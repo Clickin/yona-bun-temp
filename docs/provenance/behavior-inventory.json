@@ -1,0 +1,5889 @@
+{
+  "version": 1,
+  "behaviors": [
+    {
+      "id": "B-0001",
+      "route": "DELETE /:ownerName/:project/pullRequest/:id/deletefrombranch",
+      "legacyEvidence": [
+        "yona-original/app/views/git/partial_state.scala.html:91",
+        "yona-original/conf/routes:316"
+      ],
+      "actor": "manager",
+      "action": "PullRequestApp.deleteFromBranch",
+      "trigger": "dataRequest targeting PullRequestApp.deleteFromBranch",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "pullRequest.*",
+          "pullRequest.diff.noChanges",
+          "pullRequest.ignore.conflict"
+        ]
+      }
+    },
+    {
+      "id": "B-0002",
+      "route": "DELETE /:user/:project/code/:branch/",
+      "legacyEvidence": [
+        "yona-original/app/views/code/partial_branchrow.scala.html:70",
+        "yona-original/conf/routes:355"
+      ],
+      "actor": "manager",
+      "action": "BranchApp.deleteBranch",
+      "trigger": "link targeting BranchApp.deleteBranch",
+      "expectedEffects": {
+        "state": true,
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0003",
+      "route": "DELETE /:user/:project/commit/:commitId/comments/:id/delete",
+      "legacyEvidence": [
+        "yona-original/app/views/code/svnDiff.scala.html:125",
+        "yona-original/conf/routes:351"
+      ],
+      "actor": "manager",
+      "action": "CodeHistoryApp.deleteComment",
+      "trigger": "link targeting CodeHistoryApp.deleteComment",
+      "expectedEffects": {
+        "state": true,
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0004",
+      "route": "DELETE /:user/:project/delete",
+      "legacyEvidence": [
+        "yona-original/app/views/project/delete.scala.html:68",
+        "yona-original/conf/routes:224"
+      ],
+      "actor": "manager",
+      "action": "ProjectApp.deleteProject",
+      "trigger": "link targeting ProjectApp.deleteProject",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0005",
+      "route": "DELETE /:user/:project/issue/$number<[0-9]+>/comment/:commentId/delete",
+      "legacyEvidence": [
+        "yona-original/app/views/issue/partial_comment.scala.html:103",
+        "yona-original/conf/routes:275"
+      ],
+      "actor": "manager",
+      "action": "IssueApp.deleteComment",
+      "trigger": "link targeting IssueApp.deleteComment",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "error.failedTo",
+          "issue.error.emptyTitle",
+          "issue.error.invalid.duedate",
+          "issue.update.*",
+          "label.category.new.confirm",
+          "label.confirm.delete",
+          "label.error.color",
+          "label.error.creationFailed",
+          "label.error.duplicated",
+          "label.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0006",
+      "route": "DELETE /:user/:project/issue/$number<[0-9]+>/delete",
+      "legacyEvidence": [
+        "yona-original/app/views/issue/view.scala.html:475",
+        "yona-original/conf/routes:271"
+      ],
+      "actor": "manager",
+      "action": "IssueApp.deleteIssue",
+      "trigger": "dataRequest targeting IssueApp.deleteIssue",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "error.failedTo",
+          "issue.error.emptyTitle",
+          "issue.error.invalid.duedate",
+          "issue.update.*",
+          "label.category.new.confirm",
+          "label.confirm.delete",
+          "label.error.color",
+          "label.error.creationFailed",
+          "label.error.duplicated",
+          "label.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0007",
+      "route": "DELETE /:user/:project/issue/label/category/:id",
+      "legacyEvidence": [
+        "yona-original/conf/routes:289"
+      ],
+      "actor": "manager",
+      "action": "IssueLabelApp.deleteCategory",
+      "trigger": "direct HTTP DELETE /:user/:project/issue/label/category/:id",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0008",
+      "route": "DELETE /:user/:project/member/:id/delete",
+      "legacyEvidence": [
+        "yona-original/app/views/project/home.scala.html:143",
+        "yona-original/app/views/project/members.scala.html:65",
+        "yona-original/conf/routes:231"
+      ],
+      "actor": "manager",
+      "action": "ProjectApp.deleteMember",
+      "trigger": "link targeting ProjectApp.deleteMember",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0009",
+      "route": "DELETE /:user/:project/milestone/:id/delete",
+      "legacyEvidence": [
+        "yona-original/app/views/milestone/view.scala.html:124",
+        "yona-original/conf/routes:256"
+      ],
+      "actor": "manager",
+      "action": "MilestoneApp.deleteMilestone",
+      "trigger": "dataRequest targeting MilestoneApp.deleteMilestone",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "milestone.error.content",
+          "milestone.error.duedateFormat",
+          "milestone.error.title"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0010",
+      "route": "DELETE /:user/:project/post/:number/comment/:commentId/delete",
+      "legacyEvidence": [
+        "yona-original/app/views/board/partial_comments.scala.html:61",
+        "yona-original/conf/routes:201"
+      ],
+      "actor": "manager",
+      "action": "BoardApp.deleteComment",
+      "trigger": "link targeting BoardApp.deleteComment",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "post.error.emptyTitle"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0011",
+      "route": "DELETE /:user/:project/post/:number/delete",
+      "legacyEvidence": [
+        "yona-original/app/views/board/view.scala.html:198",
+        "yona-original/conf/routes:198"
+      ],
+      "actor": "manager",
+      "action": "BoardApp.deletePost",
+      "trigger": "dataRequest targeting BoardApp.deletePost",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "post.error.emptyTitle"
+        ]
+      }
+    },
+    {
+      "id": "B-0012",
+      "route": "DELETE /:user/:project/pushedBranch/:id/delete",
+      "legacyEvidence": [
+        "yona-original/app/views/git/partial_recently_pushed_branches.scala.html:42",
+        "yona-original/conf/routes:236"
+      ],
+      "actor": "manager",
+      "action": "ProjectApp.deletePushedBranch",
+      "trigger": "dataRequest targeting ProjectApp.deletePushedBranch",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0013",
+      "route": "DELETE /:user/:project/webhooks/:id",
+      "legacyEvidence": [
+        "yona-original/app/views/project/partial_webhooks_list.scala.html:74",
+        "yona-original/conf/routes:234"
+      ],
+      "actor": "manager",
+      "action": "ProjectApp.deleteWebhook",
+      "trigger": "dataRequest targeting ProjectApp.deleteWebhook",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0014",
+      "route": "DELETE /comments/:type/:id",
+      "legacyEvidence": [
+        "yona-original/app/views/code/partial_nonrange_codecomment_thread.scala.html:52",
+        "yona-original/conf/routes:380"
+      ],
+      "actor": "manager",
+      "action": "CommentApp.delete",
+      "trigger": "dataRequest targeting CommentApp.delete",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0015",
+      "route": "DELETE /comments/:type/:id",
+      "legacyEvidence": [
+        "yona-original/app/views/partial_comment_thread.scala.html:70",
+        "yona-original/conf/routes:380"
+      ],
+      "actor": "manager",
+      "action": "CommentApp.delete",
+      "trigger": "link targeting CommentApp.delete",
+      "expectedEffects": {
+        "state": true,
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0016",
+      "route": "DELETE /organizations/:organizationName",
+      "legacyEvidence": [
+        "yona-original/app/views/organization/deleteForm.scala.html:58",
+        "yona-original/conf/routes:106"
+      ],
+      "actor": "manager",
+      "action": "OrganizationApp.deleteOrganization",
+      "trigger": "link targeting OrganizationApp.deleteOrganization",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "Server Error",
+          "project.logo.alert"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0017",
+      "route": "DELETE /organizations/:organizationName/member/:userId/delete",
+      "legacyEvidence": [
+        "yona-original/app/views/organization/members.scala.html:64",
+        "yona-original/conf/routes:111"
+      ],
+      "actor": "manager",
+      "action": "OrganizationApp.deleteMember",
+      "trigger": "link targeting OrganizationApp.deleteMember",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "Server Error",
+          "project.logo.alert"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0018",
+      "route": "DELETE /organizations/:organizationName/member/leave",
+      "legacyEvidence": [
+        "yona-original/app/views/organization/view.scala.html:30",
+        "yona-original/conf/routes:112"
+      ],
+      "actor": "member",
+      "action": "OrganizationApp.leave",
+      "trigger": "link targeting OrganizationApp.leave",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "Server Error",
+          "project.logo.alert"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0019",
+      "route": "DELETE /sites/project/delete/:projectId",
+      "legacyEvidence": [
+        "yona-original/app/views/site/projectList.scala.html:54",
+        "yona-original/conf/routes:163"
+      ],
+      "actor": "siteAdmin",
+      "action": "SiteApp.deleteProject",
+      "trigger": "link targeting SiteApp.deleteProject",
+      "expectedEffects": {
+        "state": true,
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0020",
+      "route": "DELETE /sites/user/delete:userId",
+      "legacyEvidence": [
+        "yona-original/app/views/site/userList.scala.html:117",
+        "yona-original/conf/routes:160"
+      ],
+      "actor": "siteAdmin",
+      "action": "SiteApp.deleteUser",
+      "trigger": "link targeting SiteApp.deleteUser",
+      "expectedEffects": {
+        "state": true,
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0021",
+      "route": "DELETE /svn/*path",
+      "legacyEvidence": [
+        "yona-original/conf/routes:324"
+      ],
+      "actor": "member",
+      "action": "SvnApp.serviceWithPath",
+      "trigger": "direct HTTP DELETE /svn/*path",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0022",
+      "route": "DELETE /user/email/delete/:emailId",
+      "legacyEvidence": [
+        "yona-original/app/views/user/edit_emails.scala.html:67",
+        "yona-original/conf/routes:146"
+      ],
+      "actor": "manager",
+      "action": "UserApp.deleteEmail",
+      "trigger": "dataRequest targeting UserApp.deleteEmail",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "error.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0023",
+      "route": "GET /",
+      "legacyEvidence": [
+        "yona-original/app/views/common/navbar.scala.html:42",
+        "yona-original/app/views/error/badrequest_default.scala.html:29",
+        "yona-original/app/views/error/forbidden_default.scala.html:29",
+        "yona-original/app/views/error/internalServerError_default.scala.html:29",
+        "yona-original/app/views/error/notfound_default.scala.html:26",
+        "yona-original/app/views/error/notfound_default.scala.html:46",
+        "yona-original/app/views/organization/deleteForm.scala.html:60",
+        "yona-original/app/views/welcome/restart.scala.html:56",
+        "yona-original/app/views/welcome/secret.scala.html:56",
+        "yona-original/conf/routes:9"
+      ],
+      "actor": "anonymous",
+      "action": "Application.index",
+      "trigger": "link targeting Application.index",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0024",
+      "route": "GET /_help",
+      "legacyEvidence": [
+        "yona-original/app/views/error/notfound_default.scala.html:32",
+        "yona-original/conf/routes:359"
+      ],
+      "actor": "anonymous",
+      "action": "HelpApp.help",
+      "trigger": "link targeting HelpApp.help",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0025",
+      "route": "GET /_import",
+      "legacyEvidence": [
+        "yona-original/app/views/project/create.scala.html:23",
+        "yona-original/conf/routes:93"
+      ],
+      "actor": "member",
+      "action": "ImportApp.importForm",
+      "trigger": "link targeting ImportApp.importForm",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0026",
+      "route": "GET /_init",
+      "legacyEvidence": [
+        "yona-original/conf/routes:34"
+      ],
+      "actor": "member",
+      "action": "Application.init",
+      "trigger": "direct HTTP GET /_init",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0027",
+      "route": "GET /_UIKit",
+      "legacyEvidence": [
+        "yona-original/conf/routes:35"
+      ],
+      "actor": "member",
+      "action": "Application.UIKit",
+      "trigger": "direct HTTP GET /_UIKit",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0028",
+      "route": "GET /-_-api",
+      "legacyEvidence": [
+        "yona-original/app/views/common/navbar.scala.html:42",
+        "yona-original/app/views/error/badrequest_default.scala.html:29",
+        "yona-original/app/views/error/forbidden_default.scala.html:29",
+        "yona-original/app/views/error/internalServerError_default.scala.html:29",
+        "yona-original/app/views/error/notfound_default.scala.html:26",
+        "yona-original/app/views/error/notfound_default.scala.html:46",
+        "yona-original/app/views/organization/deleteForm.scala.html:60",
+        "yona-original/app/views/welcome/restart.scala.html:56",
+        "yona-original/app/views/welcome/secret.scala.html:56",
+        "yona-original/conf/routes:40"
+      ],
+      "actor": "anonymous",
+      "action": "Application.index",
+      "trigger": "link targeting Application.index",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0029",
+      "route": "GET /-_-api/v1/",
+      "legacyEvidence": [
+        "yona-original/app/views/common/navbar.scala.html:42",
+        "yona-original/app/views/error/badrequest_default.scala.html:29",
+        "yona-original/app/views/error/forbidden_default.scala.html:29",
+        "yona-original/app/views/error/internalServerError_default.scala.html:29",
+        "yona-original/app/views/error/notfound_default.scala.html:26",
+        "yona-original/app/views/error/notfound_default.scala.html:46",
+        "yona-original/app/views/organization/deleteForm.scala.html:60",
+        "yona-original/app/views/welcome/restart.scala.html:56",
+        "yona-original/app/views/welcome/secret.scala.html:56",
+        "yona-original/conf/routes:41"
+      ],
+      "actor": "anonymous",
+      "action": "Application.index",
+      "trigger": "link targeting Application.index",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0030",
+      "route": "GET /-_-api/v1/admin/users",
+      "legacyEvidence": [
+        "yona-original/conf/routes:89"
+      ],
+      "actor": "member",
+      "action": "UserApi.users",
+      "trigger": "direct HTTP GET /-_-api/v1/admin/users",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0031",
+      "route": "GET /-_-api/v1/favoriteIssues",
+      "legacyEvidence": [
+        "yona-original/conf/routes:62"
+      ],
+      "actor": "member",
+      "action": "UserApi.getFoveriteIssues",
+      "trigger": "direct HTTP GET /-_-api/v1/favoriteIssues",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0032",
+      "route": "GET /-_-api/v1/favoriteOrganizations",
+      "legacyEvidence": [
+        "yona-original/conf/routes:60"
+      ],
+      "actor": "member",
+      "action": "UserApi.getFoveriteOrganizations",
+      "trigger": "direct HTTP GET /-_-api/v1/favoriteOrganizations",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0033",
+      "route": "GET /-_-api/v1/favoriteProjects",
+      "legacyEvidence": [
+        "yona-original/conf/routes:58"
+      ],
+      "actor": "member",
+      "action": "UserApi.getFoveriteProjects",
+      "trigger": "direct HTTP GET /-_-api/v1/favoriteProjects",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0034",
+      "route": "GET /-_-api/v1/hello",
+      "legacyEvidence": [
+        "yona-original/conf/routes:57"
+      ],
+      "actor": "member",
+      "action": "GlobalApi.hello",
+      "trigger": "direct HTTP GET /-_-api/v1/hello",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0035",
+      "route": "GET /-_-api/v1/owners/:owner/projects/:projectName/assignableUsers",
+      "legacyEvidence": [
+        "yona-original/conf/routes:65"
+      ],
+      "actor": "member",
+      "action": "IssueApi.findAssignableUsersOfProject",
+      "trigger": "direct HTTP GET /-_-api/v1/owners/:owner/projects/:projectName/assignableUsers",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0036",
+      "route": "GET /-_-api/v1/owners/:owner/projects/:projectName/exports",
+      "legacyEvidence": [
+        "yona-original/conf/routes:42"
+      ],
+      "actor": "member",
+      "action": "ProjectApi.exports",
+      "trigger": "direct HTTP GET /-_-api/v1/owners/:owner/projects/:projectName/exports",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0037",
+      "route": "GET /-_-api/v1/owners/:owner/projects/:projectName/issues/:number",
+      "legacyEvidence": [
+        "yona-original/conf/routes:72"
+      ],
+      "actor": "member",
+      "action": "IssueApi.getIssue",
+      "trigger": "direct HTTP GET /-_-api/v1/owners/:owner/projects/:projectName/issues/:number",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0038",
+      "route": "GET /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/assignableUsers",
+      "legacyEvidence": [
+        "yona-original/conf/routes:64"
+      ],
+      "actor": "member",
+      "action": "IssueApi.findAssignableUsers",
+      "trigger": "direct HTTP GET /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/assignableUsers",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0039",
+      "route": "GET /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/findSharer",
+      "legacyEvidence": [
+        "yona-original/conf/routes:67"
+      ],
+      "actor": "member",
+      "action": "IssueApi.findSharerByloginIds",
+      "trigger": "direct HTTP GET /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/findSharer",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0040",
+      "route": "GET /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/sharableUsers",
+      "legacyEvidence": [
+        "yona-original/conf/routes:68"
+      ],
+      "actor": "member",
+      "action": "IssueApi.findSharableUsers",
+      "trigger": "direct HTTP GET /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/sharableUsers",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0041",
+      "route": "GET /-_-api/v1/owners/:owner/projects/:projectName/posts/$number<[0-9]+>/watchers",
+      "legacyEvidence": [
+        "yona-original/conf/routes:43"
+      ],
+      "actor": "member",
+      "action": "WatcherApi.getWatchers",
+      "trigger": "direct HTTP GET /-_-api/v1/owners/:owner/projects/:projectName/posts/$number<[0-9]+>/watchers",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0042",
+      "route": "GET /-_-api/v1/owners/:owner/projects/:projectName/titleHeads",
+      "legacyEvidence": [
+        "yona-original/conf/routes:83"
+      ],
+      "actor": "member",
+      "action": "ProjectApi.titleHeads",
+      "trigger": "direct HTTP GET /-_-api/v1/owners/:owner/projects/:projectName/titleHeads",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0043",
+      "route": "GET /-_-api/v1/user/issues",
+      "legacyEvidence": [
+        "yona-original/conf/routes:80"
+      ],
+      "actor": "member",
+      "action": "UserApi.getIssuesByUser",
+      "trigger": "direct HTTP GET /-_-api/v1/user/issues",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0044",
+      "route": "GET /-_-api/v1/users",
+      "legacyEvidence": [
+        "yona-original/app/views/organization/members.scala.html:118",
+        "yona-original/app/views/project/members.scala.html:106",
+        "yona-original/conf/routes:77"
+      ],
+      "actor": "member",
+      "action": "UserApp.users",
+      "trigger": "link targeting UserApp.users",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0045",
+      "route": "GET /-_-api/v1/users/:user/statistics",
+      "legacyEvidence": [
+        "yona-original/conf/routes:84"
+      ],
+      "actor": "member",
+      "action": "UserApi.statistics",
+      "trigger": "direct HTTP GET /-_-api/v1/users/:user/statistics",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0046",
+      "route": "GET /:ownerName/:project/closedPullRequests",
+      "legacyEvidence": [
+        "yona-original/conf/routes:302"
+      ],
+      "actor": "member",
+      "action": "PullRequestApp.closedPullRequests",
+      "trigger": "direct HTTP GET /:ownerName/:project/closedPullRequests",
+      "expectedEffects": {
+        "alert": [
+          "pullRequest.*",
+          "pullRequest.diff.noChanges",
+          "pullRequest.ignore.conflict"
+        ]
+      }
+    },
+    {
+      "id": "B-0047",
+      "route": "GET /:ownerName/:project/info/refs",
+      "legacyEvidence": [
+        "yona-original/conf/routes:293"
+      ],
+      "actor": "member",
+      "action": "GitApp.advertise",
+      "trigger": "direct HTTP GET /:ownerName/:project/info/refs",
+      "expectedEffects": {
+        "alert": [
+          "pullRequest.*",
+          "pullRequest.diff.noChanges",
+          "pullRequest.ignore.conflict"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0048",
+      "route": "GET /:ownerName/:project/newFork",
+      "legacyEvidence": [
+        "yona-original/app/views/git/fork.scala.html:71",
+        "yona-original/app/views/git/fork.scala.html:73",
+        "yona-original/app/views/project/home.scala.html:106",
+        "yona-original/conf/routes:297"
+      ],
+      "actor": "member",
+      "action": "PullRequestApp.newFork",
+      "trigger": "link targeting PullRequestApp.newFork",
+      "expectedEffects": {
+        "alert": [
+          "pullRequest.*",
+          "pullRequest.diff.noChanges",
+          "pullRequest.ignore.conflict"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0049",
+      "route": "GET /:ownerName/:project/newPullRequest/mergeResult",
+      "legacyEvidence": [
+        "yona-original/app/views/git/create.scala.html:131",
+        "yona-original/app/views/git/edit.scala.html:133",
+        "yona-original/conf/routes:309"
+      ],
+      "actor": "member",
+      "action": "PullRequestApp.mergeResult",
+      "trigger": "link targeting PullRequestApp.mergeResult",
+      "expectedEffects": {
+        "alert": [
+          "pullRequest.*",
+          "pullRequest.diff.noChanges",
+          "pullRequest.ignore.conflict"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0050",
+      "route": "GET /:ownerName/:project/newPullRequestForm",
+      "legacyEvidence": [
+        "yona-original/app/views/git/partial_recently_pushed_branches.scala.html:41",
+        "yona-original/app/views/git/partial_search.scala.html:92",
+        "yona-original/app/views/project/partial_dashboard_pullrequests.scala.html:51",
+        "yona-original/conf/routes:308"
+      ],
+      "actor": "member",
+      "action": "PullRequestApp.newPullRequestForm",
+      "trigger": "link targeting PullRequestApp.newPullRequestForm",
+      "expectedEffects": {
+        "alert": [
+          "pullRequest.*",
+          "pullRequest.diff.noChanges",
+          "pullRequest.ignore.conflict"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0051",
+      "route": "GET /:ownerName/:project/pullRequest/:id",
+      "legacyEvidence": [
+        "yona-original/app/views/code/partial_branchrow.scala.html:45",
+        "yona-original/app/views/git/partial_info.scala.html:78",
+        "yona-original/app/views/git/partial_list.scala.html:17",
+        "yona-original/app/views/git/partial_list.scala.html:29",
+        "yona-original/app/views/git/partial_list.scala.html:64",
+        "yona-original/app/views/git/partial_state.scala.html:62",
+        "yona-original/app/views/issue/partial_event_timeline.scala.html:83",
+        "yona-original/app/views/issue/partial_index_event_timeline.scala.html:75",
+        "yona-original/app/views/organization/group_pullrequest_list_partial.scala.html:17",
+        "yona-original/app/views/organization/group_pullrequest_list_partial.scala.html:29",
+        "yona-original/app/views/project/partial_dashboard_pullrequests.scala.html:36",
+        "yona-original/app/views/user/partial_pullRequests.scala.html:41",
+        "yona-original/app/views/user/partial_pullRequests.scala.html:58",
+        "yona-original/conf/routes:304"
+      ],
+      "actor": "member",
+      "action": "PullRequestApp.pullRequest",
+      "trigger": "link targeting PullRequestApp.pullRequest",
+      "expectedEffects": {
+        "alert": [
+          "pullRequest.*",
+          "pullRequest.diff.noChanges",
+          "pullRequest.ignore.conflict"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0052",
+      "route": "GET /:ownerName/:project/pullRequest/:id/changes",
+      "legacyEvidence": [
+        "yona-original/app/views/git/partial_info.scala.html:81",
+        "yona-original/app/views/git/partial_list.scala.html:52",
+        "yona-original/app/views/git/viewChanges.scala.html:86",
+        "yona-original/app/views/organization/group_pullrequest_list_partial.scala.html:55",
+        "yona-original/conf/routes:305"
+      ],
+      "actor": "member",
+      "action": "PullRequestApp.pullRequestChanges",
+      "trigger": "link targeting PullRequestApp.pullRequestChanges",
+      "expectedEffects": {
+        "alert": [
+          "pullRequest.*",
+          "pullRequest.diff.noChanges",
+          "pullRequest.ignore.conflict"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0053",
+      "route": "GET /:ownerName/:project/pullRequest/:id/changes/:commitId",
+      "legacyEvidence": [
+        "yona-original/app/views/git/partial_pull_request_event.scala.html:116",
+        "yona-original/app/views/git/viewChanges.scala.html:91",
+        "yona-original/conf/routes:306"
+      ],
+      "actor": "member",
+      "action": "PullRequestApp.specificChange",
+      "trigger": "link targeting PullRequestApp.specificChange",
+      "expectedEffects": {
+        "alert": [
+          "pullRequest.*",
+          "pullRequest.diff.noChanges",
+          "pullRequest.ignore.conflict"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0054",
+      "route": "GET /:ownerName/:project/pullRequest/:id/editform",
+      "legacyEvidence": [
+        "yona-original/app/views/git/view.scala.html:58",
+        "yona-original/conf/routes:314"
+      ],
+      "actor": "member",
+      "action": "PullRequestApp.editPullRequestForm",
+      "trigger": "link targeting PullRequestApp.editPullRequestForm",
+      "expectedEffects": {
+        "alert": [
+          "pullRequest.*",
+          "pullRequest.diff.noChanges",
+          "pullRequest.ignore.conflict"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0055",
+      "route": "GET /:ownerName/:project/pullRequest/:id/state",
+      "legacyEvidence": [
+        "yona-original/app/views/git/view.scala.html:117",
+        "yona-original/conf/routes:307"
+      ],
+      "actor": "member",
+      "action": "PullRequestApp.pullRequestState",
+      "trigger": "link targeting PullRequestApp.pullRequestState",
+      "expectedEffects": {
+        "alert": [
+          "pullRequest.*",
+          "pullRequest.diff.noChanges",
+          "pullRequest.ignore.conflict"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0056",
+      "route": "GET /:ownerName/:project/pullRequests",
+      "legacyEvidence": [
+        "yona-original/app/views/git/fork.scala.html:102",
+        "yona-original/app/views/project/partial_dashboard_pullrequests.scala.html:31",
+        "yona-original/app/views/project/partial_dashboard_pullrequests.scala.html:44",
+        "yona-original/conf/routes:300"
+      ],
+      "actor": "member",
+      "action": "PullRequestApp.pullRequests",
+      "trigger": "link targeting PullRequestApp.pullRequests",
+      "expectedEffects": {
+        "alert": [
+          "pullRequest.*",
+          "pullRequest.diff.noChanges",
+          "pullRequest.ignore.conflict"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0057",
+      "route": "GET /:ownerName/:project/sentPullRequests",
+      "legacyEvidence": [
+        "yona-original/conf/routes:303"
+      ],
+      "actor": "member",
+      "action": "PullRequestApp.sentPullRequests",
+      "trigger": "direct HTTP GET /:ownerName/:project/sentPullRequests",
+      "expectedEffects": {
+        "alert": [
+          "pullRequest.*",
+          "pullRequest.diff.noChanges",
+          "pullRequest.ignore.conflict"
+        ]
+      }
+    },
+    {
+      "id": "B-0058",
+      "route": "GET /:user",
+      "legacyEvidence": [
+        "yona-original/app/views/board/partial_comments.scala.html:34",
+        "yona-original/app/views/board/partial_comments.scala.html:46",
+        "yona-original/app/views/board/partial_list.scala.html:13",
+        "yona-original/app/views/board/partial_list.scala.html:32",
+        "yona-original/app/views/code/diff.scala.html:54",
+        "yona-original/app/views/code/history.scala.html:169",
+        "yona-original/app/views/code/partial_nonrange_codecomment_thread.scala.html:37",
+        "yona-original/app/views/code/partial_nonrange_codecomment_thread.scala.html:44",
+        "yona-original/app/views/code/svnDiff.scala.html:107",
+        "yona-original/app/views/code/svnDiff.scala.html:114",
+        "yona-original/app/views/code/svnDiff.scala.html:64",
+        "yona-original/app/views/common/reviewForm.scala.html:31",
+        "yona-original/app/views/common/scripts.scala.html:92",
+        "yona-original/app/views/common/usermenu.scala.html:43",
+        "yona-original/app/views/git/partial_branch.scala.html:30",
+        "yona-original/app/views/git/partial_branch.scala.html:38",
+        "yona-original/app/views/git/partial_forklist.scala.html:32",
+        "yona-original/app/views/git/partial_forklist.scala.html:51",
+        "yona-original/app/views/git/partial_forklist.scala.html:61",
+        "yona-original/app/views/git/partial_list.scala.html:19",
+        "yona-original/app/views/git/partial_list.scala.html:35",
+        "yona-original/app/views/git/partial_list.scala.html:80",
+        "yona-original/app/views/git/partial_merge_result.scala.html:80",
+        "yona-original/app/views/git/partial_pull_request_event.scala.html:120",
+        "yona-original/app/views/git/partial_pull_request_event.scala.html:31",
+        "yona-original/app/views/git/partial_pull_request_event.scala.html:40",
+        "yona-original/app/views/git/partial_state.scala.html:80",
+        "yona-original/app/views/git/view.scala.html:26",
+        "yona-original/app/views/git/viewChanges.scala.html:105",
+        "yona-original/app/views/git/viewChanges.scala.html:39",
+        "yona-original/app/views/index/myProjectList_partial.scala.html:18",
+        "yona-original/app/views/index/partial_notifications.scala.html:74",
+        "yona-original/app/views/index/partial_notifications.scala.html:83",
+        "yona-original/app/views/issue/my_partial_list.scala.html:128",
+        "yona-original/app/views/issue/my_partial_list.scala.html:20",
+        "yona-original/app/views/issue/partial_list.scala.html:44",
+        "yona-original/app/views/issue/partial_list.scala.html:93",
+        "yona-original/app/views/issue/partial_list_draft.scala.html:44",
+        "yona-original/app/views/issue/partial_list_draft.scala.html:93",
+        "yona-original/app/views/organization/group_board_list_partial.scala.html:27",
+        "yona-original/app/views/organization/group_board_list_partial.scala.html:41",
+        "yona-original/app/views/organization/group_issue_list_partial.scala.html:36",
+        "yona-original/app/views/organization/group_issue_list_partial.scala.html:50",
+        "yona-original/app/views/organization/group_issue_list_partial.scala.html:93",
+        "yona-original/app/views/organization/group_pullrequest_list_partial.scala.html:19",
+        "yona-original/app/views/organization/group_pullrequest_list_partial.scala.html:35",
+        "yona-original/app/views/organization/group_pullrequest_list_partial.scala.html:69",
+        "yona-original/app/views/organization/members.scala.html:102",
+        "yona-original/app/views/organization/members.scala.html:51",
+        "yona-original/app/views/organization/members.scala.html:97",
+        "yona-original/app/views/organization/view.scala.html:108",
+        "yona-original/app/views/organization/view.scala.html:119",
+        "yona-original/app/views/organization/view.scala.html:37",
+        "yona-original/app/views/organization/view.scala.html:40",
+        "yona-original/app/views/partial_comment_form_on_thread.scala.html:43",
+        "yona-original/app/views/partial_comment_thread.scala.html:55",
+        "yona-original/app/views/partial_comment_thread.scala.html:62",
+        "yona-original/app/views/project/header.scala.html:60",
+        "yona-original/app/views/project/home.scala.html:131",
+        "yona-original/app/views/project/home.scala.html:134",
+        "yona-original/app/views/project/home.scala.html:26",
+        "yona-original/app/views/project/list.scala.html:75",
+        "yona-original/app/views/project/list.scala.html:86",
+        "yona-original/app/views/project/members.scala.html:51",
+        "yona-original/app/views/project/members.scala.html:86",
+        "yona-original/app/views/project/members.scala.html:91",
+        "yona-original/app/views/project/watchers.scala.html:19",
+        "yona-original/app/views/reviewthread/partial_list.scala.html:32",
+        "yona-original/app/views/reviewthread/partial_list.scala.html:48",
+        "yona-original/app/views/search/partial_issue_comments.scala.html:55",
+        "yona-original/app/views/search/partial_issues.scala.html:57",
+        "yona-original/app/views/search/partial_post_comments.scala.html:41",
+        "yona-original/app/views/search/partial_posts.scala.html:55",
+        "yona-original/app/views/search/partial_reviews.scala.html:69",
+        "yona-original/app/views/search/partial_users.scala.html:32",
+        "yona-original/app/views/search/partial_users.scala.html:41",
+        "yona-original/app/views/sidebar.scala.html:27",
+        "yona-original/app/views/site/issueList.scala.html:55",
+        "yona-original/app/views/site/issueList.scala.html:62",
+        "yona-original/app/views/site/postList.scala.html:47",
+        "yona-original/app/views/site/postList.scala.html:54",
+        "yona-original/app/views/site/userList.scala.html:109",
+        "yona-original/app/views/site/userList.scala.html:77",
+        "yona-original/app/views/site/userList.scala.html:84",
+        "yona-original/app/views/site/userList.scala.html:87",
+        "yona-original/app/views/user/partial_issues.scala.html:16",
+        "yona-original/app/views/user/partial_issues.scala.html:26",
+        "yona-original/app/views/user/partial_postings.scala.html:42",
+        "yona-original/app/views/user/partial_projectlist.scala.html:29",
+        "yona-original/app/views/user/partial_pullRequests.scala.html:47",
+        "yona-original/app/views/user/partial_pullRequests.scala.html:69",
+        "yona-original/conf/routes:368"
+      ],
+      "actor": "member",
+      "action": "UserApp.userInfo",
+      "trigger": "link targeting UserApp.userInfo",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0059",
+      "route": "GET /:user/:project",
+      "legacyEvidence": [
+        "yona-original/app/views/git/fork.scala.html:60",
+        "yona-original/app/views/git/partial_branch.scala.html:31",
+        "yona-original/app/views/git/partial_branch.scala.html:39",
+        "yona-original/app/views/git/partial_forklist.scala.html:42",
+        "yona-original/app/views/issue/my_partial_list.scala.html:58",
+        "yona-original/app/views/issue/partial_event_timeline.scala.html:87",
+        "yona-original/app/views/issue/partial_index_event_timeline.scala.html:79",
+        "yona-original/app/views/organization/group_board_list_partial.scala.html:48",
+        "yona-original/app/views/organization/group_issue_list_partial.scala.html:80",
+        "yona-original/app/views/organization/group_pullrequest_list_partial.scala.html:44",
+        "yona-original/app/views/organization/view.scala.html:82",
+        "yona-original/app/views/organization/view.scala.html:89",
+        "yona-original/app/views/organization/view.scala.html:92",
+        "yona-original/app/views/project/header.scala.html:62",
+        "yona-original/app/views/project/header.scala.html:80",
+        "yona-original/app/views/project/home.scala.html:28",
+        "yona-original/app/views/project/home.scala.html:62",
+        "yona-original/app/views/project/list.scala.html:51",
+        "yona-original/app/views/project/list.scala.html:57",
+        "yona-original/app/views/project/list.scala.html:60",
+        "yona-original/app/views/projectMenu.scala.html:132",
+        "yona-original/app/views/projectMenu.scala.html:54",
+        "yona-original/app/views/search/partial_issue_comments.scala.html:50",
+        "yona-original/app/views/search/partial_issues.scala.html:52",
+        "yona-original/app/views/search/partial_milestones.scala.html:57",
+        "yona-original/app/views/search/partial_post_comments.scala.html:36",
+        "yona-original/app/views/search/partial_posts.scala.html:50",
+        "yona-original/app/views/search/partial_projects.scala.html:33",
+        "yona-original/app/views/search/partial_projects.scala.html:37",
+        "yona-original/app/views/search/partial_projects.scala.html:48",
+        "yona-original/app/views/search/partial_reviews.scala.html:64",
+        "yona-original/app/views/site/issueList.scala.html:42",
+        "yona-original/app/views/site/issueList.scala.html:46",
+        "yona-original/app/views/site/postList.scala.html:34",
+        "yona-original/app/views/site/postList.scala.html:38",
+        "yona-original/app/views/site/projectList.scala.html:40",
+        "yona-original/app/views/site/projectList.scala.html:43",
+        "yona-original/app/views/user/partial_issues.scala.html:57",
+        "yona-original/app/views/user/partial_milestones.scala.html:35",
+        "yona-original/app/views/user/partial_postings.scala.html:27",
+        "yona-original/app/views/user/partial_postings.scala.html:31",
+        "yona-original/app/views/user/partial_projectlist.scala.html:14",
+        "yona-original/app/views/user/partial_projectlist.scala.html:20",
+        "yona-original/app/views/user/partial_projectlist.scala.html:24",
+        "yona-original/app/views/user/partial_pullRequests.scala.html:33",
+        "yona-original/app/views/user/partial_pullRequests.scala.html:37",
+        "yona-original/conf/routes:219"
+      ],
+      "actor": "member",
+      "action": "ProjectApp.project",
+      "trigger": "link targeting ProjectApp.project",
+      "expectedEffects": {
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0060",
+      "route": "GET /:user/:project/branches",
+      "legacyEvidence": [
+        "yona-original/app/views/code/branches.scala.html:48",
+        "yona-original/app/views/code/diff.scala.html:40",
+        "yona-original/app/views/code/history.scala.html:109",
+        "yona-original/app/views/code/view.scala.html:72",
+        "yona-original/conf/routes:354"
+      ],
+      "actor": "member",
+      "action": "BranchApp.branches",
+      "trigger": "link targeting BranchApp.branches",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0061",
+      "route": "GET /:user/:project/changeVCS",
+      "legacyEvidence": [
+        "yona-original/conf/routes:241"
+      ],
+      "actor": "manager",
+      "action": "ProjectApp.changeVCSForm",
+      "trigger": "direct HTTP GET /:user/:project/changeVCS",
+      "expectedEffects": {
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0062",
+      "route": "GET /:user/:project/code",
+      "legacyEvidence": [
+        "yona-original/app/views/code/diff.scala.html:33",
+        "yona-original/app/views/code/svnDiff.scala.html:182",
+        "yona-original/app/views/code/svnDiff.scala.html:54",
+        "yona-original/app/views/projectMenu.scala.html:137",
+        "yona-original/app/views/projectMenu.scala.html:62",
+        "yona-original/conf/routes:337"
+      ],
+      "actor": "member",
+      "action": "CodeApp.codeBrowser",
+      "trigger": "link targeting CodeApp.codeBrowser",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0063",
+      "route": "GET /:user/:project/code/:branch",
+      "legacyEvidence": [
+        "yona-original/app/views/code/branches.scala.html:41",
+        "yona-original/app/views/code/compare_svn.scala.html:47",
+        "yona-original/app/views/code/history.scala.html:159",
+        "yona-original/app/views/code/partial_branchrow.scala.html:30",
+        "yona-original/app/views/code/view.scala.html:131",
+        "yona-original/app/views/code/view.scala.html:64",
+        "yona-original/app/views/code/view.scala.html:82",
+        "yona-original/app/views/code/view.scala.html:89",
+        "yona-original/app/views/git/partial_branch.scala.html:32",
+        "yona-original/app/views/git/partial_branch.scala.html:40",
+        "yona-original/app/views/partial_filediff.scala.html:141",
+        "yona-original/app/views/partial_filediff.scala.html:148",
+        "yona-original/conf/routes:338"
+      ],
+      "actor": "member",
+      "action": "CodeApp.codeBrowserWithBranch",
+      "trigger": "link targeting CodeApp.codeBrowserWithBranch",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0064",
+      "route": "GET /:user/:project/code/:branch/!",
+      "legacyEvidence": [
+        "yona-original/app/views/code/view.scala.html:130",
+        "yona-original/conf/routes:333"
+      ],
+      "actor": "member",
+      "action": "CodeApp.ajaxRequestWithBranch",
+      "trigger": "link targeting CodeApp.ajaxRequestWithBranch",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0065",
+      "route": "GET /:user/:project/code/:branch/!/",
+      "legacyEvidence": [
+        "yona-original/app/views/code/view.scala.html:130",
+        "yona-original/conf/routes:334"
+      ],
+      "actor": "member",
+      "action": "CodeApp.ajaxRequestWithBranch",
+      "trigger": "link targeting CodeApp.ajaxRequestWithBranch",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0066",
+      "route": "GET /:user/:project/code/:branch/!/*path",
+      "legacyEvidence": [
+        "yona-original/app/views/code/view.scala.html:130",
+        "yona-original/conf/routes:335"
+      ],
+      "actor": "member",
+      "action": "CodeApp.ajaxRequestWithBranch",
+      "trigger": "link targeting CodeApp.ajaxRequestWithBranch",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0067",
+      "route": "GET /:user/:project/code/:branch/*path",
+      "legacyEvidence": [
+        "yona-original/app/views/code/branches.scala.html:41",
+        "yona-original/app/views/code/compare_svn.scala.html:47",
+        "yona-original/app/views/code/history.scala.html:159",
+        "yona-original/app/views/code/partial_branchrow.scala.html:30",
+        "yona-original/app/views/code/view.scala.html:131",
+        "yona-original/app/views/code/view.scala.html:64",
+        "yona-original/app/views/code/view.scala.html:82",
+        "yona-original/app/views/code/view.scala.html:89",
+        "yona-original/app/views/git/partial_branch.scala.html:32",
+        "yona-original/app/views/git/partial_branch.scala.html:40",
+        "yona-original/app/views/partial_filediff.scala.html:141",
+        "yona-original/app/views/partial_filediff.scala.html:148",
+        "yona-original/conf/routes:340"
+      ],
+      "actor": "member",
+      "action": "CodeApp.codeBrowserWithBranch",
+      "trigger": "link targeting CodeApp.codeBrowserWithBranch",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0068",
+      "route": "GET /:user/:project/code/:branch/download",
+      "legacyEvidence": [
+        "yona-original/app/views/code/view.scala.html:93",
+        "yona-original/conf/routes:339"
+      ],
+      "actor": "member",
+      "action": "CodeApp.download",
+      "trigger": "link targeting CodeApp.download",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0069",
+      "route": "GET /:user/:project/code/!",
+      "legacyEvidence": [
+        "yona-original/conf/routes:330"
+      ],
+      "actor": "member",
+      "action": "CodeApp.ajaxRequest",
+      "trigger": "direct HTTP GET /:user/:project/code/!",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0070",
+      "route": "GET /:user/:project/code/!/",
+      "legacyEvidence": [
+        "yona-original/conf/routes:331"
+      ],
+      "actor": "member",
+      "action": "CodeApp.ajaxRequest",
+      "trigger": "direct HTTP GET /:user/:project/code/!/",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0071",
+      "route": "GET /:user/:project/code/!/*path",
+      "legacyEvidence": [
+        "yona-original/conf/routes:332"
+      ],
+      "actor": "member",
+      "action": "CodeApp.ajaxRequest",
+      "trigger": "direct HTTP GET /:user/:project/code/!/*path",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0072",
+      "route": "GET /:user/:project/commit/:id",
+      "legacyEvidence": [
+        "yona-original/app/views/code/partial_view_file.scala.html:44",
+        "yona-original/app/views/git/partial_merge_result.scala.html:58",
+        "yona-original/app/views/git/partial_pull_request_event.scala.html:49",
+        "yona-original/app/views/issue/partial_event_timeline.scala.html:91",
+        "yona-original/app/views/issue/partial_index_event_timeline.scala.html:83",
+        "yona-original/conf/routes:349"
+      ],
+      "actor": "member",
+      "action": "CodeHistoryApp.show",
+      "trigger": "link targeting CodeHistoryApp.show",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0073",
+      "route": "GET /:user/:project/commits",
+      "legacyEvidence": [
+        "yona-original/app/views/code/diff.scala.html:36",
+        "yona-original/app/views/code/svnDiff.scala.html:57",
+        "yona-original/app/views/code/view.scala.html:66",
+        "yona-original/conf/routes:346"
+      ],
+      "actor": "member",
+      "action": "CodeHistoryApp.historyUntilHead",
+      "trigger": "link targeting CodeHistoryApp.historyUntilHead",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0074",
+      "route": "GET /:user/:project/commits/:branch/",
+      "legacyEvidence": [
+        "yona-original/app/views/code/branches.scala.html:44",
+        "yona-original/app/views/code/diff.scala.html:175",
+        "yona-original/app/views/code/history.scala.html:83",
+        "yona-original/app/views/code/history.scala.html:92",
+        "yona-original/app/views/code/partial_branchrow.scala.html:34",
+        "yona-original/app/views/code/partial_view_file.scala.html:78",
+        "yona-original/app/views/code/svnDiff.scala.html:147",
+        "yona-original/app/views/code/view.scala.html:68",
+        "yona-original/conf/routes:347"
+      ],
+      "actor": "member",
+      "action": "CodeHistoryApp.history",
+      "trigger": "link targeting CodeHistoryApp.history",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0075",
+      "route": "GET /:user/:project/commits/:branch/*path",
+      "legacyEvidence": [
+        "yona-original/app/views/code/branches.scala.html:44",
+        "yona-original/app/views/code/diff.scala.html:175",
+        "yona-original/app/views/code/history.scala.html:83",
+        "yona-original/app/views/code/history.scala.html:92",
+        "yona-original/app/views/code/partial_branchrow.scala.html:34",
+        "yona-original/app/views/code/partial_view_file.scala.html:78",
+        "yona-original/app/views/code/svnDiff.scala.html:147",
+        "yona-original/app/views/code/view.scala.html:68",
+        "yona-original/conf/routes:348"
+      ],
+      "actor": "member",
+      "action": "CodeHistoryApp.history",
+      "trigger": "link targeting CodeHistoryApp.history",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0076",
+      "route": "GET /:user/:project/compare/:revA..:revB",
+      "legacyEvidence": [
+        "yona-original/conf/routes:387"
+      ],
+      "actor": "member",
+      "action": "CompareApp.compare",
+      "trigger": "direct HTTP GET /:user/:project/compare/:revA..:revB",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0077",
+      "route": "GET /:user/:project/deleteform",
+      "legacyEvidence": [
+        "yona-original/app/views/project/partial_settingmenu.scala.html:45",
+        "yona-original/conf/routes:223"
+      ],
+      "actor": "manager",
+      "action": "ProjectApp.deleteForm",
+      "trigger": "link targeting ProjectApp.deleteForm",
+      "expectedEffects": {
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0078",
+      "route": "GET /:user/:project/files/:rev/*path",
+      "legacyEvidence": [
+        "yona-original/conf/routes:342"
+      ],
+      "actor": "member",
+      "action": "CodeApp.openFile",
+      "trigger": "direct HTTP GET /:user/:project/files/:rev/*path",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0079",
+      "route": "GET /:user/:project/go",
+      "legacyEvidence": [
+        "yona-original/app/views/index/allProjectList_partial.scala.html:14",
+        "yona-original/app/views/index/myProjectList_partial.scala.html:10",
+        "yona-original/conf/routes:245"
+      ],
+      "actor": "member",
+      "action": "ProjectApp.goConventionMenu",
+      "trigger": "link targeting ProjectApp.goConventionMenu",
+      "expectedEffects": {
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0080",
+      "route": "GET /:user/:project/image/:rev/*path",
+      "legacyEvidence": [
+        "yona-original/conf/routes:343"
+      ],
+      "actor": "member",
+      "action": "CodeApp.showImageFile",
+      "trigger": "direct HTTP GET /:user/:project/image/:rev/*path",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0081",
+      "route": "GET /:user/:project/issue/$number<[0-9]+>",
+      "legacyEvidence": [
+        "yona-original/app/views/issue/my_partial_list.scala.html:54",
+        "yona-original/app/views/issue/my_partial_list.scala.html:68",
+        "yona-original/app/views/issue/partial_list.scala.html:23",
+        "yona-original/app/views/issue/partial_list.scala.html:32",
+        "yona-original/app/views/issue/partial_list.scala.html:38",
+        "yona-original/app/views/issue/partial_list_draft.scala.html:23",
+        "yona-original/app/views/issue/partial_list_draft.scala.html:32",
+        "yona-original/app/views/issue/partial_list_draft.scala.html:38",
+        "yona-original/app/views/issue/partial_list_subtask.scala.html:28",
+        "yona-original/app/views/issue/partial_view_child.scala.html:16",
+        "yona-original/app/views/issue/partial_view_childIssueList.scala.html:25",
+        "yona-original/app/views/issue/view.scala.html:156",
+        "yona-original/app/views/milestone/list.scala.html:132",
+        "yona-original/app/views/milestone/list.scala.html:153",
+        "yona-original/app/views/organization/group_issue_list_partial.scala.html:34",
+        "yona-original/app/views/organization/group_issue_list_partial.scala.html:44",
+        "yona-original/app/views/search/partial_issue_comments.scala.html:35",
+        "yona-original/app/views/search/partial_issues.scala.html:37",
+        "yona-original/app/views/site/issueList.scala.html:50",
+        "yona-original/app/views/site/issueList.scala.html:69",
+        "yona-original/app/views/user/partial_issues.scala.html:53",
+        "yona-original/app/views/user/partial_issues.scala.html:65",
+        "yona-original/conf/routes:267"
+      ],
+      "actor": "member",
+      "action": "IssueApp.issue",
+      "trigger": "link targeting IssueApp.issue",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo",
+          "issue.error.emptyTitle",
+          "issue.error.invalid.duedate",
+          "issue.update.*",
+          "label.category.new.confirm",
+          "label.confirm.delete",
+          "label.error.color",
+          "label.error.creationFailed",
+          "label.error.duplicated",
+          "label.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0082",
+      "route": "GET /:user/:project/issue/$number<[0-9]+>/editform",
+      "legacyEvidence": [
+        "yona-original/app/views/issue/view.scala.html:237",
+        "yona-original/app/views/issue/view.scala.html:239",
+        "yona-original/app/views/issue/view.scala.html:423",
+        "yona-original/app/views/issue/view.scala.html:425",
+        "yona-original/app/views/issue/view.scala.html:524",
+        "yona-original/conf/routes:268"
+      ],
+      "actor": "member",
+      "action": "IssueApp.editIssueForm",
+      "trigger": "link targeting IssueApp.editIssueForm",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo",
+          "issue.error.emptyTitle",
+          "issue.error.invalid.duedate",
+          "issue.update.*",
+          "label.category.new.confirm",
+          "label.confirm.delete",
+          "label.error.color",
+          "label.error.creationFailed",
+          "label.error.duplicated",
+          "label.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0083",
+      "route": "GET /:user/:project/issue/$number<[0-9]+>/nextstate",
+      "legacyEvidence": [
+        "yona-original/app/views/issue/view.scala.html:512",
+        "yona-original/conf/routes:270"
+      ],
+      "actor": "member",
+      "action": "IssueApp.nextState",
+      "trigger": "link targeting IssueApp.nextState",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo",
+          "issue.error.emptyTitle",
+          "issue.error.invalid.duedate",
+          "issue.update.*",
+          "label.category.new.confirm",
+          "label.confirm.delete",
+          "label.error.color",
+          "label.error.creationFailed",
+          "label.error.duplicated",
+          "label.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0084",
+      "route": "GET /:user/:project/issue/$number<[0-9]+>/timeline",
+      "legacyEvidence": [
+        "yona-original/app/views/issue/view.scala.html:511",
+        "yona-original/conf/routes:276"
+      ],
+      "actor": "member",
+      "action": "IssueApp.timeline",
+      "trigger": "link targeting IssueApp.timeline",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo",
+          "issue.error.emptyTitle",
+          "issue.error.invalid.duedate",
+          "issue.update.*",
+          "label.category.new.confirm",
+          "label.confirm.delete",
+          "label.error.color",
+          "label.error.creationFailed",
+          "label.error.duplicated",
+          "label.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0085",
+      "route": "GET /:user/:project/issue/label/categories",
+      "legacyEvidence": [
+        "yona-original/conf/routes:285"
+      ],
+      "actor": "member",
+      "action": "IssueLabelApp.categories",
+      "trigger": "direct HTTP GET /:user/:project/issue/label/categories",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0086",
+      "route": "GET /:user/:project/issue/label/category/:id",
+      "legacyEvidence": [
+        "yona-original/conf/routes:286"
+      ],
+      "actor": "member",
+      "action": "IssueLabelApp.category",
+      "trigger": "direct HTTP GET /:user/:project/issue/label/category/:id",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0087",
+      "route": "GET /:user/:project/issue/labels",
+      "legacyEvidence": [
+        "yona-original/app/views/project/issuelabels.scala.html:92",
+        "yona-original/conf/routes:279"
+      ],
+      "actor": "member",
+      "action": "IssueLabelApp.labels",
+      "trigger": "link targeting IssueLabelApp.labels",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0088",
+      "route": "GET /:user/:project/issue/labels.css",
+      "legacyEvidence": [
+        "yona-original/app/views/board/list.scala.html:27",
+        "yona-original/app/views/board/view.scala.html:206",
+        "yona-original/app/views/issue/create.scala.html:151",
+        "yona-original/app/views/issue/edit.scala.html:190",
+        "yona-original/app/views/issue/list.scala.html:13",
+        "yona-original/app/views/issue/view.scala.html:485",
+        "yona-original/app/views/milestone/list.scala.html:14",
+        "yona-original/app/views/milestone/view.scala.html:130",
+        "yona-original/app/views/project/partial_dashboard_issuesbylabel.scala.html:26",
+        "yona-original/app/views/project/partial_issuelabels_list.scala.html:111",
+        "yona-original/conf/routes:284"
+      ],
+      "actor": "member",
+      "action": "IssueLabelApp.labelStyles",
+      "trigger": "link targeting IssueLabelApp.labelStyles",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0089",
+      "route": "GET /:user/:project/issue/labelsform",
+      "legacyEvidence": [
+        "yona-original/app/views/issue/partial_searchform.scala.html:129",
+        "yona-original/app/views/issue/partial_select_label.scala.html:27",
+        "yona-original/app/views/project/partial_settingmenu.scala.html:39",
+        "yona-original/conf/routes:281"
+      ],
+      "actor": "member",
+      "action": "IssueLabelApp.labelsForm",
+      "trigger": "link targeting IssueLabelApp.labelsForm",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0090",
+      "route": "GET /:user/:project/issueform",
+      "legacyEvidence": [
+        "yona-original/app/views/issue/create.scala.html:163",
+        "yona-original/app/views/issue/edit.scala.html:203",
+        "yona-original/app/views/issue/list.scala.html:33",
+        "yona-original/app/views/issue/partial_list_wrap.scala.html:46",
+        "yona-original/app/views/issue/view.scala.html:205",
+        "yona-original/app/views/issue/view.scala.html:302",
+        "yona-original/app/views/issue/view.scala.html:521",
+        "yona-original/app/views/project/home.scala.html:100",
+        "yona-original/app/views/project/partial_dashboard_issuesbyassignee.scala.html:29",
+        "yona-original/conf/routes:264"
+      ],
+      "actor": "member",
+      "action": "IssueApp.newIssueForm",
+      "trigger": "link targeting IssueApp.newIssueForm",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo",
+          "issue.error.emptyTitle",
+          "issue.error.invalid.duedate",
+          "issue.update.*",
+          "label.category.new.confirm",
+          "label.confirm.delete",
+          "label.error.color",
+          "label.error.creationFailed",
+          "label.error.duplicated",
+          "label.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0091",
+      "route": "GET /:user/:project/issues",
+      "legacyEvidence": [
+        "yona-original/app/views/issue/partial_searchform.scala.html:11",
+        "yona-original/conf/routes:263"
+      ],
+      "actor": "member",
+      "action": "IssueApp.issues",
+      "trigger": "form targeting IssueApp.issues",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo",
+          "issue.error.emptyTitle",
+          "issue.error.invalid.duedate",
+          "issue.update.*",
+          "label.category.new.confirm",
+          "label.confirm.delete",
+          "label.error.color",
+          "label.error.creationFailed",
+          "label.error.duplicated",
+          "label.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0092",
+      "route": "GET /:user/:project/issues",
+      "legacyEvidence": [
+        "yona-original/app/views/issue/create.scala.html:164",
+        "yona-original/app/views/issue/edit.scala.html:204",
+        "yona-original/app/views/issue/my_partial_list.scala.html:42",
+        "yona-original/app/views/issue/partial_view_child.scala.html:11",
+        "yona-original/app/views/milestone/view.scala.html:142",
+        "yona-original/app/views/organization/group_issue_list_partial.scala.html:27",
+        "yona-original/app/views/projectMenu.scala.html:140",
+        "yona-original/app/views/projectMenu.scala.html:70",
+        "yona-original/app/views/search/partial_issues.scala.html:27",
+        "yona-original/app/views/user/partial_issues.scala.html:47",
+        "yona-original/conf/routes:263"
+      ],
+      "actor": "member",
+      "action": "IssueApp.issues",
+      "trigger": "link targeting IssueApp.issues",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo",
+          "issue.error.emptyTitle",
+          "issue.error.invalid.duedate",
+          "issue.update.*",
+          "label.category.new.confirm",
+          "label.confirm.delete",
+          "label.error.color",
+          "label.error.creationFailed",
+          "label.error.duplicated",
+          "label.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0093",
+      "route": "GET /:user/:project/labels",
+      "legacyEvidence": [
+        "yona-original/app/views/project/home.scala.html:168",
+        "yona-original/conf/routes:207"
+      ],
+      "actor": "member",
+      "action": "ProjectApp.labels",
+      "trigger": "link targeting ProjectApp.labels",
+      "expectedEffects": {
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0094",
+      "route": "GET /:user/:project/members",
+      "legacyEvidence": [
+        "yona-original/app/views/project/home.scala.html:124",
+        "yona-original/app/views/project/partial_settingmenu.scala.html:37",
+        "yona-original/conf/routes:228"
+      ],
+      "actor": "manager",
+      "action": "ProjectApp.members",
+      "trigger": "link targeting ProjectApp.members",
+      "expectedEffects": {
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0095",
+      "route": "GET /:user/:project/mentionList",
+      "legacyEvidence": [
+        "yona-original/app/views/git/create.scala.html:142",
+        "yona-original/app/views/git/edit.scala.html:144",
+        "yona-original/app/views/issue/create.scala.html:173",
+        "yona-original/app/views/issue/edit.scala.html:213",
+        "yona-original/app/views/milestone/create.scala.html:119",
+        "yona-original/app/views/milestone/edit.scala.html:122",
+        "yona-original/conf/routes:225"
+      ],
+      "actor": "member",
+      "action": "ProjectApp.mentionList",
+      "trigger": "link targeting ProjectApp.mentionList",
+      "expectedEffects": {
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0096",
+      "route": "GET /:user/:project/mentionListAtCommitDiff",
+      "legacyEvidence": [
+        "yona-original/conf/routes:226"
+      ],
+      "actor": "member",
+      "action": "ProjectApp.mentionListAtCommitDiff",
+      "trigger": "direct HTTP GET /:user/:project/mentionListAtCommitDiff",
+      "expectedEffects": {
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0097",
+      "route": "GET /:user/:project/mentionListAtPullRequest",
+      "legacyEvidence": [
+        "yona-original/conf/routes:227"
+      ],
+      "actor": "member",
+      "action": "ProjectApp.mentionListAtPullRequest",
+      "trigger": "direct HTTP GET /:user/:project/mentionListAtPullRequest",
+      "expectedEffects": {
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0098",
+      "route": "GET /:user/:project/milestone/:id",
+      "legacyEvidence": [
+        "yona-original/app/views/issue/my_partial_list.scala.html:103",
+        "yona-original/app/views/issue/partial_event_timeline.scala.html:33",
+        "yona-original/app/views/issue/partial_index_event_timeline.scala.html:25",
+        "yona-original/app/views/issue/partial_list.scala.html:59",
+        "yona-original/app/views/issue/partial_list_draft.scala.html:59",
+        "yona-original/app/views/issue/view.scala.html:370",
+        "yona-original/app/views/milestone/list.scala.html:86",
+        "yona-original/app/views/milestone/partial_status.scala.html:30",
+        "yona-original/app/views/milestone/view.scala.html:25",
+        "yona-original/app/views/milestone/view.scala.html:34",
+        "yona-original/app/views/organization/group_issue_list_partial.scala.html:63",
+        "yona-original/app/views/search/partial_milestones.scala.html:42",
+        "yona-original/app/views/user/partial_issues.scala.html:103",
+        "yona-original/app/views/user/partial_milestones.scala.html:41",
+        "yona-original/conf/routes:259"
+      ],
+      "actor": "member",
+      "action": "MilestoneApp.milestone",
+      "trigger": "link targeting MilestoneApp.milestone",
+      "expectedEffects": {
+        "alert": [
+          "milestone.error.content",
+          "milestone.error.duedateFormat",
+          "milestone.error.title"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0099",
+      "route": "GET /:user/:project/milestone/:id/editform",
+      "legacyEvidence": [
+        "yona-original/app/views/milestone/view.scala.html:67",
+        "yona-original/conf/routes:254"
+      ],
+      "actor": "member",
+      "action": "MilestoneApp.editMilestoneForm",
+      "trigger": "link targeting MilestoneApp.editMilestoneForm",
+      "expectedEffects": {
+        "alert": [
+          "milestone.error.content",
+          "milestone.error.duedateFormat",
+          "milestone.error.title"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0100",
+      "route": "GET /:user/:project/milestones",
+      "legacyEvidence": [
+        "yona-original/app/views/milestone/create.scala.html:69",
+        "yona-original/app/views/milestone/edit.scala.html:70",
+        "yona-original/app/views/milestone/list.scala.html:16",
+        "yona-original/app/views/milestone/partial_status.scala.html:26",
+        "yona-original/app/views/milestone/view.scala.html:16",
+        "yona-original/app/views/milestone/view.scala.html:60",
+        "yona-original/app/views/projectMenu.scala.html:143",
+        "yona-original/app/views/projectMenu.scala.html:96",
+        "yona-original/conf/routes:251"
+      ],
+      "actor": "member",
+      "action": "MilestoneApp.milestones",
+      "trigger": "link targeting MilestoneApp.milestones",
+      "expectedEffects": {
+        "alert": [
+          "milestone.error.content",
+          "milestone.error.duedateFormat",
+          "milestone.error.title"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0101",
+      "route": "GET /:user/:project/newMilestoneForm",
+      "legacyEvidence": [
+        "yona-original/app/views/issue/create.scala.html:106",
+        "yona-original/app/views/issue/edit.scala.html:130",
+        "yona-original/app/views/issue/view.scala.html:335",
+        "yona-original/app/views/milestone/list.scala.html:193",
+        "yona-original/app/views/milestone/list.scala.html:39",
+        "yona-original/app/views/project/partial_dashboard_issuesbymilestone.scala.html:30",
+        "yona-original/conf/routes:252"
+      ],
+      "actor": "member",
+      "action": "MilestoneApp.newMilestoneForm",
+      "trigger": "link targeting MilestoneApp.newMilestoneForm",
+      "expectedEffects": {
+        "alert": [
+          "milestone.error.content",
+          "milestone.error.duedateFormat",
+          "milestone.error.title"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0102",
+      "route": "GET /:user/:project/post/:number",
+      "legacyEvidence": [
+        "yona-original/app/views/board/partial_list.scala.html:12",
+        "yona-original/app/views/board/partial_list.scala.html:26",
+        "yona-original/app/views/board/view.scala.html:73",
+        "yona-original/app/views/organization/group_board_list_partial.scala.html:26",
+        "yona-original/app/views/organization/group_board_list_partial.scala.html:35",
+        "yona-original/app/views/search/partial_post_comments.scala.html:21",
+        "yona-original/app/views/search/partial_posts.scala.html:35",
+        "yona-original/app/views/site/postList.scala.html:42",
+        "yona-original/app/views/site/postList.scala.html:61",
+        "yona-original/app/views/user/partial_postings.scala.html:36",
+        "yona-original/conf/routes:194"
+      ],
+      "actor": "member",
+      "action": "BoardApp.post",
+      "trigger": "link targeting BoardApp.post",
+      "expectedEffects": {
+        "alert": [
+          "post.error.emptyTitle"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0103",
+      "route": "GET /:user/:project/post/:number/editform",
+      "legacyEvidence": [
+        "yona-original/app/views/board/view.scala.html:118",
+        "yona-original/app/views/board/view.scala.html:120",
+        "yona-original/app/views/board/view.scala.html:162",
+        "yona-original/app/views/board/view.scala.html:164",
+        "yona-original/app/views/board/view.scala.html:230",
+        "yona-original/conf/routes:199"
+      ],
+      "actor": "member",
+      "action": "BoardApp.editPostForm",
+      "trigger": "link targeting BoardApp.editPostForm",
+      "expectedEffects": {
+        "alert": [
+          "post.error.emptyTitle"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0104",
+      "route": "GET /:user/:project/postform",
+      "legacyEvidence": [
+        "yona-original/app/views/board/list.scala.html:104",
+        "yona-original/app/views/board/list.scala.html:48",
+        "yona-original/app/views/board/view.scala.html:147",
+        "yona-original/app/views/board/view.scala.html:227",
+        "yona-original/app/views/code/partial_view_file.scala.html:71",
+        "yona-original/app/views/code/view.scala.html:98",
+        "yona-original/app/views/project/partial_readme.scala.html:23",
+        "yona-original/app/views/project/partial_readme.scala.html:35",
+        "yona-original/app/views/project/setting.scala.html:81",
+        "yona-original/conf/routes:192"
+      ],
+      "actor": "member",
+      "action": "BoardApp.newPostForm",
+      "trigger": "link targeting BoardApp.newPostForm",
+      "expectedEffects": {
+        "alert": [
+          "post.error.emptyTitle"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0105",
+      "route": "GET /:user/:project/posts",
+      "legacyEvidence": [
+        "yona-original/app/views/board/list.scala.html:31",
+        "yona-original/conf/routes:191"
+      ],
+      "actor": "member",
+      "action": "BoardApp.posts",
+      "trigger": "form targeting BoardApp.posts",
+      "expectedEffects": {
+        "alert": [
+          "post.error.emptyTitle"
+        ]
+      }
+    },
+    {
+      "id": "B-0106",
+      "route": "GET /:user/:project/posts",
+      "legacyEvidence": [
+        "yona-original/app/views/projectMenu.scala.html:103",
+        "yona-original/app/views/projectMenu.scala.html:134",
+        "yona-original/conf/routes:191"
+      ],
+      "actor": "member",
+      "action": "BoardApp.posts",
+      "trigger": "link targeting BoardApp.posts",
+      "expectedEffects": {
+        "alert": [
+          "post.error.emptyTitle"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0107",
+      "route": "GET /:user/:project/rawcode/:rev/*path",
+      "legacyEvidence": [
+        "yona-original/app/views/code/compare_svn.scala.html:48",
+        "yona-original/conf/routes:341"
+      ],
+      "actor": "member",
+      "action": "CodeApp.showRawFile",
+      "trigger": "link targeting CodeApp.showRawFile",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0108",
+      "route": "GET /:user/:project/reviews",
+      "legacyEvidence": [
+        "yona-original/app/views/reviewthread/list.scala.html:58",
+        "yona-original/conf/routes:248"
+      ],
+      "actor": "member",
+      "action": "ReviewThreadApp.reviewThreads",
+      "trigger": "form targeting ReviewThreadApp.reviewThreads",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0109",
+      "route": "GET /:user/:project/reviews",
+      "legacyEvidence": [
+        "yona-original/app/views/projectMenu.scala.html:87",
+        "yona-original/conf/routes:248"
+      ],
+      "actor": "member",
+      "action": "ReviewThreadApp.reviewThreads",
+      "trigger": "link targeting ReviewThreadApp.reviewThreads",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0110",
+      "route": "GET /:user/:project/search",
+      "legacyEvidence": [
+        "yona-original/app/views/common/navbar.scala.html:71",
+        "yona-original/conf/routes:240"
+      ],
+      "actor": "member",
+      "action": "SearchApp.searchInAProject",
+      "trigger": "form targeting SearchApp.searchInAProject",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0111",
+      "route": "GET /:user/:project/settingform",
+      "legacyEvidence": [
+        "yona-original/app/views/project/partial_settingmenu.scala.html:35",
+        "yona-original/app/views/projectMenu.scala.html:117",
+        "yona-original/app/views/projectMenu.scala.html:149",
+        "yona-original/conf/routes:221"
+      ],
+      "actor": "manager",
+      "action": "ProjectApp.settingForm",
+      "trigger": "link targeting ProjectApp.settingForm",
+      "expectedEffects": {
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0112",
+      "route": "GET /:user/:project/statistics",
+      "legacyEvidence": [
+        "yona-original/conf/routes:367"
+      ],
+      "actor": "member",
+      "action": "StatisticsApp.statistics",
+      "trigger": "direct HTTP GET /:user/:project/statistics",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0113",
+      "route": "GET /:user/:project/transfer",
+      "legacyEvidence": [
+        "yona-original/app/views/project/partial_settingmenu.scala.html:43",
+        "yona-original/conf/routes:237"
+      ],
+      "actor": "manager",
+      "action": "ProjectApp.transferForm",
+      "trigger": "link targeting ProjectApp.transferForm",
+      "expectedEffects": {
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0114",
+      "route": "GET /:user/:project/watchers",
+      "legacyEvidence": [
+        "yona-original/app/views/project/header.scala.html:128",
+        "yona-original/conf/routes:235"
+      ],
+      "actor": "member",
+      "action": "ProjectApp.watchers",
+      "trigger": "link targeting ProjectApp.watchers",
+      "expectedEffects": {
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0115",
+      "route": "GET /:user/:project/webhooks",
+      "legacyEvidence": [
+        "yona-original/app/views/project/partial_settingmenu.scala.html:41",
+        "yona-original/conf/routes:232"
+      ],
+      "actor": "manager",
+      "action": "ProjectApp.webhooks",
+      "trigger": "link targeting ProjectApp.webhooks",
+      "expectedEffects": {
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0116",
+      "route": "GET /*paths",
+      "legacyEvidence": [
+        "yona-original/conf/routes:403"
+      ],
+      "actor": "member",
+      "action": "Application.removeTrailer",
+      "trigger": "direct HTTP GET /*paths",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0117",
+      "route": "GET /authenticate/:provider",
+      "legacyEvidence": [
+        "yona-original/conf/routes:14"
+      ],
+      "actor": "anonymous",
+      "action": "Application.oAuth",
+      "trigger": "direct HTTP GET /authenticate/:provider",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0118",
+      "route": "GET /authenticate/:provider/denied",
+      "legacyEvidence": [
+        "yona-original/conf/routes:15"
+      ],
+      "actor": "anonymous",
+      "action": "Application.oAuthDenied",
+      "trigger": "direct HTTP GET /authenticate/:provider/denied",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0119",
+      "route": "GET /categories",
+      "legacyEvidence": [
+        "yona-original/app/views/project/home.scala.html:170",
+        "yona-original/conf/routes:206"
+      ],
+      "actor": "member",
+      "action": "LabelApp.categories",
+      "trigger": "link targeting LabelApp.categories",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0120",
+      "route": "GET /files",
+      "legacyEvidence": [
+        "yona-original/app/views/common/scripts.scala.html:103",
+        "yona-original/conf/routes:180"
+      ],
+      "actor": "member",
+      "action": "AttachmentApp.getFileList",
+      "trigger": "link targeting AttachmentApp.getFileList",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0121",
+      "route": "GET /files/:id",
+      "legacyEvidence": [
+        "yona-original/app/views/common/attachmentFile.scala.html:13",
+        "yona-original/app/views/user/userFiles.scala.html:53",
+        "yona-original/app/views/user/userFiles.scala.html:54",
+        "yona-original/app/views/user/userFiles.scala.html:56",
+        "yona-original/conf/routes:182"
+      ],
+      "actor": "member",
+      "action": "AttachmentApp.getFile",
+      "trigger": "link targeting AttachmentApp.getFile",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0122",
+      "route": "GET /files/:id/?",
+      "legacyEvidence": [
+        "yona-original/app/views/common/attachmentFile.scala.html:13",
+        "yona-original/app/views/user/userFiles.scala.html:53",
+        "yona-original/app/views/user/userFiles.scala.html:54",
+        "yona-original/app/views/user/userFiles.scala.html:56",
+        "yona-original/conf/routes:183"
+      ],
+      "actor": "member",
+      "action": "AttachmentApp.getFile",
+      "trigger": "link targeting AttachmentApp.getFile",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0123",
+      "route": "GET /info/leave/:user/:project",
+      "legacyEvidence": [
+        "yona-original/app/views/user/partial_projectlist.scala.html:54",
+        "yona-original/conf/routes:144"
+      ],
+      "actor": "member",
+      "action": "UserApp.leave",
+      "trigger": "link targeting UserApp.leave",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0124",
+      "route": "GET /labels",
+      "legacyEvidence": [
+        "yona-original/app/views/project/home.scala.html:169",
+        "yona-original/conf/routes:205"
+      ],
+      "actor": "member",
+      "action": "LabelApp.labels",
+      "trigger": "link targeting LabelApp.labels",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0125",
+      "route": "GET /logout",
+      "legacyEvidence": [
+        "yona-original/app/views/common/loginDialog.scala.html:65",
+        "yona-original/conf/routes:13"
+      ],
+      "actor": "anonymous",
+      "action": "Application.oAuthLogout",
+      "trigger": "link targeting Application.oAuthLogout",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0126",
+      "route": "GET /lostPassword",
+      "legacyEvidence": [
+        "yona-original/app/views/common/loginDialog.scala.html:76",
+        "yona-original/conf/routes:169"
+      ],
+      "actor": "anonymous",
+      "action": "PasswordResetApp.lostPassword",
+      "trigger": "link targeting PasswordResetApp.lostPassword",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0127",
+      "route": "GET /migration",
+      "legacyEvidence": [
+        "yona-original/conf/routes:19"
+      ],
+      "actor": "anonymous",
+      "action": "MigrationApp.migration",
+      "trigger": "direct HTTP GET /migration",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0128",
+      "route": "GET /migration/:owner/projects/:projectName",
+      "legacyEvidence": [
+        "yona-original/conf/routes:21"
+      ],
+      "actor": "member",
+      "action": "MigrationApp.project",
+      "trigger": "direct HTTP GET /migration/:owner/projects/:projectName",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0129",
+      "route": "GET /migration/:owner/projects/:projectName/issuelabel",
+      "legacyEvidence": [
+        "yona-original/conf/routes:23"
+      ],
+      "actor": "member",
+      "action": "MigrationApp.exportIssueLabelPairs",
+      "trigger": "direct HTTP GET /migration/:owner/projects/:projectName/issuelabel",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0130",
+      "route": "GET /migration/:owner/projects/:projectName/issues",
+      "legacyEvidence": [
+        "yona-original/conf/routes:25"
+      ],
+      "actor": "member",
+      "action": "MigrationApp.exportIssues",
+      "trigger": "direct HTTP GET /migration/:owner/projects/:projectName/issues",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0131",
+      "route": "GET /migration/:owner/projects/:projectName/labels",
+      "legacyEvidence": [
+        "yona-original/conf/routes:22"
+      ],
+      "actor": "member",
+      "action": "MigrationApp.exportLabels",
+      "trigger": "direct HTTP GET /migration/:owner/projects/:projectName/labels",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0132",
+      "route": "GET /migration/:owner/projects/:projectName/milestones",
+      "legacyEvidence": [
+        "yona-original/conf/routes:24"
+      ],
+      "actor": "member",
+      "action": "MigrationApp.exportMilestones",
+      "trigger": "direct HTTP GET /migration/:owner/projects/:projectName/milestones",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0133",
+      "route": "GET /migration/:owner/projects/:projectName/posts",
+      "legacyEvidence": [
+        "yona-original/conf/routes:26"
+      ],
+      "actor": "member",
+      "action": "MigrationApp.exportPosts",
+      "trigger": "direct HTTP GET /migration/:owner/projects/:projectName/posts",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0134",
+      "route": "GET /migration/projects",
+      "legacyEvidence": [
+        "yona-original/conf/routes:20"
+      ],
+      "actor": "member",
+      "action": "MigrationApp.projects",
+      "trigger": "direct HTTP GET /migration/projects",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0135",
+      "route": "GET /notification",
+      "legacyEvidence": [
+        "yona-original/app/views/index/partial_notifications.scala.html:115",
+        "yona-original/conf/routes:212"
+      ],
+      "actor": "member",
+      "action": "NotificationApp.notifications",
+      "trigger": "link targeting NotificationApp.notifications",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0136",
+      "route": "GET /notifications",
+      "legacyEvidence": [
+        "yona-original/app/views/common/mySeriesMenuTab.scala.html:18",
+        "yona-original/conf/routes:10"
+      ],
+      "actor": "member",
+      "action": "Application.notifications",
+      "trigger": "link targeting Application.notifications",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0137",
+      "route": "GET /organizations/:organizationName",
+      "legacyEvidence": [
+        "yona-original/app/views/organization/header.scala.html:41",
+        "yona-original/app/views/organization/list.scala.html:55",
+        "yona-original/app/views/organization/list.scala.html:61",
+        "yona-original/app/views/organization/menu.scala.html:27",
+        "yona-original/conf/routes:99"
+      ],
+      "actor": "member",
+      "action": "OrganizationApp.organization",
+      "trigger": "link targeting OrganizationApp.organization",
+      "expectedEffects": {
+        "alert": [
+          "Server Error",
+          "project.logo.alert"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0138",
+      "route": "GET /organizations/:organizationName/boards",
+      "legacyEvidence": [
+        "yona-original/app/views/organization/group_board_list.scala.html:13",
+        "yona-original/app/views/organization/group_board_list.scala.html:15",
+        "yona-original/app/views/organization/menu.scala.html:37",
+        "yona-original/conf/routes:101"
+      ],
+      "actor": "member",
+      "action": "BoardApp.organizationBoards",
+      "trigger": "link targeting BoardApp.organizationBoards",
+      "expectedEffects": {
+        "alert": [
+          "post.error.emptyTitle"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0139",
+      "route": "GET /organizations/:organizationName/closedPullrequests",
+      "legacyEvidence": [
+        "yona-original/conf/routes:103"
+      ],
+      "actor": "member",
+      "action": "OrganizationApp.organizationClosedPullRequests",
+      "trigger": "direct HTTP GET /organizations/:organizationName/closedPullrequests",
+      "expectedEffects": {
+        "alert": [
+          "Server Error",
+          "project.logo.alert"
+        ]
+      }
+    },
+    {
+      "id": "B-0140",
+      "route": "GET /organizations/:organizationName/deleteForm",
+      "legacyEvidence": [
+        "yona-original/app/views/organization/partial_settingmenu.scala.html:41",
+        "yona-original/conf/routes:105"
+      ],
+      "actor": "manager",
+      "action": "OrganizationApp.deleteForm",
+      "trigger": "link targeting OrganizationApp.deleteForm",
+      "expectedEffects": {
+        "alert": [
+          "Server Error",
+          "project.logo.alert"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0141",
+      "route": "GET /organizations/:organizationName/issues",
+      "legacyEvidence": [
+        "yona-original/app/views/organization/group_issue_search_partial.scala.html:41",
+        "yona-original/conf/routes:100"
+      ],
+      "actor": "member",
+      "action": "IssueApp.organizationIssues",
+      "trigger": "form targeting IssueApp.organizationIssues",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo",
+          "issue.error.emptyTitle",
+          "issue.error.invalid.duedate",
+          "issue.update.*",
+          "label.category.new.confirm",
+          "label.confirm.delete",
+          "label.error.color",
+          "label.error.creationFailed",
+          "label.error.duplicated",
+          "label.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0142",
+      "route": "GET /organizations/:organizationName/issues",
+      "legacyEvidence": [
+        "yona-original/app/views/organization/menu.scala.html:32",
+        "yona-original/conf/routes:100"
+      ],
+      "actor": "member",
+      "action": "IssueApp.organizationIssues",
+      "trigger": "link targeting IssueApp.organizationIssues",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo",
+          "issue.error.emptyTitle",
+          "issue.error.invalid.duedate",
+          "issue.update.*",
+          "label.category.new.confirm",
+          "label.confirm.delete",
+          "label.error.color",
+          "label.error.creationFailed",
+          "label.error.duplicated",
+          "label.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0143",
+      "route": "GET /organizations/:organizationName/members",
+      "legacyEvidence": [
+        "yona-original/app/views/organization/partial_settingmenu.scala.html:38",
+        "yona-original/conf/routes:108"
+      ],
+      "actor": "manager",
+      "action": "OrganizationApp.members",
+      "trigger": "link targeting OrganizationApp.members",
+      "expectedEffects": {
+        "alert": [
+          "Server Error",
+          "project.logo.alert"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0144",
+      "route": "GET /organizations/:organizationName/pullrequests",
+      "legacyEvidence": [
+        "yona-original/app/views/organization/menu.scala.html:42",
+        "yona-original/conf/routes:102"
+      ],
+      "actor": "member",
+      "action": "OrganizationApp.organizationPullRequests",
+      "trigger": "link targeting OrganizationApp.organizationPullRequests",
+      "expectedEffects": {
+        "alert": [
+          "Server Error",
+          "project.logo.alert"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0145",
+      "route": "GET /organizations/:organizationName/search",
+      "legacyEvidence": [
+        "yona-original/app/views/common/navbar.scala.html:77",
+        "yona-original/app/views/common/navbar.scala.html:87",
+        "yona-original/conf/routes:113"
+      ],
+      "actor": "member",
+      "action": "SearchApp.searchInAGroup",
+      "trigger": "form targeting SearchApp.searchInAGroup",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0146",
+      "route": "GET /organizations/:organizationName/settingform",
+      "legacyEvidence": [
+        "yona-original/app/views/organization/menu.scala.html:51",
+        "yona-original/app/views/organization/partial_settingmenu.scala.html:35",
+        "yona-original/conf/routes:104"
+      ],
+      "actor": "manager",
+      "action": "OrganizationApp.settingForm",
+      "trigger": "link targeting OrganizationApp.settingForm",
+      "expectedEffects": {
+        "alert": [
+          "Server Error",
+          "project.logo.alert"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0147",
+      "route": "GET /organizations/new",
+      "legacyEvidence": [
+        "yona-original/app/views/common/usermenu.scala.html:131",
+        "yona-original/app/views/index/notifications.scala.html:34",
+        "yona-original/conf/routes:97"
+      ],
+      "actor": "member",
+      "action": "OrganizationApp.newForm",
+      "trigger": "link targeting OrganizationApp.newForm",
+      "expectedEffects": {
+        "alert": [
+          "Server Error",
+          "project.logo.alert"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0148",
+      "route": "GET /orgs",
+      "legacyEvidence": [
+        "yona-original/app/views/organization/list.scala.html:34",
+        "yona-original/conf/routes:218"
+      ],
+      "actor": "member",
+      "action": "OrganizationApp.orgList",
+      "trigger": "form targeting OrganizationApp.orgList",
+      "expectedEffects": {
+        "alert": [
+          "Server Error",
+          "project.logo.alert"
+        ]
+      }
+    },
+    {
+      "id": "B-0149",
+      "route": "GET /orgs",
+      "legacyEvidence": [
+        "yona-original/app/views/project/list.scala.html:21",
+        "yona-original/conf/routes:218"
+      ],
+      "actor": "member",
+      "action": "OrganizationApp.orgList",
+      "trigger": "link targeting OrganizationApp.orgList",
+      "expectedEffects": {
+        "alert": [
+          "Server Error",
+          "project.logo.alert"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0150",
+      "route": "GET /project/transfer/:id/:key",
+      "legacyEvidence": [
+        "yona-original/conf/routes:239"
+      ],
+      "actor": "member",
+      "action": "ProjectApp.acceptTransfer",
+      "trigger": "direct HTTP GET /project/transfer/:id/:key",
+      "expectedEffects": {
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0151",
+      "route": "GET /projectform",
+      "legacyEvidence": [
+        "yona-original/app/views/common/usermenu.scala.html:125",
+        "yona-original/app/views/index/notifications.scala.html:26",
+        "yona-original/app/views/organization/view.scala.html:73",
+        "yona-original/app/views/project/importing.scala.html:22",
+        "yona-original/conf/routes:215"
+      ],
+      "actor": "member",
+      "action": "ProjectApp.newProjectForm",
+      "trigger": "link targeting ProjectApp.newProjectForm",
+      "expectedEffects": {
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0152",
+      "route": "GET /projects",
+      "legacyEvidence": [
+        "yona-original/app/views/project/list.scala.html:30",
+        "yona-original/conf/routes:217"
+      ],
+      "actor": "member",
+      "action": "ProjectApp.projects",
+      "trigger": "form targeting ProjectApp.projects",
+      "expectedEffects": {
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0153",
+      "route": "GET /projects",
+      "legacyEvidence": [
+        "yona-original/app/views/common/navbar.scala.html:46",
+        "yona-original/app/views/error/notfound_default.scala.html:29",
+        "yona-original/app/views/index/notifications.scala.html:42",
+        "yona-original/app/views/organization/list.scala.html:20",
+        "yona-original/app/views/organization/view.scala.html:102",
+        "yona-original/app/views/site/massMail.scala.html:55",
+        "yona-original/conf/routes:217"
+      ],
+      "actor": "member",
+      "action": "ProjectApp.projects",
+      "trigger": "link targeting ProjectApp.projects",
+      "expectedEffects": {
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0154",
+      "route": "GET /resetPassword",
+      "legacyEvidence": [
+        "yona-original/conf/routes:171"
+      ],
+      "actor": "member",
+      "action": "PasswordResetApp.resetPasswordForm",
+      "trigger": "direct HTTP GET /resetPassword",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0155",
+      "route": "GET /restricted",
+      "legacyEvidence": [
+        "yona-original/conf/routes:16"
+      ],
+      "actor": "anonymous",
+      "action": "Restricted.index",
+      "trigger": "direct HTTP GET /restricted",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0156",
+      "route": "GET /search",
+      "legacyEvidence": [
+        "yona-original/app/views/common/navbar.scala.html:97",
+        "yona-original/conf/routes:38"
+      ],
+      "actor": "member",
+      "action": "SearchApp.searchInAll",
+      "trigger": "form targeting SearchApp.searchInAll",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0157",
+      "route": "GET /sites/data",
+      "legacyEvidence": [
+        "yona-original/conf/routes:152"
+      ],
+      "actor": "siteAdmin",
+      "action": "SiteApp.data",
+      "trigger": "direct HTTP GET /sites/data",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0158",
+      "route": "GET /sites/diagnostic",
+      "legacyEvidence": [
+        "yona-original/app/views/site/siteMngLayout.scala.html:68",
+        "yona-original/conf/routes:168"
+      ],
+      "actor": "siteAdmin",
+      "action": "SiteApp.diagnose",
+      "trigger": "link targeting SiteApp.diagnose",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0159",
+      "route": "GET /sites/export",
+      "legacyEvidence": [
+        "yona-original/app/views/site/data.scala.html:40",
+        "yona-original/conf/routes:153"
+      ],
+      "actor": "siteAdmin",
+      "action": "SiteApp.exportData",
+      "trigger": "link targeting SiteApp.exportData",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0160",
+      "route": "GET /sites/issueList",
+      "legacyEvidence": [
+        "yona-original/app/views/site/issueList.scala.html:35",
+        "yona-original/app/views/site/issueList.scala.html:36",
+        "yona-original/app/views/site/siteMngLayout.scala.html:51",
+        "yona-original/conf/routes:175"
+      ],
+      "actor": "siteAdmin",
+      "action": "SiteApp.issueList",
+      "trigger": "link targeting SiteApp.issueList",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0161",
+      "route": "GET /sites/mail",
+      "legacyEvidence": [
+        "yona-original/app/views/site/siteMngLayout.scala.html:57",
+        "yona-original/conf/routes:155"
+      ],
+      "actor": "siteAdmin",
+      "action": "SiteApp.writeMail",
+      "trigger": "link targeting SiteApp.writeMail",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0162",
+      "route": "GET /sites/massmail",
+      "legacyEvidence": [
+        "yona-original/app/views/site/siteMngLayout.scala.html:60",
+        "yona-original/conf/routes:157"
+      ],
+      "actor": "siteAdmin",
+      "action": "SiteApp.massMail",
+      "trigger": "link targeting SiteApp.massMail",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0163",
+      "route": "GET /sites/noAvatarUsers",
+      "legacyEvidence": [
+        "yona-original/conf/routes:176"
+      ],
+      "actor": "siteAdmin",
+      "action": "SiteApp.noAvatarUsers",
+      "trigger": "direct HTTP GET /sites/noAvatarUsers",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0164",
+      "route": "GET /sites/postList",
+      "legacyEvidence": [
+        "yona-original/app/views/site/siteMngLayout.scala.html:48",
+        "yona-original/conf/routes:174"
+      ],
+      "actor": "siteAdmin",
+      "action": "SiteApp.postList",
+      "trigger": "link targeting SiteApp.postList",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0165",
+      "route": "GET /sites/projectList",
+      "legacyEvidence": [
+        "yona-original/app/views/site/projectList.scala.html:15",
+        "yona-original/conf/routes:162"
+      ],
+      "actor": "siteAdmin",
+      "action": "SiteApp.projectList",
+      "trigger": "form targeting SiteApp.projectList",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0166",
+      "route": "GET /sites/projectList",
+      "legacyEvidence": [
+        "yona-original/app/views/site/siteMngLayout.scala.html:54",
+        "yona-original/conf/routes:162"
+      ],
+      "actor": "siteAdmin",
+      "action": "SiteApp.projectList",
+      "trigger": "link targeting SiteApp.projectList",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0167",
+      "route": "GET /sites/update",
+      "legacyEvidence": [
+        "yona-original/app/views/site/siteMngLayout.scala.html:63",
+        "yona-original/conf/routes:166"
+      ],
+      "actor": "siteAdmin",
+      "action": "SiteApp.update",
+      "trigger": "link targeting SiteApp.update",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0168",
+      "route": "GET /sites/userList",
+      "legacyEvidence": [
+        "yona-original/app/views/site/userList.scala.html:38",
+        "yona-original/conf/routes:159"
+      ],
+      "actor": "siteAdmin",
+      "action": "SiteApp.userList",
+      "trigger": "form targeting SiteApp.userList",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0169",
+      "route": "GET /sites/userList",
+      "legacyEvidence": [
+        "yona-original/app/views/common/usermenu.scala.html:91",
+        "yona-original/app/views/site/partial_paginationForUserList.scala.html:64",
+        "yona-original/app/views/site/siteMngLayout.scala.html:45",
+        "yona-original/conf/routes:159"
+      ],
+      "actor": "siteAdmin",
+      "action": "SiteApp.userList",
+      "trigger": "link targeting SiteApp.userList",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0170",
+      "route": "GET /svn/*path",
+      "legacyEvidence": [
+        "yona-original/conf/routes:321"
+      ],
+      "actor": "member",
+      "action": "SvnApp.serviceWithPath",
+      "trigger": "direct HTTP GET /svn/*path",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0171",
+      "route": "GET /unwatch",
+      "legacyEvidence": [
+        "yona-original/app/views/board/view.scala.html:220",
+        "yona-original/app/views/code/diff.scala.html:193",
+        "yona-original/app/views/code/svnDiff.scala.html:179",
+        "yona-original/app/views/git/view.scala.html:116",
+        "yona-original/app/views/issue/view.scala.html:510",
+        "yona-original/conf/routes:364"
+      ],
+      "actor": "member",
+      "action": "WatchApp.unwatch",
+      "trigger": "link targeting WatchApp.unwatch",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0172",
+      "route": "GET /user/editform",
+      "legacyEvidence": [
+        "yona-original/app/views/common/usermenu.scala.html:44",
+        "yona-original/app/views/sidebar.scala.html:33",
+        "yona-original/app/views/user/view.scala.html:62",
+        "yona-original/conf/routes:135"
+      ],
+      "actor": "member",
+      "action": "UserApp.editUserInfoForm",
+      "trigger": "link targeting UserApp.editUserInfoForm",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0173",
+      "route": "GET /user/editform/:tabId",
+      "legacyEvidence": [
+        "yona-original/app/views/user/edit_token.scala.html:36",
+        "yona-original/conf/routes:136"
+      ],
+      "actor": "member",
+      "action": "UserApp.editUserInfoByTabForm",
+      "trigger": "form targeting UserApp.editUserInfoByTabForm",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0174",
+      "route": "GET /user/editform/:tabId",
+      "legacyEvidence": [
+        "yona-original/app/views/project/header.scala.html:134",
+        "yona-original/app/views/project/header.scala.html:152",
+        "yona-original/app/views/user/partial_edit_tabmenu.scala.html:29",
+        "yona-original/app/views/user/partial_edit_tabmenu.scala.html:34",
+        "yona-original/app/views/user/partial_edit_tabmenu.scala.html:39",
+        "yona-original/app/views/user/partial_edit_tabmenu.scala.html:44",
+        "yona-original/conf/routes:136"
+      ],
+      "actor": "member",
+      "action": "UserApp.editUserInfoByTabForm",
+      "trigger": "link targeting UserApp.editUserInfoByTabForm",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0175",
+      "route": "GET /user/email/confirm/:emailId/:token",
+      "legacyEvidence": [
+        "yona-original/conf/routes:149"
+      ],
+      "actor": "member",
+      "action": "UserApp.confirmEmail",
+      "trigger": "direct HTTP GET /user/email/confirm/:emailId/:token",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0176",
+      "route": "GET /user/files",
+      "legacyEvidence": [
+        "yona-original/app/views/user/userFiles.scala.html:36",
+        "yona-original/conf/routes:128"
+      ],
+      "actor": "member",
+      "action": "UserApp.userFiles",
+      "trigger": "form targeting UserApp.userFiles",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0177",
+      "route": "GET /user/files",
+      "legacyEvidence": [
+        "yona-original/app/views/common/mySeriesMenuTab.scala.html:20",
+        "yona-original/conf/routes:128"
+      ],
+      "actor": "member",
+      "action": "UserApp.userFiles",
+      "trigger": "link targeting UserApp.userFiles",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0178",
+      "route": "GET /user/isEmailExist",
+      "legacyEvidence": [
+        "yona-original/app/views/user/signup.scala.html:101",
+        "yona-original/conf/routes:142"
+      ],
+      "actor": "member",
+      "action": "UserApp.isEmailExist",
+      "trigger": "link targeting UserApp.isEmailExist",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0179",
+      "route": "GET /user/issues",
+      "legacyEvidence": [
+        "yona-original/app/views/issue/my_partial_search.scala.html:30",
+        "yona-original/conf/routes:125"
+      ],
+      "actor": "member",
+      "action": "IssueApp.userIssues",
+      "trigger": "form targeting IssueApp.userIssues",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo",
+          "issue.error.emptyTitle",
+          "issue.error.invalid.duedate",
+          "issue.update.*",
+          "label.category.new.confirm",
+          "label.confirm.delete",
+          "label.error.color",
+          "label.error.creationFailed",
+          "label.error.duplicated",
+          "label.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0180",
+      "route": "GET /user/issues",
+      "legacyEvidence": [
+        "yona-original/app/views/common/mySeriesMenuTab.scala.html:19",
+        "yona-original/app/views/common/scripts.scala.html:98",
+        "yona-original/app/views/common/usermenu.scala.html:86",
+        "yona-original/conf/routes:125"
+      ],
+      "actor": "member",
+      "action": "IssueApp.userIssues",
+      "trigger": "link targeting IssueApp.userIssues",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo",
+          "issue.error.emptyTitle",
+          "issue.error.invalid.duedate",
+          "issue.update.*",
+          "label.category.new.confirm",
+          "label.confirm.delete",
+          "label.error.color",
+          "label.error.creationFailed",
+          "label.error.duplicated",
+          "label.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0181",
+      "route": "GET /user/issues",
+      "legacyEvidence": [
+        "yona-original/conf/routes:124"
+      ],
+      "actor": "member",
+      "action": "IssueApp.userIssuesPage",
+      "trigger": "direct HTTP GET /user/issues",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo",
+          "issue.error.emptyTitle",
+          "issue.error.invalid.duedate",
+          "issue.update.*",
+          "label.category.new.confirm",
+          "label.confirm.delete",
+          "label.error.color",
+          "label.error.creationFailed",
+          "label.error.duplicated",
+          "label.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0182",
+      "route": "GET /user/issues/new",
+      "legacyEvidence": [
+        "yona-original/app/views/common/usermenu.scala.html:112",
+        "yona-original/app/views/issue/partial_comment.scala.html:48",
+        "yona-original/conf/routes:126"
+      ],
+      "actor": "member",
+      "action": "IssueApp.newDirectIssueForm",
+      "trigger": "link targeting IssueApp.newDirectIssueForm",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo",
+          "issue.error.emptyTitle",
+          "issue.error.invalid.duedate",
+          "issue.update.*",
+          "label.category.new.confirm",
+          "label.confirm.delete",
+          "label.error.color",
+          "label.error.creationFailed",
+          "label.error.duplicated",
+          "label.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0183",
+      "route": "GET /user/issues/new/mine",
+      "legacyEvidence": [
+        "yona-original/app/views/common/usermenu.scala.html:117",
+        "yona-original/conf/routes:127"
+      ],
+      "actor": "member",
+      "action": "IssueApp.newDirectMyIssueForm",
+      "trigger": "link targeting IssueApp.newDirectMyIssueForm",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo",
+          "issue.error.emptyTitle",
+          "issue.error.invalid.duedate",
+          "issue.update.*",
+          "label.category.new.confirm",
+          "label.confirm.delete",
+          "label.error.color",
+          "label.error.creationFailed",
+          "label.error.duplicated",
+          "label.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0184",
+      "route": "GET /user/isUsed",
+      "legacyEvidence": [
+        "yona-original/app/views/user/signup.scala.html:100",
+        "yona-original/conf/routes:141"
+      ],
+      "actor": "member",
+      "action": "UserApp.isUsed",
+      "trigger": "link targeting UserApp.isUsed",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0185",
+      "route": "GET /user/sidebar",
+      "legacyEvidence": [
+        "yona-original/conf/routes:123"
+      ],
+      "actor": "member",
+      "action": "Application.sidebar",
+      "trigger": "direct HTTP GET /user/sidebar",
+      "expectedEffects": {}
+    },
+    {
+      "id": "B-0186",
+      "route": "GET /user/usermenuTabContentList",
+      "legacyEvidence": [
+        "yona-original/app/views/layout.scala.html:76",
+        "yona-original/app/views/layout_framed.scala.html:93",
+        "yona-original/conf/routes:143"
+      ],
+      "actor": "member",
+      "action": "UserApp.usermenuTabContentList",
+      "trigger": "link targeting UserApp.usermenuTabContentList",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0187",
+      "route": "GET /users/login",
+      "legacyEvidence": [
+        "yona-original/app/views/common/navbar.scala.html:42",
+        "yona-original/app/views/error/badrequest_default.scala.html:29",
+        "yona-original/app/views/error/forbidden_default.scala.html:29",
+        "yona-original/app/views/error/internalServerError_default.scala.html:29",
+        "yona-original/app/views/error/notfound_default.scala.html:26",
+        "yona-original/app/views/error/notfound_default.scala.html:46",
+        "yona-original/app/views/organization/deleteForm.scala.html:60",
+        "yona-original/app/views/welcome/restart.scala.html:56",
+        "yona-original/app/views/welcome/secret.scala.html:56",
+        "yona-original/conf/routes:130"
+      ],
+      "actor": "anonymous",
+      "action": "Application.index",
+      "trigger": "link targeting Application.index",
+      "expectedEffects": {
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0188",
+      "route": "GET /users/loginform",
+      "legacyEvidence": [
+        "yona-original/app/views/common/usermenu.scala.html:140",
+        "yona-original/app/views/user/signup.scala.html:89",
+        "yona-original/conf/routes:129"
+      ],
+      "actor": "anonymous",
+      "action": "UserApp.loginForm",
+      "trigger": "link targeting UserApp.loginForm",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0189",
+      "route": "GET /users/loginform",
+      "legacyEvidence": [
+        "yona-original/app/views/board/view.scala.html:73",
+        "yona-original/app/views/issue/view.scala.html:156",
+        "yona-original/conf/routes:129"
+      ],
+      "actor": "anonymous",
+      "action": "UserApp.loginForm",
+      "trigger": "modal targeting UserApp.loginForm",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0190",
+      "route": "GET /users/logout",
+      "legacyEvidence": [
+        "yona-original/app/views/common/usermenu.scala.html:49",
+        "yona-original/app/views/sidebar.scala.html:38",
+        "yona-original/conf/routes:132"
+      ],
+      "actor": "anonymous",
+      "action": "UserApp.logout",
+      "trigger": "link targeting UserApp.logout",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0191",
+      "route": "GET /users/signupform",
+      "legacyEvidence": [
+        "yona-original/app/views/common/usermenu.scala.html:146",
+        "yona-original/app/views/index/partial_intro.scala.html:19",
+        "yona-original/conf/routes:133"
+      ],
+      "actor": "anonymous",
+      "action": "UserApp.signupForm",
+      "trigger": "link targeting UserApp.signupForm",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0192",
+      "route": "GET /verify/:loginId/:verificationCode",
+      "legacyEvidence": [
+        "yona-original/conf/routes:173"
+      ],
+      "actor": "member",
+      "action": "UserApp.verifyUser",
+      "trigger": "direct HTTP GET /verify/:loginId/:verificationCode",
+      "expectedEffects": {
+        "alert": [
+          "error.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0193",
+      "route": "PATCH /-_-api/v1/admin/users/:user",
+      "legacyEvidence": [
+        "yona-original/conf/routes:90"
+      ],
+      "actor": "member",
+      "action": "UserApi.updateUserState",
+      "trigger": "direct HTTP PATCH /-_-api/v1/admin/users/:user",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0194",
+      "route": "PATCH /-_-api/v1/owners/:owner/projects/:projectName/issues/:number",
+      "legacyEvidence": [
+        "yona-original/conf/routes:75"
+      ],
+      "actor": "member",
+      "action": "IssueApi.updateIssueState",
+      "trigger": "direct HTTP PATCH /-_-api/v1/owners/:owner/projects/:projectName/issues/:number",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0195",
+      "route": "PATCH /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/content",
+      "legacyEvidence": [
+        "yona-original/conf/routes:76"
+      ],
+      "actor": "member",
+      "action": "IssueApi.updateIssueContent",
+      "trigger": "direct HTTP PATCH /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/content",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0196",
+      "route": "PATCH /-_-api/v1/owners/:owner/projects/:projectName/posts/:number/content",
+      "legacyEvidence": [
+        "yona-original/conf/routes:45"
+      ],
+      "actor": "member",
+      "action": "BoardApi.updatePostingContent",
+      "trigger": "direct HTTP PATCH /-_-api/v1/owners/:owner/projects/:projectName/posts/:number/content",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0197",
+      "route": "PATCH /:user/:project/issue/$number<[0-9]+>/comments/:commentId",
+      "legacyEvidence": [
+        "yona-original/conf/routes:274"
+      ],
+      "actor": "member",
+      "action": "IssueApi.updateIssueComment",
+      "trigger": "direct HTTP PATCH /:user/:project/issue/$number<[0-9]+>/comments/:commentId",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0198",
+      "route": "PATCH /:user/:project/post/:number/comment/:commentId",
+      "legacyEvidence": [
+        "yona-original/conf/routes:197"
+      ],
+      "actor": "member",
+      "action": "BoardApi.updatePostingComment",
+      "trigger": "direct HTTP PATCH /:user/:project/post/:number/comment/:commentId",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0199",
+      "route": "POST /",
+      "legacyEvidence": [
+        "yona-original/app/views/welcome/secret.scala.html:66",
+        "yona-original/conf/routes:6"
+      ],
+      "actor": "anonymous",
+      "action": "Application.fake",
+      "trigger": "form targeting Application.fake",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0200",
+      "route": "POST /_import",
+      "legacyEvidence": [
+        "yona-original/app/views/project/importing.scala.html:17",
+        "yona-original/conf/routes:94"
+      ],
+      "actor": "member",
+      "action": "ImportApp.newProject",
+      "trigger": "form targeting ImportApp.newProject",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0201",
+      "route": "POST /-_-api/v1/favoriteIssues/:issueId",
+      "legacyEvidence": [
+        "yona-original/conf/routes:63"
+      ],
+      "actor": "member",
+      "action": "UserApi.toggleFoveriteIssue",
+      "trigger": "direct HTTP POST /-_-api/v1/favoriteIssues/:issueId",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0202",
+      "route": "POST /-_-api/v1/favoriteOrganizations/:organizationId",
+      "legacyEvidence": [
+        "yona-original/conf/routes:61"
+      ],
+      "actor": "member",
+      "action": "UserApi.toggleFoveriteOrganization",
+      "trigger": "direct HTTP POST /-_-api/v1/favoriteOrganizations/:organizationId",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0203",
+      "route": "POST /-_-api/v1/favoriteProjects/:projectId",
+      "legacyEvidence": [
+        "yona-original/conf/routes:59"
+      ],
+      "actor": "member",
+      "action": "UserApi.toggleFoveriteProject",
+      "trigger": "direct HTTP POST /-_-api/v1/favoriteProjects/:projectId",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0204",
+      "route": "POST /-_-api/v1/owners/:owner/projects",
+      "legacyEvidence": [
+        "yona-original/conf/routes:81"
+      ],
+      "actor": "member",
+      "action": "ProjectApi.newProject",
+      "trigger": "direct HTTP POST /-_-api/v1/owners/:owner/projects",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0205",
+      "route": "POST /-_-api/v1/owners/:owner/projects/:projectName/issuelabel/:number",
+      "legacyEvidence": [
+        "yona-original/conf/routes:55"
+      ],
+      "actor": "member",
+      "action": "IssueApi.updateIssueLabel",
+      "trigger": "direct HTTP POST /-_-api/v1/owners/:owner/projects/:projectName/issuelabel/:number",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0206",
+      "route": "POST /-_-api/v1/owners/:owner/projects/:projectName/issues",
+      "legacyEvidence": [
+        "yona-original/conf/routes:51"
+      ],
+      "actor": "member",
+      "action": "IssueApi.newIssues",
+      "trigger": "direct HTTP POST /-_-api/v1/owners/:owner/projects/:projectName/issues",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0207",
+      "route": "POST /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/assignees",
+      "legacyEvidence": [
+        "yona-original/conf/routes:66"
+      ],
+      "actor": "member",
+      "action": "IssueApi.updateAssginees",
+      "trigger": "direct HTTP POST /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/assignees",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0208",
+      "route": "POST /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/commentNotiReceivers",
+      "legacyEvidence": [
+        "yona-original/conf/routes:52"
+      ],
+      "actor": "member",
+      "action": "IssueApi.commentNotiRecivers",
+      "trigger": "direct HTTP POST /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/commentNotiReceivers",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0209",
+      "route": "POST /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/comments",
+      "legacyEvidence": [
+        "yona-original/conf/routes:53"
+      ],
+      "actor": "member",
+      "action": "IssueApi.newIssueComment",
+      "trigger": "direct HTTP POST /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/comments",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0210",
+      "route": "POST /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/detectChange",
+      "legacyEvidence": [
+        "yona-original/conf/routes:73"
+      ],
+      "actor": "member",
+      "action": "IssueApi.detectChange",
+      "trigger": "direct HTTP POST /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/detectChange",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0211",
+      "route": "POST /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/downvoteWeight",
+      "legacyEvidence": [
+        "yona-original/conf/routes:71"
+      ],
+      "actor": "member",
+      "action": "IssueApi.downvoteWeight",
+      "trigger": "direct HTTP POST /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/downvoteWeight",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0212",
+      "route": "POST /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/share",
+      "legacyEvidence": [
+        "yona-original/conf/routes:69"
+      ],
+      "actor": "member",
+      "action": "IssueApi.updateSharer",
+      "trigger": "direct HTTP POST /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/share",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0213",
+      "route": "POST /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/upvoteWeight",
+      "legacyEvidence": [
+        "yona-original/conf/routes:70"
+      ],
+      "actor": "member",
+      "action": "IssueApi.upvoteWeight",
+      "trigger": "direct HTTP POST /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/upvoteWeight",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0214",
+      "route": "POST /-_-api/v1/owners/:owner/projects/:projectName/issues/imports",
+      "legacyEvidence": [
+        "yona-original/conf/routes:48"
+      ],
+      "actor": "member",
+      "action": "IssueApi.imports",
+      "trigger": "direct HTTP POST /-_-api/v1/owners/:owner/projects/:projectName/issues/imports",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0215",
+      "route": "POST /-_-api/v1/owners/:owner/projects/:projectName/labels",
+      "legacyEvidence": [
+        "yona-original/conf/routes:82"
+      ],
+      "actor": "manager",
+      "action": "ProjectApi.newLabel",
+      "trigger": "direct HTTP POST /-_-api/v1/owners/:owner/projects/:projectName/labels",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0216",
+      "route": "POST /-_-api/v1/owners/:owner/projects/:projectName/milestones",
+      "legacyEvidence": [
+        "yona-original/conf/routes:56"
+      ],
+      "actor": "member",
+      "action": "MilestoneApi.newMilestone",
+      "trigger": "direct HTTP POST /-_-api/v1/owners/:owner/projects/:projectName/milestones",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0217",
+      "route": "POST /-_-api/v1/owners/:owner/projects/:projectName/postlabel/:number",
+      "legacyEvidence": [
+        "yona-original/conf/routes:50"
+      ],
+      "actor": "member",
+      "action": "BoardApi.updatePostLabel",
+      "trigger": "direct HTTP POST /-_-api/v1/owners/:owner/projects/:projectName/postlabel/:number",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0218",
+      "route": "POST /-_-api/v1/owners/:owner/projects/:projectName/posts",
+      "legacyEvidence": [
+        "yona-original/conf/routes:44"
+      ],
+      "actor": "member",
+      "action": "BoardApi.newPostings",
+      "trigger": "direct HTTP POST /-_-api/v1/owners/:owner/projects/:projectName/posts",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0219",
+      "route": "POST /-_-api/v1/owners/:owner/projects/:projectName/posts/:number/comments",
+      "legacyEvidence": [
+        "yona-original/conf/routes:46"
+      ],
+      "actor": "member",
+      "action": "BoardApi.newPostingComment",
+      "trigger": "direct HTTP POST /-_-api/v1/owners/:owner/projects/:projectName/posts/:number/comments",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0220",
+      "route": "POST /-_-api/v1/translation",
+      "legacyEvidence": [
+        "yona-original/conf/routes:87"
+      ],
+      "actor": "member",
+      "action": "IssueApi.translate",
+      "trigger": "direct HTTP POST /-_-api/v1/translation",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0221",
+      "route": "POST /-_-api/v1/user/defultLoginPage",
+      "legacyEvidence": [
+        "yona-original/app/views/index/notifications.scala.html:126",
+        "yona-original/app/views/issue/my_list.scala.html:28",
+        "yona-original/conf/routes:86"
+      ],
+      "actor": "member",
+      "action": "UserApp.setDefaultLoginPage",
+      "trigger": "link targeting UserApp.setDefaultLoginPage",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "error.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0222",
+      "route": "POST /-_-api/v1/users",
+      "legacyEvidence": [
+        "yona-original/conf/routes:78"
+      ],
+      "actor": "member",
+      "action": "UserApi.newUser",
+      "trigger": "direct HTTP POST /-_-api/v1/users",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0223",
+      "route": "POST /-_-api/v1/users/token",
+      "legacyEvidence": [
+        "yona-original/conf/routes:79"
+      ],
+      "actor": "member",
+      "action": "UserApi.newToken",
+      "trigger": "direct HTTP POST /-_-api/v1/users/token",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0224",
+      "route": "POST /:ownerName/:project/$service<git-upload-pack|git-receive-pack>",
+      "legacyEvidence": [
+        "yona-original/conf/routes:294"
+      ],
+      "actor": "member",
+      "action": "GitApp.serviceRpc",
+      "trigger": "direct HTTP POST /:ownerName/:project/$service<git-upload-pack|git-receive-pack>",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "pullRequest.*",
+          "pullRequest.diff.noChanges",
+          "pullRequest.ignore.conflict"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0225",
+      "route": "POST /:ownerName/:project/clone",
+      "legacyEvidence": [
+        "yona-original/app/views/git/clone.scala.html:47",
+        "yona-original/conf/routes:299"
+      ],
+      "actor": "member",
+      "action": "PullRequestApp.doClone",
+      "trigger": "link targeting PullRequestApp.doClone",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "pullRequest.*",
+          "pullRequest.diff.noChanges",
+          "pullRequest.ignore.conflict"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0226",
+      "route": "POST /:ownerName/:project/fork",
+      "legacyEvidence": [
+        "yona-original/app/views/git/fork.scala.html:33",
+        "yona-original/conf/routes:298"
+      ],
+      "actor": "member",
+      "action": "PullRequestApp.fork",
+      "trigger": "form targeting PullRequestApp.fork",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "pullRequest.*",
+          "pullRequest.diff.noChanges",
+          "pullRequest.ignore.conflict"
+        ]
+      }
+    },
+    {
+      "id": "B-0227",
+      "route": "POST /:ownerName/:project/pullRequest/:id/accept",
+      "legacyEvidence": [
+        "yona-original/app/views/git/partial_info.scala.html:67",
+        "yona-original/conf/routes:311"
+      ],
+      "actor": "member",
+      "action": "PullRequestApp.accept",
+      "trigger": "link targeting PullRequestApp.accept",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "pullRequest.*",
+          "pullRequest.diff.noChanges",
+          "pullRequest.ignore.conflict"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0228",
+      "route": "POST /:ownerName/:project/pullRequest/:id/close",
+      "legacyEvidence": [
+        "yona-original/app/views/git/view.scala.html:61",
+        "yona-original/conf/routes:312"
+      ],
+      "actor": "member",
+      "action": "PullRequestApp.close",
+      "trigger": "link targeting PullRequestApp.close",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "pullRequest.*",
+          "pullRequest.diff.noChanges",
+          "pullRequest.ignore.conflict"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0229",
+      "route": "POST /:ownerName/:project/pullRequest/:id/edit",
+      "legacyEvidence": [
+        "yona-original/conf/routes:315"
+      ],
+      "actor": "member",
+      "action": "PullRequestApp.editPullRequest",
+      "trigger": "direct HTTP POST /:ownerName/:project/pullRequest/:id/edit",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "pullRequest.*",
+          "pullRequest.diff.noChanges",
+          "pullRequest.ignore.conflict"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0230",
+      "route": "POST /:ownerName/:project/pullRequest/:id/open",
+      "legacyEvidence": [
+        "yona-original/app/views/git/view.scala.html:64",
+        "yona-original/conf/routes:313"
+      ],
+      "actor": "member",
+      "action": "PullRequestApp.open",
+      "trigger": "link targeting PullRequestApp.open",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "pullRequest.*",
+          "pullRequest.diff.noChanges",
+          "pullRequest.ignore.conflict"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0231",
+      "route": "POST /:ownerName/:project/pullRequest/:id/restorefrombranch",
+      "legacyEvidence": [
+        "yona-original/app/views/git/partial_state.scala.html:95",
+        "yona-original/conf/routes:317"
+      ],
+      "actor": "member",
+      "action": "PullRequestApp.restoreFromBranch",
+      "trigger": "link targeting PullRequestApp.restoreFromBranch",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "pullRequest.*",
+          "pullRequest.diff.noChanges",
+          "pullRequest.ignore.conflict"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0232",
+      "route": "POST /:ownerName/:project/pullRequest/:pullRequestId/comments",
+      "legacyEvidence": [
+        "yona-original/conf/routes:188"
+      ],
+      "actor": "member",
+      "action": "PullRequestApp.newComment",
+      "trigger": "direct HTTP POST /:ownerName/:project/pullRequest/:pullRequestId/comments",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "pullRequest.*",
+          "pullRequest.diff.noChanges",
+          "pullRequest.ignore.conflict"
+        ]
+      }
+    },
+    {
+      "id": "B-0233",
+      "route": "POST /:ownerName/:project/pullRequests",
+      "legacyEvidence": [
+        "yona-original/conf/routes:310"
+      ],
+      "actor": "member",
+      "action": "PullRequestApp.newPullRequest",
+      "trigger": "direct HTTP POST /:ownerName/:project/pullRequests",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "pullRequest.*",
+          "pullRequest.diff.noChanges",
+          "pullRequest.ignore.conflict"
+        ]
+      }
+    },
+    {
+      "id": "B-0234",
+      "route": "POST /:user",
+      "legacyEvidence": [
+        "yona-original/conf/routes:369"
+      ],
+      "actor": "member",
+      "action": "UserApp.resetUserPasswordBySiteManager",
+      "trigger": "direct HTTP POST /:user",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "error.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0235",
+      "route": "POST /:user/:project/cancel/enroll",
+      "legacyEvidence": [
+        "yona-original/app/views/project/header.scala.html:100",
+        "yona-original/conf/routes:377"
+      ],
+      "actor": "member",
+      "action": "EnrollProjectApp.cancelEnroll",
+      "trigger": "link targeting EnrollProjectApp.cancelEnroll",
+      "expectedEffects": {
+        "state": true,
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0236",
+      "route": "POST /:user/:project/changeVCS",
+      "legacyEvidence": [
+        "yona-original/app/views/project/change_vcs.scala.html:73",
+        "yona-original/app/views/project/partial_settingmenu.scala.html:47",
+        "yona-original/conf/routes:242"
+      ],
+      "actor": "manager",
+      "action": "ProjectApp.changeVCS",
+      "trigger": "link targeting ProjectApp.changeVCS",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0237",
+      "route": "POST /:user/:project/code/:branch/setAsDefault",
+      "legacyEvidence": [
+        "yona-original/app/views/code/partial_branchrow.scala.html:62",
+        "yona-original/conf/routes:356"
+      ],
+      "actor": "member",
+      "action": "BranchApp.setAsDefault",
+      "trigger": "dataRequest targeting BranchApp.setAsDefault",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0238",
+      "route": "POST /:user/:project/commit/:commitId/comments",
+      "legacyEvidence": [
+        "yona-original/conf/routes:350"
+      ],
+      "actor": "member",
+      "action": "CodeHistoryApp.newComment",
+      "trigger": "direct HTTP POST /:user/:project/commit/:commitId/comments",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0239",
+      "route": "POST /:user/:project/copyLabels",
+      "legacyEvidence": [
+        "yona-original/app/views/project/issuelabels.scala.html:33",
+        "yona-original/conf/routes:290"
+      ],
+      "actor": "member",
+      "action": "IssueLabelApp.copyLabels",
+      "trigger": "form targeting IssueLabelApp.copyLabels",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0240",
+      "route": "POST /:user/:project/enroll",
+      "legacyEvidence": [
+        "yona-original/app/views/project/header.scala.html:116",
+        "yona-original/conf/routes:376"
+      ],
+      "actor": "member",
+      "action": "EnrollProjectApp.enroll",
+      "trigger": "link targeting EnrollProjectApp.enroll",
+      "expectedEffects": {
+        "state": true,
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0241",
+      "route": "POST /:user/:project/issue/:number/comment/:commentId/unvote",
+      "legacyEvidence": [
+        "yona-original/app/views/issue/partial_comment.scala.html:79",
+        "yona-original/conf/routes:393"
+      ],
+      "actor": "member",
+      "action": "VoteApp.unvoteComment",
+      "trigger": "link targeting VoteApp.unvoteComment",
+      "expectedEffects": {
+        "state": true,
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0242",
+      "route": "POST /:user/:project/issue/:number/comment/:commentId/vote",
+      "legacyEvidence": [
+        "yona-original/app/views/issue/partial_comment.scala.html:86",
+        "yona-original/conf/routes:392"
+      ],
+      "actor": "member",
+      "action": "VoteApp.voteComment",
+      "trigger": "link targeting VoteApp.voteComment",
+      "expectedEffects": {
+        "state": true,
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0243",
+      "route": "POST /:user/:project/issue/:number/unvote",
+      "legacyEvidence": [
+        "yona-original/conf/routes:391"
+      ],
+      "actor": "member",
+      "action": "VoteApp.unvote",
+      "trigger": "direct HTTP POST /:user/:project/issue/:number/unvote",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0244",
+      "route": "POST /:user/:project/issue/:number/vote",
+      "legacyEvidence": [
+        "yona-original/conf/routes:390"
+      ],
+      "actor": "member",
+      "action": "VoteApp.vote",
+      "trigger": "direct HTTP POST /:user/:project/issue/:number/vote",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0245",
+      "route": "POST /:user/:project/issue/$number<[0-9]+>/comments",
+      "legacyEvidence": [
+        "yona-original/conf/routes:272"
+      ],
+      "actor": "member",
+      "action": "IssueApp.newComment",
+      "trigger": "direct HTTP POST /:user/:project/issue/$number<[0-9]+>/comments",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "error.failedTo",
+          "issue.error.emptyTitle",
+          "issue.error.invalid.duedate",
+          "issue.update.*",
+          "label.category.new.confirm",
+          "label.confirm.delete",
+          "label.error.color",
+          "label.error.creationFailed",
+          "label.error.duplicated",
+          "label.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0246",
+      "route": "POST /:user/:project/issue/$number<[0-9]+>/comments/:commentId",
+      "legacyEvidence": [
+        "yona-original/conf/routes:273"
+      ],
+      "actor": "member",
+      "action": "IssueApp.updateComment",
+      "trigger": "direct HTTP POST /:user/:project/issue/$number<[0-9]+>/comments/:commentId",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "error.failedTo",
+          "issue.error.emptyTitle",
+          "issue.error.invalid.duedate",
+          "issue.update.*",
+          "label.category.new.confirm",
+          "label.confirm.delete",
+          "label.error.color",
+          "label.error.creationFailed",
+          "label.error.duplicated",
+          "label.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0247",
+      "route": "POST /:user/:project/issue/$number<[0-9]+>/edit",
+      "legacyEvidence": [
+        "yona-original/conf/routes:269"
+      ],
+      "actor": "member",
+      "action": "IssueApp.editIssue",
+      "trigger": "direct HTTP POST /:user/:project/issue/$number<[0-9]+>/edit",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "error.failedTo",
+          "issue.error.emptyTitle",
+          "issue.error.invalid.duedate",
+          "issue.update.*",
+          "label.category.new.confirm",
+          "label.confirm.delete",
+          "label.error.color",
+          "label.error.creationFailed",
+          "label.error.duplicated",
+          "label.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0248",
+      "route": "POST /:user/:project/issue/label/:id/delete",
+      "legacyEvidence": [
+        "yona-original/app/views/project/partial_issuelabels_list.scala.html:88",
+        "yona-original/conf/routes:282"
+      ],
+      "actor": "manager",
+      "action": "IssueLabelApp.delete",
+      "trigger": "link targeting IssueLabelApp.delete",
+      "expectedEffects": {
+        "state": true,
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0249",
+      "route": "POST /:user/:project/issue/label/categories",
+      "legacyEvidence": [
+        "yona-original/conf/routes:288"
+      ],
+      "actor": "member",
+      "action": "IssueLabelApp.newCategory",
+      "trigger": "direct HTTP POST /:user/:project/issue/label/categories",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0250",
+      "route": "POST /:user/:project/issue/labels",
+      "legacyEvidence": [
+        "yona-original/app/views/project/issuelabels.scala.html:43",
+        "yona-original/conf/routes:280"
+      ],
+      "actor": "manager",
+      "action": "IssueLabelApp.newLabel",
+      "trigger": "form targeting IssueLabelApp.newLabel",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0251",
+      "route": "POST /:user/:project/issues",
+      "legacyEvidence": [
+        "yona-original/app/views/issue/partial_massupdate.scala.html:44",
+        "yona-original/app/views/issue/view.scala.html:295",
+        "yona-original/conf/routes:265"
+      ],
+      "actor": "manager",
+      "action": "IssueApp.massUpdate",
+      "trigger": "form targeting IssueApp.massUpdate",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "error.failedTo",
+          "issue.error.emptyTitle",
+          "issue.error.invalid.duedate",
+          "issue.update.*",
+          "label.category.new.confirm",
+          "label.confirm.delete",
+          "label.error.color",
+          "label.error.creationFailed",
+          "label.error.duplicated",
+          "label.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0252",
+      "route": "POST /:user/:project/issues/latest",
+      "legacyEvidence": [
+        "yona-original/conf/routes:266"
+      ],
+      "actor": "member",
+      "action": "IssueApp.newIssue",
+      "trigger": "direct HTTP POST /:user/:project/issues/latest",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "error.failedTo",
+          "issue.error.emptyTitle",
+          "issue.error.invalid.duedate",
+          "issue.update.*",
+          "label.category.new.confirm",
+          "label.confirm.delete",
+          "label.error.color",
+          "label.error.creationFailed",
+          "label.error.duplicated",
+          "label.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0253",
+      "route": "POST /:user/:project/labels",
+      "legacyEvidence": [
+        "yona-original/conf/routes:208"
+      ],
+      "actor": "member",
+      "action": "ProjectApp.attachLabel",
+      "trigger": "direct HTTP POST /:user/:project/labels",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0254",
+      "route": "POST /:user/:project/labels/:id",
+      "legacyEvidence": [
+        "yona-original/conf/routes:209"
+      ],
+      "actor": "member",
+      "action": "ProjectApp.detachLabel",
+      "trigger": "direct HTTP POST /:user/:project/labels/:id",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0255",
+      "route": "POST /:user/:project/member/:id/edit",
+      "legacyEvidence": [
+        "yona-original/app/views/project/members.scala.html:27",
+        "yona-original/conf/routes:230"
+      ],
+      "actor": "member",
+      "action": "ProjectApp.editMember",
+      "trigger": "link targeting ProjectApp.editMember",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0256",
+      "route": "POST /:user/:project/members",
+      "legacyEvidence": [
+        "yona-original/app/views/project/members.scala.html:38",
+        "yona-original/conf/routes:229"
+      ],
+      "actor": "manager",
+      "action": "ProjectApp.newMember",
+      "trigger": "form targeting ProjectApp.newMember",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0257",
+      "route": "POST /:user/:project/milestone/:id/close",
+      "legacyEvidence": [
+        "yona-original/app/views/milestone/view.scala.html:70",
+        "yona-original/conf/routes:258"
+      ],
+      "actor": "member",
+      "action": "MilestoneApp.close",
+      "trigger": "dataRequest targeting MilestoneApp.close",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "milestone.error.content",
+          "milestone.error.duedateFormat",
+          "milestone.error.title"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0258",
+      "route": "POST /:user/:project/milestone/:id/edit",
+      "legacyEvidence": [
+        "yona-original/conf/routes:255"
+      ],
+      "actor": "member",
+      "action": "MilestoneApp.editMilestone",
+      "trigger": "direct HTTP POST /:user/:project/milestone/:id/edit",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "milestone.error.content",
+          "milestone.error.duedateFormat",
+          "milestone.error.title"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0259",
+      "route": "POST /:user/:project/milestone/:id/open",
+      "legacyEvidence": [
+        "yona-original/app/views/milestone/view.scala.html:73",
+        "yona-original/conf/routes:257"
+      ],
+      "actor": "member",
+      "action": "MilestoneApp.open",
+      "trigger": "dataRequest targeting MilestoneApp.open",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "milestone.error.content",
+          "milestone.error.duedateFormat",
+          "milestone.error.title"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0260",
+      "route": "POST /:user/:project/milestones",
+      "legacyEvidence": [
+        "yona-original/conf/routes:253"
+      ],
+      "actor": "member",
+      "action": "MilestoneApp.newMilestone",
+      "trigger": "direct HTTP POST /:user/:project/milestones",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "milestone.error.content",
+          "milestone.error.duedateFormat",
+          "milestone.error.title"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0261",
+      "route": "POST /:user/:project/post/:number/comment",
+      "legacyEvidence": [
+        "yona-original/conf/routes:195"
+      ],
+      "actor": "member",
+      "action": "BoardApp.newComment",
+      "trigger": "direct HTTP POST /:user/:project/post/:number/comment",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "post.error.emptyTitle"
+        ]
+      }
+    },
+    {
+      "id": "B-0262",
+      "route": "POST /:user/:project/post/:number/comment/:commentId",
+      "legacyEvidence": [
+        "yona-original/conf/routes:196"
+      ],
+      "actor": "member",
+      "action": "BoardApp.updateComment",
+      "trigger": "direct HTTP POST /:user/:project/post/:number/comment/:commentId",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "post.error.emptyTitle"
+        ]
+      }
+    },
+    {
+      "id": "B-0263",
+      "route": "POST /:user/:project/post/:number/edit",
+      "legacyEvidence": [
+        "yona-original/app/views/board/edit.scala.html:20",
+        "yona-original/conf/routes:200"
+      ],
+      "actor": "member",
+      "action": "BoardApp.editPost",
+      "trigger": "form targeting BoardApp.editPost",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "post.error.emptyTitle"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0264",
+      "route": "POST /:user/:project/posts",
+      "legacyEvidence": [
+        "yona-original/app/views/board/create.scala.html:49",
+        "yona-original/conf/routes:193"
+      ],
+      "actor": "member",
+      "action": "BoardApp.newPost",
+      "trigger": "form targeting BoardApp.newPost",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "post.error.emptyTitle"
+        ]
+      }
+    },
+    {
+      "id": "B-0265",
+      "route": "POST /:user/:project/pullRequest/:number/review",
+      "legacyEvidence": [
+        "yona-original/app/views/git/partial_info.scala.html:58",
+        "yona-original/conf/routes:383"
+      ],
+      "actor": "member",
+      "action": "ReviewApp.review",
+      "trigger": "link targeting ReviewApp.review",
+      "expectedEffects": {
+        "state": true,
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0266",
+      "route": "POST /:user/:project/pullRequest/:number/unreview",
+      "legacyEvidence": [
+        "yona-original/app/views/git/partial_info.scala.html:54",
+        "yona-original/conf/routes:384"
+      ],
+      "actor": "member",
+      "action": "ReviewApp.unreview",
+      "trigger": "link targeting ReviewApp.unreview",
+      "expectedEffects": {
+        "state": true,
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0267",
+      "route": "POST /:user/:project/setting",
+      "legacyEvidence": [
+        "yona-original/app/views/project/setting.scala.html:26",
+        "yona-original/conf/routes:222"
+      ],
+      "actor": "manager",
+      "action": "ProjectApp.settingProject",
+      "trigger": "form targeting ProjectApp.settingProject",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0268",
+      "route": "POST /:user/:project/unwatch",
+      "legacyEvidence": [
+        "yona-original/app/views/project/header.scala.html:138",
+        "yona-original/app/views/user/partial_projectlist.scala.html:38",
+        "yona-original/conf/routes:373"
+      ],
+      "actor": "member",
+      "action": "WatchProjectApp.unwatch",
+      "trigger": "link targeting WatchProjectApp.unwatch",
+      "expectedEffects": {
+        "state": true,
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0269",
+      "route": "POST /:user/:project/watch",
+      "legacyEvidence": [
+        "yona-original/app/views/project/header.scala.html:156",
+        "yona-original/app/views/user/partial_projectlist.scala.html:45",
+        "yona-original/conf/routes:372"
+      ],
+      "actor": "member",
+      "action": "WatchProjectApp.watch",
+      "trigger": "link targeting WatchProjectApp.watch",
+      "expectedEffects": {
+        "state": true,
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0270",
+      "route": "POST /:user/:project/webhooks",
+      "legacyEvidence": [
+        "yona-original/app/views/project/webhooks.scala.html:19",
+        "yona-original/conf/routes:233"
+      ],
+      "actor": "member",
+      "action": "ProjectApp.newWebhook",
+      "trigger": "form targeting ProjectApp.newWebhook",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0271",
+      "route": "POST /!svn-fake/sevice/",
+      "legacyEvidence": [
+        "yona-original/conf/routes:326"
+      ],
+      "actor": "member",
+      "action": "SvnApp.service",
+      "trigger": "direct HTTP POST /!svn-fake/sevice/",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0272",
+      "route": "POST /files",
+      "legacyEvidence": [
+        "yona-original/app/views/common/scripts.scala.html:104",
+        "yona-original/conf/routes:181"
+      ],
+      "actor": "member",
+      "action": "AttachmentApp.uploadFile",
+      "trigger": "link targeting AttachmentApp.uploadFile",
+      "expectedEffects": {
+        "state": true,
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0273",
+      "route": "POST /files/:id",
+      "legacyEvidence": [
+        "yona-original/conf/routes:185"
+      ],
+      "actor": "manager",
+      "action": "AttachmentApp.deleteFile",
+      "trigger": "direct HTTP POST /files/:id",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0274",
+      "route": "POST /files/:id/?",
+      "legacyEvidence": [
+        "yona-original/conf/routes:184"
+      ],
+      "actor": "manager",
+      "action": "AttachmentApp.deleteFile",
+      "trigger": "direct HTTP POST /files/:id/?",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0275",
+      "route": "POST /lostPassword",
+      "legacyEvidence": [
+        "yona-original/app/views/site/lostPassword.scala.html:36",
+        "yona-original/conf/routes:170"
+      ],
+      "actor": "member",
+      "action": "PasswordResetApp.requestResetPasswordEmail",
+      "trigger": "form targeting PasswordResetApp.requestResetPasswordEmail",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0276",
+      "route": "POST /markdown/:user/:project",
+      "legacyEvidence": [
+        "yona-original/app/views/common/markdown.scala.html:33",
+        "yona-original/conf/routes:400"
+      ],
+      "actor": "member",
+      "action": "MarkdownApp.render",
+      "trigger": "link targeting MarkdownApp.render",
+      "expectedEffects": {
+        "state": true,
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0277",
+      "route": "POST /noti/toggle/:projectId/:notiType",
+      "legacyEvidence": [
+        "yona-original/app/views/user/edit_notifications.scala.html:61",
+        "yona-original/conf/routes:120"
+      ],
+      "actor": "member",
+      "action": "WatchProjectApp.toggle",
+      "trigger": "link targeting WatchProjectApp.toggle",
+      "expectedEffects": {
+        "state": true,
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0278",
+      "route": "POST /organizations/:organizationName/cancel/enroll",
+      "legacyEvidence": [
+        "yona-original/app/views/organization/header.scala.html:27",
+        "yona-original/conf/routes:117"
+      ],
+      "actor": "member",
+      "action": "EnrollOrganizationApp.cancelEnroll",
+      "trigger": "link targeting EnrollOrganizationApp.cancelEnroll",
+      "expectedEffects": {
+        "state": true,
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0279",
+      "route": "POST /organizations/:organizationName/enroll",
+      "legacyEvidence": [
+        "yona-original/app/views/organization/header.scala.html:27",
+        "yona-original/conf/routes:116"
+      ],
+      "actor": "member",
+      "action": "EnrollOrganizationApp.enroll",
+      "trigger": "link targeting EnrollOrganizationApp.enroll",
+      "expectedEffects": {
+        "state": true,
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0280",
+      "route": "POST /organizations/:organizationName/member/:userId/edit",
+      "legacyEvidence": [
+        "yona-original/app/views/organization/members.scala.html:25",
+        "yona-original/conf/routes:110"
+      ],
+      "actor": "member",
+      "action": "OrganizationApp.editMember",
+      "trigger": "link targeting OrganizationApp.editMember",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "Server Error",
+          "project.logo.alert"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0281",
+      "route": "POST /organizations/:organizationName/members",
+      "legacyEvidence": [
+        "yona-original/app/views/organization/members.scala.html:38",
+        "yona-original/conf/routes:109"
+      ],
+      "actor": "manager",
+      "action": "OrganizationApp.addMember",
+      "trigger": "form targeting OrganizationApp.addMember",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "Server Error",
+          "project.logo.alert"
+        ]
+      }
+    },
+    {
+      "id": "B-0282",
+      "route": "POST /organizations/:organizationName/setting",
+      "legacyEvidence": [
+        "yona-original/app/views/organization/setting.scala.html:32",
+        "yona-original/conf/routes:107"
+      ],
+      "actor": "member",
+      "action": "OrganizationApp.updateOrganizationInfo",
+      "trigger": "form targeting OrganizationApp.updateOrganizationInfo",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "Server Error",
+          "project.logo.alert"
+        ]
+      }
+    },
+    {
+      "id": "B-0283",
+      "route": "POST /organizations/new",
+      "legacyEvidence": [
+        "yona-original/app/views/organization/create.scala.html:27",
+        "yona-original/conf/routes:98"
+      ],
+      "actor": "member",
+      "action": "OrganizationApp.newOrganization",
+      "trigger": "form targeting OrganizationApp.newOrganization",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "Server Error",
+          "project.logo.alert"
+        ]
+      }
+    },
+    {
+      "id": "B-0284",
+      "route": "POST /projects",
+      "legacyEvidence": [
+        "yona-original/app/views/project/create.scala.html:18",
+        "yona-original/conf/routes:216"
+      ],
+      "actor": "member",
+      "action": "ProjectApp.newProject",
+      "trigger": "form targeting ProjectApp.newProject",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0285",
+      "route": "POST /resetPassword",
+      "legacyEvidence": [
+        "yona-original/app/views/user/resetPassword.scala.html:20",
+        "yona-original/conf/routes:172"
+      ],
+      "actor": "anonymous",
+      "action": "PasswordResetApp.resetPassword",
+      "trigger": "form targeting PasswordResetApp.resetPassword",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0286",
+      "route": "POST /sites/import",
+      "legacyEvidence": [
+        "yona-original/conf/routes:154"
+      ],
+      "actor": "siteAdmin",
+      "action": "SiteApp.importData",
+      "trigger": "direct HTTP POST /sites/import",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0287",
+      "route": "POST /sites/mail",
+      "legacyEvidence": [
+        "yona-original/app/views/site/mail.scala.html:50",
+        "yona-original/conf/routes:156"
+      ],
+      "actor": "siteAdmin",
+      "action": "SiteApp.sendMail",
+      "trigger": "form targeting SiteApp.sendMail",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0288",
+      "route": "POST /sites/mailList",
+      "legacyEvidence": [
+        "yona-original/app/views/site/massMail.scala.html:54",
+        "yona-original/conf/routes:158"
+      ],
+      "actor": "siteAdmin",
+      "action": "SiteApp.mailList",
+      "trigger": "link targeting SiteApp.mailList",
+      "expectedEffects": {
+        "state": true,
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0289",
+      "route": "POST /sites/setAttachmentToUserAvatar",
+      "legacyEvidence": [
+        "yona-original/conf/routes:177"
+      ],
+      "actor": "siteAdmin",
+      "action": "SiteApp.setAttachmentToUserAvatar",
+      "trigger": "direct HTTP POST /sites/setAttachmentToUserAvatar",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0290",
+      "route": "POST /sites/toggleAccountLock",
+      "legacyEvidence": [
+        "yona-original/app/views/site/userList.scala.html:106",
+        "yona-original/conf/routes:164"
+      ],
+      "actor": "siteAdmin",
+      "action": "SiteApp.toggleAccountLock",
+      "trigger": "dataRequest targeting SiteApp.toggleAccountLock",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0291",
+      "route": "POST /sites/toggleGuestMode",
+      "legacyEvidence": [
+        "yona-original/app/views/site/userList.scala.html:99",
+        "yona-original/conf/routes:165"
+      ],
+      "actor": "siteAdmin",
+      "action": "SiteApp.toggleGuestMode",
+      "trigger": "dataRequest targeting SiteApp.toggleGuestMode",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0292",
+      "route": "POST /sites/toggleSiteAdminRole/:loginId",
+      "legacyEvidence": [
+        "yona-original/app/views/site/userList.scala.html:110",
+        "yona-original/conf/routes:161"
+      ],
+      "actor": "siteAdmin",
+      "action": "SiteApp.toggleSiteAdminRole",
+      "trigger": "dataRequest targeting SiteApp.toggleSiteAdminRole",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0293",
+      "route": "POST /sites/unwatchUpdate",
+      "legacyEvidence": [
+        "yona-original/app/views/partial_update_notification.scala.html:27",
+        "yona-original/conf/routes:167"
+      ],
+      "actor": "siteAdmin",
+      "action": "SiteApp.unwatchUpdate",
+      "trigger": "dataRequest targeting SiteApp.unwatchUpdate",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0294",
+      "route": "POST /svn/*path",
+      "legacyEvidence": [
+        "yona-original/conf/routes:322"
+      ],
+      "actor": "member",
+      "action": "SvnApp.serviceWithPath",
+      "trigger": "direct HTTP POST /svn/*path",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0295",
+      "route": "POST /threads/:id/close",
+      "legacyEvidence": [
+        "yona-original/app/views/partial_comment_form_on_thread.scala.html:29",
+        "yona-original/conf/routes:397"
+      ],
+      "actor": "member",
+      "action": "CommentThreadApp.close",
+      "trigger": "dataRequest targeting CommentThreadApp.close",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0296",
+      "route": "POST /threads/:id/open",
+      "legacyEvidence": [
+        "yona-original/app/views/partial_comment_form_on_thread.scala.html:31",
+        "yona-original/conf/routes:396"
+      ],
+      "actor": "member",
+      "action": "CommentThreadApp.open",
+      "trigger": "dataRequest targeting CommentThreadApp.open",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0297",
+      "route": "POST /unwatch",
+      "legacyEvidence": [
+        "yona-original/app/views/board/view.scala.html:220",
+        "yona-original/app/views/code/diff.scala.html:193",
+        "yona-original/app/views/code/svnDiff.scala.html:179",
+        "yona-original/app/views/git/view.scala.html:116",
+        "yona-original/app/views/issue/view.scala.html:510",
+        "yona-original/conf/routes:363"
+      ],
+      "actor": "member",
+      "action": "WatchApp.unwatch",
+      "trigger": "link targeting WatchApp.unwatch",
+      "expectedEffects": {
+        "state": true,
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0298",
+      "route": "POST /user/edit",
+      "legacyEvidence": [
+        "yona-original/conf/routes:138"
+      ],
+      "actor": "member",
+      "action": "UserApp.editUserInfo",
+      "trigger": "direct HTTP POST /user/edit",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "error.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0299",
+      "route": "POST /user/editform/:tabId",
+      "legacyEvidence": [
+        "yona-original/app/views/user/edit_token.scala.html:36",
+        "yona-original/conf/routes:137"
+      ],
+      "actor": "member",
+      "action": "UserApp.editUserInfoByTabForm",
+      "trigger": "form targeting UserApp.editUserInfoByTabForm",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "error.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0300",
+      "route": "POST /user/editform/:tabId",
+      "legacyEvidence": [
+        "yona-original/app/views/project/header.scala.html:134",
+        "yona-original/app/views/project/header.scala.html:152",
+        "yona-original/app/views/user/partial_edit_tabmenu.scala.html:29",
+        "yona-original/app/views/user/partial_edit_tabmenu.scala.html:34",
+        "yona-original/app/views/user/partial_edit_tabmenu.scala.html:39",
+        "yona-original/app/views/user/partial_edit_tabmenu.scala.html:44",
+        "yona-original/conf/routes:137"
+      ],
+      "actor": "member",
+      "action": "UserApp.editUserInfoByTabForm",
+      "trigger": "link targeting UserApp.editUserInfoByTabForm",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "error.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0301",
+      "route": "POST /user/email",
+      "legacyEvidence": [
+        "yona-original/conf/routes:145"
+      ],
+      "actor": "member",
+      "action": "UserApp.addEmail",
+      "trigger": "direct HTTP POST /user/email",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "error.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0302",
+      "route": "POST /user/email/sendValidationEmail/:emailId",
+      "legacyEvidence": [
+        "yona-original/app/views/user/edit_emails.scala.html:75",
+        "yona-original/conf/routes:148"
+      ],
+      "actor": "member",
+      "action": "UserApp.sendValidationEmail",
+      "trigger": "link targeting UserApp.sendValidationEmail",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "error.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0303",
+      "route": "POST /user/resetPassword",
+      "legacyEvidence": [
+        "yona-original/conf/routes:139"
+      ],
+      "actor": "member",
+      "action": "UserApp.resetUserPassword",
+      "trigger": "direct HTTP POST /user/resetPassword",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "error.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0304",
+      "route": "POST /user/resetVisitedList",
+      "legacyEvidence": [
+        "yona-original/conf/routes:140"
+      ],
+      "actor": "member",
+      "action": "UserApp.resetUserVisitedList",
+      "trigger": "direct HTTP POST /user/resetVisitedList",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "error.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0305",
+      "route": "POST /users/login",
+      "legacyEvidence": [
+        "yona-original/app/views/common/loginDialog.scala.html:23",
+        "yona-original/app/views/user/login.scala.html:48",
+        "yona-original/conf/routes:131"
+      ],
+      "actor": "member",
+      "action": "UserApp.login",
+      "trigger": "form targeting UserApp.login",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "error.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0306",
+      "route": "POST /users/signup",
+      "legacyEvidence": [
+        "yona-original/app/views/user/signup.scala.html:41",
+        "yona-original/conf/routes:134"
+      ],
+      "actor": "member",
+      "action": "UserApp.newUser",
+      "trigger": "form targeting UserApp.newUser",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "error.failedTo"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0307",
+      "route": "POST /watch",
+      "legacyEvidence": [
+        "yona-original/app/views/board/view.scala.html:219",
+        "yona-original/app/views/code/diff.scala.html:192",
+        "yona-original/app/views/code/svnDiff.scala.html:178",
+        "yona-original/app/views/git/view.scala.html:115",
+        "yona-original/app/views/issue/view.scala.html:509",
+        "yona-original/conf/routes:362"
+      ],
+      "actor": "member",
+      "action": "WatchApp.watch",
+      "trigger": "link targeting WatchApp.watch",
+      "expectedEffects": {
+        "state": true,
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0308",
+      "route": "PUT /-_-api/v1/owners/:owner/projects/:projectName/issues/:number",
+      "legacyEvidence": [
+        "yona-original/conf/routes:74"
+      ],
+      "actor": "member",
+      "action": "IssueApi.updateIssue",
+      "trigger": "direct HTTP PUT /-_-api/v1/owners/:owner/projects/:projectName/issues/:number",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0309",
+      "route": "PUT /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/comments/:commentId",
+      "legacyEvidence": [
+        "yona-original/conf/routes:54"
+      ],
+      "actor": "member",
+      "action": "IssueApi.updateIssueComment",
+      "trigger": "direct HTTP PUT /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/comments/:commentId",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0310",
+      "route": "PUT /:user/:project",
+      "legacyEvidence": [
+        "yona-original/app/views/project/home.scala.html:45",
+        "yona-original/conf/routes:220"
+      ],
+      "actor": "member",
+      "action": "ProjectApp.projectOverviewUpdate",
+      "trigger": "form targeting ProjectApp.projectOverviewUpdate",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0311",
+      "route": "PUT /:user/:project/issue/label/:id",
+      "legacyEvidence": [
+        "yona-original/app/views/project/partial_issuelabels_list.scala.html:98",
+        "yona-original/conf/routes:283"
+      ],
+      "actor": "member",
+      "action": "IssueLabelApp.update",
+      "trigger": "link targeting IssueLabelApp.update",
+      "expectedEffects": {
+        "state": true,
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0312",
+      "route": "PUT /:user/:project/issue/label/category/:id",
+      "legacyEvidence": [
+        "yona-original/app/views/project/partial_issuelabels_list.scala.html:67",
+        "yona-original/conf/routes:287"
+      ],
+      "actor": "member",
+      "action": "IssueLabelApp.updateCategory",
+      "trigger": "link targeting IssueLabelApp.updateCategory",
+      "expectedEffects": {
+        "state": true,
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0313",
+      "route": "PUT /:user/:project/transfer",
+      "legacyEvidence": [
+        "yona-original/app/views/project/transfer.scala.html:83",
+        "yona-original/conf/routes:238"
+      ],
+      "actor": "manager",
+      "action": "ProjectApp.transferProject",
+      "trigger": "link targeting ProjectApp.transferProject",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "Server Error",
+          "error.forbidden",
+          "project.changeVCS.alert",
+          "project.changeVCS.error",
+          "project.delete.alert",
+          "project.delete.error",
+          "project.logo.alert",
+          "project.member.deleteConfirm",
+          "project.name.alert",
+          "project.name.reserved.alert",
+          "project.transfer.alert",
+          "project.transfer.error",
+          "project.webhook.payloadUrl.empty",
+          "user.enroll.failed",
+          "user.enroll.failed.client",
+          "user.enroll.failed.network",
+          "user.enroll.failed.server"
+        ],
+        "navigation": true
+      }
+    },
+    {
+      "id": "B-0314",
+      "route": "PUT /svn/*path",
+      "legacyEvidence": [
+        "yona-original/conf/routes:325"
+      ],
+      "actor": "member",
+      "action": "SvnApp.serviceWithPath",
+      "trigger": "direct HTTP PUT /svn/*path",
+      "expectedEffects": {
+        "state": true
+      }
+    },
+    {
+      "id": "B-0315",
+      "route": "PUT /user/email/setAsMain/:emailId",
+      "legacyEvidence": [
+        "yona-original/app/views/user/edit_emails.scala.html:71",
+        "yona-original/conf/routes:147"
+      ],
+      "actor": "member",
+      "action": "UserApp.setAsMainEmail",
+      "trigger": "link targeting UserApp.setAsMainEmail",
+      "expectedEffects": {
+        "state": true,
+        "alert": [
+          "error.failedTo"
+        ],
+        "navigation": true
+      }
+    }
+  ]
+}

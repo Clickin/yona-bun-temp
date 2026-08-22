@@ -174,3 +174,18 @@ infrastructure commits pass without the exception marker).
 - SQLite default recommendation / H2→SQLite migration /
   `crates/yona-migrate` 100% are out of scope for this pivot (verified crates
   and Sqlite paths exist); this plan only lowers their iteration cost.
+
+## Lane rebalance commit note (2026-08-22)
+
+Committed with `YONA_ALLOW_SCALA_HTML_EVIDENCE_ONLY=1` (manual supervised
+exception per AGENTS.md). Route: none — test-harness infrastructure only:
+`scripts/classify-e2e-specs.mjs` capability-family extension, lane-manifest
+rebalance (dom 205 / chrome 663), and physical split of 4 mixed specs into
+`.dom.e2e.ts` + `.chrome.e2e.ts` (ownership-anonymous-home-features,
+ownership-anonymous-site-signup, ownership-project-new-pull-request-form-paste,
+ownership-site-project-list-notification-badge). No route TSX, no CSS/LESS,
+no yona-original files changed. `test:dom`: 226/229 pass; 3 failures are
+baseline-known (`project-issue-detail-parity` ×2,
+`ownership-signup-validation-popover-position`). Follow-up: none — behavior
+preserving split per `docs/plans/2026-08-22-differential-parity-verification.md`
+Phase A.
