@@ -3,73 +3,22 @@
 
 // --- pure translation -------------------------------------------------------
 
+// Translation is delegated to per-action definitions in the domain registry
+// (scripts/differential/scenarios/*.mjs).
+import { ACTION_DEFINITIONS } from "./scenarios/index.mjs";
+
 export function translateLegacy(step, resolved = {}) {
-  const { owner, project } = step.params;
-  switch (step.action) {
-    case "login":
-      return { method: "POST", path: "/users/login", form: { loginId: step.params.loginId, password: step.params.password } };
-    case "view-project":
-      return { method: "GET", path: `/${owner}/${project}` };
-    case "create-issue":
-      return {
-        method: "POST",
-        path: `/${owner}/${project}/issues/latest`,
-        form: { title: resolved.title, body: resolved.body },
-      };
-    case "create-issue-comment":
-      return {
-        method: "POST",
-        path: `/${owner}/${project}/issue/${resolved.issueNumber}/comments`,
-        form: { body: resolved.body },
-      };
-    case "list-labels":
-      return { method: "GET", path: `/${owner}/${project}/labels` };
-    default:
-      throw new Error(`legacy adapter cannot translate action: ${step.action}`);
-  }
+  const definition = ACTION_DEFINITIONS[step.action];
+  if (!definition?.translateLegacy) throw new Error(`legacy adapter cannot translate action: ${step.action}`);
+  return definition.translateLegacy(step, resolved);
 }
 
 export function translateYoram(step, resolved = {}) {
-  const { owner, project } = step.params;
-  switch (step.action) {
-    case "login":
-      return {
-        method: "POST",
-        path: "/api/v1/auth/sign-in",
-        json: { identifier: step.params.loginId, password: step.params.password, rememberMe: false },
-      };
-    case "view-project":
-      return { method: "GET", path: `/api/v1/projects/${owner}/${project}`, pagePath: `/${owner}/${project}` };
-    case "create-issue":
-      return {
-        method: "POST",
-        path: `/api/v1/projects/${owner}/${project}/issues`,
-        json: {
-          title: resolved.title,
-          bodyMarkdown: resolved.body,
-          assigneeLoginId: "",
-          attachmentIds: [],
-          labelIds: [],
-          dueDate: "",
-          isDraft: false,
-          isPublish: true,
-        },
-        // legacy lands on the new issue page; render the same target for DOM diff
-        pagePath: null, // filled after creation with the returned issue number
-      };
-    case "create-issue-comment":
-      return {
-        method: "POST",
-        path: `/api/v1/projects/${owner}/${project}/issues/${resolved.issueNumber}/comments`,
-        json: { body: resolved.body },
-        pagePath: null,
-      };
-    case "list-labels":
-      return { method: "GET", path: `/api/v1/owners/${owner}/projects/${project}/labels`, pagePath: `/${owner}/${project}/labels` };
-    default:
-      throw new Error(`yoram adapter cannot translate action: ${step.action}`);
-  }
+  const definition = ACTION_DEFINITIONS[step.action];
+  if (!definition?.translateYoram) throw new Error(`yoram adapter cannot translate action: ${step.action}`);
+  return definition.translateYoram(step, resolved);
 }
+
 
 // --- session handling -------------------------------------------------------
 

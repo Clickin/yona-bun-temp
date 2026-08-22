@@ -7,6 +7,7 @@ import test from "node:test";
 import { LegacySession, YoramSession, translateLegacy, translateYoram } from "./adapters.mjs";
 import { buildCoverage, matchBehaviors, smokeScenarios, validateScenarios } from "./dsl.mjs";
 import {
+  ISSUE_STATE_ENCODINGS,
   diffProjections,
   filterRowsByTag,
   diffSkeletons,
@@ -17,6 +18,9 @@ import {
   projectLabelRows,
 } from "./diff.mjs";
 import { parseH2ShellOutput } from "./db-projection.mjs";
+import { ACTION_DEFINITIONS } from "./scenarios/index.mjs";
+
+const knownActions = Object.keys(ACTION_DEFINITIONS);
 
 // --- DSL --------------------------------------------------------------------
 
@@ -29,19 +33,24 @@ const inventoryBehaviors = [
 ];
 
 test("smoke scenarios pass validation", () => {
-  assert.deepEqual(validateScenarios(smokeScenarios), []);
+  assert.deepEqual(validateScenarios(smokeScenarios, knownActions), []);
 });
 
 test("validation rejects unknown actions and empty scenario lists", () => {
-  const problems = validateScenarios([
-    { id: "X", actions: [{ actor: "admin", action: "teleport", params: {} }] },
-    { id: "X", actions: [] },
-  ]);
+  const problems = validateScenarios(
+    [
+      { id: "X", actions: [{ actor: "admin", action: "teleport", params: {} }] },
+      { id: "X", actions: [] },
+    ],
+    knownActions,
+  );
   assert.equal(problems.length, 3);
 });
 
 test("matchBehaviors maps scenarios onto inventory ids", () => {
-  const ids = matchBehaviors(smokeScenarios[2], inventoryBehaviors); // S3 create-issue
+  const s3 = smokeScenarios.find((scenario) => scenario.id === "S3-create-issue"); // index-stable: I*/P* scenarios now sort before S*
+  const ids = matchBehaviors(s3, inventoryBehaviors);
+  assert.ok(s3, "S3-create-issue present in smoke scenarios");
   assert.deepEqual(ids, ["B-0200"]);
 });
 
@@ -150,6 +159,20 @@ test("db projections map legacy and yoram column spellings", () => {
   assert.equal(diff[0].side, "legacy-only");
 });
 
+test("issue state encodings normalize legacy H2 and yoram sqlite to identical rows", () => {
+  // legacy H2: 1=open, 2=closed; yoram sqlite: 0=open, 1=closed (issue_state_to_raw)
+  const legacy = projectIssueRows(
+    [{ TITLE: "T", AUTHOR_LOGIN_ID: "admin", STATE: "1" }],
+    ISSUE_STATE_ENCODINGS.legacy,
+  );
+  const yoram = projectIssueRows(
+    [{ title: "T", authorLoginId: "admin", state: 0 }],
+    ISSUE_STATE_ENCODINGS.yoram,
+  );
+  assert.equal(legacy[0].state, "open");
+  assert.deepEqual(diffProjections(legacy, yoram), []);
+});
+
 test("parseH2ShellOutput parses Shell table output", () => {
   const rows = parseH2ShellOutput("TITLE | AUTHORLOGINID\n-------\na | admin\nb | bob\n(2 rows, 1 ms)");
   assert.deepEqual(rows, [
@@ -164,7 +187,7 @@ test("hover-popover scenario validates and matches IssueApp.issues behaviors", (
   const step = scenario.actions.at(-1);
   assert.equal(step.action, "hover-popover");
   assert.ok(step.params.selector.startsWith("#"), "browser trigger needs a concrete selector");
-  assert.deepEqual(validateScenarios([scenario]), []);
+  assert.deepEqual(validateScenarios([scenario], knownActions), []);
   const ids = matchBehaviors(scenario, inventoryBehaviors);
   assert.deepEqual(ids, ["B-0201"]);
 });

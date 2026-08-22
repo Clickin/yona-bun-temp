@@ -93,13 +93,22 @@ function pick(row, ...names) {
   }
   return null;
 }
+// Legacy H2 and Yoram SQLite encode ISSUE.state differently by design
+// (crates/persistence/src/repo/common.rs issue_state_to_raw): legacy H2 uses
+// 1=open / 2=closed, Yoram SQLite uses 0=open / 1=closed. Projections
+// normalize each side to semantic text before diffing; unknown values pass
+// through unchanged.
+export const ISSUE_STATE_ENCODINGS = {
+  legacy: { 1: "open", 2: "closed" },
+  yoram: { 0: "open", 1: "closed" },
+};
 
-export function projectIssueRows(rows) {
+export function projectIssueRows(rows, stateEncoding = {}) {
   return rows
     .map((row) => ({
       title: collapseWhitespace(String(pick(row, "title") ?? "")),
       author: pick(row, "authorLoginId"),
-      state: String(pick(row, "state") ?? "").toLowerCase(),
+      state: stateEncoding[String(pick(row, "state") ?? "")] ?? String(pick(row, "state") ?? "").toLowerCase(),
     }))
     .sort((a, b) => (a.title < b.title ? -1 : a.title > b.title ? 1 : 0));
 }

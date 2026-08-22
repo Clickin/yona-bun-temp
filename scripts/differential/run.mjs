@@ -13,14 +13,14 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 
-import { LegacySession, YoramSession, translateLegacy, translateYoram } from "./adapters.mjs";
+import { LegacySession, YoramSession } from "./adapters.mjs";
 import {
   diffProjections,
   diffSkeletons,
   filterRowsByTag,
-  normalizeApiValue,
   projectCommentRows,
   projectIssueRows,
+  ISSUE_STATE_ENCODINGS,
   projectLabelRows,
 } from "./diff.mjs";
 import { queryLegacyH2, queryYoramSqlite } from "./db-projection.mjs";
@@ -29,7 +29,8 @@ import { launchWtrBrowser } from "../wtr-browser.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const outputDir = path.join(repoRoot, ".agent/differential");
-import { buildCoverage, matchBehaviors, smokeScenarios, validateScenarios } from "./dsl.mjs";
+import { buildCoverage, matchBehaviors, validateScenarios } from "./dsl.mjs";
+import { ACTION_DEFINITIONS, scenarios } from "./scenarios/index.mjs";
 const yoramRuntimeDir = path.join(outputDir, "yoram");
 
 
@@ -330,93 +331,28 @@ function issueNumberFromLocation(location) {
   return Number((/\/issue\/(\d+)/u.exec(location) ?? [])[1]) || null;
 }
 
-async function executeStep(context) {
-  const { step, resolved, state, entry, legacySession, yoramSession, legacyPage, yoramPage, options, yoramBaseUrl, suffix } = context;
-  const route =
-    step.params.owner && step.params.project
-      ? `/${step.params.owner}/${step.params.project}`
-      : "/";
-
-  if (step.action === "hover-popover") return executeBrowserInteraction(context);
-
-  if (step.action === "create-issue-comment") resolved.issueNumber = state.issueNumberLegacy;
-  const legacyTranslation = translateLegacy(step, resolved);
-  const yoramResolved = {
-    ...resolved,
-    issueNumber: step.action === "create-issue-comment" ? state.issueNumberYoram : null,
-  };
-  const yoramTranslation = translateYoram(step, yoramResolved);
-
-  // --- legacy side ---
-  let legacyResult = null;
-  if (step.action === "login") {
-    legacyResult = await legacySession.login(step.params);
-    if (legacyResult.status >= 400) {
-      entry.violations.push(
-        violation({ route: "/users/login", kind: "api", expected: "<3xx redirect>", actual: `status ${legacyResult.status}` }),
-      );
-    }
-  } else {
-    legacyResult = await legacySession.request(legacyTranslation);
+// Shared step utilities handed to domain handlers via ctx.helpers.
+const stepHelpers = {
+  // Translate + request both sides; >=400 lands in entry.errors (not violations).
+  async requestBoth(ctx, legacyTranslation, yoramTranslation) {
+    const { step, entry, legacySession, yoramSession } = ctx;
+    const legacyResult = await legacySession.request(legacyTranslation);
     if (legacyResult.status >= 400) {
       entry.errors.push(`legacy ${step.action} failed: HTTP ${legacyResult.status} @ ${legacyTranslation.path}`);
     }
-  }
-
-  // --- yoram side ---
-  let yoramResult = null;
-  if (step.action === "login") {
-    yoramResult = await yoramSession.login(step.params);
-    if (yoramResult.status >= 400) {
-      entry.violations.push(violation({ route: "/api/v1/auth/sign-in", kind: "api", expected: 200, actual: yoramResult.status }));
-    }
-  } else {
-    yoramResult = await yoramSession.request(yoramTranslation);
+    const yoramResult = await yoramSession.request(yoramTranslation);
     if (yoramResult.status >= 400) {
       entry.errors.push(`yoram ${step.action} failed: HTTP ${yoramResult.status} @ ${yoramTranslation.path}`);
     }
-  }
+    return { legacyResult, yoramResult };
+  },
 
-  // --- API semantic diff on mutation steps ---
-  if (step.action === "create-issue") {
-    state.issueNumberLegacy = issueNumberFromLocation(legacyResult?.location ?? "");
-    const yoramJson = yoramResult?.json ?? {};
-    state.issueNumberYoram = Number(yoramJson.number ?? yoramJson.issue?.number ?? 0) || null;
-    const semantic = {
-      legacy: { title: legacyTranslation.form.title, body: legacyTranslation.form.body },
-      yoram: {
-        title: yoramJson.title ?? yoramJson.issue?.title ?? null,
-        body: yoramJson.bodyMarkdown ?? yoramJson.issue?.bodyMarkdown ?? null,
-      },
-    };
-    if (
-      semantic.yoram.title === null ||
-      normalizeApiValue(semantic.legacy.title) !== normalizeApiValue(semantic.yoram.title)
-    ) {
-      entry.violations.push(violation({ route, behaviorId: entry.behaviorIds[0] ?? null, kind: "api", expected: semantic.legacy, actual: semantic.yoram }));
-    }
-  }
-
-  // --- DOM skeleton diff ---
-  const domTarget = { legacy: null, yoram: null, spa: false };
-  if (step.action === "view-project" || step.action === "list-labels") {
-    const leaf = step.action === "view-project" ? "" : "/labels";
-    domTarget.legacy = `${options.legacyUrl}/${step.params.owner}/${step.params.project}${leaf}`;
-    domTarget.yoram = `${yoramBaseUrl}/${step.params.owner}/${step.params.project}${leaf}`;
-  } else if (
-    (step.action === "create-issue" || step.action === "create-issue-comment") &&
-    state.issueNumberLegacy &&
-    state.issueNumberYoram
-  ) {
-    domTarget.legacy = `${options.legacyUrl}/${step.params.owner}/${step.params.project}/issue/${state.issueNumberLegacy}`;
-    domTarget.yoram = `${yoramBaseUrl}/${step.params.owner}/${step.params.project}/issue/${state.issueNumberYoram}`;
-    domTarget.spa = true;
-  }
-
-  if (domTarget.legacy && domTarget.yoram) {
+  // Render both dom targets as skeletons and diff; any violation is a dom kind.
+  async renderDomTarget(ctx, domTarget) {
+    const { step, suffix, entry, legacySession, yoramSession, legacyPage, yoramPage, options } = ctx;
     try {
       await setCookiesFromHeader(legacyPage, options.legacyUrl, legacySession.cookies);
-      await setCookiesFromHeader(yoramPage, yoramBaseUrl, yoramSession.cookies);
+      await setCookiesFromHeader(yoramPage, ctx.yoramBaseUrl, yoramSession.cookies);
       const legacySkeleton = await renderSkeleton(legacyPage, domTarget.legacy);
       const yoramSkeleton = await renderSkeleton(yoramPage, domTarget.yoram, { spa: domTarget.spa });
       const diffs = diffSkeletons(legacySkeleton, yoramSkeleton);
@@ -433,52 +369,23 @@ async function executeStep(context) {
     } catch (error) {
       entry.errors.push(`dom render (${step.action}) [${suffix}]: ${error.message}`);
     }
-  }
-}
+  },
 
-// Browser-driven interaction: hover popovers never render over plain HTTP, so
-// both sides get the identical in-page trigger and the revealed popover is
-// compared as a skeleton. Any side failure lands in entry.errors with a
-// reason; a one-sided popover is a violation, not a crash.
-async function executeBrowserInteraction(context) {
-  const { step, suffix, entry, legacySession, yoramSession, legacyPage, yoramPage, options, yoramBaseUrl } = context;
-  const { owner, project, path: pagePath = "/issues", selector } = step.params;
-  const pages = { legacy: legacyPage, yoram: yoramPage };
-  const sessions = { legacy: legacySession, yoram: yoramSession };
-  const skeletons = {};
-  for (const side of ["legacy", "yoram"]) {
-    const url = `${side === "legacy" ? options.legacyUrl : yoramBaseUrl}/${owner}/${project}${pagePath}`;
-    try {
-      await setCookiesFromHeader(pages[side], url, sessions[side].cookies);
-      await pages[side].goto(url, { waitUntil: "load", timeout: 30_000 });
-      const method = await hoverAnchor(pages[side], selector);
-      if (process.env.DIFF_HOVER_DEBUG) console.error(`[hover-debug] ${side}: trigger=${method}`);
-      skeletons[side] = await raceTimeout(pages[side].evaluate(POPOVER_EXTRACT), `${side} popover extract`);
-    } catch (error) {
-      entry.errors.push(`browser ${side} (${step.action}) [${suffix}]: ${error.message}`);
-      skeletons[side] = null;
-    }
-  }
-  if (skeletons.legacy === null || skeletons.yoram === null) return;
-  const route = `/${owner}${pagePath} hover ${selector}`;
-  if (skeletons.legacy.length === 0 || skeletons.yoram.length === 0) {
-    entry.violations.push(
-      violation({
-        route,
-        behaviorId: entry.behaviorIds[0] ?? null,
-        kind: "browser",
-        expected: { visiblePopovers: skeletons.legacy.length },
-        actual: { visiblePopovers: skeletons.yoram.length },
-      }),
-    );
+  issueNumberFromLocation,
+  setCookiesFromHeader,
+  hoverAnchor,
+  raceTimeout,
+  popoverExtract: POPOVER_EXTRACT,
+};
+
+async function executeStep(context) {
+  const { step, entry } = context;
+  const definition = ACTION_DEFINITIONS[step.action];
+  if (!definition?.handler) {
+    entry.errors.push(`unknown action: ${step.action}`);
     return;
   }
-  const diffs = diffSkeletons(skeletons.legacy, skeletons.yoram);
-  if (diffs.length > 0) {
-    entry.violations.push(
-      violation({ route, behaviorId: entry.behaviorIds[0] ?? null, kind: "browser", expected: skeletons.legacy, actual: skeletons.yoram }),
-    );
-  }
+  await definition.handler({ ...context, helpers: stepHelpers });
 }
 
 // --- sweep ------------------------------------------------------------------
@@ -490,7 +397,7 @@ export async function runSweep(options = {}) {
   let browserHandle = null;
 
   const inventory = JSON.parse(readFileSync(path.join(repoRoot, "docs/provenance/behavior-inventory.json"), "utf8"));
-  const problems = validateScenarios(smokeScenarios);
+  const problems = validateScenarios(scenarios, Object.keys(ACTION_DEFINITIONS));
   if (problems.length > 0) throw new Error(`invalid scenarios: ${problems.join("; ")}`);
 
   const report = {
@@ -520,7 +427,7 @@ export async function runSweep(options = {}) {
     if (!legacyBooted || !yoramHandle) {
       // Record the infra failure against every scenario so the report carries
       // a failure reason even when an instance never came up.
-      for (const scenario of smokeScenarios) {
+      for (const scenario of scenarios) {
         report.scenarios.push({ id: scenario.id, title: scenario.title, behaviorIds: [], violations: [], errors: [...infraErrors] });
       }
       report.dbProjection = { skipped: true, reason: [...infraErrors] };
@@ -534,8 +441,8 @@ export async function runSweep(options = {}) {
     const legacySession = new LegacySession(options.legacyUrl);
     const yoramSession = new YoramSession(yoramHandle.baseUrl);
 
-    for (let index = 0; index < smokeScenarios.length; index += 1) {
-      const scenario = smokeScenarios[index];
+    for (let index = 0; index < scenarios.length; index += 1) {
+      const scenario = scenarios[index];
       const entry = {
         id: scenario.id,
         title: scenario.title,
@@ -595,7 +502,7 @@ async function projectDatabases(options, runId) {
   const yoramDb = path.join(yoramRuntimeDir, "yoram.db");
   const projectName = "sample";
   const kinds = [
-    ["issues", projectIssueRows],
+    ["issues", (rows, side) => projectIssueRows(rows, ISSUE_STATE_ENCODINGS[side])],
     ["comments", projectCommentRows],
     ["labels", projectLabelRows],
   ];
@@ -605,8 +512,8 @@ async function projectDatabases(options, runId) {
     // to this run keeps accumulated legacy H2 rows from poisoning the diff.
     // Labels are seed data and stay unfiltered.
     const tag = kind === "labels" ? null : runId;
-    const legacyRows = filterRowsByTag(project(await queryLegacyH2(repoRoot, legacyDb, kind, projectName)), tag);
-    const yoramRows = filterRowsByTag(project(await queryYoramSqlite(yoramDb, kind, projectName)), tag);
+    const legacyRows = filterRowsByTag(project(await queryLegacyH2(repoRoot, legacyDb, kind, projectName), "legacy"), tag);
+    const yoramRows = filterRowsByTag(project(await queryYoramSqlite(yoramDb, kind, projectName), "yoram"), tag);
     projection[kind] = { legacyRows: legacyRows.length, yoramRows: yoramRows.length };
     const diffs = diffProjections(legacyRows, yoramRows);
     if (diffs.length > 0) {
@@ -634,8 +541,8 @@ async function main() {
             violation({
               route: `db:admin/sample/${kind}`,
               kind: "db",
-              expected: projection.violations.filter((entry) => entry.side === "yoram-only").map((entry) => entry.row),
-              actual: projection.violations.filter((entry) => entry.side === "legacy-only").map((entry) => entry.row),
+              expected: projection.violations.filter((entry) => entry.side === "legacy-only").map((entry) => entry.row),
+              actual: projection.violations.filter((entry) => entry.side === "yoram-only").map((entry) => entry.row),
             }),
           ],
           errors: [],
@@ -647,7 +554,7 @@ async function main() {
 
   // Coverage artifact; docs/provenance/behavior-inventory.json stays immutable.
   const inventory = JSON.parse(readFileSync(path.join(repoRoot, "docs/provenance/behavior-inventory.json"), "utf8"));
-  const coverage = buildCoverage(smokeScenarios, inventory.behaviors, report.runId);
+  const coverage = buildCoverage(scenarios, inventory.behaviors, report.runId);
   mkdirSync(outputDir, { recursive: true });
   writeFileSync(path.join(outputDir, "behavior-coverage.json"), `${JSON.stringify(coverage, null, 2)}\n`);
   const reportPath = writeReport(report, outputDir);

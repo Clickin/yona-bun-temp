@@ -5,72 +5,14 @@
 // The inventory itself stays immutable; scenarioId back-fill is emitted as a
 // separate coverage file by the runner.
 
-export const ACTIONS = ["login", "view-project", "create-issue", "create-issue-comment", "list-labels", "hover-popover"];
-
-export const smokeScenarios = [
-  {
-    id: "S1-login",
-    title: "admin login",
-    actions: [{ actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } }],
-    behaviorMatcher: { action: /^UserApp\.login$/ },
-  },
-  {
-    id: "S2-view-project",
-    title: "view project home",
-    actions: [
-      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      { actor: "admin", action: "view-project", params: { owner: "admin", project: "sample" } },
-    ],
-    behaviorMatcher: { action: /^(ProjectApp\.project|Application\.index)$/ },
-  },
-  {
-    id: "S3-create-issue",
-    title: "create issue",
-    actions: [
-      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      // params.title/body are filled per-run with a unique sweep suffix.
-      { actor: "admin", action: "create-issue", params: { owner: "admin", project: "sample" } },
-    ],
-    behaviorMatcher: { action: /^IssueApp\.newIssue$/, route: /issues\/latest/ },
-  },
-  {
-    id: "S4-issue-comment",
-    title: "comment on created issue",
-    actions: [
-      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      { actor: "admin", action: "create-issue", params: { owner: "admin", project: "sample" } },
-      { actor: "admin", action: "create-issue-comment", params: { owner: "admin", project: "sample" } },
-    ],
-    behaviorMatcher: { action: /^IssueApp\.newComment$/, route: /comments/ },
-  },
-  {
-    id: "S5-list-labels",
-    title: "list project labels",
-    actions: [
-      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      { actor: "admin", action: "list-labels", params: { owner: "admin", project: "sample" } },
-    ],
-    behaviorMatcher: { action: /^ProjectApp\.labels$/, route: /labels/ },
-  },
-  {
-    id: "S6-hover-popover",
-    title: "hover popover on issue list (show subtasks)",
-    actions: [
-      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      // Browser-only interaction: identical in-page hover trigger on both
-      // sides; the revealed popover is compared as a skeleton by the runner.
-      {
-        actor: "admin",
-        action: "hover-popover",
-        params: { owner: "admin", project: "sample", path: "/issues", selector: "#two-column-mode-checkbox" },
-      },
-    ],
-    behaviorMatcher: { action: /^IssueApp\.issues$/ },
-  },
-];
+import { ACTION_DEFINITIONS } from "./scenarios/index.mjs";
+// Smoke scenarios live in per-domain modules under scenarios/; this re-export
+// keeps existing imports backward compatible.
+export { scenarios as smokeScenarios } from "./scenarios/index.mjs";
 
 // Validate shape; returns list of problems ([] when valid).
-export function validateScenarios(scenarios) {
+// knownActions defaults to the merged registry keys.
+export function validateScenarios(scenarios, knownActions = Object.keys(ACTION_DEFINITIONS)) {
   const problems = [];
   const seenIds = new Set();
   for (const scenario of scenarios) {
@@ -83,8 +25,8 @@ export function validateScenarios(scenarios) {
       continue;
     }
     for (const step of scenario.actions) {
-      if (!step.actor || !ACTIONS.includes(step.action)) {
-        problems.push(`${scenario.id}: invalid action ${JSON.stringify(step.action)} (allowed: ${ACTIONS.join(", ")})`);
+      if (!step.actor || !knownActions.includes(step.action)) {
+        problems.push(`${scenario.id}: invalid action ${JSON.stringify(step.action)} (allowed: ${knownActions.join(", ")})`);
       }
     }
   }

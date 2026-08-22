@@ -43,7 +43,6 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
-import { LastOutletTransition } from "../-last-outlet-transition";
 import { DefaultSearchErrorBody, isDefaultForbiddenError } from "../-search-screen";
 import { RootAliasNotFound } from "../__root";
 
@@ -526,20 +525,22 @@ function ProjectHomeRouteShell({
 
   if (
     active === "issueDetail" &&
-    (!query.data ||
+    ((!query.data && query.error) ||
       (!issueDetailQuery.data &&
         projectRouteErrorStatus(issueDetailQuery.error) !== 404 &&
-        !preserveIssueDetailShellRef.current))
+        !preserveIssueDetailShellRef.current &&
+        Boolean(issueDetailQuery.error)))
   ) {
     return <Outlet />;
   }
 
   if (
     active === "issueEdit" &&
-    (!query.data ||
+    ((!query.data && query.error) ||
       (!issueEditQuery.data &&
         projectRouteErrorStatus(issueEditQuery.error) !== 404 &&
-        !preserveIssueEditShellRef.current))
+        !preserveIssueEditShellRef.current &&
+        Boolean(issueEditQuery.error)))
   ) {
     return <Outlet />;
   }
@@ -1016,10 +1017,10 @@ function ProjectLayoutScreen({
           <ProjectHomeTabContext value={homeTabId ?? null}>
             {active === "home" ? (
               <div data-owner="project-home-page">
-                <LastOutletTransition routeId={Route.id} />
+                <Outlet />
               </div>
             ) : (
-              <LastOutletTransition routeId={Route.id} />
+              <Outlet />
             )}
           </ProjectHomeTabContext>
         </ProjectLayoutContext>

@@ -61,8 +61,11 @@ const LEGACY_PROJECTION_SQL = Object.freeze({
   comments: `SELECT c.AUTHOR_LOGIN_ID AS authorLoginId, c.CONTENTS AS contents
              FROM ISSUE_COMMENT c JOIN PROJECT p ON c.PROJECT_ID = p.ID
              WHERE p.NAME = '{project}'`,
-  labels: `SELECT l.NAME AS name, l.CATEGORY AS category, LOWER(l.COLOR) AS color
-           FROM PROJECT_LABEL l JOIN PROJECT p ON l.PROJECT_ID = p.ID
+  labels: `SELECT l.NAME AS name, cat.NAME AS category, LOWER(l.COLOR) AS color
+           FROM ISSUE_LABEL l
+           JOIN PROJECT_LABEL pl ON pl.LABEL_ID = l.ID
+           JOIN PROJECT p ON p.ID = pl.PROJECT_ID
+           LEFT JOIN ISSUE_LABEL_CATEGORY cat ON cat.ID = l.CATEGORY_ID
            WHERE p.NAME = '{project}'`,
 });
 

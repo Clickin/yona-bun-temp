@@ -1396,6 +1396,36 @@ test("project valid search to forbidden keeps the legacy project shell DOM nodes
   await expectProjectSearchForbiddenGeometry(page);
 });
 
+test("project navigation never duplicates subMenu nodes during outlet transitions", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/setting`);
+  await expect(page.locator("#saveSetting")).toBeVisible();
+
+  // Regression guard for the removed LastOutletTransition wrapper around the
+  // nested <Outlet />: its AnimatePresence mode="popLayout" kept the exiting
+  // child's #subMenu* subtree mounted alongside the entering one, so
+  // "#subMenu*" selectors resolved to 2 elements mid-transition.
+  const assertUniqueSubMenuIds = () =>
+    page.evaluate(() => {
+      const ids = [...document.querySelectorAll("[id^=subMenu]")].map((el) => el.id);
+      return { ids, unique: new Set(ids).size };
+    });
+
+  const before = await assertUniqueSubMenuIds();
+  expect(before.unique).toBe(before.ids.length);
+
+  await page.locator("#subMenuProjectMember a[href$='/admin/sample/members']").click();
+  await expect(page.locator("#subMenuProjectMember")).toHaveClass(/active/);
+
+  const after = await assertUniqueSubMenuIds();
+  expect(after.unique).toBe(after.ids.length);
+});
+
 async function captureProjectShellNodes(page: Page) {
   await page.evaluate(() => {
     const shell = {

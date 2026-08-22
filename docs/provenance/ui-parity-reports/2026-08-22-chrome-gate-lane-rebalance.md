@@ -239,3 +239,20 @@ Status: active provenance (`docs/plans/2026-08-22-differential-parity-verificati
 - `_diag-*` 2건은 WTR 하니스 자체 진단 스펙(앱 DOM 아님)이라 회귀 판정에서 제외.
 - recovered 9건은 폐기(retire) 후보로 레져 반영을 권한다.
 - real-instance 프로브 10건은 이번 런에서 skip되어 판정 불가 — legacy 인스턴스 구동 환경에서 별도 실행 필요.
+
+## 후속 조치 (2026-08-23) — project nested-layout 이중 렌더 수정
+
+- 제거: `frontend/src/routes/$ownerName/$projectName.tsx`의 `LastOutletTransition` 사용 2곳
+  (project home 래퍼 내 1곳, 그 외 탭 분기 1곳)과 그 임포트를 제거하고 동일 위치에 직접 `<Outlet />`을
+  렌더하도록 변경. 다른 소비자(newFork/code/issue/milestone/pullRequest/org 라우트)의 전환 동작은 유지.
+- 원인: `AnimatePresence mode="popLayout"`이 퇴장 중인 자식 서브트리를 DOM에 유지하여 라우트 전환 중
+  `#subMenu*` 등 프로젝트 셸/서브메뉴 DOM이 2벌 존재 → 본 리포트 31건 실패의 근원.
+- 추가 수정 (동일 파일): 직접 딥링크(`/issue/:n`) 초기 로드 시 프로젝트/이슈 쿼리가 pending인 동안
+  셸 없는 bare `<Outlet />`로 빠지던 분기(기존)를 오류 발생 시에만 빠지도록 조건을 에러 한정으로 수정.
+  전환 래퍼 제거로 이 pending 구간의 무셸 플래시가 playwright 캡처와 경합하여
+  "Missing project layout shell" 간헐 실패가 노출되었고, pending 상태에서는 전체 프로젝트 셸이
+  마운트될 때까지 아무것도 렌더하지 않도록 해 해소.
+- 근거: 포커스 스펙 `frontend/tests/wtr/project-nested-layout.e2e.ts` — 수정 전 31건+α 실패 →
+  수정 후 연속 6회 모두 **45 passed / 0 failed**. `test:dom`은 226 passed / 3 failed로
+  baseline-known 3건(signup popover coordinates, issue-detail-parity 2건 —
+  e2e-residual-classification.md ROUTE_DOM 참조)과 동일, 회귀 없음.
