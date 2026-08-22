@@ -1,0 +1,170 @@
+// Dual adapter: translate abstract actions into legacy direct form POSTs and
+// Yoram /api/v1 calls. Translation is pure (unit-testable); execution wraps fetch.
+
+// --- pure translation -------------------------------------------------------
+
+export function translateLegacy(step, resolved = {}) {
+  const { owner, project } = step.params;
+  switch (step.action) {
+    case "login":
+      return { method: "POST", path: "/users/login", form: { loginId: step.params.loginId, password: step.params.password } };
+    case "view-project":
+      return { method: "GET", path: `/${owner}/${project}` };
+    case "create-issue":
+      return {
+        method: "POST",
+        path: `/${owner}/${project}/issues/latest`,
+        form: { title: resolved.title, body: resolved.body },
+      };
+    case "create-issue-comment":
+      return {
+        method: "POST",
+        path: `/${owner}/${project}/issue/${resolved.issueNumber}/comments`,
+        form: { body: resolved.body },
+      };
+    case "list-labels":
+      return { method: "GET", path: `/${owner}/${project}/labels` };
+    default:
+      throw new Error(`legacy adapter cannot translate action: ${step.action}`);
+  }
+}
+
+export function translateYoram(step, resolved = {}) {
+  const { owner, project } = step.params;
+  switch (step.action) {
+    case "login":
+      return {
+        method: "POST",
+        path: "/api/v1/auth/sign-in",
+        json: { identifier: step.params.loginId, password: step.params.password, rememberMe: false },
+      };
+    case "view-project":
+      return { method: "GET", path: `/api/v1/projects/${owner}/${project}`, pagePath: `/${owner}/${project}` };
+    case "create-issue":
+      return {
+        method: "POST",
+        path: `/api/v1/projects/${owner}/${project}/issues`,
+        json: {
+          title: resolved.title,
+          bodyMarkdown: resolved.body,
+          assigneeLoginId: "",
+          attachmentIds: [],
+          labelIds: [],
+          dueDate: "",
+          isDraft: false,
+          isPublish: true,
+        },
+        // legacy lands on the new issue page; render the same target for DOM diff
+        pagePath: null, // filled after creation with the returned issue number
+      };
+    case "create-issue-comment":
+      return {
+        method: "POST",
+        path: `/api/v1/projects/${owner}/${project}/issues/${resolved.issueNumber}/comments`,
+        json: { body: resolved.body },
+        pagePath: null,
+      };
+    case "list-labels":
+      return { method: "GET", path: `/api/v1/owners/${owner}/projects/${project}/labels`, pagePath: `/${owner}/${project}/labels` };
+    default:
+      throw new Error(`yoram adapter cannot translate action: ${step.action}`);
+  }
+}
+
+// --- session handling -------------------------------------------------------
+
+function cookieHeader(response) {
+  // node fetch exposes set-cookie via headers.getSetCookie()
+  const cookies = typeof response.headers.getSetCookie === "function" ? response.headers.getSetCookie() : [];
+  return cookies.map((cookie) => cookie.split(";")[0]).join("; ");
+}
+
+export class LegacySession {
+  constructor(baseUrl) {
+    this.baseUrl = baseUrl;
+    this.cookies = "";
+  }
+  async login({ loginId, password }) {
+    const response = await fetch(`${this.baseUrl}/users/login`, {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      // legacy AuthInfo binds "loginIdOrEmail" + "password" (UserApp.login).
+      body: new URLSearchParams({ loginIdOrEmail: loginId, password }).toString(),
+      redirect: "manual",
+    });
+    this.cookies = cookieHeader(response);
+    return { status: response.status, location: response.headers.get("location") ?? "" };
+  }
+
+  async request(translation) {
+    const headers = { cookie: this.cookies };
+    let body;
+    if (translation.form) {
+      headers["content-type"] = "application/x-www-form-urlencoded";
+      body = new URLSearchParams(translation.form).toString();
+    }
+    const response = await fetch(`${this.baseUrl}${translation.path}`, {
+      method: translation.method,
+      headers,
+      body,
+      redirect: "manual",
+    });
+    const location = response.headers.get("location") ?? "";
+    const nextCookies = cookieHeader(response);
+    if (nextCookies) this.cookies = nextCookies;
+    let text = "";
+    if (!location) text = await response.text();
+    return { status: response.status, location, body: text };
+  }
+}
+
+export class YoramSession {
+  constructor(baseUrl) {
+    this.baseUrl = baseUrl;
+    this.cookies = "";
+    this.csrfToken = "";
+  }
+  async login({ loginId, password }) {
+    // sign-in requires an anonymous pilot session + CSRF token; prime both.
+    const primed = await fetch(`${this.baseUrl}/api/auth/session`);
+    this.csrfToken = primed.headers.get("x-csrf-token") ?? "";
+    this.cookies = (primed.headers.getSetCookie?.() ?? [])
+      .map((cookie) => cookie.split(";")[0])
+      .join("; ");
+    const result = await this.request({
+      method: "POST",
+      path: "/api/v1/auth/sign-in",
+      json: { identifier: loginId, password, rememberMe: false },
+    });
+    if (result.status !== 200) return result;
+    const session = await fetch(`${this.baseUrl}/api/auth/session`, { headers: { cookie: this.cookies } });
+    this.csrfToken = session.headers.get("x-csrf-token") ?? "";
+    return result;
+  }
+
+  async request(translation) {
+    const headers = { cookie: this.cookies };
+    let body;
+    if (translation.json) {
+      headers["content-type"] = "application/json";
+      if (this.csrfToken) headers["x-csrf-token"] = this.csrfToken;
+      body = JSON.stringify(translation.json);
+    }
+    const response = await fetch(`${this.baseUrl}${translation.path}`, { method: translation.method, headers, body });
+    const nextCookies = cookieHeader(response);
+    if (nextCookies) this.cookies = nextCookies;
+    const text = await response.text();
+    let json = null;
+    try {
+      json = JSON.parse(text);
+    } catch {
+      // non-JSON response bodies are kept as text
+    }
+    return { status: response.status, json, body: text };
+  }
+
+  async fetchPage(pagePath) {
+    const response = await fetch(`${this.baseUrl}${pagePath}`, { headers: { cookie: this.cookies } });
+    return { status: response.status, body: await response.text() };
+  }
+}
