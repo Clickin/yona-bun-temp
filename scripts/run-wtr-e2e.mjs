@@ -67,10 +67,12 @@ async function runWtr(args, label) {
 }
 
 function specFiles() {
-  return readdirSync(wtrDir)
-    .filter((name) => name.endsWith(".e2e.ts"))
-    .filter((name) => !name.startsWith("_diag-"))
-    .sort();
+  // The lane manifest is authoritative: only chrome-lane specs run here
+  // (docs/provenance/tailwind-dom-parity-pivot.md gate wiring).
+  const manifest = JSON.parse(
+    readFileSync(resolve(repoRoot, "frontend/tests/e2e-lane-manifest.json"), "utf8"),
+  );
+  return manifest.chrome.filter((name) => !name.startsWith("_diag-")).sort();
 }
 
 function fileRevision(name) {
