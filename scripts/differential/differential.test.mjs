@@ -8,6 +8,7 @@ import { LegacySession, YoramSession, translateLegacy, translateYoram } from "./
 import { buildCoverage, matchBehaviors, smokeScenarios, validateScenarios } from "./dsl.mjs";
 import {
   diffProjections,
+  filterRowsByTag,
   diffSkeletons,
   normalizeApiValue,
   normalizeSkeletonEntries,
@@ -155,4 +156,26 @@ test("parseH2ShellOutput parses Shell table output", () => {
     { TITLE: "a", AUTHORLOGINID: "admin" },
     { TITLE: "b", AUTHORLOGINID: "bob" },
   ]);
+});
+
+test("hover-popover scenario validates and matches IssueApp.issues behaviors", () => {
+  const scenario = smokeScenarios.find((entry) => entry.id === "S6-hover-popover");
+  assert.ok(scenario, "S6-hover-popover missing from smokeScenarios");
+  const step = scenario.actions.at(-1);
+  assert.equal(step.action, "hover-popover");
+  assert.ok(step.params.selector.startsWith("#"), "browser trigger needs a concrete selector");
+  assert.deepEqual(validateScenarios([scenario]), []);
+  const ids = matchBehaviors(scenario, inventoryBehaviors);
+  assert.deepEqual(ids, ["B-0201"]);
+});
+
+test("filterRowsByTag keeps only rows tagged for the current run", () => {
+  const rows = [
+    { title: "Differential sweep issue sweep-old-1" },
+    { title: "Differential sweep issue sweep-now-2" },
+    { title: "seeded bug" },
+  ];
+  assert.deepEqual(filterRowsByTag(rows, "sweep-now").map((row) => row.title), ["Differential sweep issue sweep-now-2"]);
+  // null/empty tag = unfiltered (labels stay whole).
+  assert.equal(filterRowsByTag(rows, null).length, 3);
 });

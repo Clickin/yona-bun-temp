@@ -100,8 +100,11 @@ export class LegacySession {
     const headers = { cookie: this.cookies };
     let body;
     if (translation.form) {
-      headers["content-type"] = "application/x-www-form-urlencoded";
-      body = new URLSearchParams(translation.form).toString();
+      // ponytail: legacy Play handlers read issue/comment bodies via
+      // asMultipartFormData() (urlencoded NPEs in IssueApp.newIssue), so all
+      // form POSTs are multipart; switch per-endpoint only if one rejects it.
+      body = new FormData();
+      for (const [key, value] of Object.entries(translation.form)) body.append(key, String(value));
     }
     const response = await fetch(`${this.baseUrl}${translation.path}`, {
       method: translation.method,

@@ -5,7 +5,7 @@
 // The inventory itself stays immutable; scenarioId back-fill is emitted as a
 // separate coverage file by the runner.
 
-export const ACTIONS = ["login", "view-project", "create-issue", "create-issue-comment", "list-labels"];
+export const ACTIONS = ["login", "view-project", "create-issue", "create-issue-comment", "list-labels", "hover-popover"];
 
 export const smokeScenarios = [
   {
@@ -51,6 +51,21 @@ export const smokeScenarios = [
       { actor: "admin", action: "list-labels", params: { owner: "admin", project: "sample" } },
     ],
     behaviorMatcher: { action: /^ProjectApp\.labels$/, route: /labels/ },
+  },
+  {
+    id: "S6-hover-popover",
+    title: "hover popover on issue list (show subtasks)",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      // Browser-only interaction: identical in-page hover trigger on both
+      // sides; the revealed popover is compared as a skeleton by the runner.
+      {
+        actor: "admin",
+        action: "hover-popover",
+        params: { owner: "admin", project: "sample", path: "/issues", selector: "#two-column-mode-checkbox" },
+      },
+    ],
+    behaviorMatcher: { action: /^IssueApp\.issues$/ },
   },
 ];
 

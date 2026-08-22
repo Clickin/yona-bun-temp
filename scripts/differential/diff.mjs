@@ -121,6 +121,13 @@ export function projectLabelRows(rows) {
     }))
     .sort((a, b) => `${a.category}/${a.name}`.localeCompare(`${b.category}/${b.name}`));
 }
+// ponytail: sweep-created rows carry the runId in title/body, so filtering
+// both projections to the current run removes accumulated-run drift; swap to
+// pre-sweep SQL cleanup only if untagged rows ever need comparing.
+export function filterRowsByTag(rows, tag) {
+  if (!tag) return rows;
+  return rows.filter((row) => JSON.stringify(row).includes(tag));
+}
 
 export function diffProjections(legacyRows, yoramRows) {
   const legacy = JSON.stringify(legacyRows);

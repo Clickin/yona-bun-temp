@@ -3,8 +3,9 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
-// A violation is {route, behaviorId?, kind: "api"|"dom"|"db", expected, actual,
-// classification}. classification: "infra" | "known-gap" | "needs-review".
+// A violation is {route, behaviorId?, kind: "api"|"dom"|"db"|"browser",
+// expected, actual, classification}. classification: "infra" | "known-gap" |
+// "needs-review".
 export function classify(kind, detail) {
   if (kind === "api" || kind === "dom") {
     // Yoram serves the SPA shell over plain HTML; skeleton drift rooted in
@@ -41,7 +42,7 @@ export function formatSummary(report) {
       lines.push(`      actual:   ${JSON.stringify(entry.actual).slice(0, 300)}`);
     }
   }
-  const counts = { api: 0, dom: 0, db: 0 };
+  const counts = { api: 0, dom: 0, db: 0, browser: 0 };
   let infra = 0;
   for (const scenario of report.scenarios) {
     for (const entry of scenario.violations) {
@@ -52,7 +53,7 @@ export function formatSummary(report) {
       }
     }
   }
-  lines.push(`  violations: api=${counts.api} dom=${counts.dom} db=${counts.db} infra=${infra}`);
+  lines.push(`  violations: api=${counts.api} dom=${counts.dom} db=${counts.db} browser=${counts.browser} infra=${infra}`);
   lines.push(`  db projections compared after teardown: ${report.dbProjection ? "yes" : "no"}`);
   return lines.join("\n");
 }

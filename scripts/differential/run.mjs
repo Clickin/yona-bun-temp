@@ -17,6 +17,7 @@ import { LegacySession, YoramSession, translateLegacy, translateYoram } from "./
 import {
   diffProjections,
   diffSkeletons,
+  filterRowsByTag,
   normalizeApiValue,
   projectCommentRows,
   projectIssueRows,
@@ -52,6 +53,67 @@ const SKELETON_EXTRACT = () => {
   visit(document.body);
   return entries;
 };
+
+// Visible popovers only: legacy bootstrap appends .popover to body on hover,
+// Yoram renders it inside the anchor; both use the title/content shell.
+const POPOVER_EXTRACT = () => {
+  const entries = [];
+  for (const el of document.querySelectorAll(".popover")) {
+    if (el.getClientRects().length === 0) continue;
+    const text = (selector) => (el.querySelector(selector)?.textContent ?? "").replace(/\s+/gu, " ").trim();
+    entries.push(`div.popover:${text(".popover-title")}|${text(".popover-content")}`);
+  }
+  return entries;
+};
+
+const BROWSER_STEP_TIMEOUT_MS = 15_000;
+
+function raceTimeout(promise, label) {
+  let timer;
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`${label} timed out after ${BROWSER_STEP_TIMEOUT_MS}ms`)), BROWSER_STEP_TIMEOUT_MS);
+    }),
+  ]).finally(() => clearTimeout(timer));
+}
+
+async function visiblePopoverCount(page) {
+  return page.evaluate(() => [...document.querySelectorAll(".popover")].filter((el) => el.getClientRects().length > 0).length);
+}
+
+async function pollPopover(page) {
+  for (let waited = 0; (await visiblePopoverCount(page)) === 0 && waited < 1_500; waited += 100) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  return (await visiblePopoverCount(page)) > 0;
+}
+
+// ponytail: page.hover()'s element-handle scroll path stalls CDP under sweep
+// load (Runtime.callFunctionOn timeouts), so hover = raw mouse.move to the
+// anchor center, then a synthetic mouseover/mouseenter fallback.
+async function hoverAnchor(page, selector) {
+  const point = await raceTimeout(
+    page.evaluate((sel) => {
+      const el = document.querySelector(sel);
+      if (!el) throw new Error(`selector not found: ${sel}`);
+      const rect = el.getBoundingClientRect();
+      return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
+    }, selector),
+    `locate ${selector}`,
+  );
+  await page.mouse.move(point.x - 24, point.y - 12);
+  await page.mouse.move(point.x, point.y);
+  if (await pollPopover(page)) return "mouse-move";
+  await page.evaluate((sel) => {
+    const el = document.querySelector(sel);
+    el.dispatchEvent(new MouseEvent("mouseover", { bubbles: true }));
+    el.dispatchEvent(new MouseEvent("mouseenter", { bubbles: false }));
+  }, selector);
+  const shown = await pollPopover(page);
+  if (!shown && process.env.DIFF_HOVER_DEBUG) console.error(`[hover-debug] ${selector}: no popover after both triggers`);
+  return shown ? "synthetic" : "none";
+}
 
 function parseArgs(argv) {
   const options = { legacyUrl: process.env.YONA_LEGACY_URL ?? "http://127.0.0.1:9000", yoramPort: null };
@@ -275,6 +337,8 @@ async function executeStep(context) {
       ? `/${step.params.owner}/${step.params.project}`
       : "/";
 
+  if (step.action === "hover-popover") return executeBrowserInteraction(context);
+
   if (step.action === "create-issue-comment") resolved.issueNumber = state.issueNumberLegacy;
   const legacyTranslation = translateLegacy(step, resolved);
   const yoramResolved = {
@@ -369,6 +433,51 @@ async function executeStep(context) {
     } catch (error) {
       entry.errors.push(`dom render (${step.action}) [${suffix}]: ${error.message}`);
     }
+  }
+}
+
+// Browser-driven interaction: hover popovers never render over plain HTTP, so
+// both sides get the identical in-page trigger and the revealed popover is
+// compared as a skeleton. Any side failure lands in entry.errors with a
+// reason; a one-sided popover is a violation, not a crash.
+async function executeBrowserInteraction(context) {
+  const { step, suffix, entry, legacySession, yoramSession, legacyPage, yoramPage, options, yoramBaseUrl } = context;
+  const { owner, project, path: pagePath = "/issues", selector } = step.params;
+  const pages = { legacy: legacyPage, yoram: yoramPage };
+  const sessions = { legacy: legacySession, yoram: yoramSession };
+  const skeletons = {};
+  for (const side of ["legacy", "yoram"]) {
+    const url = `${side === "legacy" ? options.legacyUrl : yoramBaseUrl}/${owner}/${project}${pagePath}`;
+    try {
+      await setCookiesFromHeader(pages[side], url, sessions[side].cookies);
+      await pages[side].goto(url, { waitUntil: "load", timeout: 30_000 });
+      const method = await hoverAnchor(pages[side], selector);
+      if (process.env.DIFF_HOVER_DEBUG) console.error(`[hover-debug] ${side}: trigger=${method}`);
+      skeletons[side] = await raceTimeout(pages[side].evaluate(POPOVER_EXTRACT), `${side} popover extract`);
+    } catch (error) {
+      entry.errors.push(`browser ${side} (${step.action}) [${suffix}]: ${error.message}`);
+      skeletons[side] = null;
+    }
+  }
+  if (skeletons.legacy === null || skeletons.yoram === null) return;
+  const route = `/${owner}${pagePath} hover ${selector}`;
+  if (skeletons.legacy.length === 0 || skeletons.yoram.length === 0) {
+    entry.violations.push(
+      violation({
+        route,
+        behaviorId: entry.behaviorIds[0] ?? null,
+        kind: "browser",
+        expected: { visiblePopovers: skeletons.legacy.length },
+        actual: { visiblePopovers: skeletons.yoram.length },
+      }),
+    );
+    return;
+  }
+  const diffs = diffSkeletons(skeletons.legacy, skeletons.yoram);
+  if (diffs.length > 0) {
+    entry.violations.push(
+      violation({ route, behaviorId: entry.behaviorIds[0] ?? null, kind: "browser", expected: skeletons.legacy, actual: skeletons.yoram }),
+    );
   }
 }
 
@@ -470,7 +579,7 @@ export async function runSweep(options = {}) {
     yoramHandle = null;
     await stopLegacy();
 
-    report.dbProjection = await projectDatabases(options);
+    report.dbProjection = await projectDatabases(options, runId);
     return report;
   } catch (error) {
     infraErrors.push(`sweep: ${error.message}`);
@@ -481,7 +590,7 @@ export async function runSweep(options = {}) {
   }
 }
 
-async function projectDatabases(options) {
+async function projectDatabases(options, runId) {
   const legacyDb = path.join(repoRoot, ".agent/legacy-localhost/instances/parity/data/db/yona.h2.db");
   const yoramDb = path.join(yoramRuntimeDir, "yoram.db");
   const projectName = "sample";
@@ -492,8 +601,12 @@ async function projectDatabases(options) {
   ];
   const projection = {};
   for (const [kind, project] of kinds) {
-    const legacyRows = project(await queryLegacyH2(repoRoot, legacyDb, kind, projectName));
-    const yoramRows = project(await queryYoramSqlite(yoramDb, kind, projectName));
+    // Sweep-created rows carry the runId in title/body; filtering both sides
+    // to this run keeps accumulated legacy H2 rows from poisoning the diff.
+    // Labels are seed data and stay unfiltered.
+    const tag = kind === "labels" ? null : runId;
+    const legacyRows = filterRowsByTag(project(await queryLegacyH2(repoRoot, legacyDb, kind, projectName)), tag);
+    const yoramRows = filterRowsByTag(project(await queryYoramSqlite(yoramDb, kind, projectName)), tag);
     projection[kind] = { legacyRows: legacyRows.length, yoramRows: yoramRows.length };
     const diffs = diffProjections(legacyRows, yoramRows);
     if (diffs.length > 0) {
