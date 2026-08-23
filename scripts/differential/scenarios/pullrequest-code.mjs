@@ -207,6 +207,18 @@ export const scenarios = [
     ],
     behaviorMatcher: { action: /^GitApp\.serviceRpc$/ },
   },
+  {
+    id: "R18-throwaway-branch-thread-lifecycle",
+    title: "merge a throwaway pull request, toggle its review thread, and delete only its source branch",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "throwaway-pr-branch-thread-lifecycle", params: { owner: "admin" } },
+    ],
+    behaviorMatcher: {
+      action: /^(PullRequestApp\.deleteFromBranch|CommentThreadApp\.(close|open))$/,
+      route: /^(DELETE \/:ownerName\/:project\/pullRequest\/:id\/deletefrombranch|POST \/threads\/:id\/(close|open))$/,
+    },
+  },
 ];
 
 // Shared read handler: translate both sides, request both (>=400 lands in
@@ -855,6 +867,294 @@ const GIT_PAIR_ACTIONS = {
     },
   },
 };
+// --- throwaway destructive PR/review chain (B-0001, B-0295, B-0296) ---------
+//
+// This action is deliberately self-contained. It never reuses the seeded
+// sample/feature/ui repository: both servers get a uniquely named project,
+// branches are pushed with the real git client, and the project is deleted in
+// finally even when one side cannot complete the chain.
+const THROWAWAY_PR_ACTIONS = {
+  "throwaway-pr-branch-thread-lifecycle": {
+    // Registry matching is based on the direct routes exercised by the
+    // handler; these requests are intentionally not sent.
+    translateLegacy: () => ({ method: "GET", path: "/__throwaway-pr-client-side__" }),
+    translateYoram: () => ({ method: "GET", path: "/__throwaway-pr-client-side__" }),
+    async handler(ctx) {
+      const { step, entry, suffix, helpers } = ctx;
+      const owner = step.params.owner;
+      const name = `parity-pr-${suffix}`;
+      const sourceBranch = "parity-source";
+      const targetBranch = "parity-target";
+      const title = `Differential throwaway PR ${suffix}`;
+      const legacyUrl = ctx.options.legacyUrl;
+      const yoramUrl = ctx.yoramBaseUrl;
+      const projectCreated = { legacy: false, yoram: false };
+      let workRoot = null;
+
+      const fail = (message) => entry.errors.push(`throwaway-pr [${suffix}]: ${message}`);
+      const remote = (baseUrl) => `${baseUrl.replace("://", "://admin:admin@")}/${owner}/${name}`;
+      const resultId = (result) => {
+        const locationId = Number((/\/pullRequest\/(\d+)/u.exec(result.location ?? "") ?? [])[1]) || null;
+        if (locationId) return locationId;
+        const queue = [result.json];
+        while (queue.length > 0) {
+          const node = queue.shift();
+          if (Array.isArray(node)) {
+            queue.push(...node);
+          } else if (node && typeof node === "object") {
+            for (const key of ["pullRequestNumber", "pull_request_number", "number"]) {
+              const value = Number(node[key]);
+              if (value > 0) return value;
+            }
+            queue.push(...Object.values(node));
+          }
+        }
+        return null;
+      };
+      const threadIdFromJson = (json) => {
+        const queue = [json];
+        while (queue.length > 0) {
+          const node = queue.shift();
+          if (Array.isArray(node)) {
+            queue.push(...node);
+          } else if (node && typeof node === "object") {
+            if (Array.isArray(node.threads)) {
+              for (const thread of node.threads) {
+                const id = Number(thread?.id ?? thread?.threadId ?? thread?.thread_id);
+                if (id > 0) return id;
+              }
+            }
+            if (Array.isArray(node.comments) && (node.state || node.status)) {
+              const id = Number(node.id ?? node.threadId ?? node.thread_id);
+              if (id > 0) return id;
+            }
+            queue.push(...Object.values(node));
+          }
+        }
+        return null;
+      };
+      const projectIdFromLegacy = (body) => {
+        for (const match of body.matchAll(/<option value="(\d+)"[^>]*>([^<]*)/gu)) {
+          if (match[2].includes(name)) return match[1];
+        }
+        return null;
+      };
+      const pushBranch = async (baseUrl, ref) => {
+        const url = remote(baseUrl);
+        for (let attempt = 0; attempt < 5; attempt += 1) {
+          try {
+            await git(["-C", workRoot, "push", url, `${ref}:refs/heads/${ref}`]);
+            return true;
+          } catch {
+            await new Promise((resolve) => setTimeout(resolve, 1_000));
+          }
+        }
+        return false;
+      };
+      const findLegacyPullRequest = async () => {
+        const page = await helpers.sendRaw(ctx, "legacy", {
+          method: "GET",
+          path: `/${owner}/${name}/pullRequests`,
+        });
+        const ids = [...new Set([...String(page.body ?? "").matchAll(/pullRequest\/(\d+)/gu)].map((match) => Number(match[1])))]
+          .sort((a, b) => b - a);
+        for (const id of ids) {
+          const detail = await helpers.sendRaw(ctx, "legacy", {
+            method: "GET",
+            path: `/${owner}/${name}/pullRequest/${id}`,
+          });
+          if (detail.status < 400 && String(detail.body ?? "").includes(title)) return id;
+        }
+        return null;
+      };
+      const findYoramPullRequest = async () => {
+        const list = await helpers.sendRaw(ctx, "yoram", {
+          method: "GET",
+          path: `/api/v1/owners/${owner}/projects/${name}/pull-requests`,
+        });
+        const items = Array.isArray(list.json?.items) ? list.json.items : Array.isArray(list.json) ? list.json : [];
+        const match = items.find((item) => (item.title ?? "") === title);
+        return Number(match?.pullRequestNumber ?? match?.pull_request_number ?? match?.number ?? match?.id) || null;
+      };
+
+      try {
+        const legacyCreate = await helpers.sendRaw(ctx, "legacy", {
+          method: "POST",
+          path: "/projects",
+          form: {
+            owner,
+            name,
+            overview: `parity throwaway PR ${suffix}`,
+            projectScope: "PUBLIC",
+            vcs: "GIT",
+            code: "true",
+            issue: "true",
+            pullRequest: "true",
+            review: "true",
+          },
+        });
+        projectCreated.legacy = legacyCreate.status < 400;
+        const yoramCreate = await helpers.sendRaw(ctx, "yoram", {
+          method: "POST",
+          path: `/api/v1/owners/${owner}/projects`,
+          json: { projectName: name, overview: `parity throwaway PR ${suffix}`, projectScope: "PUBLIC", vcs: "GIT" },
+        });
+        projectCreated.yoram = yoramCreate.status < 400;
+        if (!projectCreated.legacy || !projectCreated.yoram) {
+          fail(`project creation failed: legacy=${legacyCreate.status} yoram=${yoramCreate.status}`);
+          return;
+        }
+
+        workRoot = mkdtempSync(`${tmpdir()}/parity-pr-`);
+        const { writeFileSync } = await import("node:fs");
+        await git(["init", "-b", "main", workRoot]);
+        await git(["-C", workRoot, "config", "user.name", "parity"]);
+        await git(["-C", workRoot, "config", "user.email", "parity@example.com"]);
+        writeFileSync(`${workRoot}/README.md`, `throwaway target ${suffix}\n`);
+        await git(["-C", workRoot, "add", "README.md"]);
+        await git(["-C", workRoot, "commit", "-m", `throwaway target ${suffix}`]);
+        await git(["-C", workRoot, "branch", targetBranch]);
+        await git(["-C", workRoot, "checkout", "-b", sourceBranch]);
+        writeFileSync(`${workRoot}/source.txt`, `throwaway source ${suffix}\n`);
+        await git(["-C", workRoot, "add", "source.txt"]);
+        await git(["-C", workRoot, "commit", "-m", `throwaway source ${suffix}`]);
+        if (!(await pushBranch(legacyUrl, "main")) || !(await pushBranch(yoramUrl, "main"))) throw new Error("git push main failed");
+        if (!(await pushBranch(legacyUrl, targetBranch)) || !(await pushBranch(yoramUrl, targetBranch))) throw new Error("git push target branch failed");
+        if (!(await pushBranch(legacyUrl, sourceBranch)) || !(await pushBranch(yoramUrl, sourceBranch))) throw new Error("git push source branch failed");
+
+        const legacyForm = await helpers.sendRaw(ctx, "legacy", {
+          method: "GET",
+          path: `/${owner}/${name}/newPullRequestForm`,
+        });
+        const legacyProjectId = projectIdFromLegacy(String(legacyForm.body ?? ""));
+        const yoramOptions = await helpers.sendRaw(ctx, "yoram", {
+          method: "GET",
+          path: `/api/v1/owners/${owner}/projects/${name}/pull-requests/form-options`,
+        });
+        const yoramProject = (yoramOptions.json?.toProjects ?? yoramOptions.json?.to_projects ?? []).find(
+          (option) => option.projectName === name || option.project_name === name,
+        );
+        const yoramProjectId = Number(yoramProject?.id) || null;
+        if (!legacyProjectId || !yoramProjectId) throw new Error(`project ids unresolved: legacy=${legacyProjectId ?? "none"} yoram=${yoramProjectId ?? "none"}`);
+
+        const legacyPr = await helpers.sendRaw(ctx, "legacy", {
+          method: "POST",
+          path: `/${owner}/${name}/pullRequests`,
+          form: {
+            title,
+            body: `throwaway review chain ${suffix}`,
+            fromProjectId: legacyProjectId,
+            fromBranch: `refs/heads/${sourceBranch}`,
+            toProjectId: legacyProjectId,
+            toBranch: `refs/heads/${targetBranch}`,
+          },
+        });
+        const yoramPr = await helpers.sendRaw(ctx, "yoram", {
+          method: "POST",
+          path: `/api/v1/owners/${owner}/projects/${name}/pull-requests`,
+          json: {
+            title,
+            bodyMarkdown: `throwaway review chain ${suffix}`,
+            fromProjectId: yoramProjectId,
+            fromBranch: sourceBranch,
+            toProjectId: yoramProjectId,
+            toBranch: targetBranch,
+            attachmentIds: [],
+          },
+        });
+        let legacyPrId = resultId(legacyPr) ?? await findLegacyPullRequest();
+        let yoramPrId = resultId(yoramPr) ?? await findYoramPullRequest();
+        if (!legacyPrId || !yoramPrId) throw new Error(`pull request id unresolved: legacy=${legacyPrId ?? "none"} yoram=${yoramPrId ?? "none"}`);
+
+        const commentText = `throwaway review thread ${suffix}`;
+        const legacyComment = await helpers.sendRaw(ctx, "legacy", {
+          method: "POST",
+          path: `/${owner}/${name}/pullRequest/${legacyPrId}/comments`,
+          form: { contents: commentText },
+        });
+        const yoramComment = await helpers.sendRaw(ctx, "yoram", {
+          method: "POST",
+          path: `/api/v1/owners/${owner}/projects/${name}/pull-requests/${yoramPrId}/comments`,
+          json: { contentsMarkdown: commentText, attachmentIds: [] },
+        });
+        const legacyDetail = await helpers.sendRaw(ctx, "legacy", {
+          method: "GET",
+          path: `/${owner}/${name}/pullRequest/${legacyPrId}/changes`,
+        });
+        const yoramDetail = yoramComment.status < 400
+          ? yoramComment
+          : await helpers.sendRaw(ctx, "yoram", {
+            method: "GET",
+            path: `/api/v1/owners/${owner}/projects/${name}/pull-requests/${yoramPrId}`,
+          });
+        let legacyThreadId = Number((/id="thread-(\d+)"/u.exec(legacyDetail.body ?? "") ?? [])[1])
+          || Number((/name="thread\.id" value="(\d+)"/u.exec(legacyDetail.body ?? "") ?? [])[1])
+          || null;
+        if (!legacyThreadId) {
+          const reviewList = await helpers.sendRaw(ctx, "legacy", {
+            method: "GET",
+            path: `/${owner}/${name}/reviews`,
+          });
+          const reviewBody = String(reviewList.body ?? "");
+          const commentOffset = reviewBody.indexOf(commentText);
+          const reviewIds = commentOffset < 0
+            ? []
+            : [...reviewBody.slice(0, commentOffset).matchAll(/<span class="post-id">(\d+)<\/span>/gu)];
+          legacyThreadId = Number(reviewIds[reviewIds.length - 1]?.[1]) || null;
+        }
+        const yoramThreadId = threadIdFromJson(yoramDetail.json);
+
+        for (const state of ["close", "open"]) {
+          const legacyThread = await helpers.sendRaw(ctx, "legacy", { method: "POST", path: `/threads/${legacyThreadId}/${state}` });
+          const yoramThread = await helpers.sendRaw(ctx, "yoram", { method: "POST", path: `/threads/${yoramThreadId}/${state}` });
+          if (legacyThread.status >= 400 || yoramThread.status >= 400) {
+            throw new Error(`thread ${state} failed: legacy=${legacyThread.status} yoram=${yoramThread.status}`);
+          }
+        }
+
+        const legacyAccept = await helpers.sendRaw(ctx, "legacy", { method: "POST", path: `/${owner}/${name}/pullRequest/${legacyPrId}/accept` });
+        const yoramAccept = await helpers.sendRaw(ctx, "yoram", { method: "POST", path: `/api/v1/owners/${owner}/projects/${name}/pull-requests/${yoramPrId}/accept` });
+        if (legacyAccept.status >= 400 || yoramAccept.status >= 400) {
+          throw new Error(`pull request merge failed: legacy=${legacyAccept.status} yoram=${yoramAccept.status}`);
+        }
+
+        const legacyDelete = await helpers.sendRaw(ctx, "legacy", {
+          method: "DELETE",
+          path: `/${owner}/${name}/pullRequest/${legacyPrId}/deletefrombranch`,
+        });
+        const yoramDelete = await helpers.sendRaw(ctx, "yoram", {
+          method: "DELETE",
+          path: `/${owner}/${name}/pullRequest/${yoramPrId}/deletefrombranch`,
+        });
+        if (legacyDelete.status >= 400 || yoramDelete.status >= 400) {
+          throw new Error(`source branch delete failed: legacy=${legacyDelete.status} yoram=${yoramDelete.status}`);
+        }
+        for (const [label, baseUrl] of [["legacy", legacyUrl], ["yoram", yoramUrl]]) {
+          const refs = await git(["ls-remote", remote(baseUrl), `refs/heads/${sourceBranch}`]);
+          if (refs.stdout.trim()) throw new Error(`${label} source branch still exists after direct delete`);
+        }
+      } catch (error) {
+        fail(error.message);
+      } finally {
+        if (workRoot) rmSync(workRoot, { recursive: true, force: true });
+        if (projectCreated.legacy) {
+          await helpers.sendRaw(ctx, "legacy", {
+            method: "DELETE",
+            path: `/${owner}/${name}/delete`,
+            headers: { "x-requested-with": "XMLHttpRequest" },
+          }).catch((error) => fail(`legacy project cleanup failed: ${error.message}`));
+        }
+        if (projectCreated.yoram) {
+          await helpers.sendRaw(ctx, "yoram", {
+            method: "DELETE",
+            path: `/api/v1/owners/${owner}/projects/${name}`,
+          }).catch((error) => fail(`yoram project cleanup failed: ${error.message}`));
+        }
+      }
+    },
+  },
+};
+Object.assign(MUTATION_DEFINITIONS, THROWAWAY_PR_ACTIONS);
 Object.assign(MUTATION_DEFINITIONS, GIT_PAIR_ACTIONS);
 export const actionDefinitions = Object.assign(
   Object.fromEntries(READ_ACTIONS.map((name) => [name, readGet()])),

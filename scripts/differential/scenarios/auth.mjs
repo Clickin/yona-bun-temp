@@ -317,6 +317,12 @@ export const actionDefinitions = {
         const legacyResult = await legacySession.request({ method: "GET", path });
         if (legacyResult.status >= 400) entry.errors.push(`legacy logout failed: HTTP ${legacyResult.status} @ ${path}`);
       }
+      const primed = await fetch(`${yoramSession.baseUrl}/api/auth/session`, { headers: { cookie: yoramSession.cookies } });
+      yoramSession.csrfToken = primed.headers.get("x-csrf-token") ?? yoramSession.csrfToken;
+      const sessionCookies = primed.headers.getSetCookie?.() ?? [];
+      if (sessionCookies.length > 0) {
+        yoramSession.cookies = sessionCookies.map((cookie) => cookie.split(";")[0]).join("; ");
+      }
       const yoramResult = await yoramSession.request({ method: "POST", path: "/api/v1/auth/sign-out" });
       if (yoramResult.status >= 400) entry.errors.push(`yoram logout failed: HTTP ${yoramResult.status} @ /api/v1/auth/sign-out`);
     },

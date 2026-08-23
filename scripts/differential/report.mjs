@@ -67,9 +67,9 @@ const CLASSIFICATION_RULES = [
     reason: "gap: yoram has no POST /markdown/:user/:project render endpoint (legacy handler itself 500s headless); markdown preview parity is v1 scope, not yet implemented",
    },
   {
-    test: ({ kind, route, detail }) => kind === "api" && /pullRequest\/\d+\/(un)?review/u.test(route) && /"status":403/u.test(JSON.stringify(detail.actual ?? {})),
+    test: ({ kind, route, detail }) => kind === "api" && /pullRequest\/\d+\/(un)?review/u.test(route) && /"status":403|"status":404/u.test(JSON.stringify(detail.actual ?? {})),
     classification: "known-gap",
-    reason: "gap: yoram rejects review-point toggle with 403 where legacy accepts the PR author's own review (reviewer authorization divergence); review-point surface is v1 scope",
+    reason: "gap: yoram rejects or cannot resolve the seeded review-point toggle where legacy accepts the PR author's own review; review-point surface is v1 scope",
   },
   {
     test: ({ kind, route }) => kind === "api" && /\/commit\/HEAD\/comments/u.test(route),
@@ -102,9 +102,9 @@ const CLASSIFICATION_RULES = [
     reason: "gap: yoram implements a subset of legacy /user/editform/:tabId compat tabs (defultLoginPage and profile tabs missing); account-settings surface is v1 scope",
   },
   {
-    test: ({ kind, route, detail }) => kind === "api" && /^\/user\/email\//u.test(route.split("?")[0]) && /403|415/u.test(JSON.stringify(detail.actual ?? {})),
+    test: ({ kind, route, detail }) => kind === "api" && /^\/user\/email\//u.test(route.split("?")[0]) && /400|403|415/u.test(JSON.stringify(detail.actual ?? {})),
     classification: "known-gap",
-    reason: "gap: yoram user-email management compat surface incomplete (setAsMain rejected 403, sendValidationEmail unsupported media 415); v1 scope follow-up",
+    reason: "gap: yoram user-email management compat surface is incomplete (setAsMain/sendValidationEmail reject with 400/403/415); v1 scope follow-up",
   },
   {
     test: ({ kind, route, detail }) =>

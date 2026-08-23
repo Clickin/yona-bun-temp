@@ -1,4 +1,4 @@
-# Differential Behavior Coverage — Sweep-Excluded Behaviors & Follow-up (2026-08-23, rev.5)
+# Differential Behavior Coverage — Sweep-Excluded Behaviors & Follow-up (2026-08-23, rev.6)
 
 Status: current. 이 문서는 differential sweep이 자동 비교하지 **않는** 행위와 그
 이유를 기록한다. **중요(rev.4 정정): 아래 §1 행위는 대부분 Yoram에 이미 구현되어
@@ -38,7 +38,7 @@ favorite 3종+토글, assignableUsers/findSharer/share/vote-weight/detectChange,
 issues/comments CRUD compat)은 app-owned implemented이며 S12–S16 경계 프로브와
 I11–I13/I20·I23 프로브가 검증한다.
 
-## 1. Sweep-excluded behaviors (구현됨 — 스윕 자동 비교 미포함)
+## 1. Previously sweep-excluded behaviors — now covered
 
 ### SVN protocol (5) — covered by `P22-svn-client-pair`
 - B-0021/B-0170/B-0294/B-0314 (`/svn/*path`) and B-0271
@@ -56,15 +56,14 @@ I11–I13/I20·I23 프로브가 검증한다.
 - B-0286 and B-0159 are covered by `U25-residual-site-user-probes`.
 - Probes intentionally submit empty/invalid payloads; no import state is written.
 
-### Email-token flows (5) — four covered, one safely deferred
-- B-0175 is covered by `U23-email-validation-lifecycle` when the legacy
-  confirmation mail is available; Yoram's unsupported send path is recorded.
-- B-0275/B-0154 are covered by `S17-lost-password-flow` using per-side SMTP
-  reset links; B-0285 is covered by `U24-signup-email-verification` for the
-  throwaway credential.
-- B-0192 remains uncovered: neither instance emitted a deterministic signup
-  verification mail in the final run; U24 records the skip rather than
-  claiming `UserApp.verifyUser`.
+### Email-token flows (5) — covered by SMTP-backed fixtures
+- B-0175 is covered by `U23-email-validation-lifecycle`; Yoram's unsupported
+  send path remains a recorded known gap.
+- B-0275/B-0154 are covered by `S17-lost-password-flow` using per-side reset
+  links; B-0285 is covered by `U24-signup-email-verification`.
+- B-0192 is covered by `U24-signup-email-verification`: the fixture waits for
+  both side-specific signup mails, opens both `/verify/:loginId/:code` links,
+  and follows Yoram's SPA-owned REST verification mutation.
 
 ### Destructive on shared parity state — throwaway coverage
 - B-0002 is covered by `P26-residual-branch-import-probes` as a missing-branch
@@ -72,16 +71,19 @@ I11–I13/I20·I23 프로브가 검증한다.
 - B-0019 is covered by `P24-site-project-purge`; B-0225/B-0226/B-0236 are
   covered by `P23-wave-d-project-destructive`, with generated projects deleted
   and absence checked.
-- B-0001 remains uncovered: deleting `feature/ui` would mutate the protected
-  seeded PR branch; the harness deliberately skips it.
+- B-0001 is covered by `R18-throwaway-branch-thread-lifecycle`: the fixture
+  creates a unique Git project, pushes `parity-source`, merges the PR, deletes
+  only that source branch, verifies `git ls-remote` absence, and removes the
+  project. Seeded `feature/ui` is never touched.
 
-### Misc — covered probes and explicit skips
+### Misc — covered probes
 - B-0199 is covered by `P25-empty-root-post`.
 - B-0287/B-0288 and B-0303 are covered by `U25-residual-site-user-probes`.
-- B-0289 remains uncovered: no valid image attachment/current-avatar pair was
-  available for a reversible capture-set-restore.
-- B-0295/B-0296 remain uncovered: no deterministic notification thread id was
-  discoverable without manufacturing an unverified notification chain.
+- B-0289 is covered by `U26-avatar-capture-restore` using a deterministic
+  offline 1×1 PNG attachment, capture, restore, and attachment cleanup.
+- B-0295/B-0296 are covered by `R18-throwaway-branch-thread-lifecycle`, which
+  creates a review comment thread, discovers the legacy/Yoram thread ids,
+  closes and reopens each thread, and cleans the throwaway PR/project.
 
 ## 2. Runtime divergences found by the mutation sweeps (2026-08-23 해소)
 
@@ -94,25 +96,26 @@ the live instances before the fix):
    415 cascades; promoted to the canonical helper together with `pairLenient`.
 2. Body-less yoram mutations (watch/unwatch/enroll/DELETE family) never carried
    the CSRF header; yoram validates CSRF on every session mutation while legacy
-   ignores it — the single largest 403 cluster (~25 violations).
-3. `LegacySession.request` replaced the cookie jar on every Set-Cookie, so a
-   flash-only response wiped PLAY_SESSION mid-scenario; now merges.
-4. Legacy payload ground-truth (probed, not guessed): milestone create/edit
-   requires `{title, contents, state, dueDate:""}` (Play binds java Date via
-   request locale — ISO strings fail binding); board post requires the hidden
-   `issueTemplate` field (NPE at BoardApp.newPost otherwise); post comments bind
-   `contents`, not `body`; project-label attach/detach binds urlencoded only;
-   issue-label category create requires `project.id`.
-5. Webhook id discovery matches the `data-webhook-id` row carrying this run's
-   payload-url suffix instead of max-id (earlier sweeps left rows behind).
-6. `pairRequest`/`pairLenient` now treat agreed outcomes (including identical
+   ignores it — fixed in `YoramSession.request`.
+3. `YoramSession` now merges session and CSRF cookies after sign-in and after
+   every response; `LegacySession` preserves its cookie jar as well.
+4. `LegacySession` supports the URL-encoded signup payload required by the
+   legacy Play binder; U24 waits for both asynchronous signup mails before
+   claiming verification.
+5. Legacy PR creation submits the full `refs/heads/*` branch values expected
+   by `PullRequest.fetchSourceBranchTo`; R18 falls back to the legacy reviews
+   list when the changes page omits the thread markup.
+6. Yoram's `/verify/:loginId/:verificationCode` remains SPA-owned; R18/U24
+   fixtures translate the browser route to the existing `/api/v1` mutation
+   after checking the linked page response.
+7. `pairRequest`/`pairLenient` now treat agreed outcomes (including identical
    error statuses) as parity; only disagreement is reported.
 
 Remaining classified divergences live in `report.mjs` CLASSIFICATION_RULES with
-per-rule reasons (markdown render gap, review-point authorization, commit
-pseudo-ref shape, org/favorites/user-email compat surface, SPA-shell auth pages,
-OAuth deferral, label-category rename/delete divergence, comment PATCH
-optimistic-lock drift, trailing-slash attachment route).
+per-rule reasons (markdown render gap, review-point authorization/seed shape,
+commit pseudo-ref shape, org/favorites/user-email compat surface, SPA-shell
+auth pages, OAuth deferral, label-category rename/delete divergence, comment
+PATCH optimistic-lock drift, trailing-slash attachment route).
 
 ## 3. Harness debt (remaining)
 
@@ -122,7 +125,8 @@ optimistic-lock drift, trailing-slash attachment route).
 - db-labels projection stays unfiltered by run tag (labels treated as seed
   data); sweep-created label rows therefore remain classified known-gap diffs.
 
-Final Wave 2 artifact evidence: `.agent/differential/report.json` and
-`behavior-coverage.json` report 310/315 unique behaviors, `needs-review = 0`,
-17 SMTP `.eml` files were captured, and the five uncovered IDs are explicitly
-documented above (B-0001, B-0192, B-0289, B-0295, B-0296).
+Final Wave 2 artifact evidence: run `sweep-mt5ne45e` produced 315/315 unique
+behaviors, `needs-review = 0`, 20 SMTP `.eml` files, and
+`api=30 dom=81 db=1 browser=0 infra=15`. R18, U24, U26, and the user cleanup
+actions completed without fixture errors; no uncovered behavior IDs remain in
+the inventory.

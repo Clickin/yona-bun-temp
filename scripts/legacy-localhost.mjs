@@ -447,9 +447,13 @@ async function start(layout, options) {
   };
   mkdirSync(layout.runDir, { recursive: true });
   const logFd = openSync(layout.logFile, "a");
+  const args = ["-java-home", javaHome, `-Dhttp.address=${layout.host}`, `-Dhttp.port=${layout.port}`];
+  if (process.env.YONA_LEGACY_EMAIL_VERIFICATION === "true") {
+    args.push("-Dapplication.use.email.verification=true");
+  }
   const child = spawn(
     resolve(layout.installDir, "bin/yona"),
-    ["-java-home", javaHome, `-Dhttp.address=${layout.host}`, `-Dhttp.port=${layout.port}`],
+    args,
     {
       cwd: layout.installDir,
       detached: true,

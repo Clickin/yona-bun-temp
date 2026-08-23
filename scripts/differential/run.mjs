@@ -29,7 +29,7 @@ import { launchWtrBrowser } from "../wtr-browser.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const outputDir = path.join(repoRoot, ".agent/differential");
-import { buildCoverage, matchBehaviors, validateScenarios } from "./dsl.mjs";
+import { matchBehaviors, validateScenarios } from "./dsl.mjs";
 import { ACTION_DEFINITIONS, scenarios } from "./scenarios/index.mjs";
 const yoramRuntimeDir = path.join(outputDir, "yoram");
 
@@ -162,6 +162,7 @@ async function bootLegacy() {
   const result = await new Promise((resolve) => {
     const child = spawn("node", [path.join(repoRoot, "scripts/legacy-localhost.mjs"), "start"], {
       cwd: repoRoot,
+      env: { ...process.env, YONA_LEGACY_EMAIL_VERIFICATION: "true" },
       stdio: ["ignore", "pipe", "pipe"],
     });
     let output = "";
@@ -183,7 +184,8 @@ async function stopLegacy() {
     setTimeout(resolve, 30_000).unref?.();
   });
 }
-async function writeYoramConfig(databaseUrl, dataRoot, seedPilot, port) {
+async function writeYoramConfig(databaseUrl, dataRoot, seedPilot, port, emailVerification = true) {
+  const authEmailVerification = emailVerification ? "email_verification = true" : "email_verification = false";
   const config = [
     `bind_addr = ${JSON.stringify(`127.0.0.1:${port}`)}`,
     `database_url = ${JSON.stringify(databaseUrl)}`,
@@ -192,6 +194,9 @@ async function writeYoramConfig(databaseUrl, dataRoot, seedPilot, port) {
     "asset_root = \"frontend/dist\"",
     `seed_pilot = ${seedPilot ? "true" : "false"}`,
     "use_embedded_assets = false",
+    "",
+    "[auth]",
+    authEmailVerification,
     "",
     "[smtp]",
     "host = \"127.0.0.1\"",
@@ -242,10 +247,11 @@ function patchLegacySmtpConf() {
     ["smtp.port", "2525"],
     ["smtp.ssl", "false"],
     ["smtp.mock", "false"],
+    ["application.use.email.verification", "true"],
   ];
   let updated = original;
   for (const [key, value] of settings) {
-    const pattern = new RegExp(`^${key.replace(".", "\\.")}\\s*=.*$`, "mu");
+    const pattern = new RegExp(`^${key.replaceAll(".", "\\.")}\\s*=.*$`, "mu");
     updated = pattern.test(updated) ? updated.replace(pattern, `${key} = ${value}`) : `${updated.trimEnd()}\n${key} = ${value}\n`;
   }
   if (updated !== original) writeFileSync(confPath, updated);
@@ -378,7 +384,7 @@ async function bootYoram(port) {
   if (isFreshDb) {
     // Phase 1: schema/pilot bootstrap, then REST-provision the parity accounts
     // and the admin/sample project that reconcileDefaultDevParitySeed expects.
-    await writeYoramConfig(databaseUrl, dataRoot, true, port);
+    await writeYoramConfig(databaseUrl, dataRoot, true, port, false);
     const child = startYoramProcess(port);
     children.push(child);
     try {
@@ -393,7 +399,7 @@ async function bootYoram(port) {
   seedModule.reconcileDefaultDevSiteAdmin(databasePath);
   seedModule.reconcileDefaultDevParitySeed(databasePath, yoramRuntimeDir);
 
-  await writeYoramConfig(databaseUrl, dataRoot, false, port);
+  await writeYoramConfig(databaseUrl, dataRoot, false, port, true);
   const child = startYoramProcess(port);
   children.push(child);
   await waitForHttp(`http://127.0.0.1:${port}/api/auth/session`);
@@ -769,9 +775,21 @@ async function main() {
   }
   report.finishedAt = new Date().toISOString();
 
-  // Coverage artifact; docs/provenance/behavior-inventory.json stays immutable.
-  const inventory = JSON.parse(readFileSync(path.join(repoRoot, "docs/provenance/behavior-inventory.json"), "utf8"));
-  const coverage = buildCoverage(scenarios, inventory.behaviors, report.runId);
+  // Runtime handlers may remove a matcher when its mail/fixture was not
+  // reachable; persist the IDs actually exercised, not the static registry.
+  const runtimeScenarios = new Map(report.scenarios.map((scenario) => [scenario.id, scenario]));
+  const coverage = {
+    runId: report.runId,
+    version: 1,
+    scenarios: scenarios.map((scenario) => {
+      const runtime = runtimeScenarios.get(scenario.id);
+      return {
+        scenarioId: scenario.id,
+        title: scenario.title,
+        behaviorIds: runtime?.behaviorIds ?? [],
+      };
+    }),
+  };
   mkdirSync(outputDir, { recursive: true });
   writeFileSync(path.join(outputDir, "behavior-coverage.json"), `${JSON.stringify(coverage, null, 2)}\n`);
   const reportPath = writeReport(report, outputDir);

@@ -326,8 +326,25 @@ export const scenarios = [
       { actor: "anonymous", action: "open-verify-link", params: {} },
       { actor: "anonymous", action: "request-lost-password-for-throwaway", params: {} },
       { actor: "anonymous", action: "complete-reset-for-throwaway", params: {} },
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "delete-site-user", params: {} },
     ],
-    behaviorMatcher: { action: /^PasswordResetApp\.resetPassword$/ },
+    behaviorMatcher: {
+      action: /^(PasswordResetApp\.resetPassword|UserApp\.verifyUser)$/,
+      route: /^(POST \/resetPassword$|GET \/verify\/:loginId\/:verificationCode)$/,
+    },
+  },
+  {
+    id: "U26-avatar-capture-restore",
+    title: "site-admin avatar set and restore with an offline PNG attachment",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "set-user-avatar-from-attachment", params: { email: "admin@example.com" } },
+    ],
+    behaviorMatcher: {
+      action: /^SiteApp\.setAttachmentToUserAvatar$/,
+      route: /^POST \/sites\/setAttachmentToUserAvatar$/,
+    },
   },
 ];
 
@@ -369,7 +386,7 @@ const pageTargets = {
   "view-user-editform": (params) => (params.tab ? `/user/editform/${params.tab}` : "/user/editform"),
   "view-site-screen": (params) => `/sites/${params.screen}`,
   "view-files-list": () => "/files",
- };
+};
 
 
 // --- mutation helpers --------------------------------------------------------
@@ -440,20 +457,96 @@ async function resolveYoramOrgMemberId(ctx, organizationName, loginId) {
 async function resolveLegacyUserIdByLoginId(ctx, loginId) {
   // /sites/userList renders data-user-id="<loginId>" next to the
   // /sites/user/delete<id> action link for each row.
-  const page = await ctx.legacySession.request({ method: "GET", path: "/sites/userList" });
-  for (const chunk of String(page.body ?? "").split('data-user-id="').slice(1)) {
-    if (!chunk.startsWith(`${loginId}"`)) continue;
-    const id = /\/sites\/user\/delete(\d+)/u.exec(chunk)?.[1];
-    if (id) return Number(id);
+  for (const state of ["ACTIVE", "LOCKED"]) {
+    const page = await ctx.legacySession.request({ method: "GET", path: `/sites/userList?state=${state}` });
+    for (const chunk of String(page.body ?? "").split('data-user-id="').slice(1)) {
+      if (!chunk.startsWith(`${loginId}"`)) continue;
+      const id = /\/sites\/user\/delete(\d+)/u.exec(chunk)?.[1];
+      if (id) return Number(id);
+    }
   }
   return null;
 }
 
 async function resolveYoramUserIdByLoginId(ctx, loginId) {
-  const result = await ctx.yoramSession.request({ method: "GET", path: "/api/v1/site/users" });
-  const users = result.json?.users ?? [];
-  const user = users.find((entry) => entry.loginId === loginId);
-  return user ? Number(user.id) : null;
+  for (const path of ["/api/v1/site/users", "/api/v1/site/users?state=locked"]) {
+    const result = await ctx.yoramSession.request({ method: "GET", path });
+    const users = result.json?.users ?? [];
+    const user = users.find((entry) => entry.loginId === loginId);
+    if (user) return Number(user.id);
+  }
+  return null;
+}
+const AVATAR_PNG = Uint8Array.from(Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+  "base64",
+));
+
+function multipartBody(fields = {}, file = null) {
+  const boundary = `parity-avatar-${file?.filename ?? "form"}`.replace(/[^a-zA-Z0-9_-]/gu, "_");
+  const encoder = new TextEncoder();
+  const chunks = [];
+  let total = 0;
+  const append = (value) => {
+    const chunk = typeof value === "string" ? encoder.encode(value) : value;
+    chunks.push(chunk);
+    total += chunk.length;
+  };
+  for (const [name, value] of Object.entries(fields)) {
+    append(`--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`);
+  }
+  if (file) {
+    append(`--${boundary}\r\nContent-Disposition: form-data; name="${file.name}"; filename="${file.filename}"\r\nContent-Type: ${file.contentType}\r\n\r\n`);
+    append(file.content);
+    append("\r\n");
+  }
+  append(`--${boundary}--\r\n`);
+  const body = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return { contentType: `multipart/form-data; boundary=${boundary}`, body };
+}
+
+function avatarUploadMultipart(suffix) {
+  return multipartBody({}, {
+    name: "filePath",
+    filename: `parity-avatar-${suffix.replace(/[^a-zA-Z0-9_-]/gu, "_")}.png`,
+    contentType: "image/png",
+    content: AVATAR_PNG,
+  });
+}
+
+function attachmentDeleteMultipart() {
+  return multipartBody({ _method: "delete" });
+}
+
+function attachmentIdFromResult(result) {
+  return Number(result.json?.id ?? result.json?.url?.match(/\/files\/(\d+)/u)?.[1] ?? /\/files\/(\d+)/u.exec(result.location ?? "")?.[1]) || null;
+}
+
+function dropBehaviorClaim(entry, behaviorId) {
+  entry.behaviorIds = entry.behaviorIds.filter((id) => id !== behaviorId);
+}
+
+function claimBehavior(entry, behaviorId) {
+  if (!entry.behaviorIds.includes(behaviorId)) entry.behaviorIds.push(behaviorId);
+}
+
+async function readCurrentAvatar(ctx, side, loginId) {
+  const result = await ctx.helpers.sendRaw(ctx, side, side === "legacy"
+    ? { method: "GET", path: "/user/editform" }
+    : { method: "GET", path: `/api/v1/users/${loginId}/profile` });
+  const avatarUrl = side === "legacy"
+    ? String(/avatar-wrap xlarge[\s\S]{0,1000}?<img[^>]+src=["']([^"']+)/u.exec(result.body ?? "")?.[1] ?? "")
+    : String(result.json?.profile?.avatarUrl ?? result.json?.profile?.avatar_url ?? "");
+  return {
+    id: Number(/\/files\/(\d+)/u.exec(avatarUrl)?.[1]) || null,
+    url: avatarUrl,
+    status: result.status,
+  };
 }
 
 const MAIN_EMAIL = "admin@example.com";
@@ -1263,6 +1356,7 @@ export const actionDefinitions = {
           password: step.params.password,
           retypedPassword: step.params.password,
         },
+        headers: { "content-type": "application/x-www-form-urlencoded" },
       };
     },
     translateYoram(step) {
@@ -1279,7 +1373,7 @@ export const actionDefinitions = {
       };
     },
     async handler(ctx) {
-      const { state, suffix, entry, helpers } = ctx;
+      const { state, suffix, helpers } = ctx;
       state.mailCountBefore = helpers.readMails().length;
       const sanitized = suffix.replace(/[^a-zA-Z0-9]/g, "");
       state.throwawayLoginId = `parity${sanitized}`;
@@ -1299,14 +1393,7 @@ export const actionDefinitions = {
         password: state.throwawayPassword,
         retypedPassword: state.throwawayPassword,
       };
-      await mutateBoth(ctx, { method: "POST", path: "/users/signup", form }, { method: "POST", path: "/users/signup", form }, "/users/signup");
-      state.throwawayUserIdLegacy ??= await resolveLegacyUserIdByLoginId(ctx, state.throwawayLoginId);
-      state.throwawayUserIdYoram ??= await resolveYoramUserIdByLoginId(ctx, state.throwawayLoginId);
-      if (!state.throwawayUserIdLegacy || !state.throwawayUserIdYoram) {
-        entry.errors.push(
-          `signup-user: user id unresolved (legacy=${state.throwawayUserIdLegacy}, yoram=${state.throwawayUserIdYoram}); site-admin cleanup steps will be skipped`,
-        );
-      }
+      await mutateBoth(ctx, { method: "POST", path: "/users/signup", form, headers: { "content-type": "application/x-www-form-urlencoded" } }, { method: "POST", path: "/users/signup", form }, "/users/signup");
     },
   },
 
@@ -1441,15 +1528,28 @@ export const actionDefinitions = {
     },
     async handler(ctx) {
       const { state, entry } = ctx;
-      const { throwawayLoginId: loginId, throwawayUserIdLegacy: legacyUserId, throwawayUserIdYoram: yoramUserId } = state;
-      if (!loginId || !legacyUserId || !yoramUserId) {
-        entry.errors.push(`delete-site-user: skipped (loginId=${loginId}, legacy=${legacyUserId}, yoram=${yoramUserId})`);
+      const loginId = state.throwawayLoginId;
+      if (!loginId) {
+        entry.errors.push("delete-site-user: skipped (no throwaway login id)");
+        return;
+      }
+      state.throwawayUserIdLegacy ??= await resolveLegacyUserIdByLoginId(ctx, loginId);
+      state.throwawayUserIdYoram ??= await resolveYoramUserIdByLoginId(ctx, loginId);
+      const legacyUserId = state.throwawayUserIdLegacy;
+      const yoramUserId = state.throwawayUserIdYoram;
+      if (!legacyUserId) {
+        entry.errors.push(`delete-site-user: skipped (loginId=${loginId}, legacy=${legacyUserId})`);
         return;
       }
       await mutateBoth(
         ctx,
         { method: "DELETE", path: `/sites/user/delete${legacyUserId}` },
-        { method: "DELETE", path: `/sites/user/delete${yoramUserId}` },
+        {
+          method: "DELETE",
+          path: yoramUserId
+            ? `/sites/user/delete${yoramUserId}`
+            : `/api/v1/site/users/${encodeURIComponent(loginId)}`,
+        },
         "/sites/user/delete:userId",
       );
       const legacyList = await ctx.legacySession.request({ method: "GET", path: "/sites/userList?state=DELETED" });
@@ -1582,30 +1682,68 @@ Object.assign(actionDefinitions, {
     async handler(ctx) {
       const { entry, state, options, yoramBaseUrl, helpers } = ctx;
       const loginId = state.throwawayLoginId;
+      dropBehaviorClaim(entry, "B-0192");
       if (!loginId) {
         entry.errors.push("open-verify-link: skipped, no throwaway user recorded");
         return;
       }
-      const mails = await helpers.waitForMail(state.mailCountBefore ?? 0);
-      const outcomes = {};
-      for (const [side, baseUrl] of [["legacy", options.legacyUrl], ["yoram", yoramBaseUrl]]) {
+      const previousCount = state.mailCountBefore ?? 0;
+      const deadline = Date.now() + 30_000;
+      let mails = [];
+      const findLink = (baseUrl) => {
         const expectedPort = new URL(baseUrl).port || "80";
-        const link = mails
+        return mails
           .flatMap((raw) => helpers.extractMailLinks(raw, "/verify"))
           .find((candidate) => {
             const url = new URL(candidate);
-            return (url.port || "80") === expectedPort && url.pathname.includes(`/${loginId}/`);
+            return (url.port || "80") === expectedPort && url.pathname.startsWith(`/verify/${loginId}/`);
           });
+      };
+      while (Date.now() <= deadline) {
+        const allMails = helpers.readMails();
+        mails = allMails.slice(0, Math.max(0, allMails.length - previousCount));
+        if (findLink(options.legacyUrl) && findLink(yoramBaseUrl)) break;
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+      const outcomes = {};
+      state.verifyLinks = {};
+      for (const [side, baseUrl] of [["legacy", options.legacyUrl], ["yoram", yoramBaseUrl]]) {
+        const link = findLink(baseUrl);
         if (!link) {
           entry.errors.push(`open-verify-link: no ${side} verify mail captured for ${loginId}`);
           continue;
         }
         const url = new URL(link);
-        const result = await helpers.sendRaw(ctx, side, { method: "GET", path: `${url.pathname}${url.search}` });
+        state.verifyLinks[side] = `${url.pathname}${url.search}`;
+        claimBehavior(entry, "B-0192");
+        const result = await helpers.sendRaw(ctx, side, { method: "GET", path: state.verifyLinks[side] });
         outcomes[side] = result.status;
+        if (result.status >= 400) {
+          entry.errors.push(`open-verify-link: ${side} GET ${state.verifyLinks[side]} returned HTTP ${result.status}`);
+        }
+        if (side === "yoram" && result.status < 400) {
+          const verificationCode = decodeURIComponent(url.pathname.split("/").pop() ?? "");
+          const verifyApi = await helpers.sendRaw(ctx, "yoram", {
+            method: "POST",
+            path: "/api/v1/auth/verify",
+            json: { loginId, verificationCode },
+          });
+          if (verifyApi.status >= 400) {
+            entry.errors.push(`open-verify-link: yoram REST verification returned HTTP ${verifyApi.status}`);
+          }
+        }
       }
-      if (outcomes.legacy !== undefined && outcomes.yoram !== undefined && (outcomes.legacy >= 400) !== (outcomes.yoram >= 400)) {
-        entry.violations.push(violation({ route: "/verify/:loginId/:code", behaviorId: entry.behaviorIds[0] ?? null, kind: "api", expected: { status: outcomes.legacy }, actual: { status: outcomes.yoram } }));
+      if (outcomes.legacy !== undefined && outcomes.yoram !== undefined && (
+        (outcomes.legacy >= 400) !== (outcomes.yoram >= 400)
+        || outcomes.legacy !== outcomes.yoram
+      )) {
+        entry.violations.push(violation({
+          route: "/verify/:loginId/:verificationCode",
+          behaviorId: "B-0192",
+          kind: "api",
+          expected: { status: outcomes.legacy, path: state.verifyLinks.legacy },
+          actual: { status: outcomes.yoram, path: state.verifyLinks.yoram },
+        }));
       }
     },
   },
@@ -1657,6 +1795,112 @@ Object.assign(actionDefinitions, {
       }
       if (outcomes.legacy !== undefined && outcomes.yoram !== undefined && ((outcomes.legacy >= 400) !== (outcomes.yoram >= 400) || (outcomes.legacy >= 400 && outcomes.yoram >= 400 && outcomes.legacy !== outcomes.yoram))) {
         entry.violations.push(violation({ route: "/resetPassword", behaviorId: entry.behaviorIds[0] ?? null, kind: "api", expected: { status: outcomes.legacy }, actual: { status: outcomes.yoram } }));
+      }
+    },
+  },
+  "set-user-avatar-from-attachment": {
+    translateLegacy(step, resolved = {}) {
+      return {
+        method: "POST",
+        path: "/sites/setAttachmentToUserAvatar",
+        json: {
+          avatarFileId: Number(resolved.avatarFileId ?? step.params.avatarFileId ?? 1),
+          email: resolved.email ?? step.params.email ?? MAIN_EMAIL,
+        },
+      };
+    },
+    translateYoram(step, resolved = {}) {
+      return {
+        method: "POST",
+        path: "/api/v1/site/users/avatar-from-attachment",
+        json: {
+          avatarFileId: Number(resolved.avatarFileId ?? step.params.avatarFileId ?? 1),
+          email: resolved.email ?? step.params.email ?? MAIN_EMAIL,
+        },
+      };
+    },
+    async handler(ctx) {
+      const { entry, state, step, suffix, helpers } = ctx;
+      const email = step.params.email ?? MAIN_EMAIL;
+      const sides = ["legacy", "yoram"];
+      dropBehaviorClaim(entry, "B-0289");
+      state.avatarOriginal = {};
+      state.avatarAttachment = {};
+      state.avatarSet = {};
+
+      for (const side of sides) {
+        try {
+          state.avatarOriginal[side] = await readCurrentAvatar(ctx, side, "admin");
+          if (state.avatarOriginal[side].status >= 400) {
+            entry.errors.push(`set-user-avatar: ${side} current-avatar capture returned HTTP ${state.avatarOriginal[side].status}`);
+          }
+        } catch (error) {
+          state.avatarOriginal[side] = { id: null, url: "", status: 0 };
+          entry.errors.push(`set-user-avatar: ${side} current-avatar capture failed: ${error.message}`);
+        }
+      }
+
+      for (const side of sides) {
+        const result = await helpers.sendRaw(ctx, side, {
+          method: "POST",
+          path: "/files",
+          multipart: avatarUploadMultipart(suffix),
+        });
+        const attachmentId = attachmentIdFromResult(result);
+        state.avatarAttachment[side] = attachmentId;
+        if (result.status >= 400 || !attachmentId) {
+          entry.errors.push(
+            `set-user-avatar: ${side} valid PNG upload refused (HTTP ${result.status}, id=${attachmentId ?? "none"}, body=${String(result.body ?? "").slice(0, 160)})`,
+          );
+        }
+      }
+
+      for (const side of sides) {
+        const attachmentId = state.avatarAttachment[side];
+        if (!attachmentId) continue;
+        const translation = side === "legacy"
+          ? this.translateLegacy(step, { avatarFileId: attachmentId, email })
+          : this.translateYoram(step, { avatarFileId: attachmentId, email });
+        claimBehavior(entry, "B-0289");
+        const result = await helpers.sendRaw(ctx, side, translation);
+        state.avatarSet[side] = result;
+        if (result.status >= 400) {
+          entry.errors.push(
+            `set-user-avatar: ${side} exact avatar route refused valid PNG attachment ${attachmentId} (HTTP ${result.status}, body=${String(result.body ?? "").slice(0, 160)})`,
+          );
+        }
+      }
+
+      for (const side of sides) {
+        const attachmentId = state.avatarAttachment[side];
+        if (!attachmentId) continue;
+        const originalId = state.avatarOriginal[side]?.id;
+        if (originalId && state.avatarSet[side]?.status < 400) {
+          const translation = side === "legacy"
+            ? this.translateLegacy(step, { avatarFileId: originalId, email })
+            : this.translateYoram(step, { avatarFileId: originalId, email });
+          const restored = await helpers.sendRaw(ctx, side, translation);
+          if (restored.status >= 400) {
+            entry.errors.push(`set-user-avatar: ${side} captured avatar ${originalId} could not be restored (HTTP ${restored.status})`);
+          }
+        }
+        const deleted = await helpers.sendRaw(ctx, side, {
+          method: "POST",
+          path: `/files/${attachmentId}`,
+          multipart: attachmentDeleteMultipart(),
+        });
+        if (deleted.status >= 400) {
+          entry.errors.push(`set-user-avatar: ${side} temporary attachment ${attachmentId} cleanup returned HTTP ${deleted.status}`);
+        }
+        try {
+          const restoredAvatar = await readCurrentAvatar(ctx, side, "admin");
+          const expectedId = originalId ?? null;
+          if (restoredAvatar.id !== expectedId) {
+            entry.errors.push(`set-user-avatar: ${side} avatar restore mismatch (expected=${expectedId ?? "gravatar"}, actual=${restoredAvatar.id ?? "gravatar"})`);
+          }
+        } catch (error) {
+          entry.errors.push(`set-user-avatar: ${side} avatar restore verification failed: ${error.message}`);
+        }
       }
     },
   },

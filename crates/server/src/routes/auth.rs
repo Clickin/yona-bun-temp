@@ -819,6 +819,7 @@ pub(crate) async fn auth_verify_user(
     ))
 }
 
+
 pub(crate) async fn direct_request_reset_password_email(
     headers: HeaderMap,
     form: HashMap<String, String>,
