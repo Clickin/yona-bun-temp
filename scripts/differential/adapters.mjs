@@ -48,7 +48,10 @@ export class LegacySession {
   async request(translation) {
     const headers = { cookie: this.cookies };
     let body;
-    if (translation.form) {
+    if (translation.json) {
+      headers["content-type"] = "application/json";
+      body = JSON.stringify(translation.json);
+    } else if (translation.form) {
       // ponytail: legacy Play handlers read issue/comment bodies via
       // asMultipartFormData() (urlencoded NPEs in IssueApp.newIssue), so all
       // form POSTs are multipart; switch per-endpoint only if one rejects it.
@@ -97,7 +100,11 @@ export class YoramSession {
   async request(translation) {
     const headers = { cookie: this.cookies };
     let body;
-    if (translation.json) {
+    if (translation.form) {
+      headers["content-type"] = "application/x-www-form-urlencoded";
+      if (this.csrfToken) headers["x-csrf-token"] = this.csrfToken;
+      body = new URLSearchParams(Object.entries(translation.form).map(([key, value]) => [key, String(value)])).toString();
+    } else if (translation.json) {
       headers["content-type"] = "application/json";
       if (this.csrfToken) headers["x-csrf-token"] = this.csrfToken;
       body = JSON.stringify(translation.json);

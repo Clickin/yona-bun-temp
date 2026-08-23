@@ -40,7 +40,7 @@ test("every referenced action exists in ACTION_DEFINITIONS after merge", () => {
 
 test("translators produce expected method/path literals", () => {
   const step = (action, params) => ({ action, params });
-  const cases = [
+  const domCases = [
     ["list-pullrequests", { owner: "admin", project: "sample" }, "/admin/sample/pullRequests"],
     ["list-closed-pullrequests", { owner: "admin", project: "sample" }, "/admin/sample/closedPullRequests"],
     ["list-sent-pullrequests", { owner: "admin", project: "sample" }, "/admin/sample/sentPullRequests"],
@@ -62,8 +62,15 @@ test("translators produce expected method/path literals", () => {
     ["browse-code-ajax-slash", { owner: "admin", project: "sample", branch: "main" }, "/admin/sample/code/main/!/"],
     ["browse-code-ajax-path", { owner: "admin", project: "sample", branch: "main", path: "app.js" }, "/admin/sample/code/main/!/app.js"],
     ["list-branches", { owner: "admin", project: "sample" }, "/admin/sample/branches"],
+    // R10–R12 read extensions
+    ["code-compare", { owner: "admin", project: "sample", revA: "main", revB: "feature/ui" }, "/admin/sample/compare/main..feature/ui"],
+    ["view-newfork-page", { owner: "admin", project: "sample" }, "/admin/sample/newFork"],
+    ["list-reviews", { owner: "admin", project: "sample" }, "/admin/sample/reviews"],
+    ["browse-code-ajax-nobranch", { owner: "admin", project: "sample" }, "/admin/sample/code/!"],
+    ["browse-code-ajax-nobranch-slash", { owner: "admin", project: "sample" }, "/admin/sample/code/!/"],
+    ["browse-code-ajax-nobranch-path", { owner: "admin", project: "sample", path: "app.js" }, "/admin/sample/code/!/app.js"],
   ];
-  for (const [action, params, expectedPath] of cases) {
+  for (const [action, params, expectedPath] of domCases) {
     const legacy = MERGED_DEFINITIONS[action].translateLegacy(step(action, params), {});
     assert.deepEqual(legacy, { method: "GET", path: expectedPath }, `${action} legacy translation`);
     const yoram = MERGED_DEFINITIONS[action].translateYoram(step(action, params), {});
@@ -71,6 +78,98 @@ test("translators produce expected method/path literals", () => {
     assert.equal(yoram.path, expectedPath, `${action} yoram path (SPA shell serves legacy route)`);
     assert.equal(yoram.pagePath, expectedPath, `${action} yoram pagePath`);
   }
+
+  // Raw rev-path actions: paired GET without a comparable page target.
+  const rawCases = [
+    ["view-code-file", { owner: "admin", project: "sample", rev: "main", path: "README.md" }, "/admin/sample/files/main/README.md"],
+    ["fetch-raw-file", { owner: "admin", project: "sample", rev: "main", path: "README.md" }, "/admin/sample/rawcode/main/README.md"],
+    ["fetch-image-file", { owner: "admin", project: "sample", rev: "main", path: "README.md" }, "/admin/sample/image/main/README.md"],
+    ["download-code-archive", { owner: "admin", project: "sample", branch: "main" }, "/admin/sample/code/main/download"],
+    ["list-project-files", { owner: "admin", project: "sample" }, "/admin/sample/files"],
+  ];
+  for (const [action, params, expectedPath] of rawCases) {
+    const legacy = MERGED_DEFINITIONS[action].translateLegacy(step(action, params), {});
+    assert.deepEqual(legacy, { method: "GET", path: expectedPath }, `${action} legacy translation`);
+    const yoram = MERGED_DEFINITIONS[action].translateYoram(step(action, params), {});
+    assert.deepEqual(yoram, { method: "GET", path: expectedPath }, `${action} yoram translation`);
+  }
+});
+
+test("mutation translators produce expected method/path/body shapes", () => {
+  const step = (action, params) => ({ action, params });
+  const def = (action) => MERGED_DEFINITIONS[action];
+  const base = { owner: "admin", project: "sample" };
+
+  const createLegacy = def("create-pullrequest").translateLegacy(step("create-pullrequest", base), {
+    title: "T", body: "B", fromProjectId: "1", fromBranch: "main", toProjectId: "1", toBranch: "feature/ui",
+  });
+  assert.equal(createLegacy.method, "POST");
+  assert.equal(createLegacy.path, "/admin/sample/pullRequests");
+  assert.deepEqual(createLegacy.form, {
+    title: "T", body: "B", fromProjectId: "1", fromBranch: "main", toProjectId: "1", toBranch: "feature/ui",
+  });
+  const createYoram = def("create-pullrequest").translateYoram(step("create-pullrequest", base), {
+    title: "T", body: "B", fromProjectId: "2", fromBranch: "main", toProjectId: "2", toBranch: "feature/ui",
+  });
+  assert.equal(createYoram.path, "/api/v1/owners/admin/projects/sample/pull-requests");
+  assert.deepEqual(createYoram.json, {
+    title: "T", bodyMarkdown: "B", fromProjectId: 2, fromBranch: "main", toProjectId: 2, toBranch: "feature/ui", attachmentIds: [],
+  });
+
+  assert.equal(
+    def("edit-pullrequest").translateLegacy(step("edit-pullrequest", base), { prId: 5 }).path,
+    "/admin/sample/pullRequest/5/edit",
+  );
+  assert.equal(
+    def("edit-pullrequest").translateYoram(step("edit-pullrequest", base), { prId: 5 }).method,
+    "PATCH",
+  );
+  assert.equal(
+    def("comment-pullrequest").translateLegacy(step("comment-pullrequest", base), { prId: 5 }).path,
+    "/admin/sample/pullRequest/5/comments",
+  );
+  assert.equal(
+    def("comment-pullrequest").translateYoram(step("comment-pullrequest", base), { prId: 5 }).path,
+    "/api/v1/owners/admin/projects/sample/pull-requests/5/comments",
+  );
+  for (const [action, tail] of [["close-pullrequest", "close"], ["open-pullrequest", "open"], ["accept-pullrequest", "accept"]]) {
+    assert.equal(
+      def(action).translateLegacy(step(action, base), { prId: 7 }).path,
+      `/admin/sample/pullRequest/7/${tail}`,
+    );
+    assert.equal(
+      def(action).translateYoram(step(action, base), { prId: 7 }).path,
+      `/api/v1/owners/admin/projects/sample/pull-requests/7/${tail}`,
+    );
+  }
+  for (const action of ["review-pullrequest", "unreview-pullrequest"]) {
+    const tail = action === "review-pullrequest" ? "review" : "unreview";
+    assert.equal(def(action).translateLegacy(step(action, { ...base, prId: 1 }), {}).path, `/admin/sample/pullRequest/1/${tail}`);
+    assert.equal(def(action).translateYoram(step(action, { ...base, prId: 1 }), {}).path, `/api/v1/owners/admin/projects/sample/pull-requests/1/${tail}`);
+  }
+  assert.equal(
+    def("comment-commit").translateLegacy(step("comment-commit", base), { commitId: "HEAD" }).path,
+    "/admin/sample/commit/HEAD/comments",
+  );
+  assert.equal(
+    def("comment-commit").translateYoram(step("comment-commit", base), { commitId: "HEAD" }).path,
+    "/api/v1/projects/admin/sample/commit/HEAD/comments",
+  );
+  assert.equal(
+    def("delete-commit-comment").translateLegacy(step("delete-commit-comment", base), { commitId: "HEAD", commentId: 9 }).method,
+    "DELETE",
+  );
+  assert.equal(
+    def("delete-commit-comment").translateYoram(step("delete-commit-comment", base), { commitId: "HEAD", commentId: 9 }).path,
+    "/api/v1/projects/admin/sample/commit/HEAD/comments/9",
+  );
+  assert.equal(
+    def("set-default-branch").translateLegacy(step("set-default-branch", { ...base, branch: "feature/ui" }), {}).path,
+    "/admin/sample/code/feature%2Fui/setAsDefault",
+  );
+  const defaultBranchYoram = def("set-default-branch").translateYoram(step("set-default-branch", { ...base, branch: "feature/ui" }), {});
+  assert.equal(defaultBranchYoram.path, "/api/v1/projects/admin/sample/branches/default");
+  assert.deepEqual(defaultBranchYoram.json, { branchName: "feature/ui" });
 });
 
 test("matchBehaviors returns non-empty B-id lists for every scenario", () => {
@@ -80,18 +179,53 @@ test("matchBehaviors returns non-empty B-id lists for every scenario", () => {
   }
 });
 
-test("distinct covered B-id count meets target (>= 20)", () => {
-  const all = new Set(scenarios.flatMap((scenario) => matchBehaviors(scenario, inventory)));
-  assert.ok(all.size >= 20, `distinct B-id coverage ${all.size} < 20: ${[...all].join(", ")}`);
+test("new scenarios match their targeted behavior sets exactly", () => {
+  const expected = {
+    "R10-compare-and-file-views": ["B-0068", "B-0076", "B-0078", "B-0080", "B-0107"],
+    "R11-code-ajax-nobranch": ["B-0069", "B-0070", "B-0071"],
+    "R12-newfork-reviews-attachments": ["B-0048", "B-0108", "B-0109", "B-0120"],
+    "R13-pr-lifecycle-mutation": ["B-0227", "B-0228", "B-0229", "B-0230", "B-0232", "B-0233"],
+    "R14-commit-comment-lifecycle": ["B-0003", "B-0238"],
+    "R15-branch-default-toggle": ["B-0237"],
+    "R16-pr-review-points": ["B-0265", "B-0266"],
+  };
+  for (const [id, ids] of Object.entries(expected)) {
+    const scenario = scenarios.find((entry) => entry.id === id);
+    assert.ok(scenario, `${id} exists`);
+    assert.deepEqual(matchBehaviors(scenario, inventory).sort(), [...ids].sort(), `${id} behavior set`);
+  }
 });
 
-test("all scenarios are read-only GET actions (no mutations)", () => {
+test("distinct NEW B-id coverage vs pre-wave R1-R9 registry >= 22", () => {
+  // Fixed in-domain baseline (R1-R9 matcher set) instead of the moving
+  // .agent/differential/behavior-coverage.json artifact, which now includes
+  // this wave's own scenarios after every sweep.
+  const preWave = new Set(
+    scenarios
+      .filter((scenario) => /^R[1-9]-/.test(scenario.id))
+      .flatMap((scenario) => matchBehaviors(scenario, inventory)),
+  );
+  const all = new Set(scenarios.flatMap((scenario) => matchBehaviors(scenario, inventory)));
+  const fresh = [...all].filter((id) => !preWave.has(id));
+  assert.ok(fresh.length >= 22, `NEW distinct B-id coverage ${fresh.length} < 22: ${fresh.join(", ")}`);
+});
+test("R1–R12 scenarios stay read-only GET; R13–R16 carry the mutations", () => {
+  const MUTATIONS = new Set([
+    "create-pullrequest", "edit-pullrequest", "comment-pullrequest", "close-pullrequest",
+    "open-pullrequest", "accept-pullrequest", "review-pullrequest", "unreview-pullrequest",
+    "comment-commit", "delete-commit-comment", "set-default-branch",
+  ]);
   for (const scenario of scenarios) {
+    const isMutationScenario = /^R1[3-6]-/.test(scenario.id);
     for (const stepAction of scenario.actions.map((a) => a.action)) {
       if (stepAction === "login") continue;
-      const def = MERGED_DEFINITIONS[stepAction];
-      const probe = { action: stepAction, params: { owner: "o", project: "p", prId: 1, commitId: "c", branch: "b", path: "x" } };
-      assert.equal(def.translateLegacy(probe, {}).method, "GET", `${stepAction} must be GET`);
+      const probe = { action: stepAction, params: { owner: "o", project: "p", prId: 1, commitId: "c", branch: "b", path: "x", rev: "r", revA: "a", revB: "b" } };
+      const method = MERGED_DEFINITIONS[stepAction].translateLegacy(probe, { prId: 1, commitId: "c", commentId: 2 }).method;
+      if (!isMutationScenario) {
+        assert.equal(method, "GET", `${scenario.id}: ${stepAction} must be GET`);
+      } else if (MUTATIONS.has(stepAction)) {
+        assert.notEqual(method, "GET", `${scenario.id}: ${stepAction} must mutate`);
+      }
     }
   }
 });

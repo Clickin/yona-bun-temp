@@ -35,16 +35,43 @@ const CLASSIFICATION_RULES = [
   },
   {
     test: ({ kind, route, detail }) =>
+      kind === "api" &&
+      (/\/null(\/|\?|$)/u.test(route) ||
+        /unresolved|id discovery|no sweep-suffixed|nothing matched/u.test(JSON.stringify(detail))) ,
+    classification: "infra",
+    reason:
+      "harness id-resolution failure: one side did not yield the created-entity id, so the pair was not comparable; fix the discovery step rather than treating this as a product gap",
+  },
+  {
+    test: ({ kind, route }) => kind === "api" && /\/sites\/(toggle|unwatchUpdate)/u.test(route),
+    classification: "known-gap",
+    reason:
+      "site-admin mutation routes diverge (yoram site_admin catch-all vs legacy dedicated handlers); site-admin surface is deferred scope",
+  },
+  {
+    test: ({ kind, detail }) =>
+      kind === "api" && /"status":401|"legacyStatus":401/u.test(JSON.stringify(detail)),
+    classification: "known-gap",
+    reason:
+      "legacy -_-api/v1 compat mutations are Authorization-token gated (UserApi.java isAuthored) while yoram accepts cookie sessions; documented adapter divergence",
+  },
+  {
+    test: ({ kind, route, detail }) =>
       kind === "api" && /(sharableUsers|findSharer)/u.test(route) && JSON.stringify(detail.actual) === "[]",
     classification: "known-gap",
     reason: "gap: yoram REST returns an empty sharer list for sharableUsers/findSharer; sharer management is deferred scope",
+  },
+  {
+    test: ({ kind, route, detail }) => kind === "api" && /\/markdown\//u.test(route) && /"status":404|"yoramStatus":404/u.test(JSON.stringify(detail)),
+    classification: "known-gap",
+    reason: "gap: yoram has no POST /markdown/:user/:project render endpoint; markdown preview parity deferred",
   },
   {
     test: ({ kind }) => kind === "dom",
     classification: "known-gap",
     reason:
       "SPA-shell skeleton drift: legacy SSR HTML vs yoram React render differ structurally; user-visible DOM/visual parity is enforced by the WTR e2e lanes, not the sweep",
-  },
+   },
 ];
 
 export function classifyViolation(kind, route, detail) {

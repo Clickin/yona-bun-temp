@@ -97,6 +97,92 @@ export const scenarios = [
     ],
     behaviorMatcher: { action: /^BranchApp\.branches$/, route: /branches$/ },
   },
+  // --- read-only extensions (R10–R12) ---
+  {
+    id: "R10-compare-and-file-views",
+    title: "code compare range and per-rev file views (open/raw/image/download)",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "code-compare", params: { owner: "admin", project: "sample", revA: "main", revB: "feature/ui" } },
+      { actor: "admin", action: "view-code-file", params: { owner: "admin", project: "sample", rev: "main", path: "README.md" } },
+      { actor: "admin", action: "fetch-raw-file", params: { owner: "admin", project: "sample", rev: "main", path: "README.md" } },
+      { actor: "admin", action: "fetch-image-file", params: { owner: "admin", project: "sample", rev: "main", path: "README.md" } },
+      { actor: "admin", action: "download-code-archive", params: { owner: "admin", project: "sample", branch: "main" } },
+    ],
+    behaviorMatcher: { action: /^(CompareApp\.compare|CodeApp\.(openFile|showRawFile|showImageFile|download))$/, route: /(compare|files|rawcode|image|download)/ },
+  },
+  {
+    id: "R11-code-ajax-nobranch",
+    title: "code browser ajax fragments without explicit branch",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "browse-code-ajax-nobranch", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "browse-code-ajax-nobranch-slash", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "browse-code-ajax-nobranch-path", params: { owner: "admin", project: "sample", path: "README.md" } },
+    ],
+    behaviorMatcher: { action: /^CodeApp\.ajaxRequest$/, route: /code\/!/ },
+  },
+  {
+    id: "R12-newfork-reviews-attachments",
+    title: "newFork page, review thread list, project attachment list",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "view-newfork-page", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "list-reviews", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "list-project-files", params: { owner: "admin", project: "sample" } },
+    ],
+    behaviorMatcher: { action: /^(PullRequestApp\.newFork|ReviewThreadApp\.reviewThreads|AttachmentApp\.getFileList)$/, route: /(newFork|reviews|files)$/ },
+  },
+
+  // --- mutation coverage (R13–R16): divergence-pattern proof wave. Every
+  // mutation is error-tolerant: a one-sided >=400 or semantic mismatch pushes
+  // an api violation and later steps degrade gracefully into entry.errors.
+  {
+    id: "R13-pr-lifecycle-mutation",
+    title: "create/edit/comment/close/open/accept a pull request, then close it",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "create-pullrequest", params: { owner: "admin", project: "sample", fromBranch: "main", toBranch: "feature/ui" } },
+      { actor: "admin", action: "edit-pullrequest", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "comment-pullrequest", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "close-pullrequest", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "open-pullrequest", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "accept-pullrequest", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "close-pullrequest", params: { owner: "admin", project: "sample" } },
+    ],
+    behaviorMatcher: { action: /^PullRequestApp\.(newPullRequest|editPullRequest|newComment|close|open|accept)$/, route: /pullRequest/ },
+  },
+  {
+    id: "R14-commit-comment-lifecycle",
+    title: "post a commit comment and delete it again",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "comment-commit", params: { owner: "admin", project: "sample", commitId: "HEAD" } },
+      { actor: "admin", action: "delete-commit-comment", params: { owner: "admin", project: "sample", commitId: "HEAD" } },
+    ],
+    behaviorMatcher: { action: /^CodeHistoryApp\.(newComment|deleteComment)$/, route: /commit/ },
+  },
+  {
+    id: "R15-branch-default-toggle",
+    title: "toggle default branch to feature/ui and back to main",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "set-default-branch", params: { owner: "admin", project: "sample", branch: "feature/ui" } },
+      { actor: "admin", action: "list-branches", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "set-default-branch", params: { owner: "admin", project: "sample", branch: "main" } },
+    ],
+    behaviorMatcher: { action: /^BranchApp\.setAsDefault$/, route: /setAsDefault/ },
+  },
+  {
+    id: "R16-pr-review-points",
+    title: "add and remove a review point on the seeded pull request",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "review-pullrequest", params: { owner: "admin", project: "sample", prId: 1 } },
+      { actor: "admin", action: "unreview-pullrequest", params: { owner: "admin", project: "sample", prId: 1 } },
+    ],
+    behaviorMatcher: { action: /^ReviewApp\.(un)?review$/, route: /review$/ },
+  },
 ];
 
 // Shared read handler: translate both sides, request both (>=400 lands in
@@ -144,6 +230,17 @@ function legacyPath(step) {
     case "browse-code-ajax-slash": return `${base}/code/${p.branch}/!/`;
     case "browse-code-ajax-path": return `${base}/code/${p.branch}/!/${p.path}`;
     case "list-branches": return `${base}/branches`;
+    case "code-compare": return `${base}/compare/${p.revA}..${p.revB}`;
+    case "view-code-file": return `${base}/files/${p.rev}/${p.path}`;
+    case "fetch-raw-file": return `${base}/rawcode/${p.rev}/${p.path}`;
+    case "fetch-image-file": return `${base}/image/${p.rev}/${p.path}`;
+    case "download-code-archive": return `${base}/code/${p.branch}/download`;
+    case "browse-code-ajax-nobranch": return `${base}/code/!`;
+    case "browse-code-ajax-nobranch-slash": return `${base}/code/!/`;
+    case "browse-code-ajax-nobranch-path": return `${base}/code/!/${p.path}`;
+    case "view-newfork-page": return `${base}/newFork`;
+    case "list-reviews": return `${base}/reviews`;
+    case "list-project-files": return `${base}/files`;
     default: throw new Error(`unmapped action path: ${step.action}`);
   }
 }
@@ -185,6 +282,454 @@ const READ_ACTIONS = [
   "browse-code-ajax-slash",
   "browse-code-ajax-path",
   "list-branches",
+  // R10–R12 read extensions
+  "code-compare",
+  "view-newfork-page",
+  "list-reviews",
+  "browse-code-ajax-nobranch",
+  "browse-code-ajax-nobranch-slash",
+  "browse-code-ajax-nobranch-path",
 ];
 
-export const actionDefinitions = Object.fromEntries(READ_ACTIONS.map((name) => [name, readGet()]));
+// Raw rev-path actions (rawcode/image/download, per-rev file view, project
+// attachment list): responses are bytes or fragments rather than comparable
+// pages, so they stop after the paired request — status failures land in
+// entry.errors via requestBoth.
+const rawGet = () => ({
+  translateLegacy(step) {
+    return { method: "GET", path: legacyPath(step) };
+  },
+  translateYoram(step) {
+    return { method: "GET", path: legacyPath(step) };
+  },
+  async handler(ctx) {
+    const { step, resolved } = ctx;
+    await ctx.helpers.requestBoth(ctx, translateLegacy(step, resolved), translateYoram(step, resolved));
+  },
+});
+
+const RAW_ACTIONS = [
+  "view-code-file",
+  "fetch-raw-file",
+  "fetch-image-file",
+  "download-code-archive",
+  "list-project-files",
+];
+
+// --- mutation definitions (R13–R16) -----------------------------------------
+
+import { violation } from "../report.mjs";
+import { normalizeApiValue } from "../diff.mjs";
+
+function prSuffixTitle(ctx, mark = "") {
+  return `Differential sweep PR ${ctx.suffix}${mark}`;
+}
+
+// One-sided failure is the divergence signal for a mutation pair; both-side
+// failures are environment/seed issues and stay in entry.errors only.
+function ensureOutcomeParity(ctx, route, legacyResult, yoramResult) {
+  const legacyFailed = legacyResult.status >= 400;
+  const yoramFailed = yoramResult.status >= 400;
+  if (legacyFailed !== yoramFailed) {
+    ctx.entry.violations.push(
+      violation({
+        route,
+        behaviorId: ctx.entry.behaviorIds[0] ?? null,
+        kind: "api",
+        expected: { status: legacyResult.status },
+        actual: { status: yoramResult.status },
+      }),
+    );
+    return false;
+  }
+  return !legacyFailed && !yoramFailed;
+}
+
+function requireCreatedPullRequest(ctx) {
+  const { state, entry, suffix } = ctx;
+  if (!state.prNumberLegacy || !state.prNumberYoram) {
+    entry.errors.push(`${ctx.step.action} skipped [${suffix}]: no pull request created earlier in this scenario`);
+    return false;
+  }
+  return true;
+}
+
+async function resolveProjectIds(ctx) {
+  const { step, state, entry, suffix, legacySession, yoramSession } = ctx;
+  if (state.projectIdLegacy && state.projectIdYoram) return true;
+  const { owner, project } = step.params;
+  const formPage = await legacySession.request({
+    method: "GET",
+    path: `/${owner}/${project}/newPullRequestForm`,
+  });
+  const optionMatch =
+    formPage.status < 400
+      ? new RegExp(`<option value="(\\d+)"[^>]*>\\s*${owner}\\s*/\\s*${project}`).exec(formPage.body ?? "")
+      : null;
+  if (optionMatch) state.projectIdLegacy = optionMatch[1];
+  const options = await yoramSession.request({
+    method: "GET",
+    path: `/api/v1/owners/${owner}/projects/${project}/pull-requests/form-options`,
+  });
+  const yoramOption = (options.json?.toProjects ?? options.json?.to_projects ?? []).find(
+    (option) => option.projectName === project || option.project_name === project,
+  );
+  if (yoramOption) state.projectIdYoram = String(yoramOption.id);
+  if (!state.projectIdLegacy || !state.projectIdYoram) {
+    entry.errors.push(
+      `project id unresolved [${suffix}]: legacy=${state.projectIdLegacy ?? "none"} yoram=${state.projectIdYoram ?? "none"}`,
+    );
+    return false;
+  }
+  return true;
+}
+
+function firstCommitCommentId(json) {
+  const queue = [json];
+  while (queue.length > 0) {
+    const node = queue.shift();
+    if (Array.isArray(node)) {
+      queue.push(...node);
+    } else if (node && typeof node === "object") {
+      if (Array.isArray(node.comments) && node.comments.length > 0 && Number(node.comments[0]?.id) > 0) {
+        return Number(node.comments[0].id);
+      }
+      queue.push(...Object.values(node));
+    }
+  }
+  return null;
+}
+
+const MUTATION_DEFINITIONS = {
+  "create-pullrequest": {
+    translateLegacy(step, resolved) {
+      return {
+        method: "POST",
+        path: `/${step.params.owner}/${step.params.project}/pullRequests`,
+        form: {
+          title: resolved.title,
+          body: resolved.body,
+          fromProjectId: resolved.fromProjectId,
+          fromBranch: resolved.fromBranch,
+          toProjectId: resolved.toProjectId,
+          toBranch: resolved.toBranch,
+        },
+      };
+    },
+    translateYoram(step, resolved) {
+      return {
+        method: "POST",
+        path: `/api/v1/owners/${step.params.owner}/projects/${step.params.project}/pull-requests`,
+        json: {
+          title: resolved.title,
+          bodyMarkdown: resolved.body,
+          fromProjectId: Number(resolved.fromProjectId),
+          fromBranch: resolved.fromBranch,
+          toProjectId: Number(resolved.toProjectId),
+          toBranch: resolved.toBranch,
+          attachmentIds: [],
+        },
+      };
+    },
+    async handler(ctx) {
+      const { step, state, entry, suffix, helpers } = ctx;
+      if (!(await resolveProjectIds(ctx))) return;
+      const shared = {
+        title: prSuffixTitle(ctx),
+        body: `Differential sweep PR body ${suffix}`,
+        fromBranch: step.params.fromBranch,
+        toBranch: step.params.toBranch,
+        fromProjectId: state.projectIdLegacy,
+        toProjectId: state.projectIdLegacy,
+      };
+      const legacyTranslation = translateLegacy(step, shared);
+      const yoramTranslation = translateYoram(step, {
+        ...shared,
+        fromProjectId: state.projectIdYoram,
+        toProjectId: state.projectIdYoram,
+      });
+      const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
+      state.prNumberLegacy = Number((/\/pullRequest\/(\d+)/u.exec(legacyResult.location ?? "") ?? [])[1]) || null;
+      state.prFromBranch = step.params.fromBranch;
+      state.prToBranch = step.params.toBranch;
+      const ok = ensureOutcomeParity(ctx, legacyTranslation.path, legacyResult, yoramResult);
+      if (ok && state.prNumberLegacy && state.prNumberYoram) {
+        const semantic = {
+          legacy: { title: shared.title },
+          yoram: { title: yoramResult.json?.title ?? null },
+        };
+        if (normalizeApiValue(semantic.legacy.title) !== normalizeApiValue(semantic.yoram.title)) {
+          entry.violations.push(
+            violation({ route: legacyTranslation.path, behaviorId: entry.behaviorIds[0] ?? null, kind: "api", expected: semantic.legacy, actual: semantic.yoram }),
+          );
+        }
+        await helpers.renderDomTarget(ctx, {
+          legacy: `${ctx.options.legacyUrl}/${step.params.owner}/${step.params.project}/pullRequest/${state.prNumberLegacy}`,
+          yoram: `${ctx.yoramBaseUrl}/${step.params.owner}/${step.params.project}/pullRequest/${state.prNumberYoram}`,
+          spa: true,
+        });
+      }
+    },
+  },
+
+  "edit-pullrequest": {
+    translateLegacy(step, resolved) {
+      return {
+        method: "POST",
+        path: `/${step.params.owner}/${step.params.project}/pullRequest/${resolved.prId}/edit`,
+        form: {
+          title: resolved.title,
+          body: resolved.body,
+          fromProjectId: resolved.fromProjectId,
+          fromBranch: resolved.fromBranch,
+          toProjectId: resolved.toProjectId,
+          toBranch: resolved.toBranch,
+        },
+      };
+    },
+    translateYoram(step, resolved) {
+      return {
+        method: "PATCH",
+        path: `/api/v1/owners/${step.params.owner}/projects/${step.params.project}/pull-requests/${resolved.prId}`,
+        json: { title: resolved.title, bodyMarkdown: resolved.body, attachmentIds: [] },
+      };
+    },
+    async handler(ctx) {
+      const { step, state, suffix, helpers } = ctx;
+      if (!requireCreatedPullRequest(ctx)) return;
+      const shared = {
+        title: prSuffixTitle(ctx, " (edited)"),
+        body: `Differential sweep PR body ${suffix} (edited)`,
+        fromBranch: state.prFromBranch,
+        toBranch: state.prToBranch,
+      };
+      const legacyTranslation = translateLegacy(step, {
+        ...shared,
+        prId: state.prNumberLegacy,
+        fromProjectId: state.projectIdLegacy,
+        toProjectId: state.projectIdLegacy,
+      });
+      const yoramTranslation = translateYoram(step, {
+        ...shared,
+        prId: state.prNumberYoram,
+      });
+      const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
+      ensureOutcomeParity(ctx, legacyTranslation.path, legacyResult, yoramResult);
+    },
+  },
+
+  "comment-pullrequest": {
+    translateLegacy(step, resolved) {
+      return {
+        method: "POST",
+        path: `/${step.params.owner}/${step.params.project}/pullRequest/${resolved.prId}/comments`,
+        form: { body: resolved.body },
+      };
+    },
+    translateYoram(step, resolved) {
+      return {
+        method: "POST",
+        path: `/api/v1/owners/${step.params.owner}/projects/${step.params.project}/pull-requests/${resolved.prId}/comments`,
+        json: { contentsMarkdown: resolved.body, attachmentIds: [] },
+      };
+    },
+    async handler(ctx) {
+      const { step, state, suffix, helpers } = ctx;
+      if (!requireCreatedPullRequest(ctx)) return;
+      const shared = { body: `Differential sweep PR comment ${suffix}` };
+      const legacyTranslation = translateLegacy(step, { ...shared, prId: state.prNumberLegacy });
+      const yoramTranslation = translateYoram(step, { ...shared, prId: state.prNumberYoram });
+      const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
+      ensureOutcomeParity(ctx, legacyTranslation.path, legacyResult, yoramResult);
+    },
+  },
+};
+
+// Simple state-toggle mutations on the scenario-created pull request; legacy
+// uses its direct form route while Yoram exposes the same operation via REST.
+function pullRequestStateMutation(name, yoramTail) {
+  return {
+    translateLegacy(step, resolved) {
+      return {
+        method: "POST",
+        path: `/${step.params.owner}/${step.params.project}/pullRequest/${resolved.prId}/${name}`,
+      };
+    },
+    translateYoram(step, resolved) {
+      return {
+        method: "POST",
+        path: `/api/v1/owners/${step.params.owner}/projects/${step.params.project}/pull-requests/${resolved.prId}${yoramTail}`,
+      };
+    },
+    async handler(ctx) {
+      const { step, state, helpers } = ctx;
+      if (!requireCreatedPullRequest(ctx)) return;
+      const legacyTranslation = translateLegacy(step, { ...step.params, prId: state.prNumberLegacy });
+      const yoramTranslation = translateYoram(step, { ...step.params, prId: state.prNumberYoram });
+      const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
+      ensureOutcomeParity(ctx, legacyTranslation.path, legacyResult, yoramResult);
+    },
+  };
+}
+
+const PR_STATE_MUTATIONS = {
+  "close-pullrequest": pullRequestStateMutation("close", "/close"),
+  "open-pullrequest": pullRequestStateMutation("open", "/open"),
+  "accept-pullrequest": pullRequestStateMutation("accept", "/accept"),
+};
+
+const REVIEW_MUTATIONS = {
+  // Targets the seeded pull request #1 (present on both sides); a review point
+  // is added and then removed again so the sweep leaves no reviewer residue.
+  "review-pullrequest": {
+    translateLegacy(step) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/pullRequest/${step.params.prId}/review` };
+    },
+    translateYoram(step) {
+      return { method: "POST", path: `/api/v1/owners/${step.params.owner}/projects/${step.params.project}/pull-requests/${step.params.prId}/review` };
+    },
+    async handler(ctx) {
+      const { step, helpers } = ctx;
+      const { legacyResult, yoramResult } = await helpers.requestBoth(
+        ctx,
+        translateLegacy(step, step.params),
+        translateYoram(step, step.params),
+      );
+      ensureOutcomeParity(ctx, `/${step.params.owner}/${step.params.project}/pullRequest/${step.params.prId}/review`, legacyResult, yoramResult);
+    },
+  },
+  "unreview-pullrequest": {
+    translateLegacy(step) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/pullRequest/${step.params.prId}/unreview` };
+    },
+    translateYoram(step) {
+      return { method: "POST", path: `/api/v1/owners/${step.params.owner}/projects/${step.params.project}/pull-requests/${step.params.prId}/unreview` };
+    },
+    async handler(ctx) {
+      const { step, helpers } = ctx;
+      const { legacyResult, yoramResult } = await helpers.requestBoth(
+        ctx,
+        translateLegacy(step, step.params),
+        translateYoram(step, step.params),
+      );
+      ensureOutcomeParity(ctx, `/${step.params.owner}/${step.params.project}/pullRequest/${step.params.prId}/unreview`, legacyResult, yoramResult);
+    },
+  },
+};
+
+const COMMIT_COMMENT_MUTATIONS = {
+  "comment-commit": {
+    translateLegacy(step, resolved) {
+      return {
+        method: "POST",
+        path: `/${step.params.owner}/${step.params.project}/commit/${resolved.commitId}/comments`,
+        form: { contents: resolved.body },
+      };
+    },
+    translateYoram(step, resolved) {
+      return {
+        method: "POST",
+        path: `/api/v1/projects/${step.params.owner}/${step.params.project}/commit/${resolved.commitId}/comments`,
+        json: { contentsMarkdown: resolved.body, attachmentIds: [] },
+      };
+    },
+    async handler(ctx) {
+      const { step, state, entry, suffix, helpers } = ctx;
+      const shared = {
+        commitId: step.params.commitId,
+        body: `Differential sweep commit comment ${suffix}`,
+      };
+      const legacyTranslation = translateLegacy(step, shared);
+      const yoramTranslation = translateYoram(step, shared);
+      const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
+      if (!ensureOutcomeParity(ctx, legacyTranslation.path, legacyResult, yoramResult)) return;
+      state.commitCommentIdLegacy =
+        Number((/#comment-(\d+)/u.exec(legacyResult.location ?? "") ?? [])[1]) || null;
+      if (!state.commitCommentIdLegacy && legacyResult.status < 400) {
+        const commitPage = await ctx.legacySession.request({
+          method: "GET",
+          path: `/${step.params.owner}/${step.params.project}/commit/${step.params.commitId}`,
+        });
+        state.commitCommentIdLegacy =
+          Number((/comments\/(\d+)\/delete/u.exec(commitPage.body ?? "") ?? [])[1]) || null;
+      }
+      state.commitCommentIdYoram = firstCommitCommentId(yoramResult.json);
+      if (!state.commitCommentIdLegacy || !state.commitCommentIdYoram) {
+        entry.errors.push(
+          `commit comment id unresolved [${suffix}]: legacy=${state.commitCommentIdLegacy ?? "none"} yoram=${state.commitCommentIdYoram ?? "none"}`,
+        );
+      }
+    },
+  },
+
+  "delete-commit-comment": {
+    translateLegacy(step, resolved) {
+      return {
+        method: "DELETE",
+        path: `/${step.params.owner}/${step.params.project}/commit/${resolved.commitId}/comments/${resolved.commentId}/delete`,
+      };
+    },
+    translateYoram(step, resolved) {
+      return {
+        method: "DELETE",
+        path: `/api/v1/projects/${step.params.owner}/${step.params.project}/commit/${resolved.commitId}/comments/${resolved.commentId}`,
+      };
+    },
+    async handler(ctx) {
+      const { step, state, entry, suffix, helpers } = ctx;
+      if (!state.commitCommentIdLegacy || !state.commitCommentIdYoram) {
+        entry.errors.push(`delete-commit-comment skipped [${suffix}]: no commit comment recorded earlier in this scenario`);
+        return;
+      }
+      const legacyTranslation = translateLegacy(step, {
+        ...step.params,
+        commentId: state.commitCommentIdLegacy,
+      });
+      const yoramTranslation = translateYoram(step, {
+        ...step.params,
+        commentId: state.commitCommentIdYoram,
+      });
+      const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
+      ensureOutcomeParity(ctx, legacyTranslation.path, legacyResult, yoramResult);
+      state.commitCommentIdLegacy = null;
+      state.commitCommentIdYoram = null;
+    },
+  },
+};
+
+const BRANCH_MUTATIONS = {
+  // Toggles the default branch and restores it within R15; Yoram exposes the
+  // same operation as a REST default-branch POST instead of the legacy direct
+  // form route. Legacy branch names are URL-encoded like the UI does.
+  "set-default-branch": {
+    translateLegacy(step) {
+      return {
+        method: "POST",
+        path: `/${step.params.owner}/${step.params.project}/code/${encodeURIComponent(step.params.branch)}/setAsDefault`,
+      };
+    },
+    translateYoram(step) {
+      return {
+        method: "POST",
+        path: `/api/v1/projects/${step.params.owner}/${step.params.project}/branches/default`,
+        json: { branchName: step.params.branch },
+      };
+    },
+    async handler(ctx) {
+      const { step, helpers } = ctx;
+      const { legacyResult, yoramResult } = await helpers.requestBoth(
+        ctx,
+        translateLegacy(step, step.params),
+        translateYoram(step, step.params),
+      );
+      ensureOutcomeParity(ctx, `/${step.params.owner}/${step.params.project}/code setAsDefault ${step.params.branch}`, legacyResult, yoramResult);
+    },
+  },
+};
+
+Object.assign(MUTATION_DEFINITIONS, PR_STATE_MUTATIONS, REVIEW_MUTATIONS, COMMIT_COMMENT_MUTATIONS, BRANCH_MUTATIONS);
+export const actionDefinitions = Object.assign(
+  Object.fromEntries(READ_ACTIONS.map((name) => [name, readGet()])),
+  Object.fromEntries(RAW_ACTIONS.map((name) => [name, rawGet()])),
+  MUTATION_DEFINITIONS,
+);

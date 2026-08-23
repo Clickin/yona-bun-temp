@@ -202,3 +202,25 @@ test("filterRowsByTag keeps only rows tagged for the current run", () => {
   // null/empty tag = unfiltered (labels stay whole).
   assert.equal(filterRowsByTag(rows, null).length, 3);
 });
+
+test("session adapters send json/form bodies without reference errors", async () => {
+  const originalFetch = globalThis.fetch;
+  const seen = [];
+  globalThis.fetch = async (_url, init) => {
+    seen.push({ contentType: init.headers["content-type"], body: init.body });
+    return { status: 200, headers: { getSetCookie: () => [], get: () => null }, text: async () => "" };
+  };
+  try {
+    const legacy = new LegacySession("http://legacy.test");
+    await legacy.request({ method: "POST", path: "/x", json: { a: 1 } });
+    await legacy.request({ method: "POST", path: "/y", form: { b: "2" } });
+    const yoram = new YoramSession("http://yoram.test");
+    await yoram.request({ method: "POST", path: "/z", form: { c: "3" } });
+    assert.equal(seen[0].contentType, "application/json");
+    assert.equal(seen[0].body, JSON.stringify({ a: 1 }));
+    assert.equal(seen[2].body, new URLSearchParams({ c: "3" }).toString());
+    assert.ok(seen.every((call) => call.body != null));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

@@ -90,6 +90,11 @@ test("matchBehaviors returns a non-empty B-id list for every issues scenario", (
 test("issues domain covers its target set of distinct B-ids", () => {
   const union = [...new Set(issuesScenarios.flatMap((scenario) => matchBehaviors(scenario, inventory)))].sort();
   assert.deepEqual(union, [
+    "B-0005",
+    "B-0006",
+    "B-0007",
+    "B-0014",
+    "B-0015",
     "B-0031",
     "B-0035",
     "B-0037",
@@ -108,10 +113,147 @@ test("issues domain covers its target set of distinct B-ids", () => {
     "B-0090",
     "B-0091",
     "B-0092",
+    "B-0124",
+    "B-0129",
+    "B-0130",
+    "B-0131",
     "B-0141",
     "B-0142",
     "B-0160",
+    "B-0171",
+    "B-0194",
+    "B-0195",
+    "B-0197",
+    "B-0201",
+    "B-0205",
+    "B-0206",
+    "B-0207",
+    "B-0208",
+    "B-0209",
+    "B-0210",
+    "B-0211",
+    "B-0212",
+    "B-0213",
+    "B-0214",
+    "B-0241",
+    "B-0242",
+    "B-0243",
+    "B-0244",
     "B-0245",
+    "B-0246",
+    "B-0247",
+    "B-0248",
+    "B-0249",
+    "B-0250",
+    "B-0251",
     "B-0252",
-  ]);
+    "B-0276",
+    "B-0297",
+    "B-0307",
+    "B-0308",
+    "B-0309",
+    "B-0311",
+    "B-0312",
+]);
+});
+// B-ids reachable before the mutation wave (read-only era union).
+const PRE_MUTATION_COVERAGE = [
+  "B-0031",
+  "B-0035",
+  "B-0037",
+  "B-0038",
+  "B-0039",
+  "B-0040",
+  "B-0081",
+  "B-0082",
+  "B-0083",
+  "B-0084",
+  "B-0085",
+  "B-0086",
+  "B-0087",
+  "B-0088",
+  "B-0089",
+  "B-0090",
+  "B-0091",
+  "B-0092",
+  "B-0141",
+  "B-0142",
+  "B-0160",
+  "B-0245",
+  "B-0252",
+];
+
+test("mutation scenarios add at least 40 new distinct B-ids over the read-only baseline", () => {
+  const union = new Set(issuesScenarios.flatMap((scenario) => matchBehaviors(scenario, inventory)));
+  const fresh = [...union].filter((id) => !PRE_MUTATION_COVERAGE.includes(id)).sort();
+  assert.ok(fresh.length >= 40, `expected >=40 new distinct B-ids, got ${fresh.length}: ${fresh.join(",")}`);
+});
+
+test("mutation actions translate to the legacy form route vs the Yoram REST route", () => {
+  const step = (action, params) => ({ actor: "admin", action, params });
+  const vars = { title: "t", body: "b", issueNumber: 7, commentId: 9, issuePk: 42, labelId: 5, categoryId: 6, labelName: "L", categoryName: "C" };
+
+  // edit-issue: legacy form POST edit route vs Yoram compat PUT issue.
+  assert.deepEqual(
+    translateLegacy(step("edit-issue", { owner: "admin", project: "sample" }), vars),
+    { method: "POST", path: "/admin/sample/issue/7/edit", form: { title: "t", body: "b", assigneeLoginId: "" } },
+  );
+  assert.deepEqual(
+    translateYoram(step("edit-issue", { owner: "admin", project: "sample" }), vars),
+    { method: "PUT", path: "/-_-api/v1/owners/admin/projects/sample/issues/7", json: { title: "t", body: "b" } },
+  );
+
+  // delete-issue: legacy direct DELETE route vs Yoram SPA REST DELETE.
+  assert.equal(translateLegacy(step("delete-issue", { owner: "admin", project: "sample" }), vars).path, "/admin/sample/issue/7/delete");
+  assert.equal(translateYoram(step("delete-issue", { owner: "admin", project: "sample" }), vars).path, "/api/v1/projects/admin/sample/issues/7");
+
+  // comment mutations chain the captured comment id on both sides.
+  assert.equal(
+    translateLegacy(step("edit-comment", { owner: "admin", project: "sample" }), vars).path,
+    "/admin/sample/issue/7/comments/9",
+  );
+  assert.equal(
+    translateYoram(step("delete-comment-compat", { owner: "admin", project: "sample" }), vars).path,
+    "/comments/issue/9",
+  );
+
+  // watch/favorite key on the resolved DB pk.
+  assert.equal(
+    translateLegacy(step("watch-issue", { owner: "admin", project: "sample" }), vars).path,
+    "/watch?resource.type=issue&resource.id=42",
+  );
+  assert.equal(
+    translateYoram(step("toggle-favorite-issue", { owner: "admin", project: "sample" }), vars).path,
+    "/-_-api/v1/favoriteIssues/42",
+  );
+
+  // label CRUD: legacy form routes on both sides, attach via compat API.
+  assert.deepEqual(
+    translateLegacy(step("create-issue-label", { owner: "admin", project: "sample" }), { labelName: "L", categoryName: "C" }),
+    { method: "POST", path: "/admin/sample/issue/labels", form: { labelName: "L", categoryName: "C", labelColor: "#123456" } },
+  );
+  assert.equal(
+    translateLegacy(step("attach-issue-labels", { owner: "admin", project: "sample" }), vars).path,
+    "/-_-api/v1/owners/admin/projects/sample/issuelabel/7",
+  );
+  assert.equal(
+    translateLegacy(step("delete-issue-label", { owner: "admin", project: "sample" }), vars).path,
+    "/admin/sample/issue/label/5/delete",
+  );
+  assert.equal(
+    translateYoram(step("delete-label-category", { owner: "admin", project: "sample" }), vars).method,
+    "DELETE",
+  );
+
+  // migration exports + markdown probe keep identical paths on both sides.
+  for (const [action, path] of [
+    ["migration-export-issues", "/migration/admin/projects/sample/issues"],
+    ["migration-export-labels", "/migration/admin/projects/sample/labels"],
+    ["migration-export-issuelabel-pairs", "/migration/admin/projects/sample/issuelabel"],
+    ["render-markdown", "/markdown/admin/sample"],
+  ]) {
+    assert.equal(translateLegacy(step(action, { owner: "admin", project: "sample" }), vars).path, path);
+    assert.equal(translateYoram(step(action, { owner: "admin", project: "sample" }), vars).path, path);
+  }
+  assert.deepEqual(translateLegacy(step("global-labels", {})), { method: "GET", path: "/labels" });
 });

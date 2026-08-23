@@ -549,3 +549,18 @@
 - 같은 Phase에 남은 `gap`은 phase 종료 blocker다.
 - phase를 종료하려면 해당 기능을 구현하거나, 이후 Phase/deferred로 재분류하고 root canonical 문서, provenance, phase plan에 사유를 남긴다.
 - 누락 기능은 재분류된 phase의 follow-up item으로 남겨야 한다.
+
+## Differential coverage follow-up (2026-08-23)
+
+- Behavior coverage raised 92/315 → 281/315 (89.2%) via mutation-enabled domain
+  scenarios; commit `2c0712a61` and this session's follow-ups.
+- Deferred remainder (34 B-ids: SVN, migration/import, email-token flows, git
+  smart-http, destructive shared-state operations) recorded with reasons in
+  `docs/provenance/differential-behavior-coverage-deferred.md`; reclassify per
+  B-id into Feature Group `status` columns when Yoram implements the surface.
+- Follow-up: investigate the 53 needs-review runtime divergences from the first
+  mutation sweep (milestone/post/webhook create-delete chains, label
+  attach/detach, watch/enroll/member pairs) — clustered list in the same
+  provenance document §2.
+- Follow-up: promote duplicated sendRaw/pairLenient helpers to ctx.helpers and
+  extend whenIds-style id guards beyond issues.mjs (provenance doc §3).

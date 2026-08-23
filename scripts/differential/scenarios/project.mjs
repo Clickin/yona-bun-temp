@@ -2,6 +2,7 @@
 //
 // Domain module contract (see scenarios/index.mjs).
 import { translateLegacy, translateYoram } from "../adapters.mjs";
+import { violation } from "../report.mjs";
 
 export const scenarios = [
   {
@@ -107,6 +108,131 @@ export const scenarios = [
     ],
     behaviorMatcher: { action: /^SearchApp\.searchInAProject$/, route: /\/search$/ },
   },
+  {
+    id: "P8-milestone-crud",
+    title: "milestone CRUD chain: create, edit, close, open, api-create, delete",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "create-milestone", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "edit-milestone", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "close-milestone", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "open-milestone", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "create-milestone-api", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "delete-milestone", params: { owner: "admin", project: "sample" } },
+    ],
+    behaviorMatcher: { action: /^(MilestoneApp\.(newMilestone|editMilestone|close|open|deleteMilestone)|MilestoneApi\.newMilestone)$/ },
+  },
+  {
+    id: "P9-board-post-crud",
+    title: "board post CRUD chain incl. legacy external API probes and comment lifecycle",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "create-post", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "edit-post", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "patch-post-content-api", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "set-post-labels-api", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "create-post-comment", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "update-post-comment", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "patch-post-comment-api", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "delete-post-comment", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "create-post-api", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "delete-post", params: { owner: "admin", project: "sample" } },
+    ],
+    behaviorMatcher: { action: /^(BoardApp\.(newPost|editPost|deletePost|newComment|updateComment|deleteComment)|BoardApi\.(newPostings|updatePostingContent|newPostingComment|updatePostingComment|updatePostLabel))$/ },
+  },
+  {
+    id: "P10-webhook-crud",
+    title: "webhook create then delete",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "create-webhook", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "delete-webhook", params: { owner: "admin", project: "sample" } },
+    ],
+    behaviorMatcher: { action: /^ProjectApp\.(newWebhook|deleteWebhook)$/ },
+  },
+  {
+    id: "P11-watch-toggle-watchers",
+    title: "project watch toggle with watchers page verification",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "watch-project", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "view-project-watchers", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "unwatch-project", params: { owner: "admin", project: "sample" } },
+    ],
+    behaviorMatcher: { action: /^WatchProjectApp\.(watch|unwatch)$/ },
+  },
+  {
+    id: "P12-project-label-mutations",
+    title: "project label attach, detach, api-create",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "create-label-api", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "attach-project-label", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "detach-project-label", params: { owner: "admin", project: "sample" } },
+    ],
+    behaviorMatcher: { action: /^(ProjectApp\.(attachLabel|detachLabel)|ProjectApi\.newLabel)$/ },
+  },
+  {
+    id: "P13-member-add-remove",
+    title: "project member add bob then remove",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "add-project-member", params: { owner: "admin", project: "sample", loginId: "bob" } },
+      { actor: "admin", action: "remove-project-member", params: { owner: "admin", project: "sample" } },
+    ],
+    behaviorMatcher: { action: /^ProjectApp\.(newMember|deleteMember)$/ },
+  },
+  {
+    id: "P14-overview-and-markdown-preview",
+    title: "project overview update (restored) + markdown preview render",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "update-project-overview", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "render-markdown-preview", params: { owner: "admin", project: "sample" } },
+    ],
+    behaviorMatcher: { action: /^(ProjectApp\.projectOverviewUpdate|MarkdownApp\.render)$/ },
+  },
+  {
+    id: "P15-project-data-surfaces",
+    title: "read-only data surfaces: exports, reviews, leave info, migration exports, attachments, catch-all, git advertise",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "fetch-project-exports", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "list-review-threads", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "view-project-leave-info", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "view-migration-hub", params: {} },
+      { actor: "admin", action: "export-migration-project", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "export-migration-issue-label-pairs", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "export-migration-issues", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "export-migration-labels", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "export-migration-milestones", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "export-migration-posts", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "export-migration-projects-list", params: {} },
+      { actor: "admin", action: "fetch-attachment-list", params: {} },
+      { actor: "admin", action: "fetch-unknown-path", params: { owner: "admin", project: "sample", missing: "page" } },
+      { actor: "admin", action: "fetch-git-info-refs", params: { owner: "admin", project: "sample" } },
+    ],
+    behaviorMatcher: { action: /^(MigrationApp\.|ProjectApi\.exports$|ReviewThreadApp\.reviewThreads$|UserApp\.leave$|AttachmentApp\.getFileList$|Application\.removeTrailer$|GitApp\.advertise$)/ },
+  },
+  {
+    id: "P16-enroll-cancel",
+    title: "project enroll then cancel enrollment",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "enroll-project", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "cancel-enroll-project", params: { owner: "admin", project: "sample" } },
+    ],
+    behaviorMatcher: { action: /^EnrollProjectApp\.(enroll|cancelEnroll)$/ },
+  },
+  {
+    id: "P17-issue-labels-api-probe",
+    title: "issue label set via legacy external API on a fresh suffix-tagged issue",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "set-issue-labels-api", params: { owner: "admin", project: "sample" } },
+    ],
+    behaviorMatcher: { action: /^IssueApi\.updateIssueLabel$/ },
+  },
 ];
 
 // Shared handler shape for read actions: translate both sides, request both
@@ -156,11 +282,24 @@ function readPath(step) {
     case "fetch-mention-list": return `${base}/mentionList`;
     case "fetch-mention-list-commit-diff": return `${base}/mentionListAtCommitDiff`;
     case "fetch-mention-list-pull-request": return `${base}/mentionListAtPullRequest`;
+    case "fetch-project-exports": return `/-_-api/v1/owners/${p.owner}/projects/${p.project}/exports`;
+    case "list-review-threads": return `${base}/reviews`;
+    case "view-project-leave-info": return `/info/leave/${p.owner}/${p.project}`;
+    case "view-migration-hub": return "/migration";
+    case "export-migration-project": return `/migration/${p.owner}/projects/${p.project}`;
+    case "export-migration-issue-label-pairs": return `/migration/${p.owner}/projects/${p.project}/issuelabel`;
+    case "export-migration-issues": return `/migration/${p.owner}/projects/${p.project}/issues`;
+    case "export-migration-labels": return `/migration/${p.owner}/projects/${p.project}/labels`;
+    case "export-migration-milestones": return `/migration/${p.owner}/projects/${p.project}/milestones`;
+    case "export-migration-posts": return `/migration/${p.owner}/projects/${p.project}/posts`;
+    case "export-migration-projects-list": return "/migration/projects";
+    case "fetch-attachment-list": return "/files";
+    case "fetch-unknown-path": return `${base}/parity-missing-${step.params.missing ?? "page"}`;
+    case "fetch-git-info-refs": return `${base}/info/refs`;
     case "search-in-project": return `${base}/search?query=${encodeURIComponent(p.query ?? "")}`;
     default: throw new Error(`unmapped action path: ${step.action}`);
   }
 }
-
 // Fragment/API payloads (JSON, CSS): verified via status parity only — a
 // skeleton diff of raw JSON/CSS is noise, not signal.
 const API_ONLY_ACTIONS = new Set([
@@ -169,6 +308,16 @@ const API_ONLY_ACTIONS = new Set([
   "fetch-mention-list",
   "fetch-mention-list-commit-diff",
   "fetch-mention-list-pull-request",
+  "fetch-project-exports",
+  "export-migration-project",
+  "export-migration-issue-label-pairs",
+  "export-migration-issues",
+  "export-migration-labels",
+  "export-migration-milestones",
+  "export-migration-posts",
+  "export-migration-projects-list",
+  "fetch-attachment-list",
+  "fetch-git-info-refs",
 ]);
 
 // Same contract as readPageHandler above, for SPA-shell pages: skip DOM
@@ -221,6 +370,20 @@ const READ_ACTION_NAMES = [
   "fetch-mention-list-commit-diff",
   "fetch-mention-list-pull-request",
   "search-in-project",
+  "fetch-project-exports",
+  "list-review-threads",
+  "view-project-leave-info",
+  "view-migration-hub",
+  "export-migration-project",
+  "export-migration-issue-label-pairs",
+  "export-migration-issues",
+  "export-migration-labels",
+  "export-migration-milestones",
+  "export-migration-posts",
+  "export-migration-projects-list",
+  "fetch-attachment-list",
+  "fetch-unknown-path",
+  "fetch-git-info-refs",
 ];
 
 export const actionDefinitions = {
@@ -266,3 +429,1315 @@ export const actionDefinitions = {
     },
   ])),
 };
+
+// --- mutation wave -----------------------------------------------------------
+//
+// Divergence rule: pairRequest pushes an api violation when either side fails
+// (>=400) or the status classes diverge, then later steps degrade into entry
+// errors — a scenario never throws on a mutation mismatch.
+
+function mergeCookies(oldHeader, setCookies) {
+  const jar = new Map();
+  for (const pair of (oldHeader ?? "").split("; ").filter(Boolean)) {
+    const eq = pair.indexOf("=");
+    if (eq > 0) jar.set(pair.slice(0, eq), pair.slice(eq + 1));
+  }
+  for (const cookie of setCookies) {
+    const first = cookie.split(";")[0];
+    const eq = first.indexOf("=");
+    if (eq > 0) jar.set(first.slice(0, eq), first.slice(eq + 1));
+  }
+  return [...jar].map(([name, value]) => `${name}=${value}`).join("; ");
+}
+
+async function sendRaw(session, baseUrl, translation, csrfToken = "") {
+  const headers = {};
+  if (session.cookies) headers.cookie = session.cookies;
+  let body;
+  if (translation.multipart !== undefined) {
+    headers["content-type"] = translation.multipart.contentType;
+    if (csrfToken) headers["x-csrf-token"] = csrfToken;
+    body = translation.multipart.body;
+  } else if (translation.json !== undefined) {
+    headers["content-type"] = "application/json";
+    if (csrfToken) headers["x-csrf-token"] = csrfToken;
+    body = JSON.stringify(translation.json);
+  } else if (translation.form) {
+    headers["content-type"] = "application/x-www-form-urlencoded";
+    body = new URLSearchParams(translation.form).toString();
+  }
+  Object.assign(headers, translation.headers ?? {});
+  const response = await fetch(`${baseUrl}${translation.path}`, {
+    method: translation.method,
+    headers,
+    body,
+    redirect: "manual",
+  });
+  const location = response.headers.get("location") ?? "";
+  const nextCookies = response.headers.getSetCookie?.() ?? [];
+  if (nextCookies.length > 0) session.cookies = mergeCookies(session.cookies, nextCookies);
+  const text = location ? "" : await response.text();
+  let json = null;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    // non-JSON bodies stay as text
+  }
+  return { status: response.status, location, json, body: text };
+}
+
+function statusClass(status) {
+  return Math.floor(status / 100);
+}
+
+function pushApiViolation(ctx, route, expected, actual) {
+  ctx.entry.violations.push(
+    violation({ route, behaviorId: ctx.entry.behaviorIds[0] ?? null, kind: "api", expected, actual }),
+  );
+}
+
+async function pairRequest(ctx, legacyTranslation, yoramTranslation, route) {
+  const legacyResult = await sendRaw(ctx.legacySession, ctx.options.legacyUrl, legacyTranslation);
+  const yoramResult = await sendRaw(ctx.yoramSession, ctx.yoramBaseUrl, yoramTranslation, ctx.yoramSession.csrfToken);
+  if (
+    legacyResult.status >= 400 ||
+    yoramResult.status >= 400 ||
+    statusClass(legacyResult.status) !== statusClass(yoramResult.status)
+  ) {
+    pushApiViolation(ctx, route, { status: legacyResult.status }, { status: yoramResult.status });
+  }
+  return { legacyResult, yoramResult };
+}
+
+function numberFrom(pattern, value) {
+  const match = pattern.exec(value ?? "");
+  return (match && Number(match[1])) || null;
+}
+
+function idFromJson(json) {
+  return Number(json?.id ?? json?.milestone?.id ?? json?.comment?.id ?? json?.posting?.number ?? json?.number) || null;
+}
+
+function findUserId(node, loginId) {
+  if (Array.isArray(node)) {
+    for (const item of node) {
+      const hit = findUserId(item, loginId);
+      if (hit !== null) return hit;
+    }
+    return null;
+  }
+  if (node && typeof node === "object") {
+    if (node.loginId === loginId) {
+      return Number(node.userId ?? node.user?.id ?? node.id) || null;
+    }
+    for (const value of Object.values(node)) {
+      const hit = findUserId(value, loginId);
+      if (hit !== null) return hit;
+    }
+  }
+  return null;
+}
+
+function baseParams(step) {
+  return { owner: step.params.owner, project: step.params.project };
+}
+
+function restBase(step) {
+  return `/api/v1/owners/${step.params.owner}/projects/${step.params.project}`;
+}
+
+function legacyApiBase(step) {
+  return `/-_-api/v1/owners/${step.params.owner}/projects/${step.params.project}`;
+}
+
+const SEED_OVERVIEW = "Parity seed project for the admin workspace";
+
+function milestonePlan(suffix, edited = false) {
+  const title = `parity-milestone-${suffix}${edited ? "-edited" : ""}`;
+  return { title, content: `parity milestone body ${suffix}`, dueDate: "2026-12-31" };
+}
+
+function postPlan(suffix, edited = false) {
+  const title = `parity-post-${suffix}${edited ? "-edited" : ""}`;
+  const body = `parity post body ${suffix}${edited ? " (edited)" : ""}`;
+  return { title, body };
+}
+
+async function deletePairs(ctx, pairs, routeFor, legacyPathFor, yoramPathFor) {
+  for (const [legacyId, yoramId] of pairs) {
+    if (!legacyId && !yoramId) continue;
+    await pairRequest(
+      ctx,
+      { method: "DELETE", path: legacyPathFor(legacyId) },
+      { method: "DELETE", path: yoramPathFor(yoramId) },
+      routeFor,
+    );
+  }
+}
+
+const MUTATION_ACTIONS = {
+  "create-milestone": {
+    translateLegacy(step, resolved) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/milestones`, form: { title: resolved.title, content: resolved.content, dueDate: resolved.dueDate } };
+    },
+    translateYoram(step, resolved) {
+      return { method: "POST", path: `${restBase(step)}/milestones`, json: { title: resolved.title, contentsMarkdown: resolved.content, dueDate: resolved.dueDate, state: "open", attachmentIds: [] } };
+    },
+    async handler(ctx) {
+      const { step, state, suffix } = ctx;
+      const plan = milestonePlan(suffix);
+      const { legacyResult, yoramResult } = await pairRequest(
+        ctx,
+        this.translateLegacy(step, plan),
+        this.translateYoram(step, plan),
+        `${step.params.owner}/${step.params.project}/milestones (create)`,
+      );
+      state.pmL = numberFrom(/\/milestone\/(\d+)/, legacyResult.location);
+      state.pmY = idFromJson(yoramResult.json);
+      if ((state.pmL === null) !== (state.pmY === null)) {
+        pushApiViolation(ctx, `${step.params.owner}/${step.params.project}/milestones (create id)`, { id: state.pmL }, { id: state.pmY });
+      }
+    },
+  },
+
+  "edit-milestone": {
+    translateLegacy(step, resolved) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/milestone/${resolved.milestoneId}/edit`, form: { title: resolved.title, content: resolved.content, dueDate: resolved.dueDate } };
+    },
+    translateYoram(step, resolved) {
+      return { method: "PATCH", path: `${restBase(step)}/milestones/${resolved.milestoneId}`, json: { title: resolved.title, contentsMarkdown: resolved.content, dueDate: resolved.dueDate, state: "open", attachmentIds: [] } };
+    },
+    async handler(ctx) {
+      const { step, state } = ctx;
+      if (!state.pmL || !state.pmY) return;
+      const plan = milestonePlan(ctx.suffix, true);
+      await pairRequest(
+        ctx,
+        this.translateLegacy(step, { ...plan, milestoneId: state.pmL }),
+        this.translateYoram(step, { ...plan, milestoneId: state.pmY }),
+        `${step.params.owner}/${step.params.project}/milestone (edit)`,
+      );
+    },
+  },
+
+  "close-milestone": {
+    translateLegacy(step, resolved) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/milestone/${resolved.milestoneId}/close` };
+    },
+    translateYoram(step, resolved) {
+      return { method: "PATCH", path: `${restBase(step)}/milestones/${resolved.milestoneId}/state`, json: { state: "closed" } };
+    },
+    handler(ctx) {
+      const { step, state } = ctx;
+      if (!state.pmL || !state.pmY) return;
+      return pairRequest(
+        ctx,
+        this.translateLegacy(step, { milestoneId: state.pmL }),
+        this.translateYoram(step, { milestoneId: state.pmY }),
+        `${step.params.owner}/${step.params.project}/milestone (close)`,
+      );
+    },
+  },
+
+  "open-milestone": {
+    translateLegacy(step, resolved) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/milestone/${resolved.milestoneId}/open` };
+    },
+    translateYoram(step, resolved) {
+      return { method: "PATCH", path: `${restBase(step)}/milestones/${resolved.milestoneId}/state`, json: { state: "open" } };
+    },
+    handler(ctx) {
+      const { step, state } = ctx;
+      if (!state.pmL || !state.pmY) return;
+      return pairRequest(
+        ctx,
+        this.translateLegacy(step, { milestoneId: state.pmL }),
+        this.translateYoram(step, { milestoneId: state.pmY }),
+        `${step.params.owner}/${step.params.project}/milestone (open)`,
+      );
+    },
+  },
+
+  "create-milestone-api": {
+    // Legacy external API shape: {"milestones":[...]} — same path on both sides.
+    translateLegacy(step, resolved) {
+      return { method: "POST", path: `${legacyApiBase(step)}/milestones`, json: { milestones: [{ title: resolved.title, contents: resolved.content, dueDate: resolved.dueDate, state: "open" }] } };
+    },
+    translateYoram(step, resolved) {
+      return { method: "POST", path: `${legacyApiBase(step)}/milestones`, json: { milestones: [{ title: resolved.title, contents: resolved.content, dueDate: resolved.dueDate, state: "open" }] } };
+    },
+    async handler(ctx) {
+      const { step, state, suffix } = ctx;
+      const plan = { title: `parity-milestone-api-${suffix}`, content: `parity milestone api body ${suffix}`, dueDate: "2026-12-31" };
+      const translation = this.translateLegacy(step, plan);
+      const { legacyResult, yoramResult } = await pairRequest(ctx, translation, this.translateYoram(step, plan), `${legacyApiBase(step)}/milestones`);
+      state.pmApiL = Number(legacyResult.json?.[0]?.id) || null;
+      state.pmApiY = Number(yoramResult.json?.[0]?.id) || null;
+      if ((state.pmApiL === null) !== (state.pmApiY === null)) {
+        pushApiViolation(ctx, `${legacyApiBase(step)}/milestones (create id)`, { id: state.pmApiL }, { id: state.pmApiY });
+      }
+    },
+  },
+
+  "delete-milestone": {
+    translateLegacy(step, resolved) {
+      return { method: "DELETE", path: `/${step.params.owner}/${step.params.project}/milestone/${resolved.milestoneId}/delete` };
+    },
+    translateYoram(step, resolved) {
+      return { method: "DELETE", path: `${restBase(step)}/milestones/${resolved.milestoneId}` };
+    },
+    async handler(ctx) {
+      const { step, state } = ctx;
+      await deletePairs(
+        ctx,
+        [
+          [state.pmL, state.pmY],
+          [state.pmApiL, state.pmApiY],
+        ],
+        `${step.params.owner}/${step.params.project}/milestone (delete)`,
+        (id) => this.translateLegacy(step, { milestoneId: id }).path,
+        (id) => this.translateYoram(step, { milestoneId: id }).path,
+      );
+      state.pmL = state.pmY = state.pmApiL = state.pmApiY = null;
+    },
+  },
+
+  "create-post": {
+    translateLegacy(step, resolved) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/posts`, form: { title: resolved.title, body: resolved.body } };
+    },
+    translateYoram(step, resolved) {
+      return { method: "POST", path: `/api/v1/projects/${step.params.owner}/${step.params.project}/posts`, json: { title: resolved.title, bodyMarkdown: resolved.body, edit: false } };
+    },
+    async handler(ctx) {
+      const { step, state, suffix } = ctx;
+      const plan = postPlan(suffix);
+      const { legacyResult, yoramResult } = await pairRequest(
+        ctx,
+        this.translateLegacy(step, plan),
+        this.translateYoram(step, plan),
+        `${step.params.owner}/${step.params.project}/posts (create)`,
+      );
+      state.postL = numberFrom(/\/post\/(\d+)/, legacyResult.location);
+      state.postY = idFromJson(yoramResult.json);
+      if ((state.postL === null) !== (state.postY === null)) {
+        pushApiViolation(ctx, `${step.params.owner}/${step.params.project}/posts (create id)`, { number: state.postL }, { number: state.postY });
+      }
+    },
+  },
+
+  "edit-post": {
+    translateLegacy(step, resolved) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/post/${resolved.postNumber}/edit`, form: { title: resolved.title, body: resolved.body } };
+    },
+    translateYoram(step, resolved) {
+      return { method: "PATCH", path: `/api/v1/projects/${step.params.owner}/${step.params.project}/posts/${resolved.postNumber}`, json: { title: resolved.title, bodyMarkdown: resolved.body, edit: true } };
+    },
+    async handler(ctx) {
+      const { step, state } = ctx;
+      if (!state.postL || !state.postY) return;
+      const plan = postPlan(ctx.suffix, true);
+      await pairRequest(
+        ctx,
+        this.translateLegacy(step, { ...plan, postNumber: state.postL }),
+        this.translateYoram(step, { ...plan, postNumber: state.postY }),
+        `${step.params.owner}/${step.params.project}/post (edit)`,
+      );
+    },
+  },
+
+  "patch-post-content-api": {
+    // Legacy external API: PATCH content with optimistic-concurrency original.
+    translateLegacy(step, resolved) {
+      return { method: "PATCH", path: `${legacyApiBase(step)}/posts/${resolved.postNumber}/content`, json: { content: resolved.content, original: resolved.original } };
+    },
+    translateYoram(step, resolved) {
+      return { method: "PATCH", path: `${legacyApiBase(step)}/posts/${resolved.postNumber}/content`, json: { content: resolved.content, original: resolved.original } };
+    },
+    async handler(ctx) {
+      const { step, state, suffix } = ctx;
+      if (!state.postL || !state.postY) return;
+      const plan = { content: `parity api content ${suffix}`, original: postPlan(suffix, true).body };
+      await pairRequest(
+        ctx,
+        this.translateLegacy(step, { ...plan, postNumber: state.postL }),
+        this.translateYoram(step, { ...plan, postNumber: state.postY }),
+        `${legacyApiBase(step)}/posts/:number/content`,
+      );
+    },
+  },
+
+  "set-post-labels-api": {
+    translateLegacy(step) {
+      return { method: "POST", path: `${legacyApiBase(step)}/postlabel/${step.params.postNumber ?? 0}`, json: [] };
+    },
+    translateYoram(step) {
+      return { method: "POST", path: `${legacyApiBase(step)}/postlabel/${step.params.postNumber ?? 0}`, json: [] };
+    },
+    async handler(ctx) {
+      const { step, state } = ctx;
+      if (!state.postL || !state.postY) return;
+      await pairRequest(
+        ctx,
+        this.translateLegacy(step, { postNumber: state.postL }),
+        this.translateYoram(step, { postNumber: state.postY }),
+        `${legacyApiBase(step)}/postlabel/:number`,
+      );
+    },
+  },
+
+  "create-post-comment": {
+    translateLegacy(step, resolved) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/post/${resolved.postNumber}/comment`, form: { body: resolved.body } };
+    },
+    translateYoram(step, resolved) {
+      return { method: "POST", path: `/api/v1/projects/${step.params.owner}/${step.params.project}/posts/${resolved.postNumber}/comments`, json: { contentsMarkdown: resolved.body } };
+    },
+    async handler(ctx) {
+      const { step, state, suffix } = ctx;
+      if (!state.postL || !state.postY) return;
+      const plan = { body: `parity-comment-${suffix}` };
+      const { legacyResult, yoramResult } = await pairRequest(
+        ctx,
+        this.translateLegacy(step, { ...plan, postNumber: state.postL }),
+        this.translateYoram(step, { ...plan, postNumber: state.postY }),
+        `${step.params.owner}/${step.params.project}/post comment (create)`,
+      );
+      state.commentL = numberFrom(/#comment-(\d+)/, legacyResult.location);
+      state.commentY = idFromJson(yoramResult.json);
+      if ((state.commentL === null) !== (state.commentY === null)) {
+        pushApiViolation(ctx, `${step.params.owner}/${step.params.project}/post comment (create id)`, { id: state.commentL }, { id: state.commentY });
+      }
+    },
+  },
+
+  "update-post-comment": {
+    translateLegacy(step, resolved) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/post/${resolved.postNumber}/comment/${resolved.commentId}`, form: { body: resolved.body } };
+    },
+    translateYoram(step, resolved) {
+      return { method: "PATCH", path: `/api/v1/projects/${step.params.owner}/${step.params.project}/posts/${resolved.postNumber}/comments/${resolved.commentId}`, json: { contentsMarkdown: resolved.body } };
+    },
+    async handler(ctx) {
+      const { step, state, suffix } = ctx;
+      if (!state.commentL || !state.commentY) return;
+      const plan = { body: `parity-comment-${suffix}-edited` };
+      await pairRequest(
+        ctx,
+        this.translateLegacy(step, { ...plan, postNumber: state.postL, commentId: state.commentL }),
+        this.translateYoram(step, { ...plan, postNumber: state.postY, commentId: state.commentY }),
+        `${step.params.owner}/${step.params.project}/post comment (update)`,
+      );
+    },
+  },
+
+  "patch-post-comment-api": {
+    // Legacy direct PATCH route (no -_-api prefix): {"content","original"}.
+    translateLegacy(step, resolved) {
+      return { method: "PATCH", path: `/${step.params.owner}/${step.params.project}/post/${resolved.postNumber}/comment/${resolved.commentId}`, json: { content: resolved.content, original: resolved.original } };
+    },
+    translateYoram(step, resolved) {
+      return { method: "PATCH", path: `/${step.params.owner}/${step.params.project}/post/${resolved.postNumber}/comment/${resolved.commentId}`, json: { content: resolved.content, original: resolved.original } };
+    },
+    async handler(ctx) {
+      const { step, state, suffix } = ctx;
+      if (!state.commentL || !state.commentY) return;
+      const plan = { content: `parity-comment-${suffix}-api`, original: `parity-comment-${suffix}-edited` };
+      await pairRequest(
+        ctx,
+        this.translateLegacy(step, { ...plan, postNumber: state.postL, commentId: state.commentL }),
+        this.translateYoram(step, { ...plan, postNumber: state.postY, commentId: state.commentY }),
+        `${step.params.owner}/${step.params.project}/post/:number/comment/:commentId (PATCH)`,
+      );
+    },
+  },
+
+  "delete-post-comment": {
+    translateLegacy(step, resolved) {
+      return { method: "DELETE", path: `/${step.params.owner}/${step.params.project}/post/${resolved.postNumber}/comment/${resolved.commentId}/delete` };
+    },
+    translateYoram(step, resolved) {
+      return { method: "DELETE", path: `/api/v1/projects/${step.params.owner}/${step.params.project}/posts/${resolved.postNumber}/comments/${resolved.commentId}` };
+    },
+    async handler(ctx) {
+      const { step, state } = ctx;
+      if (!state.commentL || !state.commentY) return;
+      await pairRequest(
+        ctx,
+        this.translateLegacy(step, { postNumber: state.postL, commentId: state.commentL }),
+        this.translateYoram(step, { postNumber: state.postY, commentId: state.commentY }),
+        `${step.params.owner}/${step.params.project}/post comment (delete)`,
+      );
+      state.commentL = state.commentY = null;
+    },
+  },
+
+  "create-post-api": {
+    // Legacy external API shape: {"posts":[...]} — same path on both sides.
+    translateLegacy(step, resolved) {
+      return { method: "POST", path: `${legacyApiBase(step)}/posts`, json: { posts: [{ title: resolved.title, body: resolved.body }] } };
+    },
+    translateYoram(step, resolved) {
+      return { method: "POST", path: `${legacyApiBase(step)}/posts`, json: { posts: [{ title: resolved.title, body: resolved.body }] } };
+    },
+    async handler(ctx) {
+      const { step, state, suffix } = ctx;
+      const plan = { title: `parity-post-api-${suffix}`, body: `parity api post body ${suffix}` };
+      const { legacyResult, yoramResult } = await pairRequest(ctx, this.translateLegacy(step, plan), this.translateYoram(step, plan), `${legacyApiBase(step)}/posts`);
+      state.postApiL = numberFrom(/\/post\/(\d+)/, legacyResult.json?.[0]?.location);
+      state.postApiY = numberFrom(/\/post\/(\d+)/, yoramResult.json?.[0]?.location);
+      if ((state.postApiL === null) !== (state.postApiY === null)) {
+        pushApiViolation(ctx, `${legacyApiBase(step)}/posts (create id)`, { number: state.postApiL }, { number: state.postApiY });
+      }
+    },
+  },
+
+  "delete-post": {
+    translateLegacy(step, resolved) {
+      return { method: "DELETE", path: `/${step.params.owner}/${step.params.project}/post/${resolved.postNumber}/delete` };
+    },
+    translateYoram(step, resolved) {
+      return { method: "DELETE", path: `/api/v1/projects/${step.params.owner}/${step.params.project}/posts/${resolved.postNumber}` };
+    },
+    async handler(ctx) {
+      const { step, state } = ctx;
+      await deletePairs(
+        ctx,
+        [
+          [state.postL, state.postY],
+          [state.postApiL, state.postApiY],
+        ],
+        `${step.params.owner}/${step.params.project}/post (delete)`,
+        (id) => this.translateLegacy(step, { postNumber: id }).path,
+        (id) => this.translateYoram(step, { postNumber: id }).path,
+      );
+      state.postL = state.postY = state.postApiL = state.postApiY = null;
+    },
+  },
+
+  "create-webhook": {
+    translateLegacy(step, resolved) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/webhooks`, form: { payloadUrl: resolved.payloadUrl, secret: "parity-secret", webhookType: "SIMPLE" } };
+    },
+    translateYoram(step, resolved) {
+      return { method: "POST", path: `${restBase(step)}/webhooks`, json: { payloadUrl: resolved.payloadUrl, secret: "parity-secret", webhookType: "SIMPLE", gitPush: true } };
+    },
+    async handler(ctx) {
+      const { step, state, suffix, options, yoramBaseUrl } = ctx;
+      const plan = { payloadUrl: `https://parity.example/${suffix}` };
+      const { legacyResult, yoramResult } = await pairRequest(
+        ctx,
+        this.translateLegacy(step, plan),
+        this.translateYoram(step, plan),
+        `${step.params.owner}/${step.params.project}/webhooks (create)`,
+      );
+      state.webhookY = idFromJson(yoramResult.json);
+      if (state.webhookY === null) {
+        const list = await sendRaw(ctx.yoramSession, yoramBaseUrl, { method: "GET", path: `${restBase(step)}/webhooks` });
+        const mine = (Array.isArray(list.json) ? list.json : []).filter((hook) => String(hook.payloadUrl ?? "").includes(suffix));
+        state.webhookY = Number(mine[0]?.id) || null;
+      }
+      if (legacyResult.status < 400) {
+        const page = await sendRaw(ctx.legacySession, options.legacyUrl, { method: "GET", path: `/${step.params.owner}/${step.params.project}/webhooks` });
+        const ids = [...page.body.matchAll(/webhooks\/(\d+)"/gu)].map((match) => Number(match[1]));
+        // ponytail: assumes a fresh seed project has at most our webhook; max id
+        // picks ours when seed rows exist — tighten if seed webhooks appear.
+        state.webhookL = ids.length > 0 ? Math.max(...ids) : null;
+      }
+    },
+  },
+
+  "delete-webhook": {
+    translateLegacy(step, resolved) {
+      return { method: "DELETE", path: `/${step.params.owner}/${step.params.project}/webhooks/${resolved.webhookId}` };
+    },
+    translateYoram(step, resolved) {
+      return { method: "DELETE", path: `${restBase(step)}/webhooks/${resolved.webhookId}` };
+    },
+    async handler(ctx) {
+      const { step, state } = ctx;
+      if (!state.webhookL && !state.webhookY) return;
+      await pairRequest(
+        ctx,
+        { method: "DELETE", path: this.translateLegacy(step, { webhookId: state.webhookL ?? 0 }).path },
+        { method: "DELETE", path: this.translateYoram(step, { webhookId: state.webhookY ?? 0 }).path },
+        `${step.params.owner}/${step.params.project}/webhooks (delete)`,
+      );
+      state.webhookL = state.webhookY = null;
+    },
+  },
+
+  "watch-project": {
+    translateLegacy(step) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/watch` };
+    },
+    translateYoram(step) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/watch` };
+    },
+    handler(ctx) {
+      const { step } = ctx;
+      return pairRequest(ctx, this.translateLegacy(step), this.translateYoram(step), `${step.params.owner}/${step.params.project}/watch`);
+    },
+  },
+
+  "unwatch-project": {
+    translateLegacy(step) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/unwatch` };
+    },
+    translateYoram(step) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/unwatch` };
+    },
+    handler(ctx) {
+      const { step } = ctx;
+      return pairRequest(ctx, this.translateLegacy(step), this.translateYoram(step), `${step.params.owner}/${step.params.project}/unwatch`);
+    },
+  },
+
+  "create-label-api": {
+    // Legacy external API label create — same path on both sides. The label
+    // row remains in both DBs with identical suffix-tagged content (no legacy
+    // delete route for project labels); the db projection sees equal rows.
+    translateLegacy(step, resolved) {
+      return { method: "POST", path: `${legacyApiBase(step)}/labels`, json: { name: resolved.name, category: resolved.category } };
+    },
+    translateYoram(step, resolved) {
+      return { method: "POST", path: `${legacyApiBase(step)}/labels`, json: { name: resolved.name, category: resolved.category } };
+    },
+    async handler(ctx) {
+      const { step, suffix } = ctx;
+      const plan = { name: `parity-apilabel-${suffix}`, category: "parity" };
+      await pairRequest(ctx, this.translateLegacy(step, plan), this.translateYoram(step, plan), `${legacyApiBase(step)}/labels`);
+    },
+  },
+
+  "attach-project-label": {
+    translateLegacy(step, resolved) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/labels`, form: { category: resolved.category, name: resolved.name } };
+    },
+    translateYoram(step, resolved) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/labels`, form: { category: resolved.category, name: resolved.name } };
+    },
+    async handler(ctx) {
+      const { step, state, suffix } = ctx;
+      const plan = { category: "parity", name: `parity-label-${suffix}` };
+      const { legacyResult, yoramResult } = await pairRequest(ctx, this.translateLegacy(step, plan), this.translateYoram(step, plan), `${step.params.owner}/${step.params.project}/labels (attach)`);
+      state.labelL = Number(Object.keys(legacyResult.json ?? {})[0]) || null;
+      state.labelY = Number(Object.keys(yoramResult.json ?? {})[0]) || null;
+      if ((state.labelL === null) !== (state.labelY === null)) {
+        pushApiViolation(ctx, `${step.params.owner}/${step.params.project}/labels (attach id)`, { id: state.labelL }, { id: state.labelY });
+      }
+    },
+  },
+
+  "detach-project-label": {
+    translateLegacy(step, resolved) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/labels/${resolved.labelId}`, form: { _method: "detach" } };
+    },
+    translateYoram(step, resolved) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/labels/${resolved.labelId}`, form: { _method: "detach" } };
+    },
+    async handler(ctx) {
+      const { step, state } = ctx;
+      if (!state.labelL && !state.labelY) return;
+      await pairRequest(
+        ctx,
+        this.translateLegacy(step, { labelId: state.labelL ?? 0 }),
+        this.translateYoram(step, { labelId: state.labelY ?? 0 }),
+        `${step.params.owner}/${step.params.project}/labels (detach)`,
+      );
+      state.labelL = state.labelY = null;
+    },
+  },
+
+  "add-project-member": {
+    translateLegacy(step, resolved) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/members`, form: { loginId: resolved.loginId } };
+    },
+    translateYoram(step, resolved) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/members`, form: { loginId: resolved.loginId } };
+    },
+    async handler(ctx) {
+      const { step, state, entry, options, yoramBaseUrl } = ctx;
+      const loginId = step.params.loginId ?? "bob";
+      const { legacyResult, yoramResult } = await pairRequest(ctx, this.translateLegacy(step, { loginId }), this.translateYoram(step, { loginId }), `${step.params.owner}/${step.params.project}/members (add)`);
+      if (legacyResult.status < 400) {
+        const page = await sendRaw(ctx.legacySession, options.legacyUrl, { method: "GET", path: `/${step.params.owner}/${step.params.project}/members` });
+        state.memberUidL = numberFrom(new RegExp(`member\\/(\\d+)\\/edit"[^>]*data-loginId="${loginId}"`, "u"), page.body);
+      }
+      if (yoramResult.status < 400) {
+        const list = await sendRaw(ctx.yoramSession, yoramBaseUrl, { method: "GET", path: `${restBase(step)}/members` });
+        state.memberUidY = findUserId(list.json, loginId);
+      }
+      if ((state.memberUidL === null) !== (state.memberUidY === null)) {
+        entry.errors.push(`member id discovery diverged: legacy=${state.memberUidL} yoram=${state.memberUidY}`);
+      }
+    },
+  },
+
+  "remove-project-member": {
+    translateLegacy(step, resolved) {
+      return { method: "DELETE", path: `/${step.params.owner}/${step.params.project}/member/${resolved.userId}/delete` };
+    },
+    translateYoram(step, resolved) {
+      return { method: "DELETE", path: `/${step.params.owner}/${step.params.project}/member/${resolved.userId}/delete` };
+    },
+    async handler(ctx) {
+      const { step, state } = ctx;
+      if (!state.memberUidL && !state.memberUidY) return;
+      await pairRequest(
+        ctx,
+        this.translateLegacy(step, { userId: state.memberUidL ?? 0 }),
+        this.translateYoram(step, { userId: state.memberUidY ?? 0 }),
+        `${step.params.owner}/${step.params.project}/member (delete)`,
+      );
+      state.memberUidL = state.memberUidY = null;
+    },
+  },
+
+  "update-project-overview": {
+    translateLegacy(step, resolved) {
+      return { method: "PUT", path: `/${step.params.owner}/${step.params.project}`, json: { overview: resolved.overview } };
+    },
+    translateYoram(step, resolved) {
+      return { method: "PUT", path: `/${step.params.owner}/${step.params.project}`, json: { overview: resolved.overview } };
+    },
+    async handler(ctx) {
+      const { step, suffix } = ctx;
+      const base = `${step.params.owner}/${step.params.project} (overview)`;
+      const set = await pairRequest(ctx, this.translateLegacy(step, { overview: `parity-overview-${suffix}` }), this.translateYoram(step, { overview: `parity-overview-${suffix}` }), base);
+      if (set.legacyResult.status < 400 && set.yoramResult.status < 400) {
+        // restore the parity seed overview so later sweeps see unchanged state
+        await pairRequest(ctx, this.translateLegacy(step, { overview: SEED_OVERVIEW }), this.translateYoram(step, { overview: SEED_OVERVIEW }), `${base} restore`);
+      }
+    },
+  },
+
+  "render-markdown-preview": {
+    translateLegacy(step, resolved) {
+      return { method: "POST", path: `/markdown/${step.params.owner}/${step.params.project}`, json: { body: resolved.body, breaks: true } };
+    },
+    translateYoram(step, resolved) {
+      return { method: "POST", path: `/markdown/${step.params.owner}/${step.params.project}`, json: { body: resolved.body, breaks: true } };
+    },
+    async handler(ctx) {
+      const { step, suffix } = ctx;
+      const plan = { body: `**parity-markdown-${suffix}**` };
+      await pairRequest(ctx, this.translateLegacy(step, plan), this.translateYoram(step, plan), `/markdown/${step.params.owner}/${step.params.project}`);
+    },
+  },
+
+  "enroll-project": {
+    translateLegacy(step) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/enroll`, form: { _method: "enroll" } };
+    },
+    translateYoram(step) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/enroll`, form: { _method: "enroll" } };
+    },
+    handler(ctx) {
+      const { step } = ctx;
+      return pairRequest(ctx, this.translateLegacy(step), this.translateYoram(step), `${step.params.owner}/${step.params.project}/enroll`);
+    },
+  },
+
+  "cancel-enroll-project": {
+    translateLegacy(step) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/cancel/enroll`, form: { _method: "cancel" } };
+    },
+    translateYoram(step) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/cancel/enroll`, form: { _method: "cancel" } };
+    },
+    handler(ctx) {
+      const { step } = ctx;
+      return pairRequest(ctx, this.translateLegacy(step), this.translateYoram(step), `${step.params.owner}/${step.params.project}/cancel/enroll`);
+    },
+  },
+
+  "set-issue-labels-api": {
+    // Creates a suffix-tagged issue on each side (title-tagged rows are
+    // tag-filtered out of the db-issues projection), then clears its label
+    // set through the legacy external API — same path on both sides.
+    translateLegacy(step, resolved) {
+      if (resolved.phase === "issue") {
+        return { method: "POST", path: `/${step.params.owner}/${step.params.project}/issues/latest`, form: { title: resolved.title, body: resolved.body } };
+      }
+      return { method: "POST", path: `${legacyApiBase(step)}/issuelabel/${resolved.issueNumber}`, json: [] };
+    },
+    translateYoram(step, resolved) {
+      if (resolved.phase === "issue") {
+        return { method: "POST", path: `/api/v1/projects/${step.params.owner}/${step.params.project}/issues`, json: { title: resolved.title, bodyMarkdown: resolved.body, assigneeLoginId: "", attachmentIds: [], labelIds: [], dueDate: "", isDraft: false, isPublish: true } };
+      }
+      return { method: "POST", path: `${legacyApiBase(step)}/issuelabel/${resolved.issueNumber}`, json: [] };
+    },
+    async handler(ctx) {
+      const { step, state, suffix } = ctx;
+      const plan = { phase: "issue", title: `parity-ilabel-${suffix}`, body: `parity issue label probe ${suffix}` };
+      const { legacyResult, yoramResult } = await pairRequest(
+        ctx,
+        this.translateLegacy(step, plan),
+        this.translateYoram(step, plan),
+        `${step.params.owner}/${step.params.project}/issues (label probe create)`,
+      );
+      state.issueLabelProbeL = numberFrom(/\/issue\/(\d+)/, legacyResult.location);
+      state.issueLabelProbeY = idFromJson(yoramResult.json);
+      if (!state.issueLabelProbeL || !state.issueLabelProbeY) return;
+      await pairRequest(
+        ctx,
+        this.translateLegacy(step, { issueNumber: state.issueLabelProbeL }),
+        this.translateYoram(step, { issueNumber: state.issueLabelProbeY }),
+        `${legacyApiBase(step)}/issuelabel/:number`,
+      );
+    },
+  },
+};
+
+// --- wave 3: throwaway-entity lifecycles -------------------------------------
+//
+// Every mutation here targets entities created (and destroyed) inside the
+// scenario itself — a suffix-tagged project, user-scope attachments, and a
+// closed PR restored then re-closed. Nothing below mutates seeded state.
+//
+// Status conventions verified against both sources:
+//   legacy Play form POSTs redirect (303) unless XHR (204); yoram REST returns
+//   200/204. pairLenient accepts any <400 on both sides for such mixed pairs.
+
+function multipartBody(fields = {}, file = null) {
+  const boundary = `parity-${Math.random().toString(16).slice(2)}`;
+  const encoder = new TextEncoder();
+  const chunks = [];
+  let total = 0;
+  const push = (text) => {
+    const chunk = encoder.encode(text);
+    chunks.push(chunk);
+    total += chunk.length;
+  };
+  for (const [name, value] of Object.entries(fields)) {
+    push(`--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`);
+  }
+  if (file) {
+    push(`--${boundary}\r\nContent-Disposition: form-data; name="${file.name}"; filename="${file.filename}"\r\nContent-Type: text/plain\r\n\r\n`);
+    push(file.content);
+    push("\r\n");
+  }
+  push(`--${boundary}--\r\n`);
+  const body = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return { contentType: `multipart/form-data; boundary=${boundary}`, body };
+}
+
+const XHR_HEADER = { "x-requested-with": "XMLHttpRequest" };
+
+// Mixed-form pair: legacy redirects (303) vs yoram REST JSON (200/204). Only
+// requires both sides to succeed (<400) — status-class equality would flag
+// every redirect-vs-JSON pair as a violation.
+async function pairLenient(ctx, legacyTranslation, yoramTranslation, route) {
+  const legacyResult = await sendRaw(ctx.legacySession, ctx.options.legacyUrl, legacyTranslation);
+  const yoramResult = await sendRaw(ctx.yoramSession, ctx.yoramBaseUrl, yoramTranslation, ctx.yoramSession.csrfToken);
+  if (legacyResult.status >= 400 || yoramResult.status >= 400) {
+    pushApiViolation(ctx, route, { status: legacyResult.status }, { status: yoramResult.status });
+  }
+  return { legacyResult, yoramResult };
+}
+
+// The throwaway project name lives in scenario state (created by
+// create-project with the run-unique suffix); translators fall back to
+// step.params.project only so static translator tests stay expressible.
+function projectNameOf(step, resolved) {
+  return resolved.projectName ?? step.params.project;
+}
+
+function attachmentPlan(suffix) {
+  return { filename: `parity-${suffix}.txt`, content: `parity attachment payload ${suffix}\n` };
+}
+
+// Locate a closed main->feature/ui pull request per side (the residue R13
+// leaves behind). Legacy discovery parses the closed-list page HTML; yoram
+// uses its REST list. Returns per-side numbers or null.
+async function discoverClosedRestorePr(ctx, owner, project) {
+  const { options, yoramBaseUrl } = ctx;
+  const yoramList = await sendRaw(ctx.yoramSession, yoramBaseUrl, {
+    method: "GET",
+    path: `/api/v1/owners/${owner}/projects/${project}/pull-requests?category=closed`,
+  });
+  const items = Array.isArray(yoramList.json?.items) ? yoramList.json.items : [];
+  const yoramNumber = items
+    .filter((item) => (item.fromBranch ?? item.from_branch) === "main" && (item.toBranch ?? item.to_branch) === "feature/ui")
+    .map((item) => Number(item.pullRequestNumber ?? item.pull_request_number ?? item.id))
+    .filter(Boolean)
+    .sort((a, b) => b - a)[0] ?? null;
+
+  const page = await sendRaw(ctx.legacySession, options.legacyUrl, {
+    method: "GET",
+    path: `/${owner}/${project}/closedPullRequests`,
+  });
+  const ids = [...new Set([...page.body.matchAll(/pullRequest\/(\d+)/gu)].map((match) => Number(match[1])))]
+    .sort((a, b) => b - a);
+  let legacyNumber = null;
+  for (const id of ids) {
+    const detail = await sendRaw(ctx.legacySession, options.legacyUrl, {
+      method: "GET",
+      path: `/${owner}/${project}/pullRequest/${id}`,
+    });
+    if (detail.status < 400 && detail.body.includes("feature/ui")) {
+      legacyNumber = id;
+      break;
+    }
+  }
+  return { legacyNumber, yoramNumber };
+}
+
+const LIFECYCLE_ACTIONS = {
+  // Creates the throwaway project: legacy binds its Project form from
+  // /projects (owner/name/overview/projectScope/vcs/menu flags), yoram takes
+  // the REST create body. Same name both sides -> later steps share paths.
+  "create-project": {
+    translateLegacy(step, resolved) {
+      const name = projectNameOf(step, resolved);
+      return {
+        method: "POST",
+        path: "/projects",
+        form: {
+          owner: step.params.owner,
+          name,
+          overview: resolved.overview,
+          projectScope: "PUBLIC",
+          vcs: "GIT",
+          code: "true",
+          issue: "true",
+          pullRequest: "true",
+          review: "true",
+          milestone: "true",
+          board: "true",
+        },
+      };
+    },
+    translateYoram(step, resolved) {
+      const name = projectNameOf(step, resolved);
+      return {
+        method: "POST",
+        path: `/api/v1/owners/${step.params.owner}/projects`,
+        json: { projectName: name, overview: resolved.overview, projectScope: "PUBLIC", vcs: "GIT" },
+      };
+    },
+    async handler(ctx) {
+      const { step, state, entry, suffix } = ctx;
+      const name = `parity-lc-${suffix}`;
+      const plan = { projectName: name, owner: step.params.owner, overview: `parity throwaway project ${suffix}` };
+      const route = `${step.params.owner} (create project ${name})`;
+      const { legacyResult, yoramResult } = await pairLenient(ctx, this.translateLegacy(step, plan), this.translateYoram(step, plan), route);
+      const legacyOk = numberFrom(new RegExp(`/${step.params.owner}/${name}\\/?$`), legacyResult.location) !== null || legacyResult.status === 303;
+      const yoramOk = (yoramResult.json?.projectName ?? yoramResult.json?.project_name) === name;
+      if (!legacyOk || !yoramOk) {
+        entry.errors.push(`create-project incomplete [${suffix}]: legacy=${legacyResult.status} yoram=${yoramResult.status}`);
+        return;
+      }
+      state.projectName = name;
+    },
+  },
+
+  // IssueLabelApp.copyLabels: copies sample's issue labels into the
+  // throwaway project; identical direct form route on both sides.
+  "copy-labels": {
+    translateLegacy(step, resolved) {
+      return { method: "POST", path: `/${step.params.owner}/${projectNameOf(step, resolved)}/copyLabels`, form: { owner: step.params.owner, projectName: step.params.sourceProject } };
+    },
+    translateYoram(step, resolved) {
+      return { method: "POST", path: `/${step.params.owner}/${projectNameOf(step, resolved)}/copyLabels`, form: { owner: step.params.owner, projectName: step.params.sourceProject } };
+    },
+    handler(ctx) {
+      const { step, state } = ctx;
+      if (!state.projectName) return;
+      return pairRequest(
+        ctx,
+        this.translateLegacy(step, { projectName: state.projectName }),
+        this.translateYoram(step, { projectName: state.projectName }),
+        `${step.params.owner}/${state.projectName}/copyLabels`,
+      );
+    },
+  },
+
+  // Adds bob to the throwaway project and discovers his member id per side
+  // (same probes as P13 but against the state-created project).
+  "add-created-member": {
+    translateLegacy(step, resolved) {
+      return { method: "POST", path: `/${step.params.owner}/${projectNameOf(step, resolved)}/members`, form: { loginId: resolved.loginId } };
+    },
+    translateYoram(step, resolved) {
+      return { method: "POST", path: `/${step.params.owner}/${projectNameOf(step, resolved)}/members`, form: { loginId: resolved.loginId } };
+    },
+    async handler(ctx) {
+      const { step, state, entry, options, yoramBaseUrl, suffix } = ctx;
+      if (!state.projectName) return;
+      const loginId = "bob";
+      const plan = { projectName: state.projectName, loginId };
+      const { legacyResult, yoramResult } = await pairRequest(ctx, this.translateLegacy(step, plan), this.translateYoram(step, plan), `${step.params.owner}/${state.projectName}/members (add)`);
+      if (legacyResult.status < 400) {
+        const page = await sendRaw(ctx.legacySession, options.legacyUrl, { method: "GET", path: `/${step.params.owner}/${state.projectName}/members` });
+        state.memberUidL = numberFrom(new RegExp(`member\\/(\\d+)\\/edit"[^>]*data-loginId="${loginId}"`, "u"), page.body);
+      }
+      if (yoramResult.status < 400) {
+        const list = await sendRaw(ctx.yoramSession, yoramBaseUrl, { method: "GET", path: `/api/v1/owners/${step.params.owner}/projects/${state.projectName}/members` });
+        state.memberUidY = findUserId(list.json, loginId);
+      }
+      if ((state.memberUidL === null) !== (state.memberUidY === null)) {
+        entry.errors.push(`member id discovery diverged [${suffix}]: legacy=${state.memberUidL} yoram=${state.memberUidY}`);
+      }
+    },
+  },
+
+  // ProjectApp.editMember role change on the throwaway member; identical
+  // direct route + form on both sides (role id 1 = manager).
+  "edit-created-member": {
+    translateLegacy(step, resolved) {
+      return { method: "POST", path: `/${step.params.owner}/${projectNameOf(step, resolved)}/member/${resolved.userId}/edit`, form: { id: resolved.roleId } };
+    },
+    translateYoram(step, resolved) {
+      return { method: "POST", path: `/${step.params.owner}/${projectNameOf(step, resolved)}/member/${resolved.userId}/edit`, form: { id: resolved.roleId } };
+    },
+    handler(ctx) {
+      const { step, state } = ctx;
+      if (!state.projectName || (!state.memberUidL && !state.memberUidY)) return;
+      return pairRequest(
+        ctx,
+        this.translateLegacy(step, { projectName: state.projectName, userId: state.memberUidL ?? 0, roleId: "1" }),
+        this.translateYoram(step, { projectName: state.projectName, userId: state.memberUidY ?? 0, roleId: "1" }),
+        `${step.params.owner}/${state.projectName}/member/:userId/edit`,
+      );
+    },
+  },
+
+  // ProjectApp.settingProject is multipart-only on legacy (asMultipartFormData);
+  // yoram exposes the same operation via REST PATCH. Runs ONLY on the
+  // throwaway project so setting drift dies with it.
+  "update-created-setting": {
+    translateLegacy(step, resolved) {
+      const name = projectNameOf(step, resolved);
+      return {
+        method: "POST",
+        path: `/${step.params.owner}/${name}/setting`,
+        multipart: multipartBody({ name, overview: resolved.overview, projectScope: "PUBLIC" }),
+      };
+    },
+    translateYoram(step, resolved) {
+      const name = projectNameOf(step, resolved);
+      return {
+        method: "PATCH",
+        path: `/api/v1/owners/${step.params.owner}/projects/${name}`,
+        json: { projectName: name, overview: resolved.overview, projectScope: "PUBLIC" },
+      };
+    },
+    handler(ctx) {
+      const { step, state, suffix } = ctx;
+      if (!state.projectName) return;
+      const plan = { projectName: state.projectName, overview: `parity throwaway setting ${suffix}` };
+      return pairLenient(ctx, this.translateLegacy(step, plan), this.translateYoram(step, plan), `${step.params.owner}/${state.projectName}/setting`);
+    },
+  },
+
+  // Initiates a transfer request toward alice on the throwaway project only;
+  // ownership never changes without acceptance, and the pending-transfer row
+  // dies with the project delete below.
+  "request-project-transfer": {
+    translateLegacy(step, resolved) {
+      return {
+        method: "PUT",
+        path: `/${step.params.owner}/${projectNameOf(step, resolved)}/transfer?owner=${resolved.destination}`,
+        headers: XHR_HEADER,
+      };
+    },
+    translateYoram(step, resolved) {
+      return {
+        method: "PUT",
+        path: `/${step.params.owner}/${projectNameOf(step, resolved)}/transfer?owner=${resolved.destination}`,
+        headers: XHR_HEADER,
+      };
+    },
+    handler(ctx) {
+      const { step, state } = ctx;
+      if (!state.projectName) return;
+      return pairRequest(
+        ctx,
+        this.translateLegacy(step, { projectName: state.projectName, destination: "alice" }),
+        this.translateYoram(step, { projectName: state.projectName, destination: "alice" }),
+        `${step.params.owner}/${state.projectName}/transfer (request)`,
+      );
+    },
+  },
+
+  // Deletes the throwaway project on both sides (XHR -> 204 legacy, REST 200
+  // yoram) and verifies absence afterwards — the scenario's cleanup proof.
+  "delete-project": {
+    translateLegacy(step, resolved) {
+      return { method: "DELETE", path: `/${step.params.owner}/${projectNameOf(step, resolved)}/delete`, headers: XHR_HEADER };
+    },
+    translateYoram(step, resolved) {
+      return { method: "DELETE", path: `/api/v1/owners/${step.params.owner}/projects/${projectNameOf(step, resolved)}` };
+    },
+    async handler(ctx) {
+      const { step, state, entry, options, yoramBaseUrl, suffix } = ctx;
+      if (!state.projectName) return;
+      await pairRequest(
+        ctx,
+        this.translateLegacy(step, { projectName: state.projectName }),
+        this.translateYoram(step, { projectName: state.projectName }),
+        `${step.params.owner}/${state.projectName} (delete)`,
+      );
+      const goneL = await sendRaw(ctx.legacySession, options.legacyUrl, { method: "GET", path: `/${step.params.owner}/${state.projectName}` });
+      const goneY = await sendRaw(ctx.yoramSession, yoramBaseUrl, { method: "GET", path: `/api/v1/owners/${step.params.owner}/projects/${state.projectName}` });
+      if ((goneL.status < 400 && goneL.status !== 404) || goneY.status < 400) {
+        entry.errors.push(`throwaway residue [${suffix}]: ${state.projectName} still reachable (legacy=${goneL.status} yoram=${goneY.status})`);
+      }
+      state.projectName = null;
+    },
+  },
+
+  // No-op parity probe: neither instance has pushed-branch row 999999999, and
+  // both handlers treat missing ids as success without touching data.
+  "delete-missing-pushed-branch": {
+    translateLegacy(step) {
+      return { method: "DELETE", path: `/${step.params.owner}/${step.params.project}/pushedBranch/999999999/delete` };
+    },
+    translateYoram(step) {
+      return { method: "DELETE", path: `/${step.params.owner}/${step.params.project}/pushedBranch/999999999/delete` };
+    },
+    handler(ctx) {
+      const { step } = ctx;
+      return pairRequest(ctx, this.translateLegacy(step), this.translateYoram(step), `${step.params.owner}/${step.params.project}/pushedBranch/:id/delete`);
+    },
+  },
+
+  // Missing-transfer-id probe: legacy renders notFound, yoram answers 404.
+  "probe-transfer-accept-missing": {
+    translateLegacy() {
+      return { method: "GET", path: "/project/transfer/999999999/deadbeef" };
+    },
+    translateYoram() {
+      return { method: "GET", path: "/project/transfer/999999999/deadbeef" };
+    },
+    handler(ctx) {
+      return pairRequest(ctx, this.translateLegacy(), this.translateYoram(), "/project/transfer/:id/:key");
+    },
+  },
+
+  // AttachmentApp.uploadFile: multipart field filePath on both sides; legacy
+  // answers 201 + Location /files/:id, yoram 201 + JSON {id}.
+  "upload-attachment": {
+    translateLegacy(step, resolved) {
+      return { method: "POST", path: "/files", multipart: multipartBody({}, { name: "filePath", filename: resolved.filename, content: resolved.content }) };
+    },
+    translateYoram(step, resolved) {
+      return { method: "POST", path: "/files", multipart: multipartBody({}, { name: "filePath", filename: resolved.filename, content: resolved.content }) };
+    },
+    async handler(ctx) {
+      const { step, state, suffix } = ctx;
+      const plan = attachmentPlan(suffix);
+      const { legacyResult, yoramResult } = await pairRequest(
+        ctx,
+        this.translateLegacy(step, plan),
+        this.translateYoram(step, plan),
+        "/files (upload)",
+      );
+      state.attachmentL = numberFrom(/\/files\/(\d+)/, legacyResult.location);
+      state.attachmentY = Number(yoramResult.json?.id ?? yoramResult.json?.url?.match(/files\/(\d+)/)?.[1]) || null;
+      if ((state.attachmentL === null) !== (state.attachmentY === null)) {
+        pushApiViolation(ctx, "/files (upload id)", { id: state.attachmentL }, { id: state.attachmentY });
+      }
+    },
+  },
+
+  // AttachmentApp.getFile byte source probe (plain and trailing-slash routes).
+  "get-attachment": getAttachmentAction("get-attachment", false),
+  "get-attachment-trailing": getAttachmentAction("get-attachment-trailing", true),
+
+  // AttachmentApp.deleteFile: multipart _method=delete on both sides.
+  "delete-attachment": {
+    translateLegacy(step, resolved) {
+      return { method: "POST", path: `/files/${resolved.attachmentId}`, multipart: multipartBody({ _method: "delete" }) };
+    },
+    translateYoram(step, resolved) {
+      return { method: "POST", path: `/files/${resolved.attachmentId}`, multipart: multipartBody({ _method: "delete" }) };
+    },
+    async handler(ctx) {
+      const { step, state } = ctx;
+      if (!state.attachmentL && !state.attachmentY) return;
+      await pairRequest(
+        ctx,
+        this.translateLegacy(step, { attachmentId: state.attachmentL ?? 0 }),
+        this.translateYoram(step, { attachmentId: state.attachmentY ?? 0 }),
+        "/files/:id (delete)",
+      );
+      state.attachmentL = state.attachmentY = null;
+    },
+  },
+
+  // UserApp.isUsed signup-validation fragment (query param `name`).
+  "probe-user-isused": {
+    translateLegacy(step, resolved) {
+      return { method: "GET", path: `/user/isUsed?name=${encodeURIComponent(resolved.probeName)}` };
+    },
+    translateYoram(step, resolved) {
+      return { method: "GET", path: `/user/isUsed?name=${encodeURIComponent(resolved.probeName)}` };
+    },
+    handler(ctx) {
+      const { suffix } = ctx;
+      const result = pairRequest(ctx, this.translateLegacy({}, { probeName: `parity-probe-${suffix}` }), this.translateYoram({}, { probeName: `parity-probe-${suffix}` }), "/user/isUsed");
+      return result.then(({ legacyResult, yoramResult }) => {
+        if (legacyResult.json && yoramResult.json && JSON.stringify(legacyResult.json) !== JSON.stringify(yoramResult.json)) {
+          pushApiViolation(ctx, "/user/isUsed (payload)", legacyResult.json, yoramResult.json);
+        }
+      });
+    },
+  },
+
+  // Site-admin user listing via the legacy-compat external API (read-only).
+  "probe-admin-users": {
+    translateLegacy() {
+      return { method: "GET", path: "/-_-api/v1/admin/users" };
+    },
+    translateYoram() {
+      return { method: "GET", path: "/-_-api/v1/admin/users" };
+    },
+    handler(ctx) {
+      return pairRequest(ctx, this.translateLegacy(), this.translateYoram(), "/-_-api/v1/admin/users");
+    },
+  },
+
+  // PullRequestApp.restoreFromBranch on R13's closed main->feature/ui PR;
+  // identical direct route on both sides. Skips cleanly when the PR does not
+  // exist (first sweep ordering, pruned repo, ...).
+  "restore-closed-pullrequest": {
+    translateLegacy(step, resolved) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/pullRequest/${resolved.prId}/restorefrombranch` };
+    },
+    translateYoram(step, resolved) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/pullRequest/${resolved.prId}/restorefrombranch` };
+    },
+    async handler(ctx) {
+      const { step, state, entry } = ctx;
+      const found = await discoverClosedRestorePr(ctx, step.params.owner, step.params.project);
+      if (!found.legacyNumber || !found.yoramNumber) {
+        entry.errors.push(`pr-restore skip: closed main->feature/ui PR not found on both sides (legacy=${found.legacyNumber} yoram=${found.yoramNumber})`);
+        return;
+      }
+      state.restoredPrL = found.legacyNumber;
+      state.restoredPrY = found.yoramNumber;
+      await pairRequest(
+        ctx,
+        this.translateLegacy(step, { prId: state.restoredPrL }),
+        this.translateYoram(step, { prId: state.restoredPrY }),
+        `${step.params.owner}/${step.params.project}/pullRequest/:id/restorefrombranch`,
+      );
+    },
+  },
+
+  // Re-closes the restored PR so the sweep leaves the same residue it found.
+  "close-restored-pullrequest": {
+    translateLegacy(step, resolved) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/pullRequest/${resolved.prId}/close` };
+    },
+    translateYoram(step, resolved) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/pullRequest/${resolved.prId}/close` };
+    },
+    handler(ctx) {
+      const { step, state } = ctx;
+      if (!state.restoredPrL && !state.restoredPrY) return;
+      return pairRequest(
+        ctx,
+        this.translateLegacy(step, { prId: state.restoredPrL ?? 0 }),
+        this.translateYoram(step, { prId: state.restoredPrY ?? 0 }),
+        `${step.params.owner}/${step.params.project}/pullRequest/:id/close`,
+      );
+    },
+  },
+};
+
+// Shared shape for the two getFile route variants (plain + trailing slash).
+function getAttachmentAction(name, trailing) {
+  return {
+    translateLegacy(step, resolved) {
+      return { method: "GET", path: `/files/${resolved.attachmentId}${trailing ? "/" : ""}` };
+    },
+    translateYoram(step, resolved) {
+      return { method: "GET", path: `/files/${resolved.attachmentId}${trailing ? "/" : ""}` };
+    },
+    handler(ctx) {
+      const { step, state } = ctx;
+      if (!state.attachmentL && !state.attachmentY) return;
+      return pairRequest(
+        ctx,
+        this.translateLegacy(step, { attachmentId: state.attachmentL ?? 0 }),
+        this.translateYoram(step, { attachmentId: state.attachmentY ?? 0 }),
+        `/files/:id${trailing ? "/" : ""}`,
+      );
+    },
+  };
+}
+
+Object.assign(actionDefinitions, LIFECYCLE_ACTIONS);
+
+scenarios.push(
+  {
+    id: "P18-throwaway-project-lifecycle",
+    title: "throwaway project lifecycle: create, copyLabels, member edit, setting, transfer request, delete",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "create-project", params: { owner: "admin" } },
+      { actor: "admin", action: "copy-labels", params: { owner: "admin", sourceProject: "sample" } },
+      { actor: "admin", action: "add-created-member", params: { owner: "admin" } },
+      { actor: "admin", action: "edit-created-member", params: { owner: "admin" } },
+      { actor: "admin", action: "update-created-setting", params: { owner: "admin" } },
+      { actor: "admin", action: "request-project-transfer", params: { owner: "admin" } },
+      { actor: "admin", action: "delete-project", params: { owner: "admin" } },
+    ],
+    behaviorMatcher: {
+      action: /^(ProjectApp\.(newProject|deleteProject|settingProject|editMember|transferProject)|IssueLabelApp\.copyLabels|ProjectApi\.newProject)$/,
+    },
+  },
+  {
+    id: "P19-missing-entity-probes",
+    title: "missing-entity no-op probes: pushed branch delete, transfer accept",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "delete-missing-pushed-branch", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "probe-transfer-accept-missing", params: {} },
+    ],
+    behaviorMatcher: { action: /^(ProjectApp\.(deletePushedBranch|acceptTransfer))$/ },
+  },
+  {
+    id: "P20-attachment-file-lifecycle",
+    title: "user attachment upload, fetch (both routes), delete",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "upload-attachment", params: {} },
+      { actor: "admin", action: "get-attachment", params: {} },
+      { actor: "admin", action: "get-attachment-trailing", params: {} },
+      { actor: "admin", action: "delete-attachment", params: {} },
+    ],
+    behaviorMatcher: { action: /^AttachmentApp\.(uploadFile|getFile|deleteFile)$/ },
+  },
+  {
+    id: "P21-user-compat-api-probes",
+    title: "compat API probes: user-name validation, admin user list",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "probe-user-isused", params: {} },
+      { actor: "admin", action: "probe-admin-users", params: {} },
+    ],
+    behaviorMatcher: { action: /^(UserApp\.isUsed|UserApi\.users)$/ },
+  },
+  {
+    id: "T1-pr-restore-cycle",
+    title: "restore R13's closed main->feature/ui pull request, then close again",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "restore-closed-pullrequest", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "close-restored-pullrequest", params: { owner: "admin", project: "sample" } },
+    ],
+    behaviorMatcher: { action: /^PullRequestApp\.restoreFromBranch$/, route: /pullRequest/ },
+  },
+);
+
+Object.assign(actionDefinitions, MUTATION_ACTIONS);
