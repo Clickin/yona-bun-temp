@@ -556,7 +556,7 @@
   scenarios; commit `2c0712a61` and this session's follow-ups.
 - Deferred remainder (34 B-ids: SVN, migration/import, email-token flows, git
   smart-http, destructive shared-state operations) recorded with reasons in
-  `docs/provenance/differential-behavior-coverage-deferred.md`; reclassify per
+  `docs/provenance/differential-behavior-coverage-excluded.md`; reclassify per
   B-id into Feature Group `status` columns when Yoram implements the surface.
 - Follow-up: investigate the 53 needs-review runtime divergences from the first
   mutation sweep (milestone/post/webhook create-delete chains, label
@@ -568,7 +568,7 @@
 ## Scope decision update (2026-08-23, second)
 
 - deferred 분류 폐지: 기존 deferred 행위 34건 전부 1차 릴리즈 범위로 재분류
-  (상태 = gap). 근거/목록: docs/provenance/differential-behavior-coverage-deferred.md
+  (상태 = gap). 근거/목록: docs/provenance/differential-behavior-coverage-excluded.md
   (rev.3). SVN·migration/import·email-token 플로우·git smart-http·사이트 어드민
   mutation 등은 v1 구현 work item이다.
 - `-_-api/v1/**` app-owned 호환 행은 RESTful `/api/v1` 경로로 대체 (clean cutover,

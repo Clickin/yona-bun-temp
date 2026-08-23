@@ -215,10 +215,12 @@ Deferred 기능의 설정 키는 1차 PoC에서 **설정 호환성**과 **기능
 - `deviation`: 의도적으로 다른 의미나 UX를 채택함 (사유 필수 기재)
 
 `deviation` 기록은 최소한 legacy 동작, Rust 동작, 사용자 영향, 허용 사유, provenance 문서 위치를 포함해야 한다. URL deviation은 legacy route, Rust route, redirect/alias 여부를 함께 기록한다.
-Differential sweep 행위 커버리지의 미커버 B-id(현재 29개)는 전부 **1차 릴리즈
-범위의 열린 gap**이다(2026-08-23 결정으로 deferred 분류 폐지). 근거 문서:
-`docs/provenance/differential-behavior-coverage-deferred.md`. 단
-`/-_-api/v1/**` 중 migrator/export-import 범위 행은 deviation(의도 제외)이며,
+Differential sweep 행위 커버리지의 미커버 B-id(현재 29개)는 대부분 **이미 구현된
+기능**이다 — 미커버 원인은 자동 비교 수단의 부재(svn/git 클라이언트 페어, SMTP
+토큰 catch-box, 공유 시드 보호)이며 deferred가 아니라 하네스 확장 과제다
+(2026-08-23 deferred 폐지 결정, 문서 rev.4 정정). 근거 문서:
+`docs/provenance/differential-behavior-coverage-excluded.md`. 단
+`/-_-api/v1/**` 중 migrator/export-import 범위 행은 deviation(의도 위임)이며,
 해당 app-owned 호환 행은 `/api/v1` RESTful 경로로 대체됐다(같은 문서 §0).
 개별 Feature Group 테이블의 `status` 기록은 이 문서의 gap 정의를 따른다.
 
