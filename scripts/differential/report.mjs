@@ -72,6 +72,18 @@ const CLASSIFICATION_RULES = [
     reason:
       "SPA-shell skeleton drift: legacy SSR HTML vs yoram React render differ structurally; user-visible DOM/visual parity is enforced by the WTR e2e lanes, not the sweep",
    },
+   {
+    // Intentional exclusion per SPEC.md "Legacy API 접두사": broad
+    // /-_-api/v1/** external compatibility belongs to the separate
+    // migrator/export/import deliverable; only rows marked implemented in
+    // docs/provenance/legacy-external-api.md are app-owned routes.
+    test: ({ kind, route }) =>
+      kind === "api" &&
+      /-_-api\/v1\/owners\/[^/?]+\/(projects\/)?[^/?]+\/(exports(\/|$)|issues\/imports)/u.test(route.split("?")[0]),
+    classification: "known-gap",
+    reason:
+      "intentional deviation: legacy external API row is migrator/export-import scope, deliberately not an app-server route (SPEC.md Legacy API 접두사 결정; docs/provenance/legacy-external-api.md)",
+   },
 ];
 
 export function classifyViolation(kind, route, detail) {

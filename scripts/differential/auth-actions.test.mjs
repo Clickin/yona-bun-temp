@@ -83,7 +83,7 @@ test("translators produce expected method/path literals", () => {
   for (const [name, definition] of Object.entries(actionDefinitions)) {
     for (const [side, translate] of [["legacy", definition.translateLegacy], ["yoram", definition.translateYoram]]) {
       const result = translate({ params: {} });
-      assert.match(result.method, /^(GET|POST)$/u, `${name}/${side}: method`);
+      assert.match(result.method, /^(GET|POST|PUT|PATCH|DELETE)$/u, `${name}/${side}: method`);
       assert.ok(result.path.startsWith("/"), `${name}/${side}: path must be absolute`);
     }
   }

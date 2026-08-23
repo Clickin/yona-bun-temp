@@ -110,6 +110,50 @@ export const scenarios = [
     ],
     behaviorMatcher: { action: /^Application\.oAuth(Denied)?$/, route: /^GET \/authenticate\/:provider(\/denied)?$/ },
   },
+  {
+    id: "S12-compat-translation",
+    title: "compat translation helper (unconfigured precondition parity)",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "post-compat-translation", params: { owner: "admin", project: "sample" } },
+    ],
+    behaviorMatcher: { action: /^IssueApi\.translate$/ },
+  },
+  {
+    id: "S13-compat-default-login-page",
+    title: "compat default login page mutation (boundary payload)",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "post-compat-default-login-page", params: {} },
+    ],
+    behaviorMatcher: { action: /^UserApp\.setDefaultLoginPage$/, route: /defultLoginPage/ },
+  },
+  {
+    id: "S14-compat-user-create-boundary",
+    title: "site-admin user creation rejects invalid payload identically",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "post-compat-user-invalid", params: {} },
+    ],
+    behaviorMatcher: { action: /^UserApi\.newUser$/ },
+  },
+  {
+    id: "S15-compat-token-boundary",
+    title: "API token issuance rejects bad credentials identically",
+    actions: [
+      { actor: "anonymous", action: "post-compat-token-invalid", params: {} },
+    ],
+    behaviorMatcher: { action: /^UserApi\.newToken$/ },
+  },
+  {
+    id: "S16-compat-admin-user-state-missing",
+    title: "site-admin user state patch on missing user (boundary parity)",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "patch-compat-admin-user-missing", params: {} },
+    ],
+    behaviorMatcher: { action: /^UserApi\.updateUserState$/ },
+  },
 ];
 
 export const actionDefinitions = {
@@ -287,6 +331,75 @@ export const actionDefinitions = {
       const path = `/authenticate/${step.params.provider}/denied`;
       const { legacyResult, yoramResult } = await requestAnonymousBoth(ctx, { method: "GET", path }, { method: "GET", path });
       pushStatusDivergence(ctx, path, legacyResult, yoramResult);
+    },
+  },
+
+  // --- app-owned compat boundary probes (S12-S16) ---------------------------
+  // These rows are implemented in yoram (docs/provenance/legacy-external-api.md
+  // "Implemented"); probes use boundary payloads so no entity/state is created.
+  "post-compat-translation": {
+    translateLegacy(step) {
+      return { method: "POST", path: "/-_-api/v1/translation", json: { owner: step.params.owner, projectName: step.params.project, type: "issue", number: 1 } };
+    },
+    translateYoram(step) {
+      return { method: "POST", path: `/api/v1/-_-api/v1/translation`, json: { owner: step.params.owner, projectName: step.params.project, type: "issue", number: 1 } };
+    },
+    async handler(ctx) {
+      const { step, helpers, entry } = ctx;
+      const translation = { method: "POST", path: "/-_-api/v1/translation", json: { owner: step.params.owner, projectName: step.params.project, type: "issue", number: 1 } };
+      const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, translation, { ...translation, path: `/api/v1/-_-api/v1/translation` });
+      pushStatusDivergence(ctx, entry.behaviorIds[0] ?? translation.path, legacyResult, yoramResult);
+    },
+  },
+  "post-compat-default-login-page": {
+    translateLegacy: () => ({ method: "POST", path: "/-_-api/v1/user/defultLoginPage", form: { defaultLoginPage: "" } }),
+    translateYoram: () => ({ method: "POST", path: "/api/v1/-_-api/v1/user/defultLoginPage", form: { defaultLoginPage: "" } }),
+    async handler(ctx) {
+      const { entry, helpers } = ctx;
+      const legacy = { method: "POST", path: "/-_-api/v1/user/defultLoginPage", form: { defaultLoginPage: "" } };
+      const yoram = { method: "POST", path: "/api/v1/-_-api/v1/user/defultLoginPage", form: { defaultLoginPage: "" } };
+      const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacy, yoram);
+      pushStatusDivergence(ctx, "/user/editform/:tabId".replace(":tabId", "defultLoginPage"), legacyResult, yoramResult);
+    },
+  },
+  "post-compat-user-invalid": {
+    translateLegacy: () => ({ method: "POST", path: "/-_-api/v1/users", json: {} }),
+    translateYoram: () => ({ method: "POST", path: "/api/v1/-_-api/v1/users", json: {} }),
+    async handler(ctx) {
+      const { entry, helpers } = ctx;
+      const { legacyResult, yoramResult } = await helpers.requestBoth(
+        ctx,
+        { method: "POST", path: "/-_-api/v1/users", json: {} },
+        { method: "POST", path: "/api/v1/-_-api/v1/users", json: {} },
+      );
+      pushStatusDivergence(ctx, entry.behaviorIds[0] ?? "/-_-api/v1/users", legacyResult, yoramResult);
+    },
+  },
+  "post-compat-token-invalid": {
+    translateLegacy: () => ({ method: "POST", path: "/-_-api/v1/users/token", json: { id: "no-such-parity-user", password: "definitely-wrong" } }),
+    translateYoram: () => ({ method: "POST", path: "/api/v1/-_-api/v1/users/token", json: { id: "no-such-parity-user", password: "definitely-wrong" } }),
+    async handler(ctx) {
+      const { entry, helpers } = ctx;
+      const { legacyResult, yoramResult } = await requestAnonymousBoth(
+        ctx,
+        { method: "POST", path: "/-_-api/v1/users/token", json: { id: "no-such-parity-user", password: "definitely-wrong" } },
+        { method: "POST", path: "/api/v1/-_-api/v1/users/token", json: { id: "no-such-parity-user", password: "definitely-wrong" } },
+      );
+      void entry;
+      pushStatusDivergence(ctx, "/-_-api/v1/users/token", legacyResult, yoramResult);
+    },
+  },
+  "patch-compat-admin-user-missing": {
+    translateLegacy: () => ({ method: "PATCH", path: "/-_-api/v1/admin/users/no-such-parity-user", json: { state: "LOCKED" } }),
+    translateYoram: () => ({ method: "PATCH", path: "/api/v1/-_-api/v1/admin/users/no-such-parity-user", json: { state: "LOCKED" } }),
+    async handler(ctx) {
+      const { entry, helpers } = ctx;
+      const { legacyResult, yoramResult } = await helpers.requestBoth(
+        ctx,
+        { method: "PATCH", path: "/-_-api/v1/admin/users/no-such-parity-user", json: { state: "LOCKED" } },
+        { method: "PATCH", path: "/api/v1/-_-api/v1/admin/users/no-such-parity-user", json: { state: "LOCKED" } },
+      );
+      pushStatusDivergence(ctx, entry.behaviorIds[0] ?? "/-_-api/v1/admin/users/:user", legacyResult, yoramResult);
     },
   },
 };

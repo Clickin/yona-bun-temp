@@ -1,13 +1,35 @@
-# Differential Behavior Coverage — Deferred & Follow-up (2026-08-23)
+# Differential Behavior Coverage — Deferred & Follow-up (2026-08-23, rev.2)
 
 Status: current. Source of truth for what the differential sweep deliberately does
-NOT cover, and the runtime divergences surfaced by the first mutation-enabled
-sweep. Companion artifacts: `.agent/differential/behavior-coverage.json`
-(281/315 = 89.2% covered), `.agent/differential/report.json` (violations +
-classifications), `docs/provenance/behavior-inventory.json` (immutable B-id
-inventory).
+NOT cover, which legacy surfaces are intentionally excluded as deviation, and the
+runtime divergences surfaced by the mutation-enabled sweeps. Companion artifacts:
+`.agent/differential/behavior-coverage.json`, `.agent/differential/report.json`
+(violations + classifications), `docs/provenance/behavior-inventory.json`
+(immutable B-id inventory).
 
-## 1. Deferred behaviors (34 uncovered B-ids)
+## 0. Intentional deviations — deliberately removed surfaces (제외 확정)
+
+이 섹션의 행위는 Yoram app runtime에서 **의도적으로 제공하지 않기로 결정된**
+표면이다. 스윕이 이 영역의 divergence를 발견해도 패리티 gap이 아니라 deviation이며,
+`scripts/differential/report.mjs`의 migrator-scope 규칙이 자동으로 known-gap으로
+분류한다. 근거: SPEC.md §"Legacy API 접두사" 결정과
+`docs/provenance/legacy-external-api.md`의 implemented/migrator 구분.
+
+- `-_-api/v1/owners/:o/:p/exports` (B-0036) — export는 별도 migrator/export tool
+  범위. app route로 추가하지 않는다.
+- `-_-api/v1/owners/:o/:p/issues/imports` (B-0214 계열) — 게시글→이슈 변환 import도
+  migrator 범위. 스윕은 P17/I18의 boundary probe로 상태 차이만 기록한다.
+- `-_-api/v1/owners/:o/:p/projects POST`(bulk import-style 생성) — 동일 migrator
+  범위. 일반 프로젝트 생성은 `/api/v1/owners/:o/projects`가 canonical이다.
+
+주의: 위 목록 외의 `-_-api/v1/**` 행(hello, users, users/token, user/issues,
+statistics, defultLoginPage, admin/users GET/PATCH, titleHeads, translation,
+favorite 3종+토글, assignableUsers/findSharer/share/vote-weight/detectChange,
+issues/comments CRUD compat)은 **app-owned implemented**로서 커버 대상이다.
+S12–S16 경계 프로브와 I11–I13/I20·I23 프로브가 이들을 검증한다.
+
+
+## 1. Deferred behaviors (uncovered B-ids)
 
 These are outside the sweep's safe/reachable envelope. Classification per
 AGENTS.md: deferred scope; none may be counted as "covered" until Yoram
@@ -47,21 +69,19 @@ implements them or a safe harness strategy exists.
 - B-0047-adjacent: B-0224 `POST $service<git-upload-pack|git-receive-pack>`,
   plus `info/refs` probe stays error-tolerant in P15
 
-### Misc single-route leftovers (9)
+### Misc single-route leftovers
 - B-0155 `GET /restricted` (rendered only after an auth denial state the harness
   cannot reach anonymously)
-- B-0193 `PATCH /-_-api/v1/admin/users/:user` (site-admin API user mutation;
-  risky against the seeded admin)
 - B-0199 `POST /` (root catch-all form target with no stable semantic)
-- B-0220 `POST /-_-api/v1/translation`, B-0221 `defultLoginPage` (yoram route
-  existence unconfirmed at write time)
-- B-0222 `POST /-_-api/v1/users` (API user creation; overlaps signup lifecycle,
-  left for token-API wave)
-- B-0223 `POST /-_-api/v1/users/token` (creates a persistent admin API token)
 - B-0287/B-0288 `sites/mail` + `mailList` (mass mail send)
 - B-0289 `setAttachmentToUserAvatar` (not trivially reversible)
 - B-0295/B-0296 `threads/:id/close|open` (no inventory-discoverable thread id
   source in the parity seed)
+
+B-0193(admin users state PATCH), B-0220(translation), B-0221(defultLoginPage),
+B-0222(POST users), B-0223(users/token)는 migrator 제외가 아니라 app-owned
+implemented 행으로 확인되어 deferred에서 제외했다. S12–S16 경계 프로브가 이들을
+커버한다(2026-08-23).
 
 ## 2. Runtime divergences found by the first mutation sweep (follow-up)
 
