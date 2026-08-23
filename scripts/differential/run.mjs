@@ -8,7 +8,7 @@
 // Usage: node scripts/differential/run.mjs [--legacy-url URL] [--yoram-port N]
 
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, openSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, openSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -192,6 +192,11 @@ async function writeYoramConfig(databaseUrl, dataRoot, seedPilot, port) {
     "asset_root = \"frontend/dist\"",
     `seed_pilot = ${seedPilot ? "true" : "false"}`,
     "use_embedded_assets = false",
+    "",
+    "[smtp]",
+    "host = \"127.0.0.1\"",
+    "port = 2525",
+    "ssl = false",
   ].join("\n");
   writeFileSync(path.join(yoramRuntimeDir, "dev.toml"), `${config}\n`);
 }
@@ -211,6 +216,12 @@ function startYoramProcess(port) {
       YONA_BASE_PATH: "/",
       YONA_BIND_ADDR: `127.0.0.1:${port}`,
       YORAM_CONFIG_TOML: path.join(yoramRuntimeDir, "dev.toml"),
+      // Sweep SMTP catch-box (scripts/differential/mail-sink.mjs) so email
+      // token flows can be verified end to end.
+      SMTP_ENABLED: process.env.SMTP_ENABLED ?? "true",
+      SMTP_HOST: process.env.SMTP_HOST ?? "127.0.0.1",
+      SMTP_PORT: process.env.SMTP_PORT ?? "2525",
+      SMTP_SSL: "false",
     },
     stdio: ["ignore", openSync(yoramServerLog, "a"), openSync(yoramServerLog, "a")],
   });
@@ -219,6 +230,98 @@ function startYoramProcess(port) {
 // Provision the same account/project names and passwords as the legacy
 // parity instance (scripts/legacy-localhost.mjs) through Yoram's own REST
 // surface, so both sides authenticate with identical credentials.
+
+// Point the legacy parity instance's play2-mailplugin at the sweep SMTP
+// catch-box; the conf lives under .agent and is never committed.
+function patchLegacySmtpConf() {
+  const confPath = path.join(repoRoot, ".agent/legacy-localhost/instances/parity/data/conf/application.conf");
+  if (!existsSync(confPath)) return;
+  const original = readFileSync(confPath, "utf8");
+  const settings = [
+    ["smtp.host", "127.0.0.1"],
+    ["smtp.port", "2525"],
+    ["smtp.ssl", "false"],
+    ["smtp.mock", "false"],
+  ];
+  let updated = original;
+  for (const [key, value] of settings) {
+    const pattern = new RegExp(`^${key.replace(".", "\\.")}\\s*=.*$`, "mu");
+    updated = pattern.test(updated) ? updated.replace(pattern, `${key} = ${value}`) : `${updated.trimEnd()}\n${key} = ${value}\n`;
+  }
+  if (updated !== original) writeFileSync(confPath, updated);
+}
+
+async function bootMailSink() {
+  const child = spawn(process.execPath, [path.join(repoRoot, "scripts/differential/mail-sink.mjs")], {
+    cwd: repoRoot,
+    env: { ...process.env, MAIL_SINK_DIR: path.join(outputDir, "mail-out") },
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  await new Promise((resolve, reject) => {
+    let ready = false;
+    const timer = setTimeout(() => {
+      child.kill("SIGTERM");
+      reject(new Error("mail sink did not start"));
+    }, 5_000);
+    const onOutput = (chunk) => {
+      if (chunk.toString().includes("mail-sink listening")) {
+        ready = true;
+        clearTimeout(timer);
+        resolve();
+      }
+    };
+    child.stdout.on("data", onOutput);
+    child.stderr.on("data", onOutput);
+    child.once("exit", (code) => {
+      if (!ready) {
+        clearTimeout(timer);
+        reject(new Error(`mail sink exited during startup (${code})`));
+      }
+    });
+  });
+  return child;
+}
+
+// Newest-first list of mails the sink has stored.
+function readMails() {
+  const mailDir = path.join(outputDir, "mail-out");
+  if (!existsSync(mailDir)) return [];
+  return readdirSync(mailDir)
+    .filter((file) => file.endsWith(".eml"))
+    .sort()
+    .reverse()
+    .map((file) => readFileSync(path.join(mailDir, file), "utf8"));
+}
+
+function clearMailOut() {
+  const mailDir = path.join(outputDir, "mail-out");
+  if (!existsSync(mailDir)) return;
+  for (const file of readdirSync(mailDir)) {
+    if (file.endsWith(".eml")) unlinkSync(path.join(mailDir, file));
+  }
+}
+
+function decodeQuotedPrintable(text) {
+  return text
+    .replace(/=\r?\n/gu, "")
+    .replace(/=([0-9A-F]{2})/giu, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+    .replaceAll("&amp;", "&");
+}
+
+// Absolute links inside one raw .eml whose path starts with `pathPrefix`.
+function extractMailLinks(rawMail, pathPrefix) {
+  const decoded = decodeQuotedPrintable(rawMail);
+  return [...decoded.matchAll(/https?:\/\/[^\s"'<>)]+/gu)]
+    .map((match) => match[0].replace(/[.,;:!?]+$/u, ""))
+    .filter((url) => {
+      try {
+        return new URL(url).pathname.startsWith(pathPrefix);
+      } catch {
+        return false;
+      }
+    });
+}
+
 async function provisionYoramParityAccounts(baseUrl) {
   const session = new YoramSession(baseUrl);
   // Registration requires an anonymous pilot session + CSRF token; prime both.
@@ -438,7 +541,21 @@ export const stepHelpers = {
     }
     return { legacyResult, yoramResult };
   },
-
+  // Sweep SMTP catch-box access: newest-first raw .eml contents.
+  readMails,
+  extractMailLinks,
+  // Waits until the sink holds more than `previousCount` mails, then returns
+  // the new (newest-first) raw .eml contents.
+  async waitForMail(previousCount, timeoutMs = 30_000) {
+    const deadline = Date.now() + timeoutMs;
+    for (;;) {
+      const mails = readMails();
+      if (mails.length > previousCount) return mails.slice(0, mails.length - previousCount);
+      if (Date.now() > deadline) return [];
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+  },
+   issueNumberFromLocation,
   // Render both dom targets as skeletons and diff; any violation is a dom kind.
   async renderDomTarget(ctx, domTarget) {
     const { step, suffix, entry, legacySession, yoramSession, legacyPage, yoramPage, options } = ctx;
@@ -502,7 +619,14 @@ export async function runSweep(options = {}) {
     infraErrors,
   };
 
+  let mailSink = null;
   try {
+    mkdirSync(path.join(outputDir, "mail-out"), { recursive: true });
+    clearMailOut();
+    patchLegacySmtpConf();
+    // The legacy instance must be restarted to pick up the patched smtp conf.
+    await stopLegacy();
+    mailSink = await bootMailSink();
     let legacyBooted = true;
     try {
       await bootLegacy();
@@ -586,6 +710,7 @@ export async function runSweep(options = {}) {
   } finally {
     if (browserHandle) await browserHandle.close().catch(() => {});
     if (yoramHandle) await yoramHandle.stop().catch(() => {});
+    if (mailSink) await stopChild(mailSink).catch(() => {});
   }
 }
 

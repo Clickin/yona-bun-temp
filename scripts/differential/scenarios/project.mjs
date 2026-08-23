@@ -1659,6 +1659,111 @@ function getAttachmentAction(name, trailing) {
 
 Object.assign(actionDefinitions, LIFECYCLE_ACTIONS);
 
+// --- wave B: svn client pair (B-0021/B-0170/B-0294/B-0314/B-0271) ------------
+//
+// Drives a real svn client against both servers inside an SVN-vcs throwaway
+// project: checkout, add + commit, then compares the server-side log state.
+LIFECYCLE_ACTIONS["svn-pair-commit"] = {
+  // Registry contract requires translator functions; execution is fully
+  // client-side (real svn against both servers), so these stay inert.
+  translateLegacy: () => ({ method: "GET", path: "/__svn-pair-client-side__" }),
+  translateYoram: () => ({ method: "GET", path: "/__svn-pair-client-side__" }),
+  async handler(ctx) {
+    const { execFile } = await import("node:child_process");
+    const { mkdtempSync, rmSync, writeFileSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { promisify } = await import("node:util");
+    const svn = promisify(execFile);
+    const runSvn = (args, options = {}) =>
+      svn("svn", ["--non-interactive", "--username", "admin", "--password", "admin", ...args], {
+        timeout: 120_000,
+        ...options,
+      });
+
+    const { step, entry, suffix, helpers } = ctx;
+    const owner = step.params.owner;
+    const name = `parity-svn-${suffix}`;
+    const fail = (message) => entry.errors.push(`svn-pair [${suffix}]: ${message}`);
+
+    // Create the SVN-vcs throwaway project on both sides.
+    await helpers.sendRaw(ctx, "legacy", {
+      method: "POST",
+      path: "/projects",
+      form: { owner, name, overview: `parity svn pair ${suffix}`, projectScope: "PUBLIC", vcs: "Subversion", code: "true", issue: "true", pullRequest: "true", review: "true", milestone: "true", board: "true" },
+    });
+    await helpers.sendRaw(ctx, "yoram", {
+      method: "POST",
+      path: `/api/v1/owners/${owner}/projects`,
+      json: { projectName: name, overview: `parity svn pair ${suffix}`, projectScope: "PUBLIC", vcs: "Subversion" },
+    });
+
+    const svnUrl = (baseUrl) => `${baseUrl}/svn/${owner}/${name}`;
+    const workRoot = mkdtempSync(`${tmpdir()}/parity-svn-`);
+    try {
+      const checkout = async (baseUrl, dir) => {
+        for (let attempt = 0; attempt < 5; attempt += 1) {
+          try {
+            await runSvn(["co", "-q", svnUrl(baseUrl), dir]);
+            return true;
+          } catch {
+            await new Promise((resolve) => setTimeout(resolve, 2_000));
+          }
+        }
+        return false;
+      };
+
+      const legacyDir = `${workRoot}/legacy`;
+      const yoramDir = `${workRoot}/yoram`;
+      if (!(await checkout(ctx.options.legacyUrl, legacyDir))) return fail("svn checkout failed against legacy");
+      if (!(await checkout(ctx.yoramBaseUrl, yoramDir))) return fail("svn checkout failed against yoram");
+
+      // Same file content + message on both sides; a fresh project starts at
+      // r0, so the resulting server-side log state must match exactly.
+      for (const dir of [legacyDir, yoramDir]) {
+        writeFileSync(`${dir}/parity-svn-pair.txt`, `parity svn pair payload ${suffix}\n`);
+        await runSvn(["add", `${dir}/parity-svn-pair.txt`]);
+        await runSvn(["commit", `${dir}/parity-svn-pair.txt`, "-m", `parity svn pair ${suffix}`]);
+      }
+
+      const logState = async (baseUrl) => {
+        // XML is stable across svn clients; revision numbers are per-server so
+        // only message pairs are compared. Known divergence recorded separately:
+        // yoram's svn log XML omits <author>. Query the repo URL — the committed
+        // working copy can stay at r0 when MERGE skips the wc bump.
+        for (let attempt = 0; attempt < 6; attempt += 1) {
+          const output = await runSvn(["log", "--xml", svnUrl(baseUrl)]).catch((error) => {
+            fail(`svn log query failed: ${String(error.stderr ?? error.message).slice(0, 200)}`);
+            return { stdout: "" };
+          });
+          const entries = [...output.stdout.matchAll(/<logentry[^>]*>([\s\S]*?)<\/logentry>/gu)]
+            .map(([, body]) => (/<msg>([^<]*)<\/msg>/u.exec(body)?.[1] ?? "").trim())
+            .filter((line) => line !== "" && line !== "|")
+            .sort()
+            .join("\n");
+          if (entries) return entries;
+          if (attempt === 5) fail(`svn log empty; raw=${JSON.stringify(output.stdout.slice(0, 200))}`);
+          await new Promise((resolve) => setTimeout(resolve, 1_500));
+        }
+        return "";
+      };
+      const legacyLog = await logState(ctx.options.legacyUrl);
+      const yoramLog = await logState(ctx.yoramBaseUrl);
+      if (!legacyLog || !yoramLog) return fail("svn log returned no entries after commit");
+      if (legacyLog !== yoramLog) {
+        fail(`svn log state diverged: ${JSON.stringify(legacyLog)} vs ${JSON.stringify(yoramLog)}`);
+      }
+    } catch (error) {
+      fail(error.message);
+    } finally {
+      rmSync(workRoot, { recursive: true, force: true });
+    }
+
+    // Delete the throwaway projects.
+    await helpers.sendRaw(ctx, "legacy", { method: "DELETE", path: `/${owner}/${name}/delete`, headers: { "x-requested-with": "XMLHttpRequest" } });
+    await helpers.sendRaw(ctx, "yoram", { method: "DELETE", path: `/api/v1/owners/${owner}/projects/${name}` });
+  },
+};
+Object.assign(actionDefinitions, LIFECYCLE_ACTIONS);
 scenarios.push(
   {
     id: "P18-throwaway-project-lifecycle",
@@ -1719,6 +1824,316 @@ scenarios.push(
     ],
     behaviorMatcher: { action: /^PullRequestApp\.restoreFromBranch$/, route: /pullRequest/ },
   },
+  {
+    id: "P22-svn-client-pair",
+    title: "svn checkout + commit through the svn protocol on a throwaway SVN project",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "svn-pair-commit", params: { owner: "admin" } },
+    ],
+    behaviorMatcher: { action: /^SvnApp\.(serviceWithPath|service)$/ },
+  },
 );
 
 Object.assign(actionDefinitions, MUTATION_ACTIONS);
+// --- wave D: throwaway destructive operations + misc probes -----------------
+
+LIFECYCLE_ACTIONS["fork-created-project"] = {
+  translateLegacy(step, resolved) {
+    const source = resolved.sourceProject ?? projectNameOf(step, resolved);
+    return {
+      method: "POST",
+      path: `/${step.params.owner}/${source}/fork`,
+      form: { name: resolved.name, owner: step.params.owner, projectScope: "PUBLIC" },
+    };
+  },
+  translateYoram(step, resolved) {
+    const source = resolved.sourceProject ?? projectNameOf(step, resolved);
+    return {
+      method: "POST",
+      path: `/api/v1/owners/${step.params.owner}/projects/${source}/fork`,
+      json: { name: resolved.name, owner: step.params.owner, projectScope: "PUBLIC" },
+    };
+  },
+  async handler(ctx) {
+    const { step, state, entry, suffix } = ctx;
+    if (!state.projectName) return;
+    const name = `parity-fork-${suffix}`;
+    const result = await ctx.helpers.pairLenient(
+      ctx,
+      this.translateLegacy(step, { sourceProject: state.projectName, name }),
+      this.translateYoram(step, { sourceProject: state.projectName, name }),
+      `${step.params.owner}/${state.projectName}/fork`,
+    );
+    if (result.legacyResult.status < 400 || result.yoramResult.status < 400) {
+      state.forkProjectName = name;
+    }
+    if (result.legacyResult.status >= 400 || result.yoramResult.status >= 400) {
+      entry.errors.push(`fork-created-project incomplete [${suffix}]: legacy=${result.legacyResult.status} yoram=${result.yoramResult.status}`);
+    }
+  },
+};
+
+LIFECYCLE_ACTIONS["clone-created-project"] = {
+  translateLegacy(step, resolved) {
+    const source = resolved.sourceProject ?? projectNameOf(step, resolved);
+    return {
+      method: "POST",
+      path: `/${step.params.owner}/${source}/clone`,
+      form: { name: resolved.name, owner: step.params.owner, projectScope: "PUBLIC" },
+    };
+  },
+  translateYoram(step, resolved) {
+    const source = resolved.sourceProject ?? projectNameOf(step, resolved);
+    return {
+      method: "POST",
+      path: `/${step.params.owner}/${source}/clone`,
+      form: { name: resolved.name, owner: step.params.owner, projectScope: "PUBLIC" },
+    };
+  },
+  async handler(ctx) {
+    const { step, state, entry, suffix } = ctx;
+    if (!state.projectName) return;
+    const name = `parity-clone-${suffix}`;
+    const result = await ctx.helpers.pairLenient(
+      ctx,
+      this.translateLegacy(step, { sourceProject: state.projectName, name }),
+      this.translateYoram(step, { sourceProject: state.projectName, name }),
+      `${step.params.owner}/${state.projectName}/clone`,
+    );
+    if (result.legacyResult.status < 400 || result.yoramResult.status < 400) {
+      state.cloneProjectName = name;
+    }
+    if (result.legacyResult.status >= 400 || result.yoramResult.status >= 400) {
+      entry.errors.push(`clone-created-project incomplete [${suffix}]: legacy=${result.legacyResult.status} yoram=${result.yoramResult.status}`);
+    }
+  },
+};
+LIFECYCLE_ACTIONS["change-created-project-vcs"] = {
+  translateLegacy(step, resolved) {
+    return { method: "POST", path: `/${step.params.owner}/${resolved.projectName ?? projectNameOf(step, resolved)}/changeVCS` };
+  },
+  translateYoram(step, resolved) {
+    return { method: "POST", path: `/api/v1/owners/${step.params.owner}/projects/${resolved.projectName ?? projectNameOf(step, resolved)}/changeVCS` };
+  },
+  async handler(ctx) {
+    const { step, state } = ctx;
+    if (!state.projectName) return;
+    return pairRequest(
+      ctx,
+      this.translateLegacy(step, { projectName: state.projectName }),
+      this.translateYoram(step, { projectName: state.projectName }),
+      `${step.params.owner}/${state.projectName}/changeVCS`,
+    );
+  },
+};
+
+LIFECYCLE_ACTIONS["cleanup-created-projects"] = {
+  translateLegacy(step, resolved) {
+    return {
+      method: "DELETE",
+      path: `/${step.params.owner}/${resolved.projectName ?? projectNameOf(step, resolved)}/delete`,
+      headers: XHR_HEADER,
+    };
+  },
+  translateYoram(step, resolved) {
+    return {
+      method: "DELETE",
+      path: `/api/v1/owners/${step.params.owner}/projects/${resolved.projectName ?? projectNameOf(step, resolved)}`,
+    };
+  },
+  async handler(ctx) {
+    const { step, state, entry, suffix, helpers } = ctx;
+    const names = [...new Set([state.forkProjectName, state.cloneProjectName, state.projectName].filter(Boolean))];
+    for (const projectName of names) {
+      await pairRequest(
+        ctx,
+        this.translateLegacy(step, { projectName }),
+        this.translateYoram(step, { projectName }),
+        `${step.params.owner}/${projectName} (cleanup)`,
+      );
+      const goneLegacy = await helpers.sendRaw(ctx, "legacy", { method: "GET", path: `/${step.params.owner}/${projectName}` });
+      const goneYoram = await helpers.sendRaw(ctx, "yoram", { method: "GET", path: `/api/v1/owners/${step.params.owner}/projects/${projectName}` });
+      if (goneLegacy.status < 400) {
+        await helpers.sendRaw(ctx, "legacy", { method: "DELETE", path: `/${step.params.owner}/${projectName}/delete`, headers: XHR_HEADER });
+      }
+      if (goneYoram.status < 400) {
+        await helpers.sendRaw(ctx, "yoram", { method: "DELETE", path: `/api/v1/owners/${step.params.owner}/projects/${projectName}` });
+      }
+      if (goneLegacy.status < 400 || goneYoram.status < 400) {
+        entry.errors.push(`cleanup-created-project residue [${suffix}]: ${projectName} legacy=${goneLegacy.status} yoram=${goneYoram.status}`);
+      }
+    }
+    state.forkProjectName = null;
+    state.cloneProjectName = null;
+    state.projectName = null;
+  },
+};
+
+LIFECYCLE_ACTIONS["site-purge-created-project"] = {
+  translateLegacy(step, resolved) {
+    return { method: "DELETE", path: `/sites/project/delete/${resolved.projectId}` };
+  },
+  translateYoram(step, resolved) {
+    return { method: "DELETE", path: `/api/v1/site/projects/${resolved.projectId}` };
+  },
+  async handler(ctx) {
+    const { step, state, entry, suffix, helpers } = ctx;
+    if (!state.projectName) return;
+    const owner = step.params.owner;
+    const name = state.projectName;
+    const legacyDetail = await helpers.sendRaw(ctx, "legacy", { method: "GET", path: `/${owner}/${name}` });
+    const yoramDetail = await helpers.sendRaw(ctx, "yoram", { method: "GET", path: `/api/v1/owners/${owner}/projects/${name}` });
+    const legacyId = Number(/data-project-id="(\d+)"/u.exec(legacyDetail.body ?? "")?.[1]) || null;
+    const yoramId = Number(yoramDetail.json?.projectId ?? yoramDetail.json?.project_id ?? 0) || null;
+    if (!legacyId || !yoramId) {
+      entry.errors.push(`site-purge-created-project skip [${suffix}]: project id unavailable (legacy=${legacyId} yoram=${yoramId})`);
+      await pairRequest(
+        ctx,
+        { method: "DELETE", path: `/${owner}/${name}/delete`, headers: XHR_HEADER },
+        { method: "DELETE", path: `/api/v1/owners/${owner}/projects/${name}` },
+        `${owner}/${name} (site purge fallback)`,
+      );
+      state.projectName = null;
+      return;
+    }
+    await pairRequest(
+      ctx,
+      this.translateLegacy(step, { projectId: legacyId }),
+      this.translateYoram(step, { projectId: yoramId }),
+      "/sites/project/delete/:projectId",
+    );
+    const goneLegacy = await helpers.sendRaw(ctx, "legacy", { method: "GET", path: `/${owner}/${name}` });
+    const goneYoram = await helpers.sendRaw(ctx, "yoram", { method: "GET", path: `/api/v1/owners/${owner}/projects/${name}` });
+    if (goneLegacy.status < 400) {
+      await helpers.sendRaw(ctx, "legacy", { method: "DELETE", path: `/${owner}/${name}/delete`, headers: XHR_HEADER });
+    }
+    if (goneYoram.status < 400) {
+      await helpers.sendRaw(ctx, "yoram", { method: "DELETE", path: `/api/v1/owners/${owner}/projects/${name}` });
+    }
+    if (goneLegacy.status < 400 || goneYoram.status < 400) {
+      entry.errors.push(`site-purge-created-project residue [${suffix}]: legacy=${goneLegacy.status} yoram=${goneYoram.status}`);
+    }
+    state.projectName = null;
+  },
+};
+
+LIFECYCLE_ACTIONS["probe-empty-post-root"] = {
+  translateLegacy() {
+    return { method: "POST", path: "/" };
+  },
+  translateYoram() {
+    return { method: "POST", path: "/" };
+  },
+  handler(ctx) {
+    return pairRequest(ctx, this.translateLegacy(), this.translateYoram(), "POST /");
+  },
+};
+
+Object.assign(actionDefinitions, LIFECYCLE_ACTIONS);
+
+scenarios.push(
+  {
+    id: "P23-wave-d-project-destructive",
+    title: "throwaway fork, clone, VCS change, and generated-project cleanup",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "create-project", params: { owner: "admin" } },
+      { actor: "admin", action: "fork-created-project", params: { owner: "admin" } },
+      { actor: "admin", action: "clone-created-project", params: { owner: "admin" } },
+      { actor: "admin", action: "change-created-project-vcs", params: { owner: "admin" } },
+      { actor: "admin", action: "cleanup-created-projects", params: { owner: "admin" } },
+    ],
+    behaviorMatcher: {
+      action: /^(PullRequestApp\.(fork|doClone)|ProjectApp\.changeVCS)$/,
+      route: /^(POST \/:ownerName\/:project\/(fork|clone)|POST \/:user\/:project\/changeVCS)$/,
+    },
+  },
+  {
+    id: "P24-site-project-purge",
+    title: "site-admin purge of a throwaway project",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "create-project", params: { owner: "admin" } },
+      { actor: "admin", action: "site-purge-created-project", params: { owner: "admin" } },
+    ],
+    behaviorMatcher: { action: /^SiteApp\.deleteProject$/, route: /^DELETE \/sites\/project\/delete\/:projectId$/ },
+  },
+  {
+    id: "P25-empty-root-post",
+    title: "empty root POST status probe",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "probe-empty-post-root", params: {} },
+    ],
+    behaviorMatcher: { action: /^Application\.fake$/, route: /^POST \/$/ },
+  },
+);
+// --- residual read/invalid probes --------------------------------------------
+//
+// These routes are intentionally exercised with a missing branch or empty
+// payloads. requestBoth records expected 4xx responses in entry.errors while
+// the status-class check still catches a real parity mismatch.
+async function residualStatusProbe(ctx, legacyTranslation, yoramTranslation, route) {
+  const { legacyResult, yoramResult } = await ctx.helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
+  if ((legacyResult.status >= 400) !== (yoramResult.status >= 400)) {
+    pushApiViolation(ctx, route, `legacy HTTP ${legacyResult.status}`, `yoram HTTP ${yoramResult.status}`);
+  }
+}
+
+const RESIDUAL_PROBE_ACTIONS = {
+  "probe-delete-branch-missing": {
+    translateLegacy(step) {
+      return { method: "DELETE", path: `/${step.params.user}/${step.params.project}/code/${step.params.branch}/` };
+    },
+    translateYoram(step) {
+      return { method: "DELETE", path: `/${step.params.user}/${step.params.project}/code/${step.params.branch}/` };
+    },
+    handler(ctx) {
+      const { step } = ctx;
+      const legacy = this.translateLegacy(step);
+      return residualStatusProbe(ctx, legacy, this.translateYoram(step), legacy.path);
+    },
+  },
+  "probe-import-form": {
+    translateLegacy() {
+      return { method: "GET", path: "/_import" };
+    },
+    translateYoram() {
+      return { method: "GET", path: "/_import" };
+    },
+    handler(ctx) {
+      const legacy = this.translateLegacy();
+      return residualStatusProbe(ctx, legacy, this.translateYoram(), legacy.path);
+    },
+  },
+  "probe-import-project-invalid": {
+    translateLegacy() {
+      return { method: "POST", path: "/_import", form: {} };
+    },
+    translateYoram() {
+      return { method: "POST", path: "/_import", form: {} };
+    },
+    handler(ctx) {
+      const legacy = this.translateLegacy();
+      return residualStatusProbe(ctx, legacy, this.translateYoram(), legacy.path);
+    },
+  },
+};
+
+Object.assign(actionDefinitions, RESIDUAL_PROBE_ACTIONS);
+
+scenarios.push({
+  id: "P26-residual-branch-import-probes",
+  title: "missing branch and invalid import probes",
+  actions: [
+    { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+    { actor: "admin", action: "probe-delete-branch-missing", params: { user: "admin", project: "sample", branch: "__parity_missing_branch__" } },
+    { actor: "admin", action: "probe-import-form", params: {} },
+    { actor: "admin", action: "probe-import-project-invalid", params: {} },
+  ],
+  behaviorMatcher: {
+    action: /^(BranchApp\.deleteBranch|ImportApp\.(importForm|newProject))$/,
+    route: /^(DELETE \/:user\/:project\/code\/:branch\/|GET \/_import|POST \/_import)$/,
+  },
+});

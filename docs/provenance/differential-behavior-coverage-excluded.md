@@ -1,4 +1,4 @@
-# Differential Behavior Coverage — Sweep-Excluded Behaviors & Follow-up (2026-08-23, rev.4)
+# Differential Behavior Coverage — Sweep-Excluded Behaviors & Follow-up (2026-08-23, rev.5)
 
 Status: current. 이 문서는 differential sweep이 자동 비교하지 **않는** 행위와 그
 이유를 기록한다. **중요(rev.4 정정): 아래 §1 행위는 대부분 Yoram에 이미 구현되어
@@ -40,58 +40,48 @@ I11–I13/I20·I23 프로브가 검증한다.
 
 ## 1. Sweep-excluded behaviors (구현됨 — 스윕 자동 비교 미포함)
 
-### SVN protocol (5) — 구현됨
-- B-0021/B-0170/B-0294/B-0314 `(/DELETE|GET|POST|PUT) /svn/*path`,
-  B-0271 `POST /!svn-fake/sevice/`
-- 구현: `crates/server/src/svn_protocol/*` (WebDAV OPTIONS/ACTIVITY/HREF 처리) +
-  `crates/vcs/src/lib.rs` (svn executable 기반 collection/put/delete)
-- 미커버 이유: WebDAV 세션(MKACTIVITY, CHECKOUT, MERGE 순차 흐름)을 양쪽 서버에
-  대해 동시 드라이브하는 svn 클라이언트 페어 하네스가 없다. 추가하려면
-  `svn co/commit` 페어 실행 + working copy 결과 비교 시나리오가 필요하다.
+### SVN protocol (5) — covered by `P22-svn-client-pair`
+- B-0021/B-0170/B-0294/B-0314 (`/svn/*path`) and B-0271
+  (`/!svn-fake/sevice/`) are driven through real `svn 1.14.5` checkout +
+  commit sessions against both instances. Commit log message state matches;
+  Yoram's missing `<author>` XML field is documented as a known divergence.
 
-### Git smart-http (2) — 구현됨
-- B-0224 `POST $service<git-upload-pack|git-receive-pack>` (+ `info/refs` GET은
-  P15가 error-tolerant probe로 부분 커버)
-- 구현: `crates/server/src/smart_http.rs` (info/refs, upload-pack,
-  receive-pack 라우팅) + git executable
-- 미커버 이유: packfile은 바이너리 프로토콜이라 HTTP skeleton 비교가 불가능하다.
-  커버하려면 양쪽에 `git clone/push`를 실행해 ref 해시와 로그를 비교하는
-  client-side 페어 시나리오가 필요하다.
+### Git smart-http (2) — covered by `R17-git-client-pair`
+- Real `git clone --depth 50` + identical commit + push runs against both
+  throwaway projects; post-push refs match after ignoring the optional HEAD
+  symref line. No client execution errors in the final sweep.
 
-### Migration / import / export pages (6) — migrator 도구 및 서버 핸들러 존재
-- B-0025 `GET /_import`, B-0200 `POST /_import`, B-0286 `POST /sites/import`
-- 구현: migrator 도구(`crates/migration`, `crates/yona-migrate` — legacy
-  `-_-api` 엔드포인트를 호출하는 importer/exporter 파서·디스크립터 포함) 및
-  서버 핸들러(`lib.rs`/`state.rs`의 `_import` 처리)
-- 미커버 이유: import는 legacy 인스턴스 접속 정보와 양방향 데이터 검증을 필요로
-  한다. 단일 스윕 페어 요청으로 비교되지 않는다. v1 범위 확정에 따라 migrator
-  완성도와 함께 별도 검증 시나리오를 붙이는 것이 후속 작업이다.
+### Migration / import / export pages — invalid-boundary probes covered
+- B-0025/B-0200 are covered by `P26-residual-branch-import-probes`.
+- B-0286 and B-0159 are covered by `U25-residual-site-user-probes`.
+- Probes intentionally submit empty/invalid payloads; no import state is written.
 
-### Email-token flows (5) — 서버 핸들러 구현됨, 토큰 전달 경로가 SMTP 의존
-- B-0175 email confirm, B-0192 verify user, B-0275/B-0285 lostPassword/
-  resetPassword POST, B-0154 resetPassword render
-- 구현: `crates/server/src/routes/auth.rs`, `utils.rs`
-- 미커버 이유: single-use 토큰이 메일로만 전달된다. 패리티 환경에 메일
-  catch-box가 없어 토큰 값을 하네스가 얻을 수 없다. 해결책은 두 서버의 메일
-  전송을 파일/catch-box로 redirect하는 테스트 설정이다.
+### Email-token flows (5) — four covered, one safely deferred
+- B-0175 is covered by `U23-email-validation-lifecycle` when the legacy
+  confirmation mail is available; Yoram's unsupported send path is recorded.
+- B-0275/B-0154 are covered by `S17-lost-password-flow` using per-side SMTP
+  reset links; B-0285 is covered by `U24-signup-email-verification` for the
+  throwaway credential.
+- B-0192 remains uncovered: neither instance emitted a deterministic signup
+  verification mail in the final run; U24 records the skip rather than
+  claiming `UserApp.verifyUser`.
 
-### Destructive on shared parity state (7) — 하네스 안전 규칙에 의한 제외
-- B-0001 deletefrombranch, B-0002 branch delete, B-0019 site project purge,
-  B-0225 clone, B-0226 fork, B-0236 changeVCS, B-0313 transfer acceptance
-- 구현 여부와 무관하게, 샘플 프로젝트/시드 브랜치는 전 시나리오의 공유 상태라
-  파괴 연산을 스윕이 실행하면 후속 시나리오 전체가 오염된다.
-- 커버 방법(구현 필요 없음): P18 throwaway-project 패턴 확장 — 격리
-  프로젝트를 만들고 그 안에서 clone/fork/changeVCS/delete를 수행한 뒤 삭제.
+### Destructive on shared parity state — throwaway coverage
+- B-0002 is covered by `P26-residual-branch-import-probes` as a missing-branch
+  direct probe.
+- B-0019 is covered by `P24-site-project-purge`; B-0225/B-0226/B-0236 are
+  covered by `P23-wave-d-project-destructive`, with generated projects deleted
+  and absence checked.
+- B-0001 remains uncovered: deleting `feature/ui` would mutate the protected
+  seeded PR branch; the harness deliberately skips it.
 
-### Misc (7) — 서버 핸들러 존재, 도달 조건이 까다로움
-- B-0155 `/restricted`: 인증 거절 후 상태에서만 렌더 → 익명/로그인 세션으로는
-  도달 불가. 강제-거절 픽스처 필요.
-- B-0199 `POST /`: root catch-all form target. 시맨틱 확인 후 프로브 추가.
-- B-0287/B-0288 sites mail/mailList: 메일 발송 — catch-box 설정 선행.
-- B-0289 setAttachmentToUserAvatar: 이전 아바타 상태 캡처 없이는 되돌리기
-  불가. 캡처-복원 스텝을 추가하면 커버 가능.
-- B-0295/B-0296 threads/:id/close|open: 시드 데이터에 notification thread id
-  원천이 없어 id discovery가 불가. 알림 생성 시나리오와 체인으로 묶으면 해소.
+### Misc — covered probes and explicit skips
+- B-0199 is covered by `P25-empty-root-post`.
+- B-0287/B-0288 and B-0303 are covered by `U25-residual-site-user-probes`.
+- B-0289 remains uncovered: no valid image attachment/current-avatar pair was
+  available for a reversible capture-set-restore.
+- B-0295/B-0296 remain uncovered: no deterministic notification thread id was
+  discoverable without manufacturing an unverified notification chain.
 
 ## 2. Runtime divergences found by the mutation sweeps (2026-08-23 해소)
 
@@ -130,3 +120,9 @@ optimistic-lock drift, trailing-slash attachment route).
   shared seed issue number does not resolve (`/issue/null/delete` family);
   same `whenIds` treatment as the label/category chains is the follow-up.
 - db-labels projection stays unfiltered by run tag (labels treated as seed
+  data); sweep-created label rows therefore remain classified known-gap diffs.
+
+Final Wave 2 artifact evidence: `.agent/differential/report.json` and
+`behavior-coverage.json` report 310/315 unique behaviors, `needs-review = 0`,
+17 SMTP `.eml` files were captured, and the five uncovered IDs are explicitly
+documented above (B-0001, B-0192, B-0289, B-0295, B-0296).

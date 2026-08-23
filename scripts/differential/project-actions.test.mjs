@@ -140,7 +140,7 @@ test("wave-3 lifecycle scenarios claim their targeted behavior set", () => {
 });
 
 // Destructive lifecycle actions may never name a static target project: they
-// operate on state.projectName created by create-project inside P18.
+// operate on state-created projects inside their dedicated scenarios.
 const THROWAWAY_ONLY_ACTIONS = new Set([
   "copy-labels",
   "add-created-member",
@@ -148,15 +148,20 @@ const THROWAWAY_ONLY_ACTIONS = new Set([
   "update-created-setting",
   "request-project-transfer",
   "delete-project",
+  "fork-created-project",
+  "clone-created-project",
+  "change-created-project-vcs",
+  "cleanup-created-projects",
+  "site-purge-created-project",
 ]);
 
-test("throwaway-only mutations are confined to P18 without static targets", () => {
+test("throwaway-only mutations are confined to their lifecycle scenarios without static targets", () => {
   for (const scenario of scenarios) {
     const uses = scenario.actions.filter((a) => THROWAWAY_ONLY_ACTIONS.has(a.action));
     if (uses.length === 0) continue;
     assert.ok(
-      scenario.id.startsWith("P18-throwaway"),
-      `${scenario.id}: throwaway-only action used outside the lifecycle scenario`,
+      /^(P18-throwaway|P23-wave-d|P24-site-project)/u.test(scenario.id),
+      `${scenario.id}: throwaway-only action used outside a lifecycle scenario`,
     );
     for (const step of uses) {
       assert.equal(step.params.project, undefined, `${scenario.id}/${step.action}: static project target forbidden`);
@@ -169,15 +174,16 @@ test("throwaway-only mutations are confined to P18 without static targets", () =
   assert.ok(p18.actions[p18.actions.length - 1].action === "delete-project", "P18 must end by deleting the throwaway project");
 });
 
+
 test("mutation actions avoid forbidden destructive routes", () => {
   const forbidden = [
-    // delete/transfer hit the state-created throwaway project only (enforced
-    // by the confinement test above), hence the action exemptions here.
-    { method: "DELETE", pathPattern: /^\/o\/p\/delete$/, exempt: new Set(["delete-project"]) },
+    // delete/transfer and Wave D project mutations hit state-created
+    // throwaways only (enforced by the confinement test above).
+    { method: "DELETE", pathPattern: /^\/o\/p\/delete$/, exempt: new Set(["delete-project", "cleanup-created-projects"]) },
     { method: "PUT", pathPattern: /^\/o\/p\/transfer$/, exempt: new Set(["request-project-transfer"]) },
-    { method: "POST", pathPattern: /\/changeVCS$/ },
-    { method: "POST", pathPattern: /\/fork$/ },
-    { method: "POST", pathPattern: /\/clone$/ },
+    { method: "POST", pathPattern: /\/changeVCS$/, exempt: new Set(["change-created-project-vcs"]) },
+    { method: "POST", pathPattern: /\/fork$/, exempt: new Set(["fork-created-project"]) },
+    { method: "POST", pathPattern: /\/clone$/, exempt: new Set(["clone-created-project"]) },
   ];
   const resolved = { title: "t", body: "b", content: "c", dueDate: "2026-12-31", overview: "ov", name: "n", category: "cat", loginId: "bob", phase: "labels", payloadUrl: "u", original: "o" };
   const probe = (action) => ({ action, params: { owner: "o", project: "p", milestoneId: 1, postNumber: 1, commentId: 1, labelId: 1, webhookId: 1, userId: 1, issueNumber: 1, loginId: "bob", query: "x", missing: "page" } });

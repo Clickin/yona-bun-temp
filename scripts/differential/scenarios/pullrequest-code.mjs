@@ -2,7 +2,22 @@
 // commit history, code browser and branch list scenarios.
 //
 // Domain module contract (see scenarios/index.mjs).
+import { execFile } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { promisify } from "node:util";
 import { translateLegacy, translateYoram } from "../adapters.mjs";
+
+const execGit = promisify(execFile);
+const GIT_TIMEOUT_MS = 120_000;
+
+async function git(args, options = {}) {
+  return execGit("git", args, {
+    timeout: GIT_TIMEOUT_MS,
+    env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },
+    ...options,
+  });
+}
 
 export const scenarios = [
   {
@@ -182,6 +197,15 @@ export const scenarios = [
       { actor: "admin", action: "unreview-pullrequest", params: { owner: "admin", project: "sample", prId: 1 } },
     ],
     behaviorMatcher: { action: /^ReviewApp\.(un)?review$/, route: /review$/ },
+  },
+  {
+    id: "R17-git-client-pair",
+    title: "git clone + push through smart-http on a throwaway project",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "git-pair-clone-push", params: { owner: "admin" } },
+    ],
+    behaviorMatcher: { action: /^GitApp\.serviceRpc$/ },
   },
 ];
 
@@ -728,6 +752,110 @@ const BRANCH_MUTATIONS = {
 };
 
 Object.assign(MUTATION_DEFINITIONS, PR_STATE_MUTATIONS, REVIEW_MUTATIONS, COMMIT_COMMENT_MUTATIONS, BRANCH_MUTATIONS);
+// --- wave A: git smart-http client pair (B-0224) -----------------------------
+//
+// Drives a real git client against both servers inside a throwaway project:
+// clone (upload-pack), identical commit on both clones, push (receive-pack),
+// then compares ls-remote hashes. Throwaway project is deleted at both ends.
+const GIT_PAIR_ACTIONS = {
+  "git-pair-clone-push": {
+    // Registry contract requires translator functions; execution is fully
+    // client-side (real git against both servers), so these stay inert.
+    translateLegacy: () => ({ method: "GET", path: "/__git-pair-client-side__" }),
+    translateYoram: () => ({ method: "GET", path: "/__git-pair-client-side__" }),
+    async handler(ctx) {
+      const { step, entry, suffix, helpers } = ctx;
+      const owner = step.params.owner;
+      const name = `parity-git-${suffix}`;
+      const legacyUrl = ctx.options.legacyUrl;
+      const yoramUrl = ctx.yoramBaseUrl;
+
+      // Create the throwaway project on both sides.
+      await helpers.sendRaw(ctx, "legacy", {
+        method: "POST",
+        path: "/projects",
+        form: { owner, name, overview: `parity git pair ${suffix}`, projectScope: "PUBLIC", vcs: "GIT", code: "true", issue: "true", pullRequest: "true", review: "true", milestone: "true", board: "true" },
+      });
+      await helpers.sendRaw(ctx, "yoram", {
+        method: "POST",
+        path: `/api/v1/owners/${owner}/projects`,
+        json: { projectName: name, overview: `parity git pair ${suffix}`, projectScope: "PUBLIC", vcs: "GIT" },
+      });
+
+      const fail = (message) => entry.errors.push(`git-pair [${suffix}]: ${message}`);
+      const remote = (baseUrl) => `${baseUrl.replace("//", "//admin:admin@")}/${owner}/${name}`;
+      const remoteRefs = async (baseUrl) => {
+        const output = await git(["ls-remote", remote(baseUrl)]).catch(() => ({ stdout: "" }));
+        return output.stdout
+          .split("\n")
+          .filter((line) => line && !line.endsWith("\tHEAD"))
+          .sort()
+          .join("\n");
+      };
+      const cloneInto = async (baseUrl, dir) => {
+        // Repo init can lag the project-create response; retry briefly.
+        for (let attempt = 0; attempt < 5; attempt += 1) {
+          try {
+            await git(["clone", "--depth", "50", remote(baseUrl), dir]);
+            return true;
+          } catch {
+            await new Promise((resolve) => setTimeout(resolve, 2_000));
+          }
+        }
+        return false;
+      };
+
+      const workRoot = mkdtempSync(`${tmpdir()}/parity-git-`);
+      try {
+        const legacyDir = `${workRoot}/legacy`;
+        const yoramDir = `${workRoot}/yoram`;
+        if (!(await cloneInto(legacyUrl, legacyDir))) return fail("git clone failed against legacy");
+        if (!(await cloneInto(yoramUrl, yoramDir))) return fail("git clone failed against yoram");
+
+        // The parity seed repos may be empty on both sides; only disagreement
+        // in the pre-push ref state is a finding.
+        const preLegacy = await remoteRefs(legacyUrl);
+        const preYoram = await remoteRefs(yoramUrl);
+        if (preLegacy !== preYoram) {
+          fail(`seed HEAD diverged after clone: ${preLegacy.slice(0, 12) || "<empty>"} vs ${preYoram.slice(0, 12) || "<empty>"}`);
+        }
+
+        // Identical commit on both clones: same tree, message, identity and
+        // fixed dates -> identical SHA, so pushed refs must match exactly.
+        const { writeFileSync } = await import("node:fs");
+        for (const dir of [legacyDir, yoramDir]) {
+          writeFileSync(`${dir}/parity-git-pair.txt`, `parity git pair payload ${suffix}\n`);
+          const env = {
+            GIT_AUTHOR_NAME: "parity",
+            GIT_AUTHOR_EMAIL: "parity@example.com",
+            GIT_AUTHOR_DATE: "2026-01-01T00:00:00Z",
+            GIT_COMMITTER_NAME: "parity",
+            GIT_COMMITTER_EMAIL: "parity@example.com",
+            GIT_COMMITTER_DATE: "2026-01-01T00:00:00Z",
+          };
+          await git(["-C", dir, "add", "parity-git-pair.txt"]);
+          await git(["-C", dir, "-c", "user.name=parity", "-c", "user.email=parity@example.com", "commit", "-m", `parity git pair ${suffix}`], { env });
+          await git(["-C", dir, "push", "origin", "HEAD"]);
+        }
+        const pushedLegacy = await remoteRefs(legacyUrl);
+        const pushedYoram = await remoteRefs(yoramUrl);
+        if (!pushedLegacy || !pushedYoram) return fail("post-push ls-remote returned no ref");
+        if (pushedLegacy !== pushedYoram) {
+          fail(`post-push refs diverged (B-0224): ${pushedLegacy} vs ${pushedYoram}`);
+        }
+      } catch (error) {
+        fail(error.message);
+      } finally {
+        rmSync(workRoot, { recursive: true, force: true });
+      }
+
+      // Delete the throwaway projects.
+      await helpers.sendRaw(ctx, "legacy", { method: "DELETE", path: `/${owner}/${name}/delete`, headers: { "x-requested-with": "XMLHttpRequest" } });
+      await helpers.sendRaw(ctx, "yoram", { method: "DELETE", path: `/api/v1/owners/${owner}/projects/${name}` });
+    },
+  },
+};
+Object.assign(MUTATION_DEFINITIONS, GIT_PAIR_ACTIONS);
 export const actionDefinitions = Object.assign(
   Object.fromEntries(READ_ACTIONS.map((name) => [name, readGet()])),
   Object.fromEntries(RAW_ACTIONS.map((name) => [name, rawGet()])),

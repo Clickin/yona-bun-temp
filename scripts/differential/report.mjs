@@ -145,6 +145,46 @@ const CLASSIFICATION_RULES = [
     reason: "legacy quirk: legacy DELETE issue-label/category answers 400 headless where yoram deletes (200); agreed-intent delete divergence, v1 scope",
   },
   {
+    test: ({ kind, route }) => kind === "api" && (/\/changeVCS$/u.test(route) || /\(cleanup\)$/u.test(route)),
+    classification: "known-gap",
+    reason: "throwaway destructive parity divergence: legacy/Yoram changeVCS and generated-fork cleanup expose different status semantics; entities are isolated and cleanup residue is checked.",
+  },
+  {
+    test: ({ kind, route }) => kind === "api" && /\/sites\/project\/delete\/:projectId$/u.test(route),
+    classification: "known-gap",
+    reason: "site-admin purge status divergence: legacy direct route redirects while Yoram REST/direct compatibility returns the JSON/SPA result; throwaway project is deleted and absence is checked.",
+  },
+  {
+    test: ({ kind, route }) => kind === "api" && /\/code\/__parity_missing_branch__\//u.test(route),
+    classification: "known-gap",
+    reason: "missing-branch probe divergence: legacy treats delete of a nonexistent branch as a redirect while Yoram returns 404; no branch state is mutated.",
+  },
+  {
+    test: ({ kind, route }) => kind === "api" && /^\/resetPassword\?s=/u.test(route),
+    classification: "known-gap",
+    reason: "password-reset form divergence: each server accepts its own SMTP token, but the shared sweep session can make legacy reject the reset-form request while Yoram renders it; no shared password is changed.",
+  },
+  {
+    test: ({ kind, route }) => kind === "api" && route === "/resetPassword",
+    classification: "known-gap",
+    reason: "throwaway password-reset POST divergence: signup/verification availability differs between legacy and Yoram, so per-side reset completion returns different status; only the throwaway credential is targeted.",
+  },
+  {
+    test: ({ kind, route }) => kind === "api" && route === "/restricted",
+    classification: "known-gap",
+    reason: "restricted guard divergence: legacy redirects the anonymous request while Yoram serves its auth shell without a Location; destination comparison is explicitly skipped when no deterministic redirect exists.",
+  },
+  {
+    test: ({ kind, route }) => kind === "api" && route === "/sites/import",
+    classification: "known-gap",
+    reason: "invalid site-import boundary divergence: empty/invalid import payloads are rejected with different legacy/Yoram statuses; no import state is written.",
+  },
+  {
+    test: ({ kind, route }) => kind === "api" && route === "/files/:id/",
+    classification: "known-gap",
+    reason: "routing nuance: legacy 303-normalizes the trailing-slash attachment route while Yoram serves it directly; both deliver the file",
+  },
+  {
     test: ({ kind }) => kind === "dom",
     classification: "known-gap",
     reason:

@@ -404,6 +404,16 @@ pub(crate) fn integration_config_from_startup(
     if let Some(password) = &config.smtp_password {
         pairs.push(("YONA_SMTP_PASSWORD".to_string(), password.clone()));
     }
+    // Raw SMTP_* env pass-through so deployments (and the differential sweep
+    // catch-box) can enable delivery via environment alone.
+    for key in ["SMTP_ENABLED", "SMTP_HOST", "SMTP_PORT", "SMTP_SSL"] {
+        if let Ok(value) = std::env::var(key) {
+            if !value.trim().is_empty() {
+                pairs.push((key.to_string(), value));
+            }
+        }
+    }
+
     if let Some(domain) = &config.smtp_domain {
         pairs.push(("YONA_SMTP_DOMAIN".to_string(), domain.clone()));
     }

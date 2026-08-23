@@ -154,6 +154,22 @@ export const scenarios = [
     ],
     behaviorMatcher: { action: /^UserApi\.updateUserState$/ },
   },
+  {
+    id: "S17-lost-password-flow",
+    title: "password reset request delivers token mail; reset form renders",
+    actions: [
+      { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "anonymous", action: "request-lost-password", params: { loginId: "admin", emailAddress: "admin@example.com" } },
+      { actor: "anonymous", action: "open-reset-link", params: {} },
+    ],
+    behaviorMatcher: { action: /^PasswordResetApp\.(requestResetPasswordEmail|resetPasswordForm)$/ },
+  },
+  {
+    id: "S18-restricted-anonymous",
+    title: "anonymous restricted page guard (/restricted)",
+    actions: [{ actor: "anonymous", action: "view-restricted-page", params: {} }],
+    behaviorMatcher: { action: /^Restricted\.index$/, route: /^GET \/restricted$/ },
+  },
 ];
 
 export const actionDefinitions = {
@@ -217,6 +233,50 @@ export const actionDefinitions = {
     translateLegacy: () => ({ method: "GET", path: "/_UIKit" }),
     translateYoram: () => ({ method: "GET", path: "/_UIKit" }),
     handler: anonymousPageAction("/_UIKit"),
+  },
+  "view-restricted-page": {
+    translateLegacy: () => ({ method: "GET", path: "/restricted" }),
+    translateYoram: () => ({ method: "GET", path: "/restricted" }),
+    async handler(ctx) {
+      const { entry } = ctx;
+      const path = "/restricted";
+      const { legacyResult, yoramResult } = await requestAnonymousBoth(
+        ctx,
+        { method: "GET", path },
+        { method: "GET", path },
+      );
+      pushStatusDivergence(ctx, path, legacyResult, yoramResult);
+
+      const legacyRedirect = legacyResult.status >= 300 && legacyResult.status < 400;
+      const yoramRedirect = yoramResult.status >= 300 && yoramResult.status < 400;
+      const legacyLocation = normalizeLocation(legacyResult.location);
+      const yoramLocation = normalizeLocation(yoramResult.location);
+
+      if (legacyRedirect || yoramRedirect) {
+        if (!legacyLocation || !yoramLocation) {
+          entry.errors.push(
+            `view-restricted-page: skipped redirect/render comparison; Yoram GET ${path} returned ${yoramResult.status} without a deterministic Location`,
+          );
+          return;
+        }
+        if (legacyLocation !== yoramLocation) {
+          entry.violations.push(
+            violation({
+              route: path,
+              behaviorId: entry.behaviorIds[0] ?? null,
+              kind: "api",
+              expected: { redirect: legacyLocation },
+              actual: { redirect: yoramLocation },
+            }),
+          );
+          return;
+        }
+        await renderDomTargetPath(ctx, legacyLocation);
+        return;
+      }
+
+      await renderDomTargetPath(ctx, path);
+    },
   },
 
   // --- authenticated pages (S6-S8) -----------------------------------------
@@ -397,8 +457,69 @@ export const actionDefinitions = {
       pushStatusDivergence(ctx, entry.behaviorIds[0] ?? legacy.path, legacyResult, yoramResult);
     },
   },
+
+  // --- wave C: email-token flows (B-0275/B-0154) -----------------------------
+  // Both sides deliver password-reset mail to the sweep SMTP sink; each side's
+  // mail carries its own absolute reset link (ports differ per instance).
+  "request-lost-password": {
+    translateLegacy(step) {
+      return { method: "POST", path: "/lostPassword", form: { loginId: step.params.loginId, emailAddress: step.params.emailAddress } };
+    },
+    translateYoram(step) {
+      return { method: "POST", path: "/lostPassword", form: { loginId: step.params.loginId, emailAddress: step.params.emailAddress } };
+    },
+    async handler(ctx) {
+      const { step, state, helpers } = ctx;
+      state.mailCountBefore = helpers.readMails().length;
+      await helpers.requestBoth(ctx, this.translateLegacy(step, step.params), this.translateYoram(step, step.params));
+    },
+  },
+  "open-reset-link": {
+    // Client-side mail-driven flow; translators are inert registry stubs.
+    translateLegacy: () => ({ method: "GET", path: "/__reset-link-client-side__" }),
+    translateYoram: () => ({ method: "GET", path: "/__reset-link-client-side__" }),
+    async handler(ctx) {
+      const { entry, state, options, yoramBaseUrl, helpers } = ctx;
+      const mails = await helpers.waitForMail(state.mailCountBefore ?? 0);
+      const outcomes = {};
+      for (const [side, baseUrl] of [["legacy", options.legacyUrl], ["yoram", yoramBaseUrl]]) {
+        const expected = new URL(baseUrl);
+        const expectedPort = expected.port || (expected.protocol === "https:" ? "443" : "80");
+        const mail = mails.find((raw) =>
+          helpers.extractMailLinks(raw, "/resetPassword").some((link) => {
+            const url = new URL(link);
+            return (url.port || (url.protocol === "https:" ? "443" : "80")) === expectedPort;
+          }),
+        );
+        if (!mail) {
+          entry.errors.push(`open-reset-link: no ${side} reset mail captured`);
+          continue;
+        }
+        const link = helpers.extractMailLinks(mail, "/resetPassword").find((candidate) => {
+          const url = new URL(candidate);
+          return (url.port || (url.protocol === "https:" ? "443" : "80")) === expectedPort;
+        });
+        const url = new URL(link);
+        const result = await helpers.sendRaw(ctx, side, { method: "GET", path: `${url.pathname}${url.search}` });
+        outcomes[side] = result.status;
+      }
+      if (outcomes.legacy !== undefined && outcomes.yoram !== undefined && ((outcomes.legacy >= 400) !== (outcomes.yoram >= 400) || (outcomes.legacy >= 400 && outcomes.yoram >= 400 && outcomes.legacy !== outcomes.yoram))) {
+        entry.violations.push(violation({ route: "/resetPassword?s=...", behaviorId: entry.behaviorIds[0] ?? null, kind: "api", expected: { status: outcomes.legacy }, actual: { status: outcomes.yoram } }));
+      }
+    },
+  },
 };
 // --- shared helpers ---------------------------------------------------------
+
+const normalizeLocation = (location) => {
+  if (!location) return "";
+  try {
+    const url = new URL(location, "http://differential.invalid");
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return location;
+  }
+};
 
 const statusBucket = (status) => (status < 300 ? "2xx" : status < 400 ? "3xx" : status < 500 ? "4xx" : "5xx");
 

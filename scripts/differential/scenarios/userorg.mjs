@@ -304,17 +304,30 @@ export const scenarios = [
   },
   {
     id: "U23-email-validation-lifecycle",
-    title: "add email, send validation mail, delete (self-cleaning)",
+    title: "add email, send validation mail, confirm, delete (self-cleaning)",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
       { actor: "admin", action: "add-email", params: {} },
       { actor: "admin", action: "send-validation-email", params: {} },
+      { actor: "anonymous", action: "open-validation-link", params: {} },
       { actor: "admin", action: "delete-email", params: {} },
     ],
     behaviorMatcher: {
-      action: /^UserApp\.sendValidationEmail$/,
-      route: /^POST \/user\/email\/sendValidationEmail\/:emailId$/,
+      action: /^(UserApp\.(sendValidationEmail|confirmEmail))$/,
+      route: /^(POST|GET) \/user\/email\/(sendValidationEmail\/:emailId|confirm\/:emailId\/:token)$/,
     },
+  },
+  {
+    id: "U24-signup-email-verification",
+    title: "signup delivers verify mail; reset flow completes for throwaway user",
+    actions: [
+      { actor: "admin", action: "logout-session", params: {} },
+      { actor: "anonymous", action: "signup-user", params: {} },
+      { actor: "anonymous", action: "open-verify-link", params: {} },
+      { actor: "anonymous", action: "request-lost-password-for-throwaway", params: {} },
+      { actor: "anonymous", action: "complete-reset-for-throwaway", params: {} },
+    ],
+    behaviorMatcher: { action: /^PasswordResetApp\.resetPassword$/ },
   },
 ];
 
@@ -1266,7 +1279,8 @@ export const actionDefinitions = {
       };
     },
     async handler(ctx) {
-      const { state, suffix, entry } = ctx;
+      const { state, suffix, entry, helpers } = ctx;
+      state.mailCountBefore = helpers.readMails().length;
       const sanitized = suffix.replace(/[^a-zA-Z0-9]/g, "");
       state.throwawayLoginId = `parity${sanitized}`;
       state.throwawayEmail = `${sanitized.toLowerCase()}@parity.example.com`;
@@ -1503,7 +1517,7 @@ export const actionDefinitions = {
       return { method: "POST", path: `/user/email/sendValidationEmail/${step.params.emailId ?? 1}` };
     },
     async handler(ctx) {
-      const { state, entry } = ctx;
+      const { state, entry, helpers } = ctx;
       if (!state.emailAddress) {
         entry.errors.push("send-validation-email: skipped, no added address in state");
         return;
@@ -1515,6 +1529,9 @@ export const actionDefinitions = {
         entry.errors.push(`send-validation-email: id unresolved (legacy=${legacyId}, yoram=${yoramId})`);
         return;
       }
+      state.validationEmailIdLegacy = legacyId;
+      state.validationEmailIdYoram = yoramId;
+      state.mailCountBefore = helpers.readMails().length;
       await mutateBoth(
         ctx,
         { method: "POST", path: `/user/email/sendValidationEmail/${legacyId}` },
@@ -1523,4 +1540,197 @@ export const actionDefinitions = {
       );
     },
   },
- };
+};
+
+// --- wave C: email-token flows (B-0192/B-0285) ------------------------------
+// The signup verification and password-reset mails land in the sweep SMTP
+// sink; each side's mail carries its own absolute link (ports differ).
+Object.assign(actionDefinitions, {
+  "open-validation-link": {
+    translateLegacy: () => ({ method: "GET", path: "/__validation-link-client-side__" }),
+    translateYoram: () => ({ method: "GET", path: "/__validation-link-client-side__" }),
+    async handler(ctx) {
+      const { entry, state, options, yoramBaseUrl, helpers } = ctx;
+      const mails = await helpers.waitForMail(state.mailCountBefore ?? 0);
+      const ids = { legacy: state.validationEmailIdLegacy, yoram: state.validationEmailIdYoram };
+      const outcomes = {};
+      for (const [side, baseUrl] of [["legacy", options.legacyUrl], ["yoram", yoramBaseUrl]]) {
+        const expectedPort = new URL(baseUrl).port || "80";
+        const link = mails
+          .flatMap((raw) => helpers.extractMailLinks(raw, "/user/email/confirm/"))
+          .find((candidate) => {
+            const url = new URL(candidate);
+            return (url.port || "80") === expectedPort && url.pathname.includes(`/${ids[side]}/`);
+          });
+        if (!link) {
+          entry.errors.push(`open-validation-link: no ${side} confirmation mail captured`);
+          continue;
+        }
+        const url = new URL(link);
+        const result = await helpers.sendRaw(ctx, side, { method: "GET", path: `${url.pathname}${url.search}` });
+        outcomes[side] = result.status;
+      }
+      if (outcomes.legacy !== undefined && outcomes.yoram !== undefined && (outcomes.legacy >= 400) !== (outcomes.yoram >= 400)) {
+        entry.violations.push(violation({ route: "/user/email/confirm/:emailId/:token", behaviorId: entry.behaviorIds[0] ?? null, kind: "api", expected: { status: outcomes.legacy }, actual: { status: outcomes.yoram } }));
+      }
+    },
+  },
+  "open-verify-link": {
+    // Client-side mail-driven flow; translators are inert registry stubs.
+    translateLegacy: () => ({ method: "GET", path: "/__verify-link-client-side__" }),
+    translateYoram: () => ({ method: "GET", path: "/__verify-link-client-side__" }),
+    async handler(ctx) {
+      const { entry, state, options, yoramBaseUrl, helpers } = ctx;
+      const loginId = state.throwawayLoginId;
+      if (!loginId) {
+        entry.errors.push("open-verify-link: skipped, no throwaway user recorded");
+        return;
+      }
+      const mails = await helpers.waitForMail(state.mailCountBefore ?? 0);
+      const outcomes = {};
+      for (const [side, baseUrl] of [["legacy", options.legacyUrl], ["yoram", yoramBaseUrl]]) {
+        const expectedPort = new URL(baseUrl).port || "80";
+        const link = mails
+          .flatMap((raw) => helpers.extractMailLinks(raw, "/verify"))
+          .find((candidate) => {
+            const url = new URL(candidate);
+            return (url.port || "80") === expectedPort && url.pathname.includes(`/${loginId}/`);
+          });
+        if (!link) {
+          entry.errors.push(`open-verify-link: no ${side} verify mail captured for ${loginId}`);
+          continue;
+        }
+        const url = new URL(link);
+        const result = await helpers.sendRaw(ctx, side, { method: "GET", path: `${url.pathname}${url.search}` });
+        outcomes[side] = result.status;
+      }
+      if (outcomes.legacy !== undefined && outcomes.yoram !== undefined && (outcomes.legacy >= 400) !== (outcomes.yoram >= 400)) {
+        entry.violations.push(violation({ route: "/verify/:loginId/:code", behaviorId: entry.behaviorIds[0] ?? null, kind: "api", expected: { status: outcomes.legacy }, actual: { status: outcomes.yoram } }));
+      }
+    },
+  },
+  "request-lost-password-for-throwaway": {
+    translateLegacy(step, resolved = {}) {
+      return { method: "POST", path: "/lostPassword", form: { loginId: resolved.loginId, emailAddress: resolved.emailAddress } };
+    },
+    translateYoram(step, resolved = {}) {
+      return { method: "POST", path: "/lostPassword", form: { loginId: resolved.loginId, emailAddress: resolved.emailAddress } };
+    },
+    async handler(ctx) {
+      const { state, helpers } = ctx;
+      state.mailCountBefore = helpers.readMails().length;
+      await mutateBoth(
+        ctx,
+        this.translateLegacy(ctx.step, { loginId: state.throwawayLoginId, emailAddress: state.throwawayEmail }),
+        this.translateYoram(ctx.step, { loginId: state.throwawayLoginId, emailAddress: state.throwawayEmail }),
+        "/lostPassword",
+      );
+    },
+  },
+  "complete-reset-for-throwaway": {
+    // Client-side mail-driven flow; translators are inert registry stubs.
+    translateLegacy: () => ({ method: "GET", path: "/__reset-complete-client-side__" }),
+    translateYoram: () => ({ method: "GET", path: "/__reset-complete-client-side__" }),
+    async handler(ctx) {
+      const { entry, state, options, yoramBaseUrl, helpers } = ctx;
+      const mails = await helpers.waitForMail(state.mailCountBefore ?? 0);
+      const outcomes = {};
+      for (const [side, baseUrl] of [["legacy", options.legacyUrl], ["yoram", yoramBaseUrl]]) {
+        const expectedPort = new URL(baseUrl).port || "80";
+        const link = mails
+          .flatMap((raw) => helpers.extractMailLinks(raw, "/resetPassword"))
+          .find((candidate) => {
+            const url = new URL(candidate);
+            return (url.port || "80") === expectedPort;
+          });
+        if (!link) {
+          entry.errors.push(`complete-reset-for-throwaway: no ${side} reset mail captured`);
+          continue;
+        }
+        const hashString = new URL(link).searchParams.get("s") ?? "";
+        const result = await helpers.sendRaw(ctx, side, {
+          method: "POST",
+          path: "/resetPassword",
+          form: { hashString, password: state.throwawayPassword, retypedPassword: state.throwawayPassword },
+        });
+        outcomes[side] = result.status;
+      }
+      if (outcomes.legacy !== undefined && outcomes.yoram !== undefined && ((outcomes.legacy >= 400) !== (outcomes.yoram >= 400) || (outcomes.legacy >= 400 && outcomes.yoram >= 400 && outcomes.legacy !== outcomes.yoram))) {
+        entry.violations.push(violation({ route: "/resetPassword", behaviorId: entry.behaviorIds[0] ?? null, kind: "api", expected: { status: outcomes.legacy }, actual: { status: outcomes.yoram } }));
+      }
+    },
+  },
+});
+
+// --- residual site-admin/user invalid probes ---------------------------------
+//
+// Empty forms exercise the route handlers without creating users, mail, or
+// imported records. requestBoth records expected unsupported/validation errors.
+async function residualStatusProbe(ctx, legacyTranslation, yoramTranslation, route) {
+  const { legacyResult, yoramResult } = await ctx.helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
+  if ((legacyResult.status >= 400) !== (yoramResult.status >= 400)) {
+    pushApiViolation(ctx, route, `legacy HTTP ${legacyResult.status}`, `yoram HTTP ${yoramResult.status}`);
+  }
+}
+
+const RESIDUAL_PROBE_ACTIONS = {
+  "probe-site-export": {
+    translateLegacy: () => ({ method: "GET", path: "/sites/export" }),
+    translateYoram: () => ({ method: "GET", path: "/sites/export" }),
+    handler(ctx) {
+      const legacy = this.translateLegacy();
+      return residualStatusProbe(ctx, legacy, this.translateYoram(), legacy.path);
+    },
+  },
+  "probe-site-import-invalid": {
+    translateLegacy: () => ({ method: "POST", path: "/sites/import", form: {} }),
+    translateYoram: () => ({ method: "POST", path: "/sites/import", form: {} }),
+    handler(ctx) {
+      const legacy = this.translateLegacy();
+      return residualStatusProbe(ctx, legacy, this.translateYoram(), legacy.path);
+    },
+  },
+  "probe-site-mail-invalid": {
+    translateLegacy: () => ({ method: "POST", path: "/sites/mail", form: {} }),
+    translateYoram: () => ({ method: "POST", path: "/sites/mail", form: {} }),
+    handler(ctx) {
+      const legacy = this.translateLegacy();
+      return residualStatusProbe(ctx, legacy, this.translateYoram(), legacy.path);
+    },
+  },
+  "probe-site-mail-list-invalid": {
+    translateLegacy: () => ({ method: "POST", path: "/sites/mailList", form: {} }),
+    translateYoram: () => ({ method: "POST", path: "/sites/mailList", form: {} }),
+    handler(ctx) {
+      const legacy = this.translateLegacy();
+      return residualStatusProbe(ctx, legacy, this.translateYoram(), legacy.path);
+    },
+  },
+  "probe-user-reset-password-invalid": {
+    translateLegacy: () => ({ method: "POST", path: "/user/resetPassword", form: {} }),
+    translateYoram: () => ({ method: "POST", path: "/user/resetPassword", form: {} }),
+    handler(ctx) {
+      const legacy = this.translateLegacy();
+      return residualStatusProbe(ctx, legacy, this.translateYoram(), legacy.path);
+    },
+  },
+};
+
+Object.assign(actionDefinitions, RESIDUAL_PROBE_ACTIONS);
+
+scenarios.push({
+  id: "U25-residual-site-user-probes",
+  title: "site-admin export/import/mail and invalid password-reset probes",
+  actions: [
+    { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+    { actor: "admin", action: "probe-site-export", params: {} },
+    { actor: "admin", action: "probe-site-import-invalid", params: {} },
+    { actor: "admin", action: "probe-site-mail-invalid", params: {} },
+    { actor: "admin", action: "probe-site-mail-list-invalid", params: {} },
+    { actor: "admin", action: "probe-user-reset-password-invalid", params: {} },
+  ],
+  behaviorMatcher: {
+    action: /^(SiteApp\.(exportData|importData|sendMail|mailList)|UserApp\.resetUserPassword)$/,
+    route: /^(GET \/sites\/export|POST \/sites\/(import|mail|mailList)|POST \/user\/resetPassword)$/,
+  },
+});
