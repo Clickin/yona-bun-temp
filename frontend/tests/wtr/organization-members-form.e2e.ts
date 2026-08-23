@@ -994,7 +994,7 @@ async function mockOrganizationMembers(
       }),
     });
   });
-  await page.route("**/-_-api/v1/users?*", async (route) => {
+  await page.route("**/api/v1/users/directory?*", async (route) => {
     const query = new URL(route.request().url()).searchParams.get("query") ?? "";
     requests.userSearchQueries.push(query);
     await route.fulfill({

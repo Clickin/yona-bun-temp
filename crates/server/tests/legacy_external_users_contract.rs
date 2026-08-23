@@ -147,7 +147,7 @@ async fn legacy_external_users_search_preserves_members_helper_contract() {
         rest_with_headers(
             app.clone(),
             Method::GET,
-            "/yona/-_-api/v1/users?query=",
+            "/yona/api/v1/users/directory?query=",
             &[
                 ("Accept", "application/json"),
                 ("Referer", "http://localhost/yona/owner/projectYobi/members"),
@@ -163,7 +163,7 @@ async fn legacy_external_users_search_preserves_members_helper_contract() {
         rest_with_headers(
             app.clone(),
             Method::GET,
-            "/yona/-_-api/v1/users?query=vis",
+            "/yona/api/v1/users/directory?query=vis",
             &[
                 ("Accept", "application/json"),
                 ("Referer", "http://localhost/yona/owner/projectYobi/members"),
@@ -197,7 +197,7 @@ async fn legacy_external_users_search_preserves_members_helper_contract() {
         rest_with_headers(
             app.clone(),
             Method::GET,
-            "/yona/-_-api/v1/users?query=own",
+            "/yona/api/v1/users/directory?query=own",
             &[
                 ("Accept", "application/json"),
                 ("Referer", "http://localhost/yona/owner/projectYobi/members"),
@@ -219,7 +219,7 @@ async fn legacy_external_users_search_preserves_members_helper_contract() {
     let legacy_users_html = rest_with_headers(
         app.clone(),
         Method::GET,
-        "/yona/-_-api/v1/users?query=vis",
+        "/yona/api/v1/users/directory?query=vis",
         &[
             ("Accept", "text/html"),
             ("Referer", "http://localhost/yona/owner/projectYobi/members"),
@@ -232,7 +232,7 @@ async fn legacy_external_users_search_preserves_members_helper_contract() {
     let legacy_users_without_members_referer = rest_with_headers(
         app.clone(),
         Method::GET,
-        "/yona/-_-api/v1/users?query=vis",
+        "/yona/api/v1/users/directory?query=vis",
         &[("Accept", "application/json")],
         None,
     )
@@ -246,7 +246,7 @@ async fn legacy_external_users_search_preserves_members_helper_contract() {
         rest_with_headers(
             app.clone(),
             Method::GET,
-            "/yona/-_-api/v1/users/visitor/statistics",
+            "/yona/api/v1/users/visitor/statistics/summary",
             &[("Cookie", &visitor_cookie_header)],
             None,
         )

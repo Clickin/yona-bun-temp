@@ -616,7 +616,7 @@ async fn milestone_legacy_mutation_routes_preserve_redirects() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/-_-api/v1/owners/owner/projects/projectYobi/milestones")
+                .uri("/yona/api/v1/owners/owner/projects/projectYobi/milestones/bulk")
                 .header(http::header::COOKIE, &cookie)
                 .header("x-csrf-token", &csrf)
                 .header(http::header::CONTENT_TYPE, "application/json")

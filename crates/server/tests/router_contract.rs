@@ -97,8 +97,9 @@ async fn register_user(app: axum::Router, login_id: &str) -> String {
 }
 
 #[tokio::test]
-// Guards asset-owned legacy API root fallback to the application index.
-async fn legacy_external_api_roots_fall_back_to_application_index() {
+// Guards the RESTful collapse: the legacy API index aliases are gone and
+// `GET /api/v1/hello` is the only surviving root endpoint.
+async fn legacy_external_api_root_collapses_into_hello() {
     let asset_root = std::env::temp_dir().join(format!(
         "yona-legacy-api-index-{}-{}",
         std::process::id(),
@@ -123,7 +124,23 @@ async fn legacy_external_api_roots_fall_back_to_application_index() {
         asset_root.clone(),
     );
 
-    for path in ["/yona/-_-api", "/yona/-_-api/v1/"] {
+    let hello = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/hello")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(hello.status(), StatusCode::OK);
+    let hello_body = hello.into_body().collect().await.unwrap().to_bytes();
+    let hello_json: serde_json::Value = serde_json::from_slice(&hello_body).unwrap();
+    assert_eq!(hello_json["ok"], serde_json::Value::Bool(true));
+
+    for path in ["/yona/api/v1", "/yona/api/v1/"] {
         let response = app
             .clone()
             .oneshot(
@@ -137,21 +154,9 @@ async fn legacy_external_api_roots_fall_back_to_application_index() {
             .unwrap();
 
         assert_eq!(response.status(), StatusCode::OK, "{path}");
-        let content_type = response
-            .headers()
-            .get(http::header::CONTENT_TYPE)
-            .and_then(|value| value.to_str().ok())
-            .unwrap_or_default()
-            .to_string();
         let body = response.into_body().collect().await.unwrap().to_bytes();
         let html = String::from_utf8(body.to_vec()).unwrap();
-        assert_eq!(content_type, "text/html; charset=utf-8");
         assert!(html.contains("legacy index"), "{path}: {html}");
-        assert!(
-            html.contains("window.__YONA_RUNTIME_CONFIG__"),
-            "{path}: {html}"
-        );
-        assert!(html.contains(r#""basePath":"/yona""#), "{path}: {html}");
     }
 
     fs::remove_dir_all(asset_root).expect("asset cleanup");

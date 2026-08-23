@@ -46,7 +46,7 @@ const CLASSIFICATION_RULES = [
     test: ({ kind, route }) => kind === "api" && /\/sites\/(toggle|unwatchUpdate)/u.test(route),
     classification: "known-gap",
     reason:
-      "site-admin mutation routes diverge (yoram site_admin catch-all vs legacy dedicated handlers); site-admin surface is deferred scope",
+      "site-admin mutation routes diverge (yoram site_admin catch-all vs legacy dedicated handlers); site-admin surface is v1 scope, handler-level parity not yet implemented",
   },
   {
     test: ({ kind, detail }) =>
@@ -59,12 +59,12 @@ const CLASSIFICATION_RULES = [
     test: ({ kind, route, detail }) =>
       kind === "api" && /(sharableUsers|findSharer)/u.test(route) && JSON.stringify(detail.actual) === "[]",
     classification: "known-gap",
-    reason: "gap: yoram REST returns an empty sharer list for sharableUsers/findSharer; sharer management is deferred scope",
+    reason: "gap: yoram REST returns an empty sharer list for sharableUsers/findSharer; sharer management is v1 scope, not yet implemented",
   },
   {
     test: ({ kind, route, detail }) => kind === "api" && /\/markdown\//u.test(route) && /"status":404|"yoramStatus":404/u.test(JSON.stringify(detail)),
     classification: "known-gap",
-    reason: "gap: yoram has no POST /markdown/:user/:project render endpoint; markdown preview parity deferred",
+    reason: "gap: yoram has no POST /markdown/:user/:project render endpoint; markdown preview parity is v1 scope, not yet implemented",
   },
   {
     test: ({ kind }) => kind === "dom",

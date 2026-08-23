@@ -629,7 +629,7 @@ async function mockMembers(page: Page, fixture: { populated: boolean; enrollment
 
 async function mockMemberAddFormRoutes(page: Page) {
   const addedLoginIds: string[] = [];
-  await page.route("**/-_-api/v1/users?*", async (route) => {
+  await page.route("**/api/v1/users/directory?*", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       headers: { "Content-Range": "items 1/1" },

@@ -63,11 +63,13 @@ test("list-issues encodes state/milestone/search filter params", () => {
   assert.equal(translateYoram(search).path, "/admin/sample/issues?search=parity");
 });
 
-test("issue-api-probe mirrors the legacy-compat path and issue-label-categories targets categories", () => {
+test("issue-api-probe keeps the legacy-compat path on legacy and maps to RESTful on yoram", () => {
   const probe = { actor: "admin", action: "issue-api-probe", params: { api: "/-_-api/v1/owners/admin/projects/sample/issues/1" } };
   assert.equal(translateLegacy(probe).method, "GET");
   assert.equal(translateLegacy(probe).path, "/-_-api/v1/owners/admin/projects/sample/issues/1");
-  assert.equal(translateYoram(probe).path, "/-_-api/v1/owners/admin/projects/sample/issues/1");
+  assert.equal(translateYoram(probe).path, "/api/v1/owners/admin/projects/sample/issues/1");
+  const assignable = { actor: "admin", action: "issue-api-probe", params: { api: "/-_-api/v1/owners/admin/projects/sample/issues/1/assignableUsers" } };
+  assert.equal(translateYoram(assignable).path, "/api/v1/owners/admin/projects/sample/issues/1/assignable-users/find");
   const categories = { actor: "admin", action: "issue-label-categories", params: { owner: "admin", project: "sample" } };
   assert.equal(translateYoram(categories).path, "/admin/sample/issue/label/categories");
 });
@@ -200,7 +202,7 @@ test("mutation actions translate to the legacy form route vs the Yoram REST rout
   );
   assert.deepEqual(
     translateYoram(step("edit-issue", { owner: "admin", project: "sample" }), vars),
-    { method: "PUT", path: "/-_-api/v1/owners/admin/projects/sample/issues/7", json: { title: "t", body: "b" } },
+    { method: "PUT", path: "/api/v1/owners/admin/projects/sample/issues/7", json: { title: "t", body: "b" } },
   );
 
   // delete-issue: legacy direct DELETE route vs Yoram SPA REST DELETE.
@@ -224,7 +226,7 @@ test("mutation actions translate to the legacy form route vs the Yoram REST rout
   );
   assert.equal(
     translateYoram(step("toggle-favorite-issue", { owner: "admin", project: "sample" }), vars).path,
-    "/-_-api/v1/favoriteIssues/42",
+    "/api/v1/user/favorites/issues/42",
   );
 
   // label CRUD: legacy form routes on both sides, attach via compat API.

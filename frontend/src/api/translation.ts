@@ -28,15 +28,12 @@ export async function translateLegacyResource(
     headers.set("x-csrf-token", csrfToken);
   }
 
-  const response = await fetchImpl(
-    prefixBasePath(runtimeConfig.basePath, "/-_-api/v1/translation"),
-    {
-      body: JSON.stringify(body),
-      credentials: "same-origin",
-      headers,
-      method: "POST",
-    },
-  );
+  const response = await fetchImpl(prefixBasePath(runtimeConfig.basePath, "/api/v1/translation"), {
+    body: JSON.stringify(body),
+    credentials: "same-origin",
+    headers,
+    method: "POST",
+  });
 
   const text = await response.text();
   if (!response.ok) {

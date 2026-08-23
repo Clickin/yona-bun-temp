@@ -1649,14 +1649,14 @@ pub(crate) fn routes(service: PilotServiceImpl, site_name: String) -> Router {
 
     Router::new()
         .route(
-            "/-_-api/v1/favoriteProjects",
+            "/api/v1/user/favorites/projects",
             get(move |headers: HeaderMap| {
                 let service = legacy_favorite_projects_list_service.clone();
                 async move { legacy_external_favorite_projects(headers, service).await }
             }),
         )
         .route(
-            "/-_-api/v1/favoriteProjects/{project_id}",
+            "/api/v1/user/favorites/projects/{project_id}",
             post(move |headers: HeaderMap, Path(project_id): Path<i64>| {
                 let service = legacy_favorite_project_toggle_service.clone();
                 async move {
@@ -1665,28 +1665,28 @@ pub(crate) fn routes(service: PilotServiceImpl, site_name: String) -> Router {
             }),
         )
         .route(
-            "/-_-api/v1/favoriteIssues",
+            "/api/v1/user/favorites/issues",
             get(move |headers: HeaderMap| {
                 let service = legacy_favorite_issues_list_service.clone();
                 async move { legacy_external_favorite_issues(headers, service).await }
             }),
         )
         .route(
-            "/-_-api/v1/favoriteIssues/{issue_id}",
+            "/api/v1/user/favorites/issues/{issue_id}",
             post(move |headers: HeaderMap, Path(issue_id): Path<i64>| {
                 let service = legacy_favorite_issue_toggle_service.clone();
                 async move { legacy_external_toggle_favorite_issue(headers, issue_id, service).await }
             }),
         )
         .route(
-            "/-_-api/v1/favoriteOrganizations",
+            "/api/v1/user/favorites/organizations",
             get(move |headers: HeaderMap| {
                 let service = legacy_favorite_organizations_list_service.clone();
                 async move { legacy_external_favorite_organizations(headers, service).await }
             }),
         )
         .route(
-            "/-_-api/v1/favoriteOrganizations/{organization_id}",
+            "/api/v1/user/favorites/organizations/{organization_id}",
             post(
                 move |headers: HeaderMap, Path(organization_id): Path<i64>| {
                     let service = legacy_favorite_organization_toggle_service.clone();
@@ -1868,7 +1868,7 @@ pub(crate) fn routes(service: PilotServiceImpl, site_name: String) -> Router {
             }),
         )
         .route(
-            "/-_-api/v1/user/defultLoginPage",
+            "/api/v1/user/default-login-page",
             post(move |headers: HeaderMap, Query(query): Query<DirectDefaultLoginPageQuery>| {
                 async move {
                     direct_set_default_login_page(

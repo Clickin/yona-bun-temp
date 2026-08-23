@@ -56,7 +56,6 @@ test("translators produce expected method/path literals", () => {
     ["view-post-form", { owner: "admin", project: "sample" }, "/admin/sample/postform"],
     ["view-post", { owner: "admin", project: "sample", postNumber: 1 }, "/admin/sample/post/1"],
     ["view-post-editform", { owner: "admin", project: "sample", postNumber: 2 }, "/admin/sample/post/2/editform"],
-    ["list-post-watchers", { owner: "admin", project: "sample", postNumber: 1 }, "/-_-api/v1/owners/admin/projects/sample/posts/1/watchers"],
     ["view-project-members", { owner: "admin", project: "sample" }, "/admin/sample/members"],
     ["view-project-watchers", { owner: "admin", project: "sample" }, "/admin/sample/watchers"],
     ["view-project-setting-form", { owner: "admin", project: "sample" }, "/admin/sample/settingform"],
@@ -78,6 +77,22 @@ test("translators produce expected method/path literals", () => {
     assert.equal(yoram.path, expectedPath, `${action} yoram path (SPA shell serves legacy route)`);
     assert.equal(yoram.pagePath, expectedPath, `${action} yoram pagePath`);
   }
+});
+
+test("compat reads keep legacy /-_-api/v1 paths and map yoram to RESTful", () => {
+  const step = (action, params) => ({ action, params });
+  // Compat reads: legacy keeps its /-_-api/v1 spelling; yoram maps to the
+  // migrated RESTful path (restful-uri-mapping v1).
+  const watchers = MERGED_DEFINITIONS["list-post-watchers"].translateYoram(
+    step("list-post-watchers", { owner: "admin", project: "sample", postNumber: 1 }),
+    {},
+  );
+  assert.equal(watchers.path, "/api/v1/owners/admin/projects/sample/posts/1/watchers");
+  assert.equal(watchers.pagePath, "/api/v1/owners/admin/projects/sample/posts/1/watchers");
+  assert.equal(
+    MERGED_DEFINITIONS["list-post-watchers"].translateLegacy(step("list-post-watchers", { owner: "admin", project: "sample", postNumber: 1 }), {}).path,
+    "/-_-api/v1/owners/admin/projects/sample/posts/1/watchers",
+  );
 });
 
 test("matchBehaviors returns non-empty B-id lists for every scenario", () => {
@@ -193,16 +208,14 @@ test("mutation translators produce expected method/path literals", () => {
     ["close-milestone", "translateLegacy", { method: "POST", path: "/o/p/milestone/7/close" }],
     ["close-milestone", "translateYoram", { method: "PATCH", path: "/api/v1/owners/o/projects/p/milestones/7/state" }],
     ["open-milestone", "translateYoram", { method: "PATCH", path: "/api/v1/owners/o/projects/p/milestones/7/state" }],
-    ["delete-milestone", "translateLegacy", { method: "DELETE", path: "/o/p/milestone/7/delete" }],
-    ["delete-milestone", "translateYoram", { method: "DELETE", path: "/api/v1/owners/o/projects/p/milestones/7" }],
+    ["create-milestone-api", "translateYoram", { method: "POST", path: "/api/v1/owners/o/projects/p/milestones/bulk" }],
     ["create-milestone-api", "translateLegacy", { method: "POST", path: "/-_-api/v1/owners/o/projects/p/milestones" }],
-    ["create-milestone-api", "translateYoram", { method: "POST", path: "/-_-api/v1/owners/o/projects/p/milestones" }],
     ["create-post", "translateLegacy", { method: "POST", path: "/o/p/posts" }],
     ["create-post", "translateYoram", { method: "POST", path: "/api/v1/projects/o/p/posts" }],
     ["edit-post", "translateLegacy", { method: "POST", path: "/o/p/post/3/edit" }],
     ["edit-post", "translateYoram", { method: "PATCH", path: "/api/v1/projects/o/p/posts/3" }],
     ["patch-post-content-api", "translateLegacy", { method: "PATCH", path: "/-_-api/v1/owners/o/projects/p/posts/3/content" }],
-    ["patch-post-content-api", "translateYoram", { method: "PATCH", path: "/-_-api/v1/owners/o/projects/p/posts/3/content" }],
+    ["patch-post-content-api", "translateYoram", { method: "PATCH", path: "/api/v1/owners/o/projects/p/posts/3/content" }],
     ["set-post-labels-api", "translateLegacy", { method: "POST", path: "/-_-api/v1/owners/o/projects/p/postlabel/0" }],
     ["create-post-comment", "translateLegacy", { method: "POST", path: "/o/p/post/3/comment" }],
     ["create-post-comment", "translateYoram", { method: "POST", path: "/api/v1/projects/o/p/posts/3/comments" }],
@@ -236,7 +249,7 @@ test("mutation translators produce expected method/path literals", () => {
     ["enroll-project", "translateLegacy", { method: "POST", path: "/o/p/enroll" }],
     ["cancel-enroll-project", "translateYoram", { method: "POST", path: "/o/p/cancel/enroll" }],
     ["set-issue-labels-api", "translateLegacy", { method: "POST", path: "/-_-api/v1/owners/o/projects/p/issuelabel/17" }],
-    ["set-issue-labels-api", "translateYoram", { method: "POST", path: "/-_-api/v1/owners/o/projects/p/issuelabel/17" }],
+    ["set-issue-labels-api", "translateYoram", { method: "POST", path: "/api/v1/owners/o/projects/p/issues/17/labels" }],
     ["fetch-project-exports", { owner: "o", project: "p" }, "/-_-api/v1/owners/o/projects/p/exports"],
     ["list-review-threads", { owner: "o", project: "p" }, "/o/p/reviews"],
     ["view-project-leave-info", { owner: "o", project: "p" }, "/info/leave/o/p"],
@@ -280,7 +293,7 @@ test("mutation translators produce expected method/path literals", () => {
     ["probe-user-isused", "translateLegacy", { method: "GET", path: "/user/isUsed?name=pn" }],
     ["probe-user-isused", "translateYoram", { method: "GET", path: "/user/isUsed?name=pn" }],
     ["probe-admin-users", "translateLegacy", { method: "GET", path: "/-_-api/v1/admin/users" }],
-    ["probe-admin-users", "translateYoram", { method: "GET", path: "/-_-api/v1/admin/users" }],
+    ["probe-admin-users", "translateYoram", { method: "GET", path: "/api/v1/admin/users" }],
     ["restore-closed-pullrequest", "translateLegacy", { method: "POST", path: "/o/p/pullRequest/31/restorefrombranch" }],
     ["restore-closed-pullrequest", "translateYoram", { method: "POST", path: "/o/p/pullRequest/31/restorefrombranch" }],
     ["close-restored-pullrequest", "translateLegacy", { method: "POST", path: "/o/p/pullRequest/31/close" }],

@@ -4122,7 +4122,7 @@ async fn direct_legacy_reset_visited_and_default_login_page_routes_match_workspa
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/-_-api/v1/user/defultLoginPage?path=%2Fme")
+                .uri("/yona/api/v1/user/default-login-page?path=%2Fme")
                 .header(http::header::COOKIE, &cookie_header)
                 .body(Body::empty())
                 .unwrap(),

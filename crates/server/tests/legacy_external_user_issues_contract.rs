@@ -220,7 +220,7 @@ async fn legacy_external_user_issues_returns_legacy_result_shape() {
         rest(
             app.clone(),
             Method::GET,
-            "/yona/-_-api/v1/user/issues?filter=authored&page=1&pageNum=5",
+            "/yona/api/v1/user/issues/search?filter=authored&page=1&pageNum=5",
             Some(&owner_cookie),
             None,
             None,
@@ -249,7 +249,7 @@ async fn legacy_external_user_issues_returns_legacy_result_shape() {
     let token_response = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/users/token",
+        "/yona/api/v1/auth/token",
         None,
         None,
         Some(json!({
@@ -268,7 +268,7 @@ async fn legacy_external_user_issues_returns_legacy_result_shape() {
         rest_with_headers(
             app.clone(),
             Method::GET,
-            "/yona/-_-api/v1/user/issues?filter=authored&page=1&pageNum=5",
+            "/yona/api/v1/user/issues/search?filter=authored&page=1&pageNum=5",
             &[("Authorization", &authorization_header)],
             None,
         )
@@ -284,7 +284,7 @@ async fn legacy_external_user_issues_returns_legacy_result_shape() {
     let anonymous_user_issues = rest(
         app,
         Method::GET,
-        "/yona/-_-api/v1/user/issues?filter=authored&page=1&pageNum=5",
+        "/yona/api/v1/user/issues/search?filter=authored&page=1&pageNum=5",
         None,
         None,
         None,

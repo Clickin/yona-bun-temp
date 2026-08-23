@@ -498,18 +498,20 @@ export const actionDefinitions = {
     },
     translateYoram(step) {
       const query = step.params.tab && `tab=${step.params.tab}`;
-      return { method: "GET", path: withQuery("/api/v1/user/issues", query), pagePath: withQuery("/user/issues", query) };
+      return { method: "GET", path: withQuery("/api/v1/user/issues/search", query), pagePath: withQuery("/user/issues", query) };
     },
     handler: readPageHandler,
   },
 
   "get-user-issues-compat": {
-    // legacy external namespace /-_-api/v1/* is mirrored under Yoram /api/v1.
+    // Legacy keeps its external /-_-api/v1 namespace; the canonical
+    // /api/v1/user/issues route owns the plain spelling on Yoram, so the
+    // migrated compat read lives at /api/v1/user/issues/search.
     translateLegacy() {
       return { method: "GET", path: "/-_-api/v1/user/issues" };
     },
     translateYoram() {
-      return { method: "GET", path: "/api/v1/-_-api/v1/user/issues" };
+      return { method: "GET", path: "/api/v1/user/issues/search" };
     },
     handler: readApiHandler,
   },
@@ -595,7 +597,7 @@ export const actionDefinitions = {
       return { method: "GET", path: `/-_-api/v1/users/${step.params.user}/statistics` };
     },
     translateYoram(step) {
-      return { method: "GET", path: `/api/v1/users/${step.params.user}/statistics` };
+      return { method: "GET", path: `/api/v1/users/${step.params.user}/statistics/summary` };
     },
     handler: readApiHandler,
   },
@@ -675,14 +677,14 @@ export const actionDefinitions = {
     },
     handler: readPageHandler,
   },
-
   "get-users-directory": {
-    // legacy-compat user directory lives at root level on both sides.
+    // Legacy keeps its external /-_-api/v1/users spelling; the migrated
+    // Yoram route is /api/v1/users/directory (restful-uri-mapping v1 #4).
     translateLegacy() {
       return { method: "GET", path: "/-_-api/v1/users" };
     },
     translateYoram() {
-      return { method: "GET", path: "/-_-api/v1/users" };
+      return { method: "GET", path: "/api/v1/users/directory" };
     },
     handler: readApiHandler,
   },
@@ -713,11 +715,13 @@ export const actionDefinitions = {
   },
 
   "get-favorite-lists": {
+    // Legacy keeps its external /-_-api/v1/favorite* spelling; the migrated
+    // Yoram routes live under /api/v1/user/favorites (mapping v1 #15/#16).
     translateLegacy() {
       return { method: "GET", path: "/-_-api/v1/favoriteIssues" };
     },
     translateYoram() {
-      return { method: "GET", path: "/-_-api/v1/favoriteIssues" };
+      return { method: "GET", path: "/api/v1/user/favorites/issues" };
     },
     async handler(ctx) {
       const { helpers, entry } = ctx;
@@ -725,11 +729,16 @@ export const actionDefinitions = {
         const ids = json?.projectIds ?? json?.organizationIds ?? json?.ids;
         return Array.isArray(ids) ? [...ids].sort() : null;
       };
+      const yoramPath = {
+        favoriteIssues: "/api/v1/user/favorites/issues",
+        favoriteProjects: "/api/v1/user/favorites/projects",
+        favoriteOrganizations: "/api/v1/user/favorites/organizations",
+      };
       for (const name of ["favoriteIssues", "favoriteProjects", "favoriteOrganizations"]) {
         const { legacyResult, yoramResult } = await helpers.requestBoth(
           ctx,
           { method: "GET", path: `/-_-api/v1/${name}` },
-          { method: "GET", path: `/-_-api/v1/${name}` },
+          { method: "GET", path: yoramPath[name] },
         );
         const legacyIds = sortedIds(legacyResult.json);
         const yoramIds = sortedIds(yoramResult.json);

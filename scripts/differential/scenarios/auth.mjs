@@ -265,30 +265,30 @@ export const actionDefinitions = {
   // --- simple compat APIs (S10) --------------------------------------------
   "get-compat-hello": {
     translateLegacy: () => ({ method: "GET", path: "/-_-api/v1/hello" }),
-    translateYoram: () => ({ method: "GET", path: "/api/v1/-_-api/v1/hello" }),
+    translateYoram: () => ({ method: "GET", path: "/api/v1/hello" }),
     async handler(ctx) {
-      await requestCompatApi(ctx, "/-_-api/v1/hello");
+      await requestCompatApi(ctx, "/-_-api/v1/hello", "/api/v1/hello");
     },
   },
   "get-compat-users": {
     translateLegacy: () => ({ method: "GET", path: "/-_-api/v1/users" }),
-    translateYoram: () => ({ method: "GET", path: "/api/v1/-_-api/v1/users" }),
+    translateYoram: () => ({ method: "GET", path: "/api/v1/users/directory" }),
     async handler(ctx) {
-      await requestCompatApi(ctx, "/-_-api/v1/users");
+      await requestCompatApi(ctx, "/-_-api/v1/users", "/api/v1/users/directory");
     },
   },
   "get-favorite-projects": {
     translateLegacy: () => ({ method: "GET", path: "/-_-api/v1/favoriteProjects" }),
-    translateYoram: () => ({ method: "GET", path: "/api/v1/-_-api/v1/favoriteProjects" }),
+    translateYoram: () => ({ method: "GET", path: "/api/v1/user/favorites/projects" }),
     async handler(ctx) {
-      await requestCompatApi(ctx, "/-_-api/v1/favoriteProjects");
+      await requestCompatApi(ctx, "/-_-api/v1/favoriteProjects", "/api/v1/user/favorites/projects");
     },
   },
   "get-favorite-organizations": {
     translateLegacy: () => ({ method: "GET", path: "/-_-api/v1/favoriteOrganizations" }),
-    translateYoram: () => ({ method: "GET", path: "/api/v1/-_-api/v1/favoriteOrganizations" }),
+    translateYoram: () => ({ method: "GET", path: "/api/v1/user/favorites/organizations" }),
     async handler(ctx) {
-      await requestCompatApi(ctx, "/-_-api/v1/favoriteOrganizations");
+      await requestCompatApi(ctx, "/-_-api/v1/favoriteOrganizations", "/api/v1/user/favorites/organizations");
     },
   },
   "get-title-heads": {
@@ -296,11 +296,15 @@ export const actionDefinitions = {
       return { method: "GET", path: `/-_-api/v1/owners/${step.params.owner}/projects/${step.params.project}/titleHeads` };
     },
     translateYoram(step) {
-      return { method: "GET", path: `/api/v1/-_-api/v1/owners/${step.params.owner}/projects/${step.params.project}/titleHeads` };
+      return { method: "GET", path: `/api/v1/owners/${step.params.owner}/projects/${step.params.project}/title-heads/find` };
     },
     async handler(ctx) {
       const { step } = ctx;
-      await requestCompatApi(ctx, `/-_-api/v1/owners/${step.params.owner}/projects/${step.params.project}/titleHeads`);
+      await requestCompatApi(
+        ctx,
+        `/-_-api/v1/owners/${step.params.owner}/projects/${step.params.project}/titleHeads`,
+        `/api/v1/owners/${step.params.owner}/projects/${step.params.project}/title-heads/find`,
+      );
     },
   },
 
@@ -333,73 +337,64 @@ export const actionDefinitions = {
       pushStatusDivergence(ctx, path, legacyResult, yoramResult);
     },
   },
-
-  // --- app-owned compat boundary probes (S12-S16) ---------------------------
-  // These rows are implemented in yoram (docs/provenance/legacy-external-api.md
-  // "Implemented"); probes use boundary payloads so no entity/state is created.
   "post-compat-translation": {
     translateLegacy(step) {
       return { method: "POST", path: "/-_-api/v1/translation", json: { owner: step.params.owner, projectName: step.params.project, type: "issue", number: 1 } };
     },
     translateYoram(step) {
-      return { method: "POST", path: `/api/v1/-_-api/v1/translation`, json: { owner: step.params.owner, projectName: step.params.project, type: "issue", number: 1 } };
+      return { method: "POST", path: `/api/v1/translation`, json: { owner: step.params.owner, projectName: step.params.project, type: "issue", number: 1 } };
     },
     async handler(ctx) {
-      const { step, helpers, entry } = ctx;
-      const translation = { method: "POST", path: "/-_-api/v1/translation", json: { owner: step.params.owner, projectName: step.params.project, type: "issue", number: 1 } };
-      const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, translation, { ...translation, path: `/api/v1/-_-api/v1/translation` });
-      pushStatusDivergence(ctx, entry.behaviorIds[0] ?? translation.path, legacyResult, yoramResult);
+      const { helpers, entry } = ctx;
+      const legacy = this.translateLegacy(ctx.step);
+      const yoram = this.translateYoram(ctx.step);
+      const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacy, yoram);
+      pushStatusDivergence(ctx, entry.behaviorIds[0] ?? legacy.path, legacyResult, yoramResult);
     },
   },
   "post-compat-default-login-page": {
     translateLegacy: () => ({ method: "POST", path: "/-_-api/v1/user/defultLoginPage", form: { defaultLoginPage: "" } }),
-    translateYoram: () => ({ method: "POST", path: "/api/v1/-_-api/v1/user/defultLoginPage", form: { defaultLoginPage: "" } }),
+    translateYoram: () => ({ method: "POST", path: "/api/v1/user/default-login-page", form: { defaultLoginPage: "" } }),
     async handler(ctx) {
       const { entry, helpers } = ctx;
       const legacy = { method: "POST", path: "/-_-api/v1/user/defultLoginPage", form: { defaultLoginPage: "" } };
-      const yoram = { method: "POST", path: "/api/v1/-_-api/v1/user/defultLoginPage", form: { defaultLoginPage: "" } };
+      const yoram = { method: "POST", path: "/api/v1/user/default-login-page", form: { defaultLoginPage: "" } };
       const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacy, yoram);
       pushStatusDivergence(ctx, "/user/editform/:tabId".replace(":tabId", "defultLoginPage"), legacyResult, yoramResult);
     },
   },
   "post-compat-user-invalid": {
     translateLegacy: () => ({ method: "POST", path: "/-_-api/v1/users", json: {} }),
-    translateYoram: () => ({ method: "POST", path: "/api/v1/-_-api/v1/users", json: {} }),
+    translateYoram: () => ({ method: "POST", path: "/api/v1/users/bulk", json: {} }),
     async handler(ctx) {
       const { entry, helpers } = ctx;
-      const { legacyResult, yoramResult } = await helpers.requestBoth(
-        ctx,
-        { method: "POST", path: "/-_-api/v1/users", json: {} },
-        { method: "POST", path: "/api/v1/-_-api/v1/users", json: {} },
-      );
-      pushStatusDivergence(ctx, entry.behaviorIds[0] ?? "/-_-api/v1/users", legacyResult, yoramResult);
+      const legacy = { method: "POST", path: "/-_-api/v1/users", json: {} };
+      const yoram = { method: "POST", path: "/api/v1/users/bulk", json: {} };
+      const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacy, yoram);
+      pushStatusDivergence(ctx, entry.behaviorIds[0] ?? legacy.path, legacyResult, yoramResult);
     },
   },
   "post-compat-token-invalid": {
     translateLegacy: () => ({ method: "POST", path: "/-_-api/v1/users/token", json: { id: "no-such-parity-user", password: "definitely-wrong" } }),
-    translateYoram: () => ({ method: "POST", path: "/api/v1/-_-api/v1/users/token", json: { id: "no-such-parity-user", password: "definitely-wrong" } }),
+    translateYoram: () => ({ method: "POST", path: "/api/v1/auth/token", json: { id: "no-such-parity-user", password: "definitely-wrong" } }),
     async handler(ctx) {
       const { entry, helpers } = ctx;
-      const { legacyResult, yoramResult } = await requestAnonymousBoth(
-        ctx,
-        { method: "POST", path: "/-_-api/v1/users/token", json: { id: "no-such-parity-user", password: "definitely-wrong" } },
-        { method: "POST", path: "/api/v1/-_-api/v1/users/token", json: { id: "no-such-parity-user", password: "definitely-wrong" } },
-      );
+      const legacy = { method: "POST", path: "/-_-api/v1/users/token", json: { id: "no-such-parity-user", password: "definitely-wrong" } };
+      const yoram = { method: "POST", path: "/api/v1/auth/token", json: { id: "no-such-parity-user", password: "definitely-wrong" } };
+      const { legacyResult, yoramResult } = await requestAnonymousBoth(ctx, legacy, yoram);
       void entry;
-      pushStatusDivergence(ctx, "/-_-api/v1/users/token", legacyResult, yoramResult);
+      pushStatusDivergence(ctx, legacy.path, legacyResult, yoramResult);
     },
   },
   "patch-compat-admin-user-missing": {
     translateLegacy: () => ({ method: "PATCH", path: "/-_-api/v1/admin/users/no-such-parity-user", json: { state: "LOCKED" } }),
-    translateYoram: () => ({ method: "PATCH", path: "/api/v1/-_-api/v1/admin/users/no-such-parity-user", json: { state: "LOCKED" } }),
+    translateYoram: () => ({ method: "PATCH", path: "/api/v1/admin/users/no-such-parity-user", json: { state: "LOCKED" } }),
     async handler(ctx) {
       const { entry, helpers } = ctx;
-      const { legacyResult, yoramResult } = await helpers.requestBoth(
-        ctx,
-        { method: "PATCH", path: "/-_-api/v1/admin/users/no-such-parity-user", json: { state: "LOCKED" } },
-        { method: "PATCH", path: "/api/v1/-_-api/v1/admin/users/no-such-parity-user", json: { state: "LOCKED" } },
-      );
-      pushStatusDivergence(ctx, entry.behaviorIds[0] ?? "/-_-api/v1/admin/users/:user", legacyResult, yoramResult);
+      const legacy = { method: "PATCH", path: "/-_-api/v1/admin/users/no-such-parity-user", json: { state: "LOCKED" } };
+      const yoram = { method: "PATCH", path: "/api/v1/admin/users/no-such-parity-user", json: { state: "LOCKED" } };
+      const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacy, yoram);
+      pushStatusDivergence(ctx, entry.behaviorIds[0] ?? legacy.path, legacyResult, yoramResult);
     },
   },
 };
@@ -439,19 +434,11 @@ async function renderDomTargetPath(ctx, target, { spa = true } = {}) {
   await ctx.helpers.renderDomTarget(ctx, { legacy: `${ctx.options.legacyUrl}${target}`, yoram: `${ctx.yoramBaseUrl}${target}`, spa });
 }
 
-// Yoram mirrors the legacy external /-_-api/v1/* namespace under /api/v1; some
-// endpoints exist natively at /api/v1/<rest> instead. Try the compat-mirror
-// path first, fall back to the native spelling; divergence is judged against
-// whichever Yoram spelling answers.
-async function requestCompatApi(ctx, legacyPath) {
-  const rest = legacyPath.replace("/-_-api/v1", "");
-  const mirror = `/api/v1/-_-api/v1${rest}`;
-  const native = `/api/v1${rest}`;
-  let yoramResult = await ctx.yoramSession.request({ method: "GET", path: mirror });
-  if (yoramResult.status === 404) {
-    const nativeResult = await ctx.yoramSession.request({ method: "GET", path: native });
-    if (nativeResult.status !== 404) yoramResult = { ...nativeResult, path: native };
-  }
+// Yoram serves the migrated compat endpoints at their RESTful /api/v1 paths
+// (restful-uri-mapping v1) while legacy keeps its external /-_-api/v1
+// namespace; each callsite passes both spellings explicitly.
+async function requestCompatApi(ctx, legacyPath, yoramPath) {
+  const yoramResult = await ctx.yoramSession.request({ method: "GET", path: yoramPath });
   const legacyResult = await ctx.legacySession.request({ method: "GET", path: legacyPath });
   if (legacyResult.status >= 400) ctx.entry.errors.push(`legacy GET failed: HTTP ${legacyResult.status} @ ${legacyPath}`);
   pushStatusDivergence(ctx, legacyPath, legacyResult, yoramResult);

@@ -1,10 +1,11 @@
-# Differential Behavior Coverage — Deferred & Follow-up (2026-08-23, rev.2)
+# Differential Behavior Coverage — v1 Scope Gaps & Follow-up (2026-08-23, rev.3)
 
-Status: current. Source of truth for what the differential sweep deliberately does
-NOT cover, which legacy surfaces are intentionally excluded as deviation, and the
-runtime divergences surfaced by the mutation-enabled sweeps. Companion artifacts:
-`.agent/differential/behavior-coverage.json`, `.agent/differential/report.json`
-(violations + classifications), `docs/provenance/behavior-inventory.json`
+Status: current. 2026-08-23 결정으로 기존 deferred 분류는 폐지되었다 — 아래 모든
+항목은 **1차 릴리즈 범위에 포함**되며, 상태는 `gap`(미구현)이다. 이 문서는 스윕이
+의도적으로 커버하지 않는 행위, deviation으로 의도 제외된 표면, 그리고
+mutation-enabled sweep이 발견한 런타임 divergence의 source of truth다.
+Companion artifacts: `.agent/differential/behavior-coverage.json`,
+`.agent/differential/report.json`, `docs/provenance/behavior-inventory.json`
 (immutable B-id inventory).
 
 ## 0. Intentional deviations — deliberately removed surfaces (제외 확정)
@@ -29,22 +30,23 @@ issues/comments CRUD compat)은 **app-owned implemented**로서 커버 대상이
 S12–S16 경계 프로브와 I11–I13/I20·I23 프로브가 이들을 검증한다.
 
 
-## 1. Deferred behaviors (uncovered B-ids)
+## 1. v1 범위 미구현 행위 (gap — 1차 릴리즈 포함 대상)
 
-These are outside the sweep's safe/reachable envelope. Classification per
-AGENTS.md: deferred scope; none may be counted as "covered" until Yoram
-implements them or a safe harness strategy exists.
+아래 행위는 1차 릴리즈 범위에 포함된다(2026-08-23 결정). 현재 Yoram이 구현하지
+않아 스윕의 안전/도달 가능 범위 밖에 있을 뿐, deferred가 아니라 **열린 gap**이다.
+구현되는 즉시 시나리오로 커버해야 한다.
 
-### SVN (5) — 2순위 deferred, Yoram has no SVN backend
+
+### SVN (5) — v1 범위, Yoram SVN 백엔드 미구현 (gap)
 - B-0021 `DELETE /svn/*path`, B-0170 `GET /svn/*path`, B-0294 `POST /svn/*path`,
   B-0314 `PUT /svn/*path`, B-0271 `POST /!svn-fake/sevice/`
 
-### Import / migration / export (6) — 2순위 deferred
+### Import / migration / export (6) — v1 범위, 미구현 (gap)
 - B-0025 `GET /_import`, B-0200 `POST /_import`, B-0286 `POST /sites/import`
 - B-0159 `GET /sites/export` (Yoram exports endpoint returns 403 by design for
-  non-migration contexts)
+  non-migration contexts — v1에서 migrator/export 경로 구현 시 해소)
 - B-0127~B-0134 family partially probed read-only in P15/P17; full migration
-  surface deferred
+  surface is a v1 implementation item
 
 ### Destructive / irreversible on shared parity state (7)
 - B-0001 `DELETE .../pullRequest/:id/deletefrombranch` (deletes the PR's source

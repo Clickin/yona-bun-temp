@@ -1521,7 +1521,6 @@ pub(crate) async fn direct_authenticate_provider_denied(
 }
 
 const LEGACY_RESERVED_USER_NAMES: &[&str] = &[
-    "-_-api",
     "assets",
     "authenticate",
     "categories",

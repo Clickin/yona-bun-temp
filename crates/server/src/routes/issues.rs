@@ -2090,7 +2090,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
 
     Router::new()
         .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issuelabel/{number}",
+            "/api/v1/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/labels",
             post(
                 move |headers: HeaderMap,
                       Path((owner, project_name, number)): Path<(String, String, i64)>,
@@ -2110,7 +2110,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             ),
         )
         .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/upvoteWeight",
+            "/api/v1/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/weight/upvote",
             post(
                 move |headers: HeaderMap,
                       Path((owner, project_name, number)): Path<(String, String, i64)>| {
@@ -2129,7 +2129,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             ),
         )
         .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/downvoteWeight",
+            "/api/v1/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/weight/downvote",
             post(
                 move |headers: HeaderMap,
                       Path((owner, project_name, number)): Path<(String, String, i64)>| {
@@ -2148,7 +2148,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             ),
         )
         .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/content",
+            "/api/v1/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/content/update",
             patch(
                 move |headers: HeaderMap,
                       Path((owner, project_name, number)): Path<(String, String, i64)>,
@@ -2168,7 +2168,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             ),
         )
         .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/detectChange",
+            "/api/v1/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/detect-change",
             post(
                 move |headers: HeaderMap,
                       Path((owner, project_name, number)): Path<(String, String, i64)>,
@@ -2188,7 +2188,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             ),
         )
         .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}",
+            "/api/v1/owners/{owner_name}/projects/{project_name}/issues/{issue_number}",
             get(
                 move |headers: HeaderMap,
                       Path((owner, project_name, number)): Path<(String, String, i64)>| {
@@ -2206,7 +2206,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             ),
         )
         .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}",
+            "/api/v1/owners/{owner_name}/projects/{project_name}/issues/{issue_number}",
             put(
                 move |headers: HeaderMap,
                       Path((owner, project_name, number)): Path<(String, String, i64)>,
@@ -2226,7 +2226,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             ),
         )
         .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}",
+            "/api/v1/owners/{owner_name}/projects/{project_name}/issues/{issue_number}",
             patch(
                 move |headers: HeaderMap,
                       Path((owner, project_name, number)): Path<(String, String, i64)>,
@@ -2246,7 +2246,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             ),
         )
         .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/assignees",
+            "/api/v1/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/assignees",
             post(
                 move |headers: HeaderMap,
                       Path((owner, project_name, number)): Path<(String, String, i64)>,
@@ -2266,7 +2266,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             ),
         )
         .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/share",
+            "/api/v1/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/sharers/toggle",
             post(
                 move |headers: HeaderMap,
                       Path((owner, project_name, number)): Path<(String, String, i64)>,
@@ -2286,7 +2286,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             ),
         )
         .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/findSharer",
+            "/api/v1/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/sharers/find",
             get(
                 move |headers: HeaderMap,
                       Path((owner, project_name, number)): Path<(String, String, i64)>,
@@ -2306,7 +2306,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             ),
         )
         .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/assignableUsers",
+            "/api/v1/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/assignable-users/find",
             get(
                 move |headers: HeaderMap,
                       Path((owner, project_name, number)): Path<(String, String, i64)>,
@@ -2326,7 +2326,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             ),
         )
         .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/sharableUsers",
+            "/api/v1/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/sharable-users/find",
             get(
                 move |headers: HeaderMap,
                       Path((owner, project_name, number)): Path<(String, String, i64)>,
@@ -2346,7 +2346,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             ),
         )
         .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/comments",
+            "/api/v1/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/comments/new",
             post(
                 move |headers: HeaderMap,
                       Path((owner, project_name, number)): Path<(String, String, i64)>,
@@ -2366,7 +2366,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             ),
         )
         .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/comments/{comment_id}",
+            "/api/v1/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/comments/{comment_id}/update",
             put(
                 move |headers: HeaderMap,
                       Path((owner, project_name, number, comment_id)): Path<(
@@ -2392,7 +2392,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             ),
         )
         .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/issues/{number}/commentNotiReceivers",
+            "/api/v1/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/comments/notification-receivers",
             post(
                 move |headers: HeaderMap,
                       Path((owner, project_name, number)): Path<(String, String, i64)>,

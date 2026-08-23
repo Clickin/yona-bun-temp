@@ -64,17 +64,21 @@ test("translators produce expected method/path literals", () => {
   assert.deepEqual(legacy("logout-session"), { method: "GET", path: "/logout" });
   assert.deepEqual(yoram("logout-session"), { method: "POST", path: "/api/v1/auth/sign-out" });
 
-  // Compat APIs: legacy external namespace mirrored under Yoram /api/v1.
+  // Compat APIs: legacy keeps its external /-_-api/v1 namespace; Yoram serves
+  // the migrated RESTful /api/v1 counterparts (restful-uri-mapping v1).
   assert.deepEqual(legacy("get-compat-hello"), { method: "GET", path: "/-_-api/v1/hello" });
-  assert.deepEqual(yoram("get-compat-hello"), { method: "GET", path: "/api/v1/-_-api/v1/hello" });
+  assert.deepEqual(yoram("get-compat-hello"), { method: "GET", path: "/api/v1/hello" });
   assert.deepEqual(legacy("get-compat-users"), { method: "GET", path: "/-_-api/v1/users" });
+  assert.deepEqual(yoram("get-compat-users"), { method: "GET", path: "/api/v1/users/directory" });
   assert.deepEqual(legacy("get-favorite-projects"), { method: "GET", path: "/-_-api/v1/favoriteProjects" });
+  assert.deepEqual(yoram("get-favorite-projects"), { method: "GET", path: "/api/v1/user/favorites/projects" });
   assert.deepEqual(legacy("get-favorite-organizations"), { method: "GET", path: "/-_-api/v1/favoriteOrganizations" });
+  assert.deepEqual(yoram("get-favorite-organizations"), { method: "GET", path: "/api/v1/user/favorites/organizations" });
   assert.deepEqual(legacy("get-title-heads", { owner: "admin", project: "sample" }), {
     method: "GET",
     path: "/-_-api/v1/owners/admin/projects/sample/titleHeads",
   });
-  assert.deepEqual(yoram("get-title-heads", { owner: "admin", project: "sample" }).path, "/api/v1/-_-api/v1/owners/admin/projects/sample/titleHeads");
+  assert.deepEqual(yoram("get-title-heads", { owner: "admin", project: "sample" }).path, "/api/v1/owners/admin/projects/sample/title-heads/find");
 
   // OAuth provider routes.
   assert.deepEqual(legacy("oauth-authenticate", { provider: "github" }), { method: "GET", path: "/authenticate/github" });

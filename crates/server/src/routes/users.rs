@@ -343,7 +343,7 @@ async fn rest_read_direct_issue_form_options(
 pub(crate) fn routes(service: PilotServiceImpl) -> Router {
     Router::new()
         .route(
-            "/-_-api/v1/admin/users",
+            "/api/v1/admin/users",
             get({
                 let service = service.clone();
                 move |headers: HeaderMap| {
@@ -353,7 +353,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             }),
         )
         .route(
-            "/-_-api/v1/admin/users/{login_id}",
+            "/api/v1/admin/users/{login_id}",
             patch({
                 let service = service.clone();
                 move |headers: HeaderMap,
@@ -368,7 +368,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             }),
         )
         .route(
-            "/-_-api/v1/users",
+            "/api/v1/users/directory",
             get({
                 let service = service.clone();
                 move |headers: HeaderMap, Query(query): Query<LegacyExternalUsersQuery>| {
@@ -378,7 +378,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             }),
         )
         .route(
-            "/-_-api/v1/users",
+            "/api/v1/users/bulk",
             post({
                 let service = service.clone();
                 move |headers: HeaderMap, Json(body): Json<serde_json::Value>| {
@@ -388,7 +388,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             }),
         )
         .route(
-            "/-_-api/v1/users/token",
+            "/api/v1/auth/token",
             post({
                 let service = service.clone();
                 move |headers: HeaderMap, Json(body): Json<serde_json::Value>| {
@@ -398,7 +398,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             }),
         )
         .route(
-            "/-_-api/v1/user/issues",
+            "/api/v1/user/issues/search",
             get({
                 let service = service.clone();
                 move |headers: HeaderMap, Query(query): Query<LegacyExternalUserIssuesQuery>| {
@@ -408,7 +408,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             }),
         )
         .route(
-            "/-_-api/v1/users/{login_id}/statistics",
+            "/api/v1/users/{login_id}/statistics/summary",
             get({
                 let service = service.clone();
                 move |headers: HeaderMap, Path(login_id): Path<String>| {
@@ -418,7 +418,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             }),
         )
         .route(
-            "/-_-api/v1/translation",
+            "/api/v1/translation",
             post(
                 move |headers: HeaderMap, Json(body): Json<serde_json::Value>| {
                     let service = service.clone();

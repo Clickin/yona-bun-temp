@@ -279,7 +279,7 @@ async fn legacy_external_board_post_create_and_content_routes_follow_legacy_json
     let created_response = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts",
+        "/yona/api/v1/owners/owner/projects/projectYobi/posts",
         Some(&owner_cookie),
         Some(&owner_csrf),
         Some(json!({
@@ -306,7 +306,7 @@ async fn legacy_external_board_post_create_and_content_routes_follow_legacy_json
     let comment_response = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts/77/comments",
+        "/yona/api/v1/owners/owner/projects/projectYobi/posts/77/comments",
         Some(&owner_cookie),
         Some(&owner_csrf),
         Some(json!({
@@ -327,7 +327,7 @@ async fn legacy_external_board_post_create_and_content_routes_follow_legacy_json
         rest(
             app.clone(),
             Method::POST,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/postlabel/77",
+            "/yona/api/v1/owners/owner/projects/projectYobi/posts/77/labels",
             Some(&owner_cookie),
             Some(&owner_csrf),
             Some(json!([label_id])),
@@ -342,7 +342,7 @@ async fn legacy_external_board_post_create_and_content_routes_follow_legacy_json
         rest(
             app.clone(),
             Method::PATCH,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts/77/content",
+            "/yona/api/v1/owners/owner/projects/projectYobi/posts/77/content",
             Some(&owner_cookie),
             Some(&owner_csrf),
             Some(json!({

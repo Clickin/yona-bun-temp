@@ -1535,7 +1535,7 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
         rest(
             app.clone(),
             Method::POST,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/comments",
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/comments/new",
             Some(&cookie),
             Some(&csrf),
             Some(json!({
@@ -1561,7 +1561,7 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
             app.clone(),
             Method::PUT,
             &format!(
-                "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/comments/{legacy_external_comment_id}"
+                "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/comments/{legacy_external_comment_id}/update"
             ),
             Some(&cookie),
             Some(&csrf),
@@ -2106,7 +2106,7 @@ async fn issue_mutation_contract_preserves_legacy_public_project_permissions() {
         rest(
             app.clone(),
             Method::PATCH,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/content",
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/content/update",
             Some(&guest_cookie),
             Some(&guest_csrf),
             Some(json!({
@@ -2143,7 +2143,7 @@ async fn issue_mutation_contract_preserves_legacy_public_project_permissions() {
         rest(
             app.clone(),
             Method::POST,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/detectChange",
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/detect-change",
             Some(&guest_cookie),
             Some(&guest_csrf),
             Some(json!({
@@ -2161,7 +2161,7 @@ async fn issue_mutation_contract_preserves_legacy_public_project_permissions() {
         rest(
             app.clone(),
             Method::GET,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1",
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1",
             Some(&guest_cookie),
             None,
             None,
@@ -2176,7 +2176,7 @@ async fn issue_mutation_contract_preserves_legacy_public_project_permissions() {
         rest(
             app.clone(),
             Method::PUT,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1",
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1",
             Some(&guest_cookie),
             Some(&guest_csrf),
             Some(json!({
@@ -2201,7 +2201,7 @@ async fn issue_mutation_contract_preserves_legacy_public_project_permissions() {
         rest(
             app.clone(),
             Method::PATCH,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1",
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1",
             Some(&guest_cookie),
             Some(&guest_csrf),
             Some(json!({ "state": "closed" })),
@@ -2257,7 +2257,7 @@ async fn issue_mutation_contract_preserves_legacy_public_project_permissions() {
         rest(
             app.clone(),
             Method::POST,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/upvoteWeight",
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/weight/upvote",
             Some(&guest_cookie),
             Some(&guest_csrf),
             None,
@@ -2271,7 +2271,7 @@ async fn issue_mutation_contract_preserves_legacy_public_project_permissions() {
         rest(
             app.clone(),
             Method::POST,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/downvoteWeight",
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/weight/downvote",
             Some(&guest_cookie),
             Some(&guest_csrf),
             None,

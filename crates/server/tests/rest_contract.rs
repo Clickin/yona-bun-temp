@@ -1094,7 +1094,7 @@ async fn legacy_external_hello_matches_global_api_contract() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/yona/-_-api/v1/hello")
+                .uri("/yona/api/v1/hello")
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -1529,7 +1529,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let legacy_created_users_response = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/users",
+        "/yona/api/v1/users/bulk",
         Some(&owner_cookie),
         None,
         Some(json!({
@@ -1580,7 +1580,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let legacy_create_user_by_visitor = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/users",
+        "/yona/api/v1/users/bulk",
         Some(&visitor_cookie),
         None,
         Some(json!({ "users": [] })),
@@ -1599,7 +1599,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::GET,
-            "/yona/-_-api/v1/admin/users",
+            "/yona/api/v1/admin/users",
             Some(&owner_cookie),
             None,
             None,
@@ -1626,7 +1626,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let legacy_admin_users_by_visitor = rest(
         app.clone(),
         Method::GET,
-        "/yona/-_-api/v1/admin/users",
+        "/yona/api/v1/admin/users",
         Some(&visitor_cookie),
         None,
         None,
@@ -1640,7 +1640,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::PATCH,
-            "/yona/-_-api/v1/admin/users/statee",
+            "/yona/api/v1/admin/users/statee",
             Some(&owner_cookie),
             None,
             Some(json!({ "state": "locked" })),
@@ -1654,7 +1654,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::PATCH,
-            "/yona/-_-api/v1/admin/users/statee",
+            "/yona/api/v1/admin/users/statee",
             Some(&owner_cookie),
             None,
             Some(json!({ "user": { "state": "guest" } })),
@@ -1667,7 +1667,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let legacy_state_update_site_admin = rest(
         app.clone(),
         Method::PATCH,
-        "/yona/-_-api/v1/admin/users/statee",
+        "/yona/api/v1/admin/users/statee",
         Some(&owner_cookie),
         None,
         Some(json!({ "state": "SITE_ADMIN" })),
@@ -1680,7 +1680,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let legacy_state_update_by_visitor = rest(
         app.clone(),
         Method::PATCH,
-        "/yona/-_-api/v1/admin/users/statee",
+        "/yona/api/v1/admin/users/statee",
         Some(&visitor_cookie),
         None,
         Some(json!({ "state": "active" })),
@@ -2066,7 +2066,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     assert_eq!(direct_non_guest_enroll.status(), StatusCode::BAD_REQUEST);
 
     // Guards workspace legacy favorite adapters through the app-scoped service
-    // snapshot used by the `/-_-api/v1/favorite*` routes.
+    // snapshot used by the `/api/v1/user/favorites/*` routes.
     let favorited = ok_json(
         rest(
             app.clone(),
@@ -2085,7 +2085,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::GET,
-            "/yona/-_-api/v1/favoriteProjects",
+            "/yona/api/v1/user/favorites/projects",
             Some(&visitor_cookie),
             None,
             None,
@@ -2105,7 +2105,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::POST,
-            &format!("/yona/-_-api/v1/favoriteProjects/{project_id}"),
+            &format!("/yona/api/v1/user/favorites/projects/{project_id}"),
             Some(&visitor_cookie),
             Some(&visitor_csrf),
             None,
@@ -2119,7 +2119,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::POST,
-            &format!("/yona/-_-api/v1/favoriteProjects/{project_id}"),
+            &format!("/yona/api/v1/user/favorites/projects/{project_id}"),
             Some(&visitor_cookie),
             Some(&visitor_csrf),
             None,
@@ -2133,7 +2133,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let invalid_legacy_token = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/users/token",
+        "/yona/api/v1/auth/token",
         None,
         None,
         Some(json!({
@@ -2151,7 +2151,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let legacy_token_response = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/users/token",
+        "/yona/api/v1/auth/token",
         None,
         None,
         Some(json!({
@@ -2175,7 +2175,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let nested_legacy_token_response = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/users/token",
+        "/yona/api/v1/auth/token",
         None,
         None,
         Some(json!({
@@ -2198,7 +2198,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest_with_headers(
             app.clone(),
             Method::GET,
-            "/yona/-_-api/v1/favoriteProjects",
+            "/yona/api/v1/user/favorites/projects",
             &[("Yona-Token", &nested_legacy_api_token)],
             None,
         )
@@ -2226,7 +2226,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest_with_headers(
             app.clone(),
             Method::GET,
-            "/yona/-_-api/v1/favoriteProjects",
+            "/yona/api/v1/user/favorites/projects",
             &[("Yona-Token", &guest_api_token)],
             None,
         )
@@ -2239,7 +2239,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest_with_headers(
             app.clone(),
             Method::POST,
-            &format!("/yona/-_-api/v1/favoriteProjects/{project_id}"),
+            &format!("/yona/api/v1/user/favorites/projects/{project_id}"),
             &[("Authorization", &authorization_header)],
             None,
         )
@@ -2252,7 +2252,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest_with_headers(
             app.clone(),
             Method::POST,
-            &format!("/yona/-_-api/v1/favoriteProjects/{project_id}"),
+            &format!("/yona/api/v1/user/favorites/projects/{project_id}"),
             &[("Yona-Token", &guest_api_token)],
             None,
         )
@@ -2265,7 +2265,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let anonymous_legacy_favorites = rest(
         app.clone(),
         Method::GET,
-        "/yona/-_-api/v1/favoriteProjects",
+        "/yona/api/v1/user/favorites/projects",
         None,
         None,
         None,
@@ -2276,7 +2276,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let anonymous_legacy_favorite_toggle = rest(
         app.clone(),
         Method::POST,
-        &format!("/yona/-_-api/v1/favoriteProjects/{project_id}"),
+        &format!("/yona/api/v1/user/favorites/projects/{project_id}"),
         None,
         None,
         None,
@@ -2312,7 +2312,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::POST,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/commentNotiReceivers",
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/comments/notification-receivers",
             Some(&owner_cookie),
             None,
             Some(json!({
@@ -2344,7 +2344,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let anonymous_legacy_comment_receivers = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/commentNotiReceivers",
+        "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/comments/notification-receivers",
         None,
         None,
         Some(json!({
@@ -2378,7 +2378,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let legacy_issue_label_update_response = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issuelabel/1",
+        "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/labels",
         Some(&owner_cookie),
         Some(&owner_csrf),
         Some(json!([legacy_issue_label_id])),
@@ -2410,7 +2410,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let anonymous_legacy_issue_label_update = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issuelabel/1",
+        "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/labels",
         None,
         None,
         Some(json!([legacy_issue_label_fixture["label"]["id"].clone()])),
@@ -2420,7 +2420,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let legacy_issue_weight_up_response = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/upvoteWeight",
+        "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/weight/upvote",
         Some(&owner_cookie),
         Some(&owner_csrf),
         None,
@@ -2436,7 +2436,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::POST,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/downvoteWeight",
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/weight/downvote",
             Some(&owner_cookie),
             Some(&owner_csrf),
             None,
@@ -2448,7 +2448,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let anonymous_legacy_issue_weight = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/upvoteWeight",
+        "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/weight/upvote",
         None,
         None,
         None,
@@ -2459,7 +2459,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::PATCH,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/content",
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/content/update",
             Some(&owner_cookie),
             Some(&owner_csrf),
             Some(json!({
@@ -2483,7 +2483,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::PATCH,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/content",
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/content/update",
             Some(&owner_cookie),
             Some(&owner_csrf),
             Some(json!({
@@ -2508,7 +2508,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let legacy_issue_content_conflict = rest(
         app.clone(),
         Method::PATCH,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/content",
+        "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/content/update",
         Some(&owner_cookie),
         Some(&owner_csrf),
         Some(json!({
@@ -2528,7 +2528,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let anonymous_legacy_issue_content = rest(
         app.clone(),
         Method::PATCH,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/content",
+        "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/content/update",
         None,
         None,
         Some(json!({
@@ -2542,7 +2542,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::PATCH,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1",
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1",
             Some(&owner_cookie),
             Some(&owner_csrf),
             Some(json!({
@@ -2565,7 +2565,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::PATCH,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1",
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1",
             Some(&owner_cookie),
             Some(&owner_csrf),
             Some(json!({})),
@@ -2577,7 +2577,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let anonymous_legacy_issue_state = rest(
         app.clone(),
         Method::PATCH,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1",
+        "/yona/api/v1/owners/owner/projects/projectYobi/issues/1",
         None,
         None,
         Some(json!({ "state": "closed" })),
@@ -2587,7 +2587,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let legacy_issue_comment_response = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/comments",
+        "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/comments/new",
         Some(&owner_cookie),
         Some(&owner_csrf),
         Some(json!({
@@ -2615,7 +2615,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let legacy_issue_imported_comment_author_response = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/comments",
+        "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/comments/new",
         Some(&owner_cookie),
         Some(&owner_csrf),
         Some(json!({
@@ -2644,7 +2644,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let nested_legacy_issue_comment_response = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/comments",
+        "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/comments/new",
         Some(&owner_cookie),
         Some(&owner_csrf),
         Some(json!({
@@ -2668,7 +2668,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let nested_legacy_issue_attachment_comment_response = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/comments",
+        "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/comments/new",
         Some(&owner_cookie),
         Some(&owner_csrf),
         Some(json!({
@@ -2716,7 +2716,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let legacy_issue_token_comment_response = rest_with_headers(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/comments",
+        "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/comments/new",
         &[("Authorization", &authorization_header)],
         Some(json!({
             "comment": "legacy issue token comment"
@@ -2736,7 +2736,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let nested_legacy_issue_token_comment_response = rest_with_headers(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/comments",
+        "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/comments/new",
         &[("Authorization", &authorization_header)],
         Some(json!({
             "payload": {
@@ -2795,7 +2795,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
             app.clone(),
             Method::PUT,
             &format!(
-                "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/comments/{legacy_issue_comment_id}"
+                "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/comments/{legacy_issue_comment_id}/update"
             ),
             Some(&visitor_cookie),
             None,
@@ -2820,7 +2820,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
             app.clone(),
             Method::PUT,
             &format!(
-                "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/comments/{legacy_issue_comment_id}"
+                "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/comments/{legacy_issue_comment_id}/update"
             ),
             Some(&visitor_cookie),
             None,
@@ -2846,7 +2846,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         app.clone(),
         Method::PUT,
         &format!(
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/comments/{legacy_issue_comment_id}"
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/comments/{legacy_issue_comment_id}/update"
         ),
         Some(&visitor_cookie),
         None,
@@ -2867,7 +2867,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let anonymous_legacy_issue_comment = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/comments",
+        "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/comments/new",
         None,
         None,
         Some(json!({ "body": "anonymous issue comment" })),
@@ -2878,7 +2878,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         app.clone(),
         Method::PUT,
         &format!(
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/comments/{legacy_issue_comment_id}"
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/comments/{legacy_issue_comment_id}/update"
         ),
         None,
         None,
@@ -2893,7 +2893,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::POST,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/assignees",
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/assignees",
             Some(&owner_cookie),
             Some(&owner_csrf),
             Some(json!({
@@ -2925,7 +2925,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest_with_headers(
             app.clone(),
             Method::PUT,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1",
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1",
             &[("Authorization", &authorization_header)],
             Some(json!({
                 "meta": {
@@ -2989,7 +2989,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let anonymous_legacy_issue_update = rest(
         app.clone(),
         Method::PUT,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1",
+        "/yona/api/v1/owners/owner/projects/projectYobi/issues/1",
         None,
         None,
         Some(json!({
@@ -3005,7 +3005,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest_with_headers(
             app.clone(),
             Method::GET,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1",
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1",
             &[("Authorization", &authorization_header)],
             None,
         )
@@ -3033,7 +3033,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let anonymous_legacy_issue_read = rest(
         app.clone(),
         Method::GET,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1",
+        "/yona/api/v1/owners/owner/projects/projectYobi/issues/1",
         None,
         None,
         None,
@@ -3044,7 +3044,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::POST,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/detectChange",
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/detect-change",
             Some(&visitor_cookie),
             None,
             Some(json!({
@@ -3072,7 +3072,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let anonymous_legacy_issue_detect_change = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/detectChange",
+        "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/detect-change",
         None,
         None,
         Some(json!({
@@ -3132,7 +3132,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::POST,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/commentNotiReceivers",
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/comments/notification-receivers",
             Some(&visitor_cookie),
             None,
             Some(json!({
@@ -3160,7 +3160,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let legacy_issue_no_assignee = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/assignees",
+        "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/assignees",
         Some(&owner_cookie),
         Some(&owner_csrf),
         Some(json!({ "assignees": [] })),
@@ -3174,7 +3174,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let anonymous_legacy_issue_assignee = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/assignees",
+        "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/assignees",
         None,
         None,
         Some(json!({ "assignees": ["visitor"] })),
@@ -3185,7 +3185,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::POST,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/share",
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/sharers/toggle",
             Some(&owner_cookie),
             Some(&owner_csrf),
             Some(json!({
@@ -3228,7 +3228,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::GET,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/findSharer?query=guest,missing",
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/sharers/find?query=guest,missing",
             Some(&owner_cookie),
             None,
             None,
@@ -3249,7 +3249,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let legacy_find_sharer_html = rest_with_headers(
         app.clone(),
         Method::GET,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/findSharer?query=guest",
+        "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/sharers/find?query=guest",
         &[("Accept", "text/html")],
         None,
     )
@@ -3259,7 +3259,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::POST,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/share",
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/sharers/toggle",
             Some(&owner_cookie),
             Some(&owner_csrf),
             Some(json!({
@@ -3304,7 +3304,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::POST,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/share",
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/sharers/toggle",
             Some(&owner_cookie),
             Some(&owner_csrf),
             Some(json!({
@@ -3353,7 +3353,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::POST,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/share",
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/sharers/toggle",
             Some(&owner_cookie),
             Some(&owner_csrf),
             Some(json!({
@@ -3378,7 +3378,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let legacy_issue_no_sharer = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/share",
+        "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/sharers/toggle",
         Some(&owner_cookie),
         Some(&owner_csrf),
         Some(json!({ "action": "add" })),
@@ -3392,7 +3392,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let anonymous_legacy_issue_share = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/share",
+        "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/sharers/toggle",
         None,
         None,
         Some(json!({
@@ -3409,7 +3409,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::GET,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/assignableUsers?query=visitor",
+            "/yona/api/v1/owners/owner/projects/projectYobi/assignable-users/find?query=visitor",
             Some(&owner_cookie),
             None,
             None,
@@ -3428,7 +3428,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::GET,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/assignableUsers",
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/assignable-users/find",
             Some(&owner_cookie),
             None,
             None,
@@ -3454,7 +3454,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let legacy_assignable_html = rest_with_headers(
         app.clone(),
         Method::GET,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/assignableUsers",
+        "/yona/api/v1/owners/owner/projects/projectYobi/assignable-users/find",
         &[("Accept", "text/html")],
         None,
     )
@@ -3464,7 +3464,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::GET,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/sharableUsers?query=visitor",
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/sharable-users/find?query=visitor",
             Some(&owner_cookie),
             None,
             None,
@@ -3483,7 +3483,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::GET,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/sharableUsers?query=projectYobi",
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/sharable-users/find?query=projectYobi",
             Some(&owner_cookie),
             None,
             None,
@@ -3499,7 +3499,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let legacy_sharable_html = rest_with_headers(
         app.clone(),
         Method::GET,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/issues/1/sharableUsers?query=visitor",
+        "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/sharable-users/find?query=visitor",
         &[("Accept", "text/html")],
         None,
     )
@@ -3509,7 +3509,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::POST,
-            &format!("/yona/-_-api/v1/favoriteIssues/{issue_id}"),
+            &format!("/yona/api/v1/user/favorites/issues/{issue_id}"),
             Some(&visitor_cookie),
             Some(&visitor_csrf),
             None,
@@ -3527,7 +3527,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::GET,
-            "/yona/-_-api/v1/favoriteIssues",
+            "/yona/api/v1/user/favorites/issues",
             Some(&visitor_cookie),
             None,
             None,
@@ -3546,7 +3546,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::POST,
-            &format!("/yona/-_-api/v1/favoriteIssues/{issue_id}"),
+            &format!("/yona/api/v1/user/favorites/issues/{issue_id}"),
             Some(&visitor_cookie),
             Some(&visitor_csrf),
             None,
@@ -3564,7 +3564,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let anonymous_legacy_issues = rest(
         app.clone(),
         Method::GET,
-        "/yona/-_-api/v1/favoriteIssues",
+        "/yona/api/v1/user/favorites/issues",
         None,
         None,
         None,
@@ -3575,7 +3575,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let anonymous_legacy_issue_toggle = rest(
         app.clone(),
         Method::POST,
-        &format!("/yona/-_-api/v1/favoriteIssues/{issue_id}"),
+        &format!("/yona/api/v1/user/favorites/issues/{issue_id}"),
         None,
         None,
         None,
@@ -3591,7 +3591,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let translation_without_config = rest(
         translation_unconfigured_app,
         Method::POST,
-        "/yona/-_-api/v1/translation",
+        "/yona/api/v1/translation",
         Some(&visitor_cookie),
         Some(&visitor_csrf),
         Some(json!({
@@ -3621,7 +3621,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let anonymous_translation = rest(
         translation_configured_app,
         Method::POST,
-        "/yona/-_-api/v1/translation",
+        "/yona/api/v1/translation",
         None,
         None,
         Some(json!({
@@ -3638,7 +3638,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::POST,
-            "/yona/-_-api/v1/translation",
+            "/yona/api/v1/translation",
             Some(&owner_cookie),
             Some(&owner_csrf),
             Some(json!({
@@ -3681,7 +3681,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::POST,
-            &format!("/yona/-_-api/v1/favoriteOrganizations/{organization_id}"),
+            &format!("/yona/api/v1/user/favorites/organizations/{organization_id}"),
             Some(&visitor_cookie),
             Some(&visitor_csrf),
             None,
@@ -3698,7 +3698,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::GET,
-            "/yona/-_-api/v1/favoriteOrganizations",
+            "/yona/api/v1/user/favorites/organizations",
             Some(&visitor_cookie),
             None,
             None,
@@ -3722,7 +3722,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::POST,
-            &format!("/yona/-_-api/v1/favoriteOrganizations/{organization_id}"),
+            &format!("/yona/api/v1/user/favorites/organizations/{organization_id}"),
             Some(&visitor_cookie),
             Some(&visitor_csrf),
             None,
@@ -3739,7 +3739,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let anonymous_legacy_organizations = rest(
         app.clone(),
         Method::GET,
-        "/yona/-_-api/v1/favoriteOrganizations",
+        "/yona/api/v1/user/favorites/organizations",
         None,
         None,
         None,
@@ -3750,7 +3750,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let anonymous_legacy_organization_toggle = rest(
         app.clone(),
         Method::POST,
-        &format!("/yona/-_-api/v1/favoriteOrganizations/{organization_id}"),
+        &format!("/yona/api/v1/user/favorites/organizations/{organization_id}"),
         None,
         None,
         None,
@@ -3766,7 +3766,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::GET,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts/1/watchers?type=issues",
+            "/yona/api/v1/owners/owner/projects/projectYobi/posts/1/watchers?type=issues",
             None,
             None,
             None,
@@ -3809,7 +3809,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
             app.clone(),
             Method::GET,
             &format!(
-                "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts/{}/watchers?type=posts",
+                "/yona/api/v1/owners/owner/projects/projectYobi/posts/{}/watchers?type=posts",
                 posting.post_number
             ),
             None,
@@ -3829,7 +3829,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let legacy_board_create_response = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts",
+        "/yona/api/v1/owners/owner/projects/projectYobi/posts",
         Some(&owner_cookie),
         Some(&owner_csrf),
         Some(json!({
@@ -3891,7 +3891,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let nested_legacy_board_create_response = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts",
+        "/yona/api/v1/owners/owner/projects/projectYobi/posts",
         Some(&owner_cookie),
         Some(&owner_csrf),
         Some(json!({
@@ -3994,7 +3994,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::PATCH,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts/77/content",
+            "/yona/api/v1/owners/owner/projects/projectYobi/posts/77/content",
             Some(&visitor_cookie),
             Some(&visitor_csrf),
             Some(json!({
@@ -4060,7 +4060,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::PATCH,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts/77/content",
+            "/yona/api/v1/owners/owner/projects/projectYobi/posts/77/content",
             Some(&visitor_cookie),
             Some(&visitor_csrf),
             Some(json!({
@@ -4085,7 +4085,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let legacy_board_conflict = rest(
         app.clone(),
         Method::PATCH,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts/77/content",
+        "/yona/api/v1/owners/owner/projects/projectYobi/posts/77/content",
         Some(&visitor_cookie),
         Some(&visitor_csrf),
         Some(json!({
@@ -4106,7 +4106,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let legacy_board_comment_response = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts/77/comments",
+        "/yona/api/v1/owners/owner/projects/projectYobi/posts/77/comments",
         Some(&owner_cookie),
         Some(&owner_csrf),
         Some(json!({
@@ -4151,7 +4151,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let legacy_board_imported_comment_author_response = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts/77/comments",
+        "/yona/api/v1/owners/owner/projects/projectYobi/posts/77/comments",
         Some(&owner_cookie),
         Some(&owner_csrf),
         Some(json!({
@@ -4180,7 +4180,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let nested_legacy_board_comment_response = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts/77/comments",
+        "/yona/api/v1/owners/owner/projects/projectYobi/posts/77/comments",
         Some(&owner_cookie),
         Some(&owner_csrf),
         Some(json!({
@@ -4346,7 +4346,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::POST,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/postlabel/77",
+            "/yona/api/v1/owners/owner/projects/projectYobi/posts/77/labels",
             None,
             None,
             Some(json!([legacy_board_label_id])),
@@ -4376,7 +4376,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let legacy_milestones_response = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/milestones",
+        "/yona/api/v1/owners/owner/projects/projectYobi/milestones/bulk",
         Some(&owner_cookie),
         Some(&owner_csrf),
         Some(json!({
@@ -4402,7 +4402,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::POST,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/milestones",
+            "/yona/api/v1/owners/owner/projects/projectYobi/milestones/bulk",
             Some(&owner_cookie),
             Some(&owner_csrf),
             Some(json!({
@@ -4430,7 +4430,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::POST,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/milestones",
+            "/yona/api/v1/owners/owner/projects/projectYobi/milestones/bulk",
             Some(&owner_cookie),
             Some(&owner_csrf),
             Some(json!({
@@ -4455,7 +4455,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         rest(
             app.clone(),
             Method::POST,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/milestones",
+            "/yona/api/v1/owners/owner/projects/projectYobi/milestones/bulk",
             Some(&owner_cookie),
             Some(&owner_csrf),
             Some(json!({
@@ -4505,7 +4505,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let anonymous_legacy_milestones = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/milestones",
+        "/yona/api/v1/owners/owner/projects/projectYobi/milestones/bulk",
         None,
         None,
         Some(json!({
@@ -4522,7 +4522,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let anonymous_legacy_board_create = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts",
+        "/yona/api/v1/owners/owner/projects/projectYobi/posts",
         None,
         None,
         Some(json!({
@@ -4540,7 +4540,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     let legacy_watchers_without_type = rest(
         app.clone(),
         Method::GET,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/posts/1/watchers",
+        "/yona/api/v1/owners/owner/projects/projectYobi/posts/1/watchers",
         None,
         None,
         None,
@@ -6034,7 +6034,7 @@ async fn rest_user_statistics_counts_legacy_activity_rows() {
         rest(
             app.clone(),
             Method::GET,
-            "/yona/-_-api/v1/users/owner/statistics",
+            "/yona/api/v1/users/owner/statistics/summary",
             Some(&owner_cookie),
             None,
             None,
@@ -6063,7 +6063,7 @@ async fn rest_user_statistics_counts_legacy_activity_rows() {
         rest_with_headers(
             app.clone(),
             Method::GET,
-            "/yona/-_-api/v1/users/owner/statistics",
+            "/yona/api/v1/users/owner/statistics/summary",
             &[("Yona-Token", &owner_token)],
             None,
         )
@@ -6075,7 +6075,7 @@ async fn rest_user_statistics_counts_legacy_activity_rows() {
     let anonymous_legacy_statistics = rest(
         app.clone(),
         Method::GET,
-        "/yona/-_-api/v1/users/owner/statistics",
+        "/yona/api/v1/users/owner/statistics/summary",
         None,
         None,
         None,
@@ -6245,7 +6245,7 @@ async fn rest_label_routes_manage_labels_and_categories() {
     let legacy_created_response = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/labels",
+        "/yona/api/v1/owners/owner/projects/projectYobi/labels/bulk",
         Some(&owner_cookie),
         Some(&owner_csrf),
         Some(json!({
@@ -6284,7 +6284,7 @@ async fn rest_label_routes_manage_labels_and_categories() {
     let legacy_nested_labels_response = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/labels",
+        "/yona/api/v1/owners/owner/projects/projectYobi/labels/bulk",
         Some(&owner_cookie),
         Some(&owner_csrf),
         Some(json!({
@@ -6318,7 +6318,7 @@ async fn rest_label_routes_manage_labels_and_categories() {
     let anonymous_legacy_label = rest(
         app.clone(),
         Method::POST,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/labels",
+        "/yona/api/v1/owners/owner/projects/projectYobi/labels/bulk",
         None,
         None,
         Some(json!({
@@ -6348,7 +6348,7 @@ async fn rest_label_routes_manage_labels_and_categories() {
         rest(
             app.clone(),
             Method::GET,
-            "/yona/-_-api/v1/owners/owner/projects/projectYobi/titleHeads?query=bug",
+            "/yona/api/v1/owners/owner/projects/projectYobi/title-heads/find?query=bug",
             Some(&owner_cookie),
             None,
             None,
@@ -6378,7 +6378,7 @@ async fn rest_label_routes_manage_labels_and_categories() {
     let legacy_title_heads_html = rest_with_headers(
         app.clone(),
         Method::GET,
-        "/yona/-_-api/v1/owners/owner/projects/projectYobi/titleHeads",
+        "/yona/api/v1/owners/owner/projects/projectYobi/title-heads/find",
         &[("Accept", "text/html")],
         None,
     )

@@ -143,7 +143,7 @@ export async function searchLegacyMemberUsers(
   const params = new URLSearchParams();
   params.set("query", query);
   const response = await fetchImpl(
-    prefixBasePath(runtimeConfig.basePath, `/-_-api/v1/users?${params.toString()}`),
+    prefixBasePath(runtimeConfig.basePath, `/api/v1/users/directory?${params.toString()}`),
     {
       credentials: "same-origin",
       headers: new Headers({ Accept: "application/json" }),

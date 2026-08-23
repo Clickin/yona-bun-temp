@@ -661,7 +661,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
 
     Router::new()
         .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/posts",
+            "/api/v1/owners/{owner_name}/projects/{project_name}/posts",
             post(
                 move |headers: HeaderMap,
                       Path((owner, project_name)): Path<(String, String)>,
@@ -681,7 +681,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             ),
         )
         .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/posts/{number}/content",
+            "/api/v1/owners/{owner_name}/projects/{project_name}/posts/{post_number}/content",
             patch(
                 move |headers: HeaderMap,
                       Path((owner, project_name, number)): Path<(String, String, i64)>,
@@ -702,7 +702,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             ),
         )
         .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/posts/{number}/comments",
+            "/api/v1/owners/{owner_name}/projects/{project_name}/posts/{post_number}/comments",
             post(
                 move |headers: HeaderMap,
                       Path((owner, project_name, number)): Path<(String, String, i64)>,
@@ -723,7 +723,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
             ),
         )
         .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/postlabel/{number}",
+            "/api/v1/owners/{owner_name}/projects/{project_name}/posts/{post_number}/labels",
             post(
                 move |Path((owner, project_name, number)): Path<(String, String, i64)>,
                       Json(body): Json<Vec<serde_json::Value>>| {

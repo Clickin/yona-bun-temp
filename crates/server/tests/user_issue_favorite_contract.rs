@@ -268,7 +268,7 @@ async fn favorite_issue_toggle_updates_issue_detail_and_rejects_unreadable_issue
         .expect("favorite issue")
         .id;
     let legacy_favorites =
-        response_json(rest_get(app.clone(), "/yona/-_-api/v1/favoriteIssues", &owner_cookie).await)
+        response_json(rest_get(app.clone(), "/yona/api/v1/user/favorites/issues", &owner_cookie).await)
             .await;
     assert_eq!(legacy_favorites["projectIds"], json!([issue_id]));
     assert_eq!(legacy_favorites["projects"][0]["issueId"], issue_id);
@@ -276,7 +276,7 @@ async fn favorite_issue_toggle_updates_issue_detail_and_rejects_unreadable_issue
     let unfavored = response_json(
         rest_post(
             app.clone(),
-            &format!("/yona/-_-api/v1/favoriteIssues/{issue_id}"),
+            &format!("/yona/api/v1/user/favorites/issues/{issue_id}"),
             &owner_cookie,
             &owner_csrf,
         )
@@ -287,7 +287,7 @@ async fn favorite_issue_toggle_updates_issue_detail_and_rejects_unreadable_issue
     assert_eq!(unfavored["favored"], false);
 
     let legacy_favorites_after_toggle =
-        response_json(rest_get(app, "/yona/-_-api/v1/favoriteIssues", &owner_cookie).await).await;
+        response_json(rest_get(app, "/yona/api/v1/user/favorites/issues", &owner_cookie).await).await;
     assert_eq!(legacy_favorites_after_toggle["projectIds"], json!([]));
 }
 

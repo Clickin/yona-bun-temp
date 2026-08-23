@@ -97,7 +97,7 @@ async function mockMembers(page: Page) {
       },
     }),
   );
-  await page.route("**/-_-api/v1/users?*", (route) =>
+  await page.route("**/api/v1/users/directory?*", (route) =>
     route.fulfill({
       contentType: "application/json",
       json: [

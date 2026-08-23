@@ -89,13 +89,13 @@ test("translators produce expected method/path literals", () => {
   assert.deepEqual(legacy("view-user-issues", { tab: "assigned" }), { method: "GET", path: "/user/issues?tab=assigned" });
   assert.deepEqual(yoram("view-user-issues", { tab: "assigned" }), {
     method: "GET",
-    path: "/api/v1/user/issues?tab=assigned",
+    path: "/api/v1/user/issues/search?tab=assigned",
     pagePath: "/user/issues?tab=assigned",
   });
   assert.deepEqual(legacy("view-user-issues"), { method: "GET", path: "/user/issues" });
 
   assert.deepEqual(legacy("get-user-issues-compat"), { method: "GET", path: "/-_-api/v1/user/issues" });
-  assert.deepEqual(yoram("get-user-issues-compat"), { method: "GET", path: "/api/v1/-_-api/v1/user/issues" });
+  assert.deepEqual(yoram("get-user-issues-compat"), { method: "GET", path: "/api/v1/user/issues/search" });
 
   assert.deepEqual(legacy("view-notifications"), { method: "GET", path: "/notifications" });
   assert.deepEqual(legacy("view-notifications", { path: "/notification" }), { method: "GET", path: "/notification" });
@@ -133,7 +133,7 @@ test("translators produce expected method/path literals", () => {
   assert.deepEqual(yoram("view-new-direct-issue-form", { mine: true }), { method: "GET", path: "/user/issues/new/mine" });
 
   assert.deepEqual(legacy("get-user-statistics", { user: "admin" }), { method: "GET", path: "/-_-api/v1/users/admin/statistics" });
-  assert.deepEqual(yoram("get-user-statistics", { user: "admin" }), { method: "GET", path: "/api/v1/users/admin/statistics" });
+  assert.deepEqual(yoram("get-user-statistics", { user: "admin" }), { method: "GET", path: "/api/v1/users/admin/statistics/summary" });
 
   // --- org screens -----------------------------------------------------------
   assert.deepEqual(legacy("view-org-subpage", { organization: "weblabs", page: "boards" }), {
@@ -162,7 +162,7 @@ test("translators produce expected method/path literals", () => {
   assert.deepEqual(legacy("view-site-screen", { screen: "userList" }), { method: "GET", path: "/sites/userList" });
   assert.deepEqual(yoram("view-site-screen", { screen: "projectList" }), { method: "GET", path: "/sites/projectList" });
   assert.deepEqual(legacy("view-files-list"), { method: "GET", path: "/files" });
-  assert.deepEqual(yoram("get-users-directory"), { method: "GET", path: "/-_-api/v1/users" });
+  assert.deepEqual(yoram("get-users-directory"), { method: "GET", path: "/api/v1/users/directory" });
   assert.deepEqual(legacy("check-email-exists", { email: "a@b.co" }), { method: "GET", path: "/user/isEmailExist?email=a%40b.co" });
 
   // --- mutations ---------------------------------------------------------------

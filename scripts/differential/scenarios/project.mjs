@@ -419,10 +419,12 @@ export const actionDefinitions = {
       translateLegacy(step) {
         return { method: "GET", path: readPath(step) };
       },
-      // Yoram serves the same screen via the SPA shell at the legacy direct
-      // route; pagePath marks the DOM target for the runner.
+      // Yoram serves pages via the SPA shell at the legacy direct route;
+      // compat /-_-api/v1 reads go to the migrated RESTful path. pagePath
+      // marks the DOM target for the runner.
       translateYoram(step) {
-        const path = readPath(step);
+        const legacyPath = readPath(step);
+        const path = legacyPath.startsWith("/-_-api/v1") ? compatToRest(legacyPath) : legacyPath;
         return { method: "GET", path, pagePath: path };
       },
       handler: spaReadHandler,
@@ -550,6 +552,29 @@ function legacyApiBase(step) {
   return `/-_-api/v1/owners/${step.params.owner}/projects/${step.params.project}`;
 }
 
+// Yoram's migrated owner-scoped compat family keeps the /api/v1/owners/{o}/
+// projects/{p} prefix while legacy keeps its external /-_-api/v1 spelling
+// (restful-uri-mapping v1).
+const yoramApiBase = (step) => `/api/v1/owners/${step.params.owner}/projects/${step.params.project}`;
+
+// Legacy /-_-api/v1 path → its RESTful /api/v1 counterpart (renamed rows of
+// restful-uri-mapping v1); unchanged spellings only need the prefix swap.
+function compatToRest(path) {
+  return `/api/v1${path.slice("/-_-api/v1".length)}`
+    .replace(/^\/favorite(Issues|Projects|Organizations)(?=\/|$)/u, (_, kind) => `/user/favorites/${kind.toLowerCase()}`)
+    .replace(/\/issuelabel\/([^/?]+)/u, "/issues/$1/labels")
+    .replace(/\/postlabel\/([^/?]+)/u, "/posts/$1/labels")
+    .replace(/\/assignableUsers(?=\/|\?|$)/u, "/assignable-users/find")
+    .replace(/\/findSharer(?=\/|\?|$)/u, "/sharers/find")
+    .replace(/\/sharableUsers(?=\/|\?|$)/u, "/sharable-users/find")
+    .replace(/\/titleHeads(?=\/|\?|$)/u, "/title-heads/find")
+    .replace(/\/upvoteWeight(?=\/|\?|$)/u, "/weight/upvote")
+    .replace(/\/downvoteWeight(?=\/|\?|$)/u, "/weight/downvote")
+    .replace(/\/detectChange(?=\/|\?|$)/u, "/detect-change")
+    .replace(/\/commentNotiReceivers(?=\/|\?|$)/u, "/comments/notification-receivers")
+    .replace(/\/share(?=\/|\?|$)/u, "/sharers");
+}
+
 const SEED_OVERVIEW = "Parity seed project for the admin workspace";
 
 function milestonePlan(suffix, edited = false) {
@@ -664,7 +689,7 @@ const MUTATION_ACTIONS = {
       return { method: "POST", path: `${legacyApiBase(step)}/milestones`, json: { milestones: [{ title: resolved.title, contents: resolved.content, dueDate: resolved.dueDate, state: "open" }] } };
     },
     translateYoram(step, resolved) {
-      return { method: "POST", path: `${legacyApiBase(step)}/milestones`, json: { milestones: [{ title: resolved.title, contents: resolved.content, dueDate: resolved.dueDate, state: "open" }] } };
+      return { method: "POST", path: `${yoramApiBase(step)}/milestones/bulk`, json: { milestones: [{ title: resolved.title, contents: resolved.content, dueDate: resolved.dueDate, state: "open" }] } };
     },
     async handler(ctx) {
       const { step, state, suffix } = ctx;
@@ -752,7 +777,7 @@ const MUTATION_ACTIONS = {
       return { method: "PATCH", path: `${legacyApiBase(step)}/posts/${resolved.postNumber}/content`, json: { content: resolved.content, original: resolved.original } };
     },
     translateYoram(step, resolved) {
-      return { method: "PATCH", path: `${legacyApiBase(step)}/posts/${resolved.postNumber}/content`, json: { content: resolved.content, original: resolved.original } };
+      return { method: "PATCH", path: `${yoramApiBase(step)}/posts/${resolved.postNumber}/content`, json: { content: resolved.content, original: resolved.original } };
     },
     async handler(ctx) {
       const { step, state, suffix } = ctx;
@@ -772,7 +797,7 @@ const MUTATION_ACTIONS = {
       return { method: "POST", path: `${legacyApiBase(step)}/postlabel/${step.params.postNumber ?? 0}`, json: [] };
     },
     translateYoram(step) {
-      return { method: "POST", path: `${legacyApiBase(step)}/postlabel/${step.params.postNumber ?? 0}`, json: [] };
+      return { method: "POST", path: `${yoramApiBase(step)}/posts/${step.params.postNumber ?? 0}/labels`, json: [] };
     },
     async handler(ctx) {
       const { step, state } = ctx;
@@ -878,7 +903,7 @@ const MUTATION_ACTIONS = {
       return { method: "POST", path: `${legacyApiBase(step)}/posts`, json: { posts: [{ title: resolved.title, body: resolved.body }] } };
     },
     translateYoram(step, resolved) {
-      return { method: "POST", path: `${legacyApiBase(step)}/posts`, json: { posts: [{ title: resolved.title, body: resolved.body }] } };
+      return { method: "POST", path: `${yoramApiBase(step)}/posts`, json: { posts: [{ title: resolved.title, body: resolved.body }] } };
     },
     async handler(ctx) {
       const { step, state, suffix } = ctx;
@@ -1001,7 +1026,7 @@ const MUTATION_ACTIONS = {
       return { method: "POST", path: `${legacyApiBase(step)}/labels`, json: { name: resolved.name, category: resolved.category } };
     },
     translateYoram(step, resolved) {
-      return { method: "POST", path: `${legacyApiBase(step)}/labels`, json: { name: resolved.name, category: resolved.category } };
+      return { method: "POST", path: `${yoramApiBase(step)}/labels/bulk`, json: { name: resolved.name, category: resolved.category } };
     },
     async handler(ctx) {
       const { step, suffix } = ctx;
@@ -1166,7 +1191,7 @@ const MUTATION_ACTIONS = {
       if (resolved.phase === "issue") {
         return { method: "POST", path: `/api/v1/projects/${step.params.owner}/${step.params.project}/issues`, json: { title: resolved.title, bodyMarkdown: resolved.body, assigneeLoginId: "", attachmentIds: [], labelIds: [], dueDate: "", isDraft: false, isPublish: true } };
       }
-      return { method: "POST", path: `${legacyApiBase(step)}/issuelabel/${resolved.issueNumber}`, json: [] };
+      return { method: "POST", path: `${yoramApiBase(step)}/issues/${resolved.issueNumber}/labels`, json: [] };
     },
     async handler(ctx) {
       const { step, state, suffix } = ctx;
@@ -1598,10 +1623,10 @@ const LIFECYCLE_ACTIONS = {
       return { method: "GET", path: "/-_-api/v1/admin/users" };
     },
     translateYoram() {
-      return { method: "GET", path: "/-_-api/v1/admin/users" };
+      return { method: "GET", path: "/api/v1/admin/users" };
     },
     handler(ctx) {
-      return pairRequest(ctx, this.translateLegacy(), this.translateYoram(), "/-_-api/v1/admin/users");
+      return pairRequest(ctx, this.translateLegacy(), this.translateYoram(), this.translateLegacy().path);
     },
   },
 

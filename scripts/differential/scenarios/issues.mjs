@@ -377,16 +377,40 @@ const COMMENT_EDIT_EXTRACT = () => {
 
 const apiCompatBase = (step) => `/-_-api/v1/owners/${step.params.owner}/projects/${step.params.project}`;
 const spaRestBase = (step) => `/api/v1/projects/${step.params.owner}/${step.params.project}`;
+// Yoram's migrated owner-scoped compat family keeps the /api/v1/owners/{o}/
+// projects/{p} prefix while legacy keeps its external /-_-api/v1 spelling
+// (restful-uri-mapping v1).
+const yoramApiBase = (step) => `/api/v1/owners/${step.params.owner}/projects/${step.params.project}`;
+// Legacy /-_-api/v1 probe path → its RESTful /api/v1 counterpart. Endpoints
+// whose segment spelling is unchanged only need the prefix swap; the explicit
+// rules below are the renamed rows of restful-uri-mapping v1.
+function compatToRest(path) {
+  return `/api/v1${path.slice("/-_-api/v1".length)}`
+    .replace(/^\/favorite(Issues|Projects|Organizations)(?=\/|$)/u, (_, kind) => `/user/favorites/${kind.toLowerCase()}`)
+    .replace(/\/issuelabel\/([^/?]+)/u, "/issues/$1/labels")
+    .replace(/\/postlabel\/([^/?]+)/u, "/posts/$1/labels")
+    .replace(/\/assignableUsers(?=\/|\?|$)/u, "/assignable-users/find")
+    .replace(/\/findSharer(?=\/|\?|$)/u, "/sharers/find")
+    .replace(/\/sharableUsers(?=\/|\?|$)/u, "/sharable-users/find")
+    .replace(/\/titleHeads(?=\/|\?|$)/u, "/title-heads/find")
+    .replace(/\/upvoteWeight(?=\/|\?|$)/u, "/weight/upvote")
+    .replace(/\/downvoteWeight(?=\/|\?|$)/u, "/weight/downvote")
+    .replace(/\/detectChange(?=\/|\?|$)/u, "/detect-change")
+    .replace(/\/commentNotiReceivers(?=\/|\?|$)/u, "/comments/notification-receivers")
+    .replace(/\/share(?=\/|\?|$)/u, "/sharers");
+}
 
 // Per-side issue DB pk keyed watch/favorite resource param.
 function watchTranslation(method, route) {
   return (step, v) => ({ method, path: `${route}?resource.type=issue&resource.id=${v.issuePk}` });
 }
-const favoriteTranslation = (step, v) => ({ method: "POST", path: `/-_-api/v1/favoriteIssues/${v.issuePk}` });
-const downvoteTranslation = (step, v) => ({ method: "POST", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/downvoteWeight` });
-const sharerTranslation = (step, v, action) => ({
+const favoriteLegacy = (step, v) => ({ method: "POST", path: `/-_-api/v1/favoriteIssues/${v.issuePk}` });
+const favoriteYoram = (step, v) => ({ method: "POST", path: `/api/v1/user/favorites/issues/${v.issuePk}` });
+const downvoteLegacy = (step, v) => ({ method: "POST", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/downvoteWeight` });
+const downvoteYoram = (step, v) => ({ method: "POST", path: `${yoramApiBase(step)}/issues/${v.issueNumber}/weight/downvote` });
+const sharerTranslation = (base, tail, step, v, action) => ({
   method: "POST",
-  path: `${apiCompatBase(step)}/issues/${v.issueNumber}/share`,
+  path: `${base(step)}/issues/${v.issueNumber}/${tail}`,
   json: { sharer: ["admin"], action },
 });
 const deleteCategoryTranslation = (step, v) => ({
@@ -402,7 +426,7 @@ const editIssueLegacy = (step, v) => ({
 });
 const editIssueYoram = (step, v) => ({
   method: "PUT",
-  path: `${apiCompatBase(step)}/issues/${v.issueNumber}`,
+  path: `${yoramApiBase(step)}/issues/${v.issueNumber}`,
   json: { title: v.title, body: v.body },
 });
 
@@ -727,15 +751,15 @@ export const actionDefinitions = {
     },
   },
 
-  // Legacy-compat REST probe: Yoram mirrors the /-_-api/v1 paths verbatim, so
-  // both sides get the same path and JSON payloads are compared semantically
-  // (volatile fields normalized).
+  // Legacy-compat REST probe: legacy keeps its external /-_-api/v1 spelling;
+  // Yoram answers at the migrated RESTful /api/v1 counterpart and JSON
+  // payloads are compared semantically (volatile fields normalized).
   "issue-api-probe": {
     translateLegacy(step) {
       return { method: "GET", path: step.params.api };
     },
     translateYoram(step) {
-      return { method: "GET", path: step.params.api };
+      return { method: "GET", path: compatToRest(step.params.api) };
     },
     async handler(ctx) {
       const { step, entry, helpers } = ctx;
@@ -872,20 +896,20 @@ export const actionDefinitions = {
 
   "patch-issue-content": pairMutation(
     (step, v) => ({ method: "PATCH", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/content`, json: { content: `${v.body} patched`, original: v.body } }),
-    (step, v) => ({ method: "PATCH", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/content`, json: { content: `${v.body} patched`, original: v.body } }),
+    (step, v) => ({ method: "PATCH", path: `${yoramApiBase(step)}/issues/${v.issueNumber}/content/update`, json: { content: `${v.body} patched`, original: v.body } }),
   ),
 
   // Legacy mass-update form (cookie auth, keyed on DB pk) vs Yoram compat PATCH.
   "change-issue-state": pairMutation(
     (step, v) => ({ method: "POST", path: `/${step.params.owner}/${step.params.project}/issues`, form: { "issues[0].id": String(v.issuePk ?? ""), state: "closed" } }),
-    (step, v) => ({ method: "PATCH", path: `${apiCompatBase(step)}/issues/${v.issueNumber}`, json: { state: "closed" } }),
+    (step, v) => ({ method: "PATCH", path: `${yoramApiBase(step)}/issues/${v.issueNumber}`, json: { state: "closed" } }),
     null,
     whenIds(["issuePkLegacy", "issuePkYoram"]),
   ),
 
   "update-issue-assignees": pairMutation(
     (step, v) => ({ method: "POST", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/assignees`, json: { assignees: [{ loginId: "admin" }] } }),
-    (step, v) => ({ method: "POST", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/assignees`, json: { assignees: [{ loginId: "admin" }] } }),
+    (step, v) => ({ method: "POST", path: `${yoramApiBase(step)}/issues/${v.issueNumber}/assignees`, json: { assignees: [{ loginId: "admin" }] } }),
   ),
 
   "delete-issue": pairMutation(
@@ -910,14 +934,14 @@ export const actionDefinitions = {
 
   "put-issue-comment": pairMutation(
     (step, v) => ({ method: "PUT", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/comments/${v.commentId}`, json: { body: `${v.body} put` } }),
-    (step, v) => ({ method: "PUT", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/comments/${v.commentId}`, json: { body: `${v.body} put` } }),
+    (step, v) => ({ method: "PUT", path: `${yoramApiBase(step)}/issues/${v.issueNumber}/comments/${v.commentId}/update`, json: { body: `${v.body} put` } }),
     null,
     whenIds(["commentIdLegacy", "commentIdYoram"]),
   ),
 
   "patch-issue-comment": pairMutation(
     (step, v) => ({ method: "PATCH", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/comments/${v.commentId}`, json: { body: `${v.body} patched` } }),
-    (step, v) => ({ method: "PATCH", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/comments/${v.commentId}`, json: { body: `${v.body} patched` } }),
+    (step, v) => ({ method: "PUT", path: `${yoramApiBase(step)}/issues/${v.issueNumber}/comments/${v.commentId}/update`, json: { body: `${v.body} patched` } }),
     null,
     whenIds(["commentIdLegacy", "commentIdYoram"]),
   ),
@@ -983,10 +1007,10 @@ export const actionDefinitions = {
 
   // Toggle on then toggle back off — favorite state restored by scenario end.
   "toggle-favorite-issue": pairMutation(
-    (step, v) => ({ method: "POST", path: `/-_-api/v1/favoriteIssues/${v.issuePk}` }),
-    (step, v) => ({ method: "POST", path: `/-_-api/v1/favoriteIssues/${v.issuePk}` }),
+    favoriteLegacy,
+    favoriteYoram,
     async (ctx) => {
-      await mutationPair(ctx, favoriteTranslation, favoriteTranslation);
+      await mutationPair(ctx, favoriteLegacy, favoriteYoram);
     },
     whenIds(["issuePkLegacy", "issuePkYoram"]),
   ),
@@ -994,28 +1018,32 @@ export const actionDefinitions = {
   // +1 then -1 — weight restored by scenario end.
   "issue-weight-votes": pairMutation(
     (step, v) => ({ method: "POST", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/upvoteWeight` }),
-    (step, v) => ({ method: "POST", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/upvoteWeight` }),
+    (step, v) => ({ method: "POST", path: `${yoramApiBase(step)}/issues/${v.issueNumber}/weight/upvote` }),
     async (ctx) => {
-      await mutationPair(ctx, downvoteTranslation, downvoteTranslation);
+      await mutationPair(ctx, downvoteLegacy, downvoteYoram);
     },
   ),
 
   "update-sharer": pairMutation(
-    (step, v) => sharerTranslation(step, v, "add"),
-    (step, v) => sharerTranslation(step, v, "add"),
+    (step, v) => sharerTranslation(apiCompatBase, "share", step, v, "add"),
+    (step, v) => sharerTranslation(yoramApiBase, "sharers/toggle", step, v, "add"),
     async (ctx) => {
-      await mutationPair(ctx, (step, v) => sharerTranslation(step, v, "remove"), (step, v) => sharerTranslation(step, v, "remove"));
+      await mutationPair(
+        ctx,
+        (step, v) => sharerTranslation(apiCompatBase, "share", step, v, "remove"),
+        (step, v) => sharerTranslation(yoramApiBase, "sharers/toggle", step, v, "remove"),
+      );
     },
   ),
 
   "comment-noti-receivers": pairMutation(
     (step, v) => ({ method: "POST", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/commentNotiReceivers`, json: { comment: v.body, parentCommentId: "" } }),
-    (step, v) => ({ method: "POST", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/commentNotiReceivers`, json: { comment: v.body, parentCommentId: "" } }),
+    (step, v) => ({ method: "POST", path: `${yoramApiBase(step)}/issues/${v.issueNumber}/comments/notification-receivers`, json: { comment: v.body, parentCommentId: "" } }),
   ),
 
   "detect-issue-change": pairMutation(
     (step, v) => ({ method: "POST", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/detectChange`, json: { issueBodyChecksum: "differential-sweep-checksum", numOfComments: 0 } }),
-    (step, v) => ({ method: "POST", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/detectChange`, json: { issueBodyChecksum: "differential-sweep-checksum", numOfComments: 0 } }),
+    (step, v) => ({ method: "POST", path: `${yoramApiBase(step)}/issues/${v.issueNumber}/detect-change`, json: { issueBodyChecksum: "differential-sweep-checksum", numOfComments: 0 } }),
   ),
 
   // Label CRUD. Created names embed the sweep suffix so discovery is exact and
@@ -1055,7 +1083,7 @@ export const actionDefinitions = {
   // Attach replaces the issue's whole label set; sending [] detaches again.
   "attach-issue-labels": pairMutation(
     (step, v) => ({ method: "POST", path: `${apiCompatBase(step)}/issuelabel/${v.issueNumber}`, json: [String(v.labelId)] }),
-    (step, v) => ({ method: "POST", path: `${apiCompatBase(step)}/issuelabel/${v.issueNumber}`, json: [String(v.labelId)] }),
+    (step, v) => ({ method: "POST", path: `${yoramApiBase(step)}/issues/${v.issueNumber}/labels`, json: [String(v.labelId)] }),
     null,
     whenIds(["labelIdLegacy", "labelIdYoram", "issueNumberLegacy", "issueNumberYoram"]),
   ),

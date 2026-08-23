@@ -2829,7 +2829,7 @@ pub(crate) fn routes(
 
     Router::new()
         .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/milestones",
+            "/api/v1/owners/{owner_name}/projects/{project_name}/milestones/bulk",
             post(
                 move |headers: HeaderMap,
                       Path((owner, project_name)): Path<(String, String)>,
@@ -2962,7 +2962,7 @@ pub(crate) fn routes(
             ),
         )
         .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/labels",
+            "/api/v1/owners/{owner_name}/projects/{project_name}/labels/bulk",
             post(
                 move |headers: HeaderMap,
                       Path((owner, project_name)): Path<(String, String)>,
@@ -2981,7 +2981,7 @@ pub(crate) fn routes(
             ),
         )
         .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/titleHeads",
+            "/api/v1/owners/{owner_name}/projects/{project_name}/title-heads/find",
             get(
                 move |headers: HeaderMap,
                       Path((owner, project_name)): Path<(String, String)>,
@@ -3000,7 +3000,7 @@ pub(crate) fn routes(
             ),
         )
         .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/assignableUsers",
+            "/api/v1/owners/{owner_name}/projects/{project_name}/assignable-users/find",
             get(
                 move |headers: HeaderMap,
                       Path((owner, project_name)): Path<(String, String)>,
@@ -3019,7 +3019,7 @@ pub(crate) fn routes(
             ),
         )
         .route(
-            "/-_-api/v1/owners/{owner}/projects/{project_name}/posts/{number}/watchers",
+            "/api/v1/owners/{owner_name}/projects/{project_name}/posts/{post_number}/watchers",
             get(
                 move |Path((owner, project_name, number)): Path<(String, String, i64)>,
                       Query(query): Query<LegacyExternalWatchersQuery>| {

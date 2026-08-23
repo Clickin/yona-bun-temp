@@ -3,6 +3,26 @@
 Status: provenance
 Date: 2026-06-11
 
+## URI Migration Deviation (2026-08-23)
+
+`/-_-api`는 REST 관례에 맞지 않는다는 결정으로, app-owned implemented rows의
+경로가 `/api/v1` RESTful 철자로 **clean cutover** 대체되었다. 구 경로의 alias,
+redirect, deprecation shim은 존재하지 않는다. legacy route(이 문서 인벤토리와
+`yona-original/conf/routes`)는 그대로 legacy 참조이고, Rust route만 아래
+매핑으로 바뀌었다. 요청/응답 shape·auth·status 코드는 불변이다.
+
+전체 매핑 테이블은 커밋 `585c8c857` 이후 세션의 restful-uri-mapping 기록과
+`scripts/differential/scenarios/*.mjs`의 translateYoram 리터럴이 1차 근거다.
+주요 대응: `/-_-api/v1/hello`→`/api/v1/hello`, `/-_-api/v1/users?query=`→
+`/api/v1/users/directory`, `POST /-_-api/v1/users/token`→`POST /api/v1/auth/token`,
+`user/defultLoginPage`→`/api/v1/user/default-login-page`(오타 수정),
+`favorite{Projects,Issues,Organizations}`→`/api/v1/user/favorites/{projects|issues|organizations}`,
+`issuelabel/{n}`→`issues/{n}/labels`, `{up,down}voteWeight`→`weight/{up,downvote}`,
+`share`/`findSharer`/`sharableUsers`→`sharers*`, `commentNotiReceivers`→
+`comments/notification-receivers`, `postlabel/{n}`→`posts/{n}/labels`,
+`titleHeads`→`title-heads`. Migrator-scope rows(exports, issues/imports, bulk
+issue/project import)는 app route로 추가되지 않았다(아래 인벤토리 유지).
+
 ## Scope Decision
 
 Legacy Yona exposes external compatibility routes under `/-_-api/v1/**` in

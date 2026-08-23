@@ -2484,7 +2484,7 @@ async fn rest_project_container_includes_dashboard_open_issue_counts_by_label() 
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/yona/-_-api/v1/owners/admin/projects/projectYobi/titleHeads?query=guide")
+                .uri("/yona/api/v1/owners/admin/projects/projectYobi/title-heads/find?query=guide")
                 .header(http::header::COOKIE, &admin_cookie)
                 .body(Body::empty())
                 .unwrap(),

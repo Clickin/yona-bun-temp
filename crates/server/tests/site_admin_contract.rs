@@ -342,7 +342,7 @@ async fn site_admin_legacy_external_user_list_route_is_admin_only() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/yona/-_-api/v1/admin/users")
+                .uri("/yona/api/v1/admin/users")
                 .header(http::header::COOKIE, &admin_cookie)
                 .body(Body::empty())
                 .unwrap(),
@@ -361,7 +361,7 @@ async fn site_admin_legacy_external_user_list_route_is_admin_only() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/yona/-_-api/v1/admin/users")
+                .uri("/yona/api/v1/admin/users")
                 .header(http::header::COOKIE, &plain_cookie)
                 .body(Body::empty())
                 .unwrap(),

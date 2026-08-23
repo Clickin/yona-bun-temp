@@ -564,3 +564,13 @@
   provenance document §2.
 - Follow-up: promote duplicated sendRaw/pairLenient helpers to ctx.helpers and
   extend whenIds-style id guards beyond issues.mjs (provenance doc §3).
+
+## Scope decision update (2026-08-23, second)
+
+- deferred 분류 폐지: 기존 deferred 행위 34건 전부 1차 릴리즈 범위로 재분류
+  (상태 = gap). 근거/목록: docs/provenance/differential-behavior-coverage-deferred.md
+  (rev.3). SVN·migration/import·email-token 플로우·git smart-http·사이트 어드민
+  mutation 등은 v1 구현 work item이다.
+- `-_-api/v1/**` app-owned 호환 행은 RESTful `/api/v1` 경로로 대체 (clean cutover,
+  구 alias 없음). 매핑: 세션 local restful-uri-mapping.md, 결과 테이블은 커밋 메시지와
+  legacy-external-api.md 갱신분 참조.

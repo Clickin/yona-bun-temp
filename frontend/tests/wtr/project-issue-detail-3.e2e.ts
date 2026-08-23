@@ -105,7 +105,7 @@ test("project issue detail renders legacy translation button when translation AP
     csrfToken: string | null;
     method: string;
   }> = [];
-  await page.route("**/-_-api/v1/translation", async (route) => {
+  await page.route("**/api/v1/translation", async (route) => {
     translationRequests.push({
       body: JSON.parse(route.request().postData() ?? "{}") as unknown,
       csrfToken: route.request().headers()["x-csrf-token"] ?? null,
@@ -208,7 +208,7 @@ test("project issue detail renders legacy comment translation button when transl
     csrfToken: string | null;
     method: string;
   }> = [];
-  await page.route("**/-_-api/v1/translation", async (route) => {
+  await page.route("**/api/v1/translation", async (route) => {
     translationRequests.push({
       body: JSON.parse(route.request().postData() ?? "{}") as unknown,
       csrfToken: route.request().headers()["x-csrf-token"] ?? null,

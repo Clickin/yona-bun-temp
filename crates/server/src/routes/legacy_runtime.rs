@@ -299,10 +299,6 @@ pub(crate) fn routes(
     assets: AssetMode,
     browser_runtime: BrowserRuntimeConfig,
 ) -> Router {
-    let legacy_api_index_assets = assets.clone();
-    let legacy_api_index_browser_runtime = browser_runtime.clone();
-    let legacy_api_v1_index_assets = assets.clone();
-    let legacy_api_v1_index_browser_runtime = browser_runtime.clone();
     let legacy_migration_assets = assets;
     let legacy_migration_browser_runtime = browser_runtime;
     let legacy_init_service = service.clone();
@@ -312,23 +308,7 @@ pub(crate) fn routes(
 
     Router::new()
         .route("/", post(direct_legacy_fake))
-        .route(
-            "/-_-api",
-            get(move || {
-                let assets = legacy_api_index_assets.clone();
-                let browser_runtime = legacy_api_index_browser_runtime.clone();
-                async move { serve_frontend_page(assets, Method::GET, browser_runtime).await }
-            }),
-        )
-        .route(
-            "/-_-api/v1/",
-            get(move || {
-                let assets = legacy_api_v1_index_assets.clone();
-                let browser_runtime = legacy_api_v1_index_browser_runtime.clone();
-                async move { serve_frontend_page(assets, Method::GET, browser_runtime).await }
-            }),
-        )
-        .route("/-_-api/v1/hello", get(legacy_external_api_hello))
+        .route("/api/v1/hello", get(legacy_external_api_hello))
         .route(
             "/_init",
             get(move || {
