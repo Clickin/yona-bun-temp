@@ -65,8 +65,22 @@ export class LegacySession {
       redirect: "manual",
     });
     const location = response.headers.get("location") ?? "";
-    const nextCookies = cookieHeader(response);
-    if (nextCookies) this.cookies = nextCookies;
+    // Merge instead of replace: flash-only Set-Cookie responses (e.g. Play
+    // validation warnings) must not wipe PLAY_SESSION and drop the login.
+    const nextCookies = response.headers.getSetCookie?.() ?? [];
+    if (nextCookies.length > 0) {
+      const jar = new Map();
+      for (const pair of this.cookies.split("; ").filter(Boolean)) {
+        const eq = pair.indexOf("=");
+        if (eq > 0) jar.set(pair.slice(0, eq), pair.slice(eq + 1));
+      }
+      for (const cookie of nextCookies) {
+        const first = cookie.split(";")[0];
+        const eq = first.indexOf("=");
+        if (eq > 0) jar.set(first.slice(0, eq), first.slice(eq + 1));
+      }
+      this.cookies = [...jar].map(([name, value]) => `${name}=${value}`).join("; ");
+    }
     let text = "";
     if (!location) text = await response.text();
     return { status: response.status, location, body: text };

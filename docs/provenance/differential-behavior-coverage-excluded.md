@@ -93,33 +93,40 @@ I11–I13/I20·I23 프로브가 검증한다.
 - B-0295/B-0296 threads/:id/close|open: 시드 데이터에 notification thread id
   원천이 없어 id discovery가 불가. 알림 생성 시나리오와 체인으로 묶으면 해소.
 
-## 2. Runtime divergences found by the mutation sweeps (follow-up)
+## 2. Runtime divergences found by the mutation sweeps (2026-08-23 해소)
 
-49 needs-review violations in `.agent/differential/report.json` are genuine
-parity findings. Dominant clusters (each needs its own investigation before
-classification):
+The 49 needs-review violations from the first mutation sweep are resolved.
+Harness defects fixed in `scripts/differential/` (each verified by probe against
+the live instances before the fix):
 
-1. **Milestone/post/webhook create→delete chains fail mid-chain** (P8/P9/P10):
-   legacy create returns a redirect whose id extraction fails, so the paired
-   delete hits a different entity than yoram's. Fix discovery, then re-run.
-2. **Project label attach/detach + api-create** (P12/P17): legacy
-   `ProjectApp` label routes respond differently from yoram REST
-   (`/-_-api/v1/.../labels`); one suffix-tagged issue row remains yoram-only
-   (db-issues projection flags it every run).
-3. **Watch/unwatch + enroll/cancel + members add/remove** (P11/P13/P16): status
-   pairs diverge (legacy 303 redirects vs yoram 200 JSON) — needs the lenient
-   pairing treatment ProjectMutation used elsewhere.
-4. **Throwaway-project sub-flows** (P18): copyLabels/members/setting/transfer
-   diverge inside the throwaway; delete itself succeeded both sides.
-5. **Compat API probes** (I13/I18/I22/I23, S10): mix of legacy token-gated 401s
-   (documented deviation), yoram missing `/markdown` endpoint, and response-shape
-   drift in favoriteProjects/favoriteOrganizations/titleHeads.
+1. `run.mjs` `stepHelpers.sendRaw` dropped its fetch `headers` (cookies and
+   content-type never sent) — root cause of the legacy anonymous-403 and yoram
+   415 cascades; promoted to the canonical helper together with `pairLenient`.
+2. Body-less yoram mutations (watch/unwatch/enroll/DELETE family) never carried
+   the CSRF header; yoram validates CSRF on every session mutation while legacy
+   ignores it — the single largest 403 cluster (~25 violations).
+3. `LegacySession.request` replaced the cookie jar on every Set-Cookie, so a
+   flash-only response wiped PLAY_SESSION mid-scenario; now merges.
+4. Legacy payload ground-truth (probed, not guessed): milestone create/edit
+   requires `{title, contents, state, dueDate:""}` (Play binds java Date via
+   request locale — ISO strings fail binding); board post requires the hidden
+   `issueTemplate` field (NPE at BoardApp.newPost otherwise); post comments bind
+   `contents`, not `body`; project-label attach/detach binds urlencoded only;
+   issue-label category create requires `project.id`.
+5. Webhook id discovery matches the `data-webhook-id` row carrying this run's
+   payload-url suffix instead of max-id (earlier sweeps left rows behind).
+6. `pairRequest`/`pairLenient` now treat agreed outcomes (including identical
+   error statuses) as parity; only disagreement is reported.
 
-## 3. Harness debt (infra-classified, fix before next coverage raise)
+Remaining classified divergences live in `report.mjs` CLASSIFICATION_RULES with
+per-rule reasons (markdown render gap, review-point authorization, commit
+pseudo-ref shape, org/favorites/user-email compat surface, SPA-shell auth pages,
+OAuth deferral, label-category rename/delete divergence, comment PATCH
+optimistic-lock drift, trailing-slash attachment route).
 
-- `LegacySession.request`: json support added 2026-08-23; multipart form is
-  global for all legacy form POSTs (per-endpoint switch if any handler rejects).
-- Id-resolution guards (`whenIds`) exist only in issues.mjs; project/userorg
-  mutation chains need the same guard pattern to avoid `/null/` paths.
-- `sendRaw`/`pairLenient` helpers are duplicated locally in project.mjs and
-  userorg.mjs; promote to `ctx.helpers` when a third copy appears.
+## 3. Harness debt (remaining)
+
+- `issues.mjs` issue chains still report infra id-resolution failures when the
+  shared seed issue number does not resolve (`/issue/null/delete` family);
+  same `whenIds` treatment as the label/category chains is the follow-up.
+- db-labels projection stays unfiltered by run tag (labels treated as seed

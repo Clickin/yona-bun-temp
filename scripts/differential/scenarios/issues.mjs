@@ -413,9 +413,13 @@ const sharerTranslation = (base, tail, step, v, action) => ({
   path: `${base(step)}/issues/${v.issueNumber}/${tail}`,
   json: { sharer: ["admin"], action },
 });
-const deleteCategoryTranslation = (step, v) => ({
+const deleteCategoryLegacy = (step, v) => ({
   method: "DELETE",
-  path: `/${step.params.owner}/${step.params.project}/issue/label/category/${v.categoryId}`,
+  path: `/${step.params.owner}/${step.params.project}/issue/label/category/${v.categoryIdLegacy}`,
+});
+const deleteCategoryYoram = (step, v) => ({
+  method: "DELETE",
+  path: `/${step.params.owner}/${step.params.project}/issue/label/category/${v.categoryIdYoram}`,
 });
 // mutationPair accepts either a plain vars object or a (resolved, suffix)
 // function so suffix-tagged names can be injected per run.
@@ -475,7 +479,7 @@ function whenIds(keys) {
 
 // Factory for mutation actions: independent per-side translations plus an
 // optional follow-up (DOM verify / second toggle half) and an id guard.
-function pairMutation(legacyBuild, yoramBuild, followUp = null, guard = null) {
+function pairMutation(legacyBuild, yoramBuild, followUp = null, guard = null, varsFn = null) {
   return {
     translateLegacy(step, resolved) {
       return legacyBuild(step, resolved);
@@ -485,7 +489,7 @@ function pairMutation(legacyBuild, yoramBuild, followUp = null, guard = null) {
     },
     async handler(ctx) {
       const run = async (context) => {
-        await mutationPair(context, legacyBuild, yoramBuild);
+        await mutationPair(context, legacyBuild, yoramBuild, varsFn);
         if (followUp) await followUp(context);
       };
       if (guard) await guard(ctx, run);
@@ -1051,6 +1055,8 @@ export const actionDefinitions = {
   "create-issue-label": pairMutation(
     (step, v) => ({ method: "POST", path: `/${step.params.owner}/${step.params.project}/issue/labels`, form: { labelName: v.labelName, categoryName: v.categoryName, labelColor: "#123456" } }),
     (step, v) => ({ method: "POST", path: `/${step.params.owner}/${step.params.project}/issue/labels`, form: { labelName: v.labelName, categoryName: v.categoryName, labelColor: "#123456" } }),
+    null,
+    null,
     (resolved, suffix) => ({ ...resolved, labelName: `parity-label-${suffix}`, categoryName: `parity-cat-${suffix}` }),
   ),
 
@@ -1102,22 +1108,50 @@ export const actionDefinitions = {
     whenIds(["labelIdLegacy", "labelIdYoram"]),
   ),
 
-  "create-label-category": pairMutation(
-    (step, v) => ({ method: "POST", path: `/${step.params.owner}/${step.params.project}/issue/label/categories`, form: { name: v.categoryName } }),
-    (step, v) => ({ method: "POST", path: `/${step.params.owner}/${step.params.project}/issue/label/categories`, form: { name: v.categoryName } }),
-    (resolved, suffix) => ({ ...resolved, categoryName: `parity-cat-${suffix}` }),
-  ),
+  "create-label-category": {
+    // Legacy binds Form<IssueLabelCategory> whose @Required project field must
+    // arrive as project.id; yoram's compat route ignores it.
+    translateLegacy(step, resolved) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/issue/label/categories`, form: { name: resolved.categoryName, "project.id": String(resolved.legacyProjectId ?? "") } };
+    },
+    translateYoram(step, resolved) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/issue/label/categories`, form: { name: resolved.categoryName } };
+    },
+    async handler(ctx) {
+      const { step, state, entry, suffix, helpers } = ctx;
+      const page = await helpers.sendRaw(ctx, "legacy", { method: "GET", path: `/${step.params.owner}/${step.params.project}` });
+      const legacyProjectId = Number((/data-project-id="(\d+)"/u.exec(page.body ?? "") ?? [])[1]) || null;
+      if (!legacyProjectId) entry.errors.push(`create-label-category: legacy project id unresolved [${suffix}]`);
+      const categoryName = `parity-cat-${suffix}`;
+      const legacyResult = await helpers.sendRaw(ctx, "legacy", this.translateLegacy(step, { categoryName, legacyProjectId }));
+      const yoramResult = await helpers.sendRaw(ctx, "yoram", this.translateYoram(step, { categoryName }));
+      const diverged =
+        (legacyResult.status >= 400) !== (yoramResult.status >= 400) ||
+        (legacyResult.status >= 400 && yoramResult.status >= 400 && legacyResult.status !== yoramResult.status);
+      if (diverged) {
+        entry.violations.push(
+          violation({
+            route: `/${step.params.owner}/${step.params.project}/issue/label/categories`,
+            behaviorId: entry.behaviorIds[0] ?? null,
+            kind: "api",
+            expected: { status: legacyResult.status },
+            actual: { yoramStatus: yoramResult.status },
+          }),
+        );
+      }
+    },
+  },
 
   "update-label-category": pairMutation(
-    (step, v) => ({ method: "PUT", path: `/${step.params.owner}/${step.params.project}/issue/label/category/${v.categoryId}`, form: { name: `${v.categoryName}-renamed` } }),
-    (step, v) => ({ method: "PUT", path: `/${step.params.owner}/${step.params.project}/issue/label/category/${v.categoryId}`, form: { name: `${v.categoryName}-renamed` } }),
+    (step, v) => ({ method: "PUT", path: `/${step.params.owner}/${step.params.project}/issue/label/category/${v.categoryIdLegacy}`, form: { name: `${v.categoryName}-renamed` } }),
+    (step, v) => ({ method: "PUT", path: `/${step.params.owner}/${step.params.project}/issue/label/category/${v.categoryIdYoram}`, form: { name: `${v.categoryName}-renamed` } }),
     null,
     whenIds(["categoryIdLegacy", "categoryIdYoram"]),
   ),
 
   "delete-label-category": pairMutation(
-    deleteCategoryTranslation,
-    deleteCategoryTranslation,
+    deleteCategoryLegacy,
+    deleteCategoryYoram,
     null,
     whenIds(["categoryIdLegacy", "categoryIdYoram"]),
   ),

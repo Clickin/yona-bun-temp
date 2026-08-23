@@ -331,8 +331,28 @@ function issueNumberFromLocation(location) {
   return Number((/\/issue\/(\d+)/u.exec(location) ?? [])[1]) || null;
 }
 
+function pushHelperViolation(ctx, route, expected, actual) {
+  ctx.entry.violations.push(
+    violation({ route, behaviorId: ctx.entry.behaviorIds[0] ?? null, kind: "api", expected, actual }),
+  );
+}
+
+function mergeCookieHeader(oldHeader, setCookies) {
+  const jar = new Map();
+  for (const pair of (oldHeader ?? "").split("; ").filter(Boolean)) {
+    const eq = pair.indexOf("=");
+    if (eq > 0) jar.set(pair.slice(0, eq), pair.slice(eq + 1));
+  }
+  for (const cookie of setCookies) {
+    const first = cookie.split(";")[0];
+    const eq = first.indexOf("=");
+    if (eq > 0) jar.set(first.slice(0, eq), first.slice(eq + 1));
+  }
+  return [...jar].map(([name, value]) => `${name}=${value}`).join("; ");
+}
+
 // Shared step utilities handed to domain handlers via ctx.helpers.
-const stepHelpers = {
+export const stepHelpers = {
   // Translate + request both sides; >=400 lands in entry.errors (not violations).
   async requestBoth(ctx, legacyTranslation, yoramTranslation) {
     const { step, entry, legacySession, yoramSession } = ctx;
@@ -343,6 +363,78 @@ const stepHelpers = {
     const yoramResult = await yoramSession.request(yoramTranslation);
     if (yoramResult.status >= 400) {
       entry.errors.push(`yoram ${step.action} failed: HTTP ${yoramResult.status} @ ${yoramTranslation.path}`);
+    }
+    return { legacyResult, yoramResult };
+  },
+
+  // Canonical raw request used by mutation pairing. side: "legacy" | "yoram".
+  // CSRF token attaches to EVERY yoram request (bodyless POST/DELETE included)
+  // — session-routed mutations reject without it while legacy ignores it.
+  async sendRaw(ctx, side, translation) {
+    const session = side === "legacy" ? ctx.legacySession : ctx.yoramSession;
+    const baseUrl = side === "legacy" ? ctx.options.legacyUrl : ctx.yoramBaseUrl;
+    const headers = {};
+    if (session.cookies) headers.cookie = session.cookies;
+    let body;
+    if (translation.multipart !== undefined) {
+      headers["content-type"] = translation.multipart.contentType;
+      body = translation.multipart.body;
+    } else if (translation.json !== undefined) {
+      headers["content-type"] = "application/json";
+      body = JSON.stringify(translation.json);
+    } else if (translation.form) {
+      // Some legacy handlers (LabelApp, BoardApp.newComment) bind only
+      // urlencoded bodies; posting/issue handlers bind only multipart. A
+      // translation forces urlencoded by declaring that content-type header.
+      const forceUrlEncoded =
+        translation.headers?.["content-type"] === "application/x-www-form-urlencoded";
+      if (side === "legacy" && !forceUrlEncoded) {
+        // ponytail: legacy Play handlers read posting/issue bodies via
+        // asMultipartFormData(); urlencoded bodies NPE those handlers
+        // (IssueApp.newIssue), so legacy form POSTs default to multipart and
+        // fetch owns the boundary content-type.
+        const formData = new FormData();
+        for (const [key, value] of Object.entries(translation.form)) formData.append(key, String(value));
+        body = formData;
+      } else {
+        headers["content-type"] = "application/x-www-form-urlencoded";
+        body = new URLSearchParams(translation.form).toString();
+      }
+    }
+    const csrfToken = session.csrfToken ?? "";
+    if (side === "yoram" && csrfToken) headers["x-csrf-token"] = csrfToken;
+    Object.assign(headers, translation.headers ?? {});
+    const response = await fetch(`${baseUrl}${translation.path}`, {
+      method: translation.method,
+      headers,
+      body,
+      redirect: "manual",
+    });
+    const location = response.headers.get("location") ?? "";
+    const nextCookies = response.headers.getSetCookie?.() ?? [];
+    if (nextCookies.length > 0) session.cookies = mergeCookieHeader(session.cookies, nextCookies);
+    const text = location ? "" : await response.text();
+    let json = null;
+    try {
+      json = JSON.parse(text);
+    } catch {
+      // non-JSON bodies stay as text
+    }
+    return { status: response.status, location, json, body: text };
+  },
+
+  // Mixed-form pair: legacy redirects (303) vs yoram REST JSON (200/204). Only
+  // requires both sides to succeed (<400) — status-class equality flags every
+  // redirect-vs-JSON pair as a violation.
+  async pairLenient(ctx, legacyTranslation, yoramTranslation, route) {
+    const legacyResult = await this.sendRaw(ctx, "legacy", legacyTranslation);
+    const yoramResult = await this.sendRaw(ctx, "yoram", yoramTranslation);
+    const legacyFail = legacyResult.status >= 400;
+    const yoramFail = yoramResult.status >= 400;
+    // Agreed outcomes are parity (even agreed errors); only disagreement in
+    // success/failure — or in the failing status itself — is a violation.
+    if ((legacyFail !== yoramFail) || (legacyFail && yoramFail && legacyResult.status !== yoramResult.status)) {
+      pushHelperViolation(ctx, route, { status: legacyResult.status }, { status: yoramResult.status });
     }
     return { legacyResult, yoramResult };
   },

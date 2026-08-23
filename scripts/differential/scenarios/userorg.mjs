@@ -379,22 +379,6 @@ async function mutateBoth(ctx, legacyTranslation, yoramTranslation, route) {
   return { legacyResult, yoramResult };
 }
 
-// YoramSession.request only speaks JSON bodies, but the direct workspace email
-// route is an axum Form extractor — post urlencoded with session cookies.
-async function yoramFormRequest(ctx, method, path, form) {
-  const { yoramSession } = ctx;
-  const headers = { cookie: yoramSession.cookies, "content-type": "application/x-www-form-urlencoded" };
-  if (yoramSession.csrfToken) headers["x-csrf-token"] = yoramSession.csrfToken;
-  const response = await fetch(`${yoramSession.baseUrl}${path}`, {
-    method,
-    headers,
-    body: new URLSearchParams(form).toString(),
-    redirect: "manual",
-  });
-  const nextCookies = response.headers.getSetCookie?.().map((cookie) => cookie.split(";")[0]).join("; ");
-  if (nextCookies) yoramSession.cookies = nextCookies;
-  return { status: response.status, location: response.headers.get("location") ?? "" };
-}
 
 async function resolveLegacyProjectId(ctx, owner, project) {
   const result = await ctx.legacySession.request({ method: "GET", path: `/${owner}/${project}` });
@@ -873,7 +857,7 @@ export const actionDefinitions = {
         path: "/user/email",
         form: { email: address },
       });
-      const yoramResult = await yoramFormRequest(ctx, "POST", "/user/email", { email: address });
+      const yoramResult = await ctx.yoramSession.request({ method: "POST", path: "/user/email", form: { email: address } });
       if ((legacyResult.status >= 400) !== (yoramResult.status >= 400)) {
         pushApiViolation(ctx, "/user/email", `legacy HTTP ${legacyResult.status}`, `yoram HTTP ${yoramResult.status}`);
       }

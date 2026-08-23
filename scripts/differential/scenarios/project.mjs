@@ -438,55 +438,7 @@ export const actionDefinitions = {
 // (>=400) or the status classes diverge, then later steps degrade into entry
 // errors — a scenario never throws on a mutation mismatch.
 
-function mergeCookies(oldHeader, setCookies) {
-  const jar = new Map();
-  for (const pair of (oldHeader ?? "").split("; ").filter(Boolean)) {
-    const eq = pair.indexOf("=");
-    if (eq > 0) jar.set(pair.slice(0, eq), pair.slice(eq + 1));
-  }
-  for (const cookie of setCookies) {
-    const first = cookie.split(";")[0];
-    const eq = first.indexOf("=");
-    if (eq > 0) jar.set(first.slice(0, eq), first.slice(eq + 1));
-  }
-  return [...jar].map(([name, value]) => `${name}=${value}`).join("; ");
-}
 
-async function sendRaw(session, baseUrl, translation, csrfToken = "") {
-  const headers = {};
-  if (session.cookies) headers.cookie = session.cookies;
-  let body;
-  if (translation.multipart !== undefined) {
-    headers["content-type"] = translation.multipart.contentType;
-    if (csrfToken) headers["x-csrf-token"] = csrfToken;
-    body = translation.multipart.body;
-  } else if (translation.json !== undefined) {
-    headers["content-type"] = "application/json";
-    if (csrfToken) headers["x-csrf-token"] = csrfToken;
-    body = JSON.stringify(translation.json);
-  } else if (translation.form) {
-    headers["content-type"] = "application/x-www-form-urlencoded";
-    body = new URLSearchParams(translation.form).toString();
-  }
-  Object.assign(headers, translation.headers ?? {});
-  const response = await fetch(`${baseUrl}${translation.path}`, {
-    method: translation.method,
-    headers,
-    body,
-    redirect: "manual",
-  });
-  const location = response.headers.get("location") ?? "";
-  const nextCookies = response.headers.getSetCookie?.() ?? [];
-  if (nextCookies.length > 0) session.cookies = mergeCookies(session.cookies, nextCookies);
-  const text = location ? "" : await response.text();
-  let json = null;
-  try {
-    json = JSON.parse(text);
-  } catch {
-    // non-JSON bodies stay as text
-  }
-  return { status: response.status, location, json, body: text };
-}
 
 function statusClass(status) {
   return Math.floor(status / 100);
@@ -499,12 +451,13 @@ function pushApiViolation(ctx, route, expected, actual) {
 }
 
 async function pairRequest(ctx, legacyTranslation, yoramTranslation, route) {
-  const legacyResult = await sendRaw(ctx.legacySession, ctx.options.legacyUrl, legacyTranslation);
-  const yoramResult = await sendRaw(ctx.yoramSession, ctx.yoramBaseUrl, yoramTranslation, ctx.yoramSession.csrfToken);
+  const legacyResult = await ctx.helpers.sendRaw(ctx, "legacy", legacyTranslation);
+  const yoramResult = await ctx.helpers.sendRaw(ctx, "yoram", yoramTranslation);
+  // Same agreement rule as helpers.pairLenient: identical statuses (including
+  // agreed errors) are parity; only divergence is reported.
   if (
-    legacyResult.status >= 400 ||
-    yoramResult.status >= 400 ||
-    statusClass(legacyResult.status) !== statusClass(yoramResult.status)
+    statusClass(legacyResult.status) !== statusClass(yoramResult.status) ||
+    (legacyResult.status >= 400) !== (yoramResult.status >= 400)
   ) {
     pushApiViolation(ctx, route, { status: legacyResult.status }, { status: yoramResult.status });
   }
@@ -579,7 +532,9 @@ const SEED_OVERVIEW = "Parity seed project for the admin workspace";
 
 function milestonePlan(suffix, edited = false) {
   const title = `parity-milestone-${suffix}${edited ? "-edited" : ""}`;
-  return { title, content: `parity milestone body ${suffix}`, dueDate: "2026-12-31" };
+  // Legacy Play binds java Date via request locale — ISO strings fail binding
+  // and re-render the form; empty string binds null on both sides.
+  return { title, content: `parity milestone body ${suffix}`, dueDate: "" };
 }
 
 function postPlan(suffix, edited = false) {
@@ -591,7 +546,7 @@ function postPlan(suffix, edited = false) {
 async function deletePairs(ctx, pairs, routeFor, legacyPathFor, yoramPathFor) {
   for (const [legacyId, yoramId] of pairs) {
     if (!legacyId && !yoramId) continue;
-    await pairRequest(
+    await ctx.helpers.pairLenient(
       ctx,
       { method: "DELETE", path: legacyPathFor(legacyId) },
       { method: "DELETE", path: yoramPathFor(yoramId) },
@@ -603,7 +558,7 @@ async function deletePairs(ctx, pairs, routeFor, legacyPathFor, yoramPathFor) {
 const MUTATION_ACTIONS = {
   "create-milestone": {
     translateLegacy(step, resolved) {
-      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/milestones`, form: { title: resolved.title, content: resolved.content, dueDate: resolved.dueDate } };
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/milestones`, form: { title: resolved.title, contents: resolved.content, state: "OPEN", dueDate: resolved.dueDate } };
     },
     translateYoram(step, resolved) {
       return { method: "POST", path: `${restBase(step)}/milestones`, json: { title: resolved.title, contentsMarkdown: resolved.content, dueDate: resolved.dueDate, state: "open", attachmentIds: [] } };
@@ -611,7 +566,7 @@ const MUTATION_ACTIONS = {
     async handler(ctx) {
       const { step, state, suffix } = ctx;
       const plan = milestonePlan(suffix);
-      const { legacyResult, yoramResult } = await pairRequest(
+      const { legacyResult, yoramResult } = await ctx.helpers.pairLenient(
         ctx,
         this.translateLegacy(step, plan),
         this.translateYoram(step, plan),
@@ -627,7 +582,7 @@ const MUTATION_ACTIONS = {
 
   "edit-milestone": {
     translateLegacy(step, resolved) {
-      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/milestone/${resolved.milestoneId}/edit`, form: { title: resolved.title, content: resolved.content, dueDate: resolved.dueDate } };
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/milestone/${resolved.milestoneId}/edit`, form: { title: resolved.title, contents: resolved.content, state: "OPEN", dueDate: resolved.dueDate } };
     },
     translateYoram(step, resolved) {
       return { method: "PATCH", path: `${restBase(step)}/milestones/${resolved.milestoneId}`, json: { title: resolved.title, contentsMarkdown: resolved.content, dueDate: resolved.dueDate, state: "open", attachmentIds: [] } };
@@ -636,7 +591,7 @@ const MUTATION_ACTIONS = {
       const { step, state } = ctx;
       if (!state.pmL || !state.pmY) return;
       const plan = milestonePlan(ctx.suffix, true);
-      await pairRequest(
+      await ctx.helpers.pairLenient(
         ctx,
         this.translateLegacy(step, { ...plan, milestoneId: state.pmL }),
         this.translateYoram(step, { ...plan, milestoneId: state.pmY }),
@@ -655,7 +610,7 @@ const MUTATION_ACTIONS = {
     handler(ctx) {
       const { step, state } = ctx;
       if (!state.pmL || !state.pmY) return;
-      return pairRequest(
+      return ctx.helpers.pairLenient(
         ctx,
         this.translateLegacy(step, { milestoneId: state.pmL }),
         this.translateYoram(step, { milestoneId: state.pmY }),
@@ -674,7 +629,7 @@ const MUTATION_ACTIONS = {
     handler(ctx) {
       const { step, state } = ctx;
       if (!state.pmL || !state.pmY) return;
-      return pairRequest(
+      return ctx.helpers.pairLenient(
         ctx,
         this.translateLegacy(step, { milestoneId: state.pmL }),
         this.translateYoram(step, { milestoneId: state.pmY }),
@@ -729,7 +684,7 @@ const MUTATION_ACTIONS = {
 
   "create-post": {
     translateLegacy(step, resolved) {
-      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/posts`, form: { title: resolved.title, body: resolved.body } };
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/posts`, form: { title: resolved.title, body: resolved.body, issueTemplate: "", branch: "", path: "" } };
     },
     translateYoram(step, resolved) {
       return { method: "POST", path: `/api/v1/projects/${step.params.owner}/${step.params.project}/posts`, json: { title: resolved.title, bodyMarkdown: resolved.body, edit: false } };
@@ -737,7 +692,7 @@ const MUTATION_ACTIONS = {
     async handler(ctx) {
       const { step, state, suffix } = ctx;
       const plan = postPlan(suffix);
-      const { legacyResult, yoramResult } = await pairRequest(
+      const { legacyResult, yoramResult } = await ctx.helpers.pairLenient(
         ctx,
         this.translateLegacy(step, plan),
         this.translateYoram(step, plan),
@@ -753,7 +708,7 @@ const MUTATION_ACTIONS = {
 
   "edit-post": {
     translateLegacy(step, resolved) {
-      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/post/${resolved.postNumber}/edit`, form: { title: resolved.title, body: resolved.body } };
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/post/${resolved.postNumber}/edit`, form: { title: resolved.title, body: resolved.body, issueTemplate: "", branch: "", path: "" } };
     },
     translateYoram(step, resolved) {
       return { method: "PATCH", path: `/api/v1/projects/${step.params.owner}/${step.params.project}/posts/${resolved.postNumber}`, json: { title: resolved.title, bodyMarkdown: resolved.body, edit: true } };
@@ -762,7 +717,7 @@ const MUTATION_ACTIONS = {
       const { step, state } = ctx;
       if (!state.postL || !state.postY) return;
       const plan = postPlan(ctx.suffix, true);
-      await pairRequest(
+      await ctx.helpers.pairLenient(
         ctx,
         this.translateLegacy(step, { ...plan, postNumber: state.postL }),
         this.translateYoram(step, { ...plan, postNumber: state.postY }),
@@ -813,7 +768,7 @@ const MUTATION_ACTIONS = {
 
   "create-post-comment": {
     translateLegacy(step, resolved) {
-      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/post/${resolved.postNumber}/comment`, form: { body: resolved.body } };
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/post/${resolved.postNumber}/comment`, form: { contents: resolved.body } };
     },
     translateYoram(step, resolved) {
       return { method: "POST", path: `/api/v1/projects/${step.params.owner}/${step.params.project}/posts/${resolved.postNumber}/comments`, json: { contentsMarkdown: resolved.body } };
@@ -822,7 +777,7 @@ const MUTATION_ACTIONS = {
       const { step, state, suffix } = ctx;
       if (!state.postL || !state.postY) return;
       const plan = { body: `parity-comment-${suffix}` };
-      const { legacyResult, yoramResult } = await pairRequest(
+      const { legacyResult, yoramResult } = await ctx.helpers.pairLenient(
         ctx,
         this.translateLegacy(step, { ...plan, postNumber: state.postL }),
         this.translateYoram(step, { ...plan, postNumber: state.postY }),
@@ -838,7 +793,7 @@ const MUTATION_ACTIONS = {
 
   "update-post-comment": {
     translateLegacy(step, resolved) {
-      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/post/${resolved.postNumber}/comment/${resolved.commentId}`, form: { body: resolved.body } };
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/post/${resolved.postNumber}/comment/${resolved.commentId}`, form: { contents: resolved.body } };
     },
     translateYoram(step, resolved) {
       return { method: "PATCH", path: `/api/v1/projects/${step.params.owner}/${step.params.project}/posts/${resolved.postNumber}/comments/${resolved.commentId}`, json: { contentsMarkdown: resolved.body } };
@@ -847,7 +802,7 @@ const MUTATION_ACTIONS = {
       const { step, state, suffix } = ctx;
       if (!state.commentL || !state.commentY) return;
       const plan = { body: `parity-comment-${suffix}-edited` };
-      await pairRequest(
+      await ctx.helpers.pairLenient(
         ctx,
         this.translateLegacy(step, { ...plan, postNumber: state.postL, commentId: state.commentL }),
         this.translateYoram(step, { ...plan, postNumber: state.postY, commentId: state.commentY }),
@@ -887,7 +842,7 @@ const MUTATION_ACTIONS = {
     async handler(ctx) {
       const { step, state } = ctx;
       if (!state.commentL || !state.commentY) return;
-      await pairRequest(
+      await ctx.helpers.pairLenient(
         ctx,
         this.translateLegacy(step, { postNumber: state.postL, commentId: state.commentL }),
         this.translateYoram(step, { postNumber: state.postY, commentId: state.commentY }),
@@ -950,7 +905,7 @@ const MUTATION_ACTIONS = {
     async handler(ctx) {
       const { step, state, suffix, options, yoramBaseUrl } = ctx;
       const plan = { payloadUrl: `https://parity.example/${suffix}` };
-      const { legacyResult, yoramResult } = await pairRequest(
+      await ctx.helpers.pairLenient(
         ctx,
         this.translateLegacy(step, plan),
         this.translateYoram(step, plan),
@@ -958,16 +913,20 @@ const MUTATION_ACTIONS = {
       );
       state.webhookY = idFromJson(yoramResult.json);
       if (state.webhookY === null) {
-        const list = await sendRaw(ctx.yoramSession, yoramBaseUrl, { method: "GET", path: `${restBase(step)}/webhooks` });
+        const list = await ctx.helpers.sendRaw(ctx, "yoram", { method: "GET", path: `${restBase(step)}/webhooks` });
         const mine = (Array.isArray(list.json) ? list.json : []).filter((hook) => String(hook.payloadUrl ?? "").includes(suffix));
         state.webhookY = Number(mine[0]?.id) || null;
       }
       if (legacyResult.status < 400) {
-        const page = await sendRaw(ctx.legacySession, options.legacyUrl, { method: "GET", path: `/${step.params.owner}/${step.params.project}/webhooks` });
-        const ids = [...page.body.matchAll(/webhooks\/(\d+)"/gu)].map((match) => Number(match[1]));
-        // ponytail: assumes a fresh seed project has at most our webhook; max id
-        // picks ours when seed rows exist — tighten if seed webhooks appear.
-        state.webhookL = ids.length > 0 ? Math.max(...ids) : null;
+        const page = await ctx.helpers.sendRaw(ctx, "legacy", { method: "GET", path: `/${step.params.owner}/${step.params.project}/webhooks` });
+        // Rows carry data-webhook-id followed by the payload URL; pick the
+        // row whose URL matches this run's suffix (max-id breaks once earlier
+        // sweeps leave webhooks behind).
+        const mine = page.body
+          .split(/data-webhook-id="/u)
+          .slice(1)
+          .find((chunk) => chunk.includes(suffix));
+        state.webhookL = mine ? Number((/(\d+)/.exec(mine) ?? [])[1]) || null : null;
       }
     },
   },
@@ -982,7 +941,7 @@ const MUTATION_ACTIONS = {
     async handler(ctx) {
       const { step, state } = ctx;
       if (!state.webhookL && !state.webhookY) return;
-      await pairRequest(
+      await ctx.helpers.pairLenient(
         ctx,
         { method: "DELETE", path: this.translateLegacy(step, { webhookId: state.webhookL ?? 0 }).path },
         { method: "DELETE", path: this.translateYoram(step, { webhookId: state.webhookY ?? 0 }).path },
@@ -1001,7 +960,7 @@ const MUTATION_ACTIONS = {
     },
     handler(ctx) {
       const { step } = ctx;
-      return pairRequest(ctx, this.translateLegacy(step), this.translateYoram(step), `${step.params.owner}/${step.params.project}/watch`);
+      return ctx.helpers.pairLenient(ctx, this.translateLegacy(step), this.translateYoram(step), `${step.params.owner}/${step.params.project}/watch`);
     },
   },
 
@@ -1014,7 +973,7 @@ const MUTATION_ACTIONS = {
     },
     handler(ctx) {
       const { step } = ctx;
-      return pairRequest(ctx, this.translateLegacy(step), this.translateYoram(step), `${step.params.owner}/${step.params.project}/unwatch`);
+      return ctx.helpers.pairLenient(ctx, this.translateLegacy(step), this.translateYoram(step), `${step.params.owner}/${step.params.project}/unwatch`);
     },
   },
 
@@ -1037,7 +996,7 @@ const MUTATION_ACTIONS = {
 
   "attach-project-label": {
     translateLegacy(step, resolved) {
-      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/labels`, form: { category: resolved.category, name: resolved.name } };
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/labels`, form: { category: resolved.category, name: resolved.name }, headers: { "content-type": "application/x-www-form-urlencoded" } };
     },
     translateYoram(step, resolved) {
       return { method: "POST", path: `/${step.params.owner}/${step.params.project}/labels`, form: { category: resolved.category, name: resolved.name } };
@@ -1056,7 +1015,7 @@ const MUTATION_ACTIONS = {
 
   "detach-project-label": {
     translateLegacy(step, resolved) {
-      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/labels/${resolved.labelId}`, form: { _method: "detach" } };
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/labels/${resolved.labelId}`, form: { _method: "detach" }, headers: { "content-type": "application/x-www-form-urlencoded" } };
     },
     translateYoram(step, resolved) {
       return { method: "POST", path: `/${step.params.owner}/${step.params.project}/labels/${resolved.labelId}`, form: { _method: "detach" } };
@@ -1084,13 +1043,13 @@ const MUTATION_ACTIONS = {
     async handler(ctx) {
       const { step, state, entry, options, yoramBaseUrl } = ctx;
       const loginId = step.params.loginId ?? "bob";
-      const { legacyResult, yoramResult } = await pairRequest(ctx, this.translateLegacy(step, { loginId }), this.translateYoram(step, { loginId }), `${step.params.owner}/${step.params.project}/members (add)`);
+      const { legacyResult, yoramResult } = await ctx.helpers.pairLenient(ctx, this.translateLegacy(step, { loginId }), this.translateYoram(step, { loginId }), `${step.params.owner}/${step.params.project}/members (add)`);
       if (legacyResult.status < 400) {
-        const page = await sendRaw(ctx.legacySession, options.legacyUrl, { method: "GET", path: `/${step.params.owner}/${step.params.project}/members` });
+        const page = await ctx.helpers.sendRaw(ctx, "legacy", { method: "GET", path: `/${step.params.owner}/${step.params.project}/members` });
         state.memberUidL = numberFrom(new RegExp(`member\\/(\\d+)\\/edit"[^>]*data-loginId="${loginId}"`, "u"), page.body);
       }
       if (yoramResult.status < 400) {
-        const list = await sendRaw(ctx.yoramSession, yoramBaseUrl, { method: "GET", path: `${restBase(step)}/members` });
+        const list = await ctx.helpers.sendRaw(ctx, "yoram", { method: "GET", path: `${restBase(step)}/members` });
         state.memberUidY = findUserId(list.json, loginId);
       }
       if ((state.memberUidL === null) !== (state.memberUidY === null)) {
@@ -1109,7 +1068,7 @@ const MUTATION_ACTIONS = {
     async handler(ctx) {
       const { step, state } = ctx;
       if (!state.memberUidL && !state.memberUidY) return;
-      await pairRequest(
+      await ctx.helpers.pairLenient(
         ctx,
         this.translateLegacy(step, { userId: state.memberUidL ?? 0 }),
         this.translateYoram(step, { userId: state.memberUidY ?? 0 }),
@@ -1160,7 +1119,7 @@ const MUTATION_ACTIONS = {
     },
     handler(ctx) {
       const { step } = ctx;
-      return pairRequest(ctx, this.translateLegacy(step), this.translateYoram(step), `${step.params.owner}/${step.params.project}/enroll`);
+      return ctx.helpers.pairLenient(ctx, this.translateLegacy(step), this.translateYoram(step), `${step.params.owner}/${step.params.project}/enroll`);
     },
   },
 
@@ -1173,7 +1132,7 @@ const MUTATION_ACTIONS = {
     },
     handler(ctx) {
       const { step } = ctx;
-      return pairRequest(ctx, this.translateLegacy(step), this.translateYoram(step), `${step.params.owner}/${step.params.project}/cancel/enroll`);
+      return ctx.helpers.pairLenient(ctx, this.translateLegacy(step), this.translateYoram(step), `${step.params.owner}/${step.params.project}/cancel/enroll`);
     },
   },
 
@@ -1196,7 +1155,7 @@ const MUTATION_ACTIONS = {
     async handler(ctx) {
       const { step, state, suffix } = ctx;
       const plan = { phase: "issue", title: `parity-ilabel-${suffix}`, body: `parity issue label probe ${suffix}` };
-      const { legacyResult, yoramResult } = await pairRequest(
+      const { legacyResult, yoramResult } = await ctx.helpers.pairLenient(
         ctx,
         this.translateLegacy(step, plan),
         this.translateYoram(step, plan),
@@ -1211,6 +1170,15 @@ const MUTATION_ACTIONS = {
         this.translateYoram(step, { issueNumber: state.issueLabelProbeY }),
         `${legacyApiBase(step)}/issuelabel/:number`,
       );
+      // Delete the probe issue on both sides so the db-issues projection sees
+      // no yoram-only residue from this scenario.
+      await ctx.helpers.pairLenient(
+        ctx,
+        { method: "DELETE", path: `/${step.params.owner}/${step.params.project}/issue/${state.issueLabelProbeL}/delete` },
+        { method: "DELETE", path: `/api/v1/projects/${step.params.owner}/${step.params.project}/issues/${state.issueLabelProbeY}` },
+        `${step.params.owner}/${step.params.project}/issue (label probe delete)`,
+      );
+      state.issueLabelProbeL = state.issueLabelProbeY = null;
     },
   },
 };
@@ -1224,6 +1192,8 @@ const MUTATION_ACTIONS = {
 // Status conventions verified against both sources:
 //   legacy Play form POSTs redirect (303) unless XHR (204); yoram REST returns
 //   200/204. pairLenient accepts any <400 on both sides for such mixed pairs.
+
+const XHR_HEADER = { "x-requested-with": "XMLHttpRequest" };
 
 function multipartBody(fields = {}, file = null) {
   const boundary = `parity-${Math.random().toString(16).slice(2)}`;
@@ -1253,20 +1223,6 @@ function multipartBody(fields = {}, file = null) {
   return { contentType: `multipart/form-data; boundary=${boundary}`, body };
 }
 
-const XHR_HEADER = { "x-requested-with": "XMLHttpRequest" };
-
-// Mixed-form pair: legacy redirects (303) vs yoram REST JSON (200/204). Only
-// requires both sides to succeed (<400) — status-class equality would flag
-// every redirect-vs-JSON pair as a violation.
-async function pairLenient(ctx, legacyTranslation, yoramTranslation, route) {
-  const legacyResult = await sendRaw(ctx.legacySession, ctx.options.legacyUrl, legacyTranslation);
-  const yoramResult = await sendRaw(ctx.yoramSession, ctx.yoramBaseUrl, yoramTranslation, ctx.yoramSession.csrfToken);
-  if (legacyResult.status >= 400 || yoramResult.status >= 400) {
-    pushApiViolation(ctx, route, { status: legacyResult.status }, { status: yoramResult.status });
-  }
-  return { legacyResult, yoramResult };
-}
-
 // The throwaway project name lives in scenario state (created by
 // create-project with the run-unique suffix); translators fall back to
 // step.params.project only so static translator tests stay expressible.
@@ -1283,7 +1239,7 @@ function attachmentPlan(suffix) {
 // uses its REST list. Returns per-side numbers or null.
 async function discoverClosedRestorePr(ctx, owner, project) {
   const { options, yoramBaseUrl } = ctx;
-  const yoramList = await sendRaw(ctx.yoramSession, yoramBaseUrl, {
+  const yoramList = await ctx.helpers.sendRaw(ctx, "yoram", {
     method: "GET",
     path: `/api/v1/owners/${owner}/projects/${project}/pull-requests?category=closed`,
   });
@@ -1294,7 +1250,7 @@ async function discoverClosedRestorePr(ctx, owner, project) {
     .filter(Boolean)
     .sort((a, b) => b - a)[0] ?? null;
 
-  const page = await sendRaw(ctx.legacySession, options.legacyUrl, {
+  const page = await ctx.helpers.sendRaw(ctx, "legacy", {
     method: "GET",
     path: `/${owner}/${project}/closedPullRequests`,
   });
@@ -1302,7 +1258,7 @@ async function discoverClosedRestorePr(ctx, owner, project) {
     .sort((a, b) => b - a);
   let legacyNumber = null;
   for (const id of ids) {
-    const detail = await sendRaw(ctx.legacySession, options.legacyUrl, {
+    const detail = await ctx.helpers.sendRaw(ctx, "legacy", {
       method: "GET",
       path: `/${owner}/${project}/pullRequest/${id}`,
     });
@@ -1352,7 +1308,7 @@ const LIFECYCLE_ACTIONS = {
       const name = `parity-lc-${suffix}`;
       const plan = { projectName: name, owner: step.params.owner, overview: `parity throwaway project ${suffix}` };
       const route = `${step.params.owner} (create project ${name})`;
-      const { legacyResult, yoramResult } = await pairLenient(ctx, this.translateLegacy(step, plan), this.translateYoram(step, plan), route);
+      const { legacyResult, yoramResult } = await ctx.helpers.pairLenient(ctx, this.translateLegacy(step, plan), this.translateYoram(step, plan), route);
       const legacyOk = numberFrom(new RegExp(`/${step.params.owner}/${name}\\/?$`), legacyResult.location) !== null || legacyResult.status === 303;
       const yoramOk = (yoramResult.json?.projectName ?? yoramResult.json?.project_name) === name;
       if (!legacyOk || !yoramOk) {
@@ -1375,7 +1331,7 @@ const LIFECYCLE_ACTIONS = {
     handler(ctx) {
       const { step, state } = ctx;
       if (!state.projectName) return;
-      return pairRequest(
+      return ctx.helpers.pairLenient(
         ctx,
         this.translateLegacy(step, { projectName: state.projectName }),
         this.translateYoram(step, { projectName: state.projectName }),
@@ -1398,13 +1354,13 @@ const LIFECYCLE_ACTIONS = {
       if (!state.projectName) return;
       const loginId = "bob";
       const plan = { projectName: state.projectName, loginId };
-      const { legacyResult, yoramResult } = await pairRequest(ctx, this.translateLegacy(step, plan), this.translateYoram(step, plan), `${step.params.owner}/${state.projectName}/members (add)`);
+      const { legacyResult, yoramResult } = await ctx.helpers.pairLenient(ctx, this.translateLegacy(step, plan), this.translateYoram(step, plan), `${step.params.owner}/${state.projectName}/members (add)`);
       if (legacyResult.status < 400) {
-        const page = await sendRaw(ctx.legacySession, options.legacyUrl, { method: "GET", path: `/${step.params.owner}/${state.projectName}/members` });
+        const page = await ctx.helpers.sendRaw(ctx, "legacy", { method: "GET", path: `/${step.params.owner}/${state.projectName}/members` });
         state.memberUidL = numberFrom(new RegExp(`member\\/(\\d+)\\/edit"[^>]*data-loginId="${loginId}"`, "u"), page.body);
       }
       if (yoramResult.status < 400) {
-        const list = await sendRaw(ctx.yoramSession, yoramBaseUrl, { method: "GET", path: `/api/v1/owners/${step.params.owner}/projects/${state.projectName}/members` });
+        const list = await ctx.helpers.sendRaw(ctx, "yoram", { method: "GET", path: `/api/v1/owners/${step.params.owner}/projects/${state.projectName}/members` });
         state.memberUidY = findUserId(list.json, loginId);
       }
       if ((state.memberUidL === null) !== (state.memberUidY === null)) {
@@ -1425,7 +1381,7 @@ const LIFECYCLE_ACTIONS = {
     handler(ctx) {
       const { step, state } = ctx;
       if (!state.projectName || (!state.memberUidL && !state.memberUidY)) return;
-      return pairRequest(
+      return ctx.helpers.pairLenient(
         ctx,
         this.translateLegacy(step, { projectName: state.projectName, userId: state.memberUidL ?? 0, roleId: "1" }),
         this.translateYoram(step, { projectName: state.projectName, userId: state.memberUidY ?? 0, roleId: "1" }),
@@ -1458,7 +1414,7 @@ const LIFECYCLE_ACTIONS = {
       const { step, state, suffix } = ctx;
       if (!state.projectName) return;
       const plan = { projectName: state.projectName, overview: `parity throwaway setting ${suffix}` };
-      return pairLenient(ctx, this.translateLegacy(step, plan), this.translateYoram(step, plan), `${step.params.owner}/${state.projectName}/setting`);
+      return ctx.helpers.pairLenient(ctx, this.translateLegacy(step, plan), this.translateYoram(step, plan), `${step.params.owner}/${state.projectName}/setting`);
     },
   },
 
@@ -1483,7 +1439,7 @@ const LIFECYCLE_ACTIONS = {
     handler(ctx) {
       const { step, state } = ctx;
       if (!state.projectName) return;
-      return pairRequest(
+      return ctx.helpers.pairLenient(
         ctx,
         this.translateLegacy(step, { projectName: state.projectName, destination: "alice" }),
         this.translateYoram(step, { projectName: state.projectName, destination: "alice" }),
@@ -1510,8 +1466,8 @@ const LIFECYCLE_ACTIONS = {
         this.translateYoram(step, { projectName: state.projectName }),
         `${step.params.owner}/${state.projectName} (delete)`,
       );
-      const goneL = await sendRaw(ctx.legacySession, options.legacyUrl, { method: "GET", path: `/${step.params.owner}/${state.projectName}` });
-      const goneY = await sendRaw(ctx.yoramSession, yoramBaseUrl, { method: "GET", path: `/api/v1/owners/${step.params.owner}/projects/${state.projectName}` });
+      const goneL = await ctx.helpers.sendRaw(ctx, "legacy", { method: "GET", path: `/${step.params.owner}/${state.projectName}` });
+      const goneY = await ctx.helpers.sendRaw(ctx, "yoram", { method: "GET", path: `/api/v1/owners/${step.params.owner}/projects/${state.projectName}` });
       if ((goneL.status < 400 && goneL.status !== 404) || goneY.status < 400) {
         entry.errors.push(`throwaway residue [${suffix}]: ${state.projectName} still reachable (legacy=${goneL.status} yoram=${goneY.status})`);
       }
