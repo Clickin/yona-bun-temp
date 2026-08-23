@@ -48,6 +48,7 @@ async fn creates_organizations_and_rewrites_org_owned_project_owner_on_rename() 
         project_name: "projectYobi".to_string(),
         project_scope: "public".to_string(),
         vcs: "GIT".to_string(),
+        initial_manager_user_id: None,
     })
     .await
     .expect("create org project");
@@ -89,6 +90,7 @@ async fn creates_organizations_and_rewrites_org_owned_project_owner_on_rename() 
             project_name: "ownProject".to_string(),
             project_scope: "private".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .expect("create own project");
@@ -107,6 +109,7 @@ async fn creates_organizations_and_rewrites_org_owned_project_owner_on_rename() 
             project_name: "favoriteProject".to_string(),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .expect("create favorite organization project");
@@ -118,6 +121,7 @@ async fn creates_organizations_and_rewrites_org_owned_project_owner_on_rename() 
             project_name: "noise".to_string(),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .expect("create unrelated project");
@@ -198,6 +202,7 @@ async fn reads_project_members_enrollment_requests_and_workspace_project_lists()
             project_name: "projectYobi".to_string(),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .expect("create project");
@@ -305,6 +310,7 @@ async fn project_member_and_watcher_lists_follow_legacy_user_label_order() {
             project_name: "projectYobi".to_string(),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .expect("create project");

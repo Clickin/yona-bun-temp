@@ -377,7 +377,9 @@ async fn rest_project_create_provisions_empty_bare_git_repository() {
     let bare_repo = data_dir
         .path()
         .join("repo")
-        .join(format!("{}.git", project.id));
+        .join("git")
+        .join(&project.owner_name)
+        .join(format!("{}.git", project.project_name));
     assert!(bare_repo.is_dir(), "bare repo path should be created");
 
     let output = Command::new("git")
@@ -465,10 +467,10 @@ fn seed_svn_readme(repo_path: &Path, contents: &str) -> Option<i64> {
     Some(yoram_vcs::svn_youngest_revision(repo_path).expect("read seeded revision"))
 }
 
-fn seed_bare_repository(yona_data: &Path, project_id: i64) {
-    let repo_root = yona_data.join("repo");
+fn seed_bare_repository(yona_data: &Path, owner: &str, project: &str) {
+    let repo_root = yona_data.join("repo").join("git").join(owner);
     fs::create_dir_all(&repo_root).expect("repo root");
-    let bare_repo = repo_root.join(format!("{project_id}.git"));
+    let bare_repo = repo_root.join(format!("{project}.git"));
     let work = tempdir().expect("work repo");
 
     run_git(&["init", "--bare", bare_repo.to_str().unwrap()], None);
@@ -524,12 +526,17 @@ fn seed_bare_repository(yona_data: &Path, project_id: i64) {
 
 fn append_bare_repository_commit(
     yona_data: &Path,
-    project_id: i64,
+    owner: &str,
+    project: &str,
     path: &str,
     contents: &str,
     message: &str,
 ) {
-    let bare_repo = yona_data.join("repo").join(format!("{project_id}.git"));
+    let bare_repo = yona_data
+        .join("repo")
+        .join("git")
+        .join(owner)
+        .join(format!("{project}.git"));
     let work = tempdir().expect("work repo");
     run_git(
         &[
@@ -560,8 +567,12 @@ fn append_bare_repository_commit(
     run_git(&["push", "origin", "main"], Some(work.path()));
 }
 
-fn create_bare_repository_branch(yona_data: &Path, project_id: i64, branch: &str) {
-    let bare_repo = yona_data.join("repo").join(format!("{project_id}.git"));
+fn create_bare_repository_branch(yona_data: &Path, owner: &str, project: &str, branch: &str) {
+    let bare_repo = yona_data
+        .join("repo")
+        .join("git")
+        .join(owner)
+        .join(format!("{project}.git"));
     run_git(
         &[
             "--git-dir",
@@ -574,16 +585,24 @@ fn create_bare_repository_branch(yona_data: &Path, project_id: i64, branch: &str
     );
 }
 
-fn create_bare_repository_tag(yona_data: &Path, project_id: i64, tag: &str) {
-    let bare_repo = yona_data.join("repo").join(format!("{project_id}.git"));
+fn create_bare_repository_tag(yona_data: &Path, owner: &str, project: &str, tag: &str) {
+    let bare_repo = yona_data
+        .join("repo")
+        .join("git")
+        .join(owner)
+        .join(format!("{project}.git"));
     run_git(
         &["--git-dir", bare_repo.to_str().unwrap(), "tag", tag, "main"],
         None,
     );
 }
 
-fn bare_repository_head_commit_id(yona_data: &Path, project_id: i64) -> String {
-    let bare_repo = yona_data.join("repo").join(format!("{project_id}.git"));
+fn bare_repository_head_commit_id(yona_data: &Path, owner: &str, project: &str) -> String {
+    let bare_repo = yona_data
+        .join("repo")
+        .join("git")
+        .join(owner)
+        .join(format!("{project}.git"));
     let output = Command::new("git")
         .args([
             "--git-dir",
@@ -617,7 +636,7 @@ async fn code_browser_reads_root_folder_and_text_file_from_git_repo() {
         .await
         .unwrap()
         .unwrap();
-    seed_bare_repository(data_dir.path(), project.id);
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
 
     let root = response_json(
         rpc(
@@ -715,7 +734,7 @@ async fn rest_code_browser_reads_root_folder_and_text_file_from_git_repo() {
         .await
         .unwrap()
         .unwrap();
-    seed_bare_repository(data_dir.path(), project.id);
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
 
     let root =
         response_json(rest_get(app.clone(), "/projects/owner/projectYobi/code", None).await).await;
@@ -780,18 +799,25 @@ async fn rest_code_browser_selector_includes_tags_and_reads_tagged_files() {
         .await
         .unwrap()
         .unwrap();
-    seed_bare_repository(data_dir.path(), project.id);
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
     append_bare_repository_commit(
         data_dir.path(),
-        project.id,
+        &project.owner_name,
+        &project.project_name,
         "src/main.rs",
         "fn main() {\n    println!(\"v1\");\n}\n",
         "Prepare release tag",
     );
-    create_bare_repository_tag(data_dir.path(), project.id, "v1.0.0");
+    create_bare_repository_tag(
+        data_dir.path(),
+        &project.owner_name,
+        &project.project_name,
+        "v1.0.0",
+    );
     append_bare_repository_commit(
         data_dir.path(),
-        project.id,
+        &project.owner_name,
+        &project.project_name,
         "src/main.rs",
         "fn main() {\n    println!(\"main\");\n}\n",
         "Move main after tag",
@@ -850,7 +876,7 @@ async fn direct_code_ajax_compat_routes_return_legacy_metadata_json() {
         .await
         .unwrap()
         .unwrap();
-    seed_bare_repository(data_dir.path(), project.id);
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
 
     let root =
         response_json(direct_get(app.clone(), "/owner/projectYobi/code/!", None).await).await;
@@ -924,10 +950,11 @@ async fn rest_code_browser_renders_markdown_file_with_legacy_local_image_links()
         .await
         .unwrap()
         .unwrap();
-    seed_bare_repository(data_dir.path(), project.id);
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
     append_bare_repository_commit(
         data_dir.path(),
-        project.id,
+        &project.owner_name,
+        &project.project_name,
         "README.md",
         "# Hello Yona\n\n@owner @owner/projectYobi @ghost @owner/missing\n\n![logo](./assets/logo.png)\n\n[Guide](./docs/guide.md)\n",
         "Render markdown README links",
@@ -1005,10 +1032,11 @@ async fn rest_commit_history_lists_branch_and_path_commits_from_git_repo() {
         .await
         .unwrap()
         .unwrap();
-    seed_bare_repository(data_dir.path(), project.id);
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
     append_bare_repository_commit(
         data_dir.path(),
-        project.id,
+        &project.owner_name,
+        &project.project_name,
         "src/main.rs",
         "fn main() {\n    println!(\"history\");\n}\n",
         "Update main function",
@@ -1066,16 +1094,19 @@ async fn rest_commit_detail_reads_commit_metadata_and_diff_from_git_repo() {
         .await
         .unwrap()
         .unwrap();
-    seed_bare_repository(data_dir.path(), project.id);
-    let parent_commit_id = bare_repository_head_commit_id(data_dir.path(), project.id);
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
+    let parent_commit_id =
+        bare_repository_head_commit_id(data_dir.path(), &project.owner_name, &project.project_name);
     append_bare_repository_commit(
         data_dir.path(),
-        project.id,
+        &project.owner_name,
+        &project.project_name,
         "src/main.rs",
         "fn main() {\n    println!(\"detail\");\n}\n",
         "Update main function",
     );
-    let commit_id = bare_repository_head_commit_id(data_dir.path(), project.id);
+    let commit_id =
+        bare_repository_head_commit_id(data_dir.path(), &project.owner_name, &project.project_name);
 
     let response = response_json(
         rest_get(
@@ -1152,15 +1183,17 @@ async fn rest_commit_detail_creates_comments_and_updates_threads_from_git_repo()
         .await
         .unwrap()
         .unwrap();
-    seed_bare_repository(data_dir.path(), project.id);
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
     append_bare_repository_commit(
         data_dir.path(),
-        project.id,
+        &project.owner_name,
+        &project.project_name,
         "src/main.rs",
         "fn main() {\n    println!(\"discussion\");\n}\n",
         "Discuss main function",
     );
-    let commit_id = bare_repository_head_commit_id(data_dir.path(), project.id);
+    let commit_id =
+        bare_repository_head_commit_id(data_dir.path(), &project.owner_name, &project.project_name);
     let detail_path = format!("/projects/owner/projectYobi/commit/{commit_id}?branch=main");
     let comments_path = format!("/projects/owner/projectYobi/commit/{commit_id}/comments");
 
@@ -1446,7 +1479,9 @@ async fn rest_commit_detail_creates_comments_from_svn_revision() {
     ))
     .await
     .expect("mark project as svn");
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project.id);
+    let repo_path =
+        yoram_vcs::svn_repository_path(data_dir.path(), &project.owner_name, &project.project_name)
+            .expect("repository path");
     yoram_vcs::create_svn_repository(&repo_path).expect("create svn repository");
     let revision = seed_svn_readme(&repo_path, "# Hello SVN\n").expect("seed svn revision");
     let commit_id = revision.to_string();
@@ -1542,8 +1577,9 @@ async fn rest_commit_comment_create_requires_authenticated_session() {
         .await
         .unwrap()
         .unwrap();
-    seed_bare_repository(data_dir.path(), project.id);
-    let commit_id = bare_repository_head_commit_id(data_dir.path(), project.id);
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
+    let commit_id =
+        bare_repository_head_commit_id(data_dir.path(), &project.owner_name, &project.project_name);
 
     let response = rest_post_json(
         app,
@@ -1571,8 +1607,9 @@ async fn rest_commit_comment_allows_legacy_guest_nonmember_on_public_project() {
         .await
         .unwrap()
         .unwrap();
-    seed_bare_repository(data_dir.path(), project.id);
-    let commit_id = bare_repository_head_commit_id(data_dir.path(), project.id);
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
+    let commit_id =
+        bare_repository_head_commit_id(data_dir.path(), &project.owner_name, &project.project_name);
     let guest = repo
         .toggle_site_user_guest_mode("guest")
         .await
@@ -1613,7 +1650,7 @@ async fn rest_commit_detail_reports_missing_commit_as_not_found() {
         .await
         .unwrap()
         .unwrap();
-    seed_bare_repository(data_dir.path(), project.id);
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
 
     let missing = rest_get(
         app,
@@ -1636,16 +1673,19 @@ async fn rest_compare_reads_commit_pair_and_diff_from_git_repo() {
         .await
         .unwrap()
         .unwrap();
-    seed_bare_repository(data_dir.path(), project.id);
-    let base_commit_id = bare_repository_head_commit_id(data_dir.path(), project.id);
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
+    let base_commit_id =
+        bare_repository_head_commit_id(data_dir.path(), &project.owner_name, &project.project_name);
     append_bare_repository_commit(
         data_dir.path(),
-        project.id,
+        &project.owner_name,
+        &project.project_name,
         "src/main.rs",
         "fn main() {\n    println!(\"compare\");\n}\n",
         "Update main function",
     );
-    let head_commit_id = bare_repository_head_commit_id(data_dir.path(), project.id);
+    let head_commit_id =
+        bare_repository_head_commit_id(data_dir.path(), &project.owner_name, &project.project_name);
 
     let response = response_json(
         rest_get(
@@ -1686,8 +1726,9 @@ async fn rest_compare_reports_missing_commit_as_not_found() {
         .await
         .unwrap()
         .unwrap();
-    seed_bare_repository(data_dir.path(), project.id);
-    let head_commit_id = bare_repository_head_commit_id(data_dir.path(), project.id);
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
+    let head_commit_id =
+        bare_repository_head_commit_id(data_dir.path(), &project.owner_name, &project.project_name);
 
     let missing = rest_get(
         app,
@@ -1711,8 +1752,13 @@ async fn rest_branch_list_renders_default_branch_first_with_legacy_actions() {
         .await
         .unwrap()
         .unwrap();
-    seed_bare_repository(data_dir.path(), project.id);
-    create_bare_repository_branch(data_dir.path(), project.id, "topic/branch-admin");
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
+    create_bare_repository_branch(
+        data_dir.path(),
+        &project.owner_name,
+        &project.project_name,
+        "topic/branch-admin",
+    );
     let created_pull_request = response_json(
         rest_post_json(
             app.clone(),
@@ -1770,8 +1816,13 @@ async fn rest_branch_default_mutation_moves_git_head() {
         .await
         .unwrap()
         .unwrap();
-    seed_bare_repository(data_dir.path(), project.id);
-    create_bare_repository_branch(data_dir.path(), project.id, "topic/default");
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
+    create_bare_repository_branch(
+        data_dir.path(),
+        &project.owner_name,
+        &project.project_name,
+        "topic/default",
+    );
 
     let response = response_json(
         rest_post_json(
@@ -1791,7 +1842,9 @@ async fn rest_branch_default_mutation_moves_git_head() {
     let bare_repo = data_dir
         .path()
         .join("repo")
-        .join(format!("{}.git", project.id));
+        .join("git")
+        .join(&project.owner_name)
+        .join(format!("{}.git", project.project_name));
     let output = Command::new("git")
         .args([
             "--git-dir",
@@ -1820,8 +1873,13 @@ async fn rest_branch_delete_removes_non_default_branch_and_rejects_default() {
         .await
         .unwrap()
         .unwrap();
-    seed_bare_repository(data_dir.path(), project.id);
-    create_bare_repository_branch(data_dir.path(), project.id, "topic/delete-me");
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
+    create_bare_repository_branch(
+        data_dir.path(),
+        &project.owner_name,
+        &project.project_name,
+        "topic/delete-me",
+    );
 
     let response = response_json(
         rest_delete_json(
@@ -1862,8 +1920,13 @@ async fn rest_branch_mutation_requires_project_update_permission() {
         .await
         .unwrap()
         .unwrap();
-    seed_bare_repository(data_dir.path(), project.id);
-    create_bare_repository_branch(data_dir.path(), project.id, "topic/forbidden");
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
+    create_bare_repository_branch(
+        data_dir.path(),
+        &project.owner_name,
+        &project.project_name,
+        "topic/forbidden",
+    );
     let (reader_csrf, reader_cookie) = register_user(app.clone(), "reader").await;
 
     let rejected = rest_post_json(
@@ -1890,8 +1953,9 @@ async fn direct_code_file_routes_stream_raw_open_and_image_bytes() {
         .await
         .unwrap()
         .unwrap();
-    seed_bare_repository(data_dir.path(), project.id);
-    let head_commit_id = bare_repository_head_commit_id(data_dir.path(), project.id);
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
+    let head_commit_id =
+        bare_repository_head_commit_id(data_dir.path(), &project.owner_name, &project.project_name);
 
     let (raw_status, raw_headers, raw_body) = response_bytes(
         direct_get(
@@ -1980,7 +2044,7 @@ async fn direct_code_archive_download_streams_branch_zip() {
         .await
         .unwrap()
         .unwrap();
-    seed_bare_repository(data_dir.path(), project.id);
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
 
     let (status, headers, body) = response_bytes(
         direct_get(app.clone(), "/owner/projectYobi/code/main/download", None).await,
@@ -2018,8 +2082,13 @@ async fn direct_code_file_and_archive_routes_decode_legacy_encoded_branch_names(
         .await
         .unwrap()
         .unwrap();
-    seed_bare_repository(data_dir.path(), project.id);
-    create_bare_repository_branch(data_dir.path(), project.id, "topic/encoded+plus");
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
+    create_bare_repository_branch(
+        data_dir.path(),
+        &project.owner_name,
+        &project.project_name,
+        "topic/encoded+plus",
+    );
 
     let (raw_status, _raw_headers, raw_body) = response_bytes(
         direct_get(
@@ -2082,7 +2151,7 @@ async fn direct_code_file_routes_redirect_missing_raw_and_reject_path_traversal(
         .await
         .unwrap()
         .unwrap();
-    seed_bare_repository(data_dir.path(), project.id);
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
 
     let missing = direct_get(
         app.clone(),
@@ -2137,7 +2206,9 @@ async fn code_browser_reports_no_head_for_missing_repository() {
         data_dir
             .path()
             .join("repo")
-            .join(format!("{}.git", project.id)),
+            .join("git")
+            .join(&project.owner_name)
+            .join(format!("{}.git", project.project_name)),
     )
     .expect("remove provisioned repository to cover missing repo no-head state");
 
@@ -2170,7 +2241,7 @@ async fn rest_code_browser_rejects_path_traversal() {
         .await
         .unwrap()
         .unwrap();
-    seed_bare_repository(data_dir.path(), project.id);
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
 
     let response = rest_get(
         app,
@@ -2193,7 +2264,7 @@ async fn code_browser_rejects_path_traversal() {
         .await
         .unwrap()
         .unwrap();
-    seed_bare_repository(data_dir.path(), project.id);
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
 
     let response = rpc(
         app,

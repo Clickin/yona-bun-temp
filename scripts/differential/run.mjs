@@ -7,8 +7,9 @@
 //
 // Usage: node scripts/differential/run.mjs [--legacy-url URL] [--yoram-port N]
 
-import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, openSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { spawn, spawnSync } from "node:child_process";
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, openSync, readdirSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -23,8 +24,8 @@ import {
   ISSUE_STATE_ENCODINGS,
   projectLabelRows,
 } from "./diff.mjs";
-import { queryLegacyH2, queryYoramSqlite } from "./db-projection.mjs";
-import { formatSummary, violation, writeReport } from "./report.mjs";
+import { h2JarPath, queryLegacyH2, queryYoramSqlite } from "./db-projection.mjs";
+import { HarnessError, formatSummary, violation, writeReport } from "./report.mjs";
 import { launchWtrBrowser } from "../wtr-browser.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -227,6 +228,14 @@ function startYoramProcess(port) {
       SMTP_HOST: process.env.SMTP_HOST ?? "127.0.0.1",
       SMTP_PORT: process.env.SMTP_PORT ?? "2525",
       SMTP_SSL: "false",
+      // Mock GitHub OAuth provider (functional-contract boundary): the sweep
+      // asserts the authorize redirect and its params but never follows it;
+      // nothing listens on :2526 by design.
+      YONA_AUTH_SOCIAL_LOGIN_SUPPORT: "github",
+      YONA_OAUTH_GITHUB_CLIENT_ID: "parity-client-id",
+      YONA_OAUTH_GITHUB_CLIENT_SECRET: "parity-client-secret",
+      YONA_OAUTH_GITHUB_AUTHORIZATION_URL: "http://127.0.0.1:2526/mock/oauth/authorize",
+      YONA_OAUTH_GITHUB_ACCESS_TOKEN_URL: "http://127.0.0.1:2526/mock/oauth/token",
     },
     stdio: ["ignore", openSync(yoramServerLog, "a"), openSync(yoramServerLog, "a")],
   });
@@ -434,6 +443,340 @@ async function setCookiesFromHeader(page, baseUrl, header) {
   }
 }
 
+// --- sweep fixture alignment -------------------------------------------------
+
+const PARITY_LABEL_SEEDS = [
+  { labelName: "bug", categoryName: "type", color: "#f44336" },
+  { labelName: "parity", categoryName: "area", color: "#2196f3" },
+];
+
+function gitRepoHasBranches(repoPath) {
+  const result = spawnSync("git", ["--git-dir", repoPath, "for-each-ref", "refs/heads"], { encoding: "utf8" });
+  return (result.stdout ?? "").trim().length > 0;
+}
+
+// Seed an orphan main + feature/ui pair so pull-request flows have a diffable
+// repository on each side; idempotent — only fires while refs/heads is empty.
+function seedRepoBranches(repoPath) {
+  const env = {
+    ...process.env,
+    GIT_AUTHOR_NAME: "parity",
+    GIT_AUTHOR_EMAIL: "parity@example.com",
+    GIT_COMMITTER_NAME: "parity",
+    GIT_COMMITTER_EMAIL: "parity@example.com",
+    GIT_AUTHOR_DATE: "2026-01-01T00:00:00Z",
+    GIT_COMMITTER_DATE: "2026-01-01T00:00:00Z",
+  };
+  const git = (args, input) => {
+    const result = spawnSync("git", ["--git-dir", repoPath, ...args], { encoding: "utf8", env, input });
+    if (result.status !== 0) throw new Error(`git ${args[0]} failed: ${result.stderr}`);
+    return (result.stdout ?? "").trim();
+  };
+  const blob = git(["hash-object", "-w", "--stdin"], "parity seed\n");
+  const tree = git(["mktree"], `100644 blob ${blob}\tREADME.md\n`);
+  const commit = git(["commit-tree", tree, "-m", "parity seed commit"]);
+  git(["update-ref", "refs/heads/main", commit]);
+  git(["update-ref", "refs/heads/feature/ui", commit]);
+  git(["symbolic-ref", "HEAD", "refs/heads/main"]);
+}
+
+async function alignParityFixtures(options) {
+  const repos = [
+    path.join(repoRoot, ".agent/legacy-localhost/instances/parity/data/repo/git/admin/sample.git"),
+    path.join(outputDir, "yoram/data/repo/git/admin/sample.git"),
+  ];
+  for (const repo of repos) {
+    if (existsSync(repo) && !gitRepoHasBranches(repo)) seedRepoBranches(repo);
+  }
+  // Mirror yoram's dev-parity label seed into the legacy instance so the
+  // unfiltered label projection compares like-for-like, and clear residue
+  // labels/categories left behind by earlier sweeps' failed cleanups.
+  const legacySession = new LegacySession(options.legacyUrl ?? process.env.YONA_LEGACY_URL ?? "http://127.0.0.1:9000");
+  await legacySession.login({ loginId: "admin", password: "admin" });
+  const yoramSession = new YoramSession(options.yoramUrl ?? "http://127.0.0.1:3101");
+  try {
+    await yoramSession.login({ loginId: "admin", password: "admin" });
+  } catch {
+    // already-authenticated instance is fine; keep going with cookies we have
+  }
+  for (const [side, session, base] of [
+    ["legacy", legacySession, ""],
+    ["yoram", yoramSession, ""],
+  ]) {
+    let labels = [];
+    let categories = [];
+    try {
+      labels = JSON.parse((await session.request({ method: "GET", path: `${base}/admin/sample/issue/labels` })).body || "[]");
+      categories = JSON.parse((await session.request({ method: "GET", path: `${base}/admin/sample/issue/label/categories` })).body || "[]");
+    } catch {
+      continue;
+    }
+    for (const label of labels) {
+      if (/^parity-(label|cat)-sweep-/u.test(label.name ?? "")) {
+        await session.request({
+          method: "POST",
+          path: `${base}/admin/sample/issue/label/${label.id}/delete`,
+          form: { _method: "delete" },
+        });
+      }
+    }
+    for (const category of categories) {
+      if (/^parity-cat-sweep-/u.test(category.name ?? "")) {
+        await session.request({
+          method: "DELETE",
+          path: `${base}/admin/sample/issue/label/category/${category.id}`,
+        });
+      }
+    }
+  }
+  // Align on the FULL (name, category, color) tuple from the labels listing:
+  // a name-only match left a yoram-only row when legacy's tuple differed.
+  const labels = JSON.parse(
+    (await legacySession.request({ method: "GET", path: "/admin/sample/issue/labels" })).body || "[]",
+  );
+  for (const seed of PARITY_LABEL_SEEDS) {
+    const row = labels.find((label) => label.name === seed.labelName);
+    if (!row) {
+      await legacySession.request({
+        method: "POST",
+        path: "/admin/sample/issue/labels",
+        form: { labelName: seed.labelName, categoryName: seed.categoryName, labelColor: seed.color },
+      });
+    } else {
+      const category = (row.category ?? "").toLowerCase();
+      const color = (row.color ?? "").toLowerCase();
+      if (category !== seed.categoryName.toLowerCase() || color !== seed.color.toLowerCase()) {
+        // Replace the mismatched row so the projected tuple matches exactly.
+        await legacySession.request({
+          method: "POST",
+          path: `/admin/sample/issue/label/${row.id}/delete`,
+          form: { _method: "delete" },
+        });
+        await legacySession.request({
+          method: "POST",
+          path: "/admin/sample/issue/labels",
+          form: { labelName: seed.labelName, categoryName: seed.categoryName, labelColor: seed.color },
+        });
+      }
+    }
+  }
+
+  // Provision the legacy parity comparison users (alice/bob/carol) on yoram
+  // via REST signup so both sides' active-user sets match for the sweep
+  // project context. Registration is idempotent-tolerated (already-exists
+  // failures are ignored); legacy history rows are never deleted.
+  try {
+    const yoramUsers = new YoramSession(options.yoramUrl ?? "http://127.0.0.1:3101");
+    const primed = await fetch(`${options.yoramUrl ?? "http://127.0.0.1:3101"}/api/auth/session`);
+    yoramUsers.csrfToken = primed.headers.get("x-csrf-token") ?? "";
+    yoramUsers.cookies = (primed.headers.getSetCookie?.() ?? [])
+      .map((cookie) => cookie.split(";")[0])
+      .join("; ");
+    for (const user of [
+      { loginId: "alice", name: "Alice Kim", email: "alice@example.com", password: "alicealice" },
+      { loginId: "bob", name: "Bob Park", email: "bob@example.com", password: "bobbobbob" },
+      { loginId: "carol", name: "Carol Lee", email: "carol@example.com", password: "carolcarol" },
+    ]) {
+      try {
+        await yoramUsers.request({
+          method: "POST",
+          path: "/api/v1/auth/register",
+          json: {
+            emailAddress: user.email,
+            loginId: user.loginId,
+            name: user.name,
+            password: user.password,
+            retypedPassword: user.password,
+          },
+        });
+      } catch {
+        // already-exists / transient registration failure tolerated
+      }
+    }
+  } catch {
+    // best-effort alignment; candidate-set diffs surface as INFRA_ERROR with
+    // the fixture-asymmetry rationale instead of crashing the sweep.
+  }
+
+  // SQL-level reconciliation: compare the exact projected label tuples of both
+  // instances and create anything present on yoram but missing/divergent on
+  // legacy (restricted to parity-seed names so sweep rows are never imported).
+  try {
+    const legacyDb = path.join(repoRoot, ".agent/legacy-localhost/instances/parity/data/db/yona.h2.db");
+    const yoramDb = path.join(outputDir, "yoram", "yoram.db");
+    const lrows = projectLabelRows(await queryLegacyH2(repoRoot, legacyDb, "labels", "sample"), "legacy");
+    const yrows = projectLabelRows(await queryYoramSqlite(yoramDb, "labels", "sample"), "yoram");
+    const tupleOf = (row) => `${row.name}|${row.category}|${row.color}`.toLowerCase();
+    const legacyTuples = new Set(lrows.map(tupleOf));
+    const seedNames = new Set(PARITY_LABEL_SEEDS.map((seed) => seed.labelName));
+    const missing = yrows.filter((row) => seedNames.has(row.name) && !legacyTuples.has(tupleOf(row)));
+    for (const row of missing) {
+      const stale = lrows.find((l) => l.name === row.name);
+      if (stale?.id) {
+        await legacySession.request({
+          method: "POST",
+          path: `/admin/sample/issue/label/${stale.id}/delete`,
+          form: { _method: "delete" },
+        });
+      }
+      await legacySession.request({
+        method: "POST",
+        path: "/admin/sample/issue/labels",
+        form: { labelName: row.name, categoryName: row.category, labelColor: row.color },
+      });
+    }
+  } catch (error) {
+    console.error(`[alignParityFixtures] SQL label reconciliation skipped: ${error.message}`);
+  }
+}
+
+// --- pre-boot H2 fixture reconciliation --------------------------------------
+
+const LEGACY_H2_URL_BASE = ".agent/legacy-localhost/instances/parity/data/db/yona";
+
+function legacyH2Url() {
+  return (
+    "jdbc:h2:" +
+    path.join(repoRoot, LEGACY_H2_URL_BASE) +
+    ";MODE=PostgreSQL;MV_STORE=FALSE;MVCC=FALSE;IFEXISTS=TRUE"
+  );
+}
+
+function legacyH2Shell(sql) {
+  const result = spawnSync(
+    "java",
+    ["-cp", h2JarPath(repoRoot), "org.h2.tools.Shell", "-url", legacyH2Url(), "-user", "sa", "-password", "", "-sql", sql],
+    { encoding: "utf8" },
+  );
+  if (result.status !== 0) {
+    throw new Error(`h2 shell failed: ${(result.stderr || result.stdout || "").slice(0, 300)}`);
+  }
+  return result.stdout ?? "";
+}
+
+// Runs while NO instance holds the H2 file (before bootLegacy): deactivate
+// stale parity throwaway users (legacy treats state DELETED as inactive,
+// models/enumeration/UserState.java) and reconcile sample-project label rows
+// so both sides' fixtures measure filter logic instead of history.
+function reconcileLegacyFixturesPreboot() {
+  const h2Jar = h2JarPath(repoRoot);
+  // The original file's credentials are unknown and AUTO_SERVER records go
+  // stale, so operate on a Recover+RunScript rebuilt copy (same mechanism the
+  // db projection uses) and persist it back BEFORE any JVM opens the file.
+  const dbFile = path.join(repoRoot, LEGACY_H2_URL_BASE + ".h2.db");
+  const workDir = mkdtempSync(path.join(tmpdir(), "legacy-h2-reconcile-"));
+  copyFileSync(dbFile, path.join(workDir, "yona.h2.db"));
+  const javaBin = process.execPath === "java" ? "java" : "java";
+  const runJava = (args) => {
+    const result = spawnSync(javaBin, ["-cp", h2Jar, ...args], { encoding: "utf8" });
+    if (result.status !== 0) throw new Error(`${args[0]} failed: ${(result.stderr || result.stdout || "").slice(0, 300)}`);
+  };
+  runJava(["org.h2.tools.Recover", "-dir", workDir, "-db", "yona"]);
+  runJava([
+    "org.h2.tools.RunScript",
+    "-url", `jdbc:h2:${path.join(workDir, "rebuilt")};MODE=PostgreSQL;MV_STORE=FALSE;MVCC=FALSE`,
+    "-user", "sa",
+    "-password", "",
+    "-script", path.join(workDir, "yona.h2.sql"),
+  ]);
+  const shellOnRebuilt = (sql) => {
+    const result = spawnSync(
+      "java",
+      ["-cp", h2Jar, "org.h2.tools.Shell", "-url", `jdbc:h2:${path.join(workDir, "rebuilt")};MODE=PostgreSQL;MV_STORE=FALSE;MVCC=FALSE;IFEXISTS=TRUE`, "-user", "sa", "-password", "", "-sql", sql],
+      { encoding: "utf8" },
+    );
+    if (result.status !== 0 || /Error:|Exception/.test(result.stderr ?? "") || /^Error:/m.test(result.stdout ?? "")) {
+      throw new Error(`h2 shell failed: ${((result.stderr || "") + (result.stdout || "")).slice(0, 300)}`);
+    }
+    return result.stdout ?? "";
+  };
+  // H2 Shell prints a header line before the data row; header text itself can
+  // contain digits (e.g. COALESCE(MAX(id), 0)), so parse line 1, not line 0.
+  const scalar = (sql) => {
+    const dataLine = (shellOnRebuilt(sql).split("\n")[1] ?? "").trim();
+    return Number(/(\d+)/.exec(dataLine)?.[0] ?? "0");
+  };
+  // Ensure category + label rows exist for each parity seed tuple. Legacy H2
+  // has no identity columns here, so ids are allocated explicitly from the
+  // global max across both tables.
+  // Deactivate stale throwaway accounts and sweep residue. Legacy treats
+  // state DELETED as inactive (models/enumeration/UserState.java), so both
+  // sides' active user sets consist of the aligned fixtures only.
+  shellOnRebuilt(
+    "UPDATE n4user SET state = 'DELETED' WHERE login_id LIKE 'paritysweep%' AND state <> 'DELETED'",
+  );
+  shellOnRebuilt("DELETE FROM issue_label WHERE name = 'undefined' OR name LIKE 'parity-label-sweep-%'");
+  shellOnRebuilt("DELETE FROM issue_label_category WHERE name = 'undefined' OR name LIKE 'parity-cat-sweep-%'");
+
+  // Ensure category + label rows exist for each parity seed tuple. Legacy H2
+  // has no identity columns here, so ids are allocated explicitly from the
+  // global max across both tables.
+  const nextId = () =>
+    Math.max(
+      scalar("SELECT COALESCE(MAX(id), 0) FROM issue_label_category"),
+      scalar("SELECT COALESCE(MAX(id), 0) FROM issue_label"),
+    ) + 1;
+  // Several 'sample' projects can exist across owners; the parity fixture is
+  // the lowest-id one, matching what the sweep scenarios address.
+  const sampleProjectId = scalar("SELECT id FROM project WHERE name = 'sample' ORDER BY id LIMIT 1");
+  for (const seed of PARITY_LABEL_SEEDS) {
+    const hasCategory =
+      scalar(
+        `SELECT COUNT(*) FROM issue_label_category WHERE project_id = ${sampleProjectId} AND name = '${seed.categoryName}'`,
+      ) > 0;
+    if (!hasCategory) {
+      shellOnRebuilt(
+        `INSERT INTO issue_label_category (id, project_id, name, is_exclusive) ` +
+          `VALUES (${nextId()}, ${sampleProjectId}, '${seed.categoryName}', 0)`,
+      );
+    }
+    const categoryId = scalar(
+      `SELECT id FROM issue_label_category WHERE project_id = ${sampleProjectId} AND name = '${seed.categoryName}' LIMIT 1`,
+    );
+    const hasLabel =
+      scalar(
+        `SELECT COUNT(*) FROM issue_label WHERE category_id = ${categoryId} AND name = '${seed.labelName}'`,
+      ) > 0;
+    if (!hasLabel) {
+      shellOnRebuilt(
+        `INSERT INTO issue_label (id, name, color, category_id) ` +
+          `VALUES (${nextId()}, '${seed.labelName}', '${seed.color}', ${categoryId})`,
+      );
+    }
+  }
+
+
+  // Self-check gates the boot: fixture must be clean afterwards.
+  const activeStaleUsers = Number(
+    /\d+/.exec(
+      shellOnRebuilt("SELECT COUNT(*) FROM n4user WHERE login_id LIKE 'paritysweep%' AND state <> 'DELETED'"),
+    )?.[0] ?? "0",
+  );
+  if (activeStaleUsers !== 0) {
+    throw new Error(`self-check failed: ${activeStaleUsers} active paritysweep% users remain`);
+  }
+  const tuples = shellOnRebuilt(
+    "SELECT l.NAME || '|' || c.NAME || '|' || l.COLOR FROM ISSUE_LABEL l " +
+      "LEFT JOIN ISSUE_LABEL_CATEGORY c ON c.ID = l.CATEGORY_ID " +
+      "JOIN PROJECT p ON c.PROJECT_ID = p.ID WHERE p.NAME = 'sample'",
+  )
+    .split("\n")
+    .map((line) => line.trim().toLowerCase())
+    .filter((line) => line.includes("|"));
+  for (const seed of PARITY_LABEL_SEEDS) {
+    const wanted = `${seed.labelName}|${seed.categoryName}|${seed.color}`.toLowerCase();
+    if (!tuples.includes(wanted)) {
+      throw new Error(`self-check failed: expected label tuple ${wanted} missing (have: ${tuples.join(", ")})`);
+    }
+  }
+
+  // Persist the reconciled pagestore back over the original fixture file.
+  copyFileSync(path.join(workDir, "rebuilt.h2.db"), dbFile);
+  try {
+    unlinkSync(dbFile + ".trace.db");
+  } catch {}
+}
+
 // --- scenario execution -----------------------------------------------------
 
 function issueNumberFromLocation(location) {
@@ -583,6 +926,18 @@ export const stepHelpers = {
       }
     } catch (error) {
       entry.errors.push(`dom render (${step.action}) [${suffix}]: ${error.message}`);
+      // ponytail: single attempt, no retry — an unresolved CDP/protocol
+      // failure is infra, never a finding against Yoram; add a retry when
+      // transient timeouts measurably pollute verdicts.
+      entry.violations.push(
+        violation({
+          route: domTarget.legacy.replace(options.legacyUrl, ""),
+          behaviorId: entry.behaviorIds[0] ?? null,
+          kind: "infra",
+          expected: "browser render observable on both sides",
+          actual: error.message,
+        }),
+      );
     }
   },
 
@@ -600,7 +955,23 @@ async function executeStep(context) {
     entry.errors.push(`unknown action: ${step.action}`);
     return;
   }
-  await definition.handler({ ...context, helpers: stepHelpers });
+  try {
+    await definition.handler({ ...context, helpers: stepHelpers });
+  } catch (error) {
+    if (error instanceof HarnessError) {
+      // Scenario marked HARNESS_ERROR once; dependent actions skip quietly.
+      if (!entry.harnessNoted) {
+        entry.harnessNoted = true;
+        entry.violations.push(
+          violation({ route: step.action, behaviorId: entry.behaviorIds[0] ?? null, kind: "harness", expected: "resolvable entity id", actual: error.message }),
+        );
+      } else {
+        entry.errors.push(`${step.action} skipped: ${error.message}`);
+      }
+    } else {
+      entry.errors.push(`${step.action}: ${error.message}`);
+    }
+  }
 }
 
 // --- sweep ------------------------------------------------------------------
@@ -629,6 +1000,10 @@ export async function runSweep(options = {}) {
   try {
     mkdirSync(path.join(outputDir, "mail-out"), { recursive: true });
     clearMailOut();
+    // Pre-boot window: no JVM holds the H2 file yet. Reconciliation MUST
+    // apply — measuring against polluted fixtures is worse than not running,
+    // so any failure aborts the sweep loudly.
+    reconcileLegacyFixturesPreboot();
     patchLegacySmtpConf();
     // The legacy instance must be restarted to pick up the patched smtp conf.
     await stopLegacy();
@@ -654,6 +1029,14 @@ export async function runSweep(options = {}) {
       }
       report.dbProjection = { skipped: true, reason: [...infraErrors] };
       return report;
+    }
+
+    // Align fixtures before scenarios: empty seeded repos starve PR flows and
+    // asymmetric label seeds poison the unfiltered label projection.
+    try {
+      await alignParityFixtures({ legacyUrl: options.legacyUrl ?? process.env.YONA_LEGACY_URL ?? "http://127.0.0.1:9000" });
+    } catch (error) {
+      infraErrors.push(`fixture alignment: ${error.message}`);
     }
 
     browserHandle = await launchBrowserHandle();

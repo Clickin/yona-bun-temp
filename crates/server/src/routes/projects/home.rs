@@ -281,7 +281,12 @@ async fn rest_project_home_history(
         .await
         .map_err(internal_error)?
     {
-        let repo_path = yoram_vcs::repository_path(&service.data_root, project.id);
+        let repo_path = yoram_vcs::repository_path(
+            &service.data_root,
+            &project.owner_name,
+            &project.project_name,
+        )
+        .map_err(internal_error)?;
         for commit in
             yoram_vcs::read_project_history_commits(&repo_path, 10).map_err(code_browser_error)?
         {
@@ -348,7 +353,12 @@ async fn rest_project_readme_file(
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("project not found"))?;
-    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let repo_path = yoram_vcs::repository_path(
+        &service.data_root,
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+    )
+    .map_err(internal_error)?;
     let mut readme = project_readme_file_from_git(
         &repo_path,
         &service.base_path,

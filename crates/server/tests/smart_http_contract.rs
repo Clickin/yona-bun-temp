@@ -268,10 +268,10 @@ async fn run_git_blocking(args: Vec<String>, cwd: Option<std::path::PathBuf>) {
     .expect("git task");
 }
 
-fn seed_bare_repository(yona_data: &Path, project_id: i64) {
-    let repo_root = yona_data.join("repo");
+fn seed_bare_repository(yona_data: &Path, owner: &str, project: &str) {
+    let repo_root = yona_data.join("repo").join("git").join(owner);
     fs::create_dir_all(&repo_root).expect("repo root");
-    let bare_repo = repo_root.join(format!("{project_id}.git"));
+    let bare_repo = repo_root.join(format!("{project}.git"));
     let work = tempdir().expect("work repo");
 
     run_git(&["init", "--bare", bare_repo.to_str().unwrap()], None);
@@ -344,7 +344,7 @@ async fn smart_http_advertises_public_upload_pack_for_clone_url() {
         .await
         .unwrap()
         .expect("project");
-    seed_bare_repository(data_dir.path(), project.id);
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
 
     let (status, headers, body) = response_bytes(
         direct_request(
@@ -382,7 +382,7 @@ async fn smart_http_rejects_getanyfile_and_challenges_anonymous_push() {
         .await
         .unwrap()
         .expect("project");
-    seed_bare_repository(data_dir.path(), project.id);
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
 
     let (status, _, body) = response_bytes(
         direct_request(
@@ -437,7 +437,7 @@ async fn smart_http_allows_basic_member_write_advertisement_and_rejects_outsider
     repo.add_project_membership(project.id, member_id, "member")
         .await
         .unwrap();
-    seed_bare_repository(data_dir.path(), project.id);
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
 
     let (status, _, _) = response_bytes(
         direct_request(
@@ -512,7 +512,7 @@ async fn smart_http_basic_auth_routes_ldap_and_preserves_local_fallback_and_toke
         .reset_api_token_for_user(member_id)
         .await
         .expect("member api token");
-    seed_bare_repository(data_dir.path(), project.id);
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
 
     let (status, _, body) = response_bytes(
         direct_request(
@@ -613,13 +613,14 @@ async fn smart_http_basic_auth_uses_injected_confirmation_config_without_env_mut
             project_name: "projectYobi".to_string(),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .expect("create project");
     repo.add_project_membership(project.id, member.id, "member")
         .await
         .unwrap();
-    seed_bare_repository(data_dir.path(), project.id);
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
 
     let (status, headers, body) = response_bytes(
         direct_request(
@@ -661,7 +662,7 @@ async fn smart_http_receive_pack_rejects_oversized_content_length_before_git_exe
     repo.add_project_membership(project.id, member_id, "member")
         .await
         .unwrap();
-    seed_bare_repository(data_dir.path(), project.id);
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
 
     let (status, _, body) = response_bytes(
         direct_request_with_body(
@@ -704,7 +705,7 @@ async fn smart_http_supports_real_git_clone_and_authenticated_push() {
     repo.add_project_membership(project.id, member_id, "member")
         .await
         .unwrap();
-    seed_bare_repository(data_dir.path(), project.id);
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
 
     let (base_url, shutdown) = spawn_app_server(app).await;
     let client_parent = tempdir().expect("client parent");
@@ -765,7 +766,9 @@ async fn smart_http_supports_real_git_clone_and_authenticated_push() {
     let bare_repo = data_dir
         .path()
         .join("repo")
-        .join(format!("{}.git", project.id));
+        .join("git")
+        .join(&project.owner_name)
+        .join(format!("{}.git", project.project_name));
     let pushed_head = git_stdout(&["rev-parse", "HEAD"], Some(&clone_path));
     let server_head = git_stdout(
         &[
@@ -820,7 +823,7 @@ async fn smart_http_push_records_legacy_post_receive_side_effects() {
     })
     .await
     .unwrap();
-    seed_bare_repository(data_dir.path(), project.id);
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
 
     let (base_url, shutdown) = spawn_app_server(app).await;
     let client_parent = tempdir().expect("client parent");
@@ -944,7 +947,7 @@ async fn smart_http_push_records_pull_request_commit_changed_side_effects() {
     })
     .await
     .unwrap();
-    seed_bare_repository(data_dir.path(), project.id);
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
     let pull_request = match repo
         .create_pull_request(CreatePullRequestInput {
             actor_display_name: "Owner".to_string(),

@@ -13,7 +13,8 @@ use std::collections::{HashMap, HashSet};
 use super::utils::organization_issue_list_item_to_api;
 use super::utils::{
     accepts_legacy_json, base_path_href, format_project_date_label, gravatar_url,
-    legacy_content_update_body_from_value, legacy_external_api_auth_error_response,
+    legacy_content_modified_by_others, legacy_content_update_body_from_value,
+    legacy_external_api_auth_error_response, legacy_user_avatar_url,
     legacy_external_api_token_from_headers, legacy_external_attachment_result,
     legacy_external_authenticated_user_id, legacy_external_post_author,
     legacy_external_temporary_upload_file_ids, legacy_issue_comment_create_body_from_value,
@@ -854,28 +855,35 @@ async fn project_issue_template_markdown(
     project: &persistence::ProjectRecord,
 ) -> String {
     let data_root = service.data_root.clone();
-    let project_id = project.id;
     let is_subversion = project.vcs.eq_ignore_ascii_case("subversion");
+    let owner_name = project.owner_name.clone();
+    let project_name = project.project_name.clone();
     tokio::task::spawn_blocking(move || {
         let contents = if is_subversion {
-            let repository_path = yoram_vcs::svn_repository_path(&data_root, project_id);
-            yoram_vcs::svn_cat_file_bounded(
-                &repository_path,
-                None,
-                "ISSUE_TEMPLATE.md",
-                yoram_vcs::MAX_ISSUE_TEMPLATE_BYTES,
-            )
-            .ok()
+            yoram_vcs::svn_repository_path(&data_root, &owner_name, &project_name)
+                .ok()
+                .and_then(|repository_path| {
+                    yoram_vcs::svn_cat_file_bounded(
+                        &repository_path,
+                        None,
+                        "ISSUE_TEMPLATE.md",
+                        yoram_vcs::MAX_ISSUE_TEMPLATE_BYTES,
+                    )
+                    .ok()
+                })
         } else {
-            let repository_path = yoram_vcs::repository_path(&data_root, project_id);
-            yoram_vcs::read_file_bytes_bounded(
-                &repository_path,
-                "HEAD",
-                "ISSUE_TEMPLATE.md",
-                yoram_vcs::MAX_ISSUE_TEMPLATE_BYTES,
-            )
-            .ok()
-            .map(|file| file.bytes)
+            yoram_vcs::repository_path(&data_root, &owner_name, &project_name)
+                .ok()
+                .and_then(|repository_path| {
+                    yoram_vcs::read_file_bytes_bounded(
+                        &repository_path,
+                        "HEAD",
+                        "ISSUE_TEMPLATE.md",
+                        yoram_vcs::MAX_ISSUE_TEMPLATE_BYTES,
+                    )
+                    .ok()
+                    .map(|file| file.bytes)
+                })
         };
         contents
             .as_deref()
@@ -2071,6 +2079,7 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
     let legacy_issue_comment_update_service = service.clone();
     let issue_comment_create_service = service.clone();
     let issue_comment_update_service = service.clone();
+    let issue_comment_patch_service = service.clone();
     let issue_comment_delete_service = service.clone();
     let issue_vote_service = service.clone();
     let issue_unvote_service = service.clone();
@@ -2455,7 +2464,28 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
                         .await
                     }
                 },
-            ),
+            )
+            .patch({
+                let service = issue_comment_patch_service.clone();
+                move |headers: HeaderMap,
+                      Path((owner, project, number, comment_id)): Path<(
+                    String,
+                    String,
+                    i64,
+                    i64,
+                )>,
+                      Json(body): Json<serde_json::Value>| {
+                    let service = service.clone();
+                    async move {
+                        // Legacy PATCH on this path routes to IssueApi.updateIssueComment
+                        // (JSON {content, original}, 409 "Already modified by someone.").
+                        legacy_external_update_issue_comment(
+                            headers, owner, project, number, comment_id, body, service,
+                        )
+                        .await
+                    }
+                }
+            }),
         )
         .route(
             "/{owner}/{project}/issue/{number}/comment/{comment_id}/delete",

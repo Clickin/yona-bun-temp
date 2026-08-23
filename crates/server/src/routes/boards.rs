@@ -15,15 +15,14 @@ use crate::{
     dispatch_posting_comment_webhooks, dispatch_posting_webhooks, form_value, gravatar_url,
     headers_with_form_csrf, internal_error, markdown_commit_references_for_project,
     markdown_issue_references_for_project, markdown_mention_references, normalize_identifier,
-    optional_i64_string, parse_rest_query_i64,
-    parse_rest_query_u32, persistence, project_resource_create_allowed, project_update_allowed,
-    redirect_to, require_authenticated_user, require_project_read, require_project_resource_create,
+    optional_i64_string, parse_rest_query_i64, parse_rest_query_u32, persistence,
+    project_resource_create_allowed, project_update_allowed, redirect_to,
+    require_authenticated_user, require_project_read, require_project_resource_create,
     require_session, require_valid_csrf, rest_board_label_from_record,
     rest_issue_reference_metadata_from_resolved, rest_mention_reference_metadata_from_resolved,
     visible_projects_for_organization, ConnectError, MarkdownCommitReference,
     MarkdownIssueReference, MarkdownMentionReference, PilotBackend, PilotRepository,
-    PilotServiceImpl,
-    ProjectCreatableResource, RestBoardLabel, RestIssueReferenceMetadata,
+    PilotServiceImpl, ProjectCreatableResource, RestBoardLabel, RestIssueReferenceMetadata,
     RestMentionReferenceMetadata, RestRouteError,
 };
 
@@ -1244,6 +1243,13 @@ async fn direct_update_posting_comment(
     form: HashMap<String, String>,
     service: PilotServiceImpl,
 ) -> Response {
+    // Legacy BoardApp.updateComment delegates to newComment and binds the
+    // target comment from the edit form's hidden `id` field (RouteUtil.getUrl
+    // then anchors the 303 at the saved comment); the path arg is ignored.
+    let comment_id = form
+        .get("id")
+        .and_then(|value| value.trim().parse::<i64>().ok())
+        .unwrap_or(comment_id);
     let base_path = service.base_path.clone();
     match rest_update_posting_comment(
         headers_with_form_csrf(headers, &form),
@@ -2285,7 +2291,13 @@ fn sync_readme_posting_to_git(
     if !authorization.project.vcs.eq_ignore_ascii_case("GIT") {
         return Ok(());
     }
-    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let repo_path = yoram_vcs::repository_path(
+        &service.data_root,
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+    )
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
     if !repo_path.exists() {
         return Ok(());
     }
@@ -2311,7 +2323,12 @@ fn rest_post_online_commit_options(
     if !authorization.project.vcs.eq_ignore_ascii_case("GIT") {
         return Ok(RestPostOnlineCommitOptions::default());
     }
-    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let repo_path = yoram_vcs::repository_path(
+        &service.data_root,
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+    )
+    .map_err(internal_error)?;
     if query.readme {
         let prepared_body_markdown =
             match yoram_vcs::read_code_browser(&repo_path, None, "README.md") {
@@ -2405,7 +2422,13 @@ fn create_online_commit_from_posting_form(
             "online code editing requires a file path",
         ));
     }
-    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let repo_path = yoram_vcs::repository_path(
+        &service.data_root,
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+    )
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
     let branch = if input.branch.trim().is_empty() {
         None
     } else {

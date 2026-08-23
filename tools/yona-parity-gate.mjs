@@ -36,6 +36,9 @@ const NON_IMPLEMENTATION_PREFIXES = [
   "reports/",
   "reference/spikes/",
   "scripts/",
+  // Static legacy-data snapshots (e.g. fixtures/legacy-yona-1.16) consumed by
+  // release-gate tooling; test/reference data, not product implementation surface.
+  "fixtures/",
   "crates/protocol/src/generated/",
   "crates/server/src/generated/",
   "frontend/src/gen/",

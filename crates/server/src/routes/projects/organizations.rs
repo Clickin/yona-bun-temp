@@ -206,15 +206,48 @@ pub(crate) async fn organization_update(
         return Err(ConnectError::already_exists("organization.name.duplicate"));
     }
 
-    let updated = repository
+    let renaming = normalize_identifier(&request.current_organization_name)
+        != normalize_identifier(&request.organization_name);
+    let mut storage_rename = None;
+    if renaming {
+        let owned_projects = repository
+            .list_projects_for_organization(authorization.organization.id)
+            .await
+            .map_err(internal_error)?;
+        storage_rename = Some(
+            crate::routes::projects::vcs::OrganizationStorageRename::begin(
+                service,
+                &owned_projects,
+                request.current_organization_name.trim(),
+                request.organization_name.trim(),
+            )
+            .await
+            .map_err(internal_error)?,
+        );
+    }
+
+    let update_result = repository
         .update_organization(persistence::UpdateOrganizationInput {
             current_organization_name: request.current_organization_name.trim().to_string(),
             description: Some(request.description.trim().to_string()),
             organization_name: request.organization_name.trim().to_string(),
         })
-        .await
-        .map_err(internal_error)?
-        .ok_or_else(|| ConnectError::not_found("organization not found"))?;
+        .await;
+    let updated = match (storage_rename, update_result) {
+        (Some(rename), Ok(Some(record))) => {
+            rename.commit();
+            record
+        }
+        (rename, outcome) => {
+            // Dropping an uncommitted rename restores the directory names.
+            drop(rename);
+            match outcome {
+                Ok(Some(record)) => record,
+                Ok(None) => return Err(ConnectError::not_found("organization not found")),
+                Err(error) => return Err(internal_error(error)),
+            }
+        }
+    };
     Ok((
         organization_detail_with_logo_from_record(
             repository,

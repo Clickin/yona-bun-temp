@@ -4,7 +4,7 @@
 // Domain module contract (see scenarios/index.mjs).
 import { translateLegacy, translateYoram } from "../adapters.mjs";
 import { diffSkeletons, normalizeApiValue } from "../diff.mjs";
-import { violation } from "../report.mjs";
+import { HarnessError, violation } from "../report.mjs";
 
 export const scenarios = [
   {
@@ -230,6 +230,7 @@ export const scenarios = [
     title: "edit/put/patch comment, comment votes, delete comment (direct + compat), delete issue",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "create-issue", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "create-issue-comment", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "edit-comment", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "put-issue-comment", params: { owner: "admin", project: "sample" } },
@@ -400,9 +401,36 @@ function compatToRest(path) {
     .replace(/\/share(?=\/|\?|$)/u, "/sharers");
 }
 
+
+// Avatar URLs are environment-dependent: legacy serves /assets fallbacks when
+// its ICMP reachability probe fails while yoram emits live gravatar URLs for
+// the same email hash. Both are legacy-legal outcomes of the same code path,
+// so exact URL equality is not measurable across environments.
+const AVATAR_URL_PATTERN = /^(https?:\/\/[^"']*gravatar\.com\/.*|\/assets\/images\/default-avatar[^"']*)$/iu;
+
+function normalizeAvatars(value) {
+  const walk = (node) => {
+    if (Array.isArray(node)) return node.map(walk);
+    if (node && typeof node === "object") {
+      const out = {};
+      for (const [key, val] of Object.entries(node)) {
+        out[key] =
+          key === "avatarUrl" && typeof val === "string" && AVATAR_URL_PATTERN.test(val)
+            ? "<avatar>"
+            : walk(val);
+      }
+      return out;
+    }
+    return node;
+  };
+  return walk(value);
+}
+
 // Per-side issue DB pk keyed watch/favorite resource param.
+// Legacy models issues as issue_post resources for watch (ResourceType has no
+// plain "issue" value; WatchApp.resource binding 400s on anything else).
 function watchTranslation(method, route) {
-  return (step, v) => ({ method, path: `${route}?resource.type=issue&resource.id=${v.issuePk}` });
+  return (step, v) => ({ method, path: `${route}?resource.type=issue_post&resource.id=${v.issuePk}` });
 }
 const favoriteLegacy = (step, v) => ({ method: "POST", path: `/-_-api/v1/favoriteIssues/${v.issuePk}` });
 const favoriteYoram = (step, v) => ({ method: "POST", path: `/api/v1/user/favorites/issues/${v.issuePk}` });
@@ -439,12 +467,27 @@ const editIssueYoram = (step, v) => ({
 async function mutationPair(ctx, legacyBuild, yoramBuild, extraVars = {}) {
   const { state, entry, helpers } = ctx;
   const extra = typeof extraVars === "function" ? extraVars(ctx.resolved, ctx.suffix) : extraVars;
-  const vars = { ...ctx.resolved, ...state, ...extra };
-  const legacyTranslation = legacyBuild(ctx.step, vars);
-  const yoramTranslation = yoramBuild(ctx.step, vars);
+  // Per-side id injection: sweep-created entities get DIFFERENT numbers/pks
+  // per side, so each builder sees its own side's ids under the shared
+  // variable names (issueNumber/issuePk/commentId/labelId/categoryId).
+  const base = { ...ctx.resolved, ...state, ...extra };
+  const sideVars = (side) => ({
+    ...base,
+    issueNumber: state[`issueNumber${side}`],
+    issuePk: state[`issuePk${side}`],
+    commentId: state[`commentId${side}`],
+    labelId: state[`labelId${side}`],
+    categoryId: state[`categoryId${side}`],
+  });
+  const legacyTranslation = legacyBuild(ctx.step, sideVars("Legacy"));
+  const yoramTranslation = yoramBuild(ctx.step, sideVars("Yoram"));
   const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
   const behaviorId = entry.behaviorIds[0] ?? null;
-  if (legacyResult.status >= 400 || yoramResult.status >= 400) {
+  // Agreed failures are parity (same rule as pairLenient); only success/failure
+  // disagreement or differing failure statuses are violations.
+  const agreedFailure =
+    legacyResult.status >= 400 && yoramResult.status >= 400 && legacyResult.status === yoramResult.status;
+  if ((legacyResult.status >= 400 || yoramResult.status >= 400) && !agreedFailure) {
     entry.violations.push(
       violation({
         route: legacyTranslation.path,
@@ -468,11 +511,15 @@ async function mutationPair(ctx, legacyBuild, yoramBuild, extraVars = {}) {
   return { legacyResult, yoramResult };
 }
 
-// Graceful degradation: skip an id-dependent step when a prior discovery step
-// could not resolve the ids on both sides (already recorded in entry.errors).
+// Fail-fast id guard: an id-dependent step never runs against an unresolved
+// entity. Missing ids throw HarnessError -> scenario marked HARNESS_ERROR,
+// dependent actions skipped by the runner (never /issue/null/*).
 function whenIds(keys) {
   return async (ctx, run) => {
-    if (!keys.every((key) => Number(ctx.state[key]) > 0)) return;
+    const missing = keys.filter((key) => !(Number(ctx.state[key]) > 0));
+    if (missing.length > 0) {
+      throw new HarnessError(`${ctx.step.action}: unresolved id(s) ${missing.join(", ")} — mutation skipped`);
+    }
     await run(ctx);
   };
 }
@@ -500,6 +547,13 @@ function pairMutation(legacyBuild, yoramBuild, followUp = null, guard = null, va
 
 // Depth-first search for the numeric `id` of the object named `name`.
 function findIdByName(node, name) {
+  const names = new Set([name]);
+  if (typeof node === "object" && node !== null && !Array.isArray(node)) {
+    for (const key of ["name", "labelName", "categoryName"]) {
+      if (typeof node[key] === "string") names.add(node[key]);
+    }
+  }
+  const matches = (candidate) => typeof candidate === "string" && names.has(candidate);
   if (Array.isArray(node)) {
     for (const child of node) {
       const found = findIdByName(child, name);
@@ -508,7 +562,9 @@ function findIdByName(node, name) {
     return null;
   }
   if (node && typeof node === "object") {
-    if (node.name === name && Number(node.id) > 0) return Number(node.id);
+    for (const key of ["name", "labelName", "categoryName"]) {
+      if (matches(node[key]) && Number(node.id) > 0) return Number(node.id);
+    }
     for (const value of Object.values(node)) {
       const found = findIdByName(value, name);
       if (found !== null) return found;
@@ -590,7 +646,9 @@ export const actionDefinitions = {
 
       state.issueNumberLegacy = helpers.issueNumberFromLocation(legacyResult?.location ?? "");
       const yoramJson = yoramResult?.json ?? {};
-      state.issueNumberYoram = Number(yoramJson.number ?? yoramJson.issue?.number ?? 0) || null;
+      // REST issue payloads carry `issueNumber`; older shapes kept `number`.
+      state.issueNumberYoram = Number(yoramJson.number ?? yoramJson.issueNumber ?? yoramJson.issue?.number ?? 0) || null;
+
       const semantic = {
         legacy: { title: legacyTranslation.form.title, body: legacyTranslation.form.body },
         yoram: {
@@ -614,13 +672,14 @@ export const actionDefinitions = {
         );
       }
 
-      if (state.issueNumberLegacy && state.issueNumberYoram) {
-        await helpers.renderDomTarget(ctx, {
-          legacy: `${options.legacyUrl}/${step.params.owner}/${step.params.project}/issue/${state.issueNumberLegacy}`,
-          yoram: `${yoramBaseUrl}/${step.params.owner}/${step.params.project}/issue/${state.issueNumberYoram}`,
-          spa: true,
-        });
+      if (!state.issueNumberLegacy || !state.issueNumberYoram) {
+        throw new HarnessError(`create-issue: issue id unresolved (legacy=${state.issueNumberLegacy} yoram=${state.issueNumberYoram})`);
       }
+      await helpers.renderDomTarget(ctx, {
+        legacy: `${options.legacyUrl}/${step.params.owner}/${step.params.project}/issue/${state.issueNumberLegacy}`,
+        yoram: `${yoramBaseUrl}/${step.params.owner}/${step.params.project}/issue/${state.issueNumberYoram}`,
+        spa: true,
+      });
     },
   },
 
@@ -629,22 +688,25 @@ export const actionDefinitions = {
       return {
         method: "POST",
         path: `/${step.params.owner}/${step.params.project}/issue/${resolved.issueNumber}/comments`,
-        form: { body: resolved.body },
+        // legacy IssueApp.newComment binds the required field `contents`
+        form: { contents: resolved.body },
       };
     },
     translateYoram(step, resolved) {
       return {
         method: "POST",
         path: `/api/v1/projects/${step.params.owner}/${step.params.project}/issues/${resolved.issueNumber}/comments`,
-        json: { body: resolved.body },
-        pagePath: null,
+        json: { contentsMarkdown: resolved.body },
       };
     },
     async handler(ctx) {
       const { step, resolved, state, options, yoramBaseUrl, helpers } = ctx;
+      if (!state.issueNumberLegacy || !state.issueNumberYoram) {
+        throw new HarnessError(`create-issue-comment: issue id unresolved (legacy=${state.issueNumberLegacy} yoram=${state.issueNumberYoram}) — comment step skipped`);
+      }
       const legacyTranslation = translateLegacy(step, { ...resolved, issueNumber: state.issueNumberLegacy });
       const yoramTranslation = translateYoram(step, { ...resolved, issueNumber: state.issueNumberYoram });
-      await helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
+      const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
 
       // Capture the created comment id per side (legacy redirect anchor,
       // Yoram final-page anchor) so later edit/delete/vote steps can chain.
@@ -653,7 +715,9 @@ export const actionDefinitions = {
         return match ? Number(match[1]) : null;
       };
       state.commentIdLegacy = anchor(legacyResult?.location) ?? state.commentIdLegacy;
-      state.commentIdYoram = anchor(yoramResult?.body) ?? state.commentIdYoram;
+      // Yoram's comment POST returns the issue JSON; the new comment is last.
+      state.commentIdYoram =
+        yoramResult?.json?.comments?.at(-1)?.id ?? anchor(yoramResult?.body) ?? state.commentIdYoram;
       if (state.issueNumberLegacy && state.issueNumberYoram) {
         await helpers.renderDomTarget(ctx, {
           legacy: `${options.legacyUrl}/${step.params.owner}/${step.params.project}/issue/${state.issueNumberLegacy}`,
@@ -685,6 +749,9 @@ export const actionDefinitions = {
           skeletons[side] = await helpers.raceTimeout(pages[side].evaluate(helpers.popoverExtract), `${side} popover extract`);
         } catch (error) {
           entry.errors.push(`browser ${side} (${step.action}) [${suffix}]: ${error.message}`);
+          entry.violations.push(
+            violation({ route: url, behaviorId: entry.behaviorIds[0] ?? null, kind: "infra", expected: "hover observable", actual: error.message }),
+          );
           skeletons[side] = null;
         }
       }
@@ -778,9 +845,16 @@ export const actionDefinitions = {
         // non-JSON legacy body: status parity is all we can compare
       }
       if (legacyJson === null || yoramResult.json === null) return;
+      // Candidate arrays are order-insensitive semantically; sort by stable
+      // serialization before stringifying, and normalize environment-dependent
+      // avatar URLs.
+      const stable = (value) =>
+        JSON.stringify(normalizeAvatars(value), (key, val) =>
+          Array.isArray(val) ? [...val].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))) : val,
+        );
       const expected = normalizeApiValue(legacyJson);
       const actual = normalizeApiValue(yoramResult.json);
-      if (JSON.stringify(expected) !== JSON.stringify(actual)) {
+      if (stable(expected) !== stable(actual)) {
         entry.violations.push(
           violation({ route: step.params.api, behaviorId: entry.behaviorIds[0] ?? null, kind: "api", expected, actual }),
         );
@@ -800,6 +874,7 @@ export const actionDefinitions = {
       const { step, suffix, entry, legacySession, yoramSession, legacyPage, yoramPage, options, yoramBaseUrl, helpers } = ctx;
       const { owner, project, number } = step.params;
       const selectors = step.params.selectors ?? [
+        '[data-owner="project-issue-detail-comment-action-edit"]',
         '[data-toggle="comment-edit"]',
         ".comment-actions button[aria-label*='edit' i]",
         "button[data-testid='comment-edit-button']",
@@ -809,25 +884,49 @@ export const actionDefinitions = {
       const revealed = {};
       for (const side of ["legacy", "yoram"]) {
         const url = `${side === "legacy" ? options.legacyUrl : yoramBaseUrl}/${owner}/${project}/issue/${number}`;
-        try {
+        // ponytail: one retry — a transient CDP timeout is infra noise, a
+        // persistent miss still lands as INFRA_ERROR.
+        let attempt = 0;
+        while (attempt < 2 && revealed[side] === undefined) {
+          attempt += 1;
+          try {
           await helpers.setCookiesFromHeader(pages[side], url, sessions[side].cookies);
           await pages[side].goto(url, { waitUntil: "load", timeout: 30_000 });
-          const handle = await pages[side].evaluateHandle((candidates) => {
-            for (const selector of candidates) {
-              const el = [...document.querySelectorAll(selector)].find((node) => node.getClientRects().length > 0);
-              if (el) return el;
-            }
-            return null;
-          }, selectors);
-          const element = handle.asElement();
+          // Comments render client-side on yoram: poll for the trigger instead
+          // of failing on the first paint race.
+          let element = null;
+          for (let attempt = 0; attempt < 12 && !element; attempt += 1) {
+            const handle = await pages[side].evaluateHandle((candidates) => {
+              for (const selector of candidates) {
+                const el = [...document.querySelectorAll(selector)].find((node) => node.getClientRects().length > 0);
+                if (el) return el;
+              }
+              return null;
+            }, selectors);
+            element = handle.asElement();
+            if (!element) await new Promise((resolve) => setTimeout(resolve, 250));
+          }
           if (!element) throw new Error(`no comment-edit trigger matched: ${selectors.join(", ")}`);
           await element.click();
-          await new Promise((resolve) => setTimeout(resolve, 600));
-          revealed[side] = await pages[side].evaluate(COMMENT_EDIT_EXTRACT);
+          // Deterministic wait: poll the revealed form instead of a timing
+          // sleep; bounded so a missing reveal is a clean selector miss.
+          const deadline = Date.now() + 2_000;
+          do {
+            revealed[side] = await pages[side].evaluate(COMMENT_EDIT_EXTRACT);
+            if (revealed[side].length > 0) break;
+            await new Promise((resolve) => setTimeout(resolve, 100));
+          } while (Date.now() < deadline);
         } catch (error) {
-          entry.errors.push(`browser ${side} (${step.action}) [${suffix}]: ${error.message}`);
-          revealed[side] = null;
+          if (attempt >= 2) {
+            entry.errors.push(`browser ${side} (${step.action}) [${suffix}]: ${error.message}`);
+            entry.violations.push(
+              violation({ route: url, behaviorId: entry.behaviorIds[0] ?? null, kind: "infra", expected: "comment-edit trigger observable", actual: error.message }),
+            );
+            revealed[side] = null;
+          }
         }
+        }
+        if (revealed[side] === undefined) revealed[side] = null;
       }
       if (revealed.legacy === null || revealed.yoram === null) return;
       const route = `/${owner}/${project}/issue/${number} comment-edit-reveal`;
@@ -872,20 +971,27 @@ export const actionDefinitions = {
       const { step, state, entry, suffix, helpers } = ctx;
       const { legacyResult, yoramResult } = await helpers.requestBoth(
         ctx,
-        translateLegacy(step, { issueNumber: state.issueNumberLegacy }),
-        translateYoram(step, { issueNumber: state.issueNumberYoram }),
+        this.translateLegacy(step, { issueNumber: state.issueNumberLegacy }),
+        this.translateYoram(step, { issueNumber: state.issueNumberYoram }),
       );
-      // Legacy exposes the pk through the watch form's hidden resource.id input.
-      const formMatch = /resource\.id"\s+value="(\d+)/u.exec(legacyResult.body ?? "");
+      // Legacy exposes the pk through the mass-update form's hidden
+      // issues[0].id input; fall back to the watch-form resource id.
+      const body = legacyResult.body ?? "";
+      const formMatch =
+        /name="issues\[0\]\.id"\s+value="(\d+)"/u.exec(body) ??
+        /issues\[0\]\.id"[^>]*value="(\d+)"/u.exec(body) ??
+        /resource\.type=issue[^0-9]*resource\.id=(\d+)/u.exec(body);
       state.issuePkLegacy = formMatch ? Number(formMatch[1]) : null;
       const json = yoramResult.json ?? {};
-      const candidate = Number(json.id ?? json.issue?.id ?? 0);
+      // REST issue payloads expose the DB pk as `issueId`.
+      const candidate = Number(json.id ?? json.issueId ?? json.issue?.id ?? 0);
       state.issuePkYoram = candidate > 0 ? candidate : null;
       if (!state.issuePkLegacy || !state.issuePkYoram) {
-        entry.errors.push(`issue pk unresolved (${step.action}) [${suffix}]: legacy=${state.issuePkLegacy} yoram=${state.issuePkYoram}`);
+        throw new HarnessError(`resolve-issue-pk: issue pk unresolved (legacy=${state.issuePkLegacy} yoram=${state.issuePkYoram})`);
       }
     },
   },
+
 
   // Legacy POST /issue/:n/edit (full form bind) vs Yoram compat PUT issue.
   "edit-issue": pairMutation(editIssueLegacy, editIssueYoram, async (ctx) => {
@@ -896,16 +1002,18 @@ export const actionDefinitions = {
         spa: true,
       });
     }
-  }),
+  }, whenIds(["issueNumberLegacy", "issueNumberYoram"])),
 
   "patch-issue-content": pairMutation(
     (step, v) => ({ method: "PATCH", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/content`, json: { content: `${v.body} patched`, original: v.body } }),
     (step, v) => ({ method: "PATCH", path: `${yoramApiBase(step)}/issues/${v.issueNumber}/content/update`, json: { content: `${v.body} patched`, original: v.body } }),
+    null,
+    whenIds(["issueNumberLegacy", "issueNumberYoram"]),
   ),
 
   // Legacy mass-update form (cookie auth, keyed on DB pk) vs Yoram compat PATCH.
   "change-issue-state": pairMutation(
-    (step, v) => ({ method: "POST", path: `/${step.params.owner}/${step.params.project}/issues`, form: { "issues[0].id": String(v.issuePk ?? ""), state: "closed" } }),
+    (step, v) => ({ method: "POST", path: `/${step.params.owner}/${step.params.project}/issues`, form: { "issues[0].id": String(v.issuePk ?? ""), state: "CLOSED" } }),
     (step, v) => ({ method: "PATCH", path: `${yoramApiBase(step)}/issues/${v.issueNumber}`, json: { state: "closed" } }),
     null,
     whenIds(["issuePkLegacy", "issuePkYoram"]),
@@ -913,12 +1021,16 @@ export const actionDefinitions = {
 
   "update-issue-assignees": pairMutation(
     (step, v) => ({ method: "POST", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/assignees`, json: { assignees: [{ loginId: "admin" }] } }),
-    (step, v) => ({ method: "POST", path: `${yoramApiBase(step)}/issues/${v.issueNumber}/assignees`, json: { assignees: [{ loginId: "admin" }] } }),
+    (step, v) => ({ method: "POST", path: `${yoramApiBase(step)}/issues/${v.issueNumber}/assignees`, json: { assignees: ["admin"] } }),
+    null,
+    whenIds(["issueNumberLegacy", "issueNumberYoram"]),
   ),
 
   "delete-issue": pairMutation(
     (step, v) => ({ method: "DELETE", path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/delete` }),
     (step, v) => ({ method: "DELETE", path: `${spaRestBase(step)}/issues/${v.issueNumber}` }),
+    null,
+    whenIds(["issueNumberLegacy", "issueNumberYoram"]),
   ),
 
   // Failing-import probe: no real upstream repo is referenced, so both sides
@@ -928,26 +1040,62 @@ export const actionDefinitions = {
     (step, v) => ({ method: "POST", path: `${apiCompatBase(step)}/issues/imports`, json: { owner: "parity-sweep", repoName: `nonexistent-${v.title}`, token: "" } }),
   ),
 
-
   "edit-comment": pairMutation(
-    (step, v) => ({ method: "POST", path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/comments/${v.commentId}`, form: { body: `${v.body} edited` } }),
-    (step, v) => ({ method: "POST", path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/comments/${v.commentId}`, form: { body: `${v.body} edited` } }),
+    // Legacy's update form carries the hidden `id` field
+    // (common/commentUpdateForm.scala.html) — without it IssueApp re-routes
+    // through newComment and CREATES a new comment instead of updating.
+    (step, v) => ({ method: "POST", path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/comments/${v.commentId}`, form: { id: String(v.commentId), contents: `${v.body} edited` } }),
+    (step, v) => ({ method: "POST", path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/comments/${v.commentId}`, form: { id: String(v.commentId), contents: `${v.body} edited` } }),
     null,
     whenIds(["commentIdLegacy", "commentIdYoram"]),
   ),
 
+  // Optimistic concurrency chain modeled on IssueApi.updateIssueComment
+  // (yona-original IssueApi.java:588-617): each write carries the previously
+  // stored contents as `original`; a stale original yields 409 on BOTH sides.
   "put-issue-comment": pairMutation(
-    (step, v) => ({ method: "PUT", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/comments/${v.commentId}`, json: { body: `${v.body} put` } }),
-    (step, v) => ({ method: "PUT", path: `${yoramApiBase(step)}/issues/${v.issueNumber}/comments/${v.commentId}/update`, json: { body: `${v.body} put` } }),
+    (step, v) => ({ method: "PUT", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/comments/${v.commentId}`, json: { content: `${v.body} put`, original: `${v.body} edited` } }),
+    (step, v) => ({ method: "PUT", path: `${yoramApiBase(step)}/issues/${v.issueNumber}/comments/${v.commentId}/update`, json: { contentsMarkdown: `${v.body} put`, content: `${v.body} put`, original: `${v.body} edited` } }),
     null,
     whenIds(["commentIdLegacy", "commentIdYoram"]),
   ),
 
   "patch-issue-comment": pairMutation(
-    (step, v) => ({ method: "PATCH", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/comments/${v.commentId}`, json: { body: `${v.body} patched` } }),
-    (step, v) => ({ method: "PUT", path: `${yoramApiBase(step)}/issues/${v.issueNumber}/comments/${v.commentId}/update`, json: { body: `${v.body} patched` } }),
+    (step, v) => ({ method: "PATCH", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/comments/${v.commentId}`, json: { content: `${v.body} patched`, original: `${v.body} put` } }),
+    (step, v) => ({ method: "PUT", path: `${yoramApiBase(step)}/issues/${v.issueNumber}/comments/${v.commentId}/update`, json: { contentsMarkdown: `${v.body} patched`, content: `${v.body} patched`, original: `${v.body} put` } }),
     null,
-    whenIds(["commentIdLegacy", "commentIdYoram"]),
+    async (ctx, run) => {
+      if (!(Number(ctx.state.commentIdLegacy) > 0 && Number(ctx.state.commentIdYoram) > 0)) {
+        throw new HarnessError("patch-issue-comment: unresolved comment id(s)");
+      }
+      // Verify the legacy-side comment actually exists before mutating;
+      // otherwise the pair degrades into an UNVERIFIED mismatch.
+      // Verify the comment exists on EACH side using that side's own listing:
+      // legacy exposes comment anchors on the issue page; yoram exposes
+      // comments[].id on the REST issue payload.
+      const checks = [];
+      const legacyPage = await ctx.helpers.sendRaw(ctx, "legacy", {
+        method: "GET",
+        path: `/${ctx.step.params.owner}/${ctx.step.params.project}/issue/${ctx.state.issueNumberLegacy}`,
+      });
+      const legacyIds = new Set(
+        [...(legacyPage.body ?? "").matchAll(/comment-(\d+)/gu)].map((m) => Number(m[1])),
+      );
+      checks.push({ side: "legacy", id: ctx.state.commentIdLegacy, present: legacyIds.has(Number(ctx.state.commentIdLegacy)) });
+      const yoramIssue = await ctx.helpers.sendRaw(ctx, "yoram", {
+        method: "GET",
+        path: `${spaRestBase(ctx.step)}/issues/${ctx.state.issueNumberYoram}`,
+      });
+      const yoramIds = new Set((yoramIssue.json?.comments ?? []).map((c) => Number(c.id)));
+      checks.push({ side: "yoram", id: ctx.state.commentIdYoram, present: yoramIds.has(Number(ctx.state.commentIdYoram)) });
+      const missing = checks.filter((c) => !c.present);
+      if (missing.length > 0) {
+        throw new HarnessError(
+          `patch-issue-comment: comment absent on ${missing.map((c) => `${c.side}#${c.id}`).join(", ")} — pair skipped`,
+        );
+      }
+      await run(ctx);
+    },
   ),
 
   "delete-comment": pairMutation(
@@ -967,11 +1115,15 @@ export const actionDefinitions = {
   "vote-issue": pairMutation(
     (step, v) => ({ method: "POST", path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/vote` }),
     (step, v) => ({ method: "POST", path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/vote` }),
+    null,
+    whenIds(["issueNumberLegacy", "issueNumberYoram"]),
   ),
 
   "unvote-issue": pairMutation(
     (step, v) => ({ method: "POST", path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/unvote` }),
     (step, v) => ({ method: "POST", path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/unvote` }),
+    null,
+    whenIds(["issueNumberLegacy", "issueNumberYoram"]),
   ),
 
   "vote-comment": pairMutation(
@@ -1026,6 +1178,7 @@ export const actionDefinitions = {
     async (ctx) => {
       await mutationPair(ctx, downvoteLegacy, downvoteYoram);
     },
+    whenIds(["issueNumberLegacy", "issueNumberYoram"]),
   ),
 
   "update-sharer": pairMutation(
@@ -1038,16 +1191,21 @@ export const actionDefinitions = {
         (step, v) => sharerTranslation(yoramApiBase, "sharers/toggle", step, v, "remove"),
       );
     },
+    whenIds(["issueNumberLegacy", "issueNumberYoram"]),
   ),
 
   "comment-noti-receivers": pairMutation(
     (step, v) => ({ method: "POST", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/commentNotiReceivers`, json: { comment: v.body, parentCommentId: "" } }),
     (step, v) => ({ method: "POST", path: `${yoramApiBase(step)}/issues/${v.issueNumber}/comments/notification-receivers`, json: { comment: v.body, parentCommentId: "" } }),
+    null,
+    whenIds(["issueNumberLegacy", "issueNumberYoram"]),
   ),
 
   "detect-issue-change": pairMutation(
     (step, v) => ({ method: "POST", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/detectChange`, json: { issueBodyChecksum: "differential-sweep-checksum", numOfComments: 0 } }),
     (step, v) => ({ method: "POST", path: `${yoramApiBase(step)}/issues/${v.issueNumber}/detect-change`, json: { issueBodyChecksum: "differential-sweep-checksum", numOfComments: 0 } }),
+    null,
+    whenIds(["issueNumberLegacy", "issueNumberYoram"]),
   ),
 
   // Label CRUD. Created names embed the sweep suffix so discovery is exact and
@@ -1062,22 +1220,37 @@ export const actionDefinitions = {
 
   "issue-label-ids": {
     translateLegacy(step) {
-      return { method: "GET", path: ownerPath(step, "/issue/label/categories") };
+      return { method: "GET", path: ownerPath(step, "/issue/labels") };
     },
     translateYoram(step) {
-      return { method: "GET", path: ownerPath(step, "/issue/label/categories") };
+      return { method: "GET", path: `${yoramApiBase(step)}/labels` };
     },
     async handler(ctx) {
       const { step, state, entry, suffix, helpers } = ctx;
-      const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, translateLegacy(step), translateYoram(step));
+      // Label ids must come from each side's own LABELS listing; the categories
+      // listing carries only categories, so ids resolved from it 404 later.
+      const { legacyResult, yoramResult } = await helpers.requestBoth(
+        ctx,
+        this.translateLegacy(step),
+        this.translateYoram(step),
+      );
       let legacyJson = null;
       try {
         legacyJson = JSON.parse(legacyResult.body || "null");
       } catch {
-        // non-JSON categories body: discovery falls through to the error below
+        // non-JSON labels body: discovery falls through to the error below
       }
-      state.categoryIdLegacy = findIdByName(legacyJson, `parity-cat-${suffix}`);
-      state.categoryIdYoram = findIdByName(yoramResult.json, `parity-cat-${suffix}`);
+      const cats = await helpers.requestBoth(
+        ctx,
+        { method: "GET", path: ownerPath(ctx.step, "/issue/label/categories") },
+        { method: "GET", path: ownerPath(ctx.step, "/issue/label/categories") },
+      );
+      let legacyCats = null;
+      try {
+        legacyCats = JSON.parse(cats.legacyResult.body || "null");
+      } catch {}
+      state.categoryIdLegacy = findIdByName(legacyCats, `parity-cat-${suffix}`);
+      state.categoryIdYoram = findIdByName(cats.yoramResult.json, `parity-cat-${suffix}`);
       state.labelIdLegacy = findIdByName(legacyJson, `parity-label-${suffix}`);
       state.labelIdYoram = findIdByName(yoramResult.json, `parity-label-${suffix}`);
       if (!state.labelIdLegacy && !state.labelIdYoram && !state.categoryIdLegacy && !state.categoryIdYoram) {
@@ -1158,9 +1331,11 @@ export const actionDefinitions = {
 
   // Markdown preview endpoint: legacy renders; a Yoram without the route is a
   // divergence finding, not an infra failure.
+  // Legacy MarkdownApp.render accepts JSON {body, breaks} and returns the raw
+  // rendered markup as the response body (MarkdownApp.java:28-37).
   "render-markdown": pairMutation(
-    (step, v) => ({ method: "POST", path: `/markdown/${step.params.owner}/${step.params.project}`, form: { body: v.body } }),
-    (step, v) => ({ method: "POST", path: `/markdown/${step.params.owner}/${step.params.project}`, form: { body: v.body } }),
+    (step, v) => ({ method: "POST", path: `/markdown/${step.params.owner}/${step.params.project}`, json: { body: v.body, breaks: false } }),
+    (step, v) => ({ method: "POST", path: `/markdown/${step.params.owner}/${step.params.project}`, json: { body: v.body, breaks: false } }),
   ),
 
   ...exportReadAction("migration-export-issues", (step) => `/${step.params.owner}/projects/${step.params.project}/issues`),

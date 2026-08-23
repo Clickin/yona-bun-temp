@@ -190,9 +190,10 @@ export const scenarios = [
   },
   {
     id: "R16-pr-review-points",
-    title: "add and remove a review point on the seeded pull request",
+    title: "add and remove a review point on a live pull request",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "create-pullrequest", params: { owner: "admin", project: "sample", fromBranch: "main", toBranch: "feature/ui" } },
       { actor: "admin", action: "review-pullrequest", params: { owner: "admin", project: "sample", prId: 1 } },
       { actor: "admin", action: "unreview-pullrequest", params: { owner: "admin", project: "sample", prId: 1 } },
     ],
@@ -354,7 +355,7 @@ const RAW_ACTIONS = [
 
 // --- mutation definitions (R13–R16) -----------------------------------------
 
-import { violation } from "../report.mjs";
+import { HarnessError, violation } from "../report.mjs";
 import { normalizeApiValue } from "../diff.mjs";
 
 function prSuffixTitle(ctx, mark = "") {
@@ -615,40 +616,43 @@ const PR_STATE_MUTATIONS = {
 };
 
 const REVIEW_MUTATIONS = {
-  // Targets the seeded pull request #1 (present on both sides); a review point
-  // is added and then removed again so the sweep leaves no reviewer residue.
+  // Targets the PR created earlier in this scenario (state ids preferred over
+  // the static param so parity never depends on seeded PR numbering); a review
+  // point is added and then removed again so no reviewer residue remains.
   "review-pullrequest": {
-    translateLegacy(step) {
-      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/pullRequest/${step.params.prId}/review` };
+    translateLegacy(step, resolved) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/pullRequest/${resolved.prId}/review` };
     },
-    translateYoram(step) {
-      return { method: "POST", path: `/api/v1/owners/${step.params.owner}/projects/${step.params.project}/pull-requests/${step.params.prId}/review` };
+    translateYoram(step, resolved) {
+      return { method: "POST", path: `/api/v1/owners/${step.params.owner}/projects/${step.params.project}/pull-requests/${resolved.prId}/review` };
     },
     async handler(ctx) {
-      const { step, helpers } = ctx;
-      const { legacyResult, yoramResult } = await helpers.requestBoth(
-        ctx,
-        translateLegacy(step, step.params),
-        translateYoram(step, step.params),
-      );
-      ensureOutcomeParity(ctx, `/${step.params.owner}/${step.params.project}/pullRequest/${step.params.prId}/review`, legacyResult, yoramResult);
+      const { step, state, helpers } = ctx;
+      if (!state.prNumberLegacy && !state.prNumberYoram) {
+        throw new HarnessError("review-pullrequest: no live pull request resolved in this scenario");
+      }
+      const legacyTranslation = translateLegacy(step, { prId: state.prNumberLegacy ?? step.params.prId });
+      const yoramTranslation = translateYoram(step, { prId: state.prNumberYoram ?? step.params.prId });
+      const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
+      ensureOutcomeParity(ctx, legacyTranslation.path, legacyResult, yoramResult);
     },
   },
   "unreview-pullrequest": {
-    translateLegacy(step) {
-      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/pullRequest/${step.params.prId}/unreview` };
+    translateLegacy(step, resolved) {
+      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/pullRequest/${resolved.prId}/unreview` };
     },
-    translateYoram(step) {
-      return { method: "POST", path: `/api/v1/owners/${step.params.owner}/projects/${step.params.project}/pull-requests/${step.params.prId}/unreview` };
+    translateYoram(step, resolved) {
+      return { method: "POST", path: `/api/v1/owners/${step.params.owner}/projects/${step.params.project}/pull-requests/${resolved.prId}/unreview` };
     },
     async handler(ctx) {
-      const { step, helpers } = ctx;
-      const { legacyResult, yoramResult } = await helpers.requestBoth(
-        ctx,
-        translateLegacy(step, step.params),
-        translateYoram(step, step.params),
-      );
-      ensureOutcomeParity(ctx, `/${step.params.owner}/${step.params.project}/pullRequest/${step.params.prId}/unreview`, legacyResult, yoramResult);
+      const { step, state, helpers } = ctx;
+      if (!state.prNumberLegacy && !state.prNumberYoram) {
+        throw new HarnessError("unreview-pullrequest: no live pull request resolved in this scenario");
+      }
+      const legacyTranslation = translateLegacy(step, { prId: state.prNumberLegacy ?? step.params.prId });
+      const yoramTranslation = translateYoram(step, { prId: state.prNumberYoram ?? step.params.prId });
+      const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
+      ensureOutcomeParity(ctx, legacyTranslation.path, legacyResult, yoramResult);
     },
   },
 };

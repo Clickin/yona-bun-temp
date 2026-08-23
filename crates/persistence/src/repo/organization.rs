@@ -291,25 +291,29 @@ impl AppRepositoryImpl<'_> {
         let mut active = organization::ActiveModel::from(current);
         active.name = Set(Some(input.organization_name.trim().to_string()));
         active.descr = Set(empty_to_none(input.description));
-        let updated = active.update(&self.db).await?;
+        let name_changed = normalize_identity(&previous_name)
+            != normalize_identity(input.organization_name.trim());
+        let (_write_guard, txn, txn_started_at) = self.begin_serialized_write().await?;
+        let updated = active.update(&txn).await?;
+        if name_changed {
+            let projects = project::Entity::find()
+                .filter(project::Column::OrganizationId.eq(Some(updated.id)))
+                .all(&txn)
+                .await?;
+            for row in projects {
+                let mut active_project = project::ActiveModel::from(row);
+                active_project.owner = Set(Some(input.organization_name.trim().to_string()));
+                let updated_project = active_project.update(&txn).await?;
+                self.sync_project_label_cache(&txn, &updated_project)
+                    .await?;
+            }
+        }
+        self.commit_serialized_write(txn, _write_guard, txn_started_at)
+            .await?;
+
         let updated_record = self
             .organization_record_from_model(updated.clone())
             .ok_or_else(|| DbErr::Custom("organization name missing after update".to_string()))?;
-
-        if normalize_identity(&previous_name)
-            != normalize_identity(&updated_record.organization_name)
-        {
-            let projects = project::Entity::find()
-                .filter(project::Column::OrganizationId.eq(Some(updated.id)))
-                .all(&self.db)
-                .await?;
-            for row in projects {
-                let mut active_project = project::ActiveModel::from(row.clone());
-                active_project.owner = Set(Some(updated_record.organization_name.clone()));
-                let updated_project = active_project.update(&self.db).await?;
-                self.sync_project_label_cache(&updated_project).await?;
-            }
-        }
 
         Ok(Some(updated_record))
     }

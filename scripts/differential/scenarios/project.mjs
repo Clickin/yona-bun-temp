@@ -2,7 +2,7 @@
 //
 // Domain module contract (see scenarios/index.mjs).
 import { translateLegacy, translateYoram } from "../adapters.mjs";
-import { violation } from "../report.mjs";
+import { HarnessError, violation } from "../report.mjs";
 
 export const scenarios = [
   {
@@ -470,7 +470,8 @@ function numberFrom(pattern, value) {
 }
 
 function idFromJson(json) {
-  return Number(json?.id ?? json?.milestone?.id ?? json?.comment?.id ?? json?.posting?.number ?? json?.number) || null;
+  // Post payloads key routes on `postNumber`; the DB `id` is not route-addressable.
+  return Number(json?.postNumber ?? json?.number ?? json?.milestone?.id ?? json?.comment?.id ?? json?.id) || null;
 }
 
 function findUserId(node, loginId) {
@@ -802,12 +803,27 @@ const MUTATION_ACTIONS = {
       const { step, state, suffix } = ctx;
       if (!state.commentL || !state.commentY) return;
       const plan = { body: `parity-comment-${suffix}-edited` };
-      await ctx.helpers.pairLenient(
+      // Legacy BoardApp.updateComment reuses newComment's PostingComment bind:
+      // the edit form carries the hidden `id` field, without which legacy
+      // CREATES a new comment instead of updating.
+      const legacyTranslation = {
+        ...this.translateLegacy(step, { ...plan, postNumber: state.postL, commentId: state.commentL }),
+        form: { id: String(state.commentL), contents: plan.body },
+      };
+      const yoramTranslation = {
+        ...this.translateYoram(step, { ...plan, postNumber: state.postY, commentId: state.commentY }),
+        json: { contentsMarkdown: plan.body },
+      };
+      const { legacyResult, yoramResult } = await ctx.helpers.pairLenient(
         ctx,
-        this.translateLegacy(step, { ...plan, postNumber: state.postL, commentId: state.commentL }),
-        this.translateYoram(step, { ...plan, postNumber: state.postY, commentId: state.commentY }),
+        legacyTranslation,
+        yoramTranslation,
         `${step.params.owner}/${step.params.project}/post comment (update)`,
       );
+      // Downstream PATCH pairs are only measurable when the update verifiably
+      // applied on BOTH sides (2xx/3xx outcome).
+      state.postUpdateAppliedLegacy = legacyResult.status < 400;
+      state.postUpdateAppliedYoram = yoramResult.status < 400;
     },
   },
 
@@ -820,15 +836,23 @@ const MUTATION_ACTIONS = {
       return { method: "PATCH", path: `/${step.params.owner}/${step.params.project}/post/${resolved.postNumber}/comment/${resolved.commentId}`, json: { content: resolved.content, original: resolved.original } };
     },
     async handler(ctx) {
-      const { step, state, suffix } = ctx;
+      const { step, state, entry, suffix } = ctx;
       if (!state.commentL || !state.commentY) return;
+      if (state.postUpdateAppliedLegacy !== true || state.postUpdateAppliedYoram !== true) {
+        throw new HarnessError(
+          `patch-post-comment-api: post-update did not verifiably apply on both sides (legacy=${state.postUpdateAppliedLegacy} yoram=${state.postUpdateAppliedYoram}) — PATCH pair skipped`,
+        );
+      }
       const plan = { content: `parity-comment-${suffix}-api`, original: `parity-comment-${suffix}-edited` };
-      await pairRequest(
-        ctx,
-        this.translateLegacy(step, { ...plan, postNumber: state.postL, commentId: state.commentL }),
-        this.translateYoram(step, { ...plan, postNumber: state.postY, commentId: state.commentY }),
-        `${step.params.owner}/${step.params.project}/post/:number/comment/:commentId (PATCH)`,
-      );
+      const route = `${step.params.owner}/${step.params.project}/post/:number/comment/:commentId (PATCH)`;
+      const legacyResult = await ctx.helpers.sendRaw(ctx, "legacy", this.translateLegacy(step, { ...plan, postNumber: state.postL, commentId: state.commentL }));
+      const yoramResult = await ctx.helpers.sendRaw(ctx, "yoram", this.translateYoram(step, { ...plan, postNumber: state.postY, commentId: state.commentY }));
+      const diverged =
+        statusClass(legacyResult.status) !== statusClass(yoramResult.status) ||
+        (legacyResult.status >= 400) !== (yoramResult.status >= 400);
+      if (diverged) {
+        pushApiViolation(ctx, route, { status: legacyResult.status, originalSent: plan.original }, { status: yoramResult.status, originalSent: plan.original });
+      }
     },
   },
 
@@ -900,21 +924,25 @@ const MUTATION_ACTIONS = {
       return { method: "POST", path: `/${step.params.owner}/${step.params.project}/webhooks`, form: { payloadUrl: resolved.payloadUrl, secret: "parity-secret", webhookType: "SIMPLE" } };
     },
     translateYoram(step, resolved) {
-      return { method: "POST", path: `${restBase(step)}/webhooks`, json: { payloadUrl: resolved.payloadUrl, secret: "parity-secret", webhookType: "SIMPLE", gitPush: true } };
+      return { method: "POST", path: `${yoramApiBase(step)}/webhooks`, json: { payloadUrl: resolved.payloadUrl, secret: "parity-secret", webhookType: "SIMPLE", gitPush: true } };
     },
     async handler(ctx) {
       const { step, state, suffix, options, yoramBaseUrl } = ctx;
       const plan = { payloadUrl: `https://parity.example/${suffix}` };
-      await ctx.helpers.pairLenient(
+      const { legacyResult, yoramResult } = await ctx.helpers.pairLenient(
         ctx,
         this.translateLegacy(step, plan),
         this.translateYoram(step, plan),
         `${step.params.owner}/${step.params.project}/webhooks (create)`,
       );
-      state.webhookY = idFromJson(yoramResult.json);
+      // Create/list return the project webhooks envelope; match this run's
+      // suffix-tagged payload URL.
+      const hooks = Array.isArray(yoramResult.json) ? yoramResult.json : yoramResult.json?.webhooks ?? [];
+      state.webhookY =
+        Number(hooks.find((hook) => String(hook.payloadUrl ?? "").includes(suffix))?.id) || null;
       if (state.webhookY === null) {
-        const list = await ctx.helpers.sendRaw(ctx, "yoram", { method: "GET", path: `${restBase(step)}/webhooks` });
-        const mine = (Array.isArray(list.json) ? list.json : []).filter((hook) => String(hook.payloadUrl ?? "").includes(suffix));
+        const list = await ctx.helpers.sendRaw(ctx, "yoram", { method: "GET", path: `${yoramApiBase(step)}/webhooks` });
+        const mine = ((Array.isArray(list.json) ? list.json : list.json?.webhooks) ?? []).filter((hook) => String(hook.payloadUrl ?? "").includes(suffix));
         state.webhookY = Number(mine[0]?.id) || null;
       }
       if (legacyResult.status < 400) {
@@ -936,7 +964,7 @@ const MUTATION_ACTIONS = {
       return { method: "DELETE", path: `/${step.params.owner}/${step.params.project}/webhooks/${resolved.webhookId}` };
     },
     translateYoram(step, resolved) {
-      return { method: "DELETE", path: `${restBase(step)}/webhooks/${resolved.webhookId}` };
+      return { method: "DELETE", path: `${yoramApiBase(step)}/webhooks/${resolved.webhookId}` };
     },
     async handler(ctx) {
       const { step, state } = ctx;

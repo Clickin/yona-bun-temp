@@ -67,6 +67,7 @@ async fn lookup_predicates_preserve_case_insensitive_and_previous_project_semant
             project_name: "MixedProject".to_string(),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .expect("create project");
@@ -118,6 +119,7 @@ async fn site_project_list_filters_and_paginates_in_the_database() {
             project_name: format!("site-page-{index:02}"),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .expect("create site-admin project");

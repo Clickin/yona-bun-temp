@@ -2,32 +2,25 @@ use super::*;
 
 impl AppRepositoryImpl<'_> {
     pub async fn create_project(&self, input: CreateProjectInput) -> Result<ProjectRecord, DbErr> {
-        let created = project::ActiveModel {
-            id: NotSet,
-            name: Set(Some(input.project_name.trim().to_string())),
-            overview: Set(empty_to_none(input.overview)),
-            vcs: Set(Some(input.vcs.trim().to_string())),
-            siteurl: Set(None),
-            owner: Set(Some(input.owner_name.trim().to_string())),
-            created_date: Set(Some(current_datetime())),
-            last_issue_number: Set(Some(0)),
-            last_posting_number: Set(Some(0)),
-            original_project_id: Set(None),
-            last_pushed_date: Set(None),
-            default_reviewer_count: Set(Some(1)),
-            is_using_reviewer_count: Set(Some(0)),
-            organization_id: Set(input.organization_id),
-            project_scope: Set(Some(normalize_identity(&input.project_scope))),
-            previous_owner_login_id: Set(None),
-            previous_name: Set(None),
-            previous_name_changed_time: Set(None),
-            is_code_accessible_member_only: Set(Some(0)),
-        }
-        .insert(&self.db)
-        .await?;
-
+        let manager_role_id = match input.initial_manager_user_id {
+            Some(user_id) => Some((user_id, self.ensure_role_id("manager").await?)),
+            None => None,
+        };
+        let (_write_guard, txn, txn_started_at) = self.begin_serialized_write().await?;
+        let created = self.insert_project_row(&input, None, &txn).await?;
         let menu_settings = self.config.project_default_menu_settings();
-        self.set_project_menu_settings(created.id, menu_settings)
+        Self::upsert_project_menu_settings(&txn, created.id, menu_settings).await?;
+        if let Some((user_id, role_id)) = manager_role_id {
+            project_user::ActiveModel {
+                id: NotSet,
+                user_id: Set(Some(user_id)),
+                project_id: Set(Some(created.id)),
+                role_id: Set(Some(role_id)),
+            }
+            .insert(&txn)
+            .await?;
+        }
+        self.commit_serialized_write(txn, _write_guard, txn_started_at)
             .await?;
 
         self.project_record_from_model(created)
@@ -39,17 +32,49 @@ impl AppRepositoryImpl<'_> {
         &self,
         input: CreateForkProjectInput,
     ) -> Result<ProjectRecord, DbErr> {
-        let created = project::ActiveModel {
+        let (_write_guard, txn, txn_started_at) = self.begin_serialized_write().await?;
+        let created = self
+            .insert_project_row(
+                &CreateProjectInput {
+                    organization_id: input.organization_id,
+                    owner_name: input.owner_name,
+                    overview: input.overview,
+                    project_name: input.project_name,
+                    project_scope: input.project_scope,
+                    vcs: input.vcs,
+                    initial_manager_user_id: None,
+                },
+                Some(input.original_project_id),
+                &txn,
+            )
+            .await?;
+        let menu_settings = self.config.project_default_menu_settings();
+        Self::upsert_project_menu_settings(&txn, created.id, menu_settings).await?;
+        self.commit_serialized_write(txn, _write_guard, txn_started_at)
+            .await?;
+
+        self.project_record_from_model(created)
+            .await?
+            .ok_or_else(|| DbErr::Custom("project owner/name missing".to_string()))
+    }
+
+    async fn insert_project_row<C: sea_orm::ConnectionTrait>(
+        &self,
+        input: &CreateProjectInput,
+        original_project_id: Option<i64>,
+        db: &C,
+    ) -> Result<project::Model, DbErr> {
+        project::ActiveModel {
             id: NotSet,
             name: Set(Some(input.project_name.trim().to_string())),
-            overview: Set(empty_to_none(input.overview)),
+            overview: Set(empty_to_none(input.overview.clone())),
             vcs: Set(Some(input.vcs.trim().to_string())),
             siteurl: Set(None),
             owner: Set(Some(input.owner_name.trim().to_string())),
             created_date: Set(Some(current_datetime())),
             last_issue_number: Set(Some(0)),
             last_posting_number: Set(Some(0)),
-            original_project_id: Set(Some(input.original_project_id)),
+            original_project_id: Set(original_project_id),
             last_pushed_date: Set(None),
             default_reviewer_count: Set(Some(1)),
             is_using_reviewer_count: Set(Some(0)),
@@ -60,16 +85,8 @@ impl AppRepositoryImpl<'_> {
             previous_name_changed_time: Set(None),
             is_code_accessible_member_only: Set(Some(0)),
         }
-        .insert(&self.db)
-        .await?;
-
-        let menu_settings = self.config.project_default_menu_settings();
-        self.set_project_menu_settings(created.id, menu_settings)
-            .await?;
-
-        self.project_record_from_model(created)
-            .await?
-            .ok_or_else(|| DbErr::Custom("project owner/name missing".to_string()))
+        .insert(db)
+        .await
     }
 
     pub async fn list_project_forks(
@@ -154,8 +171,11 @@ impl AppRepositoryImpl<'_> {
         active.previous_name = Set(current.name.clone());
         active.previous_owner_login_id = Set(current.owner.clone());
         active.previous_name_changed_time = Set(Some(current_timestamp_millis()));
-        let updated = active.update(&self.db).await?;
-        self.sync_project_label_cache(&updated).await?;
+        let (_write_guard, txn, txn_started_at) = self.begin_serialized_write().await?;
+        let updated = active.update(&txn).await?;
+        self.sync_project_label_cache(&txn, &updated).await?;
+        self.commit_serialized_write(txn, _write_guard, txn_started_at)
+            .await?;
 
         self.project_record_from_model(updated).await
     }

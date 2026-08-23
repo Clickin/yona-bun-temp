@@ -32,6 +32,7 @@ async fn search_repository_preserves_literal_matches_when_sqlite_fts_candidates_
         project_name: "projectYobi".to_string(),
         project_scope: "public".to_string(),
         vcs: "GIT".to_string(),
+        initial_manager_user_id: None,
     })
     .await
     .expect("create project");
@@ -106,6 +107,7 @@ async fn search_repository_refreshes_sqlite_persistent_fts_index_for_update_and_
         project_name: "refreshProject".to_string(),
         project_scope: "public".to_string(),
         vcs: "GIT".to_string(),
+        initial_manager_user_id: None,
     })
     .await
     .expect("create project");

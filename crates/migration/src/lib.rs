@@ -415,7 +415,7 @@ where
     Ok(())
 }
 
-async fn validate_schema_against_manifest(db: &DatabaseConnection) -> Result<(), DbErr> {
+pub async fn validate_schema_against_manifest(db: &DatabaseConnection) -> Result<(), DbErr> {
     let manifest: LegacySchemaManifest =
         serde_json::from_str(MANIFEST_JSON).map_err(|error| DbErr::Custom(error.to_string()))?;
     let required_tables: std::collections::BTreeSet<String> =

@@ -187,8 +187,11 @@ pub(crate) async fn direct_smart_http_request(
         return (StatusCode::PAYLOAD_TOO_LARGE, "Request Entity Too Large").into_response();
     }
 
-    let repo_root = service.data_root.join("repo");
-    let path_info = format!("/{}.git/{}", authorization.project.id, route.git_path);
+    let repo_root = service.data_root.join("repo").join("git");
+    let path_info = format!(
+        "/{}/{}.git/{}",
+        authorization.project.owner_name, authorization.project.project_name, route.git_path
+    );
     let content_type = parts
         .headers
         .get(http::header::CONTENT_TYPE)
@@ -198,7 +201,16 @@ pub(crate) async fn direct_smart_http_request(
         .get("git-protocol")
         .and_then(|value| value.to_str().ok());
     let remote_addr = smart_http_remote_addr(&parts.headers);
-    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let repo_path = match yoram_vcs::repository_path(
+        &service.data_root,
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+    ) {
+        Ok(path) => path,
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
+        }
+    };
     let is_receive_pack_post = method == "POST" && route.git_path == "git-receive-pack";
     let before_refs = if is_receive_pack_post {
         match yoram_vcs::read_head_refs(&repo_path) {

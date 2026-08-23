@@ -1265,7 +1265,9 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
         .expect("site manager must be part of the site export");
     assert_eq!(manager["isSiteAdmin"], true);
     assert!(
-        manager["passwordHash"].as_str().is_some_and(|value| !value.is_empty()),
+        manager["passwordHash"]
+            .as_str()
+            .is_some_and(|value| !value.is_empty()),
         "site export should carry the user password hash"
     );
     // The REST export route answers the migration tool over Bearer token.
@@ -1275,8 +1277,7 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
         .expect("api token");
     let bearer_export = rest_get_with_bearer(app.clone(), "/yona/api/v1/site/export", &token).await;
     assert_eq!(bearer_export.status(), StatusCode::OK);
-    let bearer_payload: Value =
-        serde_json::from_str(&response_text(bearer_export).await).unwrap();
+    let bearer_payload: Value = serde_json::from_str(&response_text(bearer_export).await).unwrap();
     assert!(bearer_payload["users"]
         .as_array()
         .unwrap()
@@ -4590,7 +4591,12 @@ async fn site_admin_project_list_and_delete_follow_legacy_surface() {
         .await
         .expect("read beta project")
         .expect("beta project");
-    let beta_repo_path = yoram_vcs::repository_path(data_root.path(), beta_project.id);
+    let beta_repo_path = yoram_vcs::repository_path(
+        data_root.path(),
+        &beta_project.owner_name,
+        &beta_project.project_name,
+    )
+    .expect("repository path");
     assert!(
         beta_repo_path.join("HEAD").is_file(),
         "project create should provision repository under the app-config data root"
@@ -5035,12 +5041,18 @@ async fn site_admin_spa_shell_and_rest_routes_reject_direct_non_admin_access() {
             "anonymous direct {path} must not receive the SPA shell"
         );
         assert_eq!(
-            rest_get(app.clone(), path, Some(&member_cookie)).await.status(),
+            rest_get(app.clone(), path, Some(&member_cookie))
+                .await
+                .status(),
             StatusCode::FORBIDDEN,
             "non-admin direct {path} must not receive the SPA shell"
         );
         let response = rest_get(app.clone(), path, Some(&admin_cookie)).await;
-        assert_eq!(response.status(), StatusCode::OK, "site admin direct {path}");
+        assert_eq!(
+            response.status(),
+            StatusCode::OK,
+            "site admin direct {path}"
+        );
         assert!(response_text(response).await.contains("site admin shell"));
     }
 
@@ -5051,12 +5063,16 @@ async fn site_admin_spa_shell_and_rest_routes_reject_direct_non_admin_access() {
             "anonymous {path} must be denied"
         );
         assert_eq!(
-            rest_get(app.clone(), path, Some(&member_cookie)).await.status(),
+            rest_get(app.clone(), path, Some(&member_cookie))
+                .await
+                .status(),
             StatusCode::FORBIDDEN,
             "non-admin {path} must be denied"
         );
         assert_eq!(
-            rest_get(app.clone(), path, Some(&admin_cookie)).await.status(),
+            rest_get(app.clone(), path, Some(&admin_cookie))
+                .await
+                .status(),
             StatusCode::OK,
             "site admin {path} remains available"
         );
@@ -6027,7 +6043,12 @@ async fn site_import_svn_provisioning_tolerates_leftover_repo_dir() {
     let response = post_import(payload.clone()).await;
     assert_eq!(response.status(), StatusCode::OK);
     assert_eq!(response_json(response).await["importedProjects"], 1);
-    let svn_repo_dir = data_dir.path().join("repo/20.svn");
+    let svn_repo_dir = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("imported")
+        .join("svnproj");
     assert!(svn_repo_dir.is_dir(), "svn repo provisioned on import");
 
     // A rolled-back import leaves the repo directory behind while the project
@@ -6140,10 +6161,13 @@ async fn site_import_creates_placeholder_attachments_and_accepts_out_of_band_fil
         .await
         .unwrap();
     assert_eq!(upload_response.status(), StatusCode::OK);
-    assert!(data_dir
-        .path()
-        .join(format!("uploads/{legacy_hash}"))
-        .is_file(), "file staged at uploads/legacy-hash");
+    assert!(
+        data_dir
+            .path()
+            .join(format!("uploads/{legacy_hash}"))
+            .is_file(),
+        "file staged at uploads/legacy-hash"
+    );
 
     // Import creates the placeholder attachment row without inline content.
     let response = app

@@ -280,13 +280,19 @@ async fn fork_project_after_auth(
         .await
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
-    let source_repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
-    let fork_repo_path = yoram_vcs::repository_path(&service.data_root, fork.id);
-    let clone_result = {
-        let _guard = repository_provisioning_lock()
-            .lock()
-            .map_err(|_| internal_error("repository provisioning lock poisoned"))
+    let source_repo_path = yoram_vcs::repository_path(
+        &service.data_root,
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+    )
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
+    let fork_repo_path =
+        yoram_vcs::repository_path(&service.data_root, &fork.owner_name, &fork.project_name)
+            .map_err(internal_error)
             .map_err(RestRouteError::from_connect_error)?;
+    let clone_result = {
+        let _guard = crate::repository_namespace_lock().lock().await;
         yoram_vcs::clone_bare_repository(&source_repo_path, &fork_repo_path)
     };
     if let Err(error) = clone_result {

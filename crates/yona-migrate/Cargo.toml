@@ -16,6 +16,8 @@ reqwest = { version = "0.12", default-features = false, features = ["blocking", 
 serde.workspace = true
 serde_json.workspace = true
 sqlx = { version = "0.8", default-features = false, features = ["mysql", "runtime-tokio", "chrono"] }
+sea-orm.workspace = true
+yoram-migration = { path = "../migration", default-features = false, features = ["mysql"] }
 tokio.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true

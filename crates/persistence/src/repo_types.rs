@@ -1102,7 +1102,7 @@ pub struct UpdateOrganizationInput {
     pub organization_name: String,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct CreateProjectInput {
     pub organization_id: Option<i64>,
     pub owner_name: String,
@@ -1110,6 +1110,17 @@ pub struct CreateProjectInput {
     pub project_name: String,
     pub project_scope: String,
     pub vcs: String,
+    pub initial_manager_user_id: Option<i64>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProjectTransferRelocation {
+    pub project_id: i64,
+    pub vcs: String,
+    pub old_owner_name: String,
+    pub old_project_name: String,
+    pub new_owner_name: String,
+    pub new_project_name: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -1670,6 +1681,8 @@ pub struct PullRequestListRecord {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PullRequestPushedBranchRecord {
     pub branch_name: String,
+    pub default_branch_owner_name: String,
+    pub default_branch_project_name: String,
     pub default_branch_project_id: i64,
     pub id: i64,
     pub owner_name: String,

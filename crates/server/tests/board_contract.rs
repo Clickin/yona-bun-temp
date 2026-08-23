@@ -589,7 +589,12 @@ async fn board_readme_posting_commits_git_readme_file() {
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf).await;
 
-    let repo_path = data_dir.path().join("repo").join("1.git");
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("git")
+        .join("owner")
+        .join("projectYobi.git");
     assert!(fs::metadata(&repo_path).unwrap().is_dir());
 
     let created = ok_json(
@@ -725,7 +730,9 @@ async fn board_postform_online_commit_updates_issue_template_and_code_files() {
     let repo_path = data_dir
         .path()
         .join("repo")
-        .join(format!("{}.git", project.id));
+        .join("git")
+        .join(&project.owner_name)
+        .join(format!("{}.git", project.project_name));
     assert!(fs::metadata(&repo_path).unwrap().is_dir());
 
     let issue_template_options = ok_json(
@@ -1211,7 +1218,7 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
                     "application/x-www-form-urlencoded",
                 )
                 .body(Body::from(format!(
-                    "csrfToken={owner_csrf}&contents=Legacy+board+comment+edit"
+                    "csrfToken={owner_csrf}&id={comment_id}&contents=Legacy+board+comment+edit"
                 )))
                 .unwrap(),
         )
@@ -1623,6 +1630,7 @@ async fn board_contract_preserves_legacy_acl_for_project_group_and_public_users(
             project_name: "protectedBoard".to_string(),
             project_scope: "protected".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();

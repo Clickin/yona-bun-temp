@@ -2,7 +2,7 @@ use crate::api_types::OwnedView;
 use axum::{
     body::Bytes,
     extract::{Form, Path, Query},
-    http::{HeaderMap, Method, StatusCode},
+    http::{header, HeaderMap, Method, StatusCode},
     response::{IntoResponse, Response},
     routing::{delete, get, patch, post, put},
     Json, Router,
@@ -29,7 +29,7 @@ use crate::{
     organization_detail_with_logo_from_record, organization_logo_url, parse_attachment_ids,
     parse_milestone_due_date, percent_encode_uri_component, persistence,
     project_detail_from_record, project_detail_with_logo_from_record, project_logo_url,
-    project_read_allowed, project_update_allowed, redirect_to, repository_provisioning_lock,
+    project_read_allowed, project_update_allowed, redirect_to, repository_namespace_lock,
     require_authenticated_user, require_project_read, require_project_resource_create,
     require_session, require_valid_csrf, resolve_issue_reference_search_project,
     rest_json_response, rest_mention_reference_metadata_from_resolved, rest_owned_view,
@@ -106,8 +106,8 @@ use transfers::{
 };
 pub(crate) use vcs::delete_project_repository_storage;
 use vcs::{
-    direct_change_project_vcs, reset_project_repository_storage, rest_change_project_vcs,
-    rest_read_project_change_vcs,
+    direct_change_project_vcs, rest_change_project_vcs, rest_read_project_change_vcs,
+    ProjectVcsSwap,
 };
 use webhooks::{
     direct_create_project_webhook, direct_delete_project_webhook, rest_create_project_webhook,
@@ -123,13 +123,6 @@ pub(crate) use webhooks::{
 struct DirectMarkdownRenderBody {
     body: Option<String>,
     breaks: Option<bool>,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct DirectMarkdownRenderResponse {
-    body_markdown: String,
-    breaks: bool,
 }
 
 #[derive(Default, Deserialize)]
@@ -293,6 +286,19 @@ pub(crate) async fn project_create(
         .read_organization_authorization(&request.owner_name, Some(user_id))
         .await
         .map_err(internal_error)?;
+    // Namespace mutation lock ONLY: the project ID does not exist until INSERT,
+    // so no per-project lock applies before creation. It prevents concurrent
+    // create/rename/transfer from claiming the same owner/project namespace.
+    let namespace_guard = repository_namespace_lock().lock().await;
+    let layout = vcs::project_storage_layout(
+        service,
+        &request.owner_name.trim(),
+        &request.project_name.trim(),
+    )
+    .map_err(internal_error)?;
+    if layout.git_path.exists() || layout.svn_path.exists() {
+        return Err(ConnectError::already_exists("project.name.duplicate"));
+    }
     let created = if let Some(organization) = organization {
         if !can_create_organization_project(organization.viewer.is_organization_admin) {
             return Err(ConnectError::permission_denied(
@@ -307,6 +313,7 @@ pub(crate) async fn project_create(
                 project_name: request.project_name.trim().to_string(),
                 project_scope: scope.as_str().to_string(),
                 vcs: "GIT".to_string(),
+                initial_manager_user_id: Some(user_id),
             })
             .await
             .map_err(internal_error)?
@@ -322,21 +329,19 @@ pub(crate) async fn project_create(
                 project_name: request.project_name.trim().to_string(),
                 project_scope: scope.as_str().to_string(),
                 vcs: "GIT".to_string(),
+                initial_manager_user_id: Some(user_id),
             })
             .await
             .map_err(internal_error)?
     };
-    let repo_path = yoram_vcs::repository_path(&service.data_root, created.id);
-    {
-        let _guard = repository_provisioning_lock()
-            .lock()
-            .map_err(|_| internal_error("repository provisioning lock poisoned"))?;
-        yoram_vcs::create_bare_repository(&repo_path).map_err(code_browser_error)?;
+    // Provisioning failure is compensated: the committed project row is removed.
+    if let Err(error) = yoram_vcs::create_bare_repository(&layout.git_path) {
+        let _ = repository
+            .delete_project_by_owner_and_name(&created.owner_name, &created.project_name)
+            .await;
+        return Err(code_browser_error(error));
     }
-    repository
-        .add_project_membership(created.id, user_id, "manager")
-        .await
-        .map_err(internal_error)?;
+    drop(namespace_guard);
     let authorization = repository
         .read_project_authorization(&created.owner_name, &created.project_name, Some(user_id))
         .await
@@ -646,7 +651,23 @@ pub(crate) async fn project_update(
         return Err(ConnectError::already_exists("project.name.duplicate"));
     }
 
-    repository
+    let renaming = normalize_identifier(&request.current_project_name)
+        != normalize_identifier(&request.project_name);
+    let mut storage_swap: Option<vcs::ProjectStorageRename> = None;
+    if renaming {
+        storage_swap = Some(
+            vcs::ProjectStorageRename::begin(
+                service,
+                authorization.project.id,
+                &authorization.project.vcs,
+                &authorization.project.owner_name,
+                &request.current_project_name.trim(),
+                &request.project_name.trim(),
+            )
+            .await?,
+        );
+    }
+    let update_result = repository
         .update_project(persistence::UpdateProjectInput {
             current_owner_name: request.current_owner_name.trim().to_string(),
             current_project_name: request.current_project_name.trim().to_string(),
@@ -658,8 +679,24 @@ pub(crate) async fn project_update(
                 .to_string(),
         })
         .await
-        .map_err(internal_error)?
-        .ok_or_else(|| ConnectError::not_found("project not found"))?;
+        .map_err(internal_error);
+    match (storage_swap, update_result) {
+        (swap, Ok(Some(record))) => {
+            if let Some(swap) = swap {
+                swap.commit();
+            }
+            let _ = record;
+        }
+        (swap, outcome) => {
+            // Dropping an uncommitted swap restores the physical directory.
+            drop(swap);
+            match outcome {
+                Ok(None) => return Err(ConnectError::not_found("project not found")),
+                Err(error) => return Err(error),
+                Ok(Some(_)) => unreachable!("handled above"),
+            }
+        }
+    };
     let updated = repository
         .read_project_authorization(&request.owner_name, &request.project_name, Some(user_id))
         .await
@@ -1053,24 +1090,36 @@ async fn direct_render_markdown(
     body: DirectMarkdownRenderBody,
     service: PilotServiceImpl,
 ) -> Response {
+    // Legacy MarkdownApp.render returns the raw rendered output via ok(rendered) -> text/html.
     let markdown = body.body.as_deref().unwrap_or_default();
-    if let PilotBackend::Repository(repository) = &service.backend {
+    let breaks = body.breaks.unwrap_or(true);
+    let html = if let PilotBackend::Repository(repository) = &service.backend {
         let actor_id = service
             .session_manager
             .read_session_from_headers(&headers)
             .and_then(|session| session.user_id);
-        if let Err(error) =
-            require_project_read(repository, &owner_name, &project_name, actor_id).await
-        {
-            return direct_status_from_connect_error(error).into_response();
-        }
+        let authorization =
+            match require_project_read(repository, &owner_name, &project_name, actor_id).await {
+                Ok(authorization) => authorization,
+                Err(error) => return direct_status_from_connect_error(error).into_response(),
+            };
+        crate::markdown::markdown_render_html(
+            repository,
+            &authorization,
+            actor_id,
+            &service.base_path,
+            markdown,
+            breaks,
+            &service.data_root,
+        )
+        .await
+    } else {
+        Ok(crate::markdown::markdown_render_plain(markdown, breaks))
+    };
+    match html {
+        Ok(html) => ([(header::CONTENT_TYPE, "text/html; charset=utf-8")], html).into_response(),
+        Err(error) => error.into_response(),
     }
-
-    Json(DirectMarkdownRenderResponse {
-        body_markdown: markdown.to_string(),
-        breaks: body.breaks.unwrap_or(true),
-    })
-    .into_response()
 }
 
 #[derive(Serialize)]
@@ -1512,7 +1561,16 @@ async fn rest_create_project(
             .map_err(internal_error)
             .map_err(RestRouteError::from_connect_error)?
             .ok_or_else(|| RestRouteError::not_found("project not found"))?;
-        reset_project_repository_storage(&service, changed.id, &changed.vcs)?;
+        let swap = ProjectVcsSwap::begin(
+            &service,
+            authorization.project.id,
+            &authorization.project.vcs,
+            &changed.vcs,
+            &authorization.project.owner_name,
+            &authorization.project.project_name,
+        )
+        .await?;
+        swap.commit();
         let mut changed_authorization = authorization;
         changed_authorization.project = changed;
         payload = project_detail_with_logo_from_record(
@@ -1615,6 +1673,7 @@ async fn rest_import_project(
                 project_name: project_name.to_string(),
                 project_scope: scope.as_str().to_string(),
                 vcs: "GIT".to_string(),
+                initial_manager_user_id: None,
             })
             .await
     } else {
@@ -1629,17 +1688,17 @@ async fn rest_import_project(
                 project_name: project_name.to_string(),
                 project_scope: scope.as_str().to_string(),
                 vcs: "GIT".to_string(),
+                initial_manager_user_id: None,
             })
             .await
     }
     .map_err(internal_error)
     .map_err(RestRouteError::from_connect_error)?;
 
-    let repo_path = yoram_vcs::repository_path(&service.data_root, created.id);
+    let repo_path =
+        vcs::project_storage_layout(&service, &created.owner_name, &created.project_name)?.git_path;
     let clone_result = {
-        let _guard = repository_provisioning_lock()
-            .lock()
-            .map_err(|_| RestRouteError::internal("repository provisioning lock poisoned"))?;
+        let _guard = repository_namespace_lock().lock().await;
         if repo_path.exists() {
             let _ = yoram_vcs::delete_repository(&repo_path);
         }
@@ -2194,14 +2253,20 @@ pub(crate) async fn rest_delete_project(
             ConnectError::permission_denied("project delete is not allowed"),
         ));
     }
-    let project_id = authorization.project.id;
-
-    repository
-        .delete_project_by_owner_and_name(&owner_name, &project_name)
-        .await
-        .map_err(internal_error)
-        .map_err(RestRouteError::from_connect_error)?;
-    delete_project_repository_storage(&service, project_id)?;
+    delete_project_repository_storage(
+        &service,
+        authorization.project.id,
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+        async {
+            repository
+                .delete_project_by_owner_and_name(&owner_name, &project_name)
+                .await
+                .map_err(internal_error)
+                .map_err(RestRouteError::from_connect_error)
+        },
+    )
+    .await?;
 
     Ok(Json(RestProjectDeleteResponse {
         ok: true,

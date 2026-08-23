@@ -300,7 +300,8 @@ async fn project_commit(
         .unwrap()
         .expect("project");
     yoram_vcs::commit_text_file(
-        &yoram_vcs::repository_path(data_root, project.id),
+        &(yoram_vcs::repository_path(data_root, &project.owner_name, &project.project_name)
+            .expect("repository path")),
         None,
         "README.md",
         &format!("{owner_name}/{project_name}\n"),
@@ -373,7 +374,8 @@ async fn create_issue(app: axum::Router, cookie_header: &str, csrf: &str, title:
 }
 
 #[tokio::test]
-async fn legacy_markdown_preview_route_returns_markdown_source_for_react() {
+async fn legacy_markdown_preview_route_returns_raw_rendered_html() {
+    // Legacy MarkdownApp.render answers ok(Markdown.render(...)) -> text/html body (I23).
     let app = build_app_with_repository().await;
     let (csrf, cookie_header) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &cookie_header, &csrf).await;
@@ -394,7 +396,7 @@ async fn legacy_markdown_preview_route_returns_markdown_source_for_react() {
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .body(Body::from(
                     json!({
-                        "body": "Hello @owner #1 owner/projectYobi#1 http://example.com\n<script>alert(1)</script>",
+                        "body": "Hello @owner #1 owner/projectYobi#1\n<script>alert(1)</script>",
                         "breaks": true
                     })
                     .to_string(),
@@ -411,61 +413,72 @@ async fn legacy_markdown_preview_route_returns_markdown_source_for_react() {
         .and_then(|value| value.to_str().ok())
         .unwrap_or_default()
         .to_string();
-    let payload: Value = serde_json::from_str(&response_text(response).await).unwrap();
-
     assert!(
-        content_type.starts_with("application/json"),
-        "markdown preview should return source JSON for React rendering, got {content_type}: {payload}"
+        content_type.starts_with("text/html"),
+        "markdown preview must return rendered text/html like legacy, got {content_type}"
     );
-    assert_eq!(
-        payload["bodyMarkdown"],
-        "Hello @owner #1 owner/projectYobi#1 http://example.com\n<script>alert(1)</script>"
-    );
+    let payload = response_text(response).await;
+    assert!(payload.contains("<p>"));
     assert!(
-        payload["bodyMarkdown"]
-            .as_str()
-            .unwrap_or_default()
-            .contains("@owner #1 owner/projectYobi#1"),
-        "markdown preview should preserve legacy mention and issue-reference source tokens"
+        payload.contains("issueLink"),
+        "issue refs become links: {payload}"
     );
-    assert_eq!(payload["breaks"], true);
+    assert!(payload.contains("/owner/projectYobi/issue/1"));
+    assert!(
+        payload.contains("user-link"),
+        "mentions become links: {payload}"
+    );
+    assert!(!payload.contains("<script>alert(1)</script>"));
+    assert!(!payload.contains("<bodyMarkdown>"));
 }
 
 #[tokio::test]
 async fn legacy_markdown_preview_route_preserves_breaks_flag() {
-    // Guards direct project markdown preview handler while project route ownership is split.
     let app = build_app_with_repository().await;
     let (csrf, cookie_header) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &cookie_header, &csrf).await;
 
-    let response = app
-        .oneshot(
-            Request::builder()
-                .method(Method::POST)
-                .uri("/yona/markdown/owner/projectYobi")
-                .header(http::header::COOKIE, &cookie_header)
-                .header(http::header::CONTENT_TYPE, "application/json")
-                .body(Body::from(
-                    json!({
-                        "body": "first line\nsecond line",
-                        "breaks": true
-                    })
-                    .to_string(),
-                ))
-                .unwrap(),
-        )
-        .await
-        .unwrap();
+    let render = |breaks: bool| {
+        let app = app.clone();
+        let cookie_header = cookie_header.clone();
+        async move {
+            app.oneshot(
+                Request::builder()
+                    .method(Method::POST)
+                    .uri("/yona/markdown/owner/projectYobi")
+                    .header(http::header::COOKIE, &cookie_header)
+                    .header(http::header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(
+                        json!({
+                            "body": "first line\nsecond line",
+                            "breaks": breaks
+                        })
+                        .to_string(),
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap()
+        }
+    };
 
-    assert_eq!(response.status(), StatusCode::OK);
-    let payload: Value = serde_json::from_str(&response_text(response).await).unwrap();
-    assert_eq!(payload["bodyMarkdown"], "first line\nsecond line");
-    assert_eq!(payload["breaks"], true);
-    assert!(payload.get("bodyHtml").is_none());
+    let with_breaks = render(true).await;
+    assert_eq!(with_breaks.status(), StatusCode::OK);
+    let html = response_text(with_breaks).await;
+    assert!(
+        html.contains("<br>"),
+        "breaks=true renders soft breaks as <br>: {html}"
+    );
+
+    let without_breaks = render(false).await;
+    assert_eq!(without_breaks.status(), StatusCode::OK);
+    let html = response_text(without_breaks).await;
+    assert!(!html.contains("<br />"));
+    assert!(html.contains("first line"));
 }
 
 #[tokio::test]
-async fn legacy_markdown_preview_route_does_not_server_render_autolinks() {
+async fn legacy_markdown_preview_route_escapes_plain_urls_without_autolink_context() {
     let app = build_app_with_repository().await;
     let (csrf, cookie_header) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &cookie_header, &csrf).await;
@@ -490,15 +503,13 @@ async fn legacy_markdown_preview_route_does_not_server_render_autolinks() {
         .unwrap();
 
     assert_eq!(response.status(), StatusCode::OK);
-    let payload: Value = serde_json::from_str(&response_text(response).await).unwrap();
-    assert_eq!(
-        payload["bodyMarkdown"],
-        "ftp://files.example.com www.example.com help@example.com"
-    );
+    let payload = response_text(response).await;
+    assert!(payload.contains("ftp://files.example.com"));
+    assert!(payload.contains("www.example.com"));
 }
 
 #[tokio::test]
-async fn legacy_markdown_preview_route_returns_long_sql_fence_as_source() {
+async fn legacy_markdown_preview_route_renders_long_sql_fence_as_code() {
     let app = build_app_with_repository().await;
     let (csrf, cookie_header) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &cookie_header, &csrf).await;
@@ -525,11 +536,9 @@ async fn legacy_markdown_preview_route_returns_long_sql_fence_as_source() {
         .unwrap();
 
     assert_eq!(response.status(), StatusCode::OK);
-    let payload: Value = serde_json::from_str(&response_text(response).await).unwrap();
-    assert_eq!(payload["bodyMarkdown"], long_sql);
-    assert_eq!(payload["breaks"], true);
-    assert!(payload.get("bodyHtml").is_none());
-    assert!(payload.get("html").is_none());
+    let payload = response_text(response).await;
+    assert!(payload.contains("<pre><code class=\"language-sql\">"));
+    assert!(payload.contains(sql_line));
 }
 
 #[tokio::test]

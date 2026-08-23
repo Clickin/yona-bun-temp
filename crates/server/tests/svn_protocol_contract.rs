@@ -438,7 +438,9 @@ async fn mark_project_as_svn(
     ))
     .await
     .expect("mark project as svn");
-    let repo_path = yoram_vcs::svn_repository_path(data_root, project.id);
+    let repo_path =
+        (yoram_vcs::svn_repository_path(data_root, &project.owner_name, &project.project_name)
+            .expect("repository path"));
     let youngest_revision = if svn_tools_available() {
         yoram_vcs::create_svn_repository(&repo_path).expect("seed executable svn storage");
         Some(yoram_vcs::svn_youngest_revision(&repo_path).expect("read youngest revision"))
@@ -570,7 +572,12 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
             text.contains(&format!("<D:version-name>{revision}</D:version-name>")),
             "SVN root PROPFIND should include executable-backed youngest revision metadata: {text}"
         );
-        let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+        let repo_path = data_dir
+            .path()
+            .join("repo")
+            .join("svn")
+            .join("owner")
+            .join("projectYobi");
         let uuid = yoram_vcs::svn_repository_uuid(&repo_path).expect("read repository uuid");
         assert!(
             text.contains(&format!("<S:repository-uuid>{uuid}</S:repository-uuid>")),
@@ -595,7 +602,12 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
     assert_eq!(response.status(), StatusCode::MULTI_STATUS);
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let text = String::from_utf8(body.to_vec()).unwrap();
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     let repository_uuid = yoram_vcs::svn_repository_uuid(&repo_path).ok();
     assert!(
         text.contains("<D:resourcetype/>")
@@ -685,7 +697,12 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
             )),
             "SVN default VCC PROPFIND should expose the latest baseline resource for ra_serf discovery: {text}"
         );
-        let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+        let repo_path = data_dir
+            .path()
+            .join("repo")
+            .join("svn")
+            .join("owner")
+            .join("projectYobi");
         let uuid = yoram_vcs::svn_repository_uuid(&repo_path).expect("read repository uuid");
         assert!(
             text.contains(&format!("<S:repository-uuid>{uuid}</S:repository-uuid>")),
@@ -953,7 +970,7 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
             .headers()
             .get("dav")
             .and_then(|value| value.to_str().ok()),
-        Some("1,2")
+        Some("1,2, SVN-atomic-revprops, SVN-mergeinfo")
     );
     assert_eq!(
         response
@@ -1047,7 +1064,12 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     let revision = seed_svn_readme(&repo_path, "hello from svn\n").expect("seed svn readme");
 
     let response = direct_request(
@@ -2869,7 +2891,12 @@ async fn svn_protocol_external_client_can_info_public_project() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello from external svn client\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -2899,7 +2926,12 @@ async fn svn_protocol_external_client_can_ls_cat_and_log_public_project() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello from external svn read\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -2993,7 +3025,12 @@ async fn svn_protocol_external_client_can_ls_recursive_public_project() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello before external svn recursive ls\n")
         .expect("seed svn readme");
     seed_svn_nested_tree(&repo_path).expect("seed svn nested tree");
@@ -3034,7 +3071,12 @@ async fn svn_protocol_external_client_can_log_verbose_public_project() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello before external svn verbose log\n")
         .expect("seed svn readme");
     seed_svn_nested_tree(&repo_path).expect("seed svn nested tree");
@@ -3096,7 +3138,12 @@ async fn svn_protocol_external_client_can_read_mergeinfo() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello before external svn mergeinfo\n").expect("seed svn readme");
     yoram_vcs::svn_copy_path(&repo_path, None, "trunk", "topic", "seed mergeinfo branch")
         .expect("seed mergeinfo branch");
@@ -3147,7 +3194,12 @@ async fn svn_protocol_external_client_can_blame_public_file() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello from external svn blame\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -3188,7 +3240,12 @@ async fn svn_protocol_external_client_can_diff_public_file() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     let base_revision =
         seed_svn_readme(&repo_path, "hello before external svn diff\n").expect("seed svn readme");
     let target_revision = yoram_vcs::svn_put_file(
@@ -3283,7 +3340,12 @@ async fn svn_protocol_external_client_can_checkout_public_project() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello from external svn checkout\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -3327,7 +3389,12 @@ async fn svn_protocol_external_client_can_checkout_depth_empty() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello from external svn depth empty checkout\n")
         .expect("seed svn readme");
     seed_svn_nested_tree(&repo_path).expect("seed svn nested tree");
@@ -3382,7 +3449,12 @@ async fn svn_protocol_external_client_can_deepen_depth_empty_checkout() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello from external svn depth-deepen update\n")
         .expect("seed svn readme");
     seed_svn_nested_tree(&repo_path).expect("seed svn nested tree");
@@ -3451,7 +3523,12 @@ async fn svn_protocol_external_client_can_update_depth_empty_checkout_to_files()
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello from external svn depth-files update\n")
         .expect("seed svn readme");
     seed_svn_nested_tree(&repo_path).expect("seed svn nested tree");
@@ -3517,7 +3594,12 @@ async fn svn_protocol_external_client_can_shrink_checkout_depth_to_files() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello from external svn depth-files shrink\n")
         .expect("seed svn readme");
     seed_svn_nested_tree(&repo_path).expect("seed svn nested tree");
@@ -3587,7 +3669,12 @@ async fn svn_protocol_external_client_can_exclude_child_directory_depth() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello from external svn depth exclude\n")
         .expect("seed svn readme");
     seed_svn_nested_tree(&repo_path).expect("seed svn nested tree");
@@ -3648,7 +3735,12 @@ async fn svn_protocol_external_client_can_shrink_checkout_depth_to_empty() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello from external svn depth-shrink update\n")
         .expect("seed svn readme");
     seed_svn_nested_tree(&repo_path).expect("seed svn nested tree");
@@ -3720,7 +3812,12 @@ async fn svn_protocol_external_client_can_checkout_depth_files() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello from external svn depth files checkout\n")
         .expect("seed svn readme");
     seed_svn_nested_tree(&repo_path).expect("seed svn nested tree");
@@ -3774,7 +3871,12 @@ async fn svn_protocol_external_client_can_checkout_depth_immediates() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(
         &repo_path,
         "hello from external svn depth immediates checkout\n",
@@ -3838,7 +3940,12 @@ async fn svn_protocol_external_client_can_switch_working_copy_directory() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello from trunk before svn switch\n").expect("seed svn readme");
     yoram_vcs::svn_copy_path(
         &repo_path,
@@ -3924,7 +4031,12 @@ async fn svn_protocol_external_client_can_export_public_project() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello from external svn export\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -3973,7 +4085,12 @@ async fn svn_protocol_external_client_can_checkout_requested_revision() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     let initial_revision = seed_svn_readme(
         &repo_path,
         "hello from external svn requested revision checkout\n",
@@ -4058,7 +4175,12 @@ async fn svn_protocol_external_client_can_commit_file_update() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello before external svn commit\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -4112,7 +4234,12 @@ async fn svn_protocol_external_client_can_update_after_remote_commit() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello before external svn update\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -4205,7 +4332,12 @@ async fn svn_protocol_external_client_can_update_to_older_revision_and_back_to_h
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     let initial_revision = seed_svn_readme(&repo_path, "hello before revision-targeted update\n")
         .expect("seed svn readme");
 
@@ -4293,7 +4425,12 @@ async fn svn_protocol_external_client_can_update_after_remote_delete() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello before external svn delete update\n")
         .expect("seed svn readme");
 
@@ -4379,7 +4516,12 @@ async fn svn_protocol_external_client_reports_conflict_on_update() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello before external svn conflict\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -4476,7 +4618,12 @@ async fn svn_protocol_external_client_can_add_file_and_commit() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello before external svn add\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -4539,7 +4686,12 @@ async fn svn_protocol_external_client_can_delete_file_and_commit() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello before external svn delete\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -4602,7 +4754,12 @@ async fn svn_protocol_external_client_can_delete_direct_url() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello before direct URL svn delete\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -4653,7 +4810,12 @@ async fn svn_protocol_external_client_can_mkdir_and_commit() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello before external svn mkdir\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -4722,7 +4884,12 @@ async fn svn_protocol_external_client_can_mkdir_direct_url() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello before direct URL svn mkdir\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -4778,7 +4945,12 @@ async fn svn_protocol_external_client_can_import_direct_url() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello before direct URL svn import\n").expect("seed svn readme");
 
     let import_dir = tempdir().expect("svn import tempdir");
@@ -4840,7 +5012,12 @@ async fn svn_protocol_external_client_can_propset_and_commit() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello before external svn propset\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -5101,7 +5278,12 @@ async fn svn_protocol_external_client_can_lock_and_unlock_file() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello before external svn lock\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -5170,7 +5352,12 @@ async fn svn_protocol_external_client_can_copy_file_and_commit() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello before external svn copy\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -5236,7 +5423,12 @@ async fn svn_protocol_external_client_can_copy_direct_url() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello before direct URL svn copy\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -5289,7 +5481,12 @@ async fn svn_protocol_external_client_can_copy_directory_direct_url() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello before direct URL svn directory copy\n")
         .expect("seed svn readme");
 
@@ -5341,7 +5538,12 @@ async fn svn_protocol_external_client_can_move_file_and_commit() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello before external svn move\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -5409,7 +5611,12 @@ async fn svn_protocol_external_client_can_move_direct_url() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello before direct URL svn move\n").expect("seed svn readme");
 
     let (base_url, shutdown) = spawn_app_server(app).await;
@@ -5467,7 +5674,12 @@ async fn svn_protocol_external_client_can_move_directory_direct_url() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     seed_svn_readme(&repo_path, "hello before direct URL svn directory move\n")
         .expect("seed svn readme");
 
@@ -5526,7 +5738,12 @@ async fn svn_protocol_root_and_default_vcc_propfind_honor_label_revision() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     let old_revision =
         seed_svn_readme(&repo_path, "hello before label propfind\n").expect("seed svn readme");
     let latest_revision = seed_svn_nested_tree(&repo_path).expect("seed second svn revision");
@@ -5579,7 +5796,12 @@ async fn svn_protocol_root_and_default_vcc_propfind_allprop_exposes_deltav_metad
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     let revision =
         seed_svn_readme(&repo_path, "hello before root vcc allprop\n").expect("seed svn readme");
     let uuid = yoram_vcs::svn_repository_uuid(&repo_path).expect("read repository uuid");
@@ -5680,7 +5902,12 @@ async fn svn_protocol_supports_checkout_merge_choreography() {
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
-    let repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
     let Some(revision) = seed_svn_readme(&repo_path, "initial content\n") else {
         eprintln!(
             "skipping executable SVN checkout/merge test because svnadmin/svnlook/svn is unavailable"

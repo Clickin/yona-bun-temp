@@ -613,8 +613,9 @@ async fn rest_issue_create_update_persists_legacy_due_date() {
 #[tokio::test]
 async fn rest_project_issue_list_exposes_legacy_row_payload_fields() {
     // Guards issue route-owned project list helper, REST string/number parsing, filters, and row payloads.
-    let future_due_date =
-        (chrono::Utc::now() + chrono::Duration::days(1)).format("%Y-%m-%d").to_string();
+    let future_due_date = (chrono::Utc::now() + chrono::Duration::days(1))
+        .format("%Y-%m-%d")
+        .to_string();
     let (app, _, db) = build_app_with_repository_and_db().await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
@@ -3289,6 +3290,7 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
             project_name: "targetShare".to_string(),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .expect("target share project");
@@ -5179,6 +5181,7 @@ async fn rest_workspace_routes_manage_overview_settings_and_recent_projects() {
             project_name: "projectYobi".to_string(),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();
@@ -5549,6 +5552,7 @@ async fn rest_public_user_profile_reads_legacy_single_segment_profile() {
             project_name: "publicYobi".to_string(),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();
@@ -5560,6 +5564,7 @@ async fn rest_public_user_profile_reads_legacy_single_segment_profile() {
             project_name: "secretYobi".to_string(),
             project_scope: "private".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();
@@ -5889,6 +5894,7 @@ async fn rest_user_statistics_counts_legacy_activity_rows() {
             project_name: "statsYobi".to_string(),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();
@@ -6117,6 +6123,7 @@ async fn rest_workspace_routes_preserve_error_status_and_envelope() {
             project_name: "publicProject".to_string(),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();
@@ -6128,6 +6135,7 @@ async fn rest_workspace_routes_preserve_error_status_and_envelope() {
             project_name: "privateProject".to_string(),
             project_scope: "private".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();
@@ -7395,6 +7403,7 @@ async fn rest_issue_form_options_and_title_heads_preserve_scoped_legacy_contract
             project_name: "MentionProject".to_string(),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .expect("mention project");
@@ -7561,6 +7570,7 @@ async fn rest_issue_form_options_and_title_heads_preserve_scoped_legacy_contract
             project_name: "ProtectedMentions".to_string(),
             project_scope: "protected".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .expect("protected mention project");
@@ -7599,6 +7609,7 @@ async fn rest_issue_form_options_and_title_heads_preserve_scoped_legacy_contract
             project_name: "MainIssue".to_string(),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();
@@ -7610,6 +7621,7 @@ async fn rest_issue_form_options_and_title_heads_preserve_scoped_legacy_contract
             project_name: "alphaProject".to_string(),
             project_scope: "private".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();
@@ -7621,6 +7633,7 @@ async fn rest_issue_form_options_and_title_heads_preserve_scoped_legacy_contract
             project_name: "BetaProject".to_string(),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();
@@ -7632,6 +7645,7 @@ async fn rest_issue_form_options_and_title_heads_preserve_scoped_legacy_contract
             project_name: "alphaProject".to_string(),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();
@@ -7643,6 +7657,7 @@ async fn rest_issue_form_options_and_title_heads_preserve_scoped_legacy_contract
             project_name: "Hidden".to_string(),
             project_scope: "private".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();
@@ -7654,6 +7669,7 @@ async fn rest_issue_form_options_and_title_heads_preserve_scoped_legacy_contract
             project_name: "NotVisited".to_string(),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();
@@ -7665,6 +7681,7 @@ async fn rest_issue_form_options_and_title_heads_preserve_scoped_legacy_contract
             project_name: "SecretTitle".to_string(),
             project_scope: "private".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();
@@ -7676,6 +7693,7 @@ async fn rest_issue_form_options_and_title_heads_preserve_scoped_legacy_contract
             project_name: "SvnTemplate".to_string(),
             project_scope: "public".to_string(),
             vcs: "Subversion".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();
@@ -7746,7 +7764,12 @@ async fn rest_issue_form_options_and_title_heads_preserve_scoped_legacy_contract
         .expect("bind candidate logo")
         .expect("candidate logo binding");
 
-    let repository_path = yoram_vcs::repository_path(data_dir.path(), current_project.id);
+    let repository_path = yoram_vcs::repository_path(
+        data_dir.path(),
+        &current_project.owner_name,
+        &current_project.project_name,
+    )
+    .expect("repository path");
     yoram_vcs::create_bare_repository(&repository_path).expect("current project repository");
     yoram_vcs::commit_text_file(
         &repository_path,
@@ -8026,8 +8049,12 @@ async fn rest_issue_form_options_and_title_heads_preserve_scoped_legacy_contract
             .output()
             .is_ok_and(|output| output.status.success());
     if svn_available {
-        let svn_repository_path =
-            yoram_vcs::svn_repository_path(data_dir.path(), svn_template_project.id);
+        let svn_repository_path = yoram_vcs::svn_repository_path(
+            data_dir.path(),
+            &svn_template_project.owner_name,
+            &svn_template_project.project_name,
+        )
+        .expect("repository path");
         yoram_vcs::create_svn_repository(&svn_repository_path)
             .expect("create SVN template repository");
         yoram_vcs::svn_put_file(

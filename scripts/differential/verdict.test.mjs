@@ -5,6 +5,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { computeCoverage, aggregateViolations, buildVerdict, main } from './verdict.mjs';
+import { CLASSIFICATIONS, BLOCKING_CLASSIFICATIONS } from './report.mjs';
 
 const inventory = {
   version: 1,
@@ -17,8 +18,10 @@ const coverage = {
 };
 const report = {
   scenarios: [
-    { id: 'S1', violations: [{ classification: 'needs-review' }] },
-    { id: 'S2', violations: [{ classification: 'known-gap' }, {}] },
+    // missing classification -> UNVERIFIED (blocking)
+    { id: 'S1', violations: [{ classification: 'UNVERIFIED' }] },
+    // accepted divergence + legacy bug are NON-blocking
+    { id: 'S2', violations: [{ classification: 'ACCEPTED_DIVERGENCE' }, { classification: 'LEGACY_BUG' }] },
   ],
 };
 
@@ -34,23 +37,52 @@ test('computeCoverage: full coverage and empty inventory edge case', () => {
   assert.equal(computeCoverage({ behaviors: [] }, coverage).ratio, 1);
 });
 
-test('aggregateViolations: flatten and classify (missing -> needs-review)', () => {
-  const s = aggregateViolations(report);
-  assert.equal(s.total, 3);
-  assert.deepEqual(s.byClassification, { 'needs-review': 2, 'known-gap': 1 });
+test('aggregateViolations: flatten and classify (missing -> UNVERIFIED)', () => {
+  const s = aggregateViolations({ scenarios: [{ violations: [{}] }] });
+  assert.equal(s.total, 1);
+  assert.deepEqual(s.byClassification, { UNVERIFIED: 1 });
 });
 
-test('buildVerdict: strict blocks all violations, non-strict only known-gap/infra', () => {
+test('aggregateViolations: counts every class independently', () => {
+  const s = aggregateViolations(report);
+  assert.equal(s.total, 3);
+  assert.deepEqual(s.byClassification, { UNVERIFIED: 1, ACCEPTED_DIVERGENCE: 1, LEGACY_BUG: 1 });
+});
+
+test('buildVerdict gate: only PRODUCT_GAP/HARNESS_ERROR/INFRA_ERROR/UNVERIFIED block', () => {
   const base = { inventory, coverage, report, skipFastLane: true };
-  assert.equal(buildVerdict(base).checks.sweep.blocked, 3);
-  assert.equal(buildVerdict({ ...base, strict: false }).checks.sweep.blocked, 1);
-  // infra counts as blocker in non-strict too
-  const withInfra = {
+  const v = buildVerdict(base);
+  // ACCEPTED_DIVERGENCE + LEGACY_BUG are non-blocking; UNVERIFIED blocks.
+  assert.equal(v.checks.sweep.blocked, 1);
+  assert.equal(v.ok, false);
+
+  const acceptedOnly = {
     ...base,
-    report: { scenarios: [{ violations: [{ classification: 'infra' }] }] },
-    strict: false,
+    report: { scenarios: [{ violations: [{ classification: 'ACCEPTED_DIVERGENCE', reason: 'r', rationale: 'doc' }] }] },
   };
-  assert.equal(buildVerdict(withInfra).checks.sweep.blocked, 1);
+  const v2 = buildVerdict(acceptedOnly);
+  assert.equal(v2.checks.sweep.blocked, 0);
+
+  for (const c of ['PRODUCT_GAP', 'HARNESS_ERROR', 'INFRA_ERROR', 'UNVERIFIED']) {
+    const v3 = buildVerdict({ ...base, report: { scenarios: [{ violations: [{ classification: c }] }] } });
+    assert.equal(v3.checks.sweep.blocked, 1, `${c} must block`);
+  }
+});
+
+test('classification enum is the unified model', () => {
+  assert.deepEqual(CLASSIFICATIONS, [
+    'PASS',
+    'PRODUCT_GAP',
+    'ACCEPTED_DIVERGENCE',
+    'LEGACY_BUG',
+    'HARNESS_ERROR',
+    'INFRA_ERROR',
+    'UNVERIFIED',
+  ]);
+  assert.deepEqual(
+    [...BLOCKING_CLASSIFICATIONS].sort(),
+    ['HARNESS_ERROR', 'INFRA_ERROR', 'PRODUCT_GAP', 'UNVERIFIED'],
+  );
 });
 
 test('buildVerdict: ok requires coverage=100, no blockers, fast lane', () => {
@@ -94,7 +126,7 @@ test('CLI: missing artifact gives clear error and nonzero exit', async () => {
   assert.equal(code, 2);
 });
 
-test('CLI: end-to-end writes verdict.json with exit code 1 (violations present)', async () => {
+test('CLI: end-to-end writes verdict.json with exit code 1 (blockers present)', async () => {
   const dir = writeFixtures();
   const out = join(dir, 'verdict.json');
   const code = await main([
@@ -109,34 +141,25 @@ test('CLI: end-to-end writes verdict.json with exit code 1 (violations present)'
   const v = JSON.parse(readFileSync(out, 'utf8'));
   assert.equal(v.ok, false);
   assert.equal(v.checks.sweep.total, 3);
+  assert.equal(v.checks.sweep.blocked, 1);
   assert.deepEqual(v.checks.coverage.uncovered, ['B-0003']);
 
-  // non-strict + fast lane pass still blocked by known-gap
-  const out2 = join(dir, 'verdict2.json');
-  const code2 = await main([
-    'node', 'verdict.mjs', '--non-strict', '--fast-lane-pass', 'true',
-    '--inventory', join(dir, 'inventory.json'),
-    '--coverage', join(dir, 'coverage.json'),
-    '--report', join(dir, 'report.json'),
-    '--out', out2,
-  ]);
-  assert.equal(code2, 1);
-  assert.equal(JSON.parse(readFileSync(out2, 'utf8')).checks.sweep.blocked, 1);
-
-  // fully green run exits 0
+  // accepted divergences alone never block: fully green run exits 0
+  const repAccepted = join(dir, 'report-accepted.json');
+  writeFileSync(repAccepted, JSON.stringify({
+    scenarios: [{ violations: [{ classification: 'ACCEPTED_DIVERGENCE', reason: 'r', rationale: 'docs/x.md' }] }],
+  }));
   const covFull = join(dir, 'coverage-full.json');
   writeFileSync(covFull, JSON.stringify({ scenarios: [{ behaviorIds: ['B-0001', 'B-0002', 'B-0003'] }] }));
-  const repClean = join(dir, 'report-clean.json');
-  writeFileSync(repClean, JSON.stringify({ scenarios: [{ violations: [] }] }));
   const code3 = await main([
     'node', 'verdict.mjs', '--fast-lane-pass', 'true',
     '--inventory', join(dir, 'inventory.json'),
-    '--coverage', covFull, '--report', repClean,
+    '--coverage', covFull, '--report', repAccepted,
     '--out', join(dir, 'v3.json'),
   ]);
   assert.equal(code3, 0);
 
-  // ponytail: direct invocation against real repo artifacts — expected to fail while violations exist
+  // ponytail: direct invocation against real repo artifacts — expected to fail while blockers exist
   try {
     execFileSync(process.execPath, [new URL('./verdict.mjs', import.meta.url).pathname, '--skip-fast-lane']);
     assert.fail('expected nonzero exit');

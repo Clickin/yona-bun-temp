@@ -99,10 +99,14 @@ impl AppRepositoryImpl<'_> {
         Ok(Some(record))
     }
 
+    /// Consumes the caller-resolved destination project name (`next_project_transfer_name`)
+    /// so the filesystem relocation and DB write use ONE identity. All related
+    /// rows are written in a single transaction.
     pub async fn accept_project_transfer(
         &self,
         transfer_id: i64,
-    ) -> Result<Option<ProjectRecord>, DbErr> {
+        resolved_new_project_name: &str,
+    ) -> Result<Option<ProjectTransferRelocation>, DbErr> {
         let Some(transfer) = self.read_valid_project_transfer(transfer_id).await? else {
             return Ok(None);
         };
@@ -124,50 +128,85 @@ impl AppRepositoryImpl<'_> {
             .as_ref()
             .map(|organization| organization.id);
 
-        let previous_owner = project.owner.clone();
-        let previous_name = project.name.clone();
-        let new_project_name = self
-            .next_project_transfer_name(
-                &transfer.destination,
-                previous_name.as_deref().unwrap_or_default(),
-            )
-            .await?;
-        let mut active_project = project::ActiveModel::from(project);
-        active_project.owner = Set(Some(transfer.destination.clone()));
-        active_project.name = Set(Some(new_project_name.clone()));
-        active_project.organization_id = Set(organization_id);
-        active_project.previous_owner_login_id = Set(previous_owner);
-        active_project.previous_name = Set(previous_name);
-        active_project.previous_name_changed_time = Set(Some(current_timestamp_millis()));
-        let updated_project = active_project.update(&self.db).await?;
-
-        if let Some(sender_membership) = project_user::Entity::find()
-            .filter(project_user::Column::ProjectId.eq(Some(updated_project.id)))
+        let manager_role_id = self.ensure_role_id("manager").await?;
+        let member_role_id = self.ensure_role_id("member").await?;
+        let sender_membership = project_user::Entity::find()
+            .filter(project_user::Column::ProjectId.eq(Some(project.id)))
             .filter(project_user::Column::UserId.eq(Some(transfer.sender_id)))
             .one(&self.db)
-            .await?
-        {
-            if self.role_name_for_id(sender_membership.role_id).await? == "manager" {
-                self.add_project_membership(updated_project.id, transfer.sender_id, "member")
+            .await?;
+        let demote_sender = match &sender_membership {
+            Some(membership) => self.role_name_for_id(membership.role_id).await? == "manager",
+            None => false,
+        };
+        let destination_membership = match &destination_user {
+            Some(user) => {
+                project_user::Entity::find()
+                    .filter(project_user::Column::ProjectId.eq(Some(project.id)))
+                    .filter(project_user::Column::UserId.eq(Some(user.id)))
+                    .one(&self.db)
+                    .await?
+            }
+            None => None,
+        };
+
+        let previous_owner = project.owner.clone().unwrap_or_default();
+        let previous_name = project.name.clone().unwrap_or_default();
+        let mut active_project = project::ActiveModel::from(project);
+        active_project.owner = Set(Some(transfer.destination.clone()));
+        active_project.name = Set(Some(resolved_new_project_name.to_string()));
+        active_project.organization_id = Set(organization_id);
+        active_project.previous_owner_login_id = Set(Some(previous_owner.clone()));
+        active_project.previous_name = Set(Some(previous_name.clone()));
+        active_project.previous_name_changed_time = Set(Some(current_timestamp_millis()));
+
+        let (_write_guard, txn, txn_started_at) = self.begin_serialized_write().await?;
+        let updated_project = active_project.update(&txn).await?;
+        if let (true, Some(membership)) = (&demote_sender, &sender_membership) {
+            let mut active = project_user::ActiveModel::from(membership.clone());
+            active.role_id = Set(Some(member_role_id));
+            active.update(&txn).await?;
+        }
+        if let Some(user) = &destination_user {
+            match &destination_membership {
+                Some(membership) => {
+                    let mut active = project_user::ActiveModel::from(membership.clone());
+                    active.role_id = Set(Some(manager_role_id));
+                    active.update(&txn).await?;
+                }
+                None => {
+                    project_user::ActiveModel {
+                        id: NotSet,
+                        user_id: Set(Some(user.id)),
+                        project_id: Set(Some(updated_project.id)),
+                        role_id: Set(Some(manager_role_id)),
+                    }
+                    .insert(&txn)
                     .await?;
+                }
             }
         }
-        if let Some(destination_user) = destination_user {
-            self.add_project_membership(updated_project.id, destination_user.id, "manager")
-                .await?;
-        }
-
         if let Some(row) = project_transfer::Entity::find_by_id(transfer.id)
-            .one(&self.db)
+            .one(&txn)
             .await?
         {
             let mut active_transfer = project_transfer::ActiveModel::from(row);
             active_transfer.accepted = Set(Some(1));
-            active_transfer.new_project_name = Set(Some(new_project_name));
-            active_transfer.update(&self.db).await?;
+            active_transfer.new_project_name = Set(Some(resolved_new_project_name.to_string()));
+            active_transfer.update(&txn).await?;
         }
-        self.sync_project_label_cache(&updated_project).await?;
+        self.sync_project_label_cache(&txn, &updated_project)
+            .await?;
+        self.commit_serialized_write(txn, _write_guard, txn_started_at)
+            .await?;
 
-        self.project_record_from_model(updated_project).await
+        Ok(Some(ProjectTransferRelocation {
+            project_id: updated_project.id,
+            vcs: updated_project.vcs.unwrap_or_default(),
+            old_owner_name: previous_owner,
+            old_project_name: previous_name,
+            new_owner_name: transfer.destination,
+            new_project_name: resolved_new_project_name.to_string(),
+        }))
     }
 }

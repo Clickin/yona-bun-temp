@@ -54,6 +54,7 @@ pub(crate) use routes::{
     filter_workspace_member_projects_by_read_acl_for_viewer,
     filter_workspace_pull_request_items_by_read_acl_for_viewer, form_bool, form_value,
     format_project_date_label, gravatar_url, headers_with_form_csrf, internal_error,
+    legacy_content_modified_by_others, legacy_user_avatar_url,
     issue_attachment_from_record, issue_comment_participation_mutation, issue_favorite_toggle,
     issue_label_category_from_record, issue_label_css, issue_label_from_record,
     issue_milestone_from_record, issue_milestone_from_record_with_issue_references,
@@ -114,10 +115,10 @@ pub(crate) use routes::{
     workspace_profile_update, workspace_visited_projects_reset,
 };
 pub(crate) use state::{
-    repository_provisioning_lock, site_import_staging_lock, AssetMode, BrowserRuntimeConfig,
-    ConnectError, Context, ErrorCode, PilotBackend, PilotServiceImpl, RuntimeRegistry,
-    LEGACY_LOGIN_INVALID_MESSAGE, LEGACY_LOGIN_REQUIRED_MESSAGE, LEGACY_MIN_PASSWORD_LENGTH,
-    SITE_UPDATE_NOTIFICATION_WATCHED,
+    lock_projects_for_mutation, repository_namespace_lock, site_import_staging_lock, AssetMode,
+    BrowserRuntimeConfig, ConnectError, Context, ErrorCode, PilotBackend, PilotServiceImpl,
+    ProjectMutationLocks, RuntimeRegistry, LEGACY_LOGIN_INVALID_MESSAGE,
+    LEGACY_LOGIN_REQUIRED_MESSAGE, LEGACY_MIN_PASSWORD_LENGTH, SITE_UPDATE_NOTIFICATION_WATCHED,
 };
 pub mod runtime_config;
 mod server_config;

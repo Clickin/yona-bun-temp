@@ -273,7 +273,20 @@ impl Default for AppRuntimeConfig {
         Self {
             auth_ui: AuthUiConfig::default(),
             password_hashing_silent_migration_to_argon2id: false,
-            data_root: PathBuf::from(".yona-data"),
+            // ponytail: unique temp root so parallel tests never share the
+            // canonical owner/project storage; production builds this struct
+            // from config/env (YONA_DATA) instead of via Default.
+            data_root: {
+                static SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+                let mut path = std::env::temp_dir();
+                path.push(format!(
+                    "yoram-default-data-{}-{}",
+                    std::process::id(),
+                    SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+                ));
+                let _ = std::fs::create_dir_all(&path);
+                path
+            },
             integrations: IntegrationConfig::default(),
             ldap: LdapRuntimeConfig::default(),
             max_uploaded_file_size: LEGACY_DEFAULT_MAX_FILE_SIZE,

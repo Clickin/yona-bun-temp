@@ -222,7 +222,7 @@ test("mutation actions translate to the legacy form route vs the Yoram REST rout
   // watch/favorite key on the resolved DB pk.
   assert.equal(
     translateLegacy(step("watch-issue", { owner: "admin", project: "sample" }), vars).path,
-    "/watch?resource.type=issue&resource.id=42",
+    "/watch?resource.type=issue_post&resource.id=42",
   );
   assert.equal(
     translateYoram(step("toggle-favorite-issue", { owner: "admin", project: "sample" }), vars).path,

@@ -2,9 +2,9 @@ use axum::http::HeaderMap;
 use http::StatusCode;
 use serde::Serialize;
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, HashMap},
     path::PathBuf,
-    sync::{atomic::AtomicBool, Mutex, OnceLock},
+    sync::{atomic::AtomicBool, LazyLock, Mutex},
 };
 
 use crate::runtime_config::normalize_base_path;
@@ -107,14 +107,71 @@ impl Context {
     }
 }
 
-pub(crate) fn repository_provisioning_lock() -> &'static Mutex<()> {
-    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-    LOCK.get_or_init(|| Mutex::new(()))
+pub(crate) fn site_import_staging_lock() -> &'static tokio::sync::Mutex<()> {
+    static LOCK: LazyLock<tokio::sync::Mutex<()>> = LazyLock::new(|| tokio::sync::Mutex::new(()));
+    &LOCK
 }
 
-pub(crate) fn site_import_staging_lock() -> &'static tokio::sync::Mutex<()> {
-    static LOCK: OnceLock<tokio::sync::Mutex<()>> = OnceLock::new();
-    LOCK.get_or_init(|| tokio::sync::Mutex::new(()))
+/// Namespace mutation lock: serializes every operation that can claim an
+/// owner/project repository destination path (project create, rename,
+/// transfer, organization rename, delete staging transition, VCS type
+/// change). A per-project lock alone cannot stop two different project IDs
+/// racing for the same destination path.
+///
+/// Acquisition order is ALWAYS: 1) this namespace lock, then 2) affected
+/// project locks from [`project_repository_lock`] in ascending project_id
+/// order. Single-process scope only.
+pub(crate) fn repository_namespace_lock() -> &'static tokio::sync::Mutex<()> {
+    static LOCK: LazyLock<tokio::sync::Mutex<()>> = LazyLock::new(|| tokio::sync::Mutex::new(()));
+    &LOCK
+}
+
+/// Project-ID-keyed exclusive/shared repository lease. Shared read guards
+/// keep the physical repository path stable for smart-http/SVN dispatch and
+/// code-browser reads; exclusive write guards cover rename, transfer,
+/// delete, VCS type change, and organization rename. Entries are removed
+/// once the last guard drops so the registry cannot grow indefinitely.
+pub(crate) fn project_repository_lock(project_id: i64) -> std::sync::Arc<tokio::sync::RwLock<()>> {
+    static LOCKS: LazyLock<Mutex<HashMap<i64, std::sync::Weak<tokio::sync::RwLock<()>>>>> =
+        LazyLock::new(|| Mutex::new(HashMap::new()));
+    let mut locks = LOCKS
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    locks.retain(|_, weak| weak.upgrade().is_some());
+    let lock = match locks.get(&project_id).and_then(std::sync::Weak::upgrade) {
+        Some(lock) => lock,
+        None => {
+            let lock = std::sync::Arc::new(tokio::sync::RwLock::new(()));
+            locks.insert(project_id, std::sync::Arc::downgrade(&lock));
+            lock
+        }
+    };
+    lock
+}
+
+/// Held across repository lifecycle mutations. Acquisition order: namespace
+/// mutation lock first, then exclusive project locks in ascending project_id
+/// order.
+pub(crate) struct ProjectMutationLocks {
+    _namespace: tokio::sync::OwnedMutexGuard<()>,
+    _projects: Vec<tokio::sync::OwnedRwLockWriteGuard<()>>,
+}
+
+pub(crate) async fn lock_projects_for_mutation(project_ids: Vec<i64>) -> ProjectMutationLocks {
+    let mut ids = project_ids;
+    ids.sort_unstable();
+    ids.dedup();
+    static NAMESPACE: LazyLock<std::sync::Arc<tokio::sync::Mutex<()>>> =
+        LazyLock::new(|| std::sync::Arc::new(tokio::sync::Mutex::new(())));
+    let namespace = std::sync::Arc::clone(&NAMESPACE).lock_owned().await;
+    let mut projects = Vec::with_capacity(ids.len());
+    for id in ids {
+        projects.push(project_repository_lock(id).write_owned().await);
+    }
+    ProjectMutationLocks {
+        _namespace: namespace,
+        _projects: projects,
+    }
 }
 
 #[derive(Clone)]
@@ -275,3 +332,27 @@ impl BrowserRuntimeConfig {
 pub(crate) const LEGACY_LOGIN_INVALID_MESSAGE: &str = "user.login.invalid";
 pub(crate) const LEGACY_LOGIN_REQUIRED_MESSAGE: &str = "user.login.required";
 pub(crate) const LEGACY_MIN_PASSWORD_LENGTH: usize = 4;
+
+#[cfg(test)]
+mod lock_tests {
+    use super::*;
+    use std::time::Duration;
+
+    #[tokio::test]
+    async fn exclusive_project_lock_blocks_shared_readers() {
+        let _mutation = lock_projects_for_mutation(vec![7, 3]).await;
+        let lock = project_repository_lock(3);
+        let blocked = tokio::time::timeout(Duration::from_millis(50), lock.read()).await;
+        assert!(
+            blocked.is_err(),
+            "shared reader must be blocked while the exclusive mutation lock is held"
+        );
+        drop(_mutation);
+        let lock = project_repository_lock(3);
+        let acquired = tokio::time::timeout(Duration::from_millis(50), lock.read()).await;
+        assert!(
+            acquired.is_ok(),
+            "shared reader must proceed after mutation completes"
+        );
+    }
+}

@@ -19,6 +19,7 @@ import {
 } from "./diff.mjs";
 import { parseH2ShellOutput } from "./db-projection.mjs";
 import { ACTION_DEFINITIONS } from "./scenarios/index.mjs";
+import { CLASSIFICATIONS, HarnessError, classifyViolation, violation } from "./report.mjs";
 
 const knownActions = Object.keys(ACTION_DEFINITIONS);
 
@@ -149,6 +150,7 @@ test("db projections map legacy and yoram column spellings", () => {
     { name: "bug", category: "type", color: "#F44336" },
     { name: "bug", category_name: "type", color: "#f44336" },
   ]);
+  assert.deepEqual(labels[0], { name: "bug", category: "type", color: "#f44336" });
   assert.deepEqual(diffProjections([labels[0]], [labels[1]]), []);
 
   const comments = projectCommentRows([{ authorLoginId: "bob", contents: "hi  there" }, { author_login_id: "bob", body: "hi there" }]);
@@ -223,4 +225,63 @@ test("session adapters send json/form bodies without reference errors", async ()
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+// --- typed classification model ----------------------------------------------
+
+test("classify maps unmatched findings to UNVERIFIED and dom skeletons to ACCEPTED_DIVERGENCE", () => {
+  assert.equal(classifyViolation("api", "/x", { expected: 1, actual: 2 }).classification, "UNVERIFIED");
+  assert.equal(classifyViolation("dom", "/x", { firstDiffs: [] }).classification, "ACCEPTED_DIVERGENCE");
+  assert.equal(classifyViolation("harness", "step", {}).classification, "HARNESS_ERROR");
+  assert.equal(classifyViolation("infra", "render", {}).classification, "INFRA_ERROR");
+});
+
+test("every ACCEPTED_DIVERGENCE rule carries a rationale reference", () => {
+  // report.mjs validates its own rule table at import; this asserts the enum
+  // contract stays closed against banned legacy terms.
+  for (const c of CLASSIFICATIONS) {
+    assert.match(c, /^(PASS|PRODUCT_GAP|ACCEPTED_DIVERGENCE|LEGACY_BUG|HARNESS_ERROR|INFRA_ERROR|UNVERIFIED)$/u);
+  }
+});
+
+test("violation() rejects an ACCEPTED_DIVERGENCE without rationale", () => {
+  assert.throws(
+    () => violation({ route: "/x", kind: "divergence", classification: "ACCEPTED_DIVERGENCE", expected: 1, actual: 2 }),
+    /rationale/u,
+  );
+  const ok = violation({ route: "/x", kind: "divergence", classification: "ACCEPTED_DIVERGENCE", reason: "r", rationale: "docs/x.md", expected: 1, actual: 2 });
+  assert.equal(ok.classification, "ACCEPTED_DIVERGENCE");
+  assert.equal(ok.rationale, "docs/x.md");
+});
+
+// --- fail-fast id resolution ---------------------------------------------------
+
+function guardedActionCtx(action, state) {
+  return {
+    step: { action, params: { owner: "admin", project: "sample" } },
+    resolved: { title: "t", body: "b" },
+    suffix: "sfx",
+    state,
+    entry: { behaviorIds: ["B-0001"], violations: [], errors: [] },
+    helpers: {},
+  };
+}
+
+test("id-dependent mutations throw HarnessError instead of issuing /issue/null/*", async () => {
+  for (const action of ["edit-issue", "patch-issue-content", "update-issue-assignees", "delete-issue", "vote-issue", "unvote-issue"]) {
+    const ctx = guardedActionCtx(action, { issueNumberLegacy: null, issueNumberYoram: 7 });
+    await assert.rejects(() => ACTION_DEFINITIONS[action].handler(ctx), HarnessError);
+    assert.equal(ctx.entry.violations.length, 0);
+  }
+});
+
+test("create-issue-comment throws before requesting when the issue id is unresolved", async () => {
+  let requested = false;
+  const ctx = guardedActionCtx("create-issue-comment", { issueNumberLegacy: null, issueNumberYoram: null });
+  ctx.helpers.requestBoth = async () => {
+    requested = true;
+    return { legacyResult: {}, yoramResult: {} };
+  };
+  await assert.rejects(() => ACTION_DEFINITIONS["create-issue-comment"].handler(ctx), HarnessError);
+  assert.equal(requested, false, "no /issue/null/* request may be issued");
 });

@@ -383,8 +383,12 @@ fn clone_bare(work_path: &Path, repo_path: &Path) {
     assert!(status.success(), "git clone --bare failed");
 }
 
-fn seed_bare_repo_with_branches(data_root: &Path, project_id: i64) {
-    let repo_path = data_root.join("repo").join(format!("{project_id}.git"));
+fn seed_bare_repo_with_branches(data_root: &Path, owner: &str, project: &str) {
+    let repo_path = data_root
+        .join("repo")
+        .join("git")
+        .join(owner)
+        .join(format!("{project}.git"));
     let work_path = temp_path("work");
     fs::create_dir_all(&work_path).unwrap();
     run_git(&work_path, &["init", "-b", "main"]);
@@ -443,7 +447,7 @@ async fn pull_request_watcher_projection_matches_legacy_get_watchers() {
         .await
         .unwrap()
         .expect("public project");
-    seed_bare_repo_with_branches(&data_root, project.id);
+    seed_bare_repo_with_branches(&data_root, &project.owner_name, &project.project_name);
 
     let created = response_json(
         rest_json(
@@ -550,7 +554,11 @@ async fn pull_request_watcher_projection_matches_legacy_get_watchers() {
         .await
         .unwrap()
         .expect("private project");
-    seed_bare_repo_with_branches(&data_root, private_project.id);
+    seed_bare_repo_with_branches(
+        &data_root,
+        &private_project.owner_name,
+        &private_project.project_name,
+    );
     let private_created = response_json(
         rest_json(
             app.clone(),
@@ -615,7 +623,7 @@ async fn pull_request_review_comment_allows_legacy_guest_nonmember_on_public_pro
         .await
         .unwrap()
         .expect("project");
-    seed_bare_repo_with_branches(&data_root, project.id);
+    seed_bare_repo_with_branches(&data_root, &project.owner_name, &project.project_name);
     let created = response_json(
         rest_json(
             app.clone(),
@@ -697,7 +705,7 @@ async fn pull_request_create_rejects_legacy_project_guest_nonmember() {
         .await
         .unwrap()
         .expect("project");
-    seed_bare_repo_with_branches(&data_root, project.id);
+    seed_bare_repo_with_branches(&data_root, &project.owner_name, &project.project_name);
 
     let form_options_forbidden = rest_get(
         app.clone(),
@@ -764,7 +772,7 @@ async fn pull_request_state_notifications_include_legacy_review_comment_watchers
         .await
         .unwrap()
         .expect("project");
-    seed_bare_repo_with_branches(&data_root, project.id);
+    seed_bare_repo_with_branches(&data_root, &project.owner_name, &project.project_name);
 
     let created = response_json(
         rest_json(
@@ -907,7 +915,7 @@ async fn pull_request_hangout_webhooks_persist_thread_names_for_followups() {
         .await
         .unwrap()
         .expect("project");
-    seed_bare_repo_with_branches(&data_root, project.id);
+    seed_bare_repo_with_branches(&data_root, &project.owner_name, &project.project_name);
 
     let created_webhook = response_json(
         rest_json(
@@ -1057,7 +1065,7 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     repo.add_project_membership(project.id, reviewer_id, "member")
         .await
         .unwrap();
-    seed_bare_repo_with_branches(&data_root, project.id);
+    seed_bare_repo_with_branches(&data_root, &project.owner_name, &project.project_name);
     response_json(
         rest_json(
             app.clone(),
@@ -1215,7 +1223,11 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     assert!(created_text.contains("[projectYobi] owner"));
     assert!(created_text.contains("notification.type.new.pullrequest"));
     assert!(created_text.contains("/yona/owner/projectYobi/pullRequest/1|#1: Interaction parity"));
-    let repo_path = data_root.join("repo").join(format!("{}.git", project.id));
+    let repo_path = data_root
+        .join("repo")
+        .join("git")
+        .join(&project.owner_name)
+        .join(format!("{}.git", project.project_name));
     let base_commit_id = git_dir_output(&repo_path, &["rev-parse", "refs/heads/main"])
         .trim()
         .to_string();
@@ -1900,7 +1912,11 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         count_rows(&db, "pull_request_event", "PULL_REQUEST_MERGED").await,
         1
     );
-    let repo_path = data_root.join("repo").join(format!("{}.git", project.id));
+    let repo_path = data_root
+        .join("repo")
+        .join("git")
+        .join(&project.owner_name)
+        .join(format!("{}.git", project.project_name));
     let merged_head = git_dir_output(&repo_path, &["rev-parse", "refs/heads/main"])
         .trim()
         .to_string();

@@ -1008,7 +1008,16 @@ pub(crate) async fn direct_code_ajax_compat(
         };
     }
 
-    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let repo_path = match yoram_vcs::repository_path(
+        &service.data_root,
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+    ) {
+        Ok(path) => path,
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+        }
+    };
     let snapshot = match yoram_vcs::read_code_browser(
         &repo_path,
         branch.as_deref().filter(|value| !value.trim().is_empty()),
@@ -1078,7 +1087,16 @@ pub(crate) async fn direct_code_file(
         };
     }
 
-    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let repo_path = match yoram_vcs::repository_path(
+        &service.data_root,
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+    ) {
+        Ok(path) => path,
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+        }
+    };
     match yoram_vcs::read_file_bytes(&repo_path, &revision, &path) {
         Ok(file) => direct_code_file_response(file, mode),
         Err(VcsError::NotFound) if mode == DirectCodeFileMode::Raw => {
@@ -1264,7 +1282,16 @@ pub(crate) async fn rest_read_code_archive(
         };
     }
 
-    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let repo_path = match yoram_vcs::repository_path(
+        &service.data_root,
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+    ) {
+        Ok(path) => path,
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+        }
+    };
     let format = query.format.as_deref().unwrap_or("zip");
     if format == "tar.gz" || format == "tgz" {
         match yoram_vcs::read_archive_targz(&repo_path, &branch) {
@@ -1319,7 +1346,13 @@ pub(crate) async fn rest_read_code_blame(
         };
     }
 
-    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let repo_path = yoram_vcs::repository_path(
+        &service.data_root,
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+    )
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
     let snapshot = yoram_vcs::read_code_blame(&repo_path, &branch, &filepath)
         .map_err(code_browser_error)
         .map_err(RestRouteError::from_connect_error)?;
@@ -1389,15 +1422,25 @@ pub(crate) async fn rest_read_code_find_files(
         };
     }
 
-    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let repo_path = yoram_vcs::repository_path(
+        &service.data_root,
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+    )
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
     let q = if !query.q.is_empty() {
         query.q
     } else {
         query.query
     };
-    let result = yoram_vcs::find_code_files(&repo_path, &branch, if q.is_empty() { None } else { Some(&q) })
-        .map_err(code_browser_error)
-        .map_err(RestRouteError::from_connect_error)?;
+    let result = yoram_vcs::find_code_files(
+        &repo_path,
+        &branch,
+        if q.is_empty() { None } else { Some(&q) },
+    )
+    .map_err(code_browser_error)
+    .map_err(RestRouteError::from_connect_error)?;
 
     Ok(Json(RestCodeFindFileResult {
         owner_name,
@@ -1448,7 +1491,13 @@ pub(crate) async fn rest_read_code_grep(
         };
     }
 
-    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let repo_path = yoram_vcs::repository_path(
+        &service.data_root,
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+    )
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
     let q = if !query.q.is_empty() {
         query.q
     } else {
@@ -1617,11 +1666,22 @@ async fn rest_read_code_browser(
 
     let branch = Some(query.branch.as_str()).filter(|value| !value.trim().is_empty());
     let snapshot = if authorization.project.vcs == "Subversion" {
-        let repo_path =
-            yoram_vcs::svn_repository_path(&service.data_root, authorization.project.id);
+        let repo_path = yoram_vcs::svn_repository_path(
+            &service.data_root,
+            &authorization.project.owner_name,
+            &authorization.project.project_name,
+        )
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
         yoram_vcs::read_svn_code_browser(&repo_path, branch, &query.path)
     } else {
-        let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+        let repo_path = yoram_vcs::repository_path(
+            &service.data_root,
+            &authorization.project.owner_name,
+            &authorization.project.project_name,
+        )
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
         yoram_vcs::read_code_browser(&repo_path, branch, &query.path)
     }
     .map_err(code_browser_error)
@@ -1812,11 +1872,22 @@ async fn rest_read_code_history(
 
     let branch = Some(query.branch.as_str()).filter(|value| !value.trim().is_empty());
     let mut snapshot = if authorization.project.vcs == "Subversion" {
-        let repo_path =
-            yoram_vcs::svn_repository_path(&service.data_root, authorization.project.id);
+        let repo_path = yoram_vcs::svn_repository_path(
+            &service.data_root,
+            &authorization.project.owner_name,
+            &authorization.project.project_name,
+        )
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
         yoram_vcs::read_svn_code_history(&repo_path, branch, &query.path, query.page)
     } else {
-        let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+        let repo_path = yoram_vcs::repository_path(
+            &service.data_root,
+            &authorization.project.owner_name,
+            &authorization.project.project_name,
+        )
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
         yoram_vcs::read_code_history(&repo_path, branch, &query.path, query.page)
     }
     .map_err(code_browser_error)
@@ -1931,11 +2002,22 @@ async fn rest_code_commit_detail_response(
     service: &PilotServiceImpl,
 ) -> Result<RestCodeCommitDetailResponse, RestRouteError> {
     let mut snapshot = if authorization.project.vcs == "Subversion" {
-        let repo_path =
-            yoram_vcs::svn_repository_path(&service.data_root, authorization.project.id);
+        let repo_path = yoram_vcs::svn_repository_path(
+            &service.data_root,
+            &authorization.project.owner_name,
+            &authorization.project.project_name,
+        )
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
         yoram_vcs::read_svn_commit_detail(&repo_path, commit_id, &query.path)
     } else {
-        let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+        let repo_path = yoram_vcs::repository_path(
+            &service.data_root,
+            &authorization.project.owner_name,
+            &authorization.project.project_name,
+        )
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
         yoram_vcs::read_commit_detail(
             &repo_path,
             commit_id,
@@ -2395,7 +2477,13 @@ async fn rest_read_code_compare(
         };
     }
 
-    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let repo_path = yoram_vcs::repository_path(
+        &service.data_root,
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+    )
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
     let snapshot = yoram_vcs::read_compare_diff_ext(&repo_path, rev_a, rev_b, three_dot)
         .map_err(code_browser_error)
         .map_err(RestRouteError::from_connect_error)?;
@@ -2447,7 +2535,13 @@ async fn rest_read_code_commit_file_diff(
         };
     }
 
-    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let repo_path = yoram_vcs::repository_path(
+        &service.data_root,
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+    )
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
     let file_diff = yoram_vcs::read_commit_file_diff(&repo_path, &commit_id, &filepath)
         .map_err(code_browser_error)
         .map_err(RestRouteError::from_connect_error)?;
@@ -2472,7 +2566,13 @@ async fn rest_read_code_branches(
     };
     let authorization =
         rest_require_project_code_read(repository, &owner_name, &project_name, actor_id).await?;
-    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let repo_path = yoram_vcs::repository_path(
+        &service.data_root,
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+    )
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
     let snapshot = yoram_vcs::read_branch_list(&repo_path)
         .map_err(code_branch_error)
         .map_err(RestRouteError::from_connect_error)?;
@@ -2513,7 +2613,13 @@ async fn rest_set_default_code_branch(
             ConnectError::permission_denied("branch default update is not allowed"),
         ));
     }
-    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let repo_path = yoram_vcs::repository_path(
+        &service.data_root,
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+    )
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
     let snapshot = yoram_vcs::set_default_branch(&repo_path, &body.branch_name)
         .map_err(code_branch_error)
         .map_err(RestRouteError::from_connect_error)?;
@@ -2554,7 +2660,13 @@ async fn rest_delete_code_branch(
             ConnectError::permission_denied("branch delete is not allowed"),
         ));
     }
-    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let repo_path = yoram_vcs::repository_path(
+        &service.data_root,
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+    )
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
     let snapshot = yoram_vcs::delete_branch(&repo_path, &body.branch_name)
         .map_err(code_branch_error)
         .map_err(RestRouteError::from_connect_error)?;
@@ -2585,7 +2697,13 @@ async fn rest_read_code_tags(
     };
     let authorization =
         rest_require_project_code_read(repository, &owner_name, &project_name, actor_id).await?;
-    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let repo_path = yoram_vcs::repository_path(
+        &service.data_root,
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+    )
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
     let snapshot = yoram_vcs::read_code_tags(&repo_path)
         .map_err(code_branch_error)
         .map_err(RestRouteError::from_connect_error)?;
@@ -2622,7 +2740,13 @@ async fn rest_create_code_tag(
             ConnectError::permission_denied("tag creation is not allowed"),
         ));
     }
-    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let repo_path = yoram_vcs::repository_path(
+        &service.data_root,
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+    )
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
     let snapshot = yoram_vcs::create_code_tag(
         &repo_path,
         &body.tag_name,
@@ -2664,7 +2788,13 @@ async fn rest_delete_code_tag(
             ConnectError::permission_denied("tag delete is not allowed"),
         ));
     }
-    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let repo_path = yoram_vcs::repository_path(
+        &service.data_root,
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+    )
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
     let snapshot = yoram_vcs::delete_code_tag(&repo_path, &body.tag_name)
         .map_err(code_branch_error)
         .map_err(RestRouteError::from_connect_error)?;

@@ -54,13 +54,73 @@ pub(super) async fn direct_accept_project_transfer(
         return StatusCode::FORBIDDEN.into_response();
     }
 
-    match repository.accept_project_transfer(transfer.id).await {
-        Ok(Some(project)) => redirect_to(
+    // Destination-name resolution FIRST: one identity consumed by BOTH the
+    // filesystem relocation and the DB transaction (no TOCTOU recompute).
+    let Some(project) = repository
+        .read_project_by_id(transfer.project_id)
+        .await
+        .ok()
+        .flatten()
+    else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let resolved_new_name = match repository
+        .next_project_transfer_name(&transfer.destination, &project.project_name)
+        .await
+    {
+        Ok(name) => name,
+        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    };
+
+    let _locks = crate::lock_projects_for_mutation(vec![project.id]).await;
+    let (old_layout, new_layout) = match (
+        vcs::project_storage_layout(&service, &project.owner_name, &project.project_name),
+        vcs::project_storage_layout(&service, &transfer.destination, &resolved_new_name),
+    ) {
+        (Ok(old), Ok(new)) => (old, new),
+        _ => return StatusCode::UNPROCESSABLE_ENTITY.into_response(),
+    };
+    if vcs::ensure_single_storage_layout(&old_layout).is_err() {
+        return (StatusCode::CONFLICT, "Inconsistent repository storage").into_response();
+    }
+
+    // Relocate the active-VCS store; roll back on DB failure.
+    let (active_source, active_destination) = if project.vcs == "Subversion" {
+        (old_layout.svn_path.clone(), new_layout.svn_path.clone())
+    } else {
+        (old_layout.git_path.clone(), new_layout.git_path.clone())
+    };
+    if active_source.exists() && !active_destination.exists() {
+        if active_destination
+            .parent()
+            .is_some_and(|parent| std::fs::create_dir_all(parent).is_err())
+        {
+            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+        }
+        if std::fs::rename(&active_source, &active_destination).is_err() {
+            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+        }
+    }
+
+    match repository
+        .accept_project_transfer(transfer.id, &resolved_new_name)
+        .await
+    {
+        Ok(Some(relocation)) => redirect_to(
             &service.base_path,
-            &format!("/{}/{}", project.owner_name, project.project_name),
+            &format!(
+                "/{}/{}",
+                relocation.new_owner_name, relocation.new_project_name
+            ),
         ),
         Ok(None) => StatusCode::NOT_FOUND.into_response(),
-        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+        Err(_) => {
+            // DB transaction failed: restore the physical location.
+            if active_destination.exists() && !active_source.exists() {
+                let _ = std::fs::rename(&active_destination, &active_source);
+            }
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
     }
 }
 #[derive(Deserialize)]

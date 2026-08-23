@@ -28,12 +28,12 @@ use crate::{
     legacy_external_date_string, legacy_external_parse_datetime, map_project_scope,
     normalize_identifier, normalize_issue_label_color, normalize_milestone_state,
     parse_milestone_due_date, percent_encode_uri_component, persistence, project_logo_url,
-    random_site_admin_password, random_storage_token, redirect_to,
-    repository_provisioning_lock, rest_board_label_from_record, rest_migration_actor_from_user_id,
-    rest_require_migration_actor, rest_repository,
-    site_export_filename_stamp, site_import_staging_lock, workspace_avatar_url, AssetMode,
-    BrowserRuntimeConfig, ConnectError, PilotServiceImpl, RestBoardLabel,
-    RestProjectDeleteResponse, RestRouteError, SmtpRuntimeConfig, SITE_UPDATE_NOTIFICATION_WATCHED,
+    random_site_admin_password, random_storage_token, redirect_to, repository_namespace_lock,
+    rest_board_label_from_record, rest_migration_actor_from_user_id, rest_repository,
+    rest_require_migration_actor, site_export_filename_stamp, site_import_staging_lock,
+    workspace_avatar_url, AssetMode, BrowserRuntimeConfig, ConnectError, PilotServiceImpl,
+    RestBoardLabel, RestProjectDeleteResponse, RestRouteError, SmtpRuntimeConfig,
+    SITE_UPDATE_NOTIFICATION_WATCHED,
 };
 
 use super::uploaded_file_path_with_root;
@@ -1283,9 +1283,9 @@ impl RestSiteImportResponse {
 fn valid_storage_token(token: &str) -> bool {
     !token.is_empty()
         && token.len() <= 128
-        && token
-            .chars()
-            .all(|character| character.is_ascii_alphanumeric() || character == '-' || character == '_')
+        && token.chars().all(|character| {
+            character.is_ascii_alphanumeric() || character == '-' || character == '_'
+        })
 }
 
 /// Site-import request body cap. The metadata payload for the full production
@@ -2629,10 +2629,9 @@ pub(crate) async fn rest_import_site_data_from_source(
     .await;
     match result {
         Ok(mut response) => {
-            if let Err(error) =
-                repository
-                    .commit_serialized_write(transaction, _write_guard, txn_started_at)
-                    .await
+            if let Err(error) = repository
+                .commit_serialized_write(transaction, _write_guard, txn_started_at)
+                .await
             {
                 rollback.cleanup_staged_uploads();
                 return Err(RestRouteError::internal(error.to_string()));
@@ -2791,12 +2790,12 @@ impl RestSiteImportRollbackLedger {
     }
 
     fn record_organization(&mut self, organization: &persistence::OrganizationRecord) {
-        self.organizations.push(organization.organization_name.clone());
+        self.organizations
+            .push(organization.organization_name.clone());
     }
 
     fn record_organization_member(&mut self, organization_id: i64, user_id: i64) {
-        self.organization_members
-            .push((organization_id, user_id));
+        self.organization_members.push((organization_id, user_id));
     }
 
     fn record_pull_request(&mut self, id: i64, project_id: i64, commit_ids: Vec<String>) {
@@ -3034,10 +3033,7 @@ pub(crate) trait ImportRecordSource: Send {
     >;
     fn next_pull_request(
         &mut self,
-    ) -> futures::future::BoxFuture<
-        '_,
-        Result<Option<RestSiteImportPullRequestItem>, RestRouteError>,
-    >;
+    ) -> futures::future::BoxFuture<'_, Result<Option<RestSiteImportPullRequestItem>, RestRouteError>>;
     fn next_project(
         &mut self,
     ) -> futures::future::BoxFuture<'_, Result<Option<RestSiteImportProjectItem>, RestRouteError>>;
@@ -3055,10 +3051,7 @@ pub(crate) trait ImportRecordSource: Send {
     >;
     fn next_milestone(
         &mut self,
-    ) -> futures::future::BoxFuture<
-        '_,
-        Result<Option<RestSiteExportMilestoneItem>, RestRouteError>,
-    >;
+    ) -> futures::future::BoxFuture<'_, Result<Option<RestSiteExportMilestoneItem>, RestRouteError>>;
     fn next_post(
         &mut self,
     ) -> futures::future::BoxFuture<'_, Result<Option<RestSiteExportPostItem>, RestRouteError>>;
@@ -3139,10 +3132,8 @@ impl ImportRecordSource for VecImportRecordSource {
 
     fn next_pull_request(
         &mut self,
-    ) -> futures::future::BoxFuture<
-        '_,
-        Result<Option<RestSiteImportPullRequestItem>, RestRouteError>,
-    > {
+    ) -> futures::future::BoxFuture<'_, Result<Option<RestSiteImportPullRequestItem>, RestRouteError>>
+    {
         Box::pin(async move { Ok(self.pull_requests.next()) })
     }
 
@@ -3173,10 +3164,8 @@ impl ImportRecordSource for VecImportRecordSource {
 
     fn next_milestone(
         &mut self,
-    ) -> futures::future::BoxFuture<
-        '_,
-        Result<Option<RestSiteExportMilestoneItem>, RestRouteError>,
-    > {
+    ) -> futures::future::BoxFuture<'_, Result<Option<RestSiteExportMilestoneItem>, RestRouteError>>
+    {
         Box::pin(async move { Ok(self.milestones.next()) })
     }
 
@@ -3388,12 +3377,14 @@ async fn rest_import_site_data_streamed(
             checkpoint.mark_skipped("projects", index);
             continue;
         }
-        let organization_id =
-            resolve_site_import_project_organization_id(repository, project.organization_id, owner_name)
-                .await?;
-        let project_scope =
-            normalize_site_import_project_scope(&project.project_scope)
-                .map_err(RestRouteError::from_connect_error)?;
+        let organization_id = resolve_site_import_project_organization_id(
+            repository,
+            project.organization_id,
+            owner_name,
+        )
+        .await?;
+        let project_scope = normalize_site_import_project_scope(&project.project_scope)
+            .map_err(RestRouteError::from_connect_error)?;
         let vcs = normalize_site_import_project_vcs(&project.vcs);
         let created_project = if project.id > 0 {
             repository
@@ -3420,6 +3411,7 @@ async fn rest_import_site_data_streamed(
                     project_name: project_name.to_string(),
                     project_scope,
                     vcs: vcs.clone(),
+                    initial_manager_user_id: None,
                 })
                 .await
                 .map_err(|error| RestRouteError::internal(error.to_string()))?
@@ -3444,11 +3436,14 @@ async fn rest_import_site_data_streamed(
         // Provision the empty bare repository so git clone/push works right
         // after import (mirrors the project-create flow).
         {
-            let repo_path =
-                yoram_vcs::repository_path_for_vcs(&service.data_root, created_project.id, &vcs);
-            let _guard = repository_provisioning_lock()
-                .lock()
-                .map_err(|_| RestRouteError::internal("repository provisioning lock poisoned"))?;
+            let repo_path = yoram_vcs::repository_path_for_vcs(
+                &service.data_root,
+                &vcs,
+                &created_project.owner_name,
+                &created_project.project_name,
+            )
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+            let _guard = repository_namespace_lock().lock().await;
             let provisioning = if vcs == "Subversion" {
                 yoram_vcs::create_svn_repository(&repo_path)
             } else {
@@ -4002,7 +3997,12 @@ async fn rest_import_site_data_streamed(
                     attachment_actor_id: Some(actor.id),
                     created_at: imported_created_at,
                     owner_name: post.owner_name.trim().to_string(),
-                    post_number: post.post_number.trim().parse::<i64>().ok().filter(|number| *number > 0),
+                    post_number: post
+                        .post_number
+                        .trim()
+                        .parse::<i64>()
+                        .ok()
+                        .filter(|number| *number > 0),
                     project_name: post.project_name.trim().to_string(),
                     updated_at: imported_updated_at,
                     values: persistence::PostingMutationInput {
@@ -4021,12 +4021,7 @@ async fn rest_import_site_data_streamed(
             Ok(created) => created,
             Err(error) => {
                 let message = error.to_string();
-                checkpoint.set_failure(
-                    "posts",
-                    index,
-                    failure_key,
-                    message.clone(),
-                );
+                checkpoint.set_failure("posts", index, failure_key, message.clone());
                 rest_site_import_cleanup_attachments(
                     &service,
                     repository,
@@ -4366,7 +4361,10 @@ async fn rest_site_import_dry_run_report(
             .await
             .map_err(|error| RestRouteError::internal(error.to_string()))?
             .is_some();
-        if member.organization_id <= 0 || member.user_id <= 0 || !organization_exists || !user_exists
+        if member.organization_id <= 0
+            || member.user_id <= 0
+            || !organization_exists
+            || !user_exists
         {
             would_skip.organization_members += 1;
             continue;
@@ -5030,8 +5028,7 @@ fn rest_site_import_dry_run_attachments(
                 // Placeholder attachment: the file arrives out of band via
                 // /site/import/files keyed by the legacy hash, so a valid
                 // hash counts as importable.
-                if !attachment.hash.trim().is_empty()
-                    && valid_storage_token(attachment.hash.trim())
+                if !attachment.hash.trim().is_empty() && valid_storage_token(attachment.hash.trim())
                 {
                     if attachment.id > 0
                         && !state.payload_portable_attachment_ids.insert(attachment.id)
@@ -5179,9 +5176,7 @@ async fn rest_site_import_post_comments(
                 .await
                 .map_err(|error| RestRouteError::internal(error.to_string()));
             match detail {
-                Ok(Some(posting)) => {
-                    posting.comments.iter().map(|comment| comment.id).max()
-                }
+                Ok(Some(posting)) => posting.comments.iter().map(|comment| comment.id).max(),
                 Ok(None) => {
                     rest_site_import_cleanup_attachments(
                         service,
@@ -6462,12 +6457,20 @@ pub(crate) async fn rest_delete_site_project(
         .await
         .map_err(|error| RestRouteError::internal(error.to_string()))?
         .ok_or_else(|| RestRouteError::not_found("project not found"))?;
-    repository
-        .delete_project_by_owner_and_name(&project.owner_name, &project.project_name)
-        .await
-        .map_err(internal_error)
-        .map_err(RestRouteError::from_connect_error)?;
-    delete_project_repository_storage(&service, project.id)?;
+    delete_project_repository_storage(
+        &service,
+        project.id,
+        &project.owner_name,
+        &project.project_name,
+        async {
+            repository
+                .delete_project_by_owner_and_name(&project.owner_name, &project.project_name)
+                .await
+                .map_err(internal_error)
+                .map_err(RestRouteError::from_connect_error)
+        },
+    )
+    .await?;
 
     Ok(Json(RestProjectDeleteResponse {
         ok: true,

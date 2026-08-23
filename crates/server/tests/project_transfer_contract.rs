@@ -206,7 +206,12 @@ async fn project_transfer_requests_and_accept_link_follow_legacy_permissions() {
         .await
         .expect("original project lookup")
         .expect("original project");
-    let original_repo_path = repository_path(data_dir.path(), original_project.id);
+    let original_repo_path = repository_path(
+        data_dir.path(),
+        &original_project.owner_name,
+        &original_project.project_name,
+    )
+    .expect("repository path");
     assert!(original_repo_path.is_dir());
 
     let forbidden = rest(
@@ -377,7 +382,13 @@ async fn project_transfer_requests_and_accept_link_follow_legacy_permissions() {
     assert_eq!(moved.owner_name, "recipient");
     assert_eq!(moved.project_name, "projectYobi-1");
     assert_eq!(moved.id, original_project.id);
-    assert!(original_repo_path.is_dir());
+    let moved_repo_path = repository_path(data_dir.path(), &moved.owner_name, &moved.project_name)
+        .expect("repository path");
+    assert!(moved_repo_path.is_dir());
+    assert!(
+        !original_repo_path.is_dir(),
+        "transfer should relocate the repository away from the original owner path"
+    );
     assert_eq!(moved.previous_owner_name.as_deref(), Some("owner"));
     assert_eq!(moved.previous_project_name.as_deref(), Some("projectYobi"));
     assert!(

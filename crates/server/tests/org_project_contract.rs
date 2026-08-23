@@ -368,10 +368,10 @@ fn seed_source_bare_repository(repo_path: &Path, readme: &str) {
     );
 }
 
-fn seed_bare_repository_readme(yona_data: &Path, project_id: i64, readme: &str) {
-    let repo_root = yona_data.join("repo");
+fn seed_bare_repository_readme(yona_data: &Path, owner: &str, project: &str, readme: &str) {
+    let repo_root = yona_data.join("repo").join("git").join(owner);
     fs::create_dir_all(&repo_root).expect("repo root");
-    let bare_repo = repo_root.join(format!("{project_id}.git"));
+    let bare_repo = repo_root.join(format!("{project}.git"));
     if !bare_repo.exists() {
         run_git(&["init", "--bare", bare_repo.to_str().unwrap()], None);
     }
@@ -477,7 +477,12 @@ async fn project_import_direct_route_clones_git_repository_and_preserves_legacy_
         .await
         .expect("read imported project")
         .expect("imported project exists");
-    let imported_repo = repository_path(yona_data.path(), authorization.project.id);
+    let imported_repo = repository_path(
+        yona_data.path(),
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+    )
+    .expect("repository path");
     assert!(
         imported_repo.exists(),
         "import should clone source repository into ID-based bare Git storage"
@@ -595,7 +600,12 @@ async fn project_import_rest_route_clones_git_repository_for_spa() {
         .await
         .expect("read imported project")
         .expect("imported project exists");
-    let imported_repo = repository_path(yona_data.path(), authorization.project.id);
+    let imported_repo = repository_path(
+        yona_data.path(),
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+    )
+    .expect("repository path");
     assert!(imported_repo.exists());
     let readme = git_output(
         &[
@@ -1234,11 +1244,23 @@ async fn project_create_and_settings_mutations_persist_legacy_menu_checkboxes() 
         .expect("created project authorization");
     assert_eq!(authorization.project.vcs, "Subversion");
     assert!(
-        !repository_path(yona_data.path(), authorization.project.id).exists(),
+        !repository_path(
+            yona_data.path(),
+            &authorization.project.owner_name,
+            &authorization.project.project_name
+        )
+        .expect("repository path")
+        .exists(),
         "SVN project creation should not leave Git repository storage"
     );
     assert!(
-        svn_repository_path(yona_data.path(), authorization.project.id).exists(),
+        svn_repository_path(
+            yona_data.path(),
+            &authorization.project.owner_name,
+            &authorization.project.project_name
+        )
+        .expect("repository path")
+        .exists(),
         "SVN project creation should provision executable-backed SVN storage"
     );
     let menu_settings = app_repo
@@ -1552,6 +1574,7 @@ async fn canonical_sidebar_favorites_persist_under_an_arbitrary_context_path() {
             project_name: "mixedOwner".to_string(),
             project_scope: "private".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .expect("create mixed-case owner project");
@@ -2365,7 +2388,8 @@ async fn rest_project_container_includes_git_readme_with_legacy_readme_link_rewr
         .unwrap();
     seed_bare_repository_readme(
         yona_data.path(),
-        project.id,
+        &project.owner_name,
+        &project.project_name,
         "# Git README\n\n@admin @admin/projectYobi @ghost @admin/missing\n\n![logo](./assets/logo.png)\n\n[Guide](./docs/guide.md)\n",
     );
 
@@ -3013,7 +3037,12 @@ async fn rest_project_container_includes_legacy_project_home_commit_history_rows
         .await
         .unwrap()
         .expect("project");
-    seed_bare_repository_readme(yona_data.path(), project.id, "# Git README\n");
+    seed_bare_repository_readme(
+        yona_data.path(),
+        &project.owner_name,
+        &project.project_name,
+        "# Git README\n",
+    );
 
     let response = app
         .oneshot(

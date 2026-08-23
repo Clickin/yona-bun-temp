@@ -78,6 +78,10 @@ tempfile.workspace = true
 testcontainers-modules = { version = "0.15", features = ["postgres", "mariadb"] }
 
 [[test]]
+name = "project_storage_lifecycle_contract"
+path = "tests/project_storage_lifecycle_contract.rs"
+
+[[test]]
 name = "server_core_contract"
 path = "tests/server_core_contract.rs"
 

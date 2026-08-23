@@ -182,6 +182,7 @@ async fn legacy_external_user_issues_returns_legacy_result_shape() {
             project_name: "projectYobi".to_string(),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();

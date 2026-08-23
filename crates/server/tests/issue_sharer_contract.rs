@@ -299,8 +299,22 @@ async fn issue_sharer_contract_searches_sharable_active_users_with_issue_read_ac
         .await,
     )
     .await;
-    assert_eq!(blank["total"], 0);
-    assert_eq!(blank["items"].as_array().unwrap().len(), 0);
+    // Legacy findSharableUsers returns the FULL candidate list for an empty query (I13).
+    assert!(blank["total"].as_u64().unwrap() >= 5);
+    let blank_login_ids = login_ids(&blank);
+    for expected in [
+        "owner",
+        "outsider",
+        "matchterm-login",
+        "name-holder",
+        "english-holder",
+    ] {
+        assert!(
+            blank_login_ids.contains(&expected.to_string()),
+            "empty query should list {expected}: {blank}"
+        );
+    }
+    assert!(!blank_login_ids.contains(&"matchterm-locked".to_string()));
 
     let broad = response_json(
         rest(
@@ -357,6 +371,7 @@ async fn issue_sharer_contract_searches_public_project_targets() {
             project_name: "targetShare".to_string(),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();
@@ -367,6 +382,7 @@ async fn issue_sharer_contract_searches_public_project_targets() {
         project_name: "targetSecret".to_string(),
         project_scope: "private".to_string(),
         vcs: "GIT".to_string(),
+        initial_manager_user_id: None,
     })
     .await
     .unwrap();
@@ -417,6 +433,7 @@ async fn issue_sharer_contract_caps_large_sharable_results_by_user_and_project()
             project_name: format!("targetProject{index}"),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();
@@ -470,6 +487,7 @@ async fn issue_sharer_contract_project_target_mutation_expands_project_members()
             project_name: "targetShare".to_string(),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();
@@ -1087,4 +1105,71 @@ async fn issue_sharer_contract_rejects_unknown_login_and_unauthorized_manager() 
     )
     .await;
     assert_eq!(denied.status(), StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn issue_sharer_contract_returns_legacy_shaped_entries_on_compat_route() {
+    // Legacy IssueApi.findSharableUsers emits user entries
+    // {loginId, name, pureNameOnly, avatarUrl(gravatar s=64), type:"user"} and
+    // project entries {loginId:<numeric id>, name:"owner/name", avatarUrl:"",
+    // type:"project"} with no pureNameOnly (I13 candidate-set shape).
+    let (app, _repo, _db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    register_user(app.clone(), "visitor").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    create_issue(app.clone(), &owner_cookie, &owner_csrf, "Shared issue").await;
+
+    let users = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/sharable-users/find?query=visit",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    let user_entry = users
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|item| item["loginId"] == "visitor")
+        .expect("legacy sharable user entry")
+        .clone();
+    assert_eq!(user_entry["name"], "visitor");
+    assert_eq!(user_entry["pureNameOnly"], "visitor");
+    assert_eq!(user_entry["type"], "user");
+    let avatar_url = user_entry["avatarUrl"].as_str().expect("avatar url");
+    // Legacy User.avatarUrl(): size-64 gravatar when the gravatar servers are
+    // reachable, else the default avatar asset.
+    let gravatar_shape = avatar_url.starts_with("https://www.gravatar.com/avatar/")
+        && avatar_url.contains("s=64")
+        && avatar_url.contains("d=https%3A%2F%2Fko.gravatar.com%2Fuserimage%2F53495145");
+    assert!(
+        gravatar_shape || avatar_url == "/assets/images/default-avatar-128.png",
+        "avatar must be a legacy-shaped value, got {avatar_url}"
+    );
+
+    let projects = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/sharable-users/find?query=projectYobi",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    let project_entry = projects
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|item| item["type"] == "project" && item["name"] == "owner/projectYobi")
+        .expect("legacy sharable project entry");
+    assert!(project_entry.get("pureNameOnly").is_none());
+    assert_eq!(project_entry["avatarUrl"], "");
+    assert!(
+        project_entry["loginId"].is_u64(),
+        "project loginId must stay numeric like legacy, got {project_entry}"
+    );
 }

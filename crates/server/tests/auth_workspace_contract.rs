@@ -319,6 +319,7 @@ async fn anonymous_access_disabled_redirects_pages_and_rejects_non_auth_rest() {
             project_name: "projectYobi".to_string(),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();
@@ -3937,6 +3938,68 @@ async fn direct_legacy_email_delete_and_set_main_routes_redirect_and_mutate_emai
 }
 
 #[tokio::test]
+async fn direct_legacy_email_set_main_allows_unvalidated_address_like_legacy() {
+    // Legacy allows switching the main email even when it is not yet validated (U16).
+    let (app, repository, db) = build_auth_router().await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+
+    let register = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"door\",\"name\":\"Door\",\"emailAddress\":\"door@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(register.status(), StatusCode::OK);
+
+    let user = repository
+        .find_user_by_identifier("door")
+        .await
+        .unwrap()
+        .expect("registered user");
+    repository
+        .add_workspace_email_for_user(user.id, "pending@example.com")
+        .await
+        .expect("pending email");
+    let pending_email = email::Entity::find()
+        .filter(email::Column::UserId.eq(Some(user.id)))
+        .filter(email::Column::Email.eq(Some("pending@example.com".to_string())))
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("pending email row");
+    assert_eq!(pending_email.valid, Some(0));
+
+    let set_main = app
+        .oneshot(
+            Request::builder()
+                .method(Method::PUT)
+                .uri(format!("/yona/user/email/setAsMain/{}", pending_email.id))
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(set_main.status(), StatusCode::SEE_OTHER);
+
+    let updated_user = repository
+        .find_user_by_identifier("door")
+        .await
+        .unwrap()
+        .expect("updated user");
+    assert_eq!(updated_user.email_address, "pending@example.com");
+}
+
+#[tokio::test]
 async fn direct_legacy_token_reset_route_accepts_form_csrf_redirects_and_rotates_api_token() {
     let (app, repository, db) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
@@ -4037,6 +4100,7 @@ async fn direct_legacy_reset_visited_and_default_login_page_routes_match_workspa
             project_name: "projectYobi".to_string(),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();
@@ -4185,6 +4249,7 @@ async fn direct_legacy_usermenu_tab_content_list_returns_workspace_api_payload()
             project_name: "projectYobi".to_string(),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();
@@ -4280,6 +4345,7 @@ async fn direct_legacy_user_sidebar_returns_api_payload() {
             project_name: "projectYobi".to_string(),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();
@@ -4476,6 +4542,7 @@ async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
             project_name: "projectYobi".to_string(),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();
@@ -4862,6 +4929,7 @@ async fn toggle_workspace_notification_preserves_missing_forbidden_and_unwatched
             project_name: "publicProject".to_string(),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();
@@ -4873,6 +4941,7 @@ async fn toggle_workspace_notification_preserves_missing_forbidden_and_unwatched
             project_name: "privateProject".to_string(),
             project_scope: "private".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();
@@ -5217,6 +5286,7 @@ async fn workspace_overview_reads_and_updates_default_landing() {
             project_name: "projectYobi".to_string(),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();
@@ -5228,6 +5298,7 @@ async fn workspace_overview_reads_and_updates_default_landing() {
             project_name: "hiddenYobi".to_string(),
             project_scope: "private".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();

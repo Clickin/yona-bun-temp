@@ -1,0 +1,2 @@
+TypeError: sample is not a function
+    at login (src/login.js:42:7)

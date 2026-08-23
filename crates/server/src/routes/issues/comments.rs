@@ -9,6 +9,7 @@ pub(super) struct RestIssueCommentBody {
     )]
     attachment_ids: Vec<i64>,
     contents_markdown: String,
+    original: Option<String>,
     parent_comment_id: Option<i64>,
 }
 
@@ -38,6 +39,7 @@ fn direct_issue_comment_body(form: &HashMap<String, String>) -> RestIssueComment
     RestIssueCommentBody {
         attachment_ids: direct_comment_attachment_ids(form),
         contents_markdown: direct_comment_contents(form),
+        original: form.get("original").cloned(),
         parent_comment_id: form
             .get("parentCommentId")
             .and_then(|value| value.parse::<i64>().ok()),
@@ -304,7 +306,7 @@ pub(super) async fn rest_update_issue_comment(
     comment_id: i64,
     body: RestIssueCommentBody,
     service: PilotServiceImpl,
-) -> Result<Json<RestIssueDetailResponse>, RestRouteError> {
+) -> Result<Response, RestRouteError> {
     let session = require_session(&service.session_manager, &headers)
         .map_err(RestRouteError::from_connect_error)?;
     require_valid_csrf(&service.session_manager, &headers, &session)
@@ -340,6 +342,25 @@ pub(super) async fn rest_update_issue_comment(
             ConnectError::permission_denied("issue comment update is not allowed"),
         ));
     }
+    if let Some(original) = body.original.as_deref() {
+        if let Some(existing_comment) = access
+            .issue
+            .comments
+            .iter()
+            .find(|comment| comment.id == comment_id)
+        {
+            if legacy_content_modified_by_others(&existing_comment.contents_markdown, original) {
+                return Ok((
+                    StatusCode::CONFLICT,
+                    Json(serde_json::json!({
+                        "message": "Already modified by someone.",
+                        "storedContent": existing_comment.contents_markdown,
+                    })),
+                )
+                    .into_response());
+            }
+        }
+    }
     let issue = repository
         .update_issue_comment(persistence::UpdateIssueCommentInput {
             actor_id: actor.id,
@@ -354,18 +375,17 @@ pub(super) async fn rest_update_issue_comment(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
-    Ok(Json(
-        rest_issue_detail_response_from_record_with_access_issue_references(
-            repository,
-            &issue,
-            &access,
-            session.user_id,
-            &service.base_path,
-            !service.translation_proxy.api_url.trim().is_empty(),
-        )
-        .await
-        .map_err(RestRouteError::from_connect_error)?,
-    ))
+    let detail = rest_issue_detail_response_from_record_with_access_issue_references(
+        repository,
+        &issue,
+        &access,
+        session.user_id,
+        &service.base_path,
+        !service.translation_proxy.api_url.trim().is_empty(),
+    )
+    .await
+    .map_err(RestRouteError::from_connect_error)?;
+    Ok(Json(detail).into_response())
 }
 
 pub(super) async fn rest_delete_issue_comment(

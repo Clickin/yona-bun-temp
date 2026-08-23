@@ -37,27 +37,75 @@ fn repository_paths_preserve_git_and_svn_storage_suffixes() {
     let data_root = tempdir().expect("tempdir");
 
     assert_eq!(
-        repository_path(&data_root.path(), 7),
-        data_root.path().join("repo").join("7.git")
+        repository_path(&data_root.path(), "owner", "project").expect("git path"),
+        data_root
+            .path()
+            .join("repo")
+            .join("git")
+            .join("owner")
+            .join("project.git")
     );
     assert_eq!(
-        svn_repository_path(&data_root.path(), 7),
-        data_root.path().join("repo").join("7.svn")
+        svn_repository_path(&data_root.path(), "owner", "project").expect("svn path"),
+        data_root
+            .path()
+            .join("repo")
+            .join("svn")
+            .join("owner")
+            .join("project")
     );
     assert_eq!(
-        repository_path_for_vcs(data_root.path(), 7, "GIT"),
-        repository_path(data_root.path(), 7)
+        repository_path_for_vcs(data_root.path(), "GIT", "owner", "project").expect("vcs git path"),
+        repository_path(data_root.path(), "owner", "project").expect("git path")
     );
     assert_eq!(
-        repository_path_for_vcs(data_root.path(), 7, "Subversion"),
-        svn_repository_path(data_root.path(), 7)
+        repository_path_for_vcs(data_root.path(), "Subversion", "owner", "project")
+            .expect("vcs svn path"),
+        svn_repository_path(data_root.path(), "owner", "project").expect("svn path")
     );
+}
+
+#[test]
+fn repository_paths_allow_valid_yona_names() {
+    let data_root = tempdir().expect("tempdir");
+
+    // Leading dots and `.git` are valid Yona project names; the generic
+    // path-safety layer must NOT reject them (domain validation owns that).
+    repository_path(&data_root.path(), "owner", ".hidden-project").expect("leading dot");
+    repository_path(&data_root.path(), "owner", "sample.git").expect("dot-git suffix");
+    svn_repository_path(&data_root.path(), "Owner", "Project").expect("case preserved");
+}
+
+#[test]
+fn repository_paths_reject_unsafe_components() {
+    let data_root = tempdir().expect("tempdir");
+
+    for owner in ["", ".", "..", "a/b", r"a\b", "a\0b"] {
+        assert!(
+            repository_path(&data_root.path(), owner, "project").is_err(),
+            "owner {owner:?} must be rejected"
+        );
+        assert!(
+            svn_repository_path(&data_root.path(), owner, "project").is_err(),
+            "owner {owner:?} must be rejected"
+        );
+    }
+    for project in ["", ".", "..", "a/b", r"a\b", "a\0b"] {
+        assert!(
+            repository_path(&data_root.path(), "owner", project).is_err(),
+            "project {project:?} must be rejected"
+        );
+        assert!(
+            svn_repository_path(&data_root.path(), "owner", project).is_err(),
+            "project {project:?} must be rejected"
+        );
+    }
 }
 
 #[test]
 fn delete_repository_accepts_svn_repository_storage() {
     let data_root = tempdir().expect("tempdir");
-    let repo_path = svn_repository_path(data_root.path(), 9);
+    let repo_path = svn_repository_path(data_root.path(), "owner", "project").expect("svn path");
     std::fs::create_dir_all(&repo_path).expect("seed svn storage");
 
     delete_repository(&repo_path).expect("delete svn storage");
@@ -68,7 +116,7 @@ fn delete_repository_accepts_svn_repository_storage() {
 #[test]
 fn create_svn_repository_uses_svnadmin_when_available() {
     let data_root = tempdir().expect("tempdir");
-    let repo_path = svn_repository_path(data_root.path(), 11);
+    let repo_path = svn_repository_path(data_root.path(), "owner", "project").expect("svn path");
 
     if !svnadmin_available() {
         assert!(matches!(
@@ -95,7 +143,7 @@ fn svn_youngest_revision_uses_svnlook_when_available() {
     }
 
     let data_root = tempdir().expect("tempdir");
-    let repo_path = svn_repository_path(data_root.path(), 12);
+    let repo_path = svn_repository_path(data_root.path(), "owner", "project").expect("svn path");
 
     create_svn_repository(&repo_path).expect("create svn repository");
 
@@ -112,7 +160,7 @@ fn svn_repository_uuid_uses_svnlook_when_available() {
     }
 
     let data_root = tempdir().expect("tempdir");
-    let repo_path = svn_repository_path(data_root.path(), 13);
+    let repo_path = svn_repository_path(data_root.path(), "owner", "project").expect("svn path");
 
     create_svn_repository(&repo_path).expect("create svn repository");
 
@@ -128,7 +176,7 @@ fn svn_path_last_changed_revision_preserves_path_specific_metadata() {
     }
 
     let data_root = tempdir().expect("tempdir");
-    let repo_path = svn_repository_path(data_root.path(), 14);
+    let repo_path = svn_repository_path(data_root.path(), "owner", "project").expect("svn path");
     create_svn_repository(&repo_path).expect("create svn repository");
 
     let import_dir = tempdir().expect("svn import tempdir");

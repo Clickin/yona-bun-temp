@@ -192,8 +192,11 @@ async fn project_change_vcs_follows_legacy_update_gate_and_resets_repository() {
         .await
         .expect("project lookup")
         .expect("project exists");
-    let repo_path = repository_path(data_dir.path(), project.id);
-    let svn_repo_path = svn_repository_path(data_dir.path(), project.id);
+    let repo_path = repository_path(data_dir.path(), &project.owner_name, &project.project_name)
+        .expect("repository path");
+    let svn_repo_path =
+        svn_repository_path(data_dir.path(), &project.owner_name, &project.project_name)
+            .expect("repository path");
     assert!(
         repo_path.exists(),
         "project create should provision the original repository"

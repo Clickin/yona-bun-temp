@@ -24,20 +24,35 @@ use yoram_server::{
 };
 
 async fn build_auth_router() -> (axum::Router, AppRepository, DatabaseConnection) {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static TEST_SEQ: AtomicU64 = AtomicU64::new(0);
     let db = Database::connect("sqlite::memory:")
         .await
         .expect("sqlite connection");
     Migrator::fresh(&db).await.expect("fresh migration");
     let app_repo = AppRepository::new(db.clone());
 
+    // Unique per-call data root: canonical owner/project storage is shared on
+    // disk, so parallel tests must not collide in the default .yona-data dir.
+    let mut data_root = std::env::temp_dir();
+    data_root.push(format!(
+        "yoram-assets-test-{}-{}",
+        std::process::id(),
+        TEST_SEQ.fetch_add(1, Ordering::Relaxed)
+    ));
+    std::fs::create_dir_all(&data_root).expect("create test data root");
+    let mut app_config = AppRuntimeConfig::default();
+    app_config.data_root = data_root;
+
     (
-        create_router_with_app_repository(
+        create_router_with_repository_and_app_config(
             RuntimeConfig {
                 allow_anonymous_access: true,
                 base_path: "/yona".to_string(),
                 public_origin: String::new(),
             },
             app_repo.clone(),
+            app_config,
         ),
         app_repo,
         db,
@@ -1201,6 +1216,7 @@ async fn legacy_init_redirects_home_and_recreates_project_repositories() {
             project_name: "projectYobi".to_string(),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();
@@ -1225,7 +1241,8 @@ async fn legacy_init_redirects_home_and_recreates_project_repositories() {
         Some("/yona/")
     );
     assert!(
-        yoram_vcs::repository_path(data_root.path(), project.id)
+        yoram_vcs::repository_path(data_root.path(), &project.owner_name, &project.project_name)
+            .expect("repository path")
             .join("HEAD")
             .is_file(),
         "legacy /_init should recreate missing Git repository storage before redirecting"
@@ -1645,6 +1662,7 @@ async fn attachment_binding_uses_legacy_container_type_names() {
             project_name: "projectYobi".to_string(),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();
@@ -1881,6 +1899,7 @@ async fn attachment_binding_uses_legacy_container_type_names() {
             project_name: "privateYobi".to_string(),
             project_scope: "private".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();
@@ -2846,6 +2865,7 @@ async fn workspace_files_list_returns_current_users_legacy_attachment_rows() {
             project_name: "projectYobi".to_string(),
             project_scope: "public".to_string(),
             vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
         })
         .await
         .unwrap();

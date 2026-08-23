@@ -439,19 +439,60 @@ pub enum VcsError {
     SvnLookFailed(String),
 }
 
-pub fn repository_path(data_root: &Path, project_id: i64) -> PathBuf {
-    data_root.join("repo").join(format!("{project_id}.git"))
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum VcsPathError {
+    #[error("invalid repository path component: {0:?}")]
+    InvalidComponent(String),
 }
 
-pub fn svn_repository_path(data_root: &Path, project_id: i64) -> PathBuf {
-    data_root.join("repo").join(format!("{project_id}.svn"))
+fn validate_repository_component(component: &str) -> Result<(), VcsPathError> {
+    // ponytail: path-safety only — business naming policy lives in entity validation.
+    if component.is_empty()
+        || component == "."
+        || component == ".."
+        || component.contains('/')
+        || component.contains('\\')
+        || component.contains('\0')
+    {
+        return Err(VcsPathError::InvalidComponent(component.to_string()));
+    }
+    Ok(())
 }
 
-pub fn repository_path_for_vcs(data_root: &Path, project_id: i64, vcs: &str) -> PathBuf {
+pub fn repository_path(
+    data_root: &Path,
+    owner: &str,
+    project: &str,
+) -> Result<PathBuf, VcsPathError> {
+    validate_repository_component(owner)?;
+    validate_repository_component(project)?;
+    Ok(data_root
+        .join("repo")
+        .join("git")
+        .join(owner)
+        .join(format!("{project}.git")))
+}
+
+pub fn svn_repository_path(
+    data_root: &Path,
+    owner: &str,
+    project: &str,
+) -> Result<PathBuf, VcsPathError> {
+    validate_repository_component(owner)?;
+    validate_repository_component(project)?;
+    Ok(data_root.join("repo").join("svn").join(owner).join(project))
+}
+
+pub fn repository_path_for_vcs(
+    data_root: &Path,
+    vcs: &str,
+    owner: &str,
+    project: &str,
+) -> Result<PathBuf, VcsPathError> {
     if vcs == "Subversion" {
-        svn_repository_path(data_root, project_id)
+        svn_repository_path(data_root, owner, project)
     } else {
-        repository_path(data_root, project_id)
+        repository_path(data_root, owner, project)
     }
 }
 
@@ -508,9 +549,7 @@ pub fn create_svn_repository(repo_path: &Path) -> Result<(), VcsError> {
     }
     // svnadmin create is not idempotent (unlike `git init --bare`): a valid
     // repo left behind by an earlier (possibly rolled-back) import is fine.
-    if repo_path.is_dir()
-        && (repo_path.join("format").exists() || repo_path.join("db").is_dir())
-    {
+    if repo_path.is_dir() && (repo_path.join("format").exists() || repo_path.join("db").is_dir()) {
         return Ok(());
     }
 
@@ -1945,13 +1984,6 @@ pub fn delete_repository(repo_path: &Path) -> Result<(), VcsError> {
             repo_path.display()
         )));
     }
-    let file_name = repo_path
-        .file_name()
-        .and_then(|value| value.to_str())
-        .ok_or(VcsError::InvalidRepositoryPath)?;
-    if !file_name.ends_with(".git") && !file_name.ends_with(".svn") {
-        return Err(VcsError::InvalidRepositoryPath);
-    }
 
     std::fs::remove_dir_all(repo_path)
         .map_err(|error| VcsError::FilesystemFailed(error.to_string()))
@@ -2465,7 +2497,10 @@ pub fn find_code_files(
         branch.to_string()
     };
 
-    let output = git_output(repo_path, &["ls-tree", "-r", "--name-only", &selected_branch])?;
+    let output = git_output(
+        repo_path,
+        &["ls-tree", "-r", "--name-only", &selected_branch],
+    )?;
     let q_lower = query.map(|q| q.trim().to_lowercase()).unwrap_or_default();
     let mut paths = Vec::new();
 
@@ -2513,17 +2548,29 @@ pub fn grep_code_files(
     command
         .arg("--git-dir")
         .arg(repo_path)
-        .args(["grep", "-n", "-I", "--full-name", "-e", query_trimmed, &selected_branch])
+        .args([
+            "grep",
+            "-n",
+            "-I",
+            "--full-name",
+            "-e",
+            query_trimmed,
+            &selected_branch,
+        ])
         .stdin(Stdio::null())
         .stderr(Stdio::piped())
         .stdout(Stdio::piped());
 
-    let (output, exceeded) =
-        capture_command_output(command, Duration::from_secs(10), Some(10 * 1024 * 1024), Some(64 * 1024))
-            .map_err(|error| match error {
-                CommandCaptureError::Unavailable => VcsError::GitUnavailable,
-                CommandCaptureError::TimedOut => VcsError::GitTimedOut,
-            })?;
+    let (output, exceeded) = capture_command_output(
+        command,
+        Duration::from_secs(10),
+        Some(10 * 1024 * 1024),
+        Some(64 * 1024),
+    )
+    .map_err(|error| match error {
+        CommandCaptureError::Unavailable => VcsError::GitUnavailable,
+        CommandCaptureError::TimedOut => VcsError::GitTimedOut,
+    })?;
 
     if exceeded {
         return Err(VcsError::GitFailed(
@@ -2922,7 +2969,10 @@ pub fn compute_diff_stat_from_files(files: &[CodeCommitFileDiffRecord]) -> GitDi
     let mut deletions = 0u32;
     for file in files {
         for line in file.patch.lines() {
-            if line.starts_with("--- ") || line.starts_with("+++ ") || line.starts_with("diff --git ") {
+            if line.starts_with("--- ")
+                || line.starts_with("+++ ")
+                || line.starts_with("diff --git ")
+            {
                 continue;
             }
             if line.starts_with('+') {
@@ -3167,10 +3217,7 @@ pub fn create_code_tag(
     read_code_tags(repo_path)
 }
 
-pub fn delete_code_tag(
-    repo_path: &Path,
-    tag_name: &str,
-) -> Result<CodeTagListSnapshot, VcsError> {
+pub fn delete_code_tag(repo_path: &Path, tag_name: &str) -> Result<CodeTagListSnapshot, VcsError> {
     if !repo_path.exists() {
         return Err(VcsError::NotFound);
     }
@@ -4811,13 +4858,9 @@ mod tests {
         assert!(!initial_tags.no_head);
         assert!(initial_tags.tags.is_empty());
 
-        let created_snapshot = create_code_tag(
-            &repo_path,
-            "v1.0.0",
-            Some("HEAD"),
-            Some("Release v1.0.0"),
-        )
-        .expect("create tag");
+        let created_snapshot =
+            create_code_tag(&repo_path, "v1.0.0", Some("HEAD"), Some("Release v1.0.0"))
+                .expect("create tag");
         assert_eq!(created_snapshot.tags.len(), 1);
         assert_eq!(created_snapshot.tags[0].name, "v1.0.0");
         assert_eq!(created_snapshot.tags[0].commit_id, commit_id);
@@ -4871,8 +4914,9 @@ mod tests {
         assert_eq!(grep_results.matches[0].line_number, 2);
         assert!(grep_results.matches[0].content.contains("println!"));
 
-        let grep_empty = grep_code_files(&repo_path, &find_all.selected_branch, "nonexistent_keyword")
-            .expect("grep code files empty");
+        let grep_empty =
+            grep_code_files(&repo_path, &find_all.selected_branch, "nonexistent_keyword")
+                .expect("grep code files empty");
         assert!(grep_empty.matches.is_empty());
     }
 }
@@ -4917,14 +4961,18 @@ mod git_backend_relative_root_tests {
         assert!(
             String::from_utf8_lossy(&response.body).contains("service=git-upload-pack"),
             "got advertisement: {:?}",
-            String::from_utf8_lossy(&response.body).chars().take(80).collect::<String>()
+            String::from_utf8_lossy(&response.body)
+                .chars()
+                .take(80)
+                .collect::<String>()
         );
     }
 
     /// Hand-rolled pathdiff: a relative path from `base` to `target`.
     fn relative_path_from(base: &std::path::Path, target: &std::path::Path) -> std::path::PathBuf {
         let base_parts: Vec<&std::ffi::OsStr> = base.components().map(|c| c.as_os_str()).collect();
-        let target_parts: Vec<&std::ffi::OsStr> = target.components().map(|c| c.as_os_str()).collect();
+        let target_parts: Vec<&std::ffi::OsStr> =
+            target.components().map(|c| c.as_os_str()).collect();
         let mut common = 0;
         while common < base_parts.len()
             && common < target_parts.len()

@@ -2611,3 +2611,214 @@ async fn issue_core_contract_restores_direct_my_issue_project_selection() {
     .await;
     assert_eq!(inbox_options["selectedProject"]["projectName"], "inbox");
 }
+
+#[tokio::test]
+async fn issue_comment_update_rejects_stale_original_like_legacy() {
+    // Legacy IssueApi.updateIssueComment returns 409 {message, storedContent} when the
+    // stored contents differ from the submitted original (P9).
+    let (app, _) = build_app_with_repository().await;
+    let (csrf, cookie, _) = register_user(app.clone(), "owner").await;
+    response_json(
+        rpc(
+            app.clone(),
+            "CreateProject",
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "overview": "Comment conflict parity",
+                "projectScope": "public"
+            }),
+        )
+        .await,
+    )
+    .await;
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "title": "Conflict issue",
+                "bodyMarkdown": "body"
+            })),
+        )
+        .await,
+    )
+    .await;
+    let commented = response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1/comments",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "contentsMarkdown": "stored comment body"
+            })),
+        )
+        .await,
+    )
+    .await;
+    let comment_id = commented["comments"][0]["id"].as_i64().expect("comment id");
+
+    let stale = rest(
+        app.clone(),
+        Method::PUT,
+        &format!("/yona/api/v1/projects/owner/projectYobi/issues/1/comments/{comment_id}"),
+        Some(&cookie),
+        Some(&csrf),
+        Some(json!({
+            "contentsMarkdown": "fresh body",
+            "original": "stale original body"
+        })),
+    )
+    .await;
+    assert_eq!(stale.status(), StatusCode::CONFLICT);
+    let conflict = response_json_with_status(stale, StatusCode::CONFLICT).await;
+    assert_eq!(conflict["message"], "Already modified by someone.");
+    assert_eq!(conflict["storedContent"], "stored comment body");
+
+    let matching = response_json(
+        rest(
+            app.clone(),
+            Method::PUT,
+            &format!("/yona/api/v1/projects/owner/projectYobi/issues/1/comments/{comment_id}"),
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "contentsMarkdown": "updated comment body",
+                "original": "stored comment body"
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        matching["comments"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|comment| comment["id"] == comment_id)
+            .expect("updated comment")["contentsMarkdown"],
+        "updated comment body"
+    );
+
+    let without_original = response_json(
+        rest(
+            app.clone(),
+            Method::PUT,
+            &format!("/yona/api/v1/projects/owner/projectYobi/issues/1/comments/{comment_id}"),
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "contentsMarkdown": "updated again without original"
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        without_original["comments"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|comment| comment["id"] == comment_id)
+            .expect("updated comment")["contentsMarkdown"],
+        "updated again without original"
+    );
+}
+
+#[tokio::test]
+async fn issue_comment_patch_direct_route_rejects_stale_original_like_legacy() {
+    // Legacy routes PATCH /:user/:project/issue/:n/comments/:cid to
+    // IssueApi.updateIssueComment: JSON {content, original}, 409
+    // {"message":"Already modified by someone.","storedContent":...} when the
+    // normalized stored contents differ from the submitted original, and no
+    // conflict when they differ only by \r / surrounding whitespace
+    // (IssueApi.isModifiedByOthers hashes trim()+'\r'-stripped text).
+    let (app, _) = build_app_with_repository().await;
+    let (csrf, cookie, _) = register_user(app.clone(), "owner").await;
+    response_json(
+        rpc(
+            app.clone(),
+            "CreateProject",
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "overview": "Comment patch parity",
+                "projectScope": "public"
+            }),
+        )
+        .await,
+    )
+    .await;
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "title": "Patch conflict issue",
+                "bodyMarkdown": "body"
+            })),
+        )
+        .await,
+    )
+    .await;
+    let commented = response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1/comments",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "contentsMarkdown": "stored patch body"
+            })),
+        )
+        .await,
+    )
+    .await;
+    let comment_id = commented["comments"][0]["id"].as_i64().expect("comment id");
+    let patch_path = format!("/yona/owner/projectYobi/issue/1/comments/{comment_id}");
+
+    let stale = rest(
+        app.clone(),
+        Method::PATCH,
+        &patch_path,
+        Some(&cookie),
+        Some(&csrf),
+        Some(json!({
+            "content": "fresh content",
+            "original": "stale original"
+        })),
+    )
+    .await;
+    assert_eq!(stale.status(), StatusCode::CONFLICT);
+    let conflict = response_json_with_status(stale, StatusCode::CONFLICT).await;
+    assert_eq!(conflict["message"], "Already modified by someone.");
+    assert_eq!(conflict["storedContent"], "stored patch body");
+
+    // Only \r and surrounding whitespace differ -> legacy treats it as unchanged.
+    let normalized = rest(
+        app.clone(),
+        Method::PATCH,
+        &patch_path,
+        Some(&cookie),
+        Some(&csrf),
+        Some(json!({
+            "content": "patched via direct route",
+            "original": "\r\n  stored patch body  \r\n"
+        })),
+    )
+    .await;
+    assert_eq!(normalized.status(), StatusCode::OK);
+}

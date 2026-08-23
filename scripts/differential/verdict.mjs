@@ -3,6 +3,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { CLASSIFICATIONS } from './report.mjs';
 
 const DEFAULTS = {
   inventory: 'docs/provenance/behavior-inventory.json',
@@ -25,14 +26,14 @@ export function computeCoverage(inventory, coverage) {
   };
 }
 
-const BLOCKING_NON_STRICT = new Set(['known-gap', 'infra']);
+
+const BLOCKING = new Set(['PRODUCT_GAP', 'HARNESS_ERROR', 'INFRA_ERROR', 'UNVERIFIED']);
 
 export function aggregateViolations(report) {
-  // ponytail: classification policy may evolve; then drop the strict flag.
   const all = (report.scenarios ?? []).flatMap((s) => s.violations ?? []);
   const byClassification = {};
   for (const v of all) {
-    const c = v.classification ?? 'needs-review';
+    const c = CLASSIFICATIONS.includes(v.classification) ? v.classification : 'UNVERIFIED';
     byClassification[c] = (byClassification[c] ?? 0) + 1;
   }
   return { total: all.length, byClassification, violations: all };
@@ -44,19 +45,13 @@ export function buildVerdict({
   report,
   fastLanePass,
   skipFastLane,
-  strict = true,
 }) {
   const cov = computeCoverage(inventory, coverage);
   const sweep = aggregateViolations(report);
 
-  let blocked;
-  if (strict) {
-    blocked = sweep.total;
-  } else {
-    blocked = Object.entries(sweep.byClassification)
-      .filter(([c]) => BLOCKING_NON_STRICT.has(c))
-      .reduce((n, [, k]) => n + k, 0);
-  }
+  const blocked = Object.entries(sweep.byClassification)
+    .filter(([c]) => BLOCKING.has(c))
+    .reduce((n, [, k]) => n + k, 0);
 
   const fastLane = skipFastLane ? { skipped: true, pass: null } : { skipped: false, pass: fastLanePass };
   const ok =
@@ -84,12 +79,10 @@ function loadJson(path, label) {
 }
 
 function parseArgs(argv) {
-  const args = { ...DEFAULTS, strict: true };
+  const args = { ...DEFAULTS };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
-    if (a === '--strict') args.strict = true;
-    else if (a === '--non-strict') args.strict = false;
-    else if (a === '--skip-fast-lane') args.skipFastLane = true;
+    if (a === '--skip-fast-lane') args.skipFastLane = true;
     else if (a === '--fast-lane-pass') args.fastLanePass = argv[++i] === 'true';
     else if (a.startsWith('--')) {
       const key = a.slice(2);
@@ -106,7 +99,7 @@ export async function main(argv = process.argv) {
     opts = parseArgs(argv);
   } catch (err) {
     console.error(`verdict: ${err.message}`);
-    console.error('usage: node scripts/differential/verdict.mjs [--strict|--non-strict] (--fast-lane-pass true|false | --skip-fast-lane) [--inventory P] [--coverage P] [--report P] [--out P]');
+    console.error('usage: node scripts/differential/verdict.mjs (--fast-lane-pass true|false | --skip-fast-lane) [--inventory P] [--coverage P] [--report P] [--out P]');
     return 2;
   }
   if (!opts.skipFastLane && typeof opts.fastLanePass !== 'boolean') {
@@ -124,9 +117,7 @@ export async function main(argv = process.argv) {
     report,
     fastLanePass: opts.fastLanePass,
     skipFastLane: opts.skipFastLane,
-    strict: opts.strict,
   });
-
   mkdirSync(dirname(resolve(opts.out)), { recursive: true });
   writeFileSync(resolve(opts.out), JSON.stringify(verdict, null, 2) + '\n');
 
@@ -136,7 +127,10 @@ export async function main(argv = process.argv) {
   if (c.coverage.uncovered.length > 0) {
     console.log(`uncovered: ${c.coverage.uncovered.join(', ')}`);
   }
-  console.log(`sweep    : ${c.sweep.total} violation(s) ${JSON.stringify(c.sweep.byClassification)} -> ${c.sweep.blocked} blocking`);
+  console.log(`sweep    : ${c.sweep.total} violation(s) -> ${c.sweep.blocked} blocking`);
+  console.log(
+    `classes  : ` + CLASSIFICATIONS.map((k) => `${k}=${c.sweep.byClassification[k] ?? 0}`).join(' '),
+  );
   console.log(`fastLane : ${c.fastLane.skipped ? 'skipped' : c.fastLane.pass ? 'pass' : 'FAIL'}`);
   console.log(`verdict  : ${verdict.ok ? 'OK' : 'NOT OK'} (${opts.out})`);
   return verdict.ok ? 0 : 1;

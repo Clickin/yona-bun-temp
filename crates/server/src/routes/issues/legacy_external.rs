@@ -1135,7 +1135,7 @@ pub(super) async fn legacy_external_update_issue_comment(
     else {
         return RestRouteError::not_found("issue comment not found").into_response();
     };
-    if existing_comment.contents_markdown != body.original {
+    if legacy_content_modified_by_others(&existing_comment.contents_markdown, &body.original) {
         return (
             StatusCode::CONFLICT,
             Json(serde_json::json!({
@@ -1288,6 +1288,37 @@ pub(super) async fn legacy_external_issue_sharable_users(
         Ok(None) => return RestRouteError::not_found("pilot issue not found").into_response(),
         Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
     };
+    // Legacy User.avatarUrl(): uploaded avatar -> /files/{id}, else a size-64
+    // gravatar of the raw email, else the default avatar asset when the
+    // gravatar servers are unreachable (Config.isConnectableToGravatar).
+    let mut record = record;
+    let user_login_ids = record
+        .items
+        .iter()
+        .filter(|item| item.item_type == "user")
+        .map(|item| item.login_id.clone())
+        .collect::<Vec<_>>();
+    if !user_login_ids.is_empty() {
+        if let Ok(avatar_inputs) =
+            repository
+                .list_mention_user_avatar_inputs(&user_login_ids)
+                .await
+        {
+            for item in &mut record.items {
+                if item.item_type != "user" {
+                    continue;
+                }
+                item.avatar_url = avatar_inputs
+                    .get(&item.login_id)
+                    .map_or_else(
+                        || legacy_user_avatar_url("", None),
+                        |(email, attachment_id)| {
+                            legacy_user_avatar_url(email, *attachment_id)
+                        },
+                    );
+            }
+        }
+    }
     Json(legacy_external_assignable_users_result(record)).into_response()
 }
 
@@ -1298,6 +1329,16 @@ pub(crate) fn legacy_external_assignable_users_result(
         .items
         .into_iter()
         .map(|item| {
+            if item.item_type == "project" {
+                // Legacy addProjectToProjects: numeric project id as loginId,
+                // "owner/name" as name, empty avatarUrl, no pureNameOnly.
+                return serde_json::json!({
+                    "loginId": item.login_id.parse::<i64>().unwrap_or_default(),
+                    "name": item.display_name,
+                    "avatarUrl": item.avatar_url,
+                    "type": item.item_type,
+                });
+            }
             serde_json::json!({
                 "loginId": item.login_id,
                 "name": item.display_name,
@@ -1308,3 +1349,4 @@ pub(crate) fn legacy_external_assignable_users_result(
         })
         .collect()
 }
+

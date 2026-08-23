@@ -71,7 +71,9 @@ pub fn read_site_export(base_url: &str, auth: &FromAuth) -> Result<SourceTableSe
         req = req.header(k, &v);
     }
 
-    let response = req.send().context("Failed to fetch site export from legacy Yona")?;
+    let response = req
+        .send()
+        .context("Failed to fetch site export from legacy Yona")?;
 
     if !response.status().is_success() {
         anyhow::bail!(
@@ -106,8 +108,14 @@ pub fn read_project_export(
 ) -> Result<serde_json::Value> {
     let base = base_url.trim_end_matches('/');
     let paths = [
-        format!("{}/-_-api/v1/owners/{}/projects/{}/exports", base, owner, project),
-        format!("{}/api/v1/owners/{}/projects/{}/exports", base, owner, project),
+        format!(
+            "{}/-_-api/v1/owners/{}/projects/{}/exports",
+            base, owner, project
+        ),
+        format!(
+            "{}/api/v1/owners/{}/projects/{}/exports",
+            base, owner, project
+        ),
     ];
 
     let client = reqwest::blocking::Client::builder()
@@ -123,7 +131,9 @@ pub fn read_project_export(
 
         match req.send() {
             Ok(response) if response.status().is_success() => {
-                return response.json().context("Failed to parse project export JSON");
+                return response
+                    .json()
+                    .context("Failed to parse project export JSON");
             }
             Ok(response) => {
                 last_error = Some(anyhow::anyhow!(
@@ -137,9 +147,8 @@ pub fn read_project_export(
         }
     }
 
-    Err(last_error.unwrap_or_else(|| {
-        anyhow::anyhow!("Failed to read project export from {}", base)
-    }))
+    Err(last_error
+        .unwrap_or_else(|| anyhow::anyhow!("Failed to read project export from {}", base)))
 }
 
 /// Read site or project export from a local JSON file.
@@ -175,11 +184,7 @@ pub fn read_yoram_site_export(base_url: &str, token: &str) -> Result<serde_json:
 /// GET `{base_url}/files/{id}` with Bearer auth — the app serves attachment
 /// bytes over HTTP regardless of its storage backend (local partition, S3,
 /// ...), which is what keeps the migrator backend-agnostic.
-pub fn fetch_attachment_bytes(
-    base_url: &str,
-    token: &str,
-    attachment_id: i64,
-) -> Result<Vec<u8>> {
+pub fn fetch_attachment_bytes(base_url: &str, token: &str, attachment_id: i64) -> Result<Vec<u8>> {
     let url = format!(
         "{}/files/{}?download=1",
         base_url.trim_end_matches('/'),
@@ -267,8 +272,17 @@ const DB_TABLES: &[(&str, &str, &[&str])] = &[
         "N4USER",
         "n4user",
         &[
-            "id", "name", "login_id", "password", "password_salt", "email", "remember_me",
-            "created_date", "state", "last_state_modified_date", "lang",
+            "id",
+            "name",
+            "login_id",
+            "password",
+            "password_salt",
+            "email",
+            "remember_me",
+            "created_date",
+            "state",
+            "last_state_modified_date",
+            "lang",
         ],
     ),
     ("SITE_ADMIN", "site_admin", &["id", "admin_id"]),
@@ -287,9 +301,21 @@ const DB_TABLES: &[(&str, &str, &[&str])] = &[
         "PROJECT",
         "project",
         &[
-            "id", "name", "overview", "vcs", "siteurl", "owner", "created_date",
-            "last_issue_number", "last_posting_number", "original_project_id", "last_pushed_date",
-            "is_using_reviewer_count", "default_reviewer_count", "organization_id", "project_scope",
+            "id",
+            "name",
+            "overview",
+            "vcs",
+            "siteurl",
+            "owner",
+            "created_date",
+            "last_issue_number",
+            "last_posting_number",
+            "original_project_id",
+            "last_pushed_date",
+            "is_using_reviewer_count",
+            "default_reviewer_count",
+            "organization_id",
+            "project_scope",
         ],
     ),
     (
@@ -317,17 +343,38 @@ const DB_TABLES: &[(&str, &str, &[&str])] = &[
         "ISSUE",
         "issue",
         &[
-            "id", "title", "body", "created_date", "num_of_comments", "milestone_id", "author_id",
-            "author_login_id", "author_name", "state", "project_id", "assignee_id", "number",
-            "updated_date", "due_date",
+            "id",
+            "title",
+            "body",
+            "created_date",
+            "num_of_comments",
+            "milestone_id",
+            "author_id",
+            "author_login_id",
+            "author_name",
+            "state",
+            "project_id",
+            "assignee_id",
+            "number",
+            "updated_date",
+            "due_date",
         ],
     ),
-    ("ISSUE_ISSUE_LABEL", "issue_issue_label", &["issue_id", "issue_label_id"]),
+    (
+        "ISSUE_ISSUE_LABEL",
+        "issue_issue_label",
+        &["issue_id", "issue_label_id"],
+    ),
     (
         "ISSUE_COMMENT",
         "issue_comment",
         &[
-            "id", "created_date", "author_id", "author_login_id", "author_name", "issue_id",
+            "id",
+            "created_date",
+            "author_id",
+            "author_login_id",
+            "author_name",
+            "issue_id",
             "contents",
         ],
     ),
@@ -335,8 +382,18 @@ const DB_TABLES: &[(&str, &str, &[&str])] = &[
         "POSTING",
         "posting",
         &[
-            "id", "title", "body", "created_date", "num_of_comments", "author_id",
-            "author_login_id", "author_name", "project_id", "number", "notice", "updated_date",
+            "id",
+            "title",
+            "body",
+            "created_date",
+            "num_of_comments",
+            "author_id",
+            "author_login_id",
+            "author_name",
+            "project_id",
+            "number",
+            "notice",
+            "updated_date",
             "readme",
         ],
     ),
@@ -344,7 +401,12 @@ const DB_TABLES: &[(&str, &str, &[&str])] = &[
         "POSTING_COMMENT",
         "posting_comment",
         &[
-            "id", "created_date", "author_id", "author_login_id", "author_name", "posting_id",
+            "id",
+            "created_date",
+            "author_id",
+            "author_login_id",
+            "author_name",
+            "posting_id",
             "contents",
         ],
     ),
@@ -352,7 +414,13 @@ const DB_TABLES: &[(&str, &str, &[&str])] = &[
         "ATTACHMENT",
         "attachment",
         &[
-            "id", "name", "hash", "container_type", "mime_type", "size", "container_id",
+            "id",
+            "name",
+            "hash",
+            "container_type",
+            "mime_type",
+            "size",
+            "container_id",
             "created_date",
         ],
     ),
@@ -360,17 +428,37 @@ const DB_TABLES: &[(&str, &str, &[&str])] = &[
         "PULL_REQUEST",
         "pull_request",
         &[
-            "id", "title", "body", "to_project_id", "from_project_id", "to_branch", "from_branch",
-            "contributor_id", "receiver_id", "created", "updated", "received", "state",
-            "last_commit_id", "merged_commit_id_from", "merged_commit_id_to", "number",
-            "is_conflict", "is_merging",
+            "id",
+            "title",
+            "body",
+            "to_project_id",
+            "from_project_id",
+            "to_branch",
+            "from_branch",
+            "contributor_id",
+            "receiver_id",
+            "created",
+            "updated",
+            "received",
+            "state",
+            "last_commit_id",
+            "merged_commit_id_from",
+            "merged_commit_id_to",
+            "number",
+            "is_conflict",
+            "is_merging",
         ],
     ),
     (
         "PULL_REQUEST_EVENT",
         "pull_request_event",
         &[
-            "id", "pull_request_id", "created", "sender_login_id", "event_type", "new_value",
+            "id",
+            "pull_request_id",
+            "created",
+            "sender_login_id",
+            "event_type",
+            "new_value",
             "old_value",
         ],
     ),
@@ -553,9 +641,8 @@ fn h2_cell_to_json(column: &str, raw: &str, data_type: Option<&String>) -> serde
         let text = trimmed.trim_end_matches(".0");
         let millis = chrono::NaiveDateTime::parse_from_str(text, "%Y-%m-%d %H:%M:%S")
             .or_else(|_| {
-                chrono::NaiveDate::parse_from_str(text, "%Y-%m-%d").map(|date| {
-                    date.and_hms_opt(0, 0, 0).expect("midnight datetime")
-                })
+                chrono::NaiveDate::parse_from_str(text, "%Y-%m-%d")
+                    .map(|date| date.and_hms_opt(0, 0, 0).expect("midnight datetime"))
             })
             .ok()
             .and_then(|datetime| chrono::Local.from_local_datetime(&datetime).single())
@@ -587,7 +674,6 @@ const INT_FIELDS: &[&str] = &[
 /// `--yona-data-dir` and repos via `--from-repo-dir`.
 pub fn read_from_db(url: &str) -> Result<serde_json::Value> {
     use sqlx::Connection as _;
-    use sqlx::Row as _;
 
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
@@ -613,10 +699,7 @@ pub fn read_from_db(url: &str) -> Result<serde_json::Value> {
             for row in rows {
                 let mut value = serde_json::Map::new();
                 for (index, column) in columns.iter().enumerate() {
-                    value.insert(
-                        (*column).to_string(),
-                        db_cell_to_json(&row, index, column)?,
-                    );
+                    value.insert((*column).to_string(), db_cell_to_json(&row, index, column)?);
                 }
                 values.push(serde_json::Value::Object(value));
             }
@@ -702,7 +785,9 @@ fn db_cell_to_json(
                 .try_get::<Option<Vec<u8>>, _>(index)
                 .map_err(|error| anyhow::anyhow!("{column}: {error}"))?;
             Ok(bytes
-                .map(|value| serde_json::Value::String(String::from_utf8_lossy(&value).into_owned()))
+                .map(|value| {
+                    serde_json::Value::String(String::from_utf8_lossy(&value).into_owned())
+                })
                 .unwrap_or(serde_json::Value::Null))
         }
     }

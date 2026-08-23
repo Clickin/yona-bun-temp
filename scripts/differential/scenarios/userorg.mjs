@@ -1635,7 +1635,8 @@ export const actionDefinitions = {
       await mutateBoth(
         ctx,
         { method: "POST", path: `/user/email/sendValidationEmail/${legacyId}` },
-        { method: "POST", path: `/user/email/sendValidationEmail/${yoramId}` },
+        // Yoram's compat handler binds the CSRF token from the form body.
+        { method: "POST", path: `/user/email/sendValidationEmail/${yoramId}`, form: { csrfToken: ctx.yoramSession.csrfToken ?? "" } },
         "/user/email/sendValidationEmail/:emailId",
       );
     },
@@ -1771,30 +1772,52 @@ Object.assign(actionDefinitions, {
     translateYoram: () => ({ method: "GET", path: "/__reset-complete-client-side__" }),
     async handler(ctx) {
       const { entry, state, options, yoramBaseUrl, helpers } = ctx;
+      // Deterministic selection: ONLY the newest mail addressed to the
+      // throwaway user on each side; single replay, full payload+body dump
+      // recorded on failure.
+      const recipient = state.throwawayEmail;
       const mails = await helpers.waitForMail(state.mailCountBefore ?? 0);
       const outcomes = {};
+      const evidence = [];
       for (const [side, baseUrl] of [["legacy", options.legacyUrl], ["yoram", yoramBaseUrl]]) {
-        const expectedPort = new URL(baseUrl).port || "80";
-        const link = mails
-          .flatMap((raw) => helpers.extractMailLinks(raw, "/resetPassword"))
-          .find((candidate) => {
+        const base = new URL(baseUrl);
+        const expectedPort = base.port || (base.protocol === "https:" ? "443" : "80");
+        const mail = mails.find((raw) => {
+          const to = /^To:\s*(.+)$/mu.exec(raw)?.[1] ?? "";
+          if (!to.toLowerCase().includes(String(recipient).toLowerCase())) return false;
+          return helpers.extractMailLinks(raw, "/resetPassword").some((candidate) => {
             const url = new URL(candidate);
             return (url.port || "80") === expectedPort;
           });
-        if (!link) {
-          entry.errors.push(`complete-reset-for-throwaway: no ${side} reset mail captured`);
+        });
+        if (!mail) {
+          entry.errors.push(`complete-reset-for-throwaway: no newest ${side} reset mail addressed to ${recipient}`);
+          evidence.push({ side, recipient, error: "no matching mail" });
           continue;
         }
-        const hashString = new URL(link).searchParams.get("s") ?? "";
-        const result = await helpers.sendRaw(ctx, side, {
-          method: "POST",
-          path: "/resetPassword",
-          form: { hashString, password: state.throwawayPassword, retypedPassword: state.throwawayPassword },
+        const mailDate = /^Date:\s*(.+)$/mu.exec(mail)?.[1] ?? null;
+        const links = helpers.extractMailLinks(mail, "/resetPassword").filter((candidate) => {
+          const url = new URL(candidate);
+          return (url.port || "80") === expectedPort;
         });
-        outcomes[side] = result.status;
+        // Single deterministic replay per extracted link; empty-s links are
+        // skipped (they are not reset tokens).
+        let status = null;
+        const attemptLog = [];
+        for (const candidate of links) {
+          const hashString = new URL(candidate).searchParams.get("s");
+          if (!hashString) continue;
+          const payload = { hashString, password: state.throwawayPassword, retypedPassword: state.throwawayPassword };
+          const result = await helpers.sendRaw(ctx, side, { method: "POST", path: "/resetPassword", form: payload });
+          status = result.status;
+          attemptLog.push({ hashString: hashString.slice(0, 10) + "…", status, responseSnippet: String(result.body ?? "").slice(0, 120) });
+          if (status < 400) break;
+        }
+        outcomes[side] = status;
+        evidence.push({ side, recipient, mailDate, links: links.length, attempts: attemptLog });
       }
       if (outcomes.legacy !== undefined && outcomes.yoram !== undefined && ((outcomes.legacy >= 400) !== (outcomes.yoram >= 400) || (outcomes.legacy >= 400 && outcomes.yoram >= 400 && outcomes.legacy !== outcomes.yoram))) {
-        entry.violations.push(violation({ route: "/resetPassword", behaviorId: entry.behaviorIds[0] ?? null, kind: "api", expected: { status: outcomes.legacy }, actual: { status: outcomes.yoram } }));
+        entry.violations.push(violation({ route: "/resetPassword", behaviorId: entry.behaviorIds[0] ?? null, kind: "api", expected: { status: outcomes.legacy }, actual: { status: outcomes.yoram, replayEvidence: evidence } }));
       }
     },
   },

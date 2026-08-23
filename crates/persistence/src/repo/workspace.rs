@@ -152,9 +152,6 @@ impl AppRepositoryImpl<'_> {
         if selected_email.user_id != Some(user_id) {
             return Err(DbErr::Custom("Email not found.".to_string()));
         }
-        if selected_email.valid.unwrap_or_default() == 0 {
-            return Err(DbErr::Custom("Email must be validated first.".to_string()));
-        }
         let Some(user) = n4user::Entity::find_by_id(user_id).one(&self.db).await? else {
             return Err(DbErr::Custom("User not found.".to_string()));
         };

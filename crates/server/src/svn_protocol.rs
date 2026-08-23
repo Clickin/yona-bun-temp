@@ -106,7 +106,16 @@ pub(crate) async fn direct_request(request: Request, service: PilotServiceImpl) 
         }
     }
 
-    let repo_path = yoram_vcs::svn_repository_path(&service.data_root, authorization.project.id);
+    let repo_path = match yoram_vcs::svn_repository_path(
+        &service.data_root,
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+    ) {
+        Ok(path) => path,
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
+        }
+    };
     if !repo_path.exists() || !repo_path.is_dir() {
         return StatusCode::NOT_FOUND.into_response();
     }

@@ -125,6 +125,9 @@ export function projectCommentRows(rows) {
 export function projectLabelRows(rows) {
   return rows
     .map((row) => ({
+      // Name is required: color/category alone cannot distinguish two labels
+      // of the same palette, and reconciliation keys on the full tuple.
+      name: pick(row, "name", "labelName"),
       category: pick(row, "category", "categoryName"),
       color: String(pick(row, "color") ?? "").toLowerCase(),
     }))

@@ -28,9 +28,17 @@ impl AppRepositoryImpl<'_> {
         project_id: i64,
         settings: ProjectMenuSettingsRecord,
     ) -> Result<(), DbErr> {
+        Self::upsert_project_menu_settings(&self.db, project_id, settings).await
+    }
+
+    pub(super) async fn upsert_project_menu_settings<C: sea_orm::ConnectionTrait>(
+        db: &C,
+        project_id: i64,
+        settings: ProjectMenuSettingsRecord,
+    ) -> Result<(), DbErr> {
         let existing = project_menu_setting::Entity::find()
             .filter(project_menu_setting::Column::ProjectId.eq(Some(project_id)))
-            .one(&self.db)
+            .one(db)
             .await?;
 
         if let Some(row) = existing {
@@ -41,7 +49,7 @@ impl AppRepositoryImpl<'_> {
             active.review = Set(Some(bool_to_i16(settings.review)));
             active.milestone = Set(Some(bool_to_i16(settings.milestone)));
             active.board = Set(Some(bool_to_i16(settings.board)));
-            active.update(&self.db).await?;
+            active.update(db).await?;
         } else {
             project_menu_setting::ActiveModel {
                 id: NotSet,
@@ -53,7 +61,7 @@ impl AppRepositoryImpl<'_> {
                 milestone: Set(Some(bool_to_i16(settings.milestone))),
                 board: Set(Some(bool_to_i16(settings.board))),
             }
-            .insert(&self.db)
+            .insert(db)
             .await?;
         }
 

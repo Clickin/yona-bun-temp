@@ -42,16 +42,41 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use anyhow::{Context as _, Result};
-use clap::Parser;
+use clap::{Parser, Subcommand};
 
 mod from;
+mod preflight;
 mod site_transform;
 mod stream_reader;
 mod to;
 
+#[derive(Subcommand)]
+enum CliCommand {
+    /// In-place preflight against a legacy MariaDB + YONA_DATA pair (Phase 6 gate).
+    Preflight {
+        /// Legacy database URL, e.g. mysql://root@127.0.0.1:3306/yona
+        #[arg(long)]
+        db_url: String,
+
+        /// YONA_DATA root containing repo/ and uploads/
+        #[arg(long)]
+        data_root: PathBuf,
+
+        /// Promote selected warnings (orphan repositories) to errors
+        #[arg(long)]
+        strict: bool,
+    },
+}
+
 #[derive(Parser)]
-#[command(name = "yona-migrate", version, about = "Streaming Yona-to-Yoram migration tool")]
+#[command(
+    name = "yona-migrate",
+    version,
+    about = "Streaming Yona-to-Yoram migration tool"
+)]
 struct Args {
+    #[command(subcommand)]
+    command: Option<CliCommand>,
     /// Source URL (legacy Yona instance)
     #[arg(long, group = "from")]
     from_url: Option<String>,
@@ -131,6 +156,12 @@ struct Args {
     #[arg(short = 'd', long)]
     yona_data_dir: Option<PathBuf>,
 
+    /// Yoram data root (YONA_DATA) of the in-place target; enables the
+    /// repository preflight that validates repo/git/{owner}/{project}.git and
+    /// repo/svn/{owner}/{project} for every migrated project.
+    #[arg(long)]
+    yoram_data_root: Option<PathBuf>,
+
     /// Dry run — validate but don't import
     #[arg(long)]
     dry_run: bool,
@@ -143,6 +174,16 @@ struct Args {
 fn main() -> Result<()> {
     let args = Args::parse();
     tracing_subscriber::fmt::init();
+
+    if let Some(CliCommand::Preflight {
+        db_url,
+        data_root,
+        strict,
+    }) = &args.command
+    {
+        let runtime = tokio::runtime::Runtime::new().context("building tokio runtime")?;
+        return runtime.block_on(preflight::run(db_url, data_root, *strict));
+    }
 
     match determine_mode(&args) {
         Mode::SiteLevel => run_site_export(&args),
@@ -260,7 +301,10 @@ fn run_project_export(args: &Args) -> Result<()> {
     let owner = args.from_owner.as_deref().unwrap();
     let project = args.from_project.as_deref().unwrap();
 
-    eprintln!("Reading project export: {}/{} from {} ...", owner, project, from_url);
+    eprintln!(
+        "Reading project export: {}/{} from {} ...",
+        owner, project, from_url
+    );
 
     let payload = from::read_project_export(from_url, &auth, owner, project)?;
     let lines = to::project_export_to_ndjson(&payload)?;
@@ -282,7 +326,8 @@ fn run_project_export(args: &Args) -> Result<()> {
     if let Some(to_url) = &args.to_url {
         let to_token = args.to_token.as_deref().unwrap();
         eprintln!("Importing project into {} ...", to_url);
-        let result = to::write_project_import_ndjson(to_url, to_token, owner, project, &lines, false)?;
+        let result =
+            to::write_project_import_ndjson(to_url, to_token, owner, project, &lines, false)?;
         eprintln!("Import result: {}", serde_json::to_string_pretty(&result)?);
         let skipped_projects = result
             .get("skippedProjects")
@@ -559,35 +604,32 @@ fn upload_attachments_from_url(
             let from_token = from_token.to_string();
             let to_url = to_url.to_string();
             let to_token = to_token.to_string();
-            let fetch_client = &fetch_client;
             let upload_client = &upload_client;
-            scope.spawn(move || {
-                loop {
-                    let pair = {
-                        let mut queue = queue.lock().expect("queue lock");
-                        queue.pop()
-                    };
-                    let Some((hash, id)) = pair else { break };
-                    let bytes = match from::fetch_attachment_bytes(&from_url, &from_token, id) {
-                        Ok(bytes) => bytes,
-                        Err(error) => {
-                            *missing.lock().expect("missing lock") += 1;
-                            let _ = failure_tx.send(format!("{hash} (id {id}): {error:#}"));
-                            continue;
-                        }
-                    };
-                    let path = std::env::temp_dir().join(format!("yona-migrate-att-{hash}"));
-                    let _ = std::fs::write(&path, &bytes);
-                    match upload_one_file(upload_client, &to_url, &to_token, &hash, &path) {
-                        Ok(()) => {
-                            *uploaded.lock().expect("uploaded lock") += 1;
-                        }
-                        Err(error) => {
-                            let _ = failure_tx.send(format!("{hash}: {error:#}"));
-                        }
+            scope.spawn(move || loop {
+                let pair = {
+                    let mut queue = queue.lock().expect("queue lock");
+                    queue.pop()
+                };
+                let Some((hash, id)) = pair else { break };
+                let bytes = match from::fetch_attachment_bytes(&from_url, &from_token, id) {
+                    Ok(bytes) => bytes,
+                    Err(error) => {
+                        *missing.lock().expect("missing lock") += 1;
+                        let _ = failure_tx.send(format!("{hash} (id {id}): {error:#}"));
+                        continue;
                     }
-                    let _ = std::fs::remove_file(&path);
+                };
+                let path = std::env::temp_dir().join(format!("yona-migrate-att-{hash}"));
+                let _ = std::fs::write(&path, &bytes);
+                match upload_one_file(upload_client, &to_url, &to_token, &hash, &path) {
+                    Ok(()) => {
+                        *uploaded.lock().expect("uploaded lock") += 1;
+                    }
+                    Err(error) => {
+                        let _ = failure_tx.send(format!("{hash}: {error:#}"));
+                    }
                 }
+                let _ = std::fs::remove_file(&path);
             });
         }
     });
@@ -596,7 +638,10 @@ fn upload_attachments_from_url(
     let uploaded = *uploaded.lock().expect("uploaded lock");
     let missing = *missing.lock().expect("missing lock");
     if let Some(first) = failures.first() {
-        eprintln!("Attachment fetch/upload failures ({}): {first}", failures.len());
+        eprintln!(
+            "Attachment fetch/upload failures ({}): {first}",
+            failures.len()
+        );
     }
     Ok(format!(
         "Attachment transfer done: {uploaded} uploaded, {missing} fetch failures, {} other failures",
@@ -605,7 +650,9 @@ fn upload_attachments_from_url(
 }
 
 /// Build a TransformationContext from an export payload (for repo transfer).
-fn payload_to_transformation_context(payload: &serde_json::Value) -> site_transform::TransformationContext {
+fn payload_to_transformation_context(
+    payload: &serde_json::Value,
+) -> site_transform::TransformationContext {
     let mut ctx = site_transform::TransformationContext::new();
     if let Some(projects) = payload.get("projects").and_then(|value| value.as_array()) {
         for project in projects {
@@ -633,10 +680,7 @@ fn dump_tables(payload: &serde_json::Value) -> Result<Vec<(String, Vec<serde_jso
 
 /// Shared site-import flow: transform the table dump, fill attachments,
 /// then dry-run / write file / POST to the target.
-fn run_table_import(
-    tables: Vec<(String, Vec<serde_json::Value>)>,
-    args: &Args,
-) -> Result<()> {
+fn run_table_import(tables: Vec<(String, Vec<serde_json::Value>)>, args: &Args) -> Result<()> {
     let mut ctx = site_transform::transform_dump(&tables);
     eprintln!("Transformed: {}", summarize_counts(&ctx));
 
@@ -767,25 +811,23 @@ fn upload_attachment_files(
             let to_token = to_token.to_string();
             let data_dir = data_dir.clone();
             let client = &client;
-            scope.spawn(move || {
-                loop {
-                    let hash = {
-                        let mut queue = queue.lock().expect("queue lock");
-                        queue.pop()
-                    };
-                    let Some(hash) = hash else { break };
-                    let path = data_dir.join("uploads").join(&hash);
-                    if !path.exists() {
-                        *missing.lock().expect("missing lock") += 1;
-                        continue;
+            scope.spawn(move || loop {
+                let hash = {
+                    let mut queue = queue.lock().expect("queue lock");
+                    queue.pop()
+                };
+                let Some(hash) = hash else { break };
+                let path = data_dir.join("uploads").join(&hash);
+                if !path.exists() {
+                    *missing.lock().expect("missing lock") += 1;
+                    continue;
+                }
+                match upload_one_file(client, &to_url, &to_token, &hash, &path) {
+                    Ok(()) => {
+                        *uploaded.lock().expect("uploaded lock") += 1;
                     }
-                    match upload_one_file(client, &to_url, &to_token, &hash, &path) {
-                        Ok(()) => {
-                            *uploaded.lock().expect("uploaded lock") += 1;
-                        }
-                        Err(error) => {
-                            let _ = failure_tx.send(format!("{hash}: {error:#}"));
-                        }
+                    Err(error) => {
+                        let _ = failure_tx.send(format!("{hash}: {error:#}"));
                     }
                 }
             });
@@ -817,10 +859,7 @@ fn upload_one_file(
 
     let file = std::fs::File::open(path)
         .with_context(|| format!("failed to open attachment {}", path.display()))?;
-    let length = file
-        .metadata()
-        .map(|metadata| metadata.len())
-        .unwrap_or(0);
+    let length = file.metadata().map(|metadata| metadata.len()).unwrap_or(0);
     let part = Part::reader_with_length(BufReader::new(file), length)
         .file_name(hash.to_string())
         .mime_str("application/octet-stream")
@@ -875,9 +914,8 @@ fn fill_attachments(ctx: &mut site_transform::TransformationContext, data_dir: &
                                     .count();
                                 let decoded_size = content.len() / 4 * 3 - padding;
                                 att["contentBase64"] = serde_json::Value::String(content);
-                                att["size"] = serde_json::Value::Number(
-                                    (decoded_size as i64).into(),
-                                );
+                                att["size"] =
+                                    serde_json::Value::Number((decoded_size as i64).into());
                                 filled += 1;
                             }
                             Err(_) => {
@@ -890,8 +928,9 @@ fn fill_attachments(ctx: &mut site_transform::TransformationContext, data_dir: &
         }
         if let Some(comments) = item.get_mut("comments").and_then(|v| v.as_array_mut()) {
             for comment in comments {
-                if let Some(attachments) =
-                    comment.get_mut("attachments").and_then(|v| v.as_array_mut())
+                if let Some(attachments) = comment
+                    .get_mut("attachments")
+                    .and_then(|v| v.as_array_mut())
                 {
                     for att in attachments {
                         if let Some(hash) = att.get("hash").and_then(|v| v.as_str()) {
@@ -906,9 +945,8 @@ fn fill_attachments(ctx: &mut site_transform::TransformationContext, data_dir: &
                                             .count();
                                         let decoded_size = content.len() / 4 * 3 - padding;
                                         att["contentBase64"] = serde_json::Value::String(content);
-                                        att["size"] = serde_json::Value::Number(
-                                            (decoded_size as i64).into(),
-                                        );
+                                        att["size"] =
+                                            serde_json::Value::Number((decoded_size as i64).into());
                                         filled += 1;
                                     }
                                     Err(_) => {
@@ -922,7 +960,11 @@ fn fill_attachments(ctx: &mut site_transform::TransformationContext, data_dir: &
             }
         }
     }
-    eprintln!("Filled {filled} attachments from {} ({} missing)", data_dir.display(), warn_count);
+    eprintln!(
+        "Filled {filled} attachments from {} ({} missing)",
+        data_dir.display(),
+        warn_count
+    );
 }
 
 /// Push repositories for every transformed project (git mirror push or svn dump load).
@@ -934,9 +976,103 @@ fn fill_attachments(ctx: &mut site_transform::TransformationContext, data_dir: &
 ///
 /// svn: `svnadmin dump` the legacy `{id}.svn` and `svnrdump load` into the
 /// new app's SVN DAV (`/svn/{owner}/{project}`, Basic `login:token`).
+/// In-place repository preflight (runs by default when no --to-url is given):
+/// every project must have a valid canonical repository —
+/// git: `repo/git/{owner}/{project}.git` passing `git rev-parse --is-bare-repository`,
+/// svn: `repo/svn/{owner}/{project}` with a valid `format` marker.
+/// Any missing or invalid repository fails the migration (blocking error).
+fn preflight_repositories(args: &Args, ctx: &site_transform::TransformationContext) -> Result<()> {
+    let Some(data_root) = args.yoram_data_root.as_ref() else {
+        anyhow::bail!(
+            "repository preflight requires --yoram-data-root (the YONA_DATA root of the in-place target)"
+        );
+    };
+    let mut failures = Vec::new();
+    let mut checked = 0usize;
+    for project in &ctx.projects {
+        let owner = project
+            .get("ownerName")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let name = project
+            .get("projectName")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if owner.is_empty() || name.is_empty() {
+            continue;
+        }
+        let vcs = project
+            .get("projectVcs")
+            .and_then(|v| v.as_str())
+            .unwrap_or("GIT");
+        checked += 1;
+        if vcs.eq_ignore_ascii_case("Subversion") {
+            let repo_path = data_root.join("repo").join("svn").join(owner).join(name);
+            if !repo_path.is_dir() {
+                failures.push(format!(
+                    "MISSING svn repository for {owner}/{name}: {}",
+                    repo_path.display()
+                ));
+            } else if !repo_path.join("format").is_file() {
+                failures.push(format!(
+                    "INVALID svn repository for {owner}/{name}: {} has no format marker",
+                    repo_path.display()
+                ));
+            }
+        } else {
+            let repo_path = data_root
+                .join("repo")
+                .join("git")
+                .join(owner)
+                .join(format!("{name}.git"));
+            if !repo_path.is_dir() {
+                failures.push(format!(
+                    "MISSING git repository for {owner}/{name}: {}",
+                    repo_path.display()
+                ));
+                continue;
+            }
+            let output = Command::new("git")
+                .args(["rev-parse", "--is-bare-repository"])
+                .current_dir(&repo_path)
+                .output();
+            match output {
+                Ok(output)
+                    if output.status.success()
+                        && String::from_utf8_lossy(&output.stdout).trim() == "true" => {}
+                Ok(output) => failures.push(format!(
+                    "INVALID git repository for {owner}/{name}: {}: {}",
+                    repo_path.display(),
+                    String::from_utf8_lossy(&output.stderr).trim()
+                )),
+                Err(error) => failures.push(format!(
+                    "INVALID git repository for {owner}/{name}: {}: {error}",
+                    repo_path.display()
+                )),
+            }
+        }
+    }
+    if failures.is_empty() {
+        eprintln!(
+            "Repository preflight OK: {checked} repositories validated under {}",
+            data_root.display()
+        );
+        return Ok(());
+    }
+    eprintln!(
+        "Repository preflight FAILED with {} problem(s):",
+        failures.len()
+    );
+    for failure in &failures {
+        eprintln!("  {failure}");
+    }
+    anyhow::bail!("repository preflight found missing/invalid repositories")
+}
+
 fn transfer_repositories(args: &Args, ctx: &site_transform::TransformationContext) -> Result<()> {
     let Some(to_url) = &args.to_url else {
-        return Ok(());
+        // In-place flow (no --to-url): repository "transfer" is validation-only.
+        return preflight_repositories(args, ctx);
     };
     let Some(to_token) = &args.to_token else {
         return Ok(());
@@ -968,12 +1104,21 @@ fn transfer_repositories(args: &Args, ctx: &site_transform::TransformationContex
         let Some(id) = project.get("id").and_then(|v| v.as_i64()) else {
             continue;
         };
-        let owner = project.get("ownerName").and_then(|v| v.as_str()).unwrap_or("");
-        let name = project.get("projectName").and_then(|v| v.as_str()).unwrap_or("");
+        let owner = project
+            .get("ownerName")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let name = project
+            .get("projectName")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
         if owner.is_empty() || name.is_empty() || id <= 0 {
             continue;
         }
-        let vcs = project.get("projectVcs").and_then(|v| v.as_str()).unwrap_or("GIT");
+        let vcs = project
+            .get("projectVcs")
+            .and_then(|v| v.as_str())
+            .unwrap_or("GIT");
         if vcs.eq_ignore_ascii_case("Subversion") {
             transfer_svn_repository(repo_dir, id, to_url, owner, name, to_login, to_token)?;
         } else {
@@ -997,28 +1142,49 @@ fn transfer_repositories_over_http(
         return Ok(());
     };
     for project in &ctx.projects {
-        let owner = project.get("ownerName").and_then(|v| v.as_str()).unwrap_or("");
-        let name = project.get("projectName").and_then(|v| v.as_str()).unwrap_or("");
+        let owner = project
+            .get("ownerName")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let name = project
+            .get("projectName")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
         if owner.is_empty() || name.is_empty() {
             continue;
         }
-        let vcs = project.get("projectVcs").and_then(|v| v.as_str()).unwrap_or("GIT");
+        let vcs = project
+            .get("projectVcs")
+            .and_then(|v| v.as_str())
+            .unwrap_or("GIT");
         if vcs.eq_ignore_ascii_case("Subversion") {
             eprintln!("Skipping SVN over HTTP transfer for {owner}/{name}: use --from-repo-dir");
             continue;
         }
         let legacy_url = format!("{}/{}/{}.git", from_url.trim_end_matches('/'), owner, name);
-        let mirror = format!(
-            "{}/{}/{}.git",
-            to_url.trim_end_matches('/'),
-            owner,
-            name
-        );
+        let mirror = format!("{}/{}/{}.git", to_url.trim_end_matches('/'), owner, name);
         let mirror = with_basic_auth_url(&mirror, to_login, to_token);
         let source = with_basic_auth_url(&legacy_url, owner, from_password);
         eprintln!("Mirror-cloning {} ...", legacy_url);
-        run_cmd("git", &["clone", "--mirror", &source, &format!(".yona-migrate-{}-{}.git", owner, name)])?;
-        run_cmd("git", &["-C", &format!(".yona-migrate-{}-{}.git", owner, name), "push", "--mirror", &mirror])?;
+        run_cmd(
+            "git",
+            &[
+                "clone",
+                "--mirror",
+                &source,
+                &format!(".yona-migrate-{}-{}.git", owner, name),
+            ],
+        )?;
+        run_cmd(
+            "git",
+            &[
+                "-C",
+                &format!(".yona-migrate-{}-{}.git", owner, name),
+                "push",
+                "--mirror",
+                &mirror,
+            ],
+        )?;
         let _ = std::fs::remove_dir_all(format!(".yona-migrate-{}-{}.git", owner, name));
     }
     Ok(())
@@ -1038,24 +1204,28 @@ fn transfer_repositories_from_yoram(
         return Ok(());
     };
     for project in &ctx.projects {
-        let owner = project.get("ownerName").and_then(|v| v.as_str()).unwrap_or("");
-        let name = project.get("projectName").and_then(|v| v.as_str()).unwrap_or("");
+        let owner = project
+            .get("ownerName")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let name = project
+            .get("projectName")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
         if owner.is_empty() || name.is_empty() {
             continue;
         }
-        let vcs = project.get("projectVcs").and_then(|v| v.as_str()).unwrap_or("GIT");
+        let vcs = project
+            .get("projectVcs")
+            .and_then(|v| v.as_str())
+            .unwrap_or("GIT");
         if vcs.eq_ignore_ascii_case("Subversion") {
             eprintln!("Skipping SVN over HTTP transfer for {owner}/{name}: use --from-repo-dir");
             continue;
         }
         // Yoram smart HTTP Basic auth is `login:api-token`.
         let source_login = from_login.unwrap_or(owner);
-        let source_url = format!(
-            "{}/{}/{}.git",
-            from_url.trim_end_matches('/'),
-            owner,
-            name
-        );
+        let source_url = format!("{}/{}/{}.git", from_url.trim_end_matches('/'), owner, name);
         let source = with_basic_auth_url(&source_url, source_login, from_token);
         let mirror = format!("{}/{}/{}.git", to_url.trim_end_matches('/'), owner, name);
         let mirror = with_basic_auth_url(&mirror, to_login, to_token);
@@ -1079,22 +1249,27 @@ fn transfer_git_repository(
     to_login: &str,
     to_token: &str,
 ) -> Result<()> {
-    let source = [repo_dir.join(id.to_string()), repo_dir.join(format!("{id}.git"))]
-        .into_iter()
-        .find(|path| path.exists());
+    let source = [
+        repo_dir.join(id.to_string()),
+        repo_dir.join(format!("{id}.git")),
+    ]
+    .into_iter()
+    .find(|path| path.exists());
     let Some(source) = source else {
-        eprintln!(
-            "Skipping git repo for project id {id}: not found in {}",
+        anyhow::bail!(
+            "git repository for project id {id} ({owner}/{name}) not found in {}",
             repo_dir.display()
         );
-        return Ok(());
     };
     let mirror = format!("{}/{}/{}.git", to_url.trim_end_matches('/'), owner, name);
     let mirror = with_basic_auth_url(&mirror, to_login, to_token);
     let clone_dir = format!(".yona-migrate-{}-{}.git", owner, name);
     eprintln!("Mirroring git repo {} -> {}", source.display(), mirror);
     let _ = std::fs::remove_dir_all(&clone_dir);
-    run_cmd("git", &["clone", "--bare", &source.display().to_string(), &clone_dir])?;
+    run_cmd(
+        "git",
+        &["clone", "--bare", &source.display().to_string(), &clone_dir],
+    )?;
     let push = run_cmd("git", &["-C", &clone_dir, "push", "--mirror", &mirror]);
     let _ = std::fs::remove_dir_all(&clone_dir);
     push?;
@@ -1112,8 +1287,10 @@ fn transfer_svn_repository(
 ) -> Result<()> {
     let source = repo_dir.join(format!("{id}.svn"));
     if !source.exists() {
-        eprintln!("Skipping SVN project {owner}/{name}: {} missing", source.display());
-        return Ok(());
+        anyhow::bail!(
+            "SVN repository for {owner}/{name} missing: {}",
+            source.display()
+        );
     }
     let dump_path = format!(".yona-migrate-{}-{}.svndump", owner, name);
     let target = format!("{}/svn/{}/{}", to_url.trim_end_matches('/'), owner, name);
@@ -1134,10 +1311,17 @@ fn transfer_svn_repository(
         );
     }
     eprintln!("Loading SVN repo into {} (Basic {}) ...", target, to_login);
-    let dump_file = std::fs::File::open(&dump_path)
-        .with_context(|| format!("failed to open {}", dump_path))?;
+    let dump_file =
+        std::fs::File::open(&dump_path).with_context(|| format!("failed to open {}", dump_path))?;
     let output = Command::new("svnrdump")
-        .args(["load", "--username", to_login, "--password", to_token, &target])
+        .args([
+            "load",
+            "--username",
+            to_login,
+            "--password",
+            to_token,
+            &target,
+        ])
         .stdin(std::process::Stdio::from(dump_file))
         .output()
         .context("failed to spawn svnrdump")?;
@@ -1151,7 +1335,7 @@ fn transfer_svn_repository(
         );
         eprintln!(
             "Kept SVN dump at {dump_path}. On the Yoram host, run:\n\
-             \x20 svnadmin load <yoram-data-root>/repo/{id}.svn < {dump_path}\n\
+             \x20 svnadmin load <yoram-data-root>/repo/svn/{owner}/{name} < {dump_path}\n\
              (yoram-data-root defaults to .yona-data next to the server; \
              the repo dir is created by the import.)"
         );

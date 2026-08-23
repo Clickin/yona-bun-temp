@@ -144,8 +144,8 @@ test("mutation translators produce expected method/path/body shapes", () => {
   }
   for (const action of ["review-pullrequest", "unreview-pullrequest"]) {
     const tail = action === "review-pullrequest" ? "review" : "unreview";
-    assert.equal(def(action).translateLegacy(step(action, { ...base, prId: 1 }), {}).path, `/admin/sample/pullRequest/1/${tail}`);
-    assert.equal(def(action).translateYoram(step(action, { ...base, prId: 1 }), {}).path, `/api/v1/owners/admin/projects/sample/pull-requests/1/${tail}`);
+    assert.equal(def(action).translateLegacy(step(action, base), { prId: 1 }).path, `/admin/sample/pullRequest/1/${tail}`);
+    assert.equal(def(action).translateYoram(step(action, base), { prId: 1 }).path, `/api/v1/owners/admin/projects/sample/pull-requests/1/${tail}`);
   }
   assert.equal(
     def("comment-commit").translateLegacy(step("comment-commit", base), { commitId: "HEAD" }).path,

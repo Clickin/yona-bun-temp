@@ -11,7 +11,7 @@ use std::path::Path;
 use crate::assets::serve_frontend_page;
 use crate::{
     base_path_href, headers_with_form_csrf, legacy_external_api_hello, map_project_scope,
-    persistence, redirect_to, repository_provisioning_lock, require_session, require_valid_csrf,
+    persistence, redirect_to, repository_namespace_lock, require_session, require_valid_csrf,
     rest_project_menu_settings, AssetMode, BrowserRuntimeConfig, PilotBackend, PilotRepository,
     PilotServiceImpl, RestRouteError,
 };
@@ -40,7 +40,25 @@ async fn make_legacy_test_repositories(repository: &PilotRepository, data_root: 
         }
     };
     for project in projects {
-        let repo_path = yoram_vcs::repository_path_for_vcs(data_root, project.id, &project.vcs);
+        let repo_path = match yoram_vcs::repository_path_for_vcs(
+            data_root,
+            &project.vcs,
+            &project.owner_name,
+            &project.project_name,
+        ) {
+            Ok(repo_path) => repo_path,
+            Err(error) => {
+                tracing::warn!(
+                    %error,
+                    project_id = project.id,
+                    owner = %project.owner_name,
+                    project = %project.project_name,
+                    vcs = %project.vcs,
+                    "legacy /_init repository provisioning failed"
+                );
+                continue;
+            }
+        };
         let result = if project.vcs.eq_ignore_ascii_case("Subversion") {
             yoram_vcs::create_svn_repository(&repo_path)
         } else {
@@ -190,6 +208,7 @@ pub(crate) async fn direct_import_project(
                 project_name: project_name.clone(),
                 project_scope: scope.as_str().to_string(),
                 vcs: "GIT".to_string(),
+                initial_manager_user_id: None,
             })
             .await
     } else {
@@ -204,6 +223,7 @@ pub(crate) async fn direct_import_project(
                 project_name: project_name.clone(),
                 project_scope: scope.as_str().to_string(),
                 vcs: "GIT".to_string(),
+                initial_manager_user_id: None,
             })
             .await
     };
@@ -212,15 +232,16 @@ pub(crate) async fn direct_import_project(
         Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
     };
 
-    let repo_path = yoram_vcs::repository_path(&service.data_root, created.id);
+    let repo_path = match yoram_vcs::repository_path(
+        &service.data_root,
+        &created.owner_name,
+        &created.project_name,
+    ) {
+        Ok(repo_path) => repo_path,
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
     let clone_result = {
-        let _guard = match repository_provisioning_lock().lock() {
-            Ok(guard) => guard,
-            Err(_) => {
-                return RestRouteError::internal("repository provisioning lock poisoned")
-                    .into_response();
-            }
-        };
+        let _guard = repository_namespace_lock().lock().await;
         if repo_path.exists() {
             let _ = yoram_vcs::delete_repository(&repo_path);
         }

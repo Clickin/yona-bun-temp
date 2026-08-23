@@ -207,10 +207,10 @@ fn run_git(args: &[&str], cwd: Option<&Path>) {
     );
 }
 
-fn seed_bare_repository(yona_data: &Path, project_id: i64) {
-    let repo_root = yona_data.join("repo");
+fn seed_bare_repository(yona_data: &Path, owner: &str, project: &str) {
+    let repo_root = yona_data.join("repo").join("git").join(owner);
     fs::create_dir_all(&repo_root).expect("repo root");
-    let bare_repo = repo_root.join(format!("{project_id}.git"));
+    let bare_repo = repo_root.join(format!("{project}.git"));
     let work = tempdir().expect("work repo");
 
     run_git(&["init", "--bare", bare_repo.to_str().unwrap()], None);
@@ -296,8 +296,10 @@ async fn project_fork_clones_bare_repository_and_records_origin() {
         .await
         .expect("source lookup")
         .expect("source exists");
-    seed_bare_repository(data_dir.path(), source.id);
-    let source_repo_path = repository_path(data_dir.path(), source.id);
+    seed_bare_repository(data_dir.path(), &source.owner_name, &source.project_name);
+    let source_repo_path =
+        repository_path(data_dir.path(), &source.owner_name, &source.project_name)
+            .expect("repository path");
     let source_head = head_commit(&source_repo_path);
 
     let form = ok_json(
@@ -358,7 +360,14 @@ async fn project_fork_clones_bare_repository_and_records_origin() {
         .expect("direct fork exists");
     assert_eq!(direct_fork.original_project_id, Some(source.id));
     assert_eq!(
-        head_commit(&repository_path(data_dir.path(), direct_fork.id)),
+        head_commit(
+            &repository_path(
+                data_dir.path(),
+                &direct_fork.owner_name,
+                &direct_fork.project_name
+            )
+            .expect("repository path")
+        ),
         source_head
     );
 
@@ -428,7 +437,8 @@ async fn project_fork_clones_bare_repository_and_records_origin() {
         .expect("fork lookup")
         .expect("fork exists");
     assert_eq!(fork.original_project_id, Some(source.id));
-    let fork_repo_path = repository_path(data_dir.path(), fork.id);
+    let fork_repo_path = repository_path(data_dir.path(), &fork.owner_name, &fork.project_name)
+        .expect("repository path");
     assert!(fork_repo_path.is_dir());
     assert_eq!(head_commit(&fork_repo_path), source_head);
 

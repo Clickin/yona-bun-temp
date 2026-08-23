@@ -5123,12 +5123,14 @@ dependencies = [
  "chrono",
  "clap",
  "reqwest",
+ "sea-orm",
  "serde",
  "serde_json",
  "sqlx",
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "yoram-migration",
 ]
 
 [[package]]

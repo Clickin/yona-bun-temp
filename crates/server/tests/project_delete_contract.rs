@@ -256,8 +256,12 @@ async fn project_delete_requires_update_authority_and_removes_project_state() {
         .await
         .expect("project lookup")
         .expect("project exists");
-    let repo_path = yoram_vcs::repository_path(data_dir.path(), project.id);
-    let svn_repo_path = yoram_vcs::svn_repository_path(data_dir.path(), project.id);
+    let repo_path =
+        yoram_vcs::repository_path(data_dir.path(), &project.owner_name, &project.project_name)
+            .expect("repository path");
+    let svn_repo_path =
+        yoram_vcs::svn_repository_path(data_dir.path(), &project.owner_name, &project.project_name)
+            .expect("repository path");
     assert!(
         repo_path.exists(),
         "project create should provision bare repo"

@@ -1357,7 +1357,11 @@ fn rest_pull_request_pushed_branch_from_record(
 ) -> RestPullRequestPushedBranch {
     RestPullRequestPushedBranch {
         branch_name: record.branch_name,
-        default_branch: default_branch_for_project_id(service, record.default_branch_project_id),
+        default_branch: default_branch_for_project(
+            service,
+            &record.default_branch_owner_name,
+            &record.default_branch_project_name,
+        ),
         id: record.id,
         owner_name: record.owner_name,
         project_name: record.project_name,
@@ -1366,8 +1370,16 @@ fn rest_pull_request_pushed_branch_from_record(
     }
 }
 
-fn default_branch_for_project_id(service: &PilotServiceImpl, project_id: i64) -> String {
-    let repo_path = yoram_vcs::repository_path(&service.data_root, project_id);
+fn default_branch_for_project(
+    service: &PilotServiceImpl,
+    owner_name: &str,
+    project_name: &str,
+) -> String {
+    // ponytail: best-effort read; DB-validated names only fail here on corrupt rows.
+    let Ok(repo_path) = yoram_vcs::repository_path(&service.data_root, owner_name, project_name)
+    else {
+        return "HEAD".to_string();
+    };
     yoram_vcs::read_branch_list(&repo_path)
         .ok()
         .map(|snapshot| snapshot.default_branch)
@@ -1630,7 +1642,12 @@ async fn rest_pull_request_source_branch_state(
         return Ok(RestPullRequestSourceBranchState::default());
     }
 
-    let repo_path = yoram_vcs::repository_path(&service.data_root, source_project.id);
+    let repo_path = yoram_vcs::repository_path(
+        &service.data_root,
+        &source_project.owner_name,
+        &source_project.project_name,
+    )
+    .map_err(internal_error)?;
     let snapshot = yoram_vcs::read_branch_list(&repo_path).map_err(code_browser_error)?;
     let branch = snapshot
         .branches
@@ -1914,7 +1931,13 @@ fn rest_pull_request_branch_options(
     project: &persistence::ProjectRecord,
     selected_branch: &str,
 ) -> Result<(Vec<RestPullRequestBranchOption>, String), RestRouteError> {
-    let repo_path = yoram_vcs::repository_path(&service.data_root, project.id);
+    let repo_path = yoram_vcs::repository_path(
+        &service.data_root,
+        &project.owner_name,
+        &project.project_name,
+    )
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
     let branches =
         yoram_vcs::list_repository_branches(&repo_path).map_err(rest_pull_request_branch_error)?;
     if branches.is_empty() {
@@ -2042,7 +2065,11 @@ pub(crate) async fn rest_read_pull_request_create_form_options(
         &query.from_branch,
     )?;
     let default_to_branch = if query.to_branch.trim().is_empty() {
-        default_branch_for_project_id(&service, to_authorization.project.id)
+        default_branch_for_project(
+            &service,
+            &to_authorization.project.owner_name,
+            &to_authorization.project.project_name,
+        )
     } else {
         query.to_branch.clone()
     };
@@ -2200,10 +2227,20 @@ pub(crate) async fn rest_read_pull_request_merge_result(
     let (_, selected_to_branch) =
         rest_pull_request_branch_options(&service, &to_authorization.project, &query.to_branch)?;
 
-    let source_repo_path =
-        yoram_vcs::repository_path(&service.data_root, from_authorization.project.id);
-    let target_repo_path =
-        yoram_vcs::repository_path(&service.data_root, to_authorization.project.id);
+    let source_repo_path = yoram_vcs::repository_path(
+        &service.data_root,
+        &from_authorization.project.owner_name,
+        &from_authorization.project.project_name,
+    )
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
+    let target_repo_path = yoram_vcs::repository_path(
+        &service.data_root,
+        &to_authorization.project.owner_name,
+        &to_authorization.project.project_name,
+    )
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
     let preview = yoram_vcs::preview_pull_request_merge(
         &source_repo_path,
         &target_repo_path,
@@ -2532,8 +2569,20 @@ async fn accept_pull_request_for_actor(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("source project not found"))?;
-    let source_repo_path = yoram_vcs::repository_path(&service.data_root, from_project.id);
-    let target_repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let source_repo_path = yoram_vcs::repository_path(
+        &service.data_root,
+        &from_project.owner_name,
+        &from_project.project_name,
+    )
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
+    let target_repo_path = yoram_vcs::repository_path(
+        &service.data_root,
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+    )
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
     let merge = yoram_vcs::merge_pull_request(
         &source_repo_path,
         &target_repo_path,
@@ -2614,7 +2663,13 @@ pub(crate) async fn rest_delete_pull_request_source_branch(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("source project not found"))?;
-    let source_repo_path = yoram_vcs::repository_path(&service.data_root, source_project.id);
+    let source_repo_path = yoram_vcs::repository_path(
+        &service.data_root,
+        &source_project.owner_name,
+        &source_project.project_name,
+    )
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
     yoram_vcs::delete_branch(&source_repo_path, &current.from_branch)
         .map_err(code_browser_error)
         .map_err(RestRouteError::from_connect_error)?;
@@ -2685,8 +2740,20 @@ pub(crate) async fn rest_restore_pull_request_source_branch(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("source project not found"))?;
-    let source_repo_path = yoram_vcs::repository_path(&service.data_root, source_project.id);
-    let target_repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let source_repo_path = yoram_vcs::repository_path(
+        &service.data_root,
+        &source_project.owner_name,
+        &source_project.project_name,
+    )
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
+    let target_repo_path = yoram_vcs::repository_path(
+        &service.data_root,
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+    )
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
     yoram_vcs::restore_branch_from_merge(
         &source_repo_path,
         &target_repo_path,
@@ -2983,7 +3050,13 @@ pub(crate) async fn rest_read_pull_request_changes(
     )
     .await
     .map_err(RestRouteError::from_connect_error)?;
-    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+    let repo_path = yoram_vcs::repository_path(
+        &service.data_root,
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+    )
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
     let diff = if merged_commit_id_from.trim().is_empty() || merged_commit_id_to.trim().is_empty() {
         yoram_vcs::PullRequestDiffSnapshot {
             commits: Vec::new(),

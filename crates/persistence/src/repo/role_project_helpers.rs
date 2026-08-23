@@ -52,8 +52,9 @@ impl AppRepositoryImpl<'_> {
             .unwrap_or_default())
     }
 
-    pub(super) async fn sync_project_label_cache(
+    pub(super) async fn sync_project_label_cache<C: sea_orm::ConnectionTrait>(
         &self,
+        db: &C,
         project_model: &project::Model,
     ) -> Result<(), DbErr> {
         let owner = project_model.owner.clone();
@@ -61,24 +62,24 @@ impl AppRepositoryImpl<'_> {
 
         let favorites = favorite_project::Entity::find()
             .filter(favorite_project::Column::ProjectId.eq(Some(project_model.id)))
-            .all(&self.db)
+            .all(db)
             .await?;
         for favorite in favorites {
             let mut active = favorite_project::ActiveModel::from(favorite);
             active.owner = Set(owner.clone());
             active.project_name = Set(name.clone());
-            active.update(&self.db).await?;
+            active.update(db).await?;
         }
 
         let recents = recent_project::Entity::find()
             .filter(recent_project::Column::ProjectId.eq(Some(project_model.id)))
-            .all(&self.db)
+            .all(db)
             .await?;
         for recent in recents {
             let mut active = recent_project::ActiveModel::from(recent);
             active.owner = Set(owner.clone());
             active.project_name = Set(name.clone());
-            active.update(&self.db).await?;
+            active.update(db).await?;
         }
 
         Ok(())

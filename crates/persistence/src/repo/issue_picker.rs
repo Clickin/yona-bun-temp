@@ -367,17 +367,10 @@ impl AppRepositoryImpl<'_> {
             return Ok(None);
         }
 
-        let query = query.trim();
-        if query.is_empty() {
-            return Ok(Some(IssueAssignableUserSearchRecord {
-                items: vec![],
-                total: 0,
-                truncated: false,
-            }));
-        }
-
+        // Legacy findSharableUsers applies no ORDER BY, so candidates stream in
+        // primary-key order on both sides of the differential.
         let mut user_matches = n4user::Entity::find()
-            .order_by_asc(n4user::Column::LoginId)
+            .order_by_asc(n4user::Column::Id)
             .all(&self.db)
             .await?
             .into_iter()
@@ -393,6 +386,10 @@ impl AppRepositoryImpl<'_> {
             .filter(|project| {
                 normalize_identity(&project.project_name).contains(&normalize_identity(query))
             })
+            .collect::<Vec<_>>();
+        project_matches.sort_by_key(|project| project.id);
+        let mut project_matches = project_matches
+            .into_iter()
             .map(issue_sharable_project_record)
             .collect::<Vec<_>>();
         let total = (user_matches.len() + project_matches.len()) as u32;

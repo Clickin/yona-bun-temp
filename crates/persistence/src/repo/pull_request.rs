@@ -229,6 +229,8 @@ impl AppRepositoryImpl<'_> {
             }
             records.push(PullRequestPushedBranchRecord {
                 branch_name: branch_name.clone(),
+                default_branch_owner_name: String::new(),
+                default_branch_project_name: String::new(),
                 default_branch_project_id: project.original_project_id.unwrap_or(project.id),
                 id: row.id,
                 owner_name: project.owner_name.clone(),
@@ -239,6 +241,26 @@ impl AppRepositoryImpl<'_> {
                     .unwrap_or(&branch_name)
                     .to_string(),
             });
+        }
+        let origin_ids = records
+            .iter()
+            .map(|record| record.default_branch_project_id)
+            .collect::<HashSet<_>>();
+        let mut origin_by_id = HashMap::new();
+        for row in project::Entity::find()
+            .filter(project::Column::Id.is_in(origin_ids))
+            .all(&self.db)
+            .await?
+        {
+            if let Some(record) = self.project_record_from_model(row).await? {
+                origin_by_id.insert(record.id, record);
+            }
+        }
+        for record in &mut records {
+            if let Some(origin) = origin_by_id.get(&record.default_branch_project_id) {
+                record.default_branch_owner_name = origin.owner_name.clone();
+                record.default_branch_project_name = origin.project_name.clone();
+            }
         }
         Ok(records)
     }

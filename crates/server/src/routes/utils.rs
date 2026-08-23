@@ -2086,6 +2086,49 @@ pub(crate) fn gravatar_url(email_address: &str) -> String {
     )
 }
 
+pub(crate) fn legacy_gravatar_avatar_url(email_address: &str) -> String {
+    let mut hasher = Md5::new();
+    hasher.update(email_address.as_bytes());
+    format!(
+        "https://www.gravatar.com/avatar/{:x}?s=64&d=https%3A%2F%2Fko.gravatar.com%2Fuserimage%2F53495145%2F0eaeeb47c620542ad089f17377298af6.png",
+        hasher.finalize()
+    )
+}
+
+pub(crate) const LEGACY_DEFAULT_AVATAR_URL: &str = "/assets/images/default-avatar-128.png";
+
+// Legacy probes ko.gravatar.com + www.gravatar.com reachability once at
+// startup (Config.isConnectableToGravatar) and falls back to the default
+// avatar asset when they are unreachable.
+fn gravatar_reachable() -> bool {
+    static REACHABLE: std::sync::LazyLock<bool> = std::sync::LazyLock::new(|| {
+        use std::net::ToSocketAddrs;
+        ("ko.gravatar.com", 80).to_socket_addrs().is_ok()
+            && ("www.gravatar.com", 80).to_socket_addrs().is_ok()
+    });
+    *REACHABLE
+}
+
+// Legacy User.avatarUrl(): uploaded avatar wins (/files/{id}), then a size-64
+// gravatar of the raw email, else the default avatar asset.
+pub(crate) fn legacy_user_avatar_url(email_address: &str, attachment_id: Option<i64>) -> String {
+    if let Some(attachment_id) = attachment_id {
+        return format!("/files/{attachment_id}");
+    }
+    if gravatar_reachable() {
+        legacy_gravatar_avatar_url(email_address)
+    } else {
+        LEGACY_DEFAULT_AVATAR_URL.to_string()
+    }
+}
+
+// Legacy IssueApi.isModifiedByOthers hashes trim()+'\r'-stripped contents, so
+// only normalized text differences count as "modified by someone else".
+pub(crate) fn legacy_content_modified_by_others(current: &str, original: &str) -> bool {
+    let normalize = |value: &str| value.replace('\r', "").trim().to_string();
+    normalize(current) != normalize(original)
+}
+
 pub(crate) fn legacy_json_find_value<'a>(
     value: &'a serde_json::Value,
     field_name: &str,
