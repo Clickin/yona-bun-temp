@@ -919,8 +919,9 @@
 - [x] Managed external System-Chrome focused results are normal 1/1 and explicit fallback-off 1/1 at 1366x900 and 390x844; screenshots at the recorded normal/fallback-off paths were directly inspected.
 - [ ] Live legacy rendering is unavailable, so broad screenshot parity is explicitly unverified; fallback-off global shell/Bootstrap drift remains outside these owners and received no compensation.
 
-Status: **active canonical target inventory**  
-Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
+Status: **historical target inventory**
+Parent plan: superseded `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`
+Current verification: `docs/provenance/tailwind-dom-parity-pivot.md`
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
 ### 2026-07-25 Batch 962 public profile issue fixed-height wrappers

@@ -1,7 +1,9 @@
 # 2026-06-27 UI Parity Coordination Plan
 
-Status: current execution plan
-
+Status: superseded (2026-08-24). This coordination log predates the approved
+DOM-Parity Fast Lane and its merged legacy stylesheet baseline. Current
+frontend execution follows `docs/provenance/tailwind-dom-parity-pivot.md` and
+the Scala-HTML goal workflow; this document remains historical evidence.
 ## Goal
 
 Reach legacy Yona UI/UX parity before any CSS tooling migration. The current

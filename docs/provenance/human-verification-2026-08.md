@@ -42,6 +42,17 @@ credentials, or a release environment. It is not an unimplemented-feature list.
   and evidence sources are now the DOM-Parity Fast Lane, the Scala-HTML goal
   audit, and this human-verification document.
 
+- 2026-08-24 re-audit also retired the stale RC UX checklist status, the
+  2026-06-27 coordination plan, the template-first `/goal` paste directive,
+  the StyleX internal active-status markers, and the 2026-07-30 gap inventory.
+  Current implementation evidence shows the previously listed Code Browser
+  tags/blame/compare/archive gaps are implemented; no code patch was warranted.
+- SVN protocol handlers intentionally return a `NOT_IMPLEMENTED` fallback when
+  the external `svnlook`/SVN tooling is unavailable. This is a release
+  environment prerequisite, not an unimplemented protocol slice; verify the
+  required `svn`, `svnadmin`, and `svnlook` executables in the target
+  environment.
+
 - Removed confirmed unused route imports/helpers and unused fixture locals.
   Frontend typecheck passes. The focused WTR rerun reached 99 passing tests;
   13 existing shell-comparison failures remain caused by the mocked

@@ -1,7 +1,9 @@
 # RC UX Diff Closure Checklist
 
-Status: current RC checklist
-Date: 2026-06-24
+Status: completed closure evidence (2026-08-24). All checklist rows are closed
+as `pass`, `not-applicable`, or `expected-legacy-non-ok`. Release-environment
+and product-owner checks that cannot be closed by LLM evidence are tracked in
+`docs/provenance/human-verification-2026-08.md`.
 
 This checklist is the work queue for closing the remaining legacy Yona to Rust
 Yona UX diff. It is not a pass report. The RC passes this gate only when a

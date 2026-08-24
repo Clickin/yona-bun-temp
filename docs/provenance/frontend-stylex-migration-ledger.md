@@ -1119,8 +1119,7 @@ the focused Pull Request result remains 1/1.
 
 - Folder list, row line-height, and listhead geometry use colocated StyleX owners; currentPath and generic code-viewer fallbacks remain. Focused `stylex-project-code-folder-shell.e2e.ts` verifies legacy evidence and exact fallback removal.
 
-Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete
-Date: 2026-07-15
+Status: Historical batch ledger; the StyleX wave is superseded as of 2026-08-24. Current frontend verification follows `docs/provenance/tailwind-dom-parity-pivot.md`.
 
 ## Batch 464
 

@@ -786,7 +786,7 @@ from the StyleX owner. Focused Chrome fallback-off desktop/mobile verification
 passes 1/1, including no horizontal overflow and search query navigation. The
 remaining full fallback-off/global audit and final screenshot lock stay open.
 
-Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete. Latest focused fallback-off repairs: shared GNB responsive outer padding and root login-dialog lower rows (2026-07-20).
+Status: Historical batch ledger; the parent StyleX plan is superseded as of 2026-08-24. Current frontend execution follows `docs/provenance/tailwind-dom-parity-pivot.md`.
 
 ## 2026-07-28 — Post-validation runner teardown measurement
 

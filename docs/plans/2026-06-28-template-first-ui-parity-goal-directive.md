@@ -1,11 +1,9 @@
 # Template-First UI Parity Goal Directive
 
-Status: current `/goal` slash-command directive
-Date: 2026-06-28
-
-This document is the paste-ready directive for running the UI parity reset as a
-long batch goal. It does not replace `AGENTS.md`, `SPEC.md`, or
-`docs/plans/2026-06-26-template-first-ui-parity-reset.md`.
+Status: superseded (2026-08-24). Route rebuilds now use
+`docs/plans/2026-06-30-scala-html-goal-workflow.md`; stylesheet and browser
+verification use `docs/provenance/tailwind-dom-parity-pivot.md`. This historical
+paste-ready directive must not be used as the current `/goal` instruction.
 
 ## Paste Into `/goal`
 

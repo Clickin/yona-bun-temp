@@ -1,15 +1,17 @@
 # Yoram Parity Gap Inventory — Agent-Readable Baseline
 
-> **Status: ACTIVE** — 이 문서는 `13ec0e7b2d1e5a1771d82037b2ddf2af8c28f25a` 시점의 yoram 구현 검증 결과를 바탕으로
-> 미구현/부족 영역을 구조화하여 후속 에이전트가 독립적으로 작업할 수 있게 설계된 실행 문서다.
+> **Status: superseded (2026-08-24)** — this inventory is a historical
+> baseline at commit `13ec0e7b2d1e5a1771d82037b2ddf2af8c28f25a`, not an active
+> implementation queue. Its claimed missing Code Browser tags, blame, compare,
+> archive, and diff features were implemented later; current evidence is in
+> `docs/provenance/core-parity-audit.md` and the current route/test sources.
+> Do not use the historical reset command below.
 >
-> **Baseline commit**: `13ec0e7b2d1e5a1771d82037b2ddf2af8c28f25a`
-> **Branch**: `main`
-> **Remote**: `origin/main`
-> **Revert 명령어**: `git reset --hard 13ec0e7b2`
+> **Historical baseline commit**: `13ec0e7b2d1e5a1771d82037b2ddf2af8c28f25a`
+> **Historical branch**: `main`
 >
-> **검증 방법**: 모든 subagent가 실제 소스 코드를 읽고 handler 함수 존재 여부, `todo!()` 유무, DB 쿼리 실제 구현, 테스트 파일 존재를 확인했다.
-> 문서(SPEC.md, AGENTS.md)의 주장은 코드 기반 검증으로 재확인되었다.
+> **검증 방법**: 이 문서는 당시 baseline의 기록이며 현재 구현 상태의 source
+> of truth가 아니다. 현재 구현은 코드와 canonical provenance에서 확인한다.
 
 ---
 
