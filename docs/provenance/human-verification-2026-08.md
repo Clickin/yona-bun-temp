@@ -32,6 +32,11 @@ credentials, or a release environment. It is not an unimplemented-feature list.
 - Reclassified the stale 2026-06-28 UI parity queues/source-pass ledgers as
   superseded; their open checkboxes are historical, not active LLM tasks.
 
+- 2026-08-25 re-audit after `d7eed9a53` found no new LLM-resolvable
+  implementation or documentation gap. The differential result remains
+  315/315 with I13 as the only product decision; remaining static warnings
+  stay explicitly human-review items below.
+
 ## Required human decisions and environment checks
 
 ### 1. I13 / B-0039 sharable-user catalog decision — release blocker
