@@ -1,6 +1,9 @@
 # Playwright → @web/test-runner E2E migration
 
-> status: active — pilot proven, bulk conversion pending
+> status: completed migration and WTR cutover (2026-08-24) — all 858
+> Playwright specs have WTR copies and the parity gate now runs WTR.
+> Remaining full-suite failure buckets are documented browser/parity evidence,
+> not an unconverted-spec queue.
 > slug: wtr-migration
 > date: 2026-08-05
 

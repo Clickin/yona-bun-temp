@@ -57,11 +57,19 @@ credentials, or a release environment. It is not an unimplemented-feature list.
   as completed execution summaries; their historical verification logs contain
   no active LLM work queue.
 
-- Removed confirmed unused route imports/helpers and unused fixture locals.
-  Frontend typecheck passes. The focused WTR rerun reached 99 passing tests;
-  13 existing shell-comparison failures remain caused by the mocked
-  `Loading...` usermenu state and missing legacy image fixtures, not by these
-  unused-code deletions.
+- The WTR migration plan is now marked complete: all 858 Playwright specs have
+  WTR copies and the gate cutover is recorded. The documented full-suite state
+  remains 2,449 passed / 637 failed / 1 skipped; human release review must
+  distinguish the listed CSS pseudo-state, dev/dist geometry, retained-class,
+  transient-navigation, and mirror-environment buckets from real regressions.
+
+- Fresh-build focused WTR verification of 12 files reached **234 passing / 19
+  failing**. Failures are dominated by the mocked `Loading...` usermenu shell
+  and missing legacy image fixtures. The profile lane also exposes one
+  connected-provider-logo fixture/data-path mismatch and a stale source
+  assertion expecting the removed `ConnectedSocialProviderLogo` symbol; no
+  test-only patch was retained because the Scala HTML goal guard requires a
+  paired screen implementation change for frontend parity evidence.
 - Production build passes. Its existing warnings are retained for human
   review: the frozen `:selected` pseudo-class, unresolved legacy asset URLs,
   and the large generated chunk.
