@@ -78,7 +78,7 @@ credentials, or a release environment. It is not an unimplemented-feature list.
   review: the frozen `:selected` pseudo-class, unresolved legacy asset URLs,
   and the large generated chunk.
 
-- 2026-08-24 follow-up re-audit at `9b4e01991` found no new
+- 2026-08-24 follow-up re-audit at `8f3c8bf20` found no new
   LLM-resolvable implementation or documentation queue. The remaining active
   plans are the approved Scala-HTML frontend workflow, DOM-Parity Fast Lane,
   differential verification plan, and RC/deferred release boundaries.
