@@ -53,6 +53,10 @@ credentials, or a release environment. It is not an unimplemented-feature list.
   required `svn`, `svnadmin`, and `svnlook` executables in the target
   environment.
 
+- The persistence-repository and server-route module-diet plans were reconciled
+  as completed execution summaries; their historical verification logs contain
+  no active LLM work queue.
+
 - Removed confirmed unused route imports/helpers and unused fixture locals.
   Frontend typecheck passes. The focused WTR rerun reached 99 passing tests;
   13 existing shell-comparison failures remain caused by the mocked

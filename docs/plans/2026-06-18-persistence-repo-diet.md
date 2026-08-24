@@ -1,5 +1,7 @@
-Status: Current execution plan
+Status: completed execution summary (2026-08-24)
 Date: 2026-06-18
+All move-only decomposition items recorded below are complete; no active LLM
+queue remains.
 
 # Persistence Repository Diet
 
