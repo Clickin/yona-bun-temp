@@ -748,7 +748,6 @@ test("project pull request overview badge maps the legacy partial to a condition
     "src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber.tsx",
     "utf8",
   );
-  const styleSource = readFileSync("src/app.css", "utf8");
   const legacySource = readFileSync(
     "../yona-original/app/views/git/partial_info.scala.html",
     "utf8",

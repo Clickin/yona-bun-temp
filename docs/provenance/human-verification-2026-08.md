@@ -37,6 +37,15 @@ credentials, or a release environment. It is not an unimplemented-feature list.
   315/315 with I13 as the only product decision; remaining static warnings
   stay explicitly human-review items below.
 
+- Removed confirmed unused route imports/helpers and unused fixture locals.
+  Frontend typecheck passes. The focused WTR rerun reached 99 passing tests;
+  13 existing shell-comparison failures remain caused by the mocked
+  `Loading...` usermenu state and missing legacy image fixtures, not by these
+  unused-code deletions.
+- Production build passes. Its existing warnings are retained for human
+  review: the frozen `:selected` pseudo-class, unresolved legacy asset URLs,
+  and the large generated chunk.
+
 ## Required human decisions and environment checks
 
 ### 1. I13 / B-0039 sharable-user catalog decision — release blocker
@@ -125,8 +134,9 @@ firewalls, provider rate limits, or recipient delivery.
 
 The turn hook passes with warnings, not errors. A human should decide whether
 to retain the legacy Select2 offscreen input's `aria-hidden="true"` focusable
-shape, and whether to schedule cleanup for pre-existing unused imports/helpers,
-`this` aliases, and role-vs-semantic-element warnings reported by oxlint.
+shape, and whether to schedule cleanup for the remaining `this` aliases and
+role-vs-semantic-element warnings reported by oxlint. Unused imports/helpers
+found in the previous audit were removed in the current cleanup.
 These are outside the parity-preserving fixes in this turn.
 
 ## Completion rule

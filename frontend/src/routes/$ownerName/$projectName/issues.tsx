@@ -27,7 +27,6 @@ import {
 } from "../../../components/route-fetch-lock";
 import { TabButton } from "../../../components/tab-button";
 import { useLegacyMessages } from "../../../i18n";
-import { issueLabelStyle } from "../../../legacy-issue-label-style";
 
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import {

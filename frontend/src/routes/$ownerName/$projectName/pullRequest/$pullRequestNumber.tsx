@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Fragment, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -1153,14 +1153,6 @@ function PullRequestHelpModal({ onClose, state }: { onClose: () => void; state: 
 
 function isOpenState(state: PullRequestState) {
   return state.toLowerCase() === "open";
-}
-
-function stringField(value: unknown, fallback = "") {
-  return typeof value === "string" ? value : fallback;
-}
-
-function booleanField(value: unknown) {
-  return value === true || value === "true" || value === 1 || value === "1";
 }
 
 function restApiErrorStatus(error: unknown) {

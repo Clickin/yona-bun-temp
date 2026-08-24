@@ -575,11 +575,6 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
   const elementOf = (): HTMLElement | null => (target instanceof Locator ? target.current() : null);
   const valueOf = (): unknown =>
     typeof target === "function" ? (target as () => unknown)() : target;
-  const textOf = (): string => {
-    const element = elementOf();
-    if (element) return normalizeText(element.textContent ?? "");
-    return normalizeText(String(valueOf()));
-  };
   const stringValue = (): string => {
     const element = elementOf();
     if (element) return element.textContent ?? "";
