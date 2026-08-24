@@ -1,5 +1,10 @@
 # StyleX Screen Migration Checklist
 
+> **status: superseded (2026-08-19)** — historical route-wave handoff log.
+> Batch 1108 in `docs/provenance/frontend-stylex-migration-ledger.md` closes
+> the former screenshot/pixel-lock continuation markers; the unchecked rows
+> below are retained history, not active LLM work items.
+
 ### 2026-07-28 — Batch 1107 root not-found Yoram shell and GNB box
 
 - [x] Rebuild the not-found expected shell from the error template/layout and

@@ -1,8 +1,8 @@
-# Release Triage — Differential Sweep 2026-08 (Phase 1: sweep-mt5ne45e @ HEAD 09c1e7775; Phase 4 FINAL: sweep-mt5yrmac)
+# Release Triage — Differential Sweep 2026-08 (current HEAD: bb7ef8691; report: sweep-mt6npd2a)
 
-Triage of every non-PASS finding in the stored differential reports, MERGED with the
-Phase 4 rerun (full dual-app sweep on the current working tree with the corrected
-harness; yoram binary rebuilt from the tree via `agent:cargo build -p yoram-server`).
+Triage of every non-PASS finding in the current differential artifact. The
+artifact is a full dual-app sweep with the corrected harness; the Yoram binary
+was rebuilt from the current tree before the run.
 
 One unified classification enum is used everywhere (this triage AND the harness in
 `scripts/differential/report.mjs` / `verdict.mjs`):
@@ -17,81 +17,83 @@ Legacy-term mapping applied: `REAL_PRODUCT_GAP`→PRODUCT_GAP, `HARNESS_BUG`→H
 "known-gap" and every other non-enum name is banned. The harness rules in report.mjs
 mirror these classifications one-to-one.
 
-## Final verdict (DEFINITIVE CLOSING MEASUREMENT: sweep-mt6a1bjo, coverage 315/315 = 100%, fresh binary, pre-boot reconcile loud + self-checked)
+## Final verdict (current report `sweep-mt6npd2a`, 2026-08-24, coverage 315/315 = 100%)
 
 | Class | Count | Blocking? |
-|---|---|---|
+|---|---:|---|
 | PASS | 0 (all non-PASS rows listed; passing behaviors are the 315 covered) | — |
-| ACCEPTED_DIVERGENCE | 126 | no (each carries rationale) |
+| ACCEPTED_DIVERGENCE | 127 | no (each carries rationale) |
 | LEGACY_BUG | 8 | no (legacy-side defects) |
 | PRODUCT_GAP | 1 | YES |
-| HARNESS_ERROR | 2 | YES |
-| INFRA_ERROR | 2 | YES |
-| UNVERIFIED | 3 | YES |
-| **Total** | **142** | **8 blocking** |
+| HARNESS_ERROR | 0 | no |
+| INFRA_ERROR | 0 | no |
+| UNVERIFIED | 0 | no |
+| **Total** | **136** | **1 blocking** |
 
-Strict gate: **NOT met** — blocking = PRODUCT_GAP(1) + HARNESS_ERROR(2) + INFRA_ERROR(2) + UNVERIFIED(3). Harness unit tests 74/74 pass. db projections compared after teardown: yes.
+Strict gate: **NOT met** — the only blocking finding is PRODUCT_GAP(1).
+The report has no HARNESS_ERROR, INFRA_ERROR, or UNVERIFIED classifications;
+database projections were compared after teardown. Step errors are reported
+separately and are not findings or coverage failures.
 
-One-line cause per non-zero blocker:
+## PRODUCT_GAP — current residual requiring a human decision
 
-- **PRODUCT_GAP (1)** — I13 `sharableUsers`: candidate-set semantics genuinely differ after the empty-query fix (member/project scope or ordering); needs a product decision, not a harness fix.
-- **HARNESS_ERROR (2)** — P9 `patch-post-comment-api`: update step did not verifiably apply on both sides, so the PATCH pair was skipped by the new outcome-based gate; S17: shared-session SMTP token replay contaminates per-side reset tokens (manual fresh-token flow verified 200 earlier).
-- **INFRA_ERROR (2)** — I17: unresolved CDP timeout observing the comment-edit trigger (transient browser infra under sweep load); db-labels: residue `parity-cat-sweep-*` category rows from pre-reconcile sweeps survive in the projection diff.
-- **UNVERIFIED (3)** — I19 comment lifecycle + P9 update/delete pairs: dependent on the P9 update step that was skipped, so no comparable evidence this pass.
-
-Known rig limitation (documented, non-blocking): the shared sweep session cannot replay per-side single-use SMTP reset tokens (S17/U24 class); manual fresh-token replay of the same links succeeds on both sides.
-
-## PRODUCT_GAP — confirmed residual gaps (Phase 5 scope)
-
-| ID / Behavior | Legacy observation | Yoram observation | Sources | Rationale |
+| ID / Behavior | Legacy observation | Yoram observation | Sources | Disposition |
 | --- | --- | --- | --- | --- |
-| P9 / comment optimistic concurrency | PATCH comment content enforces `originalCheck`: stale original → 409 "Already modified by someone." | Accepts stale PATCH with 200 (lost update) | legacy: `IssueApi.java:588-617`; yoram: `issues/comments.rs:299-356` | Plan Phase 5 item 2: optional `original` field → 409 with legacy-shaped message. Reproduced after the harness post-comment chain was repaired. |
-| I13 / sharableUsers empty-query discovery | Returns full candidate list (users + public projects) for empty query | Returns `[]` — `list_issue_sharable_users` short-circuits on empty query (`issue_picker.rs:353+`) | yoram persistence picker | Small behavioral gap inside the implemented sharer surface. |
-| U16 / setAsMain precondition | Switches to an unvalidated email (303) | 400 "Email must be validated first." | yoram: `workspace.rs` set-main handler | Capability works only post-validation in yoram; legacy allows immediately. |
+| I13 / B-0039 `sharableUsers` empty-query candidate set | Active users and public projects are returned; legacy `IssueApi.java:828-850` has no explicit ordering. | The same user/public-project filters are implemented in `crates/persistence/src/repo/issue_picker.rs:353-409`, and empty-query contract coverage is in `crates/server/tests/issue_sharer_contract.rs:269-357`. The differential pair differs in persisted users, project catalog, avatar URLs, and observed ordering. | `.agent/differential/report.json` (`sweep-mt6npd2a`), legacy `IssueApi.java:828-850`, the source/test paths above | **Human decision:** align the parity fixtures/catalog, or explicitly approve the observed fixture-dependent difference. Do not change candidate filtering without this decision. See `human-verification-2026-08.md`. |
 
-## HARNESS_ERROR — harness defects remaining (fix in harness, not product)
+## Closed findings at current HEAD
 
-| Finding | Detail | Next fix |
-| --- | --- | --- |
-| I18/I20 `resolve-issue-pk` legacy pk unresolved | Legacy pk comes from the watch form's hidden `resource.id` input; extraction failed on the legacy side this run (yoram side resolved) | Make legacy pk extraction robust (retry/fallback parse) |
-| I19 comment ids null both sides | create-issue-comment ids unresolved; dependent edit/put/patch/vote/delete steps skipped by design (never `/issue/null/*`) | Same id-chain hardening |
-| I21 label/category ids unresolved | Sweep-suffixed labels not found at discovery | Verify create-issue-label write reached both sides before discovery |
-| S17 + U24 reset-token contamination | Single-use tokens replayed across sides by shared sessions | Capture/replay tokens strictly per origin server |
+- P9 comment optimistic concurrency now rejects a stale `original` with
+  `409 {message, storedContent}`; focused coverage:
+  `crates/server/tests/issue_core_contract.rs:2615-2733` and
+  `crates/server/tests/rest_contract.rs:2515-2525`.
+- U16 `setAsMain` now allows an unvalidated address like legacy; focused
+  coverage: `crates/server/tests/auth_workspace_contract.rs:3940-4000`.
+- I23 markdown preview is intentionally client-owned by `react-markdown`;
+  the absent legacy server-render endpoint is an accepted divergence, not a
+  product gap.
+- The prior P9/I19 harness chain, SMTP token replay, CDP observation, PR seed,
+  and label-residue findings do not appear in the current report's
+  classification counts. Their old entries were stale triage, not open work.
 
-## INFRA_ERROR — environment/fixture (not findings against Yoram)
+Known environment-dependent follow-ups remain outside the strict differential
+gate. They are listed for a human in `docs/provenance/human-verification-2026-08.md`.
 
-| Finding | Detail |
-| --- | --- |
-| I17 comment-edit-reveal ×2 | One CDP `Runtime.callFunctionOn` timeout (legacy) and one selector miss (yoram) — observation failures, not evidence of divergence |
-| R16 PR review/unreview ×2 | Seed asymmetry: no pull requests provisioned in the yoram parity seed (see above) |
-| db-labels | Yoram dev-parity seed provisions sample-project labels the legacy parity instance lacks; align fixtures |
+## ACCEPTED_DIVERGENCE (127)
 
-## ACCEPTED_DIVERGENCE (105) — unchanged families from Phase 1, all with recorded rationale
+- DOM skeleton drift: presentation-only legacy SSR vs React SPA structure;
+  user-visible parity remains owned by WTR lanes.
+- B-0035 assignable-user i18n keys: Yoram returns stable keys and the React
+  client localizes them.
+- B-0117 OAuth denied route shape, settings-surface replacement, restricted
+  guard, auth-shell, `/_init`, attachment trailing slash, HEAD pseudo-ref,
+  site-import boundary, throwaway mutation status, and migrator-owned
+  `-_-api/v1` export/import rows retain their documented rationales.
+- I23 markdown preview is intentionally client-owned by `react-markdown`;
+  the missing legacy server-render endpoint is not a product gap.
 
-- DOM skeleton drift (~86 findings): presentation-only SPA-vs-SSR; WTR e2e lanes own visual parity.
-- B-0035 assignableUsers i18n keys ×2 (i18n-key contract, see above).
-- B-0117 OAuth: `/authenticate/github/denied` bucket mismatch ×1. NOTE: `/authenticate/github` itself is now **PASS-equivalent** — with the mock provider configured (harness passes `YONA_AUTH_SOCIAL_LOGIN_SUPPORT` + `YONA_OAUTH_GITHUB_*` pointing at an unused mock endpoint), Yoram answers the same direct 3xx-to-provider-authorize as legacy with correct `client_id`/`state`/`redirect_uri`, so the legacy route contract holds and the functional OAuth contract action passed with no violation.
-- Settings-surface replacement ×3 (B-0221/B-0298 editform tabs → workspace settings actions).
-- Throwaway-scoped status semantics (changeVCS/cleanup ×2), site-admin purge response shape ×1, missing-branch delete error semantics ×1, commit HEAD pseudo-ref extension ×1, attachment trailing slash ×1, restricted-guard gating ×1, bare login GET ×1, `/_init` bootstrap ×1, sites/import boundary ×1, external `-_-api` import row ×1 (intentional removal per SPEC.md).
-- I23 / markdown render: `POST /markdown/:user/:project` has no Yoram server-render endpoint (404/415); preview rendering is owned by the React client (react-markdown); legacy POST /markdown server-render endpoint intentionally not replicated (product decision 2026-08-24).
+## LEGACY_BUG (8)
 
-## LEGACY_BUG (5) — legacy defects, Yoram correct
+The current report records only legacy-side defects: setting-form NPE,
+label-category DELETE 400, empty postlabel 500, issue-share 500 (two rows),
+comment-delete 500, and setAsDefault 500 (two rows). These are not Yoram
+release blockers.
 
-Legacy setting-form NPE 500 (P18), legacy DELETE label-category headless 400 (I22),
-postlabel empty-set 500 (P9), issue-share handler 500 on sweep payload ×2 (I20).
+## Current sweep notes
 
-## Harness changes made during Phase 4 (all in scripts/differential/, no crates/** edits)
-
-- Per-side id injection in `mutationPair` (sweep-created entities get different numbers/pks per side) — eliminated every `/issue/null/*` request.
-- Response-shape drift adaptations: issue payloads expose `issueNumber`/`issueId`; comments require `contentsMarkdown`; posts are keyed by `postNumber`, not DB id; webhooks live under `/api/v1/owners/{o}/projects/{p}/webhooks` with a `{webhooks:[...]}` envelope; assignees take string arrays.
-- Comment/post-comment ids captured from the returned JSON (`comments.at(-1).id`).
-- sendValidationEmail posts the form CSRF token its compat handler binds.
-- Mock GitHub OAuth provider wired into the sweep boot so the functional OAuth contract is verifiable end to end without touching the live provider.
-- Browser observation failures classified INFRA_ERROR; deterministic poll replaces the reveal timing sleep.
-- Verdict/rules updated to the unified enum with evidence-based classifications (no banned terms).
+- `sweep-mt6npd2a` covers all 315 behavior IDs.
+- The report records 108 step errors separately; they do not become findings
+  or reduce coverage.
+- Harness unit tests and report classification integrity remain separate
+  checks; the current report has no HARNESS_ERROR, INFRA_ERROR, or UNVERIFIED
+  rows.
+- The only unresolved decision is B-0039/I13 candidate-set comparison. It is
+  documented in `human-verification-2026-08.md`.
 
 ## Disposition
 
-- PRODUCT_GAP ×4 → plan Phase 5 scope (markdown render, comment optimistic concurrency are the two planned items; sharableUsers empty-query and setAsMain precondition are newly confirmed small gaps).
-- HARNESS_ERROR ×7 / INFRA_ERROR ×5 → harness & fixture work items listed above; none is evidence of product divergence.
-- Coverage remains 315/315 behaviors; step errors (159) are reported separately and never folded into coverage or the verdict.
+- PRODUCT_GAP ×1: hold for the human fixture/catalog decision in
+  `human-verification-2026-08.md`; no ungrounded product patch was applied.
+- ACCEPTED_DIVERGENCE ×127 and LEGACY_BUG ×8: non-blocking with rationale.
+- Coverage is 315/315; the strict differential gate remains blocked only by
+  B-0039/I13.

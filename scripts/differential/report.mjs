@@ -141,14 +141,14 @@ const CLASSIFICATION_RULES = [
     test: ({ kind, route }) => kind === "api" && /(sharableUsers|findSharer)/u.test(route),
     classification: "PRODUCT_GAP",
     reason:
-      "sharableUsers candidate-set semantics genuinely differ after the empty-query fix (member/project scope or ordering), beyond fixture asymmetry",
+      "sharableUsers candidate-set comparison remains unresolved after the empty-query implementation; verify parity fixture/catalog alignment or obtain a product decision before changing candidate semantics",
   },
   {
     test: ({ kind, route, detail }) =>
       kind === "api" && /(sharableUsers|findSharer)/u.test(route) && JSON.stringify(detail.actual) === "[]",
     classification: "PRODUCT_GAP",
     reason:
-      "empty-query sharable-user discovery returns an empty list where legacy lists all candidates; the sharer management surface itself is implemented",
+      "regression: empty-query sharable-user discovery returned no candidates although the legacy contract lists active users and public projects",
   },
   {
     test: ({ kind, route, detail }) => kind === "api" && /\/markdown\//u.test(route) && /"status":404|"yoramStatus":404/u.test(JSON.stringify(detail)),
@@ -198,7 +198,7 @@ const CLASSIFICATION_RULES = [
     test: ({ kind, route, detail }) => kind === "api" && /^\/user\/email\//u.test(route.split("?")[0]) && /400|403|415/u.test(JSON.stringify(detail.actual ?? {})),
     classification: "PRODUCT_GAP",
     reason:
-      "yoram requires an email to be validated before setAsMain where legacy accepts the switch on an unvalidated address; sendValidationEmail contract verified once the harness posts the form CSRF token",
+      "regression: Yoram rejects setAsMain for an unvalidated address where legacy accepts it; the current contract test covers the legacy-compatible behavior",
   },
   {
     test: ({ kind, route, detail }) =>
@@ -227,7 +227,7 @@ const CLASSIFICATION_RULES = [
   {
     test: ({ kind, route, detail }) => kind === "api" && /\(PATCH\)$/u.test(route) && /"status":409/u.test(JSON.stringify(detail.expected ?? {})),
     classification: "PRODUCT_GAP",
-    reason: "legacy enforces optimistic-concurrency originalCheck (409 on stale original) for comment content PATCHes where yoram accepts (200); plan Phase 5 item 2",
+    reason: "regression: legacy stale-original comment PATCH returns 409 while Yoram accepts 200; the current original-check contract is covered by focused tests",
   },
   {
     // Stored-state drift: both sides hold DIFFERENT contents at patch time, so
@@ -253,7 +253,7 @@ const CLASSIFICATION_RULES = [
       /"status":200/u.test(JSON.stringify(detail.actual)),
     classification: "PRODUCT_GAP",
     reason:
-      "genuinely-stale original yields 200 on yoram where legacy answers 409 {message, storedContent} — originalCheck contract divergence",
+      "regression: a genuinely stale original yields 200 on Yoram where legacy answers 409 {message, storedContent}; focused tests cover this contract",
   },
   {
     // States agree AND original matches them, yet statuses diverge: unexplained
@@ -338,15 +338,6 @@ const CLASSIFICATION_RULES = [
       "intentional removal: the /-_-api/v1 namespace is outside Yoram's compatibility contract (release contract class C); the function belongs to migrator/export-import scope (SPEC.md Legacy API 접두사 결정; docs/provenance/legacy-external-api.md)",
     reason: "legacy external API row is migrator/export-import scope, deliberately not an app-server route",
   },
-  // Runner-raised harness failures (HarnessError from fail-fast id guards,
-  // thrown handlers): always HARNESS_ERROR, never folded into coverage.
-  {
-    test: ({ kind, route, detail }) =>
-      kind === "api" && /(sharableUsers|findSharer)/u.test(route),
-    classification: "PRODUCT_GAP",
-    reason:
-      "sharableUsers discovery content still diverges after the empty-query fix landed (candidate lists differ between sides); product fix in flight by the crates/server owner",
-  },
   {
     test: ({ kind, route, detail }) =>
       kind === "api" && /setAsDefault/u.test(route) && /"status":500|"legacyStatus":500/u.test(JSON.stringify(detail)),
@@ -369,15 +360,6 @@ const CLASSIFICATION_RULES = [
     classification: "HARNESS_ERROR",
     reason:
       "both sides rejected the label mutation pair: the discovery-resolved id/payload contract is still imperfect; fix id resolution rather than comparing agreed failures",
-  },
-  {
-    test: ({ kind, route, detail }) =>
-      kind === "api" &&
-      /comments\/\d+\/update/u.test(route) &&
-      /"yoramStatus":409|"status":409/u.test(JSON.stringify(detail)),
-    classification: "PRODUCT_GAP",
-    reason:
-      "comment concurrency family: yoram's new original-check rejects the sweep PATCH whose `original` does not match the chained comment state; scenario must carry the exact stored contents as `original`",
   },
   {
     test: ({ kind, route, detail }) =>

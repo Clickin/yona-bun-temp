@@ -1,4 +1,4 @@
-# Differential Behavior Coverage — Sweep-Excluded Behaviors & Follow-up (2026-08-23, rev.6)
+# Differential Behavior Coverage — Sweep-Excluded Behaviors & Follow-up (2026-08-24, rev.7)
 
 Status: current. 이 문서는 differential sweep이 자동 비교하지 **않는** 행위와 그
 이유를 기록한다. **중요(rev.4 정정): 아래 §1 행위는 대부분 Yoram에 이미 구현되어
@@ -23,7 +23,7 @@ SMTP 토큰 전달, 공유 시드 상태 보호)다. rev.3의 "미구현(gap)" �
 `crates/migration` + `crates/yona-migrate`로 구현돼 있고 legacy Yona의 실제
 `/-_-api/v1` 엔드포인트를 호출한다. 스윕이 이 영역 divergence를 발견하면
 패리티 gap이 아니라 deviation이며, `scripts/differential/report.mjs`의
-migrator-scope 규칙이 known-gap으로 자동 분류한다.
+migrator-scope 규칙이 명시적 `ACCEPTED_DIVERGENCE`로 자동 분류한다.
 
 - `-_-api/v1/owners/:o/:p/exports` (B-0036) — export는 migrator/export tool 소유.
   yoram은 `/api/v1/owners/{o}/projects/{p}/exports`를 별도로 서빙한다(P15 확인).
@@ -32,11 +32,6 @@ migrator-scope 규칙이 known-gap으로 자동 분류한다.
 - `-_-api/v1/owners/:o/:p/projects POST` (bulk import-style 생성) — 일반 프로젝트
   생성은 `/api/v1/owners/:o/projects`가 canonical이다.
 
-주의: 위 목록 외의 `-_-api/v1/**` 행(hello, users, users/token, user/issues,
-statistics, defultLoginPage, admin/users GET/PATCH, titleHeads, translation,
-favorite 3종+토글, assignableUsers/findSharer/share/vote-weight/detectChange,
-issues/comments CRUD compat)은 app-owned implemented이며 S12–S16 경계 프로브와
-I11–I13/I20·I23 프로브가 검증한다.
 
 ## 1. Previously sweep-excluded behaviors — now covered
 
@@ -110,23 +105,28 @@ the live instances before the fix):
    after checking the linked page response.
 7. `pairRequest`/`pairLenient` now treat agreed outcomes (including identical
    error statuses) as parity; only disagreement is reported.
+Current classified divergences are the 127 documented
+`ACCEPTED_DIVERGENCE` rows and 8 `LEGACY_BUG` rows in
+`.agent/differential/report.json` (`sweep-mt6npd2a`, 2026-08-24). The only
+blocking row is B-0039/I13 `sharableUsers`; its implementation and focused
+empty-query contract are present, but the two sweep fixtures expose different
+users, public projects, avatar URLs, and observed ordering. This is a
+human fixture/catalog decision, not an automatically safe product patch;
+`docs/provenance/human-verification-2026-08.md` records it.
 
-Remaining classified divergences live in `report.mjs` CLASSIFICATION_RULES with
-per-rule reasons (markdown render gap, review-point authorization/seed shape,
-commit pseudo-ref shape, org/favorites/user-email compat surface, SPA-shell
-auth pages, OAuth deferral, label-category rename/delete divergence, comment
-PATCH optimistic-lock drift, trailing-slash attachment route).
+## 3. Harness status
 
-## 3. Harness debt (remaining)
+The current report has no `HARNESS_ERROR`, `INFRA_ERROR`, or `UNVERIFIED`
+classification. The historical issue-id, label-residue, SMTP-token, CDP, and
+PR-seed items from the previous sweep were resolved or reclassified and are
+not open work. Step errors remain separately reported by the runner and do
+not reduce 315/315 behavior coverage.
 
-- `issues.mjs` issue chains still report infra id-resolution failures when the
-  shared seed issue number does not resolve (`/issue/null/delete` family);
-  same `whenIds` treatment as the label/category chains is the follow-up.
-- db-labels projection stays unfiltered by run tag (labels treated as seed
-  data); sweep-created label rows therefore remain classified known-gap diffs.
+Current artifact summary:
 
-Final Wave 2 artifact evidence: run `sweep-mt5ne45e` produced 315/315 unique
-behaviors, `needs-review = 0`, 20 SMTP `.eml` files, and
-`api=30 dom=81 db=1 browser=0 infra=15`. R18, U24, U26, and the user cleanup
-actions completed without fixture errors; no uncovered behavior IDs remain in
-the inventory.
+- coverage: 315/315 behavior IDs;
+- violations: 136 (`ACCEPTED_DIVERGENCE` 127, `LEGACY_BUG` 8,
+  `PRODUCT_GAP` 1);
+- blocking findings: B-0039/I13 only;
+- database projections compared after teardown: yes;
+- step errors: 108, reported separately from findings.

@@ -1,5 +1,11 @@
 # e2e 잔여 실패 분류 (재생성, 2026-08-13)
 
+> **status: superseded (2026-08-24)** — the 2026-08-14 failure ledger is
+> historical. Current differential classification is in
+> `docs/provenance/release-triage-2026-08.md`; human-only closure checks are
+> in `docs/provenance/human-verification-2026-08.md`. Historical
+> `HARNESS_ENV`/`SVN-DEFERRED` rows below are not active product TODOs.
+
 > 재생성 근거: `local://e2e-residual-classification.md`(242 스펙/491 실패)와
 > `local://e2e-residual-closure-plan.md`는 세션 로컬 아티팩트로 유실(커밋 없음).
 > 이 파일은 `/tmp/e2e-rebase.log`(HEAD d0b09d553, WTR_SHARDS=2 전체 실행)의 실패를

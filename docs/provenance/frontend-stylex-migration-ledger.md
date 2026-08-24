@@ -1,5 +1,10 @@
 # Frontend StyleX Migration Ledger
 
+> Status: current ledger. Batch 1108 closes the former screenshot/pixel-lock
+> continuation markers; unchecked boxes in older batch narratives are
+> historical worker handoff notes, not active repository TODOs. New StyleX
+> verification follows the property-based contract recorded in Batch 1108.
+
 ### Batch 1108 — property-based StyleX visual lock; screenshot gates retired
 
 | Legacy/evidence | Owner boundary | Stable contract | Verification | Remaining scope |

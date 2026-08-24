@@ -3,7 +3,13 @@
 ## 목적
 
 - 이 문서는 새로 투입된 에이전트가 Rust pivot 이후 기준선을 빠르게 이해하도록 압축한 체크리스트다.
+
 - 메인 source of truth는 `AGENTS.md`이며, 기술적 상세의 canonical source는 `SPEC.md`다.
+
+> 체크박스는 새 작업마다 반복 확인하는 온보딩 규칙이며, 저장소의
+> 미완료 작업 목록이 아니다. 2026-08 감사에서 canonical 구현 경계와
+> provenance 기록을 점검했고, 사람이 확인해야 할 잔여 사항은
+> `docs/provenance/human-verification-2026-08.md`에 분리했다.
 
 ## 빠른 상황 인식
 
