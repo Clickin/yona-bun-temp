@@ -1,8 +1,10 @@
-# Release Triage — Differential Sweep 2026-08 (current HEAD: bb7ef8691; report: sweep-mt6npd2a)
+# Release Triage — Differential Sweep 2026-08 (current HEAD: 189ec2479; report: sweep-mt6npd2a)
 
 Triage of every non-PASS finding in the current differential artifact. The
 artifact is a full dual-app sweep with the corrected harness; the Yoram binary
-was rebuilt from the current tree before the run.
+was rebuilt from the current tree before the run. The current HEAD adds only
+unused frontend-code cleanup and documentation/provenance updates after that
+behavioral sweep; no differential behavior was changed.
 
 One unified classification enum is used everywhere (this triage AND the harness in
 `scripts/differential/report.mjs` / `verdict.mjs`):

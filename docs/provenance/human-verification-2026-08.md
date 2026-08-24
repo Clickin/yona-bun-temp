@@ -15,7 +15,10 @@ credentials, or a release environment. It is not an unimplemented-feature list.
 - Confirmed the focused implementation evidence for P9, U16, I13, and client
   markdown preview. No safe product patch remains for the current differential
   result.
-
+- Corrected `docs/provenance/release-triage-2026-08.md` to identify the actual
+  current HEAD (`189ec2479`). The later commit contains only confirmed unused
+  frontend-code cleanup plus provenance updates, so the existing differential
+  result remains behaviorally applicable.
 - Re-audited the active Buffa-removal plan; its generated types, protobuf
   dependencies, and imports are already removed. Marked
   `docs/agents/buffa-removal-frontend.md` resolved instead of leaving a false
