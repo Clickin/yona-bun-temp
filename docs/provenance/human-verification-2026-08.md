@@ -78,6 +78,11 @@ credentials, or a release environment. It is not an unimplemented-feature list.
   review: the frozen `:selected` pseudo-class, unresolved legacy asset URLs,
   and the large generated chunk.
 
+- 2026-08-24 follow-up re-audit at `9b4e01991` found no new
+  LLM-resolvable implementation or documentation queue. The remaining active
+  plans are the approved Scala-HTML frontend workflow, DOM-Parity Fast Lane,
+  differential verification plan, and RC/deferred release boundaries.
+
 ## Required human decisions and environment checks
 
 ### 1. I13 / B-0039 sharable-user catalog decision — release blocker
