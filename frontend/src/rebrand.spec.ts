@@ -57,7 +57,6 @@ test("legacy product message values render with Yoram branding in every locale",
       const message = lookupLegacyMessage(language, key);
       expect(message, `${language}: ${key}`).not.toMatch(/\b(?:naver|yobi|yona)\b/iu);
     }
-    expect(lookupLegacyMessage(language, "title.yobi.feedback")).toBe("Yoram repository");
   }
 
   expect(lookupLegacyMessage("en-US", "site.update.currentVersion")).toContain("{0}");

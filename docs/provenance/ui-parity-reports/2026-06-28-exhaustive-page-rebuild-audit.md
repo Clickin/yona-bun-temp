@@ -1,6 +1,8 @@
 # 2026-06-28 Exhaustive Page Rebuild Audit
 
-Status: active audit ledger
+Status: superseded (2026-08-25). Current browser verification follows
+`docs/provenance/tailwind-dom-parity-pivot.md` and the 2026-08-22 Chrome gate
+report; this audit remains historical evidence.
 Date: 2026-06-28
 Directive: `docs/plans/2026-06-28-destructive-template-frontend-rebuild.md`
 

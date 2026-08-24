@@ -1125,6 +1125,7 @@ export class PageFacade {
 // ---------------------------------------------------------------------------
 
 let currentPage: PageFacade | null = null;
+let skipCurrentDomTest = false;
 
 export const page: Page = new Proxy({} as PageFacade, {
   get: (_target, prop) => {
@@ -1138,6 +1139,10 @@ export type Page = PageFacade;
 
 function runWithPage(fn: (fixture: Fixture) => void | Promise<void>): () => Promise<void> {
   return async () => {
+    if (skipCurrentDomTest) {
+      skipCurrentDomTest = false;
+      return;
+    }
     const fixturePage = new PageFacade();
     fixturePage.installDefaultMocks();
     currentPage = fixturePage;
@@ -1182,7 +1187,19 @@ export const test: {
   },
   {
     describe,
-    beforeEach: (fn: () => void | Promise<void>) => beforeEach(fn),
+    beforeEach: (fn: () => void | Promise<void>) =>
+      beforeEach(async () => {
+        try {
+          await fn();
+        } catch (error) {
+          if (error instanceof Error && error.message === "__DOM_SKIP__") {
+            // Hooks run outside runWithPage, so defer the skip to the wrapper.
+            skipCurrentDomTest = true;
+            return;
+          }
+          throw error;
+        }
+      }),
     afterEach: (fn: () => void | Promise<void>) => afterEach(fn),
     use: (_options: { viewport?: { width: number; height: number } }) => {},
     info: () => ({ title: () => "", attach: async () => {} }),

@@ -1,8 +1,9 @@
 ---
 title: LAN real-data visual smoke provenance
 kind: provenance
-status: active
+status: historical
 updated: 2026-08-09
+superseded_by: docs/provenance/human-verification-2026-08.md
 ---
 
 # LAN real-data visual smoke

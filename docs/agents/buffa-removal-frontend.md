@@ -1,10 +1,22 @@
 # Buffa Removal — Frontend Migration
 
-**Status**: active
+**Status**: resolved (2026-08-25)
 **Goal**: Remove remaining `@bufbuild/protobuf` dependency and all `frontend/src/gen/` imports from the frontend.
 **Prerequisite**: Rust-side `buffa` removal completed (see `proto_types.rs`).
 
-## What's Left
+## Resolution
+
+- `frontend/src/api/types.ts` replaced the generated protobuf type imports.
+- `frontend/src/auth-workspace-client.ts` uses plain JSON request objects.
+- `frontend/src/gen/` is absent; no `pilot_pb` or `@bufbuild` references remain
+  under `frontend/` or the workspace package manifests.
+- `frontend/package.json` has no protobuf/buf generation dependencies or
+  scripts.
+
+The plan below is retained as historical provenance; it is not an open work
+queue.
+
+## Historical plan (closed)
 
 ### 1. `frontend/src/gen/yona/pilot/v1/pilot_pb.ts` (generated protobuf TS file)
 
@@ -117,12 +129,11 @@ Check `frontend/package.json` scripts for `buf:generate`. Remove it.
 
 ## Verification
 
-```bash
-cd frontend && pnpm check    # TypeScript check
-cd frontend && pnpm test     # Vitest
-```
-
-Also check that `grep -r "pilot_pb" frontend/src/` returns nothing.
+- `pnpm --config.store-dir=/Users/senghyunjo/.pnpm-store --dir frontend check`
+  passes.
+- Structural search finds no `pilot_pb`, `@bufbuild/protobuf`,
+  `@bufbuild/buf`, or `protoc-gen-es` references in frontend sources or
+  package manifests.
 
 ## Scope Boundaries
 

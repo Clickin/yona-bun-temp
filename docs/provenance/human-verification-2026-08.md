@@ -16,6 +16,22 @@ credentials, or a release environment. It is not an unimplemented-feature list.
   markdown preview. No safe product patch remains for the current differential
   result.
 
+- Re-audited the active Buffa-removal plan; its generated types, protobuf
+  dependencies, and imports are already removed. Marked
+  `docs/agents/buffa-removal-frontend.md` resolved instead of leaving a false
+  open queue.
+- Fixed the remaining frontend type/check issues: the milestone Markdown
+  wrapper prop, legacy issue sort attributes, commit-link search defaults,
+  and the stale rebrand assertion.
+- Fixed the DOM-lane fixture read and deferred live-mirror skip handling.
+  Frontend verification now reports **210 test files / 243 tests passed**;
+  the live mirror at `192.168.45.20:9000` was unavailable, so the two
+  mirror-dependent issue-detail checks were intentionally bypassed by the
+  existing skip contract rather than treated as parity evidence.
+
+- Reclassified the stale 2026-06-28 UI parity queues/source-pass ledgers as
+  superseded; their open checkboxes are historical, not active LLM tasks.
+
 ## Required human decisions and environment checks
 
 ### 1. I13 / B-0039 sharable-user catalog decision — release blocker

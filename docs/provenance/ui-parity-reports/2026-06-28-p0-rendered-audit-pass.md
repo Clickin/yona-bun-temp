@@ -1,6 +1,8 @@
 # 2026-06-28 P0 Rendered Audit Pass
 
-Status: active P0 findings
+Status: superseded (2026-08-25). Current browser verification follows
+`docs/provenance/tailwind-dom-parity-pivot.md` and the 2026-08-22 Chrome gate
+report; these P0 findings remain historical evidence.
 Date: 2026-06-28
 Sources: `2026-06-28-rendered-verification-queue.md`,
 `yona-original/app/views/**`, `frontend/src/routes/**`

@@ -1090,10 +1090,8 @@ function IssueSortFilter({
     <button
       type="button"
       className={active ? "filter active" : "filter"}
-      /* oxlint-disable-next-line react/no-unknown-property -- legacy partial_searchform filter links carry orderBy/orderDir attributes (my_partial_search.scala.html:19-21) */
-      orderBy={field}
-      /* oxlint-disable-next-line react/no-unknown-property -- legacy partial_searchform filter links carry orderBy/orderDir attributes */
-      orderDir={orderDir}
+      /* Legacy partial_searchform links expose camelCase orderBy/orderDir attributes. */
+      {...({ orderBy: field, orderDir } as Record<string, string>)}
       onClick={selectIssueSortFilter}
     >
       {children}

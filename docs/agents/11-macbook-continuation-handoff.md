@@ -1,6 +1,8 @@
 # MacBook Continuation Handoff
 
-Status: current handoff note for continuing the legacy Yona parity port from another machine.
+Status: superseded (2026-08-25). Current review and human-only checks are
+tracked in `docs/provenance/human-verification-2026-08.md`; this handoff is
+retained as historical onboarding context.
 
 ## Goal Prompt
 

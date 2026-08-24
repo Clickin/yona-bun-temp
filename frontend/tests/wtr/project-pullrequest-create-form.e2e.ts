@@ -478,6 +478,7 @@ test("project pull request create form matches legacy git/create.scala.html core
   await mockProjectPullRequestCreateForm(page, postRequests, { mergeResultRequests });
 
   expect(ROUTE_SOURCE).toContain('to="/$ownerName/$projectName/commit/$commitId"');
+  expect(ROUTE_SOURCE).toContain('search={{ branch: "", path: "" }}');
   expect(ROUTE_SOURCE).not.toContain("<a\n                    href={prefixBasePath");
   expect(ROUTE_SOURCE).not.toContain("window.history.back()");
   expect(ROUTE_SOURCE).toContain('<span id="pullRequestState"></span>');

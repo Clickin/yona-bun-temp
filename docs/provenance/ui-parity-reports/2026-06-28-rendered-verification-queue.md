@@ -1,6 +1,8 @@
 # 2026-06-28 Rendered Verification Queue
 
-Status: active audit queue
+Status: superseded (2026-08-25). Current browser verification follows
+`docs/provenance/tailwind-dom-parity-pivot.md` and the 2026-08-22 Chrome gate
+report; this queue remains historical evidence.
 Date: 2026-06-28
 Sources: `2026-06-28-static-react-owner-coverage.md`, `yona-original/app/views/**`, `frontend/src/routes/**`
 

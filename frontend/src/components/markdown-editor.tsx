@@ -641,6 +641,7 @@ export function MilestoneMarkdownEditor({
   }, [focusRequest, textareaRef]);
   return (
     <MarkdownEditor
+      wrapperClassName={wrapperClassName}
       value={contents ?? ""}
       wrapperStyleProps={wrapperStyle}
       wrapperOwner={owners.wrapper}

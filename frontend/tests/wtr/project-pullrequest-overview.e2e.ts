@@ -529,6 +529,7 @@ test("project pull request overview route source uses direct Links", async () =>
   expect(routeSource).toContain("branch: fromBranchName");
   expect(routeSource).toContain("branch: toBranchName");
   expect(routeSource).toContain('to="/$ownerName/$projectName/commit/$commitId"');
+  expect(routeSource).toContain('search={{ branch: "", path: "" }}');
   expect(routeSource).toContain(
     'to="/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes"',
   );

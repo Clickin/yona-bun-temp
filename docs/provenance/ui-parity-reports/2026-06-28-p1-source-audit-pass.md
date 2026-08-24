@@ -1,6 +1,8 @@
 # 2026-06-28 P1 Source Audit Pass
 
-Status: active P1 findings
+Status: superseded (2026-08-25). Current browser verification follows
+`docs/provenance/tailwind-dom-parity-pivot.md` and the 2026-08-22 Chrome gate
+report; these P1 findings remain historical evidence.
 Date: 2026-06-28
 Sources: `2026-06-28-rendered-verification-queue.md`, `2026-06-28-static-react-owner-coverage.md`, `yona-original/app/views/**`, `frontend/src/routes/**`
 

@@ -2395,6 +2395,8 @@ test("project issue sort filter updates route like legacy partial_list_wrap.scal
   const dueDateFilter = filters.nth(0);
   const updatedFilter = filters.nth(1);
   await expect(filters).toHaveCount(4);
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("orderBy: field");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("orderDir }");
   await expect(page.locator('.filter-wrap a[href="#"].filter[orderBy]')).toHaveCount(0);
   await expect(dueDateFilter).toHaveAttribute("type", "button");
   await expect(dueDateFilter).toHaveClass("filter");

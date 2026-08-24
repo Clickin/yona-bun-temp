@@ -1,6 +1,8 @@
 # 2026-06-28 Rendered Evidence Execution Manifest
 
-Status: active rendered-evidence plan
+Status: superseded (2026-08-25). Current browser verification follows
+`docs/provenance/tailwind-dom-parity-pivot.md` and the 2026-08-22 Chrome gate
+report; this execution manifest remains historical evidence.
 Date: 2026-06-28
 Sources: P0/P1/P2/P3 source-pass reports, `output/playwright/visual-sweep/latest.json`
 

@@ -44,6 +44,7 @@ test("renders typed markdown in the default preview", async () => {
   await act(async () => previewTab.click());
 
   expect(container.querySelector("#preview-body strong")?.textContent).toBe("bold");
+  expect(container.querySelector(".markdown-editor")).not.toBeNull();
   root.unmount();
   container.remove();
 });

@@ -506,7 +506,9 @@
 - Workspace settings scalar fallback fix: profile/password/token/email setting mutation non-Error fallbacks now use the legacy common `error.badrequest` key instead of temporary English fallback copy, notification toggles preserve legacy `yobi.user.Setting.js` `error.failedTo` with `userinfo.changeNotifications`, and server validation continues to surface the specific legacy flash/message keys such as `user.wrongPassword.alert`, `user.wrongEmail.alert`, and `user.email.duplicate`.
 - Milestone shell scalar fix: milestone list/detail React shells now preserve the legacy `issue/labels.css` stylesheet link from `milestone/list.scala.html` and `milestone/view.scala.html` so issue label styling follows the project label CSS.
 - Profile/organization project-date scalar fix: `/me`, `/:user`, and organization home project rows now preserve legacy created/code-update date `title` attributes from `user/partial_projectlist.scala.html` and `organization/view.scala.html`.
-- Completion review active: `docs/provenance/first-priority-completion-review.md` now tracks remaining 1차 PoC closure evidence for settings migration, migration/adopt verification, Smart HTTP closure tests, single-binary frontend embedding smoke, Docker image viability, and full cargo/frontend gates.
+- Completion review closed for the current first-priority app-runtime scope:
+  `docs/provenance/first-priority-completion-review.md` records the release
+  gates as maintenance checks, not remaining implementation work.
 
 ## Phase 7: Full UI Parity Subagent Sweep
 
@@ -539,9 +541,14 @@
 - Phase 2 is complete: frontend and Rust runtime defaults, mail/auth/update identifiers, release assets, and default-off upstream usage telemetry now follow the approved identity boundary. Focused frontend/Rust contracts, typecheck, production build, and Korean desktop/mobile evidence are recorded in the provenance document; legacy DB seed, migration wording, env/API keys, selectors, and deep links remain compatibility identifiers.
 - Phase 2 completion audit also covers VCS-generated identities: empty-author README commits and server-created PR merge/preview commits use `Yoram <yoram@example.invalid>`, while explicitly configured authors and legacy test/data identifiers remain unchanged.
 - The default developer-contact item stays absent until a real public Yoram repository exists; configured operator feedback URLs continue to work.
-- Phase 3 Wave 0 is complete: the exact active stylesheet chain is generated into a deterministic lower `legacy` layer, structured StyleX priority layers are verified in production, and the transparent root boundary proves StyleX precedence plus legacy fallback without geometry change. The frozen legacy LESS/Bootstrap sources remain unchanged.
-- The Wave 0 completion audit also places the existing React parity sheet and the project-code Dynatree bridge in `legacy`; their hashes are inventoried and production verification rejects unlayered top-level style rules.
-- Active plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`. Wave 1 and later move one React owner and its E2E selectors per slice; they do not authorize edits to frozen sources or bypass parity gates.
+- Phase 3 Wave 0 is historical. The current frontend verification model is
+  the DOM-Parity Fast Lane in
+  `docs/provenance/tailwind-dom-parity-pivot.md`: one merged legacy baseline
+  stylesheet plus CSS-equivalence, DOM-parity, and browser-parity contracts.
+- The frozen legacy LESS/Bootstrap sources remain unchanged; no route work may
+  bypass the parity contracts.
+- Active plan: `docs/provenance/tailwind-dom-parity-pivot.md`. The old StyleX
+  wave plan is superseded and retained only as historical provenance.
 
 ## Phase Gate 규칙
 
