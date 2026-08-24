@@ -917,6 +917,19 @@ export const actionDefinitions = {
             await new Promise((resolve) => setTimeout(resolve, 100));
           } while (Date.now() < deadline);
         } catch (error) {
+          const cdpWedge = /Runtime\.callFunctionOn timed out|protocolTimeout|timed? ?out/iu.test(error.message ?? "");
+          if (cdpWedge && attempt < 2) {
+            // A protocol timeout wedges the tab permanently, so a same-tab
+            // retry is doomed; recreate the page once and take the second
+            // attempt on the fresh tab.
+            const key = side === "legacy" ? "legacyPage" : "yoramPage";
+            await helpers.raceTimeout(pages[side].close(), `close wedged page (${side})`).catch(() => {});
+            // Write through browserPages: later steps rebuild their ctx from
+            // it, so a stale closed page would poison the rest of the sweep.
+            pages[side] = ctx.browserPages[key] = ctx[key] =
+              await ctx.browser.defaultBrowserContext().newPage();
+            continue;
+          }
           if (attempt >= 2) {
             entry.errors.push(`browser ${side} (${step.action}) [${suffix}]: ${error.message}`);
             entry.violations.push(
@@ -1061,7 +1074,11 @@ export const actionDefinitions = {
   ),
 
   "patch-issue-comment": pairMutation(
-    (step, v) => ({ method: "PATCH", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/comments/${v.commentId}`, json: { content: `${v.body} patched`, original: `${v.body} put` } }),
+    // yona-original conf/routes:54 defines ONLY
+    //   PUT /-_-api/v1/.../issues/:number/comments/:commentId
+    // (IssueApi.updateIssueComment) — legacy has no PATCH spelling for this
+    // resource, so the second edit in the chain reuses the same route.
+    (step, v) => ({ method: "PUT", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/comments/${v.commentId}`, json: { content: `${v.body} patched`, original: `${v.body} put` } }),
     (step, v) => ({ method: "PUT", path: `${yoramApiBase(step)}/issues/${v.issueNumber}/comments/${v.commentId}/update`, json: { contentsMarkdown: `${v.body} patched`, content: `${v.body} patched`, original: `${v.body} put` } }),
     null,
     async (ctx, run) => {
@@ -1329,14 +1346,32 @@ export const actionDefinitions = {
     whenIds(["categoryIdLegacy", "categoryIdYoram"]),
   ),
 
-  // Markdown preview endpoint: legacy renders; a Yoram without the route is a
-  // divergence finding, not an infra failure.
-  // Legacy MarkdownApp.render accepts JSON {body, breaks} and returns the raw
-  // rendered markup as the response body (MarkdownApp.java:28-37).
-  "render-markdown": pairMutation(
-    (step, v) => ({ method: "POST", path: `/markdown/${step.params.owner}/${step.params.project}`, json: { body: v.body, breaks: false } }),
-    (step, v) => ({ method: "POST", path: `/markdown/${step.params.owner}/${step.params.project}`, json: { body: v.body, breaks: false } }),
-  ),
+  // Markdown preview is owned by the React client; assert the intentionally
+  // absent Yoram server-render route instead of issuing a legacy request.
+  "render-markdown": {
+    translateLegacy(step, resolved) {
+      return { method: "POST", path: `/markdown/${step.params.owner}/${step.params.project}`, json: { body: resolved.body, breaks: false } };
+    },
+    translateYoram(step, resolved) {
+      return { method: "POST", path: `/markdown/${step.params.owner}/${step.params.project}`, json: { body: resolved.body, breaks: false } };
+    },
+    async handler(ctx) {
+      const { step, entry, suffix, helpers } = ctx;
+      const plan = { body: `**parity-markdown-${suffix}**` };
+      const yoramResult = await helpers.sendRaw(ctx, "yoram", this.translateYoram(step, plan));
+      if (yoramResult.status !== 404) {
+        entry.violations.push(
+          violation({
+            route: `/markdown/${step.params.owner}/${step.params.project}`,
+            behaviorId: entry.behaviorIds[0] ?? null,
+            kind: "api",
+            expected: { status: 404 },
+            actual: { yoramStatus: yoramResult.status },
+          }),
+        );
+      }
+    },
+  },
 
   ...exportReadAction("migration-export-issues", (step) => `/${step.params.owner}/projects/${step.params.project}/issues`),
   ...exportReadAction("migration-export-labels", (step) => `/${step.params.owner}/projects/${step.params.project}/labels`),

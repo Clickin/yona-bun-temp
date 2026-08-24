@@ -24,7 +24,7 @@ import {
   ISSUE_STATE_ENCODINGS,
   projectLabelRows,
 } from "./diff.mjs";
-import { h2JarPath, queryLegacyH2, queryYoramSqlite } from "./db-projection.mjs";
+import { dedupeH2RecoverSequences, dedupeRebuiltTableRows, h2JarPath, queryLegacyH2, queryYoramSqlite, replayH2Script } from "./db-projection.mjs";
 import { HarnessError, formatSummary, violation, writeReport } from "./report.mjs";
 import { launchWtrBrowser } from "../wtr-browser.mjs";
 
@@ -317,6 +317,12 @@ function clearMailOut() {
 }
 
 function decodeQuotedPrintable(text) {
+  // Only unescape =XX when a MIME part declares quoted-printable; 7bit mails
+  // carry literal "=65" sequences inside hex tokens (legacy reset URLs) that
+  // must survive verbatim or the replayed link becomes invalid.
+  if (!/content-transfer-encoding:[^\r\n]*quoted-printable/iu.test(text)) {
+    return text.replaceAll("&amp;", "&");
+  }
   return text
     .replace(/=\r?\n/gu, "")
     .replace(/=([0-9A-F]{2})/giu, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
@@ -658,7 +664,7 @@ function legacyH2Shell(sql) {
 // stale parity throwaway users (legacy treats state DELETED as inactive,
 // models/enumeration/UserState.java) and reconcile sample-project label rows
 // so both sides' fixtures measure filter logic instead of history.
-function reconcileLegacyFixturesPreboot() {
+async function reconcileLegacyFixturesPreboot() {
   const h2Jar = h2JarPath(repoRoot);
   // The original file's credentials are unknown and AUTO_SERVER records go
   // stale, so operate on a Recover+RunScript rebuilt copy (same mechanism the
@@ -672,13 +678,13 @@ function reconcileLegacyFixturesPreboot() {
     if (result.status !== 0) throw new Error(`${args[0]} failed: ${(result.stderr || result.stdout || "").slice(0, 300)}`);
   };
   runJava(["org.h2.tools.Recover", "-dir", workDir, "-db", "yona"]);
-  runJava([
-    "org.h2.tools.RunScript",
-    "-url", `jdbc:h2:${path.join(workDir, "rebuilt")};MODE=PostgreSQL;MV_STORE=FALSE;MVCC=FALSE`,
-    "-user", "sa",
-    "-password", "",
-    "-script", path.join(workDir, "yona.h2.sql"),
-  ]);
+  const recoveredScriptPath = path.join(workDir, "yona.h2.sql");
+  writeFileSync(recoveredScriptPath, dedupeH2RecoverSequences(readFileSync(recoveredScriptPath, "utf8")));
+  // Multi-head recover dumps repeat rows; replay tolerantly then strip the
+  // duplicated rows (see db-projection.replayH2Script/dedupeRebuiltTableRows).
+  const rebuiltUrl = `jdbc:h2:${path.join(workDir, "rebuilt")};MODE=PostgreSQL;MV_STORE=FALSE;MVCC=FALSE`;
+  await replayH2Script(javaBin, h2Jar, rebuiltUrl, readFileSync(recoveredScriptPath, "utf8"));
+  await dedupeRebuiltTableRows(javaBin, h2Jar, rebuiltUrl);
   const shellOnRebuilt = (sql) => {
     const result = spawnSync(
       "java",
@@ -704,6 +710,11 @@ function reconcileLegacyFixturesPreboot() {
   // sides' active user sets consist of the aligned fixtures only.
   shellOnRebuilt(
     "UPDATE n4user SET state = 'DELETED' WHERE login_id LIKE 'paritysweep%' AND state <> 'DELETED'",
+  );
+  // Labels referencing residue categories may carry arbitrary names, so
+  // delete by category before dropping the categories themselves.
+  shellOnRebuilt(
+    "DELETE FROM issue_label WHERE category_id IN (SELECT id FROM issue_label_category WHERE name LIKE 'parity-cat-sweep-%')",
   );
   shellOnRebuilt("DELETE FROM issue_label WHERE name = 'undefined' OR name LIKE 'parity-label-sweep-%'");
   shellOnRebuilt("DELETE FROM issue_label_category WHERE name = 'undefined' OR name LIKE 'parity-cat-sweep-%'");
@@ -744,6 +755,24 @@ function reconcileLegacyFixturesPreboot() {
       );
     }
   }
+  // The app and the sweep's label projection both reach labels through the
+  // PROJECT_LABEL association (db-projection.mjs LEGACY_PROJECTION_SQL.labels),
+  // so a bare ISSUE_LABEL row is invisible to both — link each seed label to
+  // the sample project or the whole reconcile measures nothing.
+  const labelIdOf = (labelName) =>
+    scalar(
+      `SELECT id FROM issue_label WHERE name = '${labelName}' AND category_id IN ` +
+        `(SELECT id FROM issue_label_category WHERE project_id = ${sampleProjectId}) LIMIT 1`,
+    );
+  for (const seed of PARITY_LABEL_SEEDS) {
+    const labelId = labelIdOf(seed.labelName);
+    if (!labelId) throw new Error(`self-check failed: seed label ${seed.labelName} row missing`);
+    const hasLink =
+      scalar(`SELECT COUNT(*) FROM project_label WHERE project_id = ${sampleProjectId} AND label_id = ${labelId}`) > 0;
+    if (!hasLink) {
+      shellOnRebuilt(`INSERT INTO project_label (project_id, label_id) VALUES (${sampleProjectId}, ${labelId})`);
+    }
+  }
 
 
   // Self-check gates the boot: fixture must be clean afterwards.
@@ -755,22 +784,59 @@ function reconcileLegacyFixturesPreboot() {
   if (activeStaleUsers !== 0) {
     throw new Error(`self-check failed: ${activeStaleUsers} active paritysweep% users remain`);
   }
+  const residueCategories = Number(
+    /\d+/.exec(
+      shellOnRebuilt("SELECT COUNT(*) FROM issue_label_category WHERE name LIKE 'parity-cat-sweep-%'"),
+    )?.[0] ?? "0",
+  );
+  if (residueCategories !== 0) {
+    throw new Error(`self-check failed: ${residueCategories} parity-cat-sweep% categories remain`);
+  }
+  // Assert the projected tuple set (same join path as the sweep projection)
+  // equals the seed set exactly: no missing seed, no extra row on either
+  // dimension (labels and their categories).
   const tuples = shellOnRebuilt(
-    "SELECT l.NAME || '|' || c.NAME || '|' || l.COLOR FROM ISSUE_LABEL l " +
+    "SELECT DISTINCT l.NAME || '|' || c.NAME || '|' || l.COLOR FROM ISSUE_LABEL l " +
+      "JOIN PROJECT_LABEL pl ON pl.LABEL_ID = l.ID " +
+      "JOIN PROJECT p ON p.ID = pl.PROJECT_ID " +
       "LEFT JOIN ISSUE_LABEL_CATEGORY c ON c.ID = l.CATEGORY_ID " +
-      "JOIN PROJECT p ON c.PROJECT_ID = p.ID WHERE p.NAME = 'sample'",
+      "WHERE p.NAME = 'sample'",
   )
     .split("\n")
+    // Line 0 is the H2 Shell column header (the SQL expression itself); data
+    // starts at line 1 (see scalar()).
+    .slice(1)
     .map((line) => line.trim().toLowerCase())
     .filter((line) => line.includes("|"));
-  for (const seed of PARITY_LABEL_SEEDS) {
-    const wanted = `${seed.labelName}|${seed.categoryName}|${seed.color}`.toLowerCase();
-    if (!tuples.includes(wanted)) {
-      throw new Error(`self-check failed: expected label tuple ${wanted} missing (have: ${tuples.join(", ")})`);
-    }
+  const wantedTuples = PARITY_LABEL_SEEDS.map((seed) =>
+    `${seed.labelName}|${seed.categoryName}|${seed.color}`.toLowerCase(),
+  ).sort();
+  const actualTuples = [...new Set(tuples)].sort();
+  if (wantedTuples.join("\n") !== actualTuples.join("\n")) {
+    throw new Error(`self-check failed: sample-project label tuples diverge from seeds (want: ${wantedTuples.join(", ")}, have: ${actualTuples.join(", ")})`);
   }
 
-  // Persist the reconciled pagestore back over the original fixture file.
+  // Persist the reconciled pagestore back over the original fixture file,
+  // but only after a sanity reopen proves the rebuild is readable — a torn
+  // or structurally broken rebuild would brick the legacy boot.
+  const verifyRebuilt = () =>
+    new Promise((resolve, reject) => {
+      const child = spawn(
+        javaBin,
+        ["-cp", h2Jar, "org.h2.tools.Shell", "-url", `jdbc:h2:${path.join(workDir, "rebuilt")};MODE=PostgreSQL;MV_STORE=FALSE;MVCC=FALSE;IFEXISTS=TRUE`, "-user", "sa", "-password", "", "-sql", "SELECT COUNT(*) FROM N4USER"],
+        { stdio: ["ignore", "pipe", "pipe"] },
+      );
+      let out = "";
+      child.stdout.on("data", (c) => {
+        out += c;
+      });
+      child.on("exit", () => resolve(out));
+      child.on("error", reject);
+    });
+  const opened = await verifyRebuilt();
+  if (!/N4USER|COUNT|rows/u.test(opened) || /Exception|Error/u.test(opened)) {
+    throw new Error(`rebuilt fixture failed sanity open: ${opened.slice(0, 200)}`);
+  }
   copyFileSync(path.join(workDir, "rebuilt.h2.db"), dbFile);
   try {
     unlinkSync(dbFile + ".trace.db");
@@ -907,28 +973,16 @@ export const stepHelpers = {
    issueNumberFromLocation,
   // Render both dom targets as skeletons and diff; any violation is a dom kind.
   async renderDomTarget(ctx, domTarget) {
-    const { step, suffix, entry, legacySession, yoramSession, legacyPage, yoramPage, options } = ctx;
-    try {
-      await setCookiesFromHeader(legacyPage, options.legacyUrl, legacySession.cookies);
-      await setCookiesFromHeader(yoramPage, ctx.yoramBaseUrl, yoramSession.cookies);
-      const legacySkeleton = await renderSkeleton(legacyPage, domTarget.legacy);
-      const yoramSkeleton = await renderSkeleton(yoramPage, domTarget.yoram, { spa: domTarget.spa });
-      const diffs = diffSkeletons(legacySkeleton, yoramSkeleton);
-      if (diffs.length > 0) {
-        entry.violations.push(
-          violation({
-            route: domTarget.legacy.replace(options.legacyUrl, ""),
-            kind: "dom",
-            expected: { skeletonEntries: legacySkeleton.length },
-            actual: { skeletonEntries: yoramSkeleton.length, firstDiffs: diffs },
-          }),
-        );
-      }
-    } catch (error) {
+    const { step, suffix, entry, legacySession, yoramSession, options } = ctx;
+    const observe = async () => {
+      await setCookiesFromHeader(ctx.legacyPage, options.legacyUrl, legacySession.cookies);
+      await setCookiesFromHeader(ctx.yoramPage, ctx.yoramBaseUrl, yoramSession.cookies);
+      const legacySkeleton = await renderSkeleton(ctx.legacyPage, domTarget.legacy);
+      const yoramSkeleton = await renderSkeleton(ctx.yoramPage, domTarget.yoram, { spa: domTarget.spa });
+      return { diffs: diffSkeletons(legacySkeleton, yoramSkeleton), legacyCount: legacySkeleton.length, yoramCount: yoramSkeleton.length };
+    };
+    const recordInfraError = (error) => {
       entry.errors.push(`dom render (${step.action}) [${suffix}]: ${error.message}`);
-      // ponytail: single attempt, no retry — an unresolved CDP/protocol
-      // failure is infra, never a finding against Yoram; add a retry when
-      // transient timeouts measurably pollute verdicts.
       entry.violations.push(
         violation({
           route: domTarget.legacy.replace(options.legacyUrl, ""),
@@ -938,6 +992,36 @@ export const stepHelpers = {
           actual: error.message,
         }),
       );
+    };
+    try {
+      let observation;
+      try {
+        observation = await observe();
+      } catch (error) {
+        // CDP protocol timeouts ("Runtime.callFunctionOn timed out",
+        // protocolTimeout) wedge the tab permanently and the error does not
+        // say which side, so recreate both sweep pages once and retry.
+        if (!/Runtime\.callFunctionOn timed out|protocolTimeout|timed? ?out/i.test(error.message ?? "")) throw error;
+        for (const key of ["legacyPage", "yoramPage"]) {
+          await raceTimeout(ctx[key].close(), `close wedged page (${key})`).catch(() => {});
+          // Write through the shared holder: later steps rebuild their ctx
+          // from it, so a stale closed page would poison the rest of sweep.
+          ctx.browserPages[key] = ctx[key] = await ctx.browser.defaultBrowserContext().newPage();
+        }
+        observation = await observe();
+      }
+      if (observation.diffs.length > 0) {
+        entry.violations.push(
+          violation({
+            route: domTarget.legacy.replace(options.legacyUrl, ""),
+            kind: "dom",
+            expected: { skeletonEntries: observation.legacyCount },
+            actual: { skeletonEntries: observation.yoramCount, firstDiffs: observation.diffs },
+          }),
+        );
+      }
+    } catch (error) {
+      recordInfraError(error);
     }
   },
 
@@ -969,6 +1053,7 @@ async function executeStep(context) {
         entry.errors.push(`${step.action} skipped: ${error.message}`);
       }
     } else {
+      console.error(`[${step.action}]`, error.stack ?? error.message);
       entry.errors.push(`${step.action}: ${error.message}`);
     }
   }
@@ -1003,7 +1088,7 @@ export async function runSweep(options = {}) {
     // Pre-boot window: no JVM holds the H2 file yet. Reconciliation MUST
     // apply — measuring against polluted fixtures is worse than not running,
     // so any failure aborts the sweep loudly.
-    reconcileLegacyFixturesPreboot();
+    await reconcileLegacyFixturesPreboot();
     patchLegacySmtpConf();
     // The legacy instance must be restarted to pick up the patched smtp conf.
     await stopLegacy();
@@ -1040,8 +1125,12 @@ export async function runSweep(options = {}) {
     }
 
     browserHandle = await launchBrowserHandle();
-    const legacyPage = await browserHandle.browser.defaultBrowserContext().newPage();
-    const yoramPage = await browserHandle.browser.defaultBrowserContext().newPage();
+    // Single mutable holder for the sweep's two pages: page-recreation
+    // recovery writes back into it so later steps never see closed tabs.
+    const browserPages = {
+      legacyPage: await browserHandle.browser.defaultBrowserContext().newPage(),
+      yoramPage: await browserHandle.browser.defaultBrowserContext().newPage(),
+    };
 
     const legacySession = new LegacySession(options.legacyUrl);
     const yoramSession = new YoramSession(yoramHandle.baseUrl);
@@ -1068,12 +1157,14 @@ export async function runSweep(options = {}) {
             step,
             resolved,
             suffix,
+            legacyPage: browserPages.legacyPage,
+            yoramPage: browserPages.yoramPage,
+            browserPages,
             state,
             entry,
             legacySession,
             yoramSession,
-            legacyPage,
-            yoramPage,
+            browser: browserHandle.browser,
             options,
             yoramBaseUrl: yoramHandle.baseUrl,
           });

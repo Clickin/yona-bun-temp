@@ -45,7 +45,6 @@ Known rig limitation (documented, non-blocking): the shared sweep session cannot
 
 | ID / Behavior | Legacy observation | Yoram observation | Sources | Rationale |
 | --- | --- | --- | --- | --- |
-| I23 / markdown render | `POST /markdown/:user/:project` renders body via `Markdown.render` | No render endpoint: 404/415; preview returns `{bodyMarkdown, breaks}` JSON unrendered | legacy: `MarkdownApp.java:29-37`; yoram: `routes/projects.rs:1049-1073,3482-3497` | Plan Phase 5 item 1: accept JSON `{body, breaks}`, return raw rendered output like legacy `ok(rendered)`. Reproduced every run. |
 | P9 / comment optimistic concurrency | PATCH comment content enforces `originalCheck`: stale original → 409 "Already modified by someone." | Accepts stale PATCH with 200 (lost update) | legacy: `IssueApi.java:588-617`; yoram: `issues/comments.rs:299-356` | Plan Phase 5 item 2: optional `original` field → 409 with legacy-shaped message. Reproduced after the harness post-comment chain was repaired. |
 | I13 / sharableUsers empty-query discovery | Returns full candidate list (users + public projects) for empty query | Returns `[]` — `list_issue_sharable_users` short-circuits on empty query (`issue_picker.rs:353+`) | yoram persistence picker | Small behavioral gap inside the implemented sharer surface. |
 | U16 / setAsMain precondition | Switches to an unvalidated email (303) | 400 "Email must be validated first." | yoram: `workspace.rs` set-main handler | Capability works only post-validation in yoram; legacy allows immediately. |
@@ -74,6 +73,7 @@ Known rig limitation (documented, non-blocking): the shared sweep session cannot
 - B-0117 OAuth: `/authenticate/github/denied` bucket mismatch ×1. NOTE: `/authenticate/github` itself is now **PASS-equivalent** — with the mock provider configured (harness passes `YONA_AUTH_SOCIAL_LOGIN_SUPPORT` + `YONA_OAUTH_GITHUB_*` pointing at an unused mock endpoint), Yoram answers the same direct 3xx-to-provider-authorize as legacy with correct `client_id`/`state`/`redirect_uri`, so the legacy route contract holds and the functional OAuth contract action passed with no violation.
 - Settings-surface replacement ×3 (B-0221/B-0298 editform tabs → workspace settings actions).
 - Throwaway-scoped status semantics (changeVCS/cleanup ×2), site-admin purge response shape ×1, missing-branch delete error semantics ×1, commit HEAD pseudo-ref extension ×1, attachment trailing slash ×1, restricted-guard gating ×1, bare login GET ×1, `/_init` bootstrap ×1, sites/import boundary ×1, external `-_-api` import row ×1 (intentional removal per SPEC.md).
+- I23 / markdown render: `POST /markdown/:user/:project` has no Yoram server-render endpoint (404/415); preview rendering is owned by the React client (react-markdown); legacy POST /markdown server-render endpoint intentionally not replicated (product decision 2026-08-24).
 
 ## LEGACY_BUG (5) — legacy defects, Yoram correct
 

@@ -455,15 +455,18 @@ async function resolveYoramOrgMemberId(ctx, organizationName, loginId) {
 }
 
 async function resolveLegacyUserIdByLoginId(ctx, loginId) {
-  // /sites/userList renders data-user-id="<loginId>" next to the
-  // /sites/user/delete<id> action link for each row.
+  // The row markup pairs the delete href with the login id attribute:
+  //   data-href="/sites/user/delete<id>" data-user-id="<loginId>"
+  // (yona-original app/views/site/userList.scala.html:117), so match them
+  // adjacently. Splitting on data-user-id=" alone is off by one row — each
+  // row's own href precedes its attribute and lands in the previous chunk,
+  // which made the resolver return the NEXT row's user id.
+  const escaped = String(loginId).replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  const pattern = new RegExp(`data-href="/sites/user/delete(\\d+)"\\s+data-user-id="${escaped}"`, "u");
   for (const state of ["ACTIVE", "LOCKED"]) {
     const page = await ctx.legacySession.request({ method: "GET", path: `/sites/userList?state=${state}` });
-    for (const chunk of String(page.body ?? "").split('data-user-id="').slice(1)) {
-      if (!chunk.startsWith(`${loginId}"`)) continue;
-      const id = /\/sites\/user\/delete(\d+)/u.exec(chunk)?.[1];
-      if (id) return Number(id);
-    }
+    const id = pattern.exec(String(page.body ?? ""))?.[1];
+    if (id) return Number(id);
   }
   return null;
 }

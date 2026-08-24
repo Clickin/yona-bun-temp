@@ -195,7 +195,8 @@ export class WtrSweepPage {
   async goto(url, options = {}) {
     const response = await this.nativePage.goto(url, {
       timeout: options.timeout,
-      waitUntil: options.waitUntil ?? "load",
+      // Playwright-spelling compat: puppeteer calls this networkidle2.
+      waitUntil: options.waitUntil === "networkidle" ? "networkidle2" : options.waitUntil ?? "load",
     });
     return responseFromPuppeteer(response, this.requestWrappers);
   }

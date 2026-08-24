@@ -785,7 +785,13 @@ const MUTATION_ACTIONS = {
         `${step.params.owner}/${step.params.project}/post comment (create)`,
       );
       state.commentL = numberFrom(/#comment-(\d+)/, legacyResult.location);
-      state.commentY = idFromJson(yoramResult.json);
+      // Yoram create returns the whole post detail; the new comment is the
+      // max comment id (the sweep actor authored every comment on this fresh post).
+      state.commentY =
+        (yoramResult.json?.comments ?? []).reduce(
+          (max, comment) => Math.max(max, Number(comment?.id) || 0),
+          0,
+        ) || null;
       if ((state.commentL === null) !== (state.commentY === null)) {
         pushApiViolation(ctx, `${step.params.owner}/${step.params.project}/post comment (create id)`, { id: state.commentL }, { id: state.commentY });
       }
@@ -821,9 +827,9 @@ const MUTATION_ACTIONS = {
         `${step.params.owner}/${step.params.project}/post comment (update)`,
       );
       // Downstream PATCH pairs are only measurable when the update verifiably
-      // applied on BOTH sides (2xx/3xx outcome).
-      state.postUpdateAppliedLegacy = legacyResult.status < 400;
-      state.postUpdateAppliedYoram = yoramResult.status < 400;
+      // applied on BOTH sides; keep the raw statuses for the skip reason.
+      state.postUpdateStatusLegacy = legacyResult.status;
+      state.postUpdateStatusYoram = yoramResult.status;
     },
   },
 
@@ -838,9 +844,14 @@ const MUTATION_ACTIONS = {
     async handler(ctx) {
       const { step, state, entry, suffix } = ctx;
       if (!state.commentL || !state.commentY) return;
-      if (state.postUpdateAppliedLegacy !== true || state.postUpdateAppliedYoram !== true) {
+      if (
+        !state.postUpdateStatusLegacy ||
+        state.postUpdateStatusLegacy >= 400 ||
+        !state.postUpdateStatusYoram ||
+        state.postUpdateStatusYoram >= 400
+      ) {
         throw new HarnessError(
-          `patch-post-comment-api: post-update did not verifiably apply on both sides (legacy=${state.postUpdateAppliedLegacy} yoram=${state.postUpdateAppliedYoram}) — PATCH pair skipped`,
+          `patch-post-comment-api: post-update did not verifiably apply on both sides (legacy=${state.postUpdateStatusLegacy ?? "n/a"} yoram=${state.postUpdateStatusYoram ?? "n/a"}) — PATCH pair skipped`,
         );
       }
       const plan = { content: `parity-comment-${suffix}-api`, original: `parity-comment-${suffix}-edited` };
@@ -1071,6 +1082,19 @@ const MUTATION_ACTIONS = {
     async handler(ctx) {
       const { step, state, entry, options, yoramBaseUrl } = ctx;
       const loginId = step.params.loginId ?? "bob";
+      // Idempotent pre-clean: a leftover membership from an aborted earlier
+      // run makes the add diverge (legacy re-adds with 303 while yoram
+      // rejects the duplicate with 400), so drop it on both sides first.
+      const preLegacy = await ctx.helpers.sendRaw(ctx, "legacy", { method: "GET", path: `/${step.params.owner}/${step.params.project}/members` });
+      const preLegacyUid = numberFrom(new RegExp(`member\\/(\\d+)\\/edit"[^>]*data-loginId="${loginId}"`, "u"), preLegacy.body);
+      if (preLegacyUid) {
+        await ctx.helpers.sendRaw(ctx, "legacy", { method: "DELETE", path: `/${step.params.owner}/${step.params.project}/member/${preLegacyUid}/delete` });
+      }
+      const preYoram = await ctx.helpers.sendRaw(ctx, "yoram", { method: "GET", path: `${restBase(step)}/members` });
+      const preYoramUid = findUserId(preYoram.json, loginId);
+      if (preYoramUid) {
+        await ctx.helpers.sendRaw(ctx, "yoram", { method: "DELETE", path: `/${step.params.owner}/${step.params.project}/member/${preYoramUid}/delete` });
+      }
       const { legacyResult, yoramResult } = await ctx.helpers.pairLenient(ctx, this.translateLegacy(step, { loginId }), this.translateYoram(step, { loginId }), `${step.params.owner}/${step.params.project}/members (add)`);
       if (legacyResult.status < 400) {
         const page = await ctx.helpers.sendRaw(ctx, "legacy", { method: "GET", path: `/${step.params.owner}/${step.params.project}/members` });

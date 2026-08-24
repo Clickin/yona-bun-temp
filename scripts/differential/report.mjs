@@ -151,9 +151,12 @@ const CLASSIFICATION_RULES = [
       "empty-query sharable-user discovery returns an empty list where legacy lists all candidates; the sharer management surface itself is implemented",
   },
   {
-    test: ({ kind, route, detail }) => kind === "api" && /\/markdown\//u.test(route) && /"status":404|"yoramStatus":404|"yoramStatus":415/u.test(JSON.stringify(detail)),
-    classification: "PRODUCT_GAP",
-    reason: "markdown preview does not render at HEAD: yoram has no POST /markdown/:user/:project render endpoint (plan Phase 5 item 1)",
+    test: ({ kind, route, detail }) => kind === "api" && /\/markdown\//u.test(route) && /"status":404|"yoramStatus":404/u.test(JSON.stringify(detail)),
+    classification: "ACCEPTED_DIVERGENCE",
+    rationale:
+      "preview rendering is owned by the React client (react-markdown); legacy POST /markdown server-render endpoint intentionally not replicated (product decision 2026-08-24)",
+    reason:
+      "preview rendering is owned by the React client (react-markdown); legacy POST /markdown server-render endpoint intentionally not replicated (product decision 2026-08-24)",
   },
   {
     test: ({ kind, route, detail }) => kind === "api" && /pullRequest\/\d+\/(un)?review/u.test(route) && /"status":403|"status":404/u.test(JSON.stringify(detail.actual ?? {})),

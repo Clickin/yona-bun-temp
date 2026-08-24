@@ -23,10 +23,17 @@ import {
 } from "react";
 import { useLegacyMessages } from "../i18n";
 import { LegacyMarkdownHelp } from "../routes/-legacy-markdown-help";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 /** Result of `style.props(...)` spread onto an element (className + inline style). */
 // ponytail: stable empty-object default so destructuring never allocates per render.
 const NO_OWNERS = {};
+
+/** Client-owned preview used by every screen that does not pass previewChildren
+ * (product decision 2026-08-24: no server markdown-render roundtrip). */
+const defaultPreview = (active: boolean, value: string) =>
+  active ? <ReactMarkdown remarkPlugins={[remarkGfm]}>{value}</ReactMarkdown> : null;
 
 export type MarkdownEditorStyleProps = Readonly<{
   className?: string;
@@ -300,7 +307,9 @@ export function MarkdownEditor({
 }: MarkdownEditorProps) {
   const { t } = useLegacyMessages();
   const [internalActiveTab, setInternalActiveTab] = useState<EditorTab>("edit");
-  const [editorValue, setEditorValue] = useState(value ?? "");
+  const [editorValue, setEditorValue] = useState(
+    value ?? textareaValue ?? textareaDefaultValue ?? "",
+  );
   const [notificationVisible, setNotificationVisible] = useState(false);
   const activeTab = activeTabProp ?? internalActiveTab;
   const changeTab = (tab: EditorTab) => {
@@ -454,11 +463,10 @@ export function MarkdownEditor({
                   : textareaDefaultValue !== undefined
                     ? { defaultValue: textareaDefaultValue }
                     : {})}
-              onChange={
-                internalValue
-                  ? (event) => setEditorValue(event.currentTarget.value)
-                  : (textareaOnChange ?? undefined)
-              }
+              onChange={(event) => {
+                setEditorValue(event.currentTarget.value);
+                if (!internalValue) textareaOnChange?.(event);
+              }}
               onFocus={
                 notificationRevealStyle ? () => setNotificationVisible(true) : textareaOnFocus
               }
@@ -481,7 +489,7 @@ export function MarkdownEditor({
             data-owner={previewOwner}
             data-via-email="false"
           >
-            {previewChildren?.(activeTab === "preview", editorValue)}
+            {(previewChildren ?? defaultPreview)(activeTab === "preview", editorValue)}
           </div>
         </div>
         {notificationRevealStyle ? (
@@ -634,7 +642,6 @@ export function MilestoneMarkdownEditor({
   return (
     <MarkdownEditor
       value={contents ?? ""}
-      wrapperClassName={wrapperClassName}
       wrapperStyleProps={wrapperStyle}
       wrapperOwner={owners.wrapper}
       wrapperDataToggle={dataToggle ? "markdown-editor" : undefined}

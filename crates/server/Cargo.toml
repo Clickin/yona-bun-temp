@@ -34,7 +34,6 @@ db-matrix = ["sqlite", "postgres", "mysql"]
 [dependencies]
 anyhow.workspace = true
 argon2.workspace = true
-ammonia.workspace = true
 axum = { workspace = true, features = ["multipart"] }
 base64.workspace = true
 bcrypt.workspace = true
@@ -49,7 +48,6 @@ include_dir.workspace = true
 ldap3.workspace = true
 md-5.workspace = true
 mime_guess.workspace = true
-pulldown-cmark.workspace = true
 rand.workspace = true
 reqwest.workspace = true
 serde.workspace = true

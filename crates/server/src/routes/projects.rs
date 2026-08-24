@@ -118,12 +118,6 @@ pub(crate) use webhooks::{
     dispatch_pull_request_webhooks, project_webhook_type_label, record_project_webhook_delivery,
 };
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct DirectMarkdownRenderBody {
-    body: Option<String>,
-    breaks: Option<bool>,
-}
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
@@ -1081,45 +1075,6 @@ async fn direct_project_mention_list(
     };
 
     Json(DirectMentionListResponse { result }).into_response()
-}
-
-async fn direct_render_markdown(
-    headers: HeaderMap,
-    owner_name: String,
-    project_name: String,
-    body: DirectMarkdownRenderBody,
-    service: PilotServiceImpl,
-) -> Response {
-    // Legacy MarkdownApp.render returns the raw rendered output via ok(rendered) -> text/html.
-    let markdown = body.body.as_deref().unwrap_or_default();
-    let breaks = body.breaks.unwrap_or(true);
-    let html = if let PilotBackend::Repository(repository) = &service.backend {
-        let actor_id = service
-            .session_manager
-            .read_session_from_headers(&headers)
-            .and_then(|session| session.user_id);
-        let authorization =
-            match require_project_read(repository, &owner_name, &project_name, actor_id).await {
-                Ok(authorization) => authorization,
-                Err(error) => return direct_status_from_connect_error(error).into_response(),
-            };
-        crate::markdown::markdown_render_html(
-            repository,
-            &authorization,
-            actor_id,
-            &service.base_path,
-            markdown,
-            breaks,
-            &service.data_root,
-        )
-        .await
-    } else {
-        Ok(crate::markdown::markdown_render_plain(markdown, breaks))
-    };
-    match html {
-        Ok(html) => ([(header::CONTENT_TYPE, "text/html; charset=utf-8")], html).into_response(),
-        Err(error) => error.into_response(),
-    }
 }
 
 #[derive(Serialize)]
@@ -2885,7 +2840,6 @@ pub(crate) fn routes(
     let pushed_branch_delete_service = service.clone();
     let transfer_accept_service = service.clone();
     let direct_clone_service = service.clone();
-    let markdown_render_service = service.clone();
     let mention_list_service = service.clone();
     let commit_diff_mention_list_service = service.clone();
     let pull_request_mention_list_service = service.clone();
@@ -3540,25 +3494,6 @@ pub(crate) fn routes(
                     let service = direct_clone_service.clone();
                     async move {
                         direct_clone_project(headers, owner_name, project_name, form, service).await
-                    }
-                },
-            ),
-        )
-        .route(
-            "/markdown/{owner}/{project}",
-            post(
-                move |headers: HeaderMap,
-                      Path((owner, project)): Path<(String, String)>,
-                      Json(body): Json<DirectMarkdownRenderBody>| {
-                    async move {
-                        direct_render_markdown(
-                            headers,
-                            owner,
-                            project,
-                            body,
-                            markdown_render_service.clone(),
-                        )
-                        .await
                     }
                 },
             ),
