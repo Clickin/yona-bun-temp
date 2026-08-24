@@ -57,6 +57,10 @@ credentials, or a release environment. It is not an unimplemented-feature list.
   as completed execution summaries; their historical verification logs contain
   no active LLM work queue.
 
+- The runtime-config DI inventory is now explicitly marked as a completed
+  inventory: every queue row is `done`, and the remaining environment reads are
+  documented startup/test-tool boundaries rather than an active LLM queue.
+
 - The WTR migration plan is now marked complete: all 858 Playwright specs have
   WTR copies and the gate cutover is recorded. The documented full-suite state
   remains 2,449 passed / 637 failed / 1 skipped; human release review must

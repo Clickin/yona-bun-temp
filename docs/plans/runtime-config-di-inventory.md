@@ -1,8 +1,8 @@
 # Runtime Config DI Inventory
 
-Status: current
-
-Last updated: 2026-06-21
+Status: completed inventory (2026-08-24). Every queue row is `done`; this
+document is retained as closure evidence, not an active LLM work queue.
+Last updated: 2026-08-24
 
 This inventory is the working queue for removing request/test-time runtime
 configuration access through process environment mutation. Before starting a
