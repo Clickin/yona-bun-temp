@@ -116,6 +116,14 @@ fixture-backed LDAP evidence only proves application behavior up to the
 configured boundary; it does not prove credentials, DNS, certificates,
 firewalls, provider rate limits, or recipient delivery.
 
+### 7. Non-blocking static warnings
+
+The turn hook passes with warnings, not errors. A human should decide whether
+to retain the legacy Select2 offscreen input's `aria-hidden="true"` focusable
+shape, and whether to schedule cleanup for pre-existing unused imports/helpers,
+`this` aliases, and role-vs-semantic-element warnings reported by oxlint.
+These are outside the parity-preserving fixes in this turn.
+
 ## Completion rule
 
 The LLM-resolvable repository work is complete. Release closure still requires
