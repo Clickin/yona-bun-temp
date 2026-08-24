@@ -1,7 +1,9 @@
 # Template-First UI Parity Reset
 
-Status: current execution directive
-Date: 2026-06-26
+Status: superseded (2026-08-24). The current frontend execution model is
+`docs/provenance/tailwind-dom-parity-pivot.md`; route-level legacy evidence is
+tracked by `docs/provenance/frontend-scala-html-goal-violation-audit.md`.
+This document remains historical evidence, not an active execution directive.
 
 ## Decision
 

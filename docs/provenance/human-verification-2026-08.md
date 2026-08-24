@@ -35,10 +35,12 @@ credentials, or a release environment. It is not an unimplemented-feature list.
 - Reclassified the stale 2026-06-28 UI parity queues/source-pass ledgers as
   superseded; their open checkboxes are historical, not active LLM tasks.
 
-- 2026-08-25 re-audit after `d7eed9a53` found no new LLM-resolvable
-  implementation or documentation gap. The differential result remains
-  315/315 with I13 as the only product decision; remaining static warnings
-  stay explicitly human-review items below.
+- 2026-08-24 documentation re-audit marked the stale July template-first,
+  frontend-closure orchestration, and Stage A closure-matrix documents as
+  superseded. Their open rows and old TypeScript diagnostic snapshot are
+  historical inventory, not current LLM work. The active frontend execution
+  and evidence sources are now the DOM-Parity Fast Lane, the Scala-HTML goal
+  audit, and this human-verification document.
 
 - Removed confirmed unused route imports/helpers and unused fixture locals.
   Frontend typecheck passes. The focused WTR rerun reached 99 passing tests;

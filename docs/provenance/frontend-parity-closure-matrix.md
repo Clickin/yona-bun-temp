@@ -1,8 +1,11 @@
 # Frontend Parity Closure Matrix
 
-Status: current, open
-Date: 2026-07-11
-Scope: finite completion matrix for the Section 9 frontend parity claims
+Status: superseded (2026-08-24). This Stage A matrix is historical route/state
+inventory; its `OPEN` rows and 222-diagnostic snapshot are not an active LLM
+task queue. Current frontend execution follows
+`docs/provenance/tailwind-dom-parity-pivot.md`; route-level evidence follows
+`docs/provenance/frontend-scala-html-goal-violation-audit.md`. Human release
+checks are listed in `docs/provenance/human-verification-2026-08.md`.
 
 ## Authority And Finite Scope
 

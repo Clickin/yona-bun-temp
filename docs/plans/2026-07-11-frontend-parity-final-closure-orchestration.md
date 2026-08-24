@@ -1,8 +1,11 @@
 # Frontend Legacy Parity Final Closure Orchestration
 
-Status: current new-session handoff directive
-Date: 2026-07-11
-Scope: legacy Yona user-visible frontend functional/UI parity closure
+Status: superseded (2026-08-24). This July route/state closure handoff and its
+matrix are historical inventory, not an active LLM task queue. Current frontend
+execution follows `docs/provenance/tailwind-dom-parity-pivot.md`; route-level
+legacy evidence follows `docs/provenance/frontend-scala-html-goal-violation-audit.md`.
+Release and environment-dependent closure checks are listed in
+`docs/provenance/human-verification-2026-08.md`.
 
 ## 1. Objective
 
