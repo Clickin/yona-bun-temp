@@ -31,6 +31,7 @@ WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
 COPY crates ./crates
 COPY --from=frontend /app/frontend/dist ./frontend/dist
+COPY --from=frontend /app/frontend/src/i18n/messages ./frontend/src/i18n/messages
 COPY --from=frontend /app/yona-original/conf/messages ./yona-original/conf/messages
 COPY --from=frontend /app/yona-original/conf/messages.ja-JP ./yona-original/conf/messages.ja-JP
 COPY --from=frontend /app/yona-original/conf/messages.ko-KR ./yona-original/conf/messages.ko-KR

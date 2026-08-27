@@ -34,7 +34,7 @@ function fail(message) {
 if (!existsSync(dumpPath)) fail(`golden dump not found: ${dumpPath} (see fixtures/legacy-yona-1.16/META.md)`);
 if (!existsSync(dataRoot)) fail(`YONA_DATA root not found: ${dataRoot}`);
 if (!existsSync(migrateBin)) fail(`yona-migrate binary missing at ${migrateBin}; build it first (cargo build -p yona-migrate)`);
-if (!existsSync(serverBin) && !process.env.YONA_GATE_SKIP_BUILD) {
+if (!process.env.YONA_GATE_SKIP_BUILD) {
   console.error("building yoram server binary...");
   await run("cargo", ["build", "-p", "yoram-server", "--bin", "yoram", "--features", "db-matrix"]);
 }

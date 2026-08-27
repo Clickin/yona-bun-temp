@@ -61,5 +61,5 @@ test("vite dev proxy preserves mounted legacy direct compatibility surfaces", ()
   assert.match(source, /mentionListAtCommitDiff/u);
   assert.match(source, /acceptValue\.includes\("text\/html"\)/u);
   assert.match(source, /return request\.url/u);
-  assert.match(source, /mode === "production" \? "\.\/" : basePath/u);
+  assert.match(source, /mode === "production" && basePath === "\/" \? "\.\/" : basePath/u);
 });

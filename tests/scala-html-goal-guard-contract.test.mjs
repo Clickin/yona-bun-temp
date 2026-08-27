@@ -35,7 +35,7 @@ test("allows a documented fallback-off retirement batch without a fabricated rou
   const result = evaluateScalaHtmlGoalGuard({
     changedFiles: [
       "frontend/src/app.css",
-      "frontend/tests/legacy-fallback-off.e2e.ts",
+      "frontend/tests/wtr/legacy-fallback-off.e2e.ts",
       "docs/provenance/frontend-stylex-migration-ledger.md",
       "docs/plans/2026-07-13-frozen-css-to-stylex-migration.md",
       "docs/provenance/ui-parity-reports/fallback-off-2026-07-19.md",
@@ -50,7 +50,7 @@ test("blocks an asset-only fallback-off batch without a global-run report", () =
   const result = evaluateScalaHtmlGoalGuard({
     changedFiles: [
       "frontend/vite.config.ts",
-      "frontend/tests/legacy-fallback-off.e2e.ts",
+      "frontend/tests/wtr/legacy-fallback-off.e2e.ts",
       "docs/provenance/frontend-stylex-migration-ledger.md",
       "docs/plans/2026-07-13-frozen-css-to-stylex-migration.md",
     ],
@@ -65,7 +65,7 @@ test("allows only the history audit's pre-report fallback compatibility marker",
   const result = evaluateScalaHtmlGoalGuard({
     changedFiles: [
       "frontend/vite.config.ts",
-      "frontend/tests/legacy-fallback-off.e2e.ts",
+      "frontend/tests/wtr/legacy-fallback-off.e2e.ts",
       "docs/provenance/frontend-stylex-migration-ledger.md",
       "docs/plans/2026-07-13-frozen-css-to-stylex-migration.md",
     ],

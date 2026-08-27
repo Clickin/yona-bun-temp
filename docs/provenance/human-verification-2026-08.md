@@ -16,10 +16,11 @@ credentials, or a release environment. It is not an unimplemented-feature list.
   markdown preview. No safe product patch remains for the current differential
   result.
 - The requester reports that the live OAuth round trip is complete. The deterministic GitHub/Google callback, linked-account, session, and profile tests remain as regression coverage; OAuth is no longer a required human check.
-- Corrected `docs/provenance/release-triage-2026-08.md` to identify the actual
-  current HEAD (`189ec2479`). The later commit contains only confirmed unused
-  frontend-code cleanup plus provenance updates, so the existing differential
-  result remains behaviorally applicable.
+- The differential artifact's behavioral baseline is `189ec2479`. Later commits
+  add only confirmed unused frontend-code cleanup, provenance updates,
+  verification-contract maintenance, and release build fixes; none changes the
+  differential behavior.
+
 - Re-audited the active Buffa-removal plan; its generated types, protobuf
   dependencies, and imports are already removed. Marked
   `docs/agents/buffa-removal-frontend.md` resolved instead of leaving a false
@@ -32,6 +33,27 @@ credentials, or a release environment. It is not an unimplemented-feature list.
   the live mirror at `192.168.45.20:9000` was unavailable, so the two
   mirror-dependent issue-detail checks were intentionally bypassed by the
   existing skip contract rather than treated as parity evidence.
+- 2026-08-27 release-candidate preparation passed the automatable gates:
+  frontend `tsc --noEmit`, **210 test files / 243 tests**, production build, and
+  the full workspace `pnpm agent:cargo-test -- --outside-sandbox` all passed.
+  `pnpm test:release-gate` passed against the golden MariaDB dump: preflight,
+  validate-only, adopt, row/VCS/upload identity, legacy-hash login, page
+  rendering, comment mutation, and attachment-byte checks all passed.
+  The first run exposed a stale pre-existing server binary without `db-matrix`;
+  `scripts/release-gate.mjs` now rebuilds the feature-enabled binary unless
+  `YONA_GATE_SKIP_BUILD` is explicitly set. The build's frozen `:selected`,
+  unresolved legacy-asset, and large-chunk warnings remain non-blocking.
+- Docker release smoke also passes after the image build received the
+  frontend-owned i18n dictionaries required by `crates/server`'s
+  `include_str!` calls. The smoke verified embedded index/runtime config,
+  project page, asset and stylesheet delivery, session CSRF, and REST project
+  data.
+- A focused System Chrome sweep reached both local targets with authenticated
+  `200` responses, but the direct `/user/sidebar` fragment is not a passing
+  visual parity result (legacy shell selectors and local stylesheet/fixture
+  checks failed). The full sweep could not start because the local legacy
+  sample repository has no `refs/heads/main`; this remains the human browser
+  release check, not parity evidence.
 
 - Reclassified the stale 2026-06-28 UI parity queues/source-pass ledgers as
   superseded; their open checkboxes are historical, not active LLM tasks.

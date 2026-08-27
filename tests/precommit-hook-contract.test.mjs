@@ -130,11 +130,11 @@ test("external REST harness requires inventory provenance for issue and mileston
 
   assert.match(
     serverSource,
-    /\/-_-api\/v1\/owners\/\{owner\}\/projects\/\{project_name\}\/issues/u,
+    /\/api\/v1\/owners\/\{owner_name\}\/projects\/\{project_name\}\/issues/u,
   );
   assert.match(
     serverSource,
-    /\/-_-api\/v1\/owners\/\{owner\}\/projects\/\{project_name\}\/milestones/u,
+    /\/api\/v1\/owners\/\{owner_name\}\/projects\/\{project_name\}\/milestones/u,
   );
   assert.match(
     specSource,
