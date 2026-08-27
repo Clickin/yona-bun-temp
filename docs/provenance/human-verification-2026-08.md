@@ -15,6 +15,7 @@ credentials, or a release environment. It is not an unimplemented-feature list.
 - Confirmed the focused implementation evidence for P9, U16, I13, and client
   markdown preview. No safe product patch remains for the current differential
   result.
+- The requester reports that the live OAuth round trip is complete. The deterministic GitHub/Google callback, linked-account, session, and profile tests remain as regression coverage; OAuth is no longer a required human check.
 - Corrected `docs/provenance/release-triage-2026-08.md` to identify the actual
   current HEAD (`189ec2479`). The later commit contains only confirmed unused
   frontend-code cleanup plus provenance updates, so the existing differential
@@ -117,21 +118,8 @@ A human must choose one disposition:
 
 Do not change candidate filtering based on the current mismatched catalogs.
 
-### 2. Live OAuth provider round trip
 
-Deterministic GitHub/Google exchange tests are implemented, but they cannot
-prove a real provider account. A human with provider credentials must follow
-the procedure in `docs/provenance/auth-deferred-oauth-ldap.md:8` and verify:
-
-- browser authorization completes for the configured provider;
-- `/api/v1/workspace` exposes the expected `connectedSocialProviders` value;
-- the corresponding `linked_account` row persists with the provider key and
-  correct local-user association;
-- login, logout, and profile projection work for the same account.
-
-This is explicitly outside the first-priority release blocker criteria.
-
-### 3. Real LDAP directory behavior
+### 2. Real LDAP directory behavior
 
 Fixture-backed form-login and Smart HTTP/SVN BasicAuth tests pass, and a real
 simple bind/search connector exists. A human must validate the deployment's
@@ -141,7 +129,7 @@ request, then verify local provisioning/update, password refresh, guest-prefix
 classification, and the configured local fallback. Fixture tests are not
 proof that the production directory is reachable or correctly configured.
 
-### 4. Release-environment migration gate
+### 3. Release-environment migration gate
 
 The golden MariaDB adoption gate was verified on 2026-08-24 in the repository
 fixture, including preflight, validate-only, adopt, before/after row/VCS/upload
@@ -150,7 +138,7 @@ release operator must still run `pnpm test:release-gate` in the target Docker,
 MariaDB, filesystem, and binary environment and inspect failures rather than
 accepting a fixture-only result.
 
-### 5. Browser and visual release proof
+### 4. Browser and visual release proof
 
 A human must inspect the final System Chrome/WTR output against the legacy
 instance at the supported desktop and mobile viewports. Confirm that any
@@ -159,15 +147,15 @@ or SPA ownership deviations, not an unreviewed layout regression. This check
 requires the actual browser, fonts, assets, base path, and legacy server used
 for release; a static source review cannot substitute for it.
 
-### 6. External delivery and integration smoke
+### 5. External delivery and integration smoke
 
 If enabled in the deployment, a human operator must verify real SMTP delivery
-and configured webhook/SCM integration endpoints. Local outbox, mock OAuth, and
-fixture-backed LDAP evidence only proves application behavior up to the
-configured boundary; it does not prove credentials, DNS, certificates,
+and configured webhook/SCM integration endpoints. The repository's outbox and
+fixture-backed integration tests are machine-verifiable; they prove application
+behavior up to the configured boundary, not credentials, DNS, certificates,
 firewalls, provider rate limits, or recipient delivery.
 
-### 7. Non-blocking static warnings
+### 6. Non-blocking static warnings
 
 The turn hook passes with warnings, not errors. A human should decide whether
 to retain the legacy Select2 offscreen input's `aria-hidden="true"` focusable
