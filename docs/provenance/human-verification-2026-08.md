@@ -155,7 +155,14 @@ fixture-backed integration tests are machine-verifiable; they prove application
 behavior up to the configured boundary, not credentials, DNS, certificates,
 firewalls, provider rate limits, or recipient delivery.
 
-### 6. Non-blocking static warnings
+### 6. SVN release environment
+
+The SVN protocol contract is covered by executable-backed tests when
+`svn`, `svnadmin`, and `svnlook` are available. A release operator must verify
+those executables in the target environment; their absence intentionally
+produces the documented `NOT_IMPLEMENTED` fallback.
+
+### 7. Non-blocking static warnings
 
 The turn hook passes with warnings, not errors. A human should decide whether
 to retain the legacy Select2 offscreen input's `aria-hidden="true"` focusable
