@@ -202,7 +202,7 @@ export class WtrSweepPage {
   }
 
   async waitForTimeout(timeout) {
-    await this.nativePage.waitForTimeout(timeout);
+    await new Promise((resolve) => setTimeout(resolve, timeout));
   }
 
   async waitForFunction(pageFunction, arg, options = {}) {

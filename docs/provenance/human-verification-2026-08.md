@@ -48,12 +48,15 @@ credentials, or a release environment. It is not an unimplemented-feature list.
   `include_str!` calls. The smoke verified embedded index/runtime config,
   project page, asset and stylesheet delivery, session CSRF, and REST project
   data.
-- A focused System Chrome sweep reached both local targets with authenticated
-  `200` responses, but the direct `/user/sidebar` fragment is not a passing
-  visual parity result (legacy shell selectors and local stylesheet/fixture
-  checks failed). The full sweep could not start because the local legacy
-  sample repository has no `refs/heads/main`; this remains the human browser
-  release check, not parity evidence.
+- 2026-08-27 System Chrome full sweep completed against local legacy/Yoram
+  instances using authenticated fixture accounts: legacy **587/624**, local
+  **365/401**, local direct API **7/13**. The sweep recorded 18 status deltas
+  and remains evidence, not a parity completion claim. The legacy PR ref fetch
+  failed for missing `refs/heads/main`, but existing local refs allowed the
+  sweep to continue and report route results.
+- The focused `/user/sidebar` fragment still is not a passing visual parity
+  result: legacy shell selectors and local stylesheet/fixture checks failed.
+  Final desktop/mobile visual approval remains a human release check.
 
 - Reclassified the stale 2026-06-28 UI parity queues/source-pass ledgers as
   superseded; their open checkboxes are historical, not active LLM tasks.

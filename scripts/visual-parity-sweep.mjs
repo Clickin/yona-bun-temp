@@ -2347,6 +2347,13 @@ function synchronizePullRequestRepositoryFixture() {
   if (!existsSync(repoPath)) {
     throw new Error(`Visual sweep sample repository is missing: ${repoPath}`);
   }
+  const requiredRefs = ["refs/heads/main", "refs/heads/feature/ui"];
+  const hasExistingRefs = requiredRefs.every(
+    (ref) =>
+      spawnSync("git", ["--git-dir", repoPath, "show-ref", "--verify", "--quiet", ref], {
+        cwd: repoRoot,
+      }).status === 0,
+  );
   const result = spawnSync(
     "git",
     [
@@ -2360,6 +2367,12 @@ function synchronizePullRequestRepositoryFixture() {
     { cwd: repoRoot, encoding: "utf8" },
   );
   if (result.status !== 0) {
+    if (hasExistingRefs) {
+      console.warn(
+        `[visual-sweep] legacy PR refs unavailable; using existing local refs: ${result.stderr.trim()}`,
+      );
+      return;
+    }
     throw new Error(`Unable to synchronize PR parity refs: ${result.stderr.trim()}`);
   }
 }

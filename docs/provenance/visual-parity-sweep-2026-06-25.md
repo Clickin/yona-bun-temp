@@ -1,5 +1,28 @@
 # Playwright Visual Parity Sweep - 2026-06-25
 
+## 2026-08-27 RC full sweep
+
+- System Chrome ran against the local legacy instance at
+  `http://127.0.0.1:9000` and Yoram at `http://127.0.0.1:3101`, using
+  authenticated fixture accounts. The sweep completed route inspection:
+  legacy **587/624**, local **365/401**, with 37 legacy and 36 local failures.
+  Local direct API checks recorded **7 passed / 6 failed**. This is evidence,
+  not a parity completion claim.
+- The legacy sample repository did not expose `refs/heads/main`; the sweep
+  continued with the existing local `main` and `feature/ui` refs and recorded
+  that fallback instead of aborting before route coverage.
+- Current status deltas:
+
+`/projects`, `/admin/sample/issues?format=xls`,
+`/admin/sample/newPullRequestForm`, `/admin/sample/reviews?format=xls`,
+`/admin/sample?tabId=dashboard`, `/admin/sample?tabId=history`,
+`/admin/svnplayground/reviews?format=xls`, `/alice/sample`,
+`/alice/sample/newPullRequestForm`, `/alice/sample/reviews?format=xls`,
+`/alice/sample/watch`, `/sites/user/delete33`, `/sites/user/delete34`,
+`/sites/user/delete35`, `/weblabs/portal/member/1/edit`,
+`/weblabs/portal/member/33/edit`, `/weblabs/portal/newPullRequestForm`,
+`/weblabs/portal/reviews?format=xls`.
+
 ## 2026-07-27 production-dist full sweep
 
 - System Chrome, legacy `http://127.0.0.1:9000`, and a newly built frontend

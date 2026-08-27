@@ -792,6 +792,7 @@ test("focused pull request sweep aligns the compared repository refs", () => {
   assert.match(source, /synchronizePullRequestRepositoryFixture/u);
   assert.match(source, /\+refs\/heads\/main:refs\/heads\/main/u);
   assert.match(source, /\+refs\/heads\/feature\/ui:refs\/heads\/feature\/ui/u);
+  assert.match(source, /legacy PR refs unavailable; using existing local refs/u);
 });
 
 test("visual sweep keeps target sessions independent and serializes real-data discovery", () => {
