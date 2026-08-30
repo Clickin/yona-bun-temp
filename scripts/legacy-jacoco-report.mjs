@@ -127,10 +127,8 @@ export function classifyMethodCoverage({
 export function parseJacocoXml(xml) {
   const classes = [];
   const methods = [];
-  const classRecords = [
-    ...xml.matchAll(/<class\b([^>]*)>([\s\S]*?)<\/class>/gu),
-    ...xml.matchAll(/<class\b([^>]*)\/>/gu),
-  ].map((match) => ({ attributes: match[1], body: match[2] ?? "" }));
+  const classRecords = [...xml.matchAll(/<class\b([^>]*?)(?:\/>|>([\s\S]*?)<\/class>)/gu)]
+    .map((match) => ({ attributes: match[1], body: match[2] ?? "" }));
   for (const classRecord of classRecords) {
     const body = classRecord.body;
     const className = attr(classRecord.attributes, "name").replaceAll("/", ".");

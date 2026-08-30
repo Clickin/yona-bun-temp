@@ -38,6 +38,27 @@ test("JaCoCo XML parsing retains self-closing class records", () => {
   }]);
 });
 
+test("JaCoCo XML parsing does not attach following methods to self-closing classes", () => {
+  const parsed = parseJacocoXml(
+    '<report><class name="controllers/IssueApp"/><class name="controllers/BoardApp"><method name="index"><counter type="INSTRUCTION" missed="0" covered="4"/></method></class></report>',
+  );
+  assert.deepEqual(parsed.classes, [
+    {
+      name: "controllers.IssueApp",
+      methods: { covered: 0, missed: 0 },
+      branches: { covered: 0, missed: 0 },
+    },
+    {
+      name: "controllers.BoardApp",
+      methods: { covered: 1, missed: 0 },
+      branches: { covered: 0, missed: 0 },
+    },
+  ]);
+  assert.deepEqual(parsed.methods.map(({ class: className, method }) => ({ class: className, method })), [
+    { class: "controllers.BoardApp", method: "index" },
+  ]);
+});
+
 test("JaCoCo method coverage classification is deterministic", () => {
   assert.equal(classifyMethodCoverage({ instructionMissed: 4, instructionCovered: 0, branchMissed: 2, branchCovered: 0 }), "FULLY_MISSED");
   assert.equal(classifyMethodCoverage({ instructionMissed: 0, instructionCovered: 0, branchMissed: 0, branchCovered: 2 }), "FULLY_MISSED");
