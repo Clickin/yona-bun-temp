@@ -1,9 +1,11 @@
 import { strict as assert } from "node:assert";
 import test from "node:test";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import {
+  analyzerMetadata,
   buildReportArgs,
   classifyMethodCoverage,
   detectCoverageIdentityWarnings,
@@ -14,7 +16,9 @@ import {
   resolveCliJavaArgs,
   resolveDiagnosticPaths,
   resolvePaths,
+  resolvePlayCompatMode,
 } from "./legacy-jacoco-report.mjs";
+import { buildCompatShim } from "./legacy-jacoco-play-compat.mjs";
 
 const xml = `<report><package name="controllers"><class name="controllers/UserApp"><method name="index"><counter type="INSTRUCTION" missed="0" covered="4"/><counter type="BRANCH" missed="0" covered="2"/></method><method name="admin"><counter type="INSTRUCTION" missed="3" covered="0"/><counter type="BRANCH" missed="1" covered="0"/></method></class></package></report>`;
 
@@ -191,6 +195,97 @@ test("cached JaCoCo CLI uses its internal Main when the jar has no Main-Class", 
   const args = resolveCliJavaArgs(cli);
   assert.equal(args[0], "-cp");
   assert.equal(args[2], "org.jacoco.cli.internal.Main");
+});
+
+test("Play compatibility mode is explicit and records its exception", () => {
+  assert.equal(resolvePlayCompatMode({}), false);
+  assert.equal(resolvePlayCompatMode({ YONA_LEGACY_JACOCO_PLAY_COMPAT: "0" }), false);
+  assert.equal(resolvePlayCompatMode({ YONA_LEGACY_JACOCO_PLAY_COMPAT: "1" }), true);
+  assert.throws(
+    () => resolvePlayCompatMode({ YONA_LEGACY_JACOCO_PLAY_COMPAT: "yes" }),
+    /must be 1 \(enabled\) or 0 \(disabled\)/u,
+  );
+  assert.deepEqual(analyzerMetadata(true), {
+    analyzer: "jacoco-0.8.14-play23-compat",
+    upstreamVersion: "0.8.14",
+    compatibilityException: "Lplay/core/enhancers/PropertiesEnhancer$GeneratedAccessor;",
+  });
+});
+
+test("Play compatibility shim bypasses only GeneratedAccessor", () => {
+  const shim = buildCompatShim();
+  const harnessDirectory = mkdtempSync(join(tmpdir(), "legacy-jacoco-filter-probe-"));
+  const source = join(harnessDirectory, "FilterProbe.java");
+  writeFileSync(source, `
+package org.jacoco.core.internal.analysis.filter;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.AnnotationNode;
+import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.MethodNode;
+
+public final class FilterProbe {
+  private static final class Context implements IFilterContext {
+    private final Set<String> annotations;
+    Context(String annotation) {
+      annotations = annotation == null ? Collections.<String>emptySet() : Collections.singleton(annotation);
+    }
+    public String getClassName() { return "fixture"; }
+    public String getSuperClassName() { return "java/lang/Object"; }
+    public Set<String> getClassAnnotations() { return annotations; }
+    public Set<String> getClassAttributes() { return Collections.emptySet(); }
+    public String getSourceFileName() { return null; }
+    public String getSourceDebugExtension() { return null; }
+  }
+  private static final class Output implements IFilterOutput {
+    boolean ignored;
+    public void ignore(org.objectweb.asm.tree.AbstractInsnNode first, org.objectweb.asm.tree.AbstractInsnNode last) { ignored = true; }
+    public void merge(org.objectweb.asm.tree.AbstractInsnNode first, org.objectweb.asm.tree.AbstractInsnNode last) {}
+    public void replaceBranches(org.objectweb.asm.tree.AbstractInsnNode source, Replacements replacements) {}
+  }
+  private static boolean filtered(String classAnnotation, String methodAnnotation) {
+    MethodNode method = new MethodNode();
+    method.instructions.add(new InsnNode(Opcodes.RETURN));
+    if (methodAnnotation != null) {
+      method.invisibleAnnotations = Collections.singletonList(new AnnotationNode(methodAnnotation));
+    }
+    Output output = new Output();
+    new AnnotationGeneratedFilter().filter(method, new Context(classAnnotation), output);
+    return output.ignored;
+  }
+  public static void main(String[] args) {
+    String play = "Lplay/core/enhancers/PropertiesEnhancer$GeneratedAccessor;";
+    if (filtered(play, null) || !filtered("Lfixture/SomeGenerated;", null)
+        || !filtered(null, "Lfixture/SomeGenerated;")) {
+      throw new AssertionError("Generated filter scope changed");
+    }
+    System.out.println("synthetic filter scope: PASS");
+  }
+}
+`);
+  try {
+    const separator = process.platform === "win32" ? ";" : ":";
+    const classpath = [shim.dependencies.core, shim.dependencies.asm, shim.dependencies.asmTree].join(separator);
+  const compile = spawnSync(shim.tools.javac, [
+      "-source", "8", "-target", "8", "-cp", classpath, "-d", harnessDirectory, source,
+  ], { encoding: "utf8" });
+  assert.equal(compile.status, 0, compile.stderr);
+    const runStandard = spawnSync(shim.tools.java, [
+      "-cp", [harnessDirectory, classpath].join(separator), "org.jacoco.core.internal.analysis.filter.FilterProbe",
+  ], { encoding: "utf8" });
+    assert.notEqual(runStandard.status, 0, "standard JaCoCo unexpectedly bypassed Play GeneratedAccessor");
+    assert.match(runStandard.stderr, /Generated filter scope changed/u);
+  const run = spawnSync(shim.tools.java, [
+      "-cp", [harnessDirectory, shim.shimJar, classpath].join(separator), "org.jacoco.core.internal.analysis.filter.FilterProbe",
+    ], { encoding: "utf8" });
+  assert.equal(run.status, 0, run.stderr);
+  assert.match(run.stdout, /synthetic filter scope: PASS/u);
+  } finally {
+    rmSync(harnessDirectory, { force: true, recursive: true });
+  }
 });
 
 test("JaCoCo report fails clearly for missing exec and non-file CLI", () => {

@@ -2,6 +2,11 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
+import {
+  buildCompatShim,
+  inspectShimClassOrigin,
+  playGeneratedAccessorDescriptor,
+} from "./legacy-jacoco-play-compat.mjs";
 
 export const repoRoot = resolve(new URL("..", import.meta.url).pathname);
 export const defaultOutputDir = resolve(repoRoot, ".agent/legacy-jacoco");
@@ -40,8 +45,13 @@ function readManifestMainClass(jar) {
   }
 }
 
-export function resolveCliJavaArgs(cli) {
-  if (readManifestMainClass(cli)) return ["-jar", cli];
+export function resolveCliJavaArgs(cli, { classpathPrefix = [] } = {}) {
+  if (readManifestMainClass(cli)) {
+    if (classpathPrefix.length > 0) {
+      throw new Error("JaCoCo Play compatibility requires a CLI without a Main-Class manifest.");
+    }
+    return ["-jar", cli];
+  }
   const dependencyRoots = [
     resolve(homedir(), ".gradle/caches/modules-2/files-2.1/org.jacoco"),
     resolve(homedir(), ".gradle/caches/modules-2/files-2.1/args4j"),
@@ -51,7 +61,13 @@ export function resolveCliJavaArgs(cli) {
     resolve(homedir(), ".m2/repository/org/ow2/asm"),
   ];
   const dependencies = selectCliDependencies(dependencyRoots, cli);
-  return ["-cp", [cli, ...dependencies].filter((jar, index, jars) => jars.indexOf(jar) === index).join(pathDelimiter()), "org.jacoco.cli.internal.Main"];
+  return [
+    "-cp",
+    [...classpathPrefix, cli, ...dependencies]
+      .filter((jar, index, jars) => jars.indexOf(jar) === index)
+      .join(pathDelimiter()),
+    "org.jacoco.cli.internal.Main",
+  ];
 }
 
 function selectCliDependencies(roots, cli) {
@@ -156,8 +172,8 @@ export function detectCoverageIdentityWarnings(output) {
     .filter((line) => line.length > 0 && coverageIdentityWarningPatterns.some((pattern) => pattern.test(line)));
 }
 
-export function executeJacocoCli({ cli, args, java = "java", cwd = repoRoot }) {
-  const result = spawnSync(java, [...resolveCliJavaArgs(cli), ...args], {
+export function executeJacocoCli({ cli, args, java = "java", cwd = repoRoot, classpathPrefix = [] }) {
+  const result = spawnSync(java, [...resolveCliJavaArgs(cli, { classpathPrefix }), ...args], {
     cwd,
     encoding: "utf8",
     maxBuffer: 32 * 1024 * 1024,
@@ -272,18 +288,55 @@ function requireFile(path, label) {
   if (!statSync(path).isFile()) throw new Error(`JaCoCo ${label} is not a regular file: ${path}`);
 }
 
-export function buildReportArgs(paths, classfiles, cli = resolveCliJar(process.env)) {
-  const args = [...resolveCliJavaArgs(cli), "report", paths.exec, "--xml", paths.xml, "--html", paths.html];
+export function buildReportArgs(
+  paths,
+  classfiles,
+  cli = resolveCliJar(process.env),
+  { classpathPrefix = [] } = {},
+) {
+  const args = [
+    ...resolveCliJavaArgs(cli, { classpathPrefix }),
+    "report",
+    paths.exec,
+    "--xml",
+    paths.xml,
+    "--html",
+    paths.html,
+  ];
   if (paths.csv) args.push("--csv", paths.csv);
   for (const classfile of classfiles) args.push("--classfiles", classfile);
   if (paths.sourcefiles && existsSync(paths.sourcefiles)) args.push("--sourcefiles", paths.sourcefiles);
   return args;
 }
 
+export function resolvePlayCompatMode(env = process.env) {
+  const value = env.YONA_LEGACY_JACOCO_PLAY_COMPAT;
+  if (value === undefined || value === "0") return false;
+  if (value !== "1") {
+    throw new Error("YONA_LEGACY_JACOCO_PLAY_COMPAT must be 1 (enabled) or 0 (disabled).");
+  }
+  return true;
+}
+
+export function analyzerMetadata(playCompat) {
+  return playCompat
+    ? {
+        analyzer: "jacoco-0.8.14-play23-compat",
+        upstreamVersion: "0.8.14",
+        compatibilityException: playGeneratedAccessorDescriptor,
+      }
+    : {
+        analyzer: "jacoco-0.8.14",
+        upstreamVersion: "0.8.14",
+        compatibilityException: null,
+      };
+}
+
 export function main(env = process.env) {
   const paths = resolvePaths(env);
   const diagnosticPaths = resolveDiagnosticPaths(env);
   const cli = resolveCliJar(env);
+  const playCompat = resolvePlayCompatMode(env);
   const classfiles = resolveClassfiles(env);
   if (!cli) throw new Error("JaCoCo CLI jar not found. Set YONA_LEGACY_JACOCO_CLI to an existing jacococli.jar.");
   requireFile(cli, "CLI jar");
@@ -296,12 +349,26 @@ export function main(env = process.env) {
   if (paths.csv) mkdirSync(dirname(paths.csv), { recursive: true });
   mkdirSync(diagnosticPaths.diagnosticDir, { recursive: true });
   const java = env.YONA_LEGACY_JACOCO_JAVA ?? (env.JAVA_HOME ? join(env.JAVA_HOME, "bin/java") : "java");
-  const reportArgs = buildReportArgs(paths, classfiles, cli);
+  const compatShim = playCompat ? buildCompatShim(env) : null;
+  const classpathPrefix = compatShim ? [compatShim.shimJar] : [];
+  const classOrigin = compatShim
+    ? inspectShimClassOrigin({
+        shimJar: compatShim.shimJar,
+        dependencies: compatShim.dependencies,
+        java,
+        javac: compatShim.tools.javac,
+      })
+    : null;
+  if (classOrigin) {
+    writeFileSync(join(diagnosticPaths.diagnosticDir, "filter-class-origin.txt"), `${classOrigin}\n`);
+  }
+  const reportArgs = buildReportArgs(paths, classfiles, cli, { classpathPrefix });
   const cliPrefixLength = resolveCliJavaArgs(cli).length;
   const commandResult = executeJacocoCli({
     cli,
     args: reportArgs.slice(cliPrefixLength),
     java,
+    classpathPrefix,
   });
   if (commandResult.stdout) process.stdout.write(commandResult.stdout);
   if (commandResult.stderr) process.stderr.write(commandResult.stderr);
@@ -309,6 +376,8 @@ export function main(env = process.env) {
     diagnosticPaths.reportCommandLog,
     [
       `command: ${java} ${reportArgs.join(" ")}`,
+      `analyzer: ${JSON.stringify(analyzerMetadata(playCompat))}`,
+      ...(classOrigin ? [`filter-class-origin: ${classOrigin}`] : []),
       "",
       "stdout:",
       commandResult.stdout,
@@ -322,9 +391,11 @@ export function main(env = process.env) {
   }
   const parsed = parseJacocoXml(readFileSync(paths.xml, "utf8"));
   const coverageIdentityValid = commandResult.warnings.length === 0;
+  const metadata = analyzerMetadata(playCompat);
   writeFileSync(
     resolve(paths.outputDir, "summary.json"),
     `${JSON.stringify({
+      ...metadata,
       classes: parsed.classes,
       coverageIdentityValid,
       coverageIdentityWarnings: commandResult.warnings,
@@ -334,6 +405,7 @@ export function main(env = process.env) {
   writeFileSync(
     resolve(paths.outputDir, "coverage-identity.json"),
     `${JSON.stringify({
+      ...metadata,
       coverageIdentityValid,
       warnings: commandResult.warnings,
       reportCommandLog: diagnosticPaths.reportCommandLog,

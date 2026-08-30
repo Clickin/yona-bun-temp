@@ -41,6 +41,35 @@
 
 The extracted distribution and verified Gradle-cached JaCoCo 0.8.14 agent/CLI are present in the current workspace. Report generation remains opt-in via `YONA_LEGACY_JACOCO=1`; no binary is stored in the repository.
 
+## Play 2.3 compatibility shim
+
+`tools/legacy-jacoco-play-compat/` contains the JaCoCo 0.8.14
+`AnnotationGeneratedFilter` source with one deliberate exception for
+`Lplay/core/enhancers/PropertiesEnhancer$GeneratedAccessor;`. The helper
+`pnpm legacy:jacoco:play-compat` compiles it with the cached JaCoCo 0.8.14
+core and ASM dependencies to the ignored
+`.agent/tools/legacy-jacoco-play-compat/` directory. The JAR contains only
+`org.jacoco.core.internal.analysis.filter.AnnotationGeneratedFilter`; it is
+not committed.
+
+The report path is unchanged unless `YONA_LEGACY_JACOCO_PLAY_COMPAT=1` is
+explicitly set. In compatibility mode the shim JAR is first on the report
+JVM classpath, and `diagnostic/filter-class-origin.txt` records the loaded
+class origin. Report metadata identifies the analyzer as
+`jacoco-0.8.14-play23-compat`, retains `upstreamVersion: 0.8.14`, and records
+the exact descriptor exception. The default mode remains
+`jacoco-0.8.14` with no exception.
+
+The synthetic regression invokes the filter with a class-level Play
+`GeneratedAccessor` descriptor and a class/method `SomeGenerated` descriptor:
+the Play marker is visible while both other generated markers remain
+filtered. Against the existing deterministic `GET /` exec and the unchanged
+Yona distribution JAR, standard 0.8.14 reports
+`controllers.Application` with 0 methods; compatibility mode reports 18
+methods including `index`, with 19 covered instructions. The existing
+identity artifact remains `a7315256794f49b5`; no agent, exec, classfile, or
+Yona source changed.
+
 ## Real phase-de-real-v2 result
 
 The first real start used the default agent path and failed with
