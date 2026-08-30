@@ -5,7 +5,7 @@
 // adapters, compares API responses / rendered DOM skeletons / SQL semantic
 // projections, and writes .agent/differential/report.json plus a stdout summary.
 //
-// Usage: node scripts/differential/run.mjs [--legacy-url URL] [--yoram-port N]
+// Usage: node scripts/differential/run.mjs [--legacy-url URL] [--yoram-port N] [--scenario ID ...]
 
 import { spawn, spawnSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, openSync, readdirSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
@@ -117,13 +117,23 @@ async function hoverAnchor(page, selector) {
   return shown ? "synthetic" : "none";
 }
 
-function parseArgs(argv) {
-  const options = { legacyUrl: process.env.YONA_LEGACY_URL ?? "http://127.0.0.1:9000", yoramPort: null };
+export function parseArgs(argv) {
+  const options = { legacyUrl: process.env.YONA_LEGACY_URL ?? "http://127.0.0.1:9000", yoramPort: null, scenarioIds: [] };
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === "--legacy-url") options.legacyUrl = argv[++i];
     else if (argv[i] === "--yoram-port") options.yoramPort = Number(argv[++i]);
+    else if (argv[i] === "--scenario") options.scenarioIds.push(argv[++i]);
+    else if (argv[i] === "--scenarios") options.scenarioIds.push(...(argv[++i] ?? "").split(",").filter(Boolean));
   }
   return options;
+}
+
+export function selectScenarios(scenarioIds = []) {
+  if (scenarioIds.length === 0) return scenarios;
+  const selected = scenarios.filter((scenario) => scenarioIds.includes(scenario.id));
+  const unknown = scenarioIds.filter((id) => !scenarios.some((scenario) => scenario.id === id));
+  if (unknown.length > 0) throw new Error(`unknown scenario id(s): ${unknown.join(", ")}`);
+  return selected;
 }
 
 async function waitForHttp(url, timeoutMs = 120_000) {
@@ -1066,6 +1076,7 @@ export async function runSweep(options = {}) {
   const infraErrors = [];
   let yoramHandle = null;
   let browserHandle = null;
+  const selectedScenarios = selectScenarios(options.scenarioIds);
 
   const inventory = JSON.parse(readFileSync(path.join(repoRoot, "docs/provenance/behavior-inventory.json"), "utf8"));
   const problems = validateScenarios(scenarios, Object.keys(ACTION_DEFINITIONS));
@@ -1109,7 +1120,7 @@ export async function runSweep(options = {}) {
     if (!legacyBooted || !yoramHandle) {
       // Record the infra failure against every scenario so the report carries
       // a failure reason even when an instance never came up.
-      for (const scenario of scenarios) {
+      for (const scenario of selectedScenarios) {
         report.scenarios.push({ id: scenario.id, title: scenario.title, behaviorIds: [], violations: [], errors: [...infraErrors] });
       }
       report.dbProjection = { skipped: true, reason: [...infraErrors] };
@@ -1135,8 +1146,8 @@ export async function runSweep(options = {}) {
     const legacySession = new LegacySession(options.legacyUrl);
     const yoramSession = new YoramSession(yoramHandle.baseUrl);
 
-    for (let index = 0; index < scenarios.length; index += 1) {
-      const scenario = scenarios[index];
+    for (let index = 0; index < selectedScenarios.length; index += 1) {
+      const scenario = selectedScenarios[index];
       const entry = {
         id: scenario.id,
         title: scenario.title,
@@ -1223,6 +1234,7 @@ async function projectDatabases(options, runId) {
 
 async function main() {
   const options = parseArgs(process.argv.slice(2));
+  const selectedScenarios = selectScenarios(options.scenarioIds);
   const report = await runSweep(options);
 
   // DB-level violations surface as dedicated scenarios so they flow through
@@ -1255,7 +1267,7 @@ async function main() {
   const coverage = {
     runId: report.runId,
     version: 1,
-    scenarios: scenarios.map((scenario) => {
+    scenarios: selectedScenarios.map((scenario) => {
       const runtime = runtimeScenarios.get(scenario.id);
       return {
         scenarioId: scenario.id,

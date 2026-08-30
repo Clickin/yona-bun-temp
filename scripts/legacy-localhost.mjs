@@ -6,13 +6,15 @@ import {
   readFileSync,
   readdirSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from "node:fs";
-import { basename, resolve } from "node:path";
+import { basename, dirname, resolve } from "node:path";
 import process from "node:process";
 import { createWtrSweepContext, launchWtrBrowser } from "./wtr-browser.mjs";
 
 const repoRoot = resolve(new URL("..", import.meta.url).pathname);
+const defaultLegacyJacocoOutputDir = resolve(repoRoot, ".agent/legacy-jacoco");
 const defaultVersion = process.env.YONA_LEGACY_VERSION ?? "1.16.0";
 const defaultPort = numberValue(process.env.YONA_LEGACY_PORT, 9000);
 const defaultHost = process.env.YONA_LEGACY_HOST ?? "127.0.0.1";
@@ -271,6 +273,55 @@ export async function main(argv = process.argv.slice(2)) {
   }
 }
 
+export function resolveLegacyJacocoConfig(env = process.env) {
+  if (env.YONA_LEGACY_JACOCO !== "1") {
+    return null;
+  }
+
+  const configuredAgent = env.YONA_LEGACY_JACOCO_AGENT;
+  if (configuredAgent !== undefined && (typeof configuredAgent !== "string" || configuredAgent.trim() === "")) {
+    throw new Error(
+      "YONA_LEGACY_JACOCO_AGENT must name an existing JaCoCo agent JAR when YONA_LEGACY_JACOCO=1.",
+    );
+  }
+
+  const agentPath = resolve(
+    configuredAgent ?? resolve(defaultLegacyJacocoOutputDir, "jacocoagent.jar"),
+  );
+  let agentStats;
+  try {
+    agentStats = statSync(agentPath);
+  } catch {
+    throw new Error(
+      `JaCoCo agent not found at ${agentPath}. Set YONA_LEGACY_JACOCO_AGENT to an existing agent JAR.`,
+    );
+  }
+  if (!agentStats.isFile()) {
+    throw new Error(`JaCoCo agent path is not a regular file: ${agentPath}`);
+  }
+
+  const configuredDestfile = env.YONA_LEGACY_JACOCO_DESTFILE;
+  if (
+    configuredDestfile !== undefined &&
+    (typeof configuredDestfile !== "string" || configuredDestfile.trim() === "")
+  ) {
+    throw new Error("YONA_LEGACY_JACOCO_DESTFILE must name a non-empty output path.");
+  }
+  const destfile = resolve(
+    configuredDestfile ?? resolve(defaultLegacyJacocoOutputDir, "yona.exec"),
+  );
+
+  return {
+    agentPath,
+    destfile,
+    outputDir: defaultLegacyJacocoOutputDir,
+  };
+}
+
+export function buildLegacyJacocoLauncherArg(config) {
+  return `-J-javaagent:${config.agentPath}=destfile=${config.destfile},append=false`;
+}
+
 function buildLayout(input) {
   const cacheDir = resolve(input.workspaceDir, "cache");
   const distRoot = resolve(input.workspaceDir, "dist", `yona-h2-v${input.version}`);
@@ -427,6 +478,7 @@ async function prepare(layout, options) {
 }
 
 async function start(layout, options) {
+  const jacoco = resolveLegacyJacocoConfig();
   await prepare(layout, options);
   cleanupStalePidFiles(layout);
   const managedProcess = resolveManagedPid(layout);
@@ -445,9 +497,16 @@ async function start(layout, options) {
     YONA_DATA: layout.dataDir,
     YONA_HOME: layout.installDir,
   };
+  if (jacoco) {
+    mkdirSync(jacoco.outputDir, { recursive: true });
+    mkdirSync(dirname(jacoco.destfile), { recursive: true });
+  }
   mkdirSync(layout.runDir, { recursive: true });
   const logFd = openSync(layout.logFile, "a");
   const args = ["-java-home", javaHome, `-Dhttp.address=${layout.host}`, `-Dhttp.port=${layout.port}`];
+  if (jacoco) {
+    args.push(buildLegacyJacocoLauncherArg(jacoco));
+  }
   if (process.env.YONA_LEGACY_EMAIL_VERIFICATION === "true") {
     args.push("-Dapplication.use.email.verification=true");
   }

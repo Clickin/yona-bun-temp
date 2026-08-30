@@ -1,12 +1,15 @@
 import { execFileSync } from "node:child_process";
 import { strict as assert } from "node:assert";
 import test from "node:test";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
+import { tmpdir } from "node:os";
 import {
+  buildLegacyJacocoLauncherArg,
   classifySecretBootstrapResponse,
   commandMatchesLayout,
   commandMatchesPort,
+  resolveLegacyJacocoConfig,
   rewriteApplicationConf,
 } from "./legacy-localhost.mjs";
 
@@ -44,6 +47,72 @@ test("legacy-localhost package scripts expose parity content wrappers", () => {
     packageJson.scripts["legacy:localhost:seed-content:sidecar"],
     "node scripts/legacy-localhost.mjs seed-parity-content --instance default --port 19100",
   );
+});
+
+test("legacy-localhost JaCoCo config is disabled unless explicitly enabled", () => {
+  assert.equal(resolveLegacyJacocoConfig({}), null);
+  assert.equal(resolveLegacyJacocoConfig({ YONA_LEGACY_JACOCO: "0" }), null);
+});
+
+test("legacy-localhost JaCoCo config produces exactly one launcher argument", () => {
+  const directory = mkdtempSync(join(tmpdir(), "legacy-jacoco-agent-"));
+  const agent = join(directory, "jacocoagent.jar");
+  try {
+    writeFileSync(agent, "test agent");
+    const config = resolveLegacyJacocoConfig({
+      YONA_LEGACY_JACOCO: "1",
+      YONA_LEGACY_JACOCO_AGENT: agent,
+      YONA_LEGACY_JACOCO_DESTFILE: join(directory, "yona.exec"),
+    });
+    assert.equal(
+      buildLegacyJacocoLauncherArg(config),
+      `-J-javaagent:${agent}=destfile=${join(directory, "yona.exec")},append=false`,
+    );
+  } finally {
+    rmSync(directory, { force: true, recursive: true });
+  }
+});
+
+test("legacy-localhost JaCoCo config honors agent and destination overrides", () => {
+  const directory = mkdtempSync(join(tmpdir(), "legacy-jacoco-overrides-"));
+  const agent = join(directory, "custom-agent.jar");
+  const destination = join(directory, "coverage", "custom.exec");
+  try {
+    writeFileSync(agent, "test agent");
+    const config = resolveLegacyJacocoConfig({
+      YONA_LEGACY_JACOCO: "1",
+      YONA_LEGACY_JACOCO_AGENT: agent,
+      YONA_LEGACY_JACOCO_DESTFILE: destination,
+    });
+    assert.equal(config.agentPath, agent);
+    assert.equal(config.destfile, destination);
+  } finally {
+    rmSync(directory, { force: true, recursive: true });
+  }
+});
+
+test("legacy-localhost JaCoCo config rejects missing and non-file agents", () => {
+  const directory = mkdtempSync(join(tmpdir(), "legacy-jacoco-errors-"));
+  try {
+    assert.throws(
+      () => resolveLegacyJacocoConfig({
+        YONA_LEGACY_JACOCO: "1",
+        YONA_LEGACY_JACOCO_AGENT: join(directory, "missing.jar"),
+      }),
+      /JaCoCo agent not found/u,
+    );
+    const nonFile = join(directory, "agent-directory");
+    mkdirSync(nonFile);
+    assert.throws(
+      () => resolveLegacyJacocoConfig({
+        YONA_LEGACY_JACOCO: "1",
+        YONA_LEGACY_JACOCO_AGENT: nonFile,
+      }),
+      /JaCoCo agent path is not a regular file/u,
+    );
+  } finally {
+    rmSync(directory, { force: true, recursive: true });
+  }
 });
 
 test("legacy-localhost classifies secret bootstrap states for live localhost adoption", () => {

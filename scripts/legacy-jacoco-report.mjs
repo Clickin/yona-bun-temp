@@ -1,0 +1,200 @@
+import { execFileSync } from "node:child_process";
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { basename, dirname, join, resolve } from "node:path";
+
+export const repoRoot = resolve(new URL("..", import.meta.url).pathname);
+export const defaultOutputDir = resolve(repoRoot, ".agent/legacy-jacoco");
+
+function firstExisting(candidates) {
+  return candidates.find((candidate) => existsSync(candidate)) ?? null;
+}
+
+function sortedJarCandidates(root) {
+  if (!existsSync(root)) return [];
+  const found = [];
+  const visit = (dir, depth) => {
+    if (depth > 5) return;
+    for (const entry of readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) visit(path, depth + 1);
+      else if (entry.name.endsWith(".jar")) found.push(path);
+    }
+  };
+  visit(root, 0);
+  return found.sort();
+}
+
+function readManifestMainClass(jar) {
+  try {
+    return execFileSync("unzip", ["-p", jar, "META-INF/MANIFEST.MF"], { encoding: "utf8" })
+      .match(/^Main-Class:\s*(.+)$/mu)?.[1]
+      ?.trim() ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export function resolveCliJavaArgs(cli) {
+  if (readManifestMainClass(cli)) return ["-jar", cli];
+  const dependencyRoots = [
+    resolve(homedir(), ".gradle/caches/modules-2/files-2.1/org.jacoco"),
+    resolve(homedir(), ".gradle/caches/modules-2/files-2.1/args4j"),
+    resolve(homedir(), ".gradle/caches/modules-2/files-2.1/org.ow2.asm"),
+    resolve(homedir(), ".m2/repository/org/jacoco"),
+    resolve(homedir(), ".m2/repository/args4j"),
+    resolve(homedir(), ".m2/repository/org/ow2/asm"),
+  ];
+  const dependencies = selectCliDependencies(dependencyRoots, cli);
+  return ["-cp", [cli, ...dependencies].filter((jar, index, jars) => jars.indexOf(jar) === index).join(pathDelimiter()), "org.jacoco.cli.internal.Main"];
+}
+
+function selectCliDependencies(roots, cli) {
+  const candidates = roots.flatMap((root) => sortedJarCandidates(root));
+  const cliVersion = /^org\.jacoco\.cli-(.+)\.jar$/u.exec(basename(cli))?.[1] ?? null;
+  const dependencyNames = ["org.jacoco.core", "org.jacoco.report", "args4j", "asm", "asm-tree", "asm-commons"];
+  return dependencyNames.flatMap((name) => {
+    const matching = candidates.filter((candidate) => basename(candidate).startsWith(`${name}-`));
+    if (matching.length === 0) return [];
+    const sameVersion = cliVersion && name.startsWith("org.jacoco.")
+      ? matching.find((candidate) => basename(candidate) === `${name}-${cliVersion}.jar`)
+      : null;
+    return [sameVersion ?? matching.at(-1)];
+  });
+}
+
+function pathDelimiter() {
+  return process.platform === "win32" ? ";" : ":";
+}
+
+export function resolveCliJar(env = process.env) {
+  const explicit = env.YONA_LEGACY_JACOCO_CLI;
+  if (explicit) return resolve(explicit);
+  return firstExisting([
+    resolve(repoRoot, ".agent/tools/jacococli.jar"),
+    resolve(repoRoot, ".agent/legacy-jacoco/jacococli.jar"),
+    ...sortedJarCandidates(resolve(homedir(), ".m2/repository/org/jacoco")),
+    ...sortedJarCandidates(resolve(homedir(), ".gradle/caches/modules-2/files-2.1/org.jacoco/org.jacoco.cli")),
+  ]);
+}
+
+export function resolveClassfiles(env = process.env) {
+  if (env.YONA_LEGACY_JACOCO_CLASSFILES) {
+    const separator = process.platform === "win32" ? /[,;]/u : /[,:]/u;
+    return env.YONA_LEGACY_JACOCO_CLASSFILES.split(separator)
+      .map((path) => path.trim())
+      .filter(Boolean)
+      .map((path) => resolve(path));
+  }
+  const version = env.YONA_LEGACY_VERSION ?? "1.16.0";
+  const workspace = resolve(env.YONA_LEGACY_WORKSPACE_DIR ?? resolve(repoRoot, ".agent/legacy-localhost"));
+  const jar = resolve(workspace, "dist", `yona-h2-v${version}`, `yona-${version}`, "lib", `yona.yona-${version}.jar`);
+  return existsSync(jar) ? [jar] : [];
+}
+
+export function resolvePaths(env = process.env) {
+  const outputDir = resolve(env.YONA_LEGACY_JACOCO_OUTPUT_DIR ?? defaultOutputDir);
+  return {
+    outputDir,
+    exec: resolve(env.YONA_LEGACY_JACOCO_EXEC ?? join(outputDir, "yona.exec")),
+    xml: resolve(env.YONA_LEGACY_JACOCO_XML ?? join(outputDir, "report.xml")),
+    html: resolve(env.YONA_LEGACY_JACOCO_HTML ?? join(outputDir, "html")),
+    csv: env.YONA_LEGACY_JACOCO_CSV ? resolve(env.YONA_LEGACY_JACOCO_CSV) : null,
+    sourcefiles: resolve(env.YONA_LEGACY_JACOCO_SOURCE ?? resolve(repoRoot, "yona-original/app")),
+  };
+}
+
+function attr(tag, name) {
+  return new RegExp(`${name}="([^\"]*)"`, "u").exec(tag)?.[1] ?? "";
+}
+
+function numberAttr(tag, name) {
+  return Number.parseInt(attr(tag, name) || "0", 10);
+}
+
+export function parseJacocoXml(xml) {
+  const classes = [];
+  const classRecords = [
+    ...xml.matchAll(/<class\b([^>]*)>([\s\S]*?)<\/class>/gu),
+    ...xml.matchAll(/<class\b([^>]*)\/>/gu),
+  ].map((match) => ({ attributes: match[1], body: match[2] ?? "" }));
+  for (const classRecord of classRecords) {
+    const body = classRecord.body;
+    const className = attr(classRecord.attributes, "name").replaceAll("/", ".");
+    const classEntry = { name: className, methods: { covered: 0, missed: 0 }, branches: { covered: 0, missed: 0 } };
+    for (const methodMatch of body.matchAll(/<method\b([^>]*)>([\s\S]*?)<\/method>/gu)) {
+      const methodBody = methodMatch[2];
+      const counters = [...methodBody.matchAll(/<counter\b([^>]*)\/>/gu)];
+      const instruction = counters.find((m) => attr(m[1], "type") === "INSTRUCTION");
+      const branch = counters.find((m) => attr(m[1], "type") === "BRANCH");
+      const instructionMissed = numberAttr(instruction?.[1] ?? "", "missed");
+      const instructionCovered = numberAttr(instruction?.[1] ?? "", "covered");
+      const branchMissed = numberAttr(branch?.[1] ?? "", "missed");
+      const branchCovered = numberAttr(branch?.[1] ?? "", "covered");
+      classEntry.methods.covered += instructionCovered > 0 ? 1 : 0;
+      classEntry.methods.missed += instructionCovered === 0 ? 1 : 0;
+      classEntry.branches.covered += branchCovered;
+      classEntry.branches.missed += branchMissed;
+      if (instructionMissed > 0 || branchMissed > 0) {
+        classEntry._uncovered = classEntry._uncovered ?? [];
+        classEntry._uncovered.push({ class: className, method: attr(methodMatch[1], "name"), instructionMissed, branchMissed });
+      }
+    }
+    delete classEntry._uncovered;
+    classes.push(classEntry);
+  }
+  const uncoveredMethods = [];
+  for (const classRecord of classRecords) {
+    const className = attr(classRecord.attributes, "name").replaceAll("/", ".");
+    for (const methodMatch of classRecord.body.matchAll(/<method\b([^>]*)>([\s\S]*?)<\/method>/gu)) {
+      const counters = [...methodMatch[2].matchAll(/<counter\b([^>]*)\/>/gu)];
+      const instruction = counters.find((m) => attr(m[1], "type") === "INSTRUCTION");
+      const branch = counters.find((m) => attr(m[1], "type") === "BRANCH");
+      const instructionMissed = numberAttr(instruction?.[1] ?? "", "missed");
+      const branchMissed = numberAttr(branch?.[1] ?? "", "missed");
+      if (instructionMissed || branchMissed) uncoveredMethods.push({ class: className, method: attr(methodMatch[1], "name"), instructionMissed, branchMissed });
+    }
+  }
+  return { classes, uncoveredMethods };
+}
+
+function requirePath(path, label) {
+  if (!existsSync(path)) throw new Error(`JaCoCo ${label} not found: ${path}`);
+}
+
+function requireFile(path, label) {
+  requirePath(path, label);
+  if (!statSync(path).isFile()) throw new Error(`JaCoCo ${label} is not a regular file: ${path}`);
+}
+
+export function buildReportArgs(paths, classfiles, cli = resolveCliJar(process.env)) {
+  const args = [...resolveCliJavaArgs(cli), "report", paths.exec, "--xml", paths.xml, "--html", paths.html];
+  if (paths.csv) args.push("--csv", paths.csv);
+  for (const classfile of classfiles) args.push("--classfiles", classfile);
+  if (paths.sourcefiles && existsSync(paths.sourcefiles)) args.push("--sourcefiles", paths.sourcefiles);
+  return args;
+}
+
+export function main(env = process.env) {
+  const paths = resolvePaths(env);
+  const cli = resolveCliJar(env);
+  const classfiles = resolveClassfiles(env);
+  if (!cli) throw new Error("JaCoCo CLI jar not found. Set YONA_LEGACY_JACOCO_CLI to an existing jacococli.jar.");
+  requireFile(cli, "CLI jar");
+  requirePath(paths.exec, "exec file");
+  if (classfiles.length === 0) throw new Error("Legacy Yona classfiles not found. Set YONA_LEGACY_JACOCO_CLASSFILES or prepare the legacy distribution.");
+  for (const classfile of classfiles) requirePath(classfile, "classfile");
+  mkdirSync(paths.outputDir, { recursive: true });
+  mkdirSync(dirname(paths.xml), { recursive: true });
+  mkdirSync(dirname(paths.html), { recursive: true });
+  if (paths.csv) mkdirSync(dirname(paths.csv), { recursive: true });
+  const java = env.YONA_LEGACY_JACOCO_JAVA ?? (env.JAVA_HOME ? join(env.JAVA_HOME, "bin/java") : "java");
+  execFileSync(java, buildReportArgs(paths, classfiles, cli), { cwd: repoRoot, stdio: "inherit" });
+  const parsed = parseJacocoXml(readFileSync(paths.xml, "utf8"));
+  writeFileSync(resolve(paths.outputDir, "summary.json"), `${JSON.stringify({ classes: parsed.classes }, null, 2)}\n`);
+  writeFileSync(resolve(paths.outputDir, "uncovered-methods.json"), `${JSON.stringify(parsed.uncoveredMethods, null, 2)}\n`);
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === resolve(new URL(import.meta.url).pathname)) {
+  try { main(); } catch (error) { console.error(`legacy-jacoco-report: ${error.message}`); process.exitCode = 1; }
+}
