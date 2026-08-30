@@ -112,8 +112,21 @@ function numberAttr(tag, name) {
   return Number.parseInt(attr(tag, name) || "0", 10);
 }
 
+export function classifyMethodCoverage({
+  instructionMissed = 0,
+  instructionCovered = 0,
+  branchMissed,
+  branchCovered,
+} = {}) {
+  if (instructionCovered === 0) return "FULLY_MISSED";
+  if (instructionMissed > 0 || (branchMissed ?? 0) > 0) return "PARTIALLY_COVERED";
+  void branchCovered;
+  return "FULLY_COVERED";
+}
+
 export function parseJacocoXml(xml) {
   const classes = [];
+  const methods = [];
   const classRecords = [
     ...xml.matchAll(/<class\b([^>]*)>([\s\S]*?)<\/class>/gu),
     ...xml.matchAll(/<class\b([^>]*)\/>/gu),
@@ -135,6 +148,30 @@ export function parseJacocoXml(xml) {
       classEntry.methods.missed += instructionCovered === 0 ? 1 : 0;
       classEntry.branches.covered += branchCovered;
       classEntry.branches.missed += branchMissed;
+      const method = {
+        class: className,
+        method: attr(methodMatch[1], "name"),
+      };
+      const descriptor = attr(methodMatch[1], "desc");
+      if (descriptor) method.desc = descriptor;
+      const sourceLine = /<line\b([^>]*)\/>/u.exec(methodBody);
+      if (sourceLine) {
+        const line = Number.parseInt(attr(sourceLine[1], "nr") || "", 10);
+        if (Number.isInteger(line)) method.sourceLine = line;
+      }
+      Object.assign(method, {
+        instructionMissed,
+        instructionCovered,
+        branchMissed,
+        branchCovered,
+        status: classifyMethodCoverage({
+          instructionMissed,
+          instructionCovered,
+          branchMissed: branch === undefined ? undefined : branchMissed,
+          branchCovered: branch === undefined ? undefined : branchCovered,
+        }),
+      });
+      methods.push(method);
       if (instructionMissed > 0 || branchMissed > 0) {
         classEntry._uncovered = classEntry._uncovered ?? [];
         classEntry._uncovered.push({ class: className, method: attr(methodMatch[1], "name"), instructionMissed, branchMissed });
@@ -155,7 +192,7 @@ export function parseJacocoXml(xml) {
       if (instructionMissed || branchMissed) uncoveredMethods.push({ class: className, method: attr(methodMatch[1], "name"), instructionMissed, branchMissed });
     }
   }
-  return { classes, uncoveredMethods };
+  return { classes, uncoveredMethods, methods };
 }
 
 function requirePath(path, label) {
@@ -193,6 +230,7 @@ export function main(env = process.env) {
   const parsed = parseJacocoXml(readFileSync(paths.xml, "utf8"));
   writeFileSync(resolve(paths.outputDir, "summary.json"), `${JSON.stringify({ classes: parsed.classes }, null, 2)}\n`);
   writeFileSync(resolve(paths.outputDir, "uncovered-methods.json"), `${JSON.stringify(parsed.uncoveredMethods, null, 2)}\n`);
+  writeFileSync(resolve(paths.outputDir, "methods.json"), `${JSON.stringify(parsed.methods, null, 2)}\n`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === resolve(new URL(import.meta.url).pathname)) {

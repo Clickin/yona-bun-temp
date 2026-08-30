@@ -37,6 +37,7 @@
     "legacy:localhost:stop:parity": "node scripts/legacy-localhost.mjs stop --instance parity --port 9000",
     "legacy:localhost:stop:sidecar": "node scripts/legacy-localhost.mjs stop --instance default --port 19100",
     "legacy:jacoco:report": "node scripts/legacy-jacoco-report.mjs",
+    "legacy:jacoco:reconcile": "node scripts/legacy-jacoco-reconciliation.mjs",
     "smoke:docker": "node scripts/smoke-docker.mjs",
     "smoke:embedded-assets": "node scripts/smoke-embedded-assets.mjs",
     "smoke:legacy-anchor-coverage": "node scripts/audit-legacy-anchor-coverage.mjs",

@@ -1,12 +1,61 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  canonicalActionKey,
+  buildRouteActionIndex,
+  mapInventoryActions,
+  normalizeInventoryAction,
   parseRoutes,
+  parseRouteActionRows,
   inferActor,
   templateTriggers,
   jsEffects,
   buildInventory,
 } from "./build-behavior-inventory.mjs";
+
+test("route action helpers normalize inventory and JaCoCo spellings", () => {
+  assert.equal(normalizeInventoryAction("IssueApp.deleteIssue"), "IssueApp.deleteIssue");
+  assert.equal(normalizeInventoryAction("controllers.IssueApp.deleteIssue"), "IssueApp.deleteIssue");
+  assert.equal(canonicalActionKey("IssueApp.deleteIssue"), "controllers.IssueApp#deleteIssue");
+  assert.equal(canonicalActionKey("controllers.IssueApp", "deleteIssue"), "controllers.IssueApp#deleteIssue");
+});
+
+test("route action index accepts route text and preserves deterministic source rows", () => {
+  const index = buildRouteActionIndex(`
+GET /b controllers.IssueApp.index()
+GET /a controllers.IssueApp.index()
+POST /users controllers.UserApp.saveUser()
+`);
+  assert.deepEqual(
+    index.map((route) => [route.canonicalActionKey, route.path, route.line]),
+    [
+      ["controllers.IssueApp#index", "/b", 2],
+      ["controllers.IssueApp#index", "/a", 3],
+      ["controllers.UserApp#saveUser", "/users", 4],
+    ],
+  );
+});
+
+test("route action parser includes non-inventory HTTP verbs", () => {
+  const routes = parseRouteActionRows(`
+HEAD /svn/*path controllers.SvnApp.head(path)
+OPTIONS /svn/*path controllers.SvnApp.options(path)
+`);
+  assert.deepEqual(routes.map(({ method, controllerClass, controllerMethod }) => [method, controllerClass, controllerMethod]), [
+    ["HEAD", "SvnApp", "head"],
+    ["OPTIONS", "SvnApp", "options"],
+  ]);
+});
+
+test("inventory action mapping groups rows by canonical key without changing rows", () => {
+  const rows = [
+    { id: "B-0002", action: "controllers.IssueApp.index", route: "GET /b", trigger: "direct" },
+    { id: "B-0001", action: "IssueApp.index", route: "GET /a", trigger: "link" },
+  ];
+  const mapped = mapInventoryActions(rows);
+  assert.deepEqual(mapped.get("controllers.IssueApp#index"), [rows[1], rows[0]]);
+  assert.equal(rows[0].action, "controllers.IssueApp.index");
+});
 
 test("parseRoutes extracts method, path, controller key with line numbers", () => {
   const routes = parseRoutes(`

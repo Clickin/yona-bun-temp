@@ -3,7 +3,15 @@ import test from "node:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { buildReportArgs, main, parseJacocoXml, resolveClassfiles, resolveCliJavaArgs, resolvePaths } from "./legacy-jacoco-report.mjs";
+import {
+  buildReportArgs,
+  classifyMethodCoverage,
+  main,
+  parseJacocoXml,
+  resolveClassfiles,
+  resolveCliJavaArgs,
+  resolvePaths,
+} from "./legacy-jacoco-report.mjs";
 
 const xml = `<report><package name="controllers"><class name="controllers/UserApp"><method name="index"><counter type="INSTRUCTION" missed="0" covered="4"/><counter type="BRANCH" missed="0" covered="2"/></method><method name="admin"><counter type="INSTRUCTION" missed="3" covered="0"/><counter type="BRANCH" missed="1" covered="0"/></method></class></package></report>`;
 
@@ -28,6 +36,41 @@ test("JaCoCo XML parsing retains self-closing class records", () => {
     methods: { covered: 0, missed: 0 },
     branches: { covered: 0, missed: 0 },
   }]);
+});
+
+test("JaCoCo method coverage classification is deterministic", () => {
+  assert.equal(classifyMethodCoverage({ instructionMissed: 4, instructionCovered: 0, branchMissed: 2, branchCovered: 0 }), "FULLY_MISSED");
+  assert.equal(classifyMethodCoverage({ instructionMissed: 0, instructionCovered: 0, branchMissed: 0, branchCovered: 2 }), "FULLY_MISSED");
+  assert.equal(classifyMethodCoverage({ instructionMissed: 1, instructionCovered: 3, branchMissed: 0, branchCovered: 1 }), "PARTIALLY_COVERED");
+  assert.equal(classifyMethodCoverage({ instructionMissed: 0, instructionCovered: 3, branchMissed: 0, branchCovered: 2 }), "FULLY_COVERED");
+});
+
+test("JaCoCo method records retain descriptor and first source line", () => {
+  const parsed = parseJacocoXml(
+    '<report><class name="controllers/UserApp"><method name="index" desc="(Ljava/lang/String;)V"><line nr="27" mi="0" ci="4" mb="0" cb="0"/><line nr="31" mi="1" ci="0" mb="0" cb="0"/><counter type="INSTRUCTION" missed="0" covered="4"/></method></class></report>',
+  );
+  assert.deepEqual(parsed.methods, [{
+    class: "controllers.UserApp",
+    method: "index",
+    desc: "(Ljava/lang/String;)V",
+    instructionMissed: 0,
+    instructionCovered: 4,
+    branchMissed: 0,
+    branchCovered: 0,
+    status: "FULLY_COVERED",
+    sourceLine: 27,
+  }]);
+});
+
+test("JaCoCo methods without branch counters classify from instructions", () => {
+  const parsed = parseJacocoXml(
+    '<report><class name="controllers/UserApp"><method name="missed"><counter type="INSTRUCTION" missed="2" covered="0"/></method><method name="partial"><counter type="INSTRUCTION" missed="1" covered="2"/></method><method name="covered"><counter type="INSTRUCTION" missed="0" covered="2"/></method></class></report>',
+  );
+  assert.deepEqual(parsed.methods.map(({ method, status }) => ({ method, status })), [
+    { method: "missed", status: "FULLY_MISSED" },
+    { method: "partial", status: "PARTIALLY_COVERED" },
+    { method: "covered", status: "FULLY_COVERED" },
+  ]);
 });
 
 test("JaCoCo paths default to repository-local transient artifacts", () => {

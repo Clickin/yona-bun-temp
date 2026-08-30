@@ -22,6 +22,132 @@ const OUT_FILE = "docs/provenance/behavior-inventory.json";
 // ponytail: skips only Assets/static; API routes are kept as behaviors with a
 // direct-http trigger. If inventory noise from /-_-api becomes a problem,
 // filter them here — Phase C's dual adapter consumes them either way.
+/**
+ * Return the inventory spelling for an action.
+ *
+ * Inventory rows intentionally keep the compact `Class.method` spelling. The
+ * JaCoCo and route tooling uses `controllers.Class#method`; keeping this
+ * conversion in one place prevents each consumer from growing its own parser.
+ * Invalid values return null so callers can skip incomplete evidence rows.
+ */
+export function normalizeInventoryAction(action) {
+  if (typeof action !== "string") return null;
+  const value = action.trim().replaceAll("/", ".").replace(/^controllers\./u, "");
+  if (!value) return null;
+
+  const separator = value.includes("#") ? "#" : ".";
+  const parts = value.split(separator).filter(Boolean);
+  if (parts.length < 2) return null;
+  const method = parts.pop();
+  const controller = parts.pop();
+  if (!controller || !method) return null;
+  return `${controller}.${method}`;
+}
+
+/**
+ * Canonical controller action key shared by routes, inventory, and JaCoCo.
+ *
+ * Accepts either `(controllerClass, method)` or one action value such as
+ * `IssueApp.index`, `controllers.IssueApp.index`, or a route row.
+ */
+export function canonicalActionKey(actionOrClass, method) {
+  if (actionOrClass && typeof actionOrClass === "object") {
+    if (actionOrClass.action) return canonicalActionKey(actionOrClass.action);
+    if (actionOrClass.controllerClass && actionOrClass.controllerMethod) {
+      return canonicalActionKey(actionOrClass.controllerClass, actionOrClass.controllerMethod);
+    }
+    return null;
+  }
+
+  if (method !== undefined) {
+    const controller = String(actionOrClass ?? "")
+      .trim()
+      .replace(/^controllers\./, "")
+      .split(".")
+      .filter(Boolean)
+      .pop();
+    const actionMethod = String(method ?? "").trim();
+    return controller && actionMethod ? `controllers.${controller}#${actionMethod}` : null;
+  }
+
+  const normalized = normalizeInventoryAction(String(actionOrClass ?? "").replace("#", "."));
+  if (!normalized) return null;
+  const [controller, actionMethod] = normalized.split(".");
+  return `controllers.${controller}#${actionMethod}`;
+}
+
+/**
+ * Add a canonical action key to each parsed conf/routes row.
+ *
+ * `routes` may be the output of parseRoutes or raw conf/routes text. The
+ * result is sorted by source line and then route fields, while each original
+ * row is copied (rather than mutated) and retains its source line.
+ */
+export function buildRouteActionIndex(routes) {
+  const rows = typeof routes === "string" ? parseRouteActionRows(routes) : [...(routes ?? [])];
+  return rows
+    .map((route) => ({ ...route, canonicalActionKey: canonicalActionKey(route) }))
+    .filter((route) => route.canonicalActionKey)
+    .sort((left, right) =>
+      (left.line ?? 0) - (right.line ?? 0) ||
+      String(left.method ?? "").localeCompare(String(right.method ?? "")) ||
+      String(left.path ?? "").localeCompare(String(right.path ?? "")) ||
+      left.canonicalActionKey.localeCompare(right.canonicalActionKey),
+    );
+}
+
+export function parseRouteActionRows(text) {
+  const routes = [];
+  const lines = text.split("\n");
+  for (let i = 0; i < lines.length; i += 1) {
+    const match = lines[i].match(/^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+(\S+)\s+controllers\.([A-Za-z0-9_.]+?)(?:\(|$)/u);
+    if (!match) continue;
+    const [, method, path, full] = match;
+    if (full === "Assets.at" || full === "Application.jsMessages") continue;
+    const parts = full.split(".");
+    const controllerMethod = parts.at(-1);
+    const controllerClass = parts.at(-2);
+    routes.push({
+      method,
+      path,
+      controllerClass,
+      controllerMethod,
+      key: `${controllerClass}.${controllerMethod}`,
+      line: i + 1,
+    });
+  }
+  return routes;
+}
+
+/**
+ * Build a deterministic canonical-action → inventory-row index.
+ *
+ * Malformed rows are ignored; valid rows retain their original shape and
+ * action spelling so the inventory JSON contract remains unchanged.
+ */
+export function mapInventoryActions(behaviors) {
+  const grouped = new Map();
+  for (const behavior of behaviors ?? []) {
+    const key = canonicalActionKey(behavior?.action);
+    if (!key) continue;
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key).push(behavior);
+  }
+
+  return new Map(
+    [...grouped.entries()]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, rows]) => [
+        key,
+        rows.slice().sort((left, right) =>
+          String(left.id ?? "").localeCompare(String(right.id ?? "")) ||
+          String(left.route ?? "").localeCompare(String(right.route ?? "")) ||
+          String(left.trigger ?? "").localeCompare(String(right.trigger ?? "")),
+        ),
+      ]),
+  );
+}
+
 export function parseRoutes(text) {
   const routes = [];
   const lines = text.split("\n");
