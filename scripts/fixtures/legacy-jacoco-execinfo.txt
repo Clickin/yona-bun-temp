@@ -1,0 +1,5 @@
+[INFO] Loading exec file .agent/legacy-jacoco/full-sweep/yona.exec.
+CLASS ID         HITS/PROBES   CLASS NAME
+Session "Seunghyun-MacBook-Pro.local-25c93463": Sun Aug 30 19:41:24 KST 2026 - Sun Aug 30 19:42:07 KST 2026
+5fbfb1efa8fd3c04  139 of 704   controllers/UserApp
+d8b3fb9de544dbb8   32 of 646   controllers/IssueApp

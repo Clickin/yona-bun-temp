@@ -1,0 +1,8 @@
+  INST   BRAN   LINE   METH   CXTY   ELEMENT
+    14      0      2      2      2   class 0xd52e315fff4c59b8 Routes$$anonfun$routes$1$$anonfun$applyOrElse$213
+    11      0      1      1      1   +- method apply(Ljava/lang/String;Ljava/lang/String;J)Lplay/api/mvc/Handler;
+    11      0                        |  +- line 3884
+     3      0      1      1      1   +- method <init>(LRoutes$$anonfun$routes$1;)V
+     3      0                           +- line 3883
+     0      0      0      0      0   class 0xd8b3fb9de544dbb8 controllers/IssueApp
+     0      0      0      0      0   class 0x847dda27179d1ad0 notification/INotificationEvent

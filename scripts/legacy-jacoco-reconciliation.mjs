@@ -6,6 +6,7 @@ import {
   mapInventoryActions,
 } from "./build-behavior-inventory.mjs";
 import { scenarios as scenarioRegistry } from "./differential/scenarios/index.mjs";
+import { summarizeExecution } from "./differential/report.mjs";
 import { parseJacocoXml } from "./legacy-jacoco-report.mjs";
 
 export const repoRoot = resolve(new URL("..", import.meta.url).pathname);
@@ -100,14 +101,27 @@ function sourceBackedClass(className, sourceClasses) {
   return sourceClasses.some((entry) => className === entry.class || className.startsWith(`${entry.class}$`));
 }
 
+function reportClassExists(className, classes) {
+  return classes.some((entry) => entry.name === className || entry.name.startsWith(`${className}$`));
+}
+
 function methodStatus(methods) {
   if (methods.some((method) => method.instructionCovered > 0)) return "RUNTIME_EXECUTED";
   return "RUNTIME_MISSED";
 }
 
-function classifyRouteMiss({ staticCovered, reportHasInfraError, methods }) {
+function classifyRouteMiss({
+  staticCovered,
+  reportHasInfraError,
+  methods,
+  sourceBackedClass = false,
+  reportClassExists = false,
+  unreachableEvidence = false,
+}) {
   if (reportHasInfraError) return "HARNESS_GAP";
-  if (methods.length === 0) return "UNREACHABLE_OR_INTERNAL";
+  if (methods.length === 0 && unreachableEvidence) return "UNREACHABLE_OR_INTERNAL";
+  if (methods.length === 0 && sourceBackedClass && reportClassExists) return "COVERAGE_MAPPING_UNRESOLVED";
+  if (methods.length === 0) return "UNKNOWN";
   return staticCovered ? "SCENARIO_GAP" : "INVENTORY_GAP";
 }
 
@@ -120,7 +134,15 @@ function routeEvidence(routes, behaviors, methods, classification) {
   ];
 }
 
-export function buildReconciliation({ methods, routes, behaviors, infraErrors = [] }) {
+export function buildReconciliation({
+  methods,
+  routes,
+  behaviors,
+  infraErrors = [],
+  classes = [],
+  sourceClasses = [],
+  unreachableEvidence = new Set(),
+}) {
   const inventoryByAction = mapInventoryActions(behaviors);
   const routesByAction = new Map();
   for (const route of routes) {
@@ -159,6 +181,22 @@ export function buildReconciliation({ methods, routes, behaviors, infraErrors = 
     const behaviorRows = inventoryByAction.get(key) ?? [];
     const staticCovered = behaviorRows.length > 0;
     const runtime = methodStatus(methodRows);
+    const className = key.split("#")[0];
+    const actionHasSourceClass = sourceBackedClass(className, sourceClasses);
+    const actionHasReportClass = reportClassExists(className, classes);
+    const actionHasUnreachableEvidence = unreachableEvidence instanceof Set
+      ? unreachableEvidence.has(key)
+      : Boolean(unreachableEvidence?.[key]);
+    const classification = routeRows.length > 0 && runtime === "RUNTIME_MISSED"
+      ? classifyRouteMiss({
+        staticCovered,
+        reportHasInfraError: infraErrors.length > 0,
+        methods: methodRows,
+        sourceBackedClass: actionHasSourceClass,
+        reportClassExists: actionHasReportClass,
+        unreachableEvidence: actionHasUnreachableEvidence,
+      })
+      : null;
     return {
       action: key,
       routes: routeRows.map(({ method, path, line }) => ({ method, path, line })),
@@ -167,11 +205,11 @@ export function buildReconciliation({ methods, routes, behaviors, infraErrors = 
       staticRuntimeState: `${staticCovered ? "STATIC_COVERED" : "STATIC_UNCOVERED"} + ${runtime}`,
       routeFacing: routeRows.length > 0,
       methods: methodRows,
-      classification: routeRows.length > 0 && runtime === "RUNTIME_MISSED"
-        ? classifyRouteMiss({ staticCovered, reportHasInfraError: infraErrors.length > 0, methods: methodRows })
-        : null,
-      evidence: routeRows.length > 0 && runtime === "RUNTIME_MISSED"
-        ? routeEvidence(routeRows, behaviorRows, methodRows, classifyRouteMiss({ staticCovered, reportHasInfraError: infraErrors.length > 0, methods: methodRows }))
+      sourceBackedClass: actionHasSourceClass,
+      reportClassExists: actionHasReportClass,
+      classification,
+      evidence: classification
+        ? routeEvidence(routeRows, behaviorRows, methodRows, classification)
         : [],
     };
   });
@@ -187,6 +225,7 @@ export function buildReconciliation({ methods, routes, behaviors, infraErrors = 
       staticUncoveredRuntimeMissed: count("STATIC_UNCOVERED + RUNTIME_MISSED"),
       routeFacingFullyMissed: routeMissed.length,
       routeFacingUnknown: routeMissed.filter((entry) => entry.classification === "UNKNOWN").length,
+      coverageMappingUnresolved: routeMissed.filter((entry) => entry.classification === "COVERAGE_MAPPING_UNRESOLVED").length,
     },
     entries,
   };
@@ -252,7 +291,68 @@ export function buildControllerSummary(methods, reconciliation) {
   });
 }
 
-function buildDiscoveryQueue(methods, reconciliation, partials) {
+export function evaluateCoverageEvidence({
+  sourceBackedClasses = [],
+  sourceBackedMethods = [],
+  sourceClasses = [],
+  routes = [],
+  coverageIdentityValid = true,
+  coverageIdentityWarnings = [],
+} = {}) {
+  if (!coverageIdentityValid || coverageIdentityWarnings.length > 0) {
+    return {
+      status: "INVALID",
+      code: "INVALID_EVIDENCE",
+      reason: "CLASS_IDENTITY_MISMATCH",
+      warnings: coverageIdentityWarnings,
+    };
+  }
+  if (sourceBackedClasses.length > 0 && sourceBackedMethods.length === 0) {
+    return {
+      status: "INVALID",
+      code: "INVALID_EVIDENCE",
+      reason: "SOURCE_BACKED_METHODS_MISSING",
+      warnings: coverageIdentityWarnings,
+    };
+  }
+  const routeFacingMajorControllers = new Set(
+    routes
+      .filter((route) => route.method && route.controllerClass && MAJOR_CONTROLLERS.includes(route.controllerClass))
+      .map((route) => `controllers.${route.controllerClass}`),
+  );
+  const sourceMajorControllers = sourceClasses.filter(
+    (entry) => routeFacingMajorControllers.has(entry.class) && entry.kind === "controllers",
+  );
+  const methodMajorControllers = sourceBackedMethods.filter((method) =>
+    sourceMajorControllers.some((source) => method.class === source.class || method.class.startsWith(`${source.class}$`)),
+  );
+  if (sourceMajorControllers.length > 0 && methodMajorControllers.length === 0) {
+    return {
+      status: "INVALID",
+      code: "INVALID_EVIDENCE",
+      reason: "SOURCE_BACKED_CONTROLLER_METHODS_MISSING",
+      warnings: coverageIdentityWarnings,
+    };
+  }
+  return {
+    status: "VALID",
+    code: "VALID_EVIDENCE",
+    reason: null,
+    warnings: coverageIdentityWarnings,
+  };
+}
+
+export function buildDiscoveryQueue(methods, reconciliation, partials, coverageEvidence = { status: "VALID" }) {
+  if (coverageEvidence.status !== "VALID") {
+    return {
+      version: 1,
+      status: "BLOCKED",
+      coverageEvidenceStatus: coverageEvidence.status,
+      coverageEvidenceCode: coverageEvidence.code ?? "INVALID_EVIDENCE",
+      coverageEvidenceReason: coverageEvidence.reason ?? "INVALID_EVIDENCE",
+      priorities: { P0: [], P1: [], P2: [], P3: [] },
+    };
+  }
   const p0 = reconciliation.entries.filter((entry) => entry.routeFacing && entry.staticRuntimeState === "STATIC_COVERED + RUNTIME_MISSED");
   const p1 = reconciliation.entries.filter((entry) => entry.routeFacing && entry.staticRuntimeState === "STATIC_UNCOVERED + RUNTIME_EXECUTED");
   const p2 = partials.filter((entry) => entry.class.startsWith("controllers."));
@@ -266,21 +366,39 @@ function buildDiscoveryQueue(methods, reconciliation, partials) {
       (left.sourceLine ?? 0) - (right.sourceLine ?? 0),
     );
   const item = (priority, entry) => ({ priority, class: entry.class ?? entry.action, method: entry.method ?? entry.action.split("#").at(-1), routes: entry.routes ?? [], behaviorIds: entry.behaviorIds ?? [], coverageStatus: entry.status ?? entry.staticRuntimeState, classification: entry.classification ?? null, evidence: entry.evidence ?? [] });
-  return { version: 1, priorities: { P0: p0.map((entry) => item("P0", entry)), P1: p1.map((entry) => item("P1", entry)), P2: p2.map((entry) => item("P2", entry)), P3: p3.map((entry) => item("P3", entry)) } };
+  return {
+    version: 1,
+    status: "READY",
+    coverageEvidenceStatus: coverageEvidence.status,
+    priorities: {
+      P0: p0.map((entry) => item("P0", entry)),
+      P1: p1.map((entry) => item("P1", entry)),
+      P2: p2.map((entry) => item("P2", entry)),
+      P3: p3.map((entry) => item("P3", entry)),
+    },
+  };
 }
 
 function baselineSummary(report, execPath, reportXmlPath) {
   const scenarioRows = Array.isArray(report.scenarios) ? report.scenarios : [];
-  const completed = scenarioRows.filter((scenario) => (scenario.errors ?? []).length === 0).length;
+  const hasStepAccounting = scenarioRows.some((scenario) => Array.isArray(scenario.stepResults));
+  const execution = hasStepAccounting
+    ? summarizeExecution(report, scenarioRegistry.length)
+    : {
+      registeredScenarios: scenarioRegistry.length,
+      attemptedScenarios: scenarioRows.length,
+      globalInfraErrors: report.infraErrors ?? [],
+      scenariosWithStepErrors: scenarioRows.filter((scenario) => (scenario.errors ?? []).length > 0).length,
+      scenariosWithoutStepErrors: scenarioRows.filter((scenario) => (scenario.errors ?? []).length === 0).length,
+      totalStepErrors: scenarioRows.reduce((total, scenario) => total + (scenario.errors ?? []).length, 0),
+      stepAccountingSource: "legacy scenario.errors",
+    };
   const findings = scenarioRows.flatMap((scenario) => scenario.violations ?? []);
   return {
     runId: report.runId ?? null,
-    registeredScenarios: scenarioRegistry.length,
-    attemptedScenarios: scenarioRows.length,
-    completedWithoutInfraOrHarnessFailure: completed,
+    ...execution,
     behaviorIdsCovered: report.behaviorsCovered ?? [],
     differentialFindings: findings.length,
-    infraErrors: report.infraErrors ?? [],
     execBytes: existsSync(execPath) ? statSync(execPath).size : 0,
     reportGenerated: existsSync(reportXmlPath),
   };
@@ -290,6 +408,10 @@ export function run(env = process.env) {
   const outputDir = resolve(env.YONA_LEGACY_JACOCO_OUTPUT_DIR ?? defaultOutputDir);
   const reportXmlPath = resolve(env.YONA_LEGACY_JACOCO_XML ?? join(outputDir, "report.xml"));
   const report = readJson(resolve(repoRoot, ".agent/differential/report.json"));
+  const reportSummaryPath = join(outputDir, "summary.json");
+  const reportIdentityPath = join(outputDir, "coverage-identity.json");
+  const reportSummary = existsSync(reportSummaryPath) ? readJson(reportSummaryPath) : {};
+  const reportIdentity = existsSync(reportIdentityPath) ? readJson(reportIdentityPath) : {};
   const sourceRoot = resolve(env.YONA_LEGACY_JACOCO_SOURCE ?? join(repoRoot, "yona-original/app"));
   const sourceClasses = buildSourceClassIndex(sourceRoot);
   const parsed = existsSync(reportXmlPath) ? parseJacocoXml(readFileSync(reportXmlPath, "utf8")) : { methods: [], classes: [] };
@@ -299,10 +421,27 @@ export function run(env = process.env) {
   const inventory = readJson(resolve(repoRoot, "docs/provenance/behavior-inventory.json"));
   const routeText = readFileSync(resolve(repoRoot, "yona-original/conf/routes"), "utf8");
   const routes = buildRouteActionIndex(routeText);
-  const reconciliation = buildReconciliation({ methods: sourceBackedMethods, routes, behaviors: inventory.behaviors, infraErrors: report.infraErrors ?? [] });
+  const coverageIdentityValid = reportIdentity.coverageIdentityValid ?? reportSummary.coverageIdentityValid ?? true;
+  const coverageIdentityWarnings = reportIdentity.warnings ?? reportSummary.coverageIdentityWarnings ?? [];
+  const coverageEvidence = evaluateCoverageEvidence({
+    sourceBackedClasses: sourceBackedReportClasses,
+    sourceBackedMethods,
+    sourceClasses,
+    routes,
+    coverageIdentityValid,
+    coverageIdentityWarnings,
+  });
+  const reconciliation = buildReconciliation({
+    methods: sourceBackedMethods,
+    classes: sourceBackedReportClasses,
+    sourceClasses,
+    routes,
+    behaviors: inventory.behaviors,
+    infraErrors: report.infraErrors ?? [],
+  });
   const partials = buildControllerPartials(sourceBackedMethods, routes, inventory.behaviors);
   const controllerSummary = buildControllerSummary(sourceBackedMethods, reconciliation);
-  const queue = buildDiscoveryQueue(sourceBackedMethods, reconciliation, partials);
+  const queue = buildDiscoveryQueue(sourceBackedMethods, reconciliation, partials, coverageEvidence);
   const summaryPath = join(outputDir, "summary.json");
   const priorSummary = existsSync(summaryPath) ? readJson(summaryPath) : { classes: parsed.classes };
   mkdirSync(outputDir, { recursive: true });
@@ -312,15 +451,41 @@ export function run(env = process.env) {
   writeFileSync(join(outputDir, "controller-partials.json"), `${JSON.stringify(partials, null, 2)}\n`);
   writeFileSync(join(outputDir, "controller-review.json"), `${JSON.stringify({ version: 1, controllers: controllerSummary, routeFacingFullyMissed: reconciliation.entries.filter((entry) => entry.routeFacing && entry.staticRuntimeState.endsWith("RUNTIME_MISSED")) }, null, 2)}\n`);
   writeFileSync(join(outputDir, "discovery-queue.json"), `${JSON.stringify(queue, null, 2)}\n`);
-  writeFileSync(summaryPath, `${JSON.stringify({ ...priorSummary, baseline: baselineSummary(report, join(outputDir, "yona.exec"), reportXmlPath), sourceBacked: { classes: sourceBackedReportClasses.length, methods: sourceBackedMethods.length }, generatedOrNonSource: { classes: parsed.classes.length - sourceBackedReportClasses.length, methods: generatedMethods.length }, reconciliation: reconciliation.summary }, null, 2)}\n`);
-  return { outputDir, sourceClasses, sourceBackedMethods, generatedMethods, routes, reconciliation, partials, controllerSummary, queue };
+  writeFileSync(summaryPath, `${JSON.stringify({
+    ...priorSummary,
+    baseline: baselineSummary(report, join(outputDir, "yona.exec"), reportXmlPath),
+    coverageIdentityValid,
+    coverageIdentityWarnings,
+    coverageEvidenceStatus: coverageEvidence.status,
+    coverageEvidenceCode: coverageEvidence.code,
+    coverageEvidenceReason: coverageEvidence.reason,
+    sourceBacked: { classes: sourceBackedReportClasses.length, methods: sourceBackedMethods.length },
+    generatedOrNonSource: { classes: parsed.classes.length - sourceBackedReportClasses.length, methods: generatedMethods.length },
+    reconciliation: reconciliation.summary,
+  }, null, 2)}\n`);
+  return {
+    outputDir,
+    sourceClasses,
+    sourceBackedMethods,
+    generatedMethods,
+    routes,
+    reconciliation,
+    partials,
+    controllerSummary,
+    queue,
+    coverageEvidence,
+  };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === resolve(new URL(import.meta.url).pathname)) {
   try {
     const result = run();
     console.log(`JaCoCo reconciliation: ${result.outputDir}`);
-    console.log(`source-backed methods: ${result.sourceBackedMethods.length}; route-facing fully missed: ${result.reconciliation.summary.routeFacingFullyMissed}`);
+    console.log(
+      `source-backed methods: ${result.sourceBackedMethods.length}; ` +
+      `route-facing misses: ${result.reconciliation.summary.routeFacingFullyMissed}; ` +
+      `coverage evidence: ${result.coverageEvidence.status} (${result.coverageEvidence.reason ?? "none"})`,
+    );
   } catch (error) {
     console.error(`legacy-jacoco-reconciliation: ${error.message}`);
     process.exitCode = 1;

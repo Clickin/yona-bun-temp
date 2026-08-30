@@ -25,7 +25,7 @@ import {
   projectLabelRows,
 } from "./diff.mjs";
 import { dedupeH2RecoverSequences, dedupeRebuiltTableRows, h2JarPath, queryLegacyH2, queryYoramSqlite, replayH2Script } from "./db-projection.mjs";
-import { HarnessError, formatSummary, violation, writeReport } from "./report.mjs";
+import { HarnessError, formatSummary, summarizeExecution, violation, writeReport } from "./report.mjs";
 import { launchWtrBrowser } from "../wtr-browser.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -1042,27 +1042,43 @@ export const stepHelpers = {
   popoverExtract: POPOVER_EXTRACT,
 };
 
-async function executeStep(context) {
+export async function executeStep(context) {
   const { step, entry } = context;
+  const result = { action: step.action, status: "EXECUTED", error: null };
+  entry.stepResults ??= [];
+  entry.stepResults.push(result);
   const definition = ACTION_DEFINITIONS[step.action];
   if (!definition?.handler) {
-    entry.errors.push(`unknown action: ${step.action}`);
+    result.status = "FAILED";
+    result.error = `unknown action: ${step.action}`;
+    entry.errors.push(result.error);
     return;
   }
   try {
+    const errorCountBefore = entry.errors.length;
     await definition.handler({ ...context, helpers: stepHelpers });
+    if (entry.errors.length > errorCountBefore) {
+      result.status = "FAILED";
+      result.error = entry.errors.slice(errorCountBefore).join("; ");
+    }
   } catch (error) {
     if (error instanceof HarnessError) {
       // Scenario marked HARNESS_ERROR once; dependent actions skip quietly.
       if (!entry.harnessNoted) {
+        result.status = "FAILED";
+        result.error = error.message;
         entry.harnessNoted = true;
         entry.violations.push(
           violation({ route: step.action, behaviorId: entry.behaviorIds[0] ?? null, kind: "harness", expected: "resolvable entity id", actual: error.message }),
         );
       } else {
+        result.status = "SKIPPED";
+        result.error = error.message;
         entry.errors.push(`${step.action} skipped: ${error.message}`);
       }
     } else {
+      result.status = "FAILED";
+      result.error = error.message;
       console.error(`[${step.action}]`, error.stack ?? error.message);
       entry.errors.push(`${step.action}: ${error.message}`);
     }
@@ -1121,8 +1137,9 @@ export async function runSweep(options = {}) {
       // Record the infra failure against every scenario so the report carries
       // a failure reason even when an instance never came up.
       for (const scenario of selectedScenarios) {
-        report.scenarios.push({ id: scenario.id, title: scenario.title, behaviorIds: [], violations: [], errors: [...infraErrors] });
+        report.scenarios.push({ id: scenario.id, title: scenario.title, behaviorIds: [], violations: [], errors: [...infraErrors], stepResults: [] });
       }
+      report.executionAccounting = summarizeExecution(report, scenarios.length);
       report.dbProjection = { skipped: true, reason: [...infraErrors] };
       return report;
     }
@@ -1154,6 +1171,7 @@ export async function runSweep(options = {}) {
         behaviorIds: matchBehaviors(scenario, inventory.behaviors),
         violations: [],
         errors: [],
+        stepResults: [],
       };
       const state = { issueNumberLegacy: null, issueNumberYoram: null };
       const suffix = `${runId}-${index + 1}`;
@@ -1180,6 +1198,11 @@ export async function runSweep(options = {}) {
             yoramBaseUrl: yoramHandle.baseUrl,
           });
         } catch (error) {
+          const result = entry.stepResults.at(-1);
+          if (result?.action === step.action && result.status === "EXECUTED") {
+            result.status = "FAILED";
+            result.error = error.message;
+          }
           entry.errors.push(`${step.action}: ${error.message}`);
         }
       }
@@ -1187,6 +1210,7 @@ export async function runSweep(options = {}) {
     }
 
     report.behaviorsCovered = [...new Set(report.scenarios.flatMap((scenario) => scenario.behaviorIds))];
+    report.executionAccounting = summarizeExecution(report, scenarios.length);
 
     // Teardown before DB projections: the H2 file lock releases on stop.
     await yoramHandle.stop();
@@ -1197,6 +1221,7 @@ export async function runSweep(options = {}) {
     return report;
   } catch (error) {
     infraErrors.push(`sweep: ${error.message}`);
+    report.executionAccounting = summarizeExecution(report, scenarios.length);
     return report;
   } finally {
     if (browserHandle) await browserHandle.close().catch(() => {});

@@ -1,15 +1,18 @@
 import { strict as assert } from "node:assert";
 import test from "node:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import {
   buildReportArgs,
   classifyMethodCoverage,
+  detectCoverageIdentityWarnings,
   main,
   parseJacocoXml,
   resolveClassfiles,
+  resolveCanonicalClassfiles,
   resolveCliJavaArgs,
+  resolveDiagnosticPaths,
   resolvePaths,
 } from "./legacy-jacoco-report.mjs";
 
@@ -59,6 +62,15 @@ test("JaCoCo XML parsing does not attach following methods to self-closing class
   ]);
 });
 
+test("JaCoCo report parser preserves the observed source-backed IssueApp fixture", () => {
+  const fixture = readFileSync(new URL("./fixtures/legacy-jacoco-report-issueapp.xml", import.meta.url), "utf8");
+  assert.deepEqual(parseJacocoXml(`<report>${fixture}</report>`).classes, [{
+    name: "controllers.IssueApp",
+    methods: { covered: 0, missed: 0 },
+    branches: { covered: 0, missed: 0 },
+  }]);
+});
+
 test("JaCoCo method coverage classification is deterministic", () => {
   assert.equal(classifyMethodCoverage({ instructionMissed: 4, instructionCovered: 0, branchMissed: 2, branchCovered: 0 }), "FULLY_MISSED");
   assert.equal(classifyMethodCoverage({ instructionMissed: 0, instructionCovered: 0, branchMissed: 0, branchCovered: 2 }), "FULLY_MISSED");
@@ -99,6 +111,51 @@ test("JaCoCo paths default to repository-local transient artifacts", () => {
   assert.match(paths.exec, /\.agent\/legacy-jacoco\/yona\.exec$/u);
   assert.match(paths.xml, /\.agent\/legacy-jacoco\/report\.xml$/u);
   assert.match(paths.html, /\.agent\/legacy-jacoco\/html$/u);
+});
+
+test("JaCoCo diagnostics use a stable artifact directory", () => {
+  const paths = resolveDiagnosticPaths({ YONA_LEGACY_JACOCO_OUTPUT_DIR: "/tmp/jacoco-output" });
+  assert.deepEqual(paths, {
+    diagnosticDir: "/tmp/jacoco-output/diagnostic",
+    execinfo: "/tmp/jacoco-output/diagnostic/execinfo.txt",
+    classinfoDistribution: "/tmp/jacoco-output/diagnostic/classinfo-distribution.txt",
+    classinfoRuntimeDump: "/tmp/jacoco-output/diagnostic/classinfo-runtime-dump.txt",
+    reportCommandLog: "/tmp/jacoco-output/diagnostic/report-command.log",
+    classIdentity: "/tmp/jacoco-output/diagnostic/class-identity.json",
+  });
+});
+
+test("runtime-transformed identity makes runtime dump the report classfile source", () => {
+  const directory = mkdtempSync(join(tmpdir(), "legacy-jacoco-canonical-"));
+  try {
+    const identityDir = join(directory, "diagnostic");
+    mkdirSync(identityDir, { recursive: true });
+    writeFileSync(join(identityDir, "class-identity.json"), JSON.stringify({
+      comparison: { result: "RUNTIME_TRANSFORMED" },
+      canonicalClassfiles: { source: "runtime classdump", paths: [join(directory, "runtime-classes")] },
+    }));
+    assert.deepEqual(resolveCanonicalClassfiles({ YONA_LEGACY_JACOCO_OUTPUT_DIR: directory }), [
+      join(directory, "runtime-classes"),
+    ]);
+    assert.deepEqual(resolveClassfiles({ YONA_LEGACY_JACOCO_OUTPUT_DIR: directory }), [
+      join(directory, "runtime-classes"),
+    ]);
+  } finally {
+    rmSync(directory, { force: true, recursive: true });
+  }
+});
+
+test("JaCoCo identity warnings are evidence failures", () => {
+  assert.deepEqual(detectCoverageIdentityWarnings([
+    "normal output",
+    "[WARN] Some classes do not match with execution data: controllers/IssueApp",
+    "Execution data for class controllers/IssueApp does not match.",
+    "same class files must be used as at runtime for report generation",
+  ].join("\n")), [
+    "[WARN] Some classes do not match with execution data: controllers/IssueApp",
+    "Execution data for class controllers/IssueApp does not match.",
+    "same class files must be used as at runtime for report generation",
+  ]);
 });
 
 test("JaCoCo paths and classfiles accept explicit overrides", () => {

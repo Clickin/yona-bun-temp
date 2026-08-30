@@ -1,10 +1,15 @@
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 
 export const repoRoot = resolve(new URL("..", import.meta.url).pathname);
 export const defaultOutputDir = resolve(repoRoot, ".agent/legacy-jacoco");
+export const coverageIdentityWarningPatterns = [
+  /Some classes do not match with execution data/iu,
+  /Execution data for class .* does not match/iu,
+  /same class files must be used as at runtime/iu,
+];
 
 function firstExisting(candidates) {
   return candidates.find((candidate) => existsSync(candidate)) ?? null;
@@ -78,7 +83,7 @@ export function resolveCliJar(env = process.env) {
   ]);
 }
 
-export function resolveClassfiles(env = process.env) {
+export function resolveDistributionClassfiles(env = process.env) {
   if (env.YONA_LEGACY_JACOCO_CLASSFILES) {
     const separator = process.platform === "win32" ? /[,;]/u : /[,:]/u;
     return env.YONA_LEGACY_JACOCO_CLASSFILES.split(separator)
@@ -92,6 +97,31 @@ export function resolveClassfiles(env = process.env) {
   return existsSync(jar) ? [jar] : [];
 }
 
+export function resolveClassfiles(env = process.env) {
+  return resolveCanonicalClassfiles(env) ?? resolveDistributionClassfiles(env);
+}
+
+export function resolveCanonicalClassfiles(env = process.env) {
+  const configured = env.YONA_LEGACY_JACOCO_CANONICAL_CLASSFILES;
+  if (configured) {
+    const separator = process.platform === "win32" ? /[,;]/u : /[,:]/u;
+    return configured.split(separator).map((path) => path.trim()).filter(Boolean).map((path) => resolve(path));
+  }
+  const diagnosticDir = resolve(
+    env.YONA_LEGACY_JACOCO_DIAGNOSTIC_DIR ??
+      join(resolve(env.YONA_LEGACY_JACOCO_OUTPUT_DIR ?? defaultOutputDir), "diagnostic"),
+  );
+  const identityPath = join(diagnosticDir, "class-identity.json");
+  if (!existsSync(identityPath)) return null;
+  try {
+    const identity = JSON.parse(readFileSync(identityPath, "utf8"));
+    const paths = identity.canonicalClassfiles?.paths;
+    return Array.isArray(paths) ? paths.map((path) => resolve(path)) : [];
+  } catch {
+    return [];
+  }
+}
+
 export function resolvePaths(env = process.env) {
   const outputDir = resolve(env.YONA_LEGACY_JACOCO_OUTPUT_DIR ?? defaultOutputDir);
   return {
@@ -101,6 +131,46 @@ export function resolvePaths(env = process.env) {
     html: resolve(env.YONA_LEGACY_JACOCO_HTML ?? join(outputDir, "html")),
     csv: env.YONA_LEGACY_JACOCO_CSV ? resolve(env.YONA_LEGACY_JACOCO_CSV) : null,
     sourcefiles: resolve(env.YONA_LEGACY_JACOCO_SOURCE ?? resolve(repoRoot, "yona-original/app")),
+  };
+}
+
+export function resolveDiagnosticPaths(env = process.env) {
+  const paths = resolvePaths(env);
+  const diagnosticDir = resolve(
+    env.YONA_LEGACY_JACOCO_DIAGNOSTIC_DIR ?? join(paths.outputDir, "diagnostic"),
+  );
+  return {
+    diagnosticDir,
+    execinfo: join(diagnosticDir, "execinfo.txt"),
+    classinfoDistribution: join(diagnosticDir, "classinfo-distribution.txt"),
+    classinfoRuntimeDump: join(diagnosticDir, "classinfo-runtime-dump.txt"),
+    reportCommandLog: join(diagnosticDir, "report-command.log"),
+    classIdentity: join(diagnosticDir, "class-identity.json"),
+  };
+}
+
+export function detectCoverageIdentityWarnings(output) {
+  return String(output ?? "")
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && coverageIdentityWarningPatterns.some((pattern) => pattern.test(line)));
+}
+
+export function executeJacocoCli({ cli, args, java = "java", cwd = repoRoot }) {
+  const result = spawnSync(java, [...resolveCliJavaArgs(cli), ...args], {
+    cwd,
+    encoding: "utf8",
+    maxBuffer: 32 * 1024 * 1024,
+  });
+  const stdout = result.stdout ?? "";
+  const stderr = result.stderr ?? "";
+  return {
+    status: result.status ?? 1,
+    signal: result.signal ?? null,
+    stdout,
+    stderr,
+    output: `${stdout}${stderr ? `${stdout.endsWith("\n") ? "" : "\n"}${stderr}` : ""}`,
+    warnings: detectCoverageIdentityWarnings(`${stdout}\n${stderr}`),
   };
 }
 
@@ -212,6 +282,7 @@ export function buildReportArgs(paths, classfiles, cli = resolveCliJar(process.e
 
 export function main(env = process.env) {
   const paths = resolvePaths(env);
+  const diagnosticPaths = resolveDiagnosticPaths(env);
   const cli = resolveCliJar(env);
   const classfiles = resolveClassfiles(env);
   if (!cli) throw new Error("JaCoCo CLI jar not found. Set YONA_LEGACY_JACOCO_CLI to an existing jacococli.jar.");
@@ -223,10 +294,52 @@ export function main(env = process.env) {
   mkdirSync(dirname(paths.xml), { recursive: true });
   mkdirSync(dirname(paths.html), { recursive: true });
   if (paths.csv) mkdirSync(dirname(paths.csv), { recursive: true });
+  mkdirSync(diagnosticPaths.diagnosticDir, { recursive: true });
   const java = env.YONA_LEGACY_JACOCO_JAVA ?? (env.JAVA_HOME ? join(env.JAVA_HOME, "bin/java") : "java");
-  execFileSync(java, buildReportArgs(paths, classfiles, cli), { cwd: repoRoot, stdio: "inherit" });
+  const reportArgs = buildReportArgs(paths, classfiles, cli);
+  const cliPrefixLength = resolveCliJavaArgs(cli).length;
+  const commandResult = executeJacocoCli({
+    cli,
+    args: reportArgs.slice(cliPrefixLength),
+    java,
+  });
+  if (commandResult.stdout) process.stdout.write(commandResult.stdout);
+  if (commandResult.stderr) process.stderr.write(commandResult.stderr);
+  writeFileSync(
+    diagnosticPaths.reportCommandLog,
+    [
+      `command: ${java} ${reportArgs.join(" ")}`,
+      "",
+      "stdout:",
+      commandResult.stdout,
+      "",
+      "stderr:",
+      commandResult.stderr,
+    ].join("\n"),
+  );
+  if (commandResult.status !== 0) {
+    throw new Error(`JaCoCo report command failed with status ${commandResult.status}. See ${diagnosticPaths.reportCommandLog}.`);
+  }
   const parsed = parseJacocoXml(readFileSync(paths.xml, "utf8"));
-  writeFileSync(resolve(paths.outputDir, "summary.json"), `${JSON.stringify({ classes: parsed.classes }, null, 2)}\n`);
+  const coverageIdentityValid = commandResult.warnings.length === 0;
+  writeFileSync(
+    resolve(paths.outputDir, "summary.json"),
+    `${JSON.stringify({
+      classes: parsed.classes,
+      coverageIdentityValid,
+      coverageIdentityWarnings: commandResult.warnings,
+      canonicalClassfiles: classfiles,
+    }, null, 2)}\n`,
+  );
+  writeFileSync(
+    resolve(paths.outputDir, "coverage-identity.json"),
+    `${JSON.stringify({
+      coverageIdentityValid,
+      warnings: commandResult.warnings,
+      reportCommandLog: diagnosticPaths.reportCommandLog,
+      canonicalClassfiles: classfiles,
+    }, null, 2)}\n`,
+  );
   writeFileSync(resolve(paths.outputDir, "uncovered-methods.json"), `${JSON.stringify(parsed.uncoveredMethods, null, 2)}\n`);
   writeFileSync(resolve(paths.outputDir, "methods.json"), `${JSON.stringify(parsed.methods, null, 2)}\n`);
 }

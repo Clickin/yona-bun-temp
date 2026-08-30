@@ -447,6 +447,26 @@ export function writeReport(report, outputDir) {
   return reportPath;
 }
 
+export function summarizeExecution(report, registeredScenarios = null) {
+  const scenarioRows = Array.isArray(report.scenarios) ? report.scenarios : [];
+  const attemptedScenarios = scenarioRows.length;
+  const scenariosWithStepErrors = scenarioRows.filter((scenario) =>
+    (scenario.stepResults ?? []).some((step) => step.status !== "EXECUTED"),
+  ).length;
+  const totalStepErrors = scenarioRows.reduce(
+    (total, scenario) => total + (scenario.stepResults ?? []).filter((step) => step.status !== "EXECUTED").length,
+    0,
+  );
+  return {
+    registeredScenarios: registeredScenarios ?? attemptedScenarios,
+    attemptedScenarios,
+    globalInfraErrors: report.infraErrors ?? [],
+    scenariosWithStepErrors,
+    scenariosWithoutStepErrors: attemptedScenarios - scenariosWithStepErrors,
+    totalStepErrors,
+  };
+}
+
 // Independent per-class counts; errors are reported separately and never fold
 // into coverage.
 export function countClassifications(report) {
@@ -464,8 +484,8 @@ export function countClassifications(report) {
 export function formatSummary(report) {
   const lines = [];
   lines.push(`differential sweep ${report.runId}`);
-  lines.push(`  scenarios: ${report.scenarios.length}, behaviors covered: ${report.behaviorsCovered.length}`);
-  let errorCount = 0;
+  const execution = report.executionAccounting ?? summarizeExecution(report);
+  lines.push(`  scenarios: ${execution.attemptedScenarios}, behaviors covered: ${report.behaviorsCovered.length}`);
   for (const scenario of report.scenarios) {
     lines.push(`  [${scenario.id}] ${scenario.title} -> ${scenario.behaviorIds.join(", ") || "(no inventory match)"}`);
     for (const entry of scenario.violations) {
@@ -476,7 +496,6 @@ export function formatSummary(report) {
       lines.push(`      expected: ${JSON.stringify(entry.expected).slice(0, 300)}`);
       lines.push(`      actual:   ${JSON.stringify(entry.actual).slice(0, 300)}`);
     }
-    errorCount += scenario.errors.length;
   }
   const { total, counts } = countClassifications(report);
   lines.push(
@@ -489,7 +508,12 @@ export function formatSummary(report) {
   for (const entry of accepted) {
     lines.push(`    ACCEPTED_DIVERGENCE @ ${entry.route}: ${entry.rationale ?? entry.reason ?? "(no rationale)"}`);
   }
-  lines.push(`  step errors (not counted as findings or coverage): ${errorCount}`);
+  lines.push(
+    `  execution: registered=${execution.registeredScenarios} attempted=${execution.attemptedScenarios} ` +
+      `globalInfraErrors=${execution.globalInfraErrors.length} scenariosWithStepErrors=${execution.scenariosWithStepErrors} ` +
+      `scenariosWithoutStepErrors=${execution.scenariosWithoutStepErrors} totalStepErrors=${execution.totalStepErrors}`,
+  );
+  lines.push(`  step errors (not counted as findings or coverage): ${execution.totalStepErrors}`);
   lines.push(`  db projections compared after teardown: ${report.dbProjection ? "yes" : "no"}`);
   return lines.join("\n");
 }

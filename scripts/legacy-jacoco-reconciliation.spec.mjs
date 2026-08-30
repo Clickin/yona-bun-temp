@@ -6,8 +6,10 @@ import { tmpdir } from "node:os";
 import {
   buildControllerPartials,
   buildControllerSummary,
+  buildDiscoveryQueue,
   buildReconciliation,
   buildSourceClassIndex,
+  evaluateCoverageEvidence,
 } from "./legacy-jacoco-reconciliation.mjs";
 
 function route(controllerMethod, path, line) {
@@ -130,7 +132,71 @@ test("reconciliation reports each static/runtime coverage state", () => {
     staticUncoveredRuntimeMissed: 1,
     routeFacingFullyMissed: 2,
     routeFacingUnknown: 0,
+    coverageMappingUnresolved: 0,
   });
+});
+
+test("route-facing source-backed class without method evidence remains unresolved", () => {
+  const reconciliation = buildReconciliation({
+    classes: [{ name: "controllers.IssueApp", methods: { covered: 0, missed: 0 } }],
+    sourceClasses: [{ class: "controllers.IssueApp", kind: "controllers" }],
+    methods: [],
+    routes: [route("index", "/", 9)],
+    behaviors: [{ id: "index-behavior", action: "IssueApp.index" }],
+  });
+  const entry = reconciliation.entries.find((candidate) => candidate.action === "controllers.IssueApp#index");
+  assert.equal(entry.classification, "COVERAGE_MAPPING_UNRESOLVED");
+  assert.equal(entry.reportClassExists, true);
+  assert.equal(entry.sourceBackedClass, true);
+  assert.notEqual(entry.classification, "UNREACHABLE_OR_INTERNAL");
+  assert.equal(reconciliation.summary.coverageMappingUnresolved, 1);
+});
+
+test("route-facing missing class evidence stays non-closure UNKNOWN", () => {
+  const reconciliation = buildReconciliation({
+    methods: [],
+    routes: [route("index", "/", 9)],
+    behaviors: [{ id: "index-behavior", action: "IssueApp.index" }],
+  });
+  const entry = reconciliation.entries.find((candidate) => candidate.action === "controllers.IssueApp#index");
+  assert.equal(entry.classification, "UNKNOWN");
+  assert.equal(entry.sourceBackedClass, false);
+  assert.equal(entry.reportClassExists, false);
+  assert.equal(reconciliation.summary.coverageMappingUnresolved, 0);
+  assert.notEqual(entry.classification, "UNREACHABLE_OR_INTERNAL");
+});
+
+test("missing source-backed method evidence invalidates and blocks discovery", () => {
+  const coverageEvidence = evaluateCoverageEvidence({
+    sourceBackedClasses: [{ name: "controllers.IssueApp" }],
+    sourceBackedMethods: [],
+    sourceClasses: [{ class: "controllers.IssueApp", kind: "controllers" }],
+    routes: [route("index", "/", 9)],
+  });
+  assert.deepEqual(coverageEvidence, {
+    status: "INVALID",
+    code: "INVALID_EVIDENCE",
+    reason: "SOURCE_BACKED_METHODS_MISSING",
+    warnings: [],
+  });
+  const queue = buildDiscoveryQueue(
+    [],
+    { entries: [], summary: {} },
+    [],
+    coverageEvidence,
+  );
+  assert.deepEqual(queue.priorities, { P0: [], P1: [], P2: [], P3: [] });
+  assert.equal(queue.status, "BLOCKED");
+  assert.equal(queue.coverageEvidenceStatus, "INVALID");
+});
+
+test("identity warnings invalidate coverage evidence defensively", () => {
+  const coverageEvidence = evaluateCoverageEvidence({
+    coverageIdentityValid: true,
+    coverageIdentityWarnings: ["Some classes do not match with execution data"],
+  });
+  assert.equal(coverageEvidence.status, "INVALID");
+  assert.equal(coverageEvidence.reason, "CLASS_IDENTITY_MISMATCH");
 });
 
 test("infra errors triage route-facing misses as harness gaps, never unknown", () => {

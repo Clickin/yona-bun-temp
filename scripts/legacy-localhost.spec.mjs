@@ -91,6 +91,35 @@ test("legacy-localhost JaCoCo config honors agent and destination overrides", ()
   }
 });
 
+test("legacy-localhost JaCoCo classdump is opt-in and included in launcher args", () => {
+  const directory = mkdtempSync(join(tmpdir(), "legacy-jacoco-classdump-"));
+  const agent = join(directory, "jacocoagent.jar");
+  const classdump = join(directory, "runtime-classes");
+  try {
+    writeFileSync(agent, "test agent");
+    const config = resolveLegacyJacocoConfig({
+      YONA_LEGACY_JACOCO: "1",
+      YONA_LEGACY_JACOCO_AGENT: agent,
+      YONA_LEGACY_JACOCO_DESTFILE: join(directory, "yona.exec"),
+      YONA_LEGACY_JACOCO_CLASSDUMP_DIR: classdump,
+    });
+    assert.equal(config.classdumpdir, classdump);
+    assert.equal(
+      buildLegacyJacocoLauncherArg(config),
+      `-J-javaagent:${agent}=destfile=${join(directory, "yona.exec")},append=false,classdumpdir=${classdump}`,
+    );
+  } finally {
+    rmSync(directory, { force: true, recursive: true });
+  }
+});
+
+test("legacy-localhost disabled JaCoCo path does not inspect classdump configuration", () => {
+  assert.equal(resolveLegacyJacocoConfig({
+    YONA_LEGACY_JACOCO: "0",
+    YONA_LEGACY_JACOCO_CLASSDUMP_DIR: "",
+  }), null);
+});
+
 test("legacy-localhost JaCoCo config rejects missing and non-file agents", () => {
   const directory = mkdtempSync(join(tmpdir(), "legacy-jacoco-errors-"));
   try {

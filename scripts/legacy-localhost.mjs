@@ -310,16 +310,29 @@ export function resolveLegacyJacocoConfig(env = process.env) {
   const destfile = resolve(
     configuredDestfile ?? resolve(defaultLegacyJacocoOutputDir, "yona.exec"),
   );
+  const configuredClassdumpdir = env.YONA_LEGACY_JACOCO_CLASSDUMP_DIR;
+  if (
+    configuredClassdumpdir !== undefined &&
+    (typeof configuredClassdumpdir !== "string" || configuredClassdumpdir.trim() === "")
+  ) {
+    throw new Error("YONA_LEGACY_JACOCO_CLASSDUMP_DIR must name a non-empty output directory.");
+  }
+  const classdumpdir = configuredClassdumpdir === undefined
+    ? null
+    : resolve(configuredClassdumpdir);
 
   return {
     agentPath,
     destfile,
+    classdumpdir,
     outputDir: defaultLegacyJacocoOutputDir,
   };
 }
 
 export function buildLegacyJacocoLauncherArg(config) {
-  return `-J-javaagent:${config.agentPath}=destfile=${config.destfile},append=false`;
+  const options = [`destfile=${config.destfile}`, "append=false"];
+  if (config.classdumpdir) options.push(`classdumpdir=${config.classdumpdir}`);
+  return `-J-javaagent:${config.agentPath}=${options.join(",")}`;
 }
 
 function buildLayout(input) {
@@ -500,6 +513,7 @@ async function start(layout, options) {
   if (jacoco) {
     mkdirSync(jacoco.outputDir, { recursive: true });
     mkdirSync(dirname(jacoco.destfile), { recursive: true });
+    if (jacoco.classdumpdir) mkdirSync(jacoco.classdumpdir, { recursive: true });
   }
   mkdirSync(layout.runDir, { recursive: true });
   const logFd = openSync(layout.logFile, "a");
