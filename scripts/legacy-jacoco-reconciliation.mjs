@@ -110,6 +110,74 @@ function methodStatus(methods) {
   return "RUNTIME_MISSED";
 }
 
+function normalizeStepStatus(value) {
+  if (value === "EXECUTED" || value === "STEP_EXECUTED") return "EXECUTED";
+  if (value === "SKIPPED" || value === "STEP_SKIPPED") return "SKIPPED";
+  if (value === "FAILED" || value === "STEP_FAILED") return "FAILED";
+  return null;
+}
+
+function lookupEvidence(source, key, fallback = null) {
+  if (source instanceof Map) return source.get(key) ?? fallback;
+  if (source && typeof source === "object") return source[key] ?? fallback;
+  return fallback;
+}
+
+export function buildStepEvidence(report, behaviors = []) {
+  const actionByBehaviorId = new Map(
+    behaviors
+      .map((behavior) => [behavior.id, canonicalActionKey(behavior.action)])
+      .filter(([, action]) => action),
+  );
+  const evidence = new Map();
+  for (const scenario of report?.scenarios ?? []) {
+    const statuses = (scenario.stepResults ?? [])
+      .map((step) => normalizeStepStatus(step.status))
+      .filter(Boolean);
+    const status = statuses.length === 0
+      ? ((scenario.errors ?? []).length > 0 ? "FAILED" : null)
+      : statuses.every((value) => value === "EXECUTED")
+        ? "EXECUTED"
+        : statuses.some((value) => value === "FAILED")
+          ? "FAILED"
+          : "SKIPPED";
+    if (!status) continue;
+    for (const behaviorId of scenario.behaviorIds ?? []) {
+      const action = actionByBehaviorId.get(behaviorId);
+      if (!action) continue;
+      const prior = evidence.get(action);
+      if (!prior || (prior !== "EXECUTED" && status === "EXECUTED")) evidence.set(action, status);
+      else if (prior === "SKIPPED" && status === "FAILED") evidence.set(action, status);
+    }
+  }
+  return evidence;
+}
+
+export function buildObservableMismatchEvidence(report, behaviors = []) {
+  const actionByBehaviorId = new Map(
+    behaviors
+      .map((behavior) => [behavior.id, canonicalActionKey(behavior.action)])
+      .filter(([, action]) => action),
+  );
+  const mismatches = new Map();
+  for (const scenario of report?.scenarios ?? []) {
+    for (const violation of scenario.violations ?? []) {
+      if (["ACCEPTED_DIVERGENCE", "LEGACY_BUG"].includes(violation.classification)) continue;
+      const action = actionByBehaviorId.get(violation.behaviorId);
+      if (!action) continue;
+      if (!mismatches.has(action)) mismatches.set(action, []);
+      mismatches.get(action).push({
+        scenarioId: scenario.id,
+        route: violation.route,
+        kind: violation.kind,
+        classification: violation.classification ?? "UNVERIFIED",
+        reason: violation.reason ?? null,
+      });
+    }
+  }
+  return mismatches;
+}
+
 function classifyRouteMiss({
   staticCovered,
   reportHasInfraError,
@@ -142,6 +210,8 @@ export function buildReconciliation({
   classes = [],
   sourceClasses = [],
   unreachableEvidence = new Set(),
+  stepEvidence = new Map(),
+  observableMismatches = new Map(),
 }) {
   const inventoryByAction = mapInventoryActions(behaviors);
   const routesByAction = new Map();
@@ -197,6 +267,8 @@ export function buildReconciliation({
         unreachableEvidence: actionHasUnreachableEvidence,
       })
       : null;
+    const stepStatus = lookupEvidence(stepEvidence, key);
+    const mismatches = lookupEvidence(observableMismatches, key, []) ?? [];
     return {
       action: key,
       routes: routeRows.map(({ method, path, line }) => ({ method, path, line })),
@@ -207,6 +279,9 @@ export function buildReconciliation({
       methods: methodRows,
       sourceBackedClass: actionHasSourceClass,
       reportClassExists: actionHasReportClass,
+      stepStatus,
+      observableMismatches: mismatches,
+      observableMismatch: mismatches.length > 0,
       classification,
       evidence: classification
         ? routeEvidence(routeRows, behaviorRows, methodRows, classification)
@@ -266,7 +341,7 @@ export function buildControllerPartials(methods, routes, behaviors) {
     .sort((left, right) => `${left.class}#${left.method}${left.desc ?? ""}`.localeCompare(`${right.class}#${right.method}${right.desc ?? ""}`));
 }
 
-export function buildControllerSummary(methods, reconciliation) {
+export function buildControllerSummary(methods, reconciliation, { includeDetails = false } = {}) {
   const source = new Map();
   for (const method of methods.filter((entry) => entry.class.startsWith("controllers."))) {
     const controller = method.class.replace(/^controllers\./u, "").split("$")[0];
@@ -287,8 +362,53 @@ export function buildControllerSummary(methods, reconciliation) {
         entry.action.startsWith(`controllers.${name}#`) &&
         entry.staticRuntimeState.endsWith("RUNTIME_MISSED"),
     ).length;
-    return { controller: name, ...row, behaviorIds: [...row.behaviorIds].sort() };
+    const result = { controller: name, ...row, behaviorIds: [...row.behaviorIds].sort() };
+    if (includeDetails) {
+      const prefix = `controllers.${name}#`;
+      const controllerEntries = reconciliation.entries.filter((entry) => entry.action.startsWith(prefix));
+      Object.assign(result, {
+        routeFacingActions: controllerEntries.filter((entry) => entry.routeFacing).length,
+        runtimeExecutedActions: controllerEntries.filter((entry) => entry.staticRuntimeState.endsWith("RUNTIME_EXECUTED")).length,
+        runtimeMissedActions: controllerEntries.filter((entry) => entry.staticRuntimeState.endsWith("RUNTIME_MISSED")).length,
+        stepFailedSkippedActions: controllerEntries.filter((entry) => ["FAILED", "SKIPPED"].includes(entry.stepStatus)).length,
+        observableMismatches: controllerEntries.reduce(
+          (total, entry) => total + (entry.observableMismatches?.length ?? 0),
+          0,
+        ),
+      });
+    }
+    return result;
   });
+}
+
+export function summarizeStepAccounting(report, registeredScenarios = null) {
+  const registeredIds = new Set(
+    Array.isArray(registeredScenarios) ? registeredScenarios.map((scenario) => scenario.id) : [],
+  );
+  const scenarioRows = (report?.scenarios ?? []).filter(
+    (scenario) => registeredIds.size === 0 || registeredIds.has(scenario.id),
+  );
+  const counts = { EXECUTED: 0, SKIPPED: 0, FAILED: 0 };
+  for (const scenario of scenarioRows) {
+    for (const step of scenario.stepResults ?? []) {
+      const status = normalizeStepStatus(step.status);
+      if (status) counts[status] += 1;
+    }
+  }
+  const scenariosWithStepErrors = scenarioRows.filter((scenario) =>
+    (scenario.stepResults ?? []).some((step) => normalizeStepStatus(step.status) !== "EXECUTED"),
+  ).length;
+  return {
+    registeredScenarios: Array.isArray(registeredScenarios) ? registeredScenarios.length : scenarioRows.length,
+    attemptedScenarios: scenarioRows.length,
+    globalInfraErrors: report?.infraErrors ?? [],
+    EXECUTED: counts.EXECUTED,
+    SKIPPED: counts.SKIPPED,
+    FAILED: counts.FAILED,
+    scenariosWithStepErrors,
+    scenariosWithoutStepErrors: scenarioRows.length - scenariosWithStepErrors,
+    totalStepErrors: counts.SKIPPED + counts.FAILED,
+  };
 }
 
 export function evaluateCoverageEvidence({
@@ -353,11 +473,22 @@ export function buildDiscoveryQueue(methods, reconciliation, partials, coverageE
       priorities: { P0: [], P1: [], P2: [], P3: [] },
     };
   }
-  const p0 = reconciliation.entries.filter((entry) => entry.routeFacing && entry.staticRuntimeState === "STATIC_COVERED + RUNTIME_MISSED");
-  const p1 = reconciliation.entries.filter((entry) => entry.routeFacing && entry.staticRuntimeState === "STATIC_UNCOVERED + RUNTIME_EXECUTED");
-  const p2 = partials.filter((entry) => entry.class.startsWith("controllers."));
-  const p3 = methods
-    .filter((entry) => entry.status === "PARTIALLY_COVERED" && !entry.class.startsWith("controllers."))
+  const entries = reconciliation.entries ?? [];
+  const p0 = entries.filter((entry) =>
+    entry.stepStatus === "EXECUTED" &&
+    entry.staticRuntimeState === "STATIC_COVERED + RUNTIME_EXECUTED" &&
+    entry.observableMismatch === true,
+  );
+  const p1 = entries.filter((entry) =>
+    entry.staticRuntimeState === "STATIC_COVERED + RUNTIME_MISSED" &&
+    ["FAILED", "SKIPPED"].includes(entry.stepStatus),
+  );
+  const p2 = entries.filter((entry) =>
+    (entry.stepStatus === "EXECUTED" && entry.staticRuntimeState.endsWith("RUNTIME_MISSED")) ||
+    entry.staticRuntimeState === "STATIC_UNCOVERED + RUNTIME_EXECUTED",
+  );
+  const p3 = partials
+    .filter((entry) => entry.class.startsWith("controllers."))
     .slice()
     .sort((left, right) =>
       String(left.class ?? "").localeCompare(String(right.class ?? "")) ||
@@ -365,7 +496,18 @@ export function buildDiscoveryQueue(methods, reconciliation, partials, coverageE
       String(left.desc ?? "").localeCompare(String(right.desc ?? "")) ||
       (left.sourceLine ?? 0) - (right.sourceLine ?? 0),
     );
-  const item = (priority, entry) => ({ priority, class: entry.class ?? entry.action, method: entry.method ?? entry.action.split("#").at(-1), routes: entry.routes ?? [], behaviorIds: entry.behaviorIds ?? [], coverageStatus: entry.status ?? entry.staticRuntimeState, classification: entry.classification ?? null, evidence: entry.evidence ?? [] });
+  const item = (priority, entry) => ({
+    priority,
+    class: entry.class ?? entry.action,
+    method: entry.method ?? entry.action.split("#").at(-1),
+    routes: entry.routes ?? [],
+    behaviorIds: entry.behaviorIds ?? [],
+    coverageStatus: entry.status ?? entry.staticRuntimeState,
+    stepStatus: entry.stepStatus ?? null,
+    observableMismatches: entry.observableMismatches ?? [],
+    classification: entry.classification ?? null,
+    evidence: entry.evidence ?? [],
+  });
   return {
     version: 1,
     status: "READY",
@@ -431,29 +573,36 @@ export function run(env = process.env) {
     coverageIdentityValid,
     coverageIdentityWarnings,
   });
-  const reconciliation = buildReconciliation({
+  const partials = buildControllerPartials(sourceBackedMethods, routes, inventory.behaviors);
+  const stepEvidence = buildStepEvidence(report, inventory.behaviors);
+  const observableMismatches = buildObservableMismatchEvidence(report, inventory.behaviors);
+  const enrichedReconciliation = buildReconciliation({
     methods: sourceBackedMethods,
     classes: sourceBackedReportClasses,
     sourceClasses,
     routes,
     behaviors: inventory.behaviors,
     infraErrors: report.infraErrors ?? [],
+    stepEvidence,
+    observableMismatches,
   });
-  const partials = buildControllerPartials(sourceBackedMethods, routes, inventory.behaviors);
-  const controllerSummary = buildControllerSummary(sourceBackedMethods, reconciliation);
-  const queue = buildDiscoveryQueue(sourceBackedMethods, reconciliation, partials, coverageEvidence);
+  const controllerSummary = buildControllerSummary(sourceBackedMethods, enrichedReconciliation, { includeDetails: true });
+  const queue = buildDiscoveryQueue(sourceBackedMethods, enrichedReconciliation, partials, coverageEvidence);
+  const stepSummary = summarizeStepAccounting(report, scenarioRegistry);
   const summaryPath = join(outputDir, "summary.json");
   const priorSummary = existsSync(summaryPath) ? readJson(summaryPath) : { classes: parsed.classes };
   mkdirSync(outputDir, { recursive: true });
   writeFileSync(join(outputDir, "source-class-index.json"), `${JSON.stringify(sourceClasses, null, 2)}\n`);
   writeFileSync(join(outputDir, "route-action-index.json"), `${JSON.stringify(routes, null, 2)}\n`);
-  writeFileSync(join(outputDir, "reconciliation.json"), `${JSON.stringify(reconciliation, null, 2)}\n`);
+  writeFileSync(join(outputDir, "reconciliation.json"), `${JSON.stringify(enrichedReconciliation, null, 2)}\n`);
   writeFileSync(join(outputDir, "controller-partials.json"), `${JSON.stringify(partials, null, 2)}\n`);
-  writeFileSync(join(outputDir, "controller-review.json"), `${JSON.stringify({ version: 1, controllers: controllerSummary, routeFacingFullyMissed: reconciliation.entries.filter((entry) => entry.routeFacing && entry.staticRuntimeState.endsWith("RUNTIME_MISSED")) }, null, 2)}\n`);
+  writeFileSync(join(outputDir, "controller-review.json"), `${JSON.stringify({ version: 2, controllers: controllerSummary, routeFacingFullyMissed: enrichedReconciliation.entries.filter((entry) => entry.routeFacing && entry.staticRuntimeState.endsWith("RUNTIME_MISSED")) }, null, 2)}\n`);
+  writeFileSync(join(outputDir, "step-summary.json"), `${JSON.stringify(stepSummary, null, 2)}\n`);
   writeFileSync(join(outputDir, "discovery-queue.json"), `${JSON.stringify(queue, null, 2)}\n`);
   writeFileSync(summaryPath, `${JSON.stringify({
     ...priorSummary,
     baseline: baselineSummary(report, join(outputDir, "yona.exec"), reportXmlPath),
+    stepAccounting: stepSummary,
     coverageIdentityValid,
     coverageIdentityWarnings,
     coverageEvidenceStatus: coverageEvidence.status,
@@ -461,7 +610,8 @@ export function run(env = process.env) {
     coverageEvidenceReason: coverageEvidence.reason,
     sourceBacked: { classes: sourceBackedReportClasses.length, methods: sourceBackedMethods.length },
     generatedOrNonSource: { classes: parsed.classes.length - sourceBackedReportClasses.length, methods: generatedMethods.length },
-    reconciliation: reconciliation.summary,
+    reconciliation: enrichedReconciliation.summary,
+    discoveryQueue: Object.fromEntries(Object.entries(queue.priorities).map(([priority, entries]) => [priority, entries.length])),
   }, null, 2)}\n`);
   return {
     outputDir,
@@ -469,11 +619,12 @@ export function run(env = process.env) {
     sourceBackedMethods,
     generatedMethods,
     routes,
-    reconciliation,
+    reconciliation: enrichedReconciliation,
     partials,
     controllerSummary,
     queue,
     coverageEvidence,
+    stepSummary,
   };
 }
 

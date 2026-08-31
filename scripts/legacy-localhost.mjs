@@ -286,7 +286,10 @@ export function resolveLegacyJacocoConfig(env = process.env) {
   }
 
   const agentPath = resolve(
-    configuredAgent ?? resolve(defaultLegacyJacocoOutputDir, "jacocoagent.jar"),
+    configuredAgent ??
+      (existsSync(resolve(defaultLegacyJacocoOutputDir, "jacocoagent-runtime.jar"))
+        ? resolve(defaultLegacyJacocoOutputDir, "jacocoagent-runtime.jar")
+        : resolve(defaultLegacyJacocoOutputDir, "jacocoagent.jar")),
   );
   let agentStats;
   try {

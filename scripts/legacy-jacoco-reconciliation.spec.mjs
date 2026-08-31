@@ -314,3 +314,55 @@ test("major controller summary has stable rows and aggregate counts", () => {
     { totalMethods: 0, behaviorIds: [] },
   ]);
 });
+
+test("discovery queue follows v2 step/runtime/mismatch priorities", () => {
+  const entries = [
+    {
+      action: "controllers.IssueApp#p0",
+      staticRuntimeState: "STATIC_COVERED + RUNTIME_EXECUTED",
+      stepStatus: "EXECUTED",
+      observableMismatch: true,
+      routeFacing: true,
+    },
+    {
+      action: "controllers.IssueApp#p1",
+      staticRuntimeState: "STATIC_COVERED + RUNTIME_MISSED",
+      stepStatus: "FAILED",
+      routeFacing: true,
+    },
+    {
+      action: "controllers.IssueApp#p2-step",
+      staticRuntimeState: "STATIC_COVERED + RUNTIME_MISSED",
+      stepStatus: "EXECUTED",
+      routeFacing: true,
+    },
+    {
+      action: "controllers.IssueApp#p2-static",
+      staticRuntimeState: "STATIC_UNCOVERED + RUNTIME_EXECUTED",
+      stepStatus: null,
+      routeFacing: true,
+    },
+    {
+      action: "controllers.IssueApp#not-product",
+      staticRuntimeState: "STATIC_COVERED + RUNTIME_EXECUTED",
+      stepStatus: "EXECUTED",
+      observableMismatch: false,
+      routeFacing: true,
+    },
+  ];
+  const queue = buildDiscoveryQueue(
+    [],
+    { entries },
+    [{
+      class: "controllers.IssueApp",
+      method: "partial",
+      status: "PARTIALLY_COVERED",
+    }],
+    { status: "VALID" },
+  );
+  assert.equal(queue.priorities.P0.length, 1);
+  assert.equal(queue.priorities.P1.length, 1);
+  assert.equal(queue.priorities.P2.length, 2);
+  assert.equal(queue.priorities.P3.length, 1);
+  assert.equal(queue.priorities.P0[0].class, "controllers.IssueApp#p0");
+});
