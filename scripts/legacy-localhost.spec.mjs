@@ -54,7 +54,12 @@ test("legacy-localhost JaCoCo config is disabled unless explicitly enabled", () 
   assert.equal(resolveLegacyJacocoConfig({ YONA_LEGACY_JACOCO: "0" }), null);
 });
 
-test("legacy-localhost prefers the executable runtime JaCoCo agent", () => {
+test("legacy-localhost prefers the executable runtime JaCoCo agent when available", {
+  skip: !existsSync(resolve(repoRoot, ".agent/legacy-jacoco/jacocoagent-runtime.jar")) &&
+    !existsSync(resolve(repoRoot, ".agent/legacy-jacoco/jacocoagent.jar"))
+    ? "JaCoCo agent artifacts are not present in this checkout"
+    : false,
+}, () => {
   const runtimeAgent = resolve(repoRoot, ".agent/legacy-jacoco/jacocoagent-runtime.jar");
   const libraryAgent = resolve(repoRoot, ".agent/legacy-jacoco/jacocoagent.jar");
   const config = resolveLegacyJacocoConfig({ YONA_LEGACY_JACOCO: "1" });

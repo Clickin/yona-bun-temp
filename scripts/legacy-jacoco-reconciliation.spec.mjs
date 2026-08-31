@@ -9,7 +9,9 @@ import {
   buildDiscoveryQueue,
   buildReconciliation,
   buildSourceClassIndex,
+  buildStepEvidence,
   evaluateCoverageEvidence,
+  summarizeStepAccounting,
 } from "./legacy-jacoco-reconciliation.mjs";
 
 function route(controllerMethod, path, line) {
@@ -134,6 +136,59 @@ test("reconciliation reports each static/runtime coverage state", () => {
     routeFacingUnknown: 0,
     coverageMappingUnresolved: 0,
   });
+});
+
+test("step accounting and action evidence classify executed, skipped, and failed steps", () => {
+  const report = {
+    infraErrors: ["one global warning"],
+    scenarios: [
+      {
+        id: "scenario-executed",
+        behaviorIds: ["behavior-executed"],
+        stepResults: [{ status: "EXECUTED" }, { status: "EXECUTED" }],
+        errors: [],
+      },
+      {
+        id: "scenario-skipped",
+        behaviorIds: ["behavior-skipped"],
+        stepResults: [{ status: "SKIPPED" }],
+        errors: ["dependency unavailable"],
+      },
+      {
+        id: "scenario-failed",
+        behaviorIds: ["behavior-failed"],
+        stepResults: [{ status: "FAILED" }],
+        errors: ["assertion failed"],
+      },
+    ],
+  };
+  assert.deepEqual(summarizeStepAccounting(report, [
+    { id: "scenario-executed" },
+    { id: "scenario-skipped" },
+    { id: "scenario-failed" },
+  ]), {
+    registeredScenarios: 3,
+    attemptedScenarios: 3,
+    globalInfraErrors: ["one global warning"],
+    EXECUTED: 2,
+    SKIPPED: 1,
+    FAILED: 1,
+    scenariosWithStepErrors: 2,
+    scenariosWithoutStepErrors: 1,
+    totalStepErrors: 2,
+  });
+  assert.deepEqual(
+    [...buildStepEvidence(report, [
+      { id: "behavior-executed", action: "IssueApp.executed" },
+      { id: "behavior-skipped", action: "IssueApp.skipped" },
+      { id: "behavior-failed", action: "IssueApp.failed" },
+    ])],
+    [
+      ["controllers.IssueApp#executed", "EXECUTED"],
+      ["controllers.IssueApp#skipped", "SKIPPED"],
+      ["controllers.IssueApp#failed", "FAILED"],
+    ],
+  );
 });
 
 test("route-facing source-backed class without method evidence remains unresolved", () => {
