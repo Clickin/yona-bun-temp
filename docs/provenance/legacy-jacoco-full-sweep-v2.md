@@ -38,7 +38,7 @@ The blocked artifacts record only facts available from this run:
 - reconciliation: blocked; no entries emitted
 - discovery queue: all P0/P1/P2/P3 queues empty and blocked
 
-Artifacts: `summary.json`, `step-summary.json`, `reconciliation.json`, `discovery-queue.json`, and `controller-review.json` under `.agent/legacy-jacoco/full-sweep-v2/`.
+Artifacts: `summary.json`, `step-summary.json`, `reconciliation.json`, `discovery-queue.json`, `controller-review.json`, `run-metadata.json`, and `failure.json` under `.agent/legacy-jacoco/full-sweep-v2/`. The runner now materializes these blocked artifacts itself on validation, runner, analyzer, report, timeout, or reconciliation failure. Unknown partial-run counts are recorded as `null`, never as successful or zero coverage.
 
 Because fresh runtime evidence is absent, no product parity candidate or parity backlog is recognized. The prior `sweep-mtfoidbc` / `full-sweep` baseline remains invalid and untouched.
 
@@ -52,3 +52,5 @@ The coverage tooling now provides the five-controller gate, explicit authenticat
 - P3: partial controller methods.
 
 Invalid coverage evidence blocks every queue.
+
+The full-sweep child runner has a 15-minute timeout by default; `YONA_LEGACY_JACOCO_FULL_SWEEP_TIMEOUT_MS` can set a positive override. JaCoCo is enabled only when `YONA_LEGACY_JACOCO=1`, and the launcher prefers the repository's `jacocoagent-runtime.jar` (the executable JaCoCo agent) over the older library-only `jacocoagent.jar`. This changes coverage harness startup only; it does not widen the Play compatibility shim or alter legacy/Yoram product behavior.

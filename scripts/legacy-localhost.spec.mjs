@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { strict as assert } from "node:assert";
 import test from "node:test";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import {
@@ -52,6 +52,13 @@ test("legacy-localhost package scripts expose parity content wrappers", () => {
 test("legacy-localhost JaCoCo config is disabled unless explicitly enabled", () => {
   assert.equal(resolveLegacyJacocoConfig({}), null);
   assert.equal(resolveLegacyJacocoConfig({ YONA_LEGACY_JACOCO: "0" }), null);
+});
+
+test("legacy-localhost prefers the executable runtime JaCoCo agent", () => {
+  const runtimeAgent = resolve(repoRoot, ".agent/legacy-jacoco/jacocoagent-runtime.jar");
+  const libraryAgent = resolve(repoRoot, ".agent/legacy-jacoco/jacocoagent.jar");
+  const config = resolveLegacyJacocoConfig({ YONA_LEGACY_JACOCO: "1" });
+  assert.equal(config.agentPath, existsSync(runtimeAgent) ? runtimeAgent : libraryAgent);
 });
 
 test("legacy-localhost JaCoCo config produces exactly one launcher argument", () => {
