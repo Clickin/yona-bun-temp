@@ -1,7 +1,6 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
-import { homedir } from "node:os";
-import { basename, dirname, join, resolve } from "node:path";
+import { existsSync, mkdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 
 export const repoRoot = resolve(new URL("..", import.meta.url).pathname);
 
@@ -13,36 +12,11 @@ function pathDelimiter() {
   return process.platform === "win32" ? ";" : ":";
 }
 
-function sortedJarCandidates(root) {
-  if (!existsSync(root)) return [];
-  const found = [];
-  const visit = (directory, depth) => {
-    if (depth > 5) return;
-    for (const entry of readdirSync(directory, { withFileTypes: true }).sort((left, right) => left.name.localeCompare(right.name))) {
-      const path = join(directory, entry.name);
-      if (entry.isDirectory()) visit(path, depth + 1);
-      else if (entry.isFile() && entry.name.endsWith(".jar")) found.push(path);
-    }
-  };
-  visit(root, 0);
-  return found.sort();
-}
-
-function dependencyCandidates() {
-  return [
-    resolve(homedir(), ".gradle/caches/modules-2/files-2.1/org.jacoco"),
-    resolve(homedir(), ".gradle/caches/modules-2/files-2.1/org.ow2.asm"),
-    resolve(homedir(), ".m2/repository/org/jacoco"),
-    resolve(homedir(), ".m2/repository/org/ow2/asm"),
-  ].flatMap((root) => sortedJarCandidates(root));
-}
-
 function resolveDependency(name, version, env, envName = name.replaceAll(".", "_").replaceAll("-", "_").toUpperCase()) {
   const configured = env[`YONA_LEGACY_JACOCO_${envName}`];
   if (configured) return resolve(configured);
-  const candidates = dependencyCandidates().filter((path) => basename(path).startsWith(`${name}-`));
-  const exact = version ? candidates.find((path) => basename(path) === `${name}-${version}.jar`) : null;
-  return exact ?? candidates.at(-1) ?? null;
+  const vendored = resolve(repoRoot, "tools/jacoco/0.8.14/lib", `${name}-${version}.jar`);
+  return existsSync(vendored) ? vendored : null;
 }
 
 function requireJar(path, label) {

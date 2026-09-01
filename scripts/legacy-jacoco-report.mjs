@@ -48,7 +48,11 @@ function readManifestMainClass(jar) {
 export function resolveCliJavaArgs(cli, { classpathPrefix = [] } = {}) {
   if (readManifestMainClass(cli)) {
     if (classpathPrefix.length > 0) {
-      throw new Error("JaCoCo Play compatibility requires a CLI without a Main-Class manifest.");
+      return [
+        "-cp",
+        [...classpathPrefix, cli].join(pathDelimiter()),
+        "org.jacoco.cli.internal.Main",
+      ];
     }
     return ["-jar", cli];
   }
@@ -91,12 +95,7 @@ function pathDelimiter() {
 export function resolveCliJar(env = process.env) {
   const explicit = env.YONA_LEGACY_JACOCO_CLI;
   if (explicit) return resolve(explicit);
-  return firstExisting([
-    resolve(repoRoot, ".agent/tools/jacococli.jar"),
-    resolve(repoRoot, ".agent/legacy-jacoco/jacococli.jar"),
-    ...sortedJarCandidates(resolve(homedir(), ".m2/repository/org/jacoco")),
-    ...sortedJarCandidates(resolve(homedir(), ".gradle/caches/modules-2/files-2.1/org.jacoco/org.jacoco.cli")),
-  ]);
+  return firstExisting([resolve(repoRoot, "tools/jacoco/0.8.14/jacococli.jar")]);
 }
 
 export function resolveDistributionClassfiles(env = process.env) {
@@ -363,7 +362,7 @@ export function main(env = process.env) {
     writeFileSync(join(diagnosticPaths.diagnosticDir, "filter-class-origin.txt"), `${classOrigin}\n`);
   }
   const reportArgs = buildReportArgs(paths, classfiles, cli, { classpathPrefix });
-  const cliPrefixLength = resolveCliJavaArgs(cli).length;
+  const cliPrefixLength = resolveCliJavaArgs(cli, { classpathPrefix }).length;
   const commandResult = executeJacocoCli({
     cli,
     args: reportArgs.slice(cliPrefixLength),

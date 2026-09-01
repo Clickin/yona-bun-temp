@@ -5,8 +5,8 @@
 - **Java process boundary:** `bin/yona` owns the JVM launch; the launcher adds the JaCoCo option to that child process's argument vector.
 - **JVM option injection:** `-J-javaagent:<agent>=destfile:<exec>,append=false` is passed as one `bin/yona` argument, which the Play launcher forwards to the Java process.
 - **Dump timing:** JaCoCo's default `dumponexit=true` writes the exec data during JVM shutdown; `legacy-localhost stop` sends the managed process `SIGTERM`, so report generation runs after that stop/dump boundary.
-- **Verified JaCoCo 0.8.14 Gradle cache:** the agent is at `$HOME/.gradle/caches/modules-2/files-2.1/org.jacoco/org.jacoco.agent/0.8.14/bca1f6d49506da3ebd0d3b9acbcfdd1fb22c14e/org.jacoco.agent-0.8.14.jar`; the CLI is at `$HOME/.gradle/caches/modules-2/files-2.1/org.jacoco/org.jacoco.cli/0.8.14/67219de732252f3c289e267e24733147934132da/org.jacoco.cli-0.8.14.jar`. The report script discovers CLI jars below `$HOME/.gradle/caches/modules-2/files-2.1/org.jacoco/org.jacoco.cli` (and the equivalent Maven cache), while the launcher accepts the agent through `YONA_LEGACY_JACOCO_AGENT`.
-- **Artifacts:** default exec/report outputs are under `.agent/legacy-jacoco/`. JaCoCo agent and CLI binaries are cache/user-provided inputs; no binary is committed to the repository.
+- **Pinned JaCoCo toolchain:** version 0.8.14 is vendored under `tools/jacoco/0.8.14/`. `jacocoagent-runtime.jar` is the executable `-javaagent` runtime (its manifest contains `Premain-Class`); `jacococli.jar` is the standalone CLI. SHA-256 values are recorded in `tools/jacoco/0.8.14/SHA256SUMS`. `YONA_LEGACY_JACOCO_AGENT`, `YONA_LEGACY_JACOCO_CLI`, and compatibility dependency overrides remain supported.
+- **Artifacts:** default exec/report outputs are under `.agent/legacy-jacoco/`. `.agent/` is generated output only; it is never a source for JaCoCo binaries.
 - **Classfile overrides:** discovery follows the launcher's versioned install layout. Set `YONA_LEGACY_WORKSPACE_DIR` or `YONA_LEGACY_JACOCO_CLASSFILES` when the prepared distribution is elsewhere.
 - **Runtime class dump:** set `YONA_LEGACY_JACOCO_CLASSDUMP_DIR` to opt in to
   JaCoCo's `classdumpdir` agent option. The launcher creates the directory
@@ -39,15 +39,15 @@
   `INVALID`/`INVALID_EVIDENCE`, and the discovery queue is emitted as blocked
   rather than as a product backlog.
 
-The extracted distribution and verified Gradle-cached JaCoCo 0.8.14 agent/CLI are present in the current workspace. Report generation remains opt-in via `YONA_LEGACY_JACOCO=1`; no binary is stored in the repository.
+Report generation remains opt-in via `YONA_LEGACY_JACOCO=1`; ordinary validation and sweep runs do not require Maven or Gradle caches. The eventual release repository may remove parity tooling, but this porting repository vendors the binaries for fresh-checkout reproducibility.
 
 ## Play 2.3 compatibility shim
 
 `tools/legacy-jacoco-play-compat/` contains the JaCoCo 0.8.14
 `AnnotationGeneratedFilter` source with one deliberate exception for
 `Lplay/core/enhancers/PropertiesEnhancer$GeneratedAccessor;`. The helper
-`pnpm legacy:jacoco:play-compat` compiles it with the cached JaCoCo 0.8.14
-core and ASM dependencies to the ignored
+`pnpm legacy:jacoco:play-compat` compiles it with the vendored JaCoCo 0.8.14
+core and ASM dependencies from `tools/jacoco/0.8.14/lib/` to the ignored
 `.agent/tools/legacy-jacoco-play-compat/` directory. The JAR contains only
 `org.jacoco.core.internal.analysis.filter.AnnotationGeneratedFilter`; it is
 not committed.

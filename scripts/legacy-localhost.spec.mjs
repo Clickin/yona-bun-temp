@@ -54,23 +54,17 @@ test("legacy-localhost JaCoCo config is disabled unless explicitly enabled", () 
   assert.equal(resolveLegacyJacocoConfig({ YONA_LEGACY_JACOCO: "0" }), null);
 });
 
-test("legacy-localhost prefers the executable runtime JaCoCo agent when available", {
-  skip: !existsSync(resolve(repoRoot, ".agent/legacy-jacoco/jacocoagent-runtime.jar")) &&
-    !existsSync(resolve(repoRoot, ".agent/legacy-jacoco/jacocoagent.jar"))
-    ? "JaCoCo agent artifacts are not present in this checkout"
-    : false,
-}, () => {
-  const runtimeAgent = resolve(repoRoot, ".agent/legacy-jacoco/jacocoagent-runtime.jar");
-  const libraryAgent = resolve(repoRoot, ".agent/legacy-jacoco/jacocoagent.jar");
+test("legacy-localhost resolves the vendored executable runtime JaCoCo agent", () => {
+  const runtimeAgent = resolve(repoRoot, "tools/jacoco/0.8.14/jacocoagent-runtime.jar");
   const config = resolveLegacyJacocoConfig({ YONA_LEGACY_JACOCO: "1" });
-  assert.equal(config.agentPath, existsSync(runtimeAgent) ? runtimeAgent : libraryAgent);
+  assert.equal(config.agentPath, runtimeAgent);
 });
 
 test("legacy-localhost JaCoCo config produces exactly one launcher argument", () => {
   const directory = mkdtempSync(join(tmpdir(), "legacy-jacoco-agent-"));
   const agent = join(directory, "jacocoagent.jar");
   try {
-    writeFileSync(agent, "test agent");
+    writeFileSync(agent, readFileSync(resolve(repoRoot, "tools/jacoco/0.8.14/jacocoagent-runtime.jar")));
     const config = resolveLegacyJacocoConfig({
       YONA_LEGACY_JACOCO: "1",
       YONA_LEGACY_JACOCO_AGENT: agent,
@@ -90,7 +84,7 @@ test("legacy-localhost JaCoCo config honors agent and destination overrides", ()
   const agent = join(directory, "custom-agent.jar");
   const destination = join(directory, "coverage", "custom.exec");
   try {
-    writeFileSync(agent, "test agent");
+    writeFileSync(agent, readFileSync(resolve(repoRoot, "tools/jacoco/0.8.14/jacocoagent-runtime.jar")));
     const config = resolveLegacyJacocoConfig({
       YONA_LEGACY_JACOCO: "1",
       YONA_LEGACY_JACOCO_AGENT: agent,
@@ -108,7 +102,7 @@ test("legacy-localhost JaCoCo classdump is opt-in and included in launcher args"
   const agent = join(directory, "jacocoagent.jar");
   const classdump = join(directory, "runtime-classes");
   try {
-    writeFileSync(agent, "test agent");
+    writeFileSync(agent, readFileSync(resolve(repoRoot, "tools/jacoco/0.8.14/jacocoagent-runtime.jar")));
     const config = resolveLegacyJacocoConfig({
       YONA_LEGACY_JACOCO: "1",
       YONA_LEGACY_JACOCO_AGENT: agent,

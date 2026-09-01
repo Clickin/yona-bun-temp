@@ -1,4 +1,4 @@
-import { spawn, spawnSync } from "node:child_process";
+import { execFileSync, spawn, spawnSync } from "node:child_process";
 import {
   existsSync,
   mkdirSync,
@@ -15,6 +15,7 @@ import { createWtrSweepContext, launchWtrBrowser } from "./wtr-browser.mjs";
 
 const repoRoot = resolve(new URL("..", import.meta.url).pathname);
 const defaultLegacyJacocoOutputDir = resolve(repoRoot, ".agent/legacy-jacoco");
+const defaultLegacyJacocoAgent = resolve(repoRoot, "tools/jacoco/0.8.14/jacocoagent-runtime.jar");
 const defaultVersion = process.env.YONA_LEGACY_VERSION ?? "1.16.0";
 const defaultPort = numberValue(process.env.YONA_LEGACY_PORT, 9000);
 const defaultHost = process.env.YONA_LEGACY_HOST ?? "127.0.0.1";
@@ -285,12 +286,7 @@ export function resolveLegacyJacocoConfig(env = process.env) {
     );
   }
 
-  const agentPath = resolve(
-    configuredAgent ??
-      (existsSync(resolve(defaultLegacyJacocoOutputDir, "jacocoagent-runtime.jar"))
-        ? resolve(defaultLegacyJacocoOutputDir, "jacocoagent-runtime.jar")
-        : resolve(defaultLegacyJacocoOutputDir, "jacocoagent.jar")),
-  );
+  const agentPath = resolve(configuredAgent ?? defaultLegacyJacocoAgent);
   let agentStats;
   try {
     agentStats = statSync(agentPath);
@@ -301,6 +297,15 @@ export function resolveLegacyJacocoConfig(env = process.env) {
   }
   if (!agentStats.isFile()) {
     throw new Error(`JaCoCo agent path is not a regular file: ${agentPath}`);
+  }
+  let manifest;
+  try {
+    manifest = execFileSync("unzip", ["-p", agentPath, "META-INF/MANIFEST.MF"], { encoding: "utf8" });
+  } catch {
+    manifest = "";
+  }
+  if (!/^Premain-Class:\s*\S+/mu.test(manifest)) {
+    throw new Error(`Configured JaCoCo agent is not an executable javaagent JAR: ${agentPath}. Missing Premain-Class manifest attribute.`);
   }
 
   const configuredDestfile = env.YONA_LEGACY_JACOCO_DESTFILE;

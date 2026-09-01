@@ -14,6 +14,7 @@ import {
   resolveClassfiles,
   resolveCanonicalClassfiles,
   resolveCliJavaArgs,
+  resolveCliJar,
   resolveDiagnosticPaths,
   resolvePaths,
   resolvePlayCompatMode,
@@ -21,6 +22,11 @@ import {
 import { buildCompatShim } from "./legacy-jacoco-play-compat.mjs";
 
 const xml = `<report><package name="controllers"><class name="controllers/UserApp"><method name="index"><counter type="INSTRUCTION" missed="0" covered="4"/><counter type="BRANCH" missed="0" covered="2"/></method><method name="admin"><counter type="INSTRUCTION" missed="3" covered="0"/><counter type="BRANCH" missed="1" covered="0"/></method></class></package></report>`;
+
+test("JaCoCo CLI resolution prefers the vendored artifact and explicit override", () => {
+  assert.equal(resolveCliJar({}), join(process.cwd(), "tools/jacoco/0.8.14/jacococli.jar"));
+  assert.equal(resolveCliJar({ YONA_LEGACY_JACOCO_CLI: "/tmp/custom-cli.jar" }), "/tmp/custom-cli.jar");
+});
 
 test("JaCoCo XML parsing emits class counters and uncovered methods", () => {
   const parsed = parseJacocoXml(xml);
