@@ -8,7 +8,7 @@
 // Usage: node scripts/differential/run.mjs [--legacy-url URL] [--yoram-port N] [--scenario ID ...]
 
 import { spawn, spawnSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, openSync, readdirSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, openSync, readdirSync, readFileSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -29,10 +29,11 @@ import { HarnessError, formatSummary, summarizeExecution, violation, writeReport
 import { launchWtrBrowser } from "../wtr-browser.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const outputDir = path.join(repoRoot, ".agent/differential");
+const defaultOutputDir = path.join(repoRoot, ".agent/differential");
+let outputDir = path.resolve(process.env.YONA_DIFFERENTIAL_OUTPUT_DIR ?? defaultOutputDir);
 import { matchBehaviors, validateScenarios } from "./dsl.mjs";
 import { ACTION_DEFINITIONS, scenarios } from "./scenarios/index.mjs";
-const yoramRuntimeDir = path.join(outputDir, "yoram");
+let yoramRuntimeDir = path.join(outputDir, "yoram");
 
 
 const SKELETON_EXTRACT = () => {
@@ -118,12 +119,20 @@ async function hoverAnchor(page, selector) {
 }
 
 export function parseArgs(argv) {
-  const options = { legacyUrl: process.env.YONA_LEGACY_URL ?? "http://127.0.0.1:9000", yoramPort: null, scenarioIds: [] };
+  const options = {
+    legacyUrl: process.env.YONA_LEGACY_URL ?? "http://127.0.0.1:9000",
+    yoramPort: null,
+    scenarioIds: (process.env.YONA_DIFFERENTIAL_SCENARIO_IDS ?? "").split(",").filter(Boolean),
+    partialReportPath: process.env.YONA_DIFFERENTIAL_PARTIAL_REPORT ?? null,
+    outputDir: process.env.YONA_DIFFERENTIAL_OUTPUT_DIR ?? null,
+  };
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === "--legacy-url") options.legacyUrl = argv[++i];
     else if (argv[i] === "--yoram-port") options.yoramPort = Number(argv[++i]);
     else if (argv[i] === "--scenario") options.scenarioIds.push(argv[++i]);
     else if (argv[i] === "--scenarios") options.scenarioIds.push(...(argv[++i] ?? "").split(",").filter(Boolean));
+    else if (argv[i] === "--partial-report") options.partialReportPath = argv[++i];
+    else if (argv[i] === "--output-dir") options.outputDir = argv[++i];
   }
   return options;
 }
@@ -1088,6 +1097,8 @@ export async function executeStep(context) {
 // --- sweep ------------------------------------------------------------------
 
 export async function runSweep(options = {}) {
+  outputDir = path.resolve(options.outputDir ?? process.env.YONA_DIFFERENTIAL_OUTPUT_DIR ?? defaultOutputDir);
+  yoramRuntimeDir = path.join(outputDir, "yoram");
   const runId = `sweep-${Date.now().toString(36)}`;
   const infraErrors = [];
   let yoramHandle = null;
@@ -1139,7 +1150,7 @@ export async function runSweep(options = {}) {
       for (const scenario of selectedScenarios) {
         report.scenarios.push({ id: scenario.id, title: scenario.title, behaviorIds: [], violations: [], errors: [...infraErrors], stepResults: [] });
       }
-      report.executionAccounting = summarizeExecution(report, scenarios.length);
+      report.executionAccounting = summarizeExecution(report, selectedScenarios.length);
       report.dbProjection = { skipped: true, reason: [...infraErrors] };
       return report;
     }
@@ -1207,10 +1218,23 @@ export async function runSweep(options = {}) {
         }
       }
       report.scenarios.push(entry);
+      const partialPath = options.partialReportPath ?? process.env.YONA_DIFFERENTIAL_PARTIAL_REPORT;
+      if (partialPath) {
+        mkdirSync(path.dirname(path.resolve(partialPath)), { recursive: true });
+        const temporary = `${path.resolve(partialPath)}.tmp`;
+        writeFileSync(temporary, `${JSON.stringify({ ...report, status: "RUNNING" }, null, 2)}\n`);
+        renameSync(temporary, path.resolve(partialPath));
+        const progressPath = process.env.YONA_DIFFERENTIAL_PROGRESS;
+        if (progressPath) {
+          const progressTemporary = `${path.resolve(progressPath)}.tmp`;
+          writeFileSync(progressTemporary, `${JSON.stringify({ status: "RUNNING", scenarioId: scenario.id, attempted: report.scenarios.length }, null, 2)}\n`);
+          renameSync(progressTemporary, path.resolve(progressPath));
+        }
+      }
     }
 
     report.behaviorsCovered = [...new Set(report.scenarios.flatMap((scenario) => scenario.behaviorIds))];
-    report.executionAccounting = summarizeExecution(report, scenarios.length);
+    report.executionAccounting = summarizeExecution(report, selectedScenarios.length);
 
     // Teardown before DB projections: the H2 file lock releases on stop.
     await yoramHandle.stop();
@@ -1221,7 +1245,7 @@ export async function runSweep(options = {}) {
     return report;
   } catch (error) {
     infraErrors.push(`sweep: ${error.message}`);
-    report.executionAccounting = summarizeExecution(report, scenarios.length);
+    report.executionAccounting = summarizeExecution(report, selectedScenarios.length);
     return report;
   } finally {
     if (browserHandle) await browserHandle.close().catch(() => {});

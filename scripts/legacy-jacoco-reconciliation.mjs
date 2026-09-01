@@ -549,7 +549,12 @@ function baselineSummary(report, execPath, reportXmlPath) {
 export function run(env = process.env) {
   const outputDir = resolve(env.YONA_LEGACY_JACOCO_OUTPUT_DIR ?? defaultOutputDir);
   const reportXmlPath = resolve(env.YONA_LEGACY_JACOCO_XML ?? join(outputDir, "report.xml"));
-  const report = readJson(resolve(repoRoot, ".agent/differential/report.json"));
+  const differentialReportPath = env.YONA_DIFFERENTIAL_REPORT
+    ? resolve(env.YONA_DIFFERENTIAL_REPORT)
+    : env.YONA_DIFFERENTIAL_OUTPUT_DIR
+      ? join(resolve(env.YONA_DIFFERENTIAL_OUTPUT_DIR), "report.json")
+      : join(repoRoot, ".agent/differential/report.json");
+  const report = readJson(differentialReportPath);
   const reportSummaryPath = join(outputDir, "summary.json");
   const reportIdentityPath = join(outputDir, "coverage-identity.json");
   const reportSummary = existsSync(reportSummaryPath) ? readJson(reportSummaryPath) : {};

@@ -26,6 +26,11 @@ import * as userorg from "./userorg.mjs";
 
 const domains = [auth, project, issues, pullrequestCode, userorg];
 
+export const DOMAIN_REGISTRY = Object.fromEntries(
+  [["auth", auth], ["project", project], ["issues", issues], ["pullrequest-code", pullrequestCode], ["userorg", userorg]]
+    .map(([name, domain]) => [name, { scenarios: domain.scenarios, actionDefinitions: domain.actionDefinitions }]),
+);
+
 export const scenarios = [...auth.scenarios, ...project.scenarios, ...issues.scenarios, ...pullrequestCode.scenarios, ...userorg.scenarios].sort((a, b) => a.id.localeCompare(b.id));
 
 export const ACTION_DEFINITIONS = Object.assign({}, ...domains.map((domain) => domain.actionDefinitions));
