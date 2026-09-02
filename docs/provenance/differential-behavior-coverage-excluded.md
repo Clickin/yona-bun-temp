@@ -246,18 +246,45 @@ semantics where the Yoram state remains unchanged or stricter:
 | B-0221 / S13 | `/user/editform/defultLoginPage` | `yona-original/app/controllers/UserApp.java:1372-1380` reads the query `path` and returns `200` even when it is absent; Yoram `crates/server/src/routes/workspace.rs:1905-1930` rejects the missing/invalid landing path. | Malformed empty boundary payload is not supported UI behavior; no default landing state is accepted by Yoram. |
 | B-0159 / U25 | `/sites/import` | `yona-original/app/controllers/SiteApp.java:368-387` redirects to `/sites/data` when no multipart `data` file exists; invalid import errors use `400`. | Legacy permissive redirect and Yoram `400` both reject the invalid probe and persist no import state; the legacy fallback is not a supported success contract. |
 
-### `REAL_OBSERVABLE_MISMATCH` — 4 rows pending fix/rerun
+### `REAL_OBSERVABLE_MISMATCH` — 4 historical rows, all fixed and verified
 
 These four rows (B-0035 contributes two route rows; B-0117 and B-0155 contribute
-one each) remain unresolved and are deliberately not hidden under
-`ACCEPTED_DIVERGENCE`. Separate workers own the minimum fixes; this ledger
-must be rerun against the same report contract before any reclassification:
+one each) were deliberately not hidden under `ACCEPTED_DIVERGENCE`. The
+post-commit rerun and direct contract evidence below verify the minimum fixes;
+the archived pre-fix report retains these four historical classifications.
 
-| behavior / scenario | exact route(s) | observed mismatch | required evidence before reclassification |
+| behavior / scenario | exact route(s) | historical mismatch | verified disposition |
 | --- | --- | --- | --- |
-| B-0035 / I12 | `/-_-api/v1/owners/admin/projects/sample/issues/1/assignableUsers`; `/-_-api/v1/owners/admin/projects/sample/assignableUsers` | Legacy `IssueApi.java:789-930` emits localized custom rows without `pureNameOnly`/`type`; Yoram's `crates/persistence/src/repo/issue_picker.rs:35-68,250-344` emits stable keys plus those fields, while `scripts/differential/run.mjs:509-540` adds an extra `bob` project member. The existing `crates/server/tests/issue_assignable_contract.rs:249-391` covers the stable-key contract but not this exact external JSON pair. | Re-run both exact external API rows after the fixture/mapper fix; compare candidate set and complete JSON shape, not only message keys. |
-| B-0117 / S11 | `/authenticate/github/denied` | Legacy answers `303` to `/` with denial flash semantics; the sweep observed Yoram `200` without `Location`. | Reproduce the raw request and verify `303`, destination, denial query/flash rendering, and no session mutation against `yona-original/app/controllers/Application.java:75-80`, `crates/server/src/routes/auth.rs:1508-1520`, and `auth_workspace_contract.rs:1641-1664`. |
-| B-0155 / S18 | `/restricted` | Legacy `Secured` redirects an anonymous request; the sweep observed Yoram `200` auth shell with no `Location` when anonymous access is enabled. | Re-run with anonymous access enabled and disabled; verify anonymous redirect plus authenticated restricted screen, using `yona-original/app/controllers/Restricted.java:9-15`, `Secured.java:19-27`, and `crates/server/src/anonymous_access.rs:11-39`. |
+| B-0035 / I12 | `/-_-api/v1/owners/admin/projects/sample/issues/1/assignableUsers`; `/-_-api/v1/owners/admin/projects/sample/assignableUsers` | Legacy `IssueApi.java:789-930` emits localized custom rows without `pureNameOnly`/`type`; Yoram's `crates/persistence/src/repo/issue_picker.rs:35-68,250-344` emitted stable keys plus those fields, while `scripts/differential/run.mjs:509-540` added an extra `bob` project member. | Fixed fixture membership and external mapper/avatar localization. Post-commit I12 has zero violations; `issue_assignable_contract.rs` is 9/9 and `rest_contract.rs` is 20/20. |
+| B-0117 / S11 | `/authenticate/github/denied` | Legacy answers `303` to `/` with denial flash semantics; the pre-fix sweep observed Yoram `200` without `Location`. | Fixed direct denied route. Post-commit S11 has zero violations and `auth_workspace_contract.rs` asserts raw `303`, `/yona/`, no-cache headers, exact `PLAY_FLASH`, and no session mutation. |
+| B-0155 / S18 | `/restricted` | Legacy `Secured` redirects an anonymous request; the pre-fix sweep observed Yoram `200` auth shell with no `Location` when anonymous access was enabled. | Fixed route-specific gate. Post-commit S18 compares the same anonymous redirect and renders `/`; its only remaining row is behavior-less DOM shell drift (`route="/"`, `behaviorId=null`), not B-0155. `auth_workspace_contract.rs` asserts raw `303`, `/yona/`, and exact `PLAY_FLASH`. |
+
+#### Post-commit verification artifact
+
+The isolated post-commit run is archived at
+`.agent/differential/archive/post-commit-b865e86f7/report.json` (also retained
+at `.agent/differential/post-commit-b865e86f7/report.json`; `runId=sweep-mtk4a3fg`,
+`startedAt=2026-09-02T13:13:30.845Z`,
+`finishedAt=2026-09-02T13:16:21.820Z`; SHA-256
+`1b8ee68effb10377abb964c4b0d2e677ce3af9150614e520b6f1e40a5ef73dc3`). All
+3/3 scenarios and 5/5 covered behaviors attempted, with zero global
+`INFRA_ERROR`s and zero step errors:
+
+| scenario | result |
+| --- | --- |
+| I12 / B-0035 | zero violations; both issue/project external assignable-user API rows matched after fixture and mapper fixes |
+| S11 / B-0117 | zero violations; OAuth denied action and provider-authorize contract executed |
+| S18 / B-0155 | authentication status/location matched; one accepted DOM shell row at `/` has no behavior ID and is unrelated to the protected-route contract |
+
+The earlier healthy-but-limited auth run
+`.agent/differential` `runId=sweep-mtk3woq0` recorded S11's provider-authorize
+step as `HARNESS_ERROR` because no provider URL was available and S18's old
+adapter saw no deterministic Yoram `Location`; the canceled `auth2` attempt
+produced no report. Neither is accepted product evidence. These limitations
+are now superseded for S11/S18 by the post-commit report and direct raw
+contract tests above. The remaining `S6/B-0091` `INFRA_ERROR` and four
+unverified prerequisite rows below remain open; this is not a parity-complete
+or 100% claim.
 
 The current non-accepted rows remain actionable: `S6/B-0091` is
 `INFRA_ERROR` because the browser/CDP selector `#two-column-mode-checkbox` was
