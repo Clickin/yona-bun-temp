@@ -1,7 +1,7 @@
 use axum::{
     extract::{Multipart, Path, Query, RawQuery},
     http::{HeaderMap, HeaderValue, StatusCode},
-    response::{IntoResponse, Response},
+    response::{IntoResponse, Redirect, Response},
     routing::get,
     Json, Router,
 };
@@ -563,16 +563,15 @@ pub(crate) fn routes(service: PilotServiceImpl) -> Router {
         .route(
             "/files/{id}/",
             get(
-                move |headers: HeaderMap, Path(id): Path<i64>, RawQuery(raw_query): RawQuery| {
-                    async move {
-                        get_uploaded_file(
-                            headers,
-                            id,
-                            raw_query,
-                            file_read_trailing_service.clone(),
-                        )
-                        .await
-                    }
+                move |Path(id): Path<i64>, RawQuery(raw_query): RawQuery| {
+                    let location = base_path_href(
+                        &file_read_trailing_service.base_path,
+                        &format!("/files/{id}"),
+                    );
+                    let location = raw_query
+                        .map(|query| format!("{location}?{query}"))
+                        .unwrap_or(location);
+                    async move { Redirect::to(&location).into_response() }
                 },
             )
             .post(move |headers: HeaderMap, Path(id): Path<i64>| {

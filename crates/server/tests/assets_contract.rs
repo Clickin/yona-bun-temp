@@ -1400,21 +1400,14 @@ async fn file_upload_requires_auth_and_preserves_general_attachments_under_legac
         )
         .await
         .unwrap();
-    assert_eq!(get_text_file_trailing_slash.status(), StatusCode::OK);
+    assert_eq!(get_text_file_trailing_slash.status(), StatusCode::SEE_OTHER);
     assert_eq!(
         get_text_file_trailing_slash
             .headers()
-            .get(http::header::CONTENT_DISPOSITION)
+            .get(http::header::LOCATION)
             .and_then(|value| value.to_str().ok()),
-        Some("inline; filename*=UTF-8''notes.txt")
+        Some(format!("/yona/files/{text_file_id}").as_str())
     );
-    let trailing_slash_body = get_text_file_trailing_slash
-        .into_body()
-        .collect()
-        .await
-        .unwrap()
-        .to_bytes();
-    assert_eq!(trailing_slash_body.as_ref(), text_bytes);
 
     let download_text_file = app
         .clone()

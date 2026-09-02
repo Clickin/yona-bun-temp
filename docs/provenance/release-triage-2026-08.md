@@ -65,6 +65,10 @@ separately and are not findings or coverage failures.
 - The prior P9/I19 harness chain, SMTP token replay, CDP observation, PR seed,
   and label-residue findings do not appear in the current report's
   classification counts. Their old entries were stale triage, not open work.
+- P20/B-0121 attachment trailing-slash normalization is closed after this
+  report: legacy `GET /files/:id/` is observed as HTTP 303 and Yoram now
+  redirects to the canonical `/files/:id`; the focused assets contract and
+  differential scenario `sweep-mtjzxaru` both pass with zero violations.
 
 Known environment-dependent follow-ups remain outside the strict differential
 gate. They are listed for a human in `docs/provenance/human-verification-2026-08.md`.
@@ -76,7 +80,7 @@ gate. They are listed for a human in `docs/provenance/human-verification-2026-08
 - B-0035 assignable-user i18n keys: Yoram returns stable keys and the React
   client localizes them.
 - B-0117 OAuth denied route shape, settings-surface replacement, restricted
-  guard, auth-shell, `/_init`, attachment trailing slash, HEAD pseudo-ref,
+  guard, auth-shell, `/_init`, HEAD pseudo-ref,
   site-import boundary, throwaway mutation status, and migrator-owned
   `-_-api/v1` export/import rows retain their documented rationales.
 - I23 markdown preview is intentionally client-owned by `react-markdown`;

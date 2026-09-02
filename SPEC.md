@@ -1152,7 +1152,7 @@ DELETE /:owner/:project/webhooks/:id  → 웹훅 삭제
 POST  /files                  → 파일 업로드
 GET   /files                  → 파일 목록(JSON, containerType/containerId)
 GET   /files/:id              → 파일 다운로드
-GET   /files/:id/?            → 파일 다운로드 (legacy trailing-slash alias)
+GET   /files/:id/?            → canonical `/files/:id`로 303 redirect (legacy trailing-slash route)
 DELETE /files/:id             → 파일 삭제
 POST  /files/:id              → legacy `_method=delete` 파일 삭제
 POST  /files/:id/?            → legacy `_method=delete` 파일 삭제 (trailing-slash alias)
@@ -1177,7 +1177,7 @@ POST  /files/:id/?            → legacy `_method=delete` 파일 삭제 (trailin
 - [x] 목록: legacy `GET /files?containerType=&containerId=` returns `{attachments,tempFiles}` with `id/name/url/size/mimeType` for `yobi.Files` / `yobi.Attachments`
 - [x] 다운로드: `GET /files/:id` → 원본 파일명 + MIME type + content
 - [x] 삭제: `DELETE /files/:id` 또는 legacy `POST /files/:id` → 업로드 작성자 또는 site admin만 삭제 가능
-- [x] Legacy trailing-slash attachment aliases `GET /files/:id/` and `POST /files/:id/` reuse the same download/delete behavior
+- [x] Legacy trailing-slash attachment routes: `GET /files/:id/` returns a 303 redirect to `/files/:id`; `POST /files/:id/` remains the `_method=delete` alias
 - [x] 마크다운 에디터에서 drag-and-drop 또는 클립보드 붙여넣기로 이미지 첨부 가능: 이슈 본문/댓글, 게시판 글/댓글, PR 생성/수정 본문, 일반 PR review comment, milestone 생성/수정 본문, non-ranged Git code comment/reply/edit 에디터, inline ranged Git code-comment reply/edit 에디터는 legacy처럼 이미지 업로드 후 `![name](url)` 삽입과 `attachmentIds` 제출을 지원한다. Git/PR diff same-file multi-line block selection과 inline code-comment edit도 구현됐다.
 - [x] Issue body/comment attachment binding keeps legacy `ISSUE_POST` / `ISSUE_COMMENT` container names, only moves the current actor's temporary uploads, and edit sync removes omitted attachments.
 - [x] Board post/comment attachment binding keeps legacy `BOARD_POST` / `NONISSUE_COMMENT` container names, only moves the current actor's temporary uploads, and edit sync removes omitted attachments.
@@ -1912,7 +1912,8 @@ Environment variable equivalents use the names exercised by `crates/server/tests
 | `/files`                           | POST     | `POST /files` direct                  | —                                             | implemented        |
 | `/files/:id`                       | GET      | `GET /files/:id` direct               | —                                             | implemented        |
 | `/files/:id`                       | POST/DELETE | `POST/DELETE /files/:id` direct    | —                                             | implemented        |
-| `/files/:id/`                      | GET/POST | `GET/POST /files/:id/` direct         | —                                             | implemented        |
+| `/files/:id/`                      | GET      | `GET /files/:id/` → 303 `/files/:id` | —                                             | implemented        |
+| `/files/:id/`                      | POST     | `POST /files/:id/` direct            | —                                             | implemented        |
 | `/-_-api/v1/favoriteProjects`      | GET      | favorite project list                 | legacy user-menu helper JSON                  | implemented        |
 | `/-_-api/v1/favoriteProjects/:id`  | POST     | favorite project toggle               | legacy user-menu helper JSON                  | implemented        |
 | `/-_-api/v1/favoriteIssues`        | GET      | favorite issue list                   | legacy user-menu helper JSON                  | implemented        |
