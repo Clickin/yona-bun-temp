@@ -20,9 +20,13 @@ Therefore:
 - Keep `/_import` as already implemented app-runtime Git clone parity.
 - Reclassify the ambiguous `GitHub Import` deferred row as legacy outbound
   GitHub migration, not app-runtime project import.
-- Do not mount GitHub API migration behavior in the Rust app runtime.
-- Any future work belongs in migration-tool code as an evidence-gated external
-  destination adapter with deterministic GitHub API fixtures/mocks.
+- Mount the bounded, config-gated legacy `/migration` runtime in Rust: preserve
+  the disabled default, exchange the legacy OAuth code, serve the authenticated
+  Yona source exports, and let the browser perform the evidenced GitHub
+  repository, warning, assignee-mapping, milestone, and issue-import behavior.
+- This runtime requires an externally configured GitHub OAuth client with
+  repository/org permissions and reachable GitHub API; it is not a
+  GitHub-to-Yona import adapter.
 - A GitHub-to-Rust/Yona import adapter remains not applicable until legacy
   route/controller/test evidence proves such source semantics.
 
@@ -66,15 +70,15 @@ issue by `postNumber`. It is not GitHub API import.
 The current Rust app already covers the legacy `/_import` Git clone behavior
 and should keep that as app-runtime project parity.
 
-The legacy outbound GitHub migration UI/API is external-provider migration
-scope. It can be revived only as a migration-tool destination adapter, using
-fixtures for:
-
-- Yona source export payloads from `/migration/:owner/projects/:projectName/*`.
-- GitHub destination repository/user/admin checks.
-- GitHub milestone creation.
-- GitHub issue-import creation with comments, dates, labels, assignee mapping,
-  milestone mapping, post-to-issue conversion, empty body fallback, and the
-  legacy post label.
-- The unsupported attachment delegation path, which the legacy script logs as
-  not supported.
+The bounded Rust `/migration` runtime now preserves the legacy outbound
+Yona-to-GitHub behavior while remaining disabled by default. It covers the
+authenticated OAuth-code token handoff, Yona source exports from
+`/migration/:owner/projects/:projectName/*`, GitHub destination
+repository/user/admin checks and existing-data warnings, assignee mapping,
+milestone creation, and GitHub issue-import creation with comments, dates,
+labels, milestone mapping, post-to-issue conversion, empty-body fallback,
+legacy post labeling, and optional `withWikiCommit` attachment/link paths.
+The unsupported attachment delegation path remains unsupported, as in the
+legacy script. Operation still requires the external GitHub OAuth client,
+repository/org permissions, and reachable GitHub API; no GitHub-to-Yona import
+semantics are claimed.
