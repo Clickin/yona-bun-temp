@@ -43425,10 +43425,6 @@ body:has(.site-admin-affix-surface) #mySidenav {
   margin-bottom: 10px;
 }
 
-label[data-owner="site-massmail-recipient-radios"]:has(#mailtoPrj:checked) ~ #project-list-wrap {
-  display: block;
-}
-
 [data-owner="site-massmail-project-input"] {
   margin: 0px;
   width: 206px;

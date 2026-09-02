@@ -1,11 +1,16 @@
 # Phase 6 release-gate flow — fixture consumption and preflight implementation
 
-Status: IMPLEMENTED and verified end-to-end (2026-08-24). Preflight lives in
+Status: implemented gate evidence (2026-08-24), not final parity or release
+authorization. Preflight lives in
 `crates/yona-migrate/src/preflight.rs` (subcommand `yona-migrate preflight`, wired in
 `main.rs`; `validate_schema_against_manifest` in `crates/migration/src/lib.rs` was made
 `pub` for reuse). Gate script: `scripts/release-gate.mjs`, wired as npm
 `test:release-gate`. The original gap analysis this implementation closes is kept at the
 bottom for reference.
+
+This existing migration/deployment gate may be reused for evidence, but it does
+not authorize a release from `yona-bun-temp`; release is only from a new
+canonical repository after the Phase 0 closure contract is satisfied.
 
 ## Fixture to consume
 

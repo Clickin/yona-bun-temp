@@ -11,6 +11,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, openSync, readdirSync, readFileSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 
@@ -34,6 +35,25 @@ let outputDir = path.resolve(process.env.YONA_DIFFERENTIAL_OUTPUT_DIR ?? default
 import { matchBehaviors, validateScenarios } from "./dsl.mjs";
 import { ACTION_DEFINITIONS, scenarios } from "./scenarios/index.mjs";
 let yoramRuntimeDir = path.join(outputDir, "yoram");
+
+const PARITY_USERS = [
+  { loginId: "admin", name: "Site Admin", email: "admin@example.com" },
+  { loginId: "alice", name: "Alice Kim", email: "alice@example.com" },
+  { loginId: "bob", name: "Bob Park", email: "bob@example.com" },
+  { loginId: "carol", name: "Carol Lee", email: "carol@example.com" },
+];
+
+// Keep the public expression-list catalog stable even though old sweeps leave
+// behind projects with auto-generated names. These are the rows present in the
+// legacy parity fixture and therefore the only project rows Yoram needs.
+const PARITY_SHARABLE_PROJECTS = [
+  { id: 1, owner: "admin", name: "sample", vcs: "GIT" },
+  { id: 2, owner: "admin", name: "svnplayground", vcs: "Subversion" },
+  { id: 3, owner: "alice", name: "sample", vcs: "GIT" },
+  { id: 262, owner: "admin", name: "parity-git-wvamt5efl73", vcs: "GIT" },
+  { id: 267, owner: "admin", name: "parity-svn-wvbmt5esi2l", vcs: "Subversion" },
+  { id: 268, owner: "admin", name: "parity-svn-wvbmt5etjsa", vcs: "Subversion" },
+];
 
 
 const SKELETON_EXTRACT = () => {
@@ -372,11 +392,11 @@ async function provisionYoramParityAccounts(baseUrl) {
     .join("; ");
   const users = [
     { loginId: "admin", password: "admin", name: "Site Admin", email: "admin@example.com" },
+    { loginId: "carol", password: "carolcarol", name: "Carol Lee", email: "carol@example.com" },
     { loginId: "alice", password: "alice", name: "Alice Kim", email: "alice@example.com" },
     // ponytail: Yoram REST enforces LEGACY_MIN_PASSWORD_LENGTH=4 while the
     // legacy parity seed uses 3-char "bob"; bump until a bob actor scenario exists.
     { loginId: "bob", password: "bobbob", name: "Bob Park", email: "bob@example.com" },
-    { loginId: "carol", password: "carolcarol", name: "Carol Lee", email: "carol@example.com" },
   ];
   for (const user of users) {
     const result = await session.request({
@@ -406,6 +426,128 @@ async function provisionYoramParityAccounts(baseUrl) {
   }
 }
 
+function reconcileYoramFixturesPreboot(databasePath) {
+  const database = new DatabaseSync(databasePath);
+  try {
+    database.exec("pragma busy_timeout = 5000");
+    const updateUser = database.prepare(
+      "update n4user set name = ?, email = ?, state = 'active', english_name = ? where login_id = ?",
+    );
+    for (const user of PARITY_USERS) {
+      updateUser.run(user.name, user.email, user.name, user.loginId);
+    }
+    database
+      .prepare("update n4user set state = 'deleted' where login_id not in (?, ?, ?, ?) and state <> 'deleted'")
+      .run(...PARITY_USERS.map((user) => user.loginId));
+    database
+      .prepare("delete from attachment where container_type = 'USER_AVATAR' and owner_login_id in (?, ?, ?, ?)")
+      .run(...PARITY_USERS.map((user) => user.loginId));
+
+    database.exec("pragma foreign_keys = off; begin");
+    try {
+      let movedSampleId = null;
+      // The old persisted Yoram fixture used id=2 for admin/sample. Move that
+      // history aside so the public expression-list IDs can match legacy's
+      // svnplayground/sample rows without deleting its issue or repository.
+      const oldSample = database
+        .prepare("select id from project where id = 2 and owner = 'admin' and name = 'sample' limit 1")
+        .get();
+      if (oldSample) {
+        const maxProjectId = Number(database.prepare("select coalesce(max(id), 0) as id from project").get().id ?? 0);
+        const replacementId = Math.max(maxProjectId + 1, 1000);
+        const tables = database
+          .prepare("select name from sqlite_master where type = 'table' order by name")
+          .all()
+          .map((row) => row.name)
+          .filter((tableName) => tableName !== "project");
+        for (const tableName of tables) {
+          const columns = database.prepare(`pragma table_info("${tableName.replaceAll('"', '""')}")`).all();
+          if (columns.some((column) => column.name === "project_id")) {
+            database
+              .prepare(`update "${tableName.replaceAll('"', '""')}" set project_id = ? where project_id = ?`)
+              .run(replacementId, 2);
+          }
+        }
+        database.prepare("update project set id = ?, project_scope = 'private' where id = 2").run(replacementId);
+        movedSampleId = replacementId;
+      }
+
+      // Keep old rows for archaeology, but make the public catalog deterministic.
+      const projectPlaceholders = PARITY_SHARABLE_PROJECTS.map(() => "?").join(", ");
+      database
+        .prepare(`update project set project_scope = 'private' where id not in (${projectPlaceholders})`)
+        .run(...PARITY_SHARABLE_PROJECTS.map((project) => project.id));
+      const insertProject = database.prepare(
+        `insert into project
+          (id, name, overview, vcs, owner, created_date, last_issue_number,
+           last_posting_number, default_reviewer_count, is_using_reviewer_count,
+           project_scope, is_code_accessible_member_only)
+         values (?, ?, ?, ?, ?, ?, 0, 0, 0, 0, 'public', 0)`,
+      );
+      const updateProject = database.prepare(
+        "update project set name = ?, overview = ?, vcs = ?, owner = ?, project_scope = 'public' where id = ?",
+      );
+      for (const project of PARITY_SHARABLE_PROJECTS) {
+        const overview = `Differential parity fixture ${project.owner}/${project.name}`;
+        const result = updateProject.run(project.name, overview, project.vcs, project.owner, project.id);
+        if (Number(result.changes ?? 0) === 0) {
+          insertProject.run(project.id, project.name, overview, project.vcs, project.owner, new Date().toISOString());
+        }
+      }
+
+      const userId = (loginId) =>
+        Number(database.prepare("select id from n4user where login_id = ? limit 1").get(loginId)?.id ?? 0);
+      const replaceMembers = (projectId, members) => {
+        database.prepare("delete from project_user where project_id = ?").run(projectId);
+        const insertMember = database.prepare(
+          "insert into project_user (user_id, project_id, role_id) values (?, ?, ?)",
+        );
+        for (const [loginId, roleId] of members) {
+          insertMember.run(userId(loginId), projectId, roleId);
+        }
+      };
+      for (const project of PARITY_SHARABLE_PROJECTS) {
+        replaceMembers(
+          project.id,
+          project.id === 1
+            ? [
+                ["admin", 3],
+                ["admin", 1],
+                ["bob", null],
+              ]
+            : project.id === 3
+            ? [
+                ["admin", 3],
+                ["alice", 1],
+              ]
+            : [
+                ["admin", 3],
+                ["admin", 1],
+              ],
+        );
+      }
+      if (!movedSampleId) {
+        const oldSample = database
+          .prepare("select id from project where owner = 'admin' and name = 'sample' and id <> 1 limit 1")
+        .get();
+        movedSampleId = oldSample?.id ? Number(oldSample.id) : null;
+      }
+      if (movedSampleId) {
+        database
+          .prepare("update project set owner = 'admin', name = ?, project_scope = 'private' where id = ?")
+          .run(`sample-history-${movedSampleId}`, movedSampleId);
+        replaceMembers(movedSampleId, [["admin", 3], ["admin", 1], ["bob", null]]);
+      }
+      database.exec("commit; pragma foreign_keys = on");
+    } catch (error) {
+      database.exec("rollback; pragma foreign_keys = on");
+      throw new Error(`Yoram parity fixture reconciliation failed: ${error.message}`, { cause: error });
+    }
+  } finally {
+    database.close();
+  }
+}
+
 async function bootYoram(port) {
   mkdirSync(yoramRuntimeDir, { recursive: true });
   mkdirSync(path.join(yoramRuntimeDir, "data"), { recursive: true });
@@ -429,6 +571,7 @@ async function bootYoram(port) {
     }
   }
 
+  reconcileYoramFixturesPreboot(databasePath);
   const seedModule = await import(pathToFileURL(path.join(repoRoot, "scripts/run-dev-backend-once.mjs")).href);
   seedModule.reconcileDefaultDevSiteAdmin(databasePath);
   seedModule.reconcileDefaultDevParitySeed(databasePath, yoramRuntimeDir);
@@ -721,6 +864,46 @@ async function reconcileLegacyFixturesPreboot() {
     const dataLine = (shellOnRebuilt(sql).split("\n")[1] ?? "").trim();
     return Number(/(\d+)/.exec(dataLine)?.[0] ?? "0");
   };
+  const parityUserValues = {
+    admin: ["Site Admin", "admin@example.com"],
+    alice: ["Alice Kim", "alice@example.com"],
+    bob: ["Bob Park", "bob@example.com"],
+    carol: ["Carol Lee", "carol@example.com"],
+  };
+  for (const [loginId, [name, email]] of Object.entries(parityUserValues)) {
+    shellOnRebuilt(
+      `UPDATE n4user SET name = '${name}', email = '${email}', english_name = NULL, ` +
+        "state = 'ACTIVE', avatar_url = NULL WHERE login_id = '" +
+        loginId +
+        "'",
+    );
+  }
+  if (scalar("SELECT COUNT(*) FROM n4user WHERE login_id = 'bob'") === 0) {
+    const nextUserId = scalar("SELECT COALESCE(MAX(id), 0) FROM n4user") + 1;
+    shellOnRebuilt(
+      `INSERT INTO n4user (id, name, login_id, password, password_salt, email, avatar_url, state, lang, is_guest, english_name) ` +
+        `VALUES (${nextUserId}, 'Bob Park', 'bob', '9fkLYYr+OyyyFsT+mv04SJH5kUw+BGdG5VsLJdpxBF4=', 'parity-bob-salt', 'bob@example.com', NULL, 'ACTIVE', 'ko-KR', 0, 'Bob Park')`,
+    );
+  } else {
+    shellOnRebuilt(
+      "UPDATE n4user SET password = '9fkLYYr+OyyyFsT+mv04SJH5kUw+BGdG5VsLJdpxBF4=', " +
+        "password_salt = 'parity-bob-salt', state = 'ACTIVE' WHERE login_id = 'bob'",
+    );
+  }
+  shellOnRebuilt(
+    "UPDATE n4user SET state = 'DELETED' WHERE login_id NOT IN ('admin', 'alice', 'bob', 'carol') AND state <> 'DELETED'",
+  );
+  const publicProjectIds = PARITY_SHARABLE_PROJECTS.map((project) => project.id).join(", ");
+  shellOnRebuilt(
+    `UPDATE project SET project_scope = 'PRIVATE' WHERE project_scope = 'PUBLIC' AND id NOT IN (${publicProjectIds})`,
+  );
+  for (const project of PARITY_SHARABLE_PROJECTS) {
+    shellOnRebuilt(
+      `UPDATE project SET owner = '${project.owner}', name = '${project.name}', vcs = '${project.vcs}', ` +
+        "project_scope = 'PUBLIC' WHERE id = " +
+        project.id,
+    );
+  }
   // Ensure category + label rows exist for each parity seed tuple. Legacy H2
   // has no identity columns here, so ids are allocated explicitly from the
   // global max across both tables.
@@ -1126,10 +1309,10 @@ export async function runSweep(options = {}) {
     // Pre-boot window: no JVM holds the H2 file yet. Reconciliation MUST
     // apply — measuring against polluted fixtures is worse than not running,
     // so any failure aborts the sweep loudly.
+    await stopLegacy();
     await reconcileLegacyFixturesPreboot();
     patchLegacySmtpConf();
     // The legacy instance must be restarted to pick up the patched smtp conf.
-    await stopLegacy();
     mailSink = await bootMailSink();
     let legacyBooted = true;
     try {

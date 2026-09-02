@@ -5,6 +5,27 @@ Date: 2026-05-06
 Language: Korean-first, English identifiers
 Audience: Codex CLI 에이전트 및 개발자 — 이 문서는 외주 업무지시서 + 검수내역서를 대체한다
 
+## Phase 0 Closure Contract
+
+이 명세의 최종 목표는 **legacy Yona 1.16의 100% legacy-product parity**다.
+현재 first-priority app-runtime 상태나 중간 gate의 green 결과는 최종 완료가
+아니다. 최종 완료에는 모든 legacy user-visible 기능의 구현·검증이 포함되며,
+user-visible `deferred`/`gap`은 0이어야 한다.
+
+일반적인 `accepted observable divergence`는 최종 gate에서 허용하지 않는다.
+남는 차이는 사용자에게 관찰되지 않는 implementation difference이거나 실제
+legacy bug라는 실행 가능한 근거가 있어야 한다. 1·2순위 구분은 구현 순서일
+뿐 최종 scope exclusion이 아니다.
+
+JaCoCo는 기존 differential/scenario가 놓친 legacy user-visible 실행 경로를
+발견하기 위한 도구일 뿐이며 coverage percentage 목표가 아니다. 기존
+validation gate만 사용하고 새 validation/reconciliation framework를 만들지
+않는다.
+
+이 repository는 parity 구현·evidence 작업 공간이며 release 대상이 아니다.
+100% parity의 human acceptance 뒤 새 canonical repository로 필요한 source와
+문서만 이전하고 최초 release를 그 repository에서 수행한다.
+
 ---
 
 ## 0. 이 문서의 성격과 구속력
@@ -39,9 +60,12 @@ Audience: Codex CLI 에이전트 및 개발자 — 이 문서는 외주 업무�
 | N-06 | 에러 메시지, 빈 상태 텍스트, placeholder 등을 legacy와 다르게 작성                          | copy parity 위반         |
 | N-07 | legacy에서 사용하는 URL 경로 패턴을 변경 (예: `/issues` → `/tickets`)                       | deep-link parity 위반    |
 | N-08 | 변환 범위를 벗어난 아키텍처 논의를 현재 작업에 끌어들이기                                   | scope creep              |
-| N-09 | `reference/mixed-code/**` 코드를 parity 근거 또는 canonical implementation처럼 취급          | legacy reference 원칙 위반 |
+| N-09 | `reference/mixed-code/**` 코드를 parity 근거 또는 canonical implementation처럼 취급          | legacy reference 원칙 위반       |
 | N-10 | 현재 Phase에 속하지 않는 기능을 선행 구현                                                   | Phase gate 위반          |
 | N-11 | 동결된 legacy Yona CSS/LESS 밖의 새 수치나 route 전용 보정 CSS로 screenshot/geometry diff를 상쇄 | pixel parity 기준선 위반 |
+| N-12 | 정상적인 사용자 관찰 가능 차이를 `accepted observable divergence`로 최종 승인                 | 100% parity 위반         |
+| N-13 | JaCoCo coverage percentage를 목표로 삼거나 새 validation/reconciliation framework를 추가       | closure contract 위반   |
+| N-14 | 이 repository에서 RC/public release를 생성하거나 release source of truth로 삼음               | repository migration 규칙 위반 |
 
 ### 0.4 권한과 근거 우선순위
 
@@ -138,6 +162,8 @@ repo root/
 - embedded static assets vs user-uploaded files 분리
 - legacy `/messages.js` JavaScript message lookup route는 base-path와 anonymous access gate를 통과해 `Messages(key, ...)` global을 제공한다
 - 설정: 환경변수 + TOML 파일 (`yoram.toml`)
+- 이 repository에서는 parity 승인 전 release/RC/public release를 생성하지
+  않는다. 최초 release는 승인 후 생성하는 새 canonical repository에서만 한다.
 
 ### 1.5 설정 호환성 — Legacy application.conf 대응
 
@@ -182,7 +208,9 @@ legacy Yona 사용자가 기존 설정을 최소한의 변환으로 새 실행�
 
 **검수 기준**: legacy `application.conf.default`의 모든 핵심 설정 키에 대응하는 환경변수 또는 TOML 키가 존재하고, 설정 migration 가이드 문서가 제공되어야 한다.
 
-Deferred 기능의 설정 키는 1차 PoC에서 **설정 호환성**과 **기능 동작**을 분리한다.
+우선순위가 낮은 기능의 설정 키는 중간 PoC에서 **설정 호환성**과 **기능
+동작**을 분리할 수 있다. 이는 구현 순서상의 기록일 뿐 최종 parity scope에서
+user-visible 기능을 제외하는 근거가 아니다.
 
 - `YONA_AUTH_SOCIAL_LOGIN_ONLY` / `YONA_AUTH_SOCIAL_LOGIN_SUPPORT`: 설정은 파싱하고 auth UI capability에 반영한다. Social-login-only UI gating과 configured provider button rendering을 보존하고, P2-A/P2-B bounded slice는 configured GitHub/Google provider authorization start, deterministic callback identity link/create, real provider token/userinfo HTTP exchange, session creation, denied/unsupported state, connected-provider profile projection, and local PlayAuthenticate/session/logout parity를 구현한다. provider가 없거나 미지원이면 조용히 무시하지 말고 warning/unsupported state를 message-key copy로 노출한다. `/authenticate/:provider`는 unsupported provider를 `/users/loginform?error=unsupported&provider=...`로 되돌려 로그인 화면에 명시 상태를 표시한다. Legacy evidence does not define provider-specific external logout beyond local `/logout` / `/users/logout` session cleanup plus Referer redirect, so that earlier follow-up is retired as not applicable. 2026-07-14 live authorization은 완료됐지만 resulting account에서 connected provider ID가 확인되지 않았으므로, live identity-link persistence/profile projection 진단은 deferred follow-up으로 남긴다.
 - `YONA_LDAP_ENABLED` / `YONA_LDAP_*`: legacy `application.use.ldap.login.supoort`, `ldap.*`, and `ldap.options.*` 호환 설정을 파싱한다. P2-C는 deterministic fixture-backed LDAP boundary로 form-login, email-base login, fallback-to-local, user provisioning/update, password refresh, new-user guest-prefix propagation, and existing-user display-name/nonblank-English-name/password/guest refresh를 구현한다. P2-D는 같은 fixture-backed LDAP boundary를 Smart HTTP/SVN BasicAuth에 연결하고 기존 local password fallback, API token, and session auth behavior를 보존한다. P2-C/P2-D connector follow-up은 fixture가 없을 때 legacy-style simple bind/search LDAP connector를 사용한다.
@@ -210,9 +238,10 @@ Deferred 기능의 설정 키는 1차 PoC에서 **설정 호환성**과 **기능
 
 **용어 정의**:
 
-- `deferred`: 현재 우선순위 밖이라 의도적으로 뒤로 미룸 (Phase 2차 이후)
+- `deferred`: 구현 순서상 뒤로 미룬 **중간 상태** (최종 완료 상태가 아님)
 - `gap`: legacy 대비 아직 구현되지 않음 (구현 예정이나 미착수)
-- `deviation`: 의도적으로 다른 의미나 UX를 채택함 (사유 필수 기재)
+- `deviation`: legacy bug 또는 사용자에게 관찰되지 않는 implementation
+  difference로 입증된 차이 (사유와 evidence 필수)
 
 `deviation` 기록은 최소한 legacy 동작, Rust 동작, 사용자 영향, 허용 사유, provenance 문서 위치를 포함해야 한다. URL deviation은 legacy route, Rust route, redirect/alias 여부를 함께 기록한다.
 Differential sweep 행위 커버리지의 미커버 B-id(현재 29개)는 대부분 **이미 구현된
@@ -223,6 +252,8 @@ Differential sweep 행위 커버리지의 미커버 B-id(현재 29개)는 대부
 `/-_-api/v1/**` 중 migrator/export-import 범위 행은 deviation(의도 위임)이며,
 해당 app-owned 호환 행은 `/api/v1` RESTful 경로로 대체됐다(같은 문서 §0).
 개별 Feature Group 테이블의 `status` 기록은 이 문서의 gap 정의를 따른다.
+이러한 중간 분류나 `ACCEPTED_DIVERGENCE` artifact는 최종 parity 승인을
+대신하지 않으며, 정상적인 user-visible 차이를 최종 상태로 남길 수 없다.
 
 
 ---
@@ -234,7 +265,7 @@ Differential sweep 행위 커버리지의 미커버 B-id(현재 29개)는 대부
 | Phase   | 범위                                                 | 목표                                          |
 | ------- | ---------------------------------------------------- | --------------------------------------------- |
 | Phase -1 | refactor temp development: 기존 임시 구현을 REST pivot SPEC에 맞춰 재기준화 | ✅ **완료**                                   |
-| Phase 0  | Rust workspace promotion, 문서 정리, provenance 갱신                         | ✅ **완료**                                   |
+| Phase 0  | Rust workspace promotion, 문서 정리, provenance 갱신                         | ✅ closure contract frozen; product parity pending |
 | Phase 1  | 인증, Workspace, 조직, 프로젝트                                                | ✅ **완료**                                   |
 | Phase 2  | 이슈, 댓글, 첨부, 라벨, 마일스톤                                               | ✅ app-runtime parity audit closed            |
 | Phase 3  | 저장소 브라우저, Smart HTTP, 커밋 토론, VCS                                    | ✅ app-runtime parity audit closed; former broader SVN PROPFIND edge scope covered by protocol contract evidence |
@@ -244,7 +275,9 @@ Differential sweep 행위 커버리지의 미커버 B-id(현재 29개)는 대부
 
 ### 3.2 1차 PoC 완료 기준
 
-**1차 PoC란**: Phase 2~6까지 완료하여 Git 이슈 관리 + 게시판 기준으로 모든 기능이 정상 동작하고, legacy Yona 사용자가 실행파일 교체 + 설정 migration만으로 즉시 사용 가능한 수준.
+**1차 PoC란**: Phase 2~6까지 완료하여 Git 이슈 관리 + 게시판 기준으로 모든
+기능이 정상 동작하는 중간 checkpoint다. 이는 100% legacy-product parity나
+human acceptance 또는 release authorization을 의미하지 않는다.
 
 구체적으로:
 
@@ -261,9 +294,11 @@ Differential sweep 행위 커버리지의 미커버 B-id(현재 29개)는 대부
 
 ### 3.3 2차/분리 범위 현황
 
-다음 항목은 원래 deferred였거나 app-runtime 밖으로 분리된 범위다. 현재
-closure status는 `docs/provenance/deferred-parity-closure-inventory.md`와
-`docs/plans/2026-06-23-remaining-deferred-parity-execution.md`를 따른다:
+다음 항목은 구현 순서상 뒤로 미뤘거나 app-runtime 밖으로 분리해 기록한
+중간 상태다. 이는 최종 parity scope의 제외 목록이 아니다. 현재 evidence는
+`docs/provenance/deferred-parity-closure-inventory.md`와
+`docs/plans/2026-06-23-remaining-deferred-parity-execution.md`를 따르며,
+각 user-visible legacy surface는 최종 closure에서 다시 확인해야 한다:
 
 | 항목                                     | 사유                                                   |
 | ---------------------------------------- | ------------------------------------------------------ |
@@ -283,6 +318,9 @@ clone project import form. Legacy GitHub migration evidence exists under
 Yona-to-GitHub and disabled by `github.allow.migration = false`; no legacy
 GitHub-to-Yona import route/controller/test was found. See
 `docs/provenance/github-migration-decision.md`.
+
+Migration/external ownership 또는 “non-blocking”이라는 중간 분류만으로
+user-visible legacy behavior를 최종 완료로 처리하지 않는다.
 
 ---
 
@@ -1571,6 +1609,9 @@ Agent/Codex가 Rust test를 실행할 때는 위 `cargo test ...` 명령을 직�
 
 - 이미 통과한 기능의 테스트가 새 작업으로 인해 깨지면 안 된다
 - `cargo test` 전체 + `pnpm --dir frontend test` + `pnpm --dir frontend build` 가 항상 green이어야 한다
+- 이 목록은 기존 validation gate의 사용 순서다. 새 validation 또는
+  reconciliation framework를 도입하지 않으며, JaCoCo coverage percentage를
+  목표·KPI·release gate로 사용하지 않는다.
 
 ---
 
@@ -1581,13 +1622,27 @@ Agent/Codex가 Rust test를 실행할 때는 위 `cargo test ...` 명령을 직�
 각 Phase는 다음 조건을 모두 충족해야 종료된다:
 
 1. 해당 Phase의 모든 Feature Group 기능이 구현됨
-2. 같은 Phase에 남은 `gap`은 Phase 종료 blocker다. 종료하려면 구현하거나, 이후 Phase/deferred로 재분류하고 provenance + phase plan에 사유를 기록해야 한다
+2. 같은 Phase에 남은 `gap`은 Phase 종료 blocker다. 중간 Phase에서 이후
+   구현 순서로 재분류할 수 있지만, 최종 완료 전에는 구현하고 provenance +
+   phase plan에 근거를 기록해야 한다
 3. 해당 Phase의 모든 검수 기준 체크리스트 통과
 4. `cargo test` 전체 green
 5. `pnpm --dir frontend test` green
 6. `pnpm --dir frontend build` green
 7. provenance 문서에 legacy → Rust 매핑 기록 완료
 8. 신규 `gap`/`deviation` 항목이 이 문서와 provenance에 반영됨
+
+### 최종 product parity 완료 조건
+
+1. legacy Yona 1.16의 모든 user-visible 기능, route/deep-link, ACL, 오류·검증,
+   copy/localization, mutation, VCS/auth/integration/migration/import/export
+   surface가 legacy evidence와 대조되어 100% parity로 확인됨
+2. 최종 결과에 user-visible `deferred`/`gap`이 남지 않음
+3. 일반적인 `accepted observable divergence`가 남지 않음. 남은 차이는
+   implementation-only 또는 재현 가능한 legacy bug라는 evidence가 있음
+4. 한 HEAD에서 기존 gate와 human acceptance가 모두 통과됨
+5. 위 조건 전에는 이 repository에서 release/RC/public release를 만들지 않고,
+   조건 충족 뒤 새 canonical repository에서만 release함
 
 ### 1차 PoC 종료 조건 (전체)
 
@@ -1601,6 +1656,10 @@ Agent/Codex가 Rust test를 실행할 때는 위 `cargo test ...` 명령을 직�
 ---
 
 ## 9. 현재 구현 상태 요약 (2026-05-10 기준)
+
+> 이 표는 bounded implementation/provenance snapshot이다. `✅` 표시는 해당
+> 영역의 현재 구현 또는 중간 audit 상태일 뿐 100% product parity 완료,
+> human acceptance, release 승인을 뜻하지 않는다.
 
 Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 입력 기준이다.
 기존 runtime ConnectRPC surface와 frontend ConnectRPC client/dependency는 제거되었고,

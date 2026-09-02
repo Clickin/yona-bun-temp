@@ -1,13 +1,19 @@
 # First-Priority Completion Review
 
-> Status: closed for the current first-priority app-runtime conversion scope.
+> Status: historical checkpoint closed for the bounded first-priority app-runtime
+> conversion scope. It is not 100% product-parity completion or release
+> approval. First/second-priority labels describe implementation order only.
 > Source of truth remains `AGENTS.md`, `SPEC.md`, and `docs/provenance/core-parity-audit.md`.
 
 Last updated: 2026-06-23
 
 ## Scope
 
-This review covers the `SPEC.md` Phase 1-6 first-priority app-runtime conversion goal: Git issue management plus board/posting, PR/review, search, notification, webhook, admin app surfaces, runtime settings compatibility, migration/adopt baseline, single-binary serving, and Docker image viability.
+This review covers the `SPEC.md` Phase 1-6 first-priority app-runtime conversion
+checkpoint: Git issue management plus board/posting, PR/review, search,
+notification, webhook, admin app surfaces, runtime settings compatibility,
+migration/adopt baseline, single-binary serving, and Docker image viability.
+Every legacy user-visible surface remains in the final parity scope.
 
 It does not reclassify second-priority or explicitly separated scopes as complete:
 
@@ -22,7 +28,7 @@ It does not reclassify second-priority or explicitly separated scopes as complet
 | --- | --- | --- | --- |
 | FG-01 through FG-18 Phase 1-6 app-runtime features implemented | `docs/provenance/core-parity-audit.md` rows are no longer marked `missing`, `semantic-drift`, or `ux-drift`; `docs/provenance/legacy-porting-progress.md` marks the first-priority app-runtime audit closed. | Evidence present; keep under review | Run the parity gate and maintain no active non-deferred audit rows. |
 | Legacy route status, core HTML shell, and data-shape parity evidence recorded | `core-parity-audit.md`, phase plan entries, and focused contract/frontend tests map legacy sources to Rust/frontend owners. | Evidence present; keep under review | Keep `node tools/yona-parity-gate.mjs docs/provenance/core-parity-audit.md` green. |
-| Same-phase gaps either implemented or reclassified | Current remaining named items are documented as deferred, migrator, hardening, or follow-up boundaries instead of active same-phase blockers. | Evidence present; keep under review | Keep canonical/provenance docs free of active first-priority `gap` rows. |
+| Same-phase gaps either implemented or reclassified | Current remaining named items are documented as deferred, migrator, hardening, or follow-up boundaries instead of active same-phase blockers. | Historical evidence; keep under review | Implement and re-verify every user-visible row before final closure; do not treat reclassification as final exclusion. |
 | Legacy `application.conf.default` core settings can map to `yona.toml` | `SPEC.md` Appendix A now contains the reviewed legacy-to-`yona.toml` migration guide, including env precedence, JDBC URL conversion, H2 handling, sectioned TOML keys, and deferred Play/JVM/LDAP/OAuth boundaries; `runtime_config_contract.rs` covers TOML loading and env override behavior. | Evidence present; keep under review | Keep Appendix A aligned with `crates/server/src/runtime_config.rs` and `crates/server/tests/runtime_config_contract.rs` when new runtime config keys are added. |
 | Existing MariaDB data can be adopted without data loss after validation | `crates/migration` implements `adopt`, `validate_only`, and multi-DB schema checks; `docs/provenance/legacy-porting-progress.md` marks SQLite/MySQL/PostgreSQL runtime migration/adopt/validate complete; the full migration target, env-backed DB matrix, and live testcontainers DB matrix now have harness evidence below. | Evidence present; keep under review | Keep `pnpm agent:cargo-test -- -p yoram-migration --test migration`, `db_matrix_env --features db-matrix`, and `db_matrix_testcontainers --features db-matrix` green before release closure. |
 | `git clone` and `git push` work | Smart HTTP upload-pack/receive-pack and push post-receive records/webhooks are documented in `SPEC.md` and `core-parity-audit.md`; `smart_http_contract` now has harness evidence below for advertisement auth, real `git clone`, authenticated `git push`, and post-receive side effects. | Evidence present; keep under review | Keep `pnpm agent:cargo-test -- -p yoram-server --test smart_http_contract` green. |
@@ -32,8 +38,17 @@ It does not reclassify second-priority or explicitly separated scopes as complet
 
 ## Release Maintenance Gates
 
-1. Keep rerunning the release-level gates before packaging or broad distribution: parity gate, frontend gates, deployment smokes, migration/DB matrix gates, Smart HTTP, and full workspace Rust gate.
-2. Keep explicitly deferred/follow-up scopes out of the closed first-priority app-runtime claim unless `SPEC.md` changes.
+1. Keep rerunning the existing gates before any new-repository packaging:
+   parity gate, frontend gates, deployment smokes, migration/DB matrix gates,
+   Smart HTTP, and full workspace Rust gate.
+2. Keep explicitly deferred/follow-up scopes out of this bounded first-priority
+   checkpoint claim, but do not treat them as final parity exclusions.
+3. This repository is not authorized to create an RC/public release. Release
+   only from the new canonical repository after 100% parity human acceptance.
+
+The checkpoint's historical `deviation`/`deferred` labels and any differential
+`ACCEPTED_DIVERGENCE` classification are not final approval of an observable
+difference. Final closure follows `AGENTS.md` and `SPEC.md`.
 
 ## Current Verification Evidence
 

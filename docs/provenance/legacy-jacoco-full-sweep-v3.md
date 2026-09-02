@@ -3,6 +3,9 @@
 ## Status
 
 - **Status:** NOT RUN (this document defines the evidence contract; no full sweep was executed).
+- JaCoCo output is discovery evidence only: it has no coverage percentage target,
+  KPI, or release-gate meaning. Use this existing contract without introducing
+  a new validation/reconciliation framework.
 - **Run ID:** `<generated: runId>`
 - **Output directory:** `<generated: outputDir>`
 - **Generated at:** `<generated: generatedAt>`

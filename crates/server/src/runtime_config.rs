@@ -17,6 +17,7 @@ pub struct StartupConfig {
     pub auth_signup_require_confirm: Option<bool>,
     pub auth_social_login_support: Option<Vec<String>>,
     pub auth_social_login_only: Option<bool>,
+    pub github_allow_migration: Option<bool>,
     pub oauth_providers: Option<BTreeMap<String, OAuthProviderConfigFile>>,
     pub allowed_sending_mail_domains: Option<Vec<String>>,
     pub bind_addr: String,
@@ -105,6 +106,7 @@ struct StartupConfigFile {
     ldap: Option<LdapConfigFile>,
     mailbox: Option<MailboxConfigFile>,
     database_url: Option<String>,
+    github: Option<GithubConfigFile>,
     project: Option<ProjectConfigFile>,
     public_origin: Option<String>,
     notification: Option<NotificationConfigFile>,
@@ -121,6 +123,23 @@ struct StartupConfigFile {
     use_embedded_assets: Option<bool>,
     webhook: Option<WebhookConfigFile>,
     protocol: Option<String>,
+}
+
+#[derive(Default, Deserialize)]
+struct GithubConfigFile {
+    allow: Option<GithubAllowConfigFile>,
+    client: Option<GithubClientConfigFile>,
+}
+
+#[derive(Default, Deserialize)]
+struct GithubAllowConfigFile {
+    migration: Option<bool>,
+}
+
+#[derive(Default, Deserialize)]
+struct GithubClientConfigFile {
+    id: Option<String>,
+    secret: Option<String>,
 }
 
 #[derive(Default, Deserialize)]
@@ -310,6 +329,9 @@ pub fn load_startup_config(
     let auth = file.auth.unwrap_or_default();
     let hashing = auth.hashing.unwrap_or_default();
     let database = file.database.unwrap_or_default();
+    let github = file.github.unwrap_or_default();
+    let github_allow = github.allow.unwrap_or_default();
+    let github_client = github.client.unwrap_or_default();
     let issue = file.issue.unwrap_or_default();
     let ldap = file.ldap.unwrap_or_default();
     let ldap_options = ldap.options.unwrap_or_default();
@@ -410,7 +432,21 @@ pub fn load_startup_config(
         .or(auth.social_login_support);
     let auth_social_login_only =
         env_bool(&env, "YONA_AUTH_SOCIAL_LOGIN_ONLY").or(auth.social_login_only);
-    let oauth_providers = oauth_providers_from_env_and_file(&env, file.oauth);
+    let github_allow_migration = env_bool(&env, "YONA_GITHUB_ALLOW_MIGRATION")
+        .or_else(|| env_bool(&env, "github.allow.migration"))
+        .or(github_allow.migration);
+    let github_client_id = env_string(&env, "YONA_GITHUB_CLIENT_ID")
+        .or_else(|| env_string(&env, "github.client.id"))
+        .or(github_client.id);
+    let github_client_secret = env_string(&env, "YONA_GITHUB_CLIENT_SECRET")
+        .or_else(|| env_string(&env, "github.client.secret"))
+        .or(github_client.secret);
+    let oauth_providers = oauth_providers_from_env_and_file(
+        &env,
+        file.oauth,
+        github_client_id,
+        github_client_secret,
+    );
     let session_timeout_seconds = env
         .get("YONA_SESSION_TIMEOUT_SECONDS")
         .and_then(|value| value.trim().parse::<u64>().ok())
@@ -568,6 +604,7 @@ pub fn load_startup_config(
         auth_signup_require_confirm,
         auth_social_login_support,
         auth_social_login_only,
+        github_allow_migration,
         oauth_providers,
         allowed_sending_mail_domains,
         bind_addr,
@@ -721,6 +758,8 @@ fn split_csv(value: &str) -> Vec<String> {
 fn oauth_providers_from_env_and_file(
     env: &BTreeMap<String, String>,
     file_providers: Option<BTreeMap<String, OAuthProviderConfigFile>>,
+    github_client_id: Option<String>,
+    github_client_secret: Option<String>,
 ) -> Option<BTreeMap<String, OAuthProviderConfigFile>> {
     let mut providers = file_providers.unwrap_or_default();
     for provider in ["github", "google", "kakao", "naver"] {
@@ -750,6 +789,13 @@ fn oauth_providers_from_env_and_file(
         {
             providers.insert(provider.to_string(), config);
         }
+    }
+
+    if github_client_id.is_some() || github_client_secret.is_some() {
+        let mut config = providers.remove("github").unwrap_or_default();
+        config.client_id = config.client_id.or(github_client_id);
+        config.client_secret = config.client_secret.or(github_client_secret);
+        providers.insert("github".to_string(), config);
     }
 
     if providers.is_empty() {

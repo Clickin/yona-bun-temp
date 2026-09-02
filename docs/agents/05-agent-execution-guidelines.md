@@ -2,10 +2,16 @@
 
 ## 변환 원칙
 
-1. 기능 동등성만이 목표다.
+1. 최종 목표는 legacy Yona 1.16의 100% legacy-product parity다.
 2. 새 구조 제안이 목적이 아니다.
 3. 기존 UI/UX를 유지한다.
 4. canonical 구현은 `repo root`에 둔다.
+5. 1·2순위는 구현 순서이며 최종 scope exclusion이 아니다.
+6. 일반적인 `accepted observable divergence`를 최종 승인하지 않는다.
+7. JaCoCo coverage percentage를 목표로 삼지 않고, 새
+   validation/reconciliation framework를 추가하지 않는다.
+8. 이 repository에서는 release하지 않으며, human acceptance 뒤 새
+   canonical repository에서만 최초 release한다.
 
 ## 기본 절차
 
@@ -53,4 +59,6 @@
 - `reference/mixed-code/**`를 reference, parity evidence, canonical path처럼 문서화하는 행위
 - 누락 기능을 기록 없이 숨기는 행위
 - provenance 없이 기능 완료를 주장하는 행위
+- user-visible `deferred`/`gap`을 최종 완료 상태로 남기거나 일반적인
+  observable divergence를 승인하는 행위
 - `DESIGN.md`와 `yona-original/` 근거 없이 새 화면 톤/색상/타이포그래피를 도입하는 행위

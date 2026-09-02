@@ -21,8 +21,11 @@ use yoram_persistence::{
 };
 use yoram_server::{
     create_router_with_repository_and_app_config,
-    create_router_with_repository_and_filesystem_assets, AppRuntimeConfig, AuthUiConfig,
-    LdapFixtureUser, LdapRuntimeConfig, RuntimeConfig, SmtpRuntimeConfig,
+    create_router_with_repository_and_filesystem_assets,
+    create_router_with_repository_and_filesystem_assets_and_app_config, AppRuntimeConfig,
+    AuthUiConfig,
+    LdapFixtureUser, LdapRuntimeConfig, OAuthProviderRuntimeConfig, RuntimeConfig,
+    SmtpRuntimeConfig,
 };
 
 // Workspace route-module ownership guard: the legacy `/info/leave/:owner/:project`
@@ -300,6 +303,212 @@ async fn spawn_oauth_provider_stub(provider: &str) -> String {
         axum::serve(listener, app).await.expect("oauth stub server");
     });
     format!("http://{address}")
+}
+
+#[tokio::test]
+async fn enabled_legacy_migration_exports_authenticated_project_data() {
+    let provider_base = spawn_oauth_provider_stub("github").await;
+    let app_config = AppRuntimeConfig {
+        github_allow_migration: true,
+        oauth: yoram_server::OAuthRuntimeConfig::from_providers([(
+            "github",
+            OAuthProviderRuntimeConfig {
+                access_token_url: format!("{provider_base}/token"),
+                authorization_url: format!("{provider_base}/authorize"),
+                client_id: "migration-client".to_string(),
+                client_secret: "migration-secret".to_string(),
+                email_url: String::new(),
+                scope: "user:email".to_string(),
+                user_info_url: String::new(),
+            },
+        )]),
+        ..AppRuntimeConfig::default()
+    };
+    let (app, repository, _) =
+        build_auth_router_with_anonymous_access_and_app_config(true, app_config).await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+    let signup = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/users/signup")
+                .header(
+                    http::header::CONTENT_TYPE,
+                    "application/x-www-form-urlencoded",
+                )
+                .header(http::header::COOKIE, &cookie_header)
+                .body(Body::from(format!(
+                    "csrfToken={csrf}&loginId=migration-owner&name=Migration%20Owner&email=migration%40example.com&password=migration-pass1&retypedPassword=migration-pass1"
+                )))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(signup.status(), StatusCode::SEE_OTHER);
+    let session_cookie = cookie_header_from_set_cookie_response(&signup);
+    let owner = repository
+        .find_user_by_identifier("migration-owner")
+        .await
+        .unwrap()
+        .expect("migration owner");
+    repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: owner.login_id.clone(),
+            overview: Some("Migration source".to_string()),
+            project_name: "source".to_string(),
+            project_scope: "private".to_string(),
+            vcs: "GIT".to_string(),
+            initial_manager_user_id: Some(owner.id),
+        })
+        .await
+        .unwrap();
+
+    let projects = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/migration/projects")
+                .header(http::header::COOKIE, &session_cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(projects.status(), StatusCode::OK);
+    let projects_json: serde_json::Value =
+        serde_json::from_str(&response_text(projects).await).unwrap();
+    assert_eq!(projects_json[0]["full_name"], "migration-owner/source");
+    assert_eq!(projects_json[0]["private"], true);
+    assert_eq!(projects_json[0]["members"], 1);
+
+    let detail = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/migration/migration-owner/projects/source")
+                .header(http::header::COOKIE, &session_cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(detail.status(), StatusCode::OK);
+    let detail_json: serde_json::Value =
+        serde_json::from_str(&response_text(detail).await).unwrap();
+    assert_eq!(detail_json["issueCount"], 0);
+    assert_eq!(detail_json["postCount"], 0);
+    assert_eq!(detail_json["milestoneCount"], 0);
+
+    for path in [
+        "/yona/migration/migration-owner/projects/source/labels",
+        "/yona/migration/migration-owner/projects/source/issuelabel",
+        "/yona/migration/migration-owner/projects/source/milestones",
+        "/yona/migration/migration-owner/projects/source/issues",
+        "/yona/migration/migration-owner/projects/source/posts",
+    ] {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method(Method::GET)
+                    .uri(path)
+                    .header(http::header::COOKIE, &session_cookie)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK, "{path}");
+    }
+}
+
+#[tokio::test]
+async fn enabled_legacy_migration_exchanges_github_code_before_rendering_page() {
+    let provider_base = spawn_oauth_provider_stub("github").await;
+    let app_config = AppRuntimeConfig {
+        github_allow_migration: true,
+        oauth: yoram_server::OAuthRuntimeConfig::from_providers([(
+            "github",
+            OAuthProviderRuntimeConfig {
+                access_token_url: format!("{provider_base}/token"),
+                authorization_url: format!("{provider_base}/authorize"),
+                client_id: "migration-client".to_string(),
+                client_secret: "migration-secret".to_string(),
+                email_url: String::new(),
+                scope: "user:email".to_string(),
+                user_info_url: String::new(),
+            },
+        )]),
+        ..AppRuntimeConfig::default()
+    };
+    let (_, repository, _) =
+        build_auth_router_with_anonymous_access_and_app_config(true, AppRuntimeConfig::default())
+            .await;
+    let asset_root = std::env::temp_dir().join(format!(
+        "yoram-migration-assets-{}",
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system clock")
+            .as_nanos()
+    ));
+    std::fs::create_dir_all(&asset_root).unwrap();
+    std::fs::write(
+        asset_root.join("index.html"),
+        "<!doctype html><html><head></head><body>migration</body></html>",
+    )
+    .unwrap();
+    let app = create_router_with_repository_and_filesystem_assets_and_app_config(
+        RuntimeConfig {
+            allow_anonymous_access: true,
+            base_path: "/yona".to_string(),
+            public_origin: String::new(),
+        },
+        repository,
+        asset_root.clone(),
+        app_config,
+    );
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+    let signup = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/users/signup")
+                .header(
+                    http::header::CONTENT_TYPE,
+                    "application/x-www-form-urlencoded",
+                )
+                .header(http::header::COOKIE, &cookie_header)
+                .body(Body::from(format!(
+                    "csrfToken={csrf}&loginId=migration-oauth&name=OAuth%20Owner&email=oauth%40example.com&password=oauth-pass1&retypedPassword=oauth-pass1"
+                )))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(signup.status(), StatusCode::SEE_OTHER);
+    let session_cookie = cookie_header_from_set_cookie_response(&signup);
+
+    let migration = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/migration?code=test-code")
+                .header(http::header::COOKIE, &session_cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(migration.status(), StatusCode::OK);
+    let body = response_text(migration).await;
+    assert!(body.contains("\"migrationToken\":\"github-access-token\""));
+    assert!(body.contains("\"migrationEnabled\":true"));
+    let _ = std::fs::remove_dir_all(asset_root);
 }
 
 fn days_ago_datetime(days: u64) -> DateTime {

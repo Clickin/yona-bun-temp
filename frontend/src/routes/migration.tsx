@@ -1,5 +1,7 @@
 /* oxlint-disable jsx-a11y/tabindex-no-positive -- legacy migration/home.scala.html requires positive tab order on source/destination search inputs. */
-import { createFileRoute } from "@tanstack/react-router";
+import * as React from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { SiteLayoutShell } from "./-home-route-screen";
@@ -16,7 +18,7 @@ function MigrationRoute() {
       <YoramQueryProvider>
         <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
           <SiteLayoutShell runtimeConfig={runtimeConfig}>
-            <MigrationScreen />
+            <MigrationScreen runtimeConfig={runtimeConfig} />
           </SiteLayoutShell>
         </LegacyI18nProvider>
       </YoramQueryProvider>
@@ -24,7 +26,15 @@ function MigrationRoute() {
   );
 }
 
-function MigrationScreen() {
+function MigrationScreen({
+  runtimeConfig,
+}: {
+  runtimeConfig: ReturnType<typeof Route.useRouteContext>["runtimeConfig"];
+}) {
+  if (runtimeConfig.migrationEnabled) {
+    return <EnabledMigrationScreen runtimeConfig={runtimeConfig} />;
+  }
+
   return (
     <div
       className={"yobi-migration"}
@@ -34,6 +44,378 @@ function MigrationScreen() {
       <div className="header-pannel" data-owner="migration-layout">
         <MigrationComebackHeader />
         <MigrationSourceDestinationGrid />
+      </div>
+    </div>
+  );
+}
+
+type MigrationProject = {
+  owner: string;
+  projectName: string;
+  full_name: string;
+  issueCount?: number;
+  postCount?: number;
+  milestoneCount?: number;
+  assignees?: Array<{ name: string; login: string; email: string }>;
+};
+
+type GithubProject = {
+  name: string;
+  full_name: string;
+  owner: { login: string; type: string };
+};
+
+type EnabledMigrationScreenProps = {
+  runtimeConfig: ReturnType<typeof Route.useRouteContext>["runtimeConfig"];
+};
+
+function EnabledMigrationScreen({ runtimeConfig }: EnabledMigrationScreenProps) {
+  const token = runtimeConfig.migrationToken ?? "";
+  const migrationBase = `${runtimeConfig.basePath === "/" ? "" : runtimeConfig.basePath}/migration`;
+  const [source, setSource] = React.useState<MigrationProject | null>(null);
+  const [destination, setDestination] = React.useState<GithubProject | null>(null);
+  const [filter, setFilter] = React.useState("");
+  const [busy, setBusy] = React.useState("");
+  const [message, setMessage] = React.useState("");
+  const milestoneMap = React.useRef<Record<string, number>>({});
+  const authorizationUrl = runtimeConfig.migrationAuthorizationUrl;
+  const clientId = runtimeConfig.migrationClientId;
+  const authorizationHref =
+    authorizationUrl && clientId
+      ? `${authorizationUrl}?${new URLSearchParams({
+          client_id: clientId,
+          scope: "user,repo,admin:org",
+        }).toString()}`
+      : undefined;
+
+  const projectsQuery = useQuery({
+    enabled: token.length > 0,
+    queryFn: async () => {
+      const [sourceResponse, destinationResponse] = await Promise.all([
+        fetch(`${migrationBase}/projects`, { credentials: "same-origin" }),
+        fetch("https://api.github.com/user/repos?per_page=100&page=1", {
+          headers: { Authorization: `token ${token}` },
+        }),
+      ]);
+      if (!sourceResponse.ok || !destinationResponse.ok) {
+        throw new Error("Unable to load migration projects.");
+      }
+      const [sourceProjects, destinationProjects] = await Promise.all([
+        sourceResponse.json() as Promise<MigrationProject[]>,
+        destinationResponse.json() as Promise<GithubProject[]>,
+      ]);
+      return { sourceProjects, destinationProjects };
+    },
+    queryKey: ["migration", "projects", migrationBase, token],
+  });
+  const sourceProjects = projectsQuery.data?.sourceProjects ?? [];
+  const destinationProjects = projectsQuery.data?.destinationProjects ?? [];
+  const projectQueryMessage =
+    projectsQuery.error instanceof Error
+      ? projectsQuery.error.message
+      : projectsQuery.error
+        ? "Unable to load migration projects."
+        : !token && !authorizationHref
+          ? "GitHub migration OAuth is not configured."
+          : undefined;
+
+  const filteredSources = sourceProjects.filter((project) =>
+    project.full_name.toLowerCase().includes(filter.toLowerCase()),
+  );
+  const filteredDestinations = destinationProjects.filter((project) =>
+    project.full_name.toLowerCase().includes(filter.toLowerCase()),
+  );
+
+  const loadSource = async (project: MigrationProject) => {
+    setBusy("source");
+    try {
+      const response = await fetch(
+        `${migrationBase}/${encodeURIComponent(project.owner)}/projects/${encodeURIComponent(project.projectName)}`,
+        { credentials: "same-origin" },
+      );
+      if (!response.ok) throw new Error("Unable to load the source project.");
+      setSource((await response.json()) as MigrationProject);
+      setMessage("");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to load the source project.");
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const importData = async (kind: "milestones" | "issues" | "posts") => {
+    if (!source || !destination) {
+      setMessage("Source와 Destination 프로젝트를 선택해 주세요.");
+      return;
+    }
+    setBusy(kind);
+    try {
+      const sourcePath = `${migrationBase}/${encodeURIComponent(source.owner)}/projects/${encodeURIComponent(source.projectName)}`;
+      const response = await fetch(`${sourcePath}/${kind}`, { credentials: "same-origin" });
+      if (!response.ok) throw new Error(`Unable to read ${kind}.`);
+      const payload = (await response.json()) as {
+        milestones?: Array<{ milestone: Record<string, unknown> }>;
+        issues?: Array<{ issue: Record<string, unknown> }>;
+      };
+      let labelsById: Record<string, string> = {};
+      if (kind === "issues") {
+        const [labelsResponse, pairsResponse] = await Promise.all([
+          fetch(`${sourcePath}/labels`, { credentials: "same-origin" }),
+          fetch(`${sourcePath}/issuelabel`, { credentials: "same-origin" }),
+        ]);
+        if (!labelsResponse.ok || !pairsResponse.ok)
+          throw new Error("Unable to read issue labels.");
+        const labels = (await labelsResponse.json()) as {
+          labels: Record<string, { name?: string }>;
+        };
+        const pairs = (await pairsResponse.json()) as {
+          issueLabelPairs: Array<{ issueId: number; issueLabelId: number }>;
+        };
+        labelsById = Object.fromEntries(
+          pairs.issueLabelPairs.map((pair) => [
+            `${pair.issueId}:${pair.issueLabelId}`,
+            labels.labels[String(pair.issueLabelId)]?.name ?? "",
+          ]),
+        );
+      }
+      const items = kind === "milestones" ? (payload.milestones ?? []) : (payload.issues ?? []);
+      await Promise.all(
+        items.map(async (item) => {
+          const endpoint =
+            kind === "milestones"
+              ? `https://api.github.com/repos/${destination.full_name}/milestones`
+              : `https://api.github.com/repos/${destination.full_name}/import/issues`;
+          const body =
+            kind === "milestones"
+              ? (item as { milestone: Record<string, unknown> }).milestone
+              : {
+                  ...(item as { issue: Record<string, unknown> }).issue,
+                  labels:
+                    kind === "posts"
+                      ? ["게시글"]
+                      : Object.entries(labelsById).flatMap(([key, label]) =>
+                          key.startsWith(`${(item as { issue: { id: number } }).issue.id}:`) &&
+                          label
+                            ? [label]
+                            : [],
+                        ),
+                };
+          if (kind === "issues") {
+            const issue = body as Record<string, unknown>;
+            const sourceMilestoneId = issue.milestoneId;
+            delete issue.milestoneId;
+            if (typeof sourceMilestoneId === "number") {
+              const destinationMilestone = milestoneMap.current[String(sourceMilestoneId)];
+              if (destinationMilestone !== undefined) {
+                issue.milestone = destinationMilestone;
+              } else {
+                delete issue.milestone;
+              }
+            }
+          }
+          const importResponse = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+              Accept: "application/vnd.github.golden-comet-preview+json",
+              Authorization: `token ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(body),
+          });
+          if (!importResponse.ok) {
+            throw new Error(`GitHub rejected ${kind} import (${importResponse.status}).`);
+          }
+          if (kind === "milestones") {
+            const sourceMilestone = (item as { milestone: { id?: number } }).milestone;
+            const destinationMilestone = (await importResponse.json()) as { number?: number };
+            if (sourceMilestone.id !== undefined && destinationMilestone.number !== undefined) {
+              milestoneMap.current[String(sourceMilestone.id)] = destinationMilestone.number;
+            }
+          }
+        }),
+      );
+      const completed = items.length;
+      setMessage(`${kind} ${completed}개를 옮겼습니다.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : `Unable to import ${kind}.`);
+    } finally {
+      setBusy("");
+    }
+  };
+
+  return (
+    <div
+      className="yobi-migration"
+      data-owner="migration-enabled-shell"
+      data-page-owner="migration-page"
+    >
+      <div className="header-pannel" data-owner="migration-layout">
+        <div className="comeback-text pull-right">Yona to Github</div>
+        <div className="row title-text-bg">
+          <div id="system-msg" className="well board">
+            <div className="messages" data-owner="migration-notice">
+              {message || projectQueryMessage || "Source와 Destination 프로젝트를 선택해 주세요."}
+              {!token && authorizationHref ? (
+                <>
+                  {" "}
+                  <Link href={authorizationHref} reloadDocument to={authorizationHref as "/"}>
+                    GitHub migration OAuth 시작
+                  </Link>
+                </>
+              ) : null}
+            </div>
+          </div>
+        </div>
+        <div className="status">
+          <div className="row">
+            <div className="head-title row-fluid">
+              <div className="source-title span5">
+                <div className={source ? "project-name" : "project-name warn"}>
+                  {source?.full_name ?? "Source 프로젝트를 선택해 주세요"}
+                </div>
+              </div>
+              <div className="arrow span1">
+                <i className="yobicon-arrow-right-alt" />
+              </div>
+              <div className="destination-title span6">
+                <div className={destination ? "project-name" : "project-name warn"}>
+                  {destination?.full_name ?? "Destination 프로젝트를 선택해 주세요"}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="row source-destination">
+          <MigrationEnabledProjectPane
+            side="source"
+            projects={filteredSources}
+            selected={source?.full_name}
+            busy={busy === "source"}
+            filter={filter}
+            onFilter={setFilter}
+            onSelect={(project) => void loadSource(project as MigrationProject)}
+          />
+          <MigrationEnabledProjectPane
+            side="destination"
+            projects={filteredDestinations}
+            selected={destination?.full_name}
+            busy={false}
+            filter={filter}
+            onFilter={setFilter}
+            onSelect={(project) => setDestination(project as GithubProject)}
+          />
+          <div className="span6 status" data-owner="migration-status-column-grid">
+            <div className="progress row">
+              <div className="bar span10 bar-danger" data-owner="migration-progress-bar">
+                {source ? `${source.issueCount ?? 0} / ${source.issueCount ?? 0}` : "0/0"}
+              </div>
+            </div>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th colSpan={2}>Migration 대상</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {(
+                  [
+                    ["milestoneCount", "마일스톤", "milestones", "마일스톤 옮기기"],
+                    ["issueCount", "이슈", "issues", "이슈 옮기기"],
+                    ["postCount", "게시글", "posts", "게시글 옮기기"],
+                  ] as const
+                ).map(([countKey, label, kind, action]) => (
+                  <tr key={kind}>
+                    <td className="left-title">{label}</td>
+                    <td className="left-title">{source?.[countKey] ?? 0}</td>
+                    <td>
+                      <div className="btn-group">
+                        <button
+                          className="btn btn-danger"
+                          disabled={!source || !destination || busy !== ""}
+                          onClick={() => void importData(kind)}
+                        >
+                          {busy === kind ? "옮기는 중..." : action}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                <tr>
+                  <td className="td-title left-title">주의 사항!!</td>
+                  <td colSpan={2} className="text-align-left">
+                    <div className="caution">
+                      작업 시작전에 Yona to Githbub 마이그레이션 가이드를 꼭 읽어주세요.
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div className="left-title">기존 이슈 담당자</div>
+            <div>{source?.assignees?.map((assignee) => assignee.login).join(", ")}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MigrationEnabledProjectPane({
+  side,
+  projects,
+  selected,
+  busy,
+  filter,
+  onFilter,
+  onSelect,
+}: {
+  side: "source" | "destination";
+  projects: Array<MigrationProject | GithubProject>;
+  selected?: string;
+  busy: boolean;
+  filter: string;
+  onFilter: (value: string) => void;
+  onSelect: (project: MigrationProject | GithubProject) => void;
+}) {
+  const isSource = side === "source";
+  return (
+    <div
+      className={isSource ? "source-project span4" : "destination-project span4"}
+      data-owner={isSource ? "migration-source-column-grid" : "migration-destination-column-grid"}
+    >
+      <div className="header">
+        {isSource ? `Source ${projects.length} 개` : `Destination ${projects.length} 개`}
+      </div>
+      <div className={isSource ? "search left-border" : "search"}>
+        <input
+          tabIndex={isSource ? 1 : 2}
+          type="text"
+          className="search-query"
+          name="target-filter"
+          placeholder="Search.."
+          value={filter}
+          onChange={(event) => onFilter(event.target.value)}
+          disabled={busy}
+        />
+      </div>
+      <div className={isSource ? "left-project-list" : "destination-project-list"}>
+        {projects.map((project) => {
+          const fullName = project.full_name;
+          const label = isSource
+            ? (project as MigrationProject).projectName
+            : (project as GithubProject).name;
+          return (
+            <button
+              type="button"
+              className={fullName === selected ? "project-list selected" : "project-list"}
+              key={fullName}
+              onClick={() => onSelect(project)}
+            >
+              <span className="owner">{fullName.split("/")[0]}</span>
+              <span className="project-name">{label}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

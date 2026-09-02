@@ -1778,16 +1778,23 @@ pub(crate) fn routes(
         )
         .route(
             "/{login_id}",
-            post(move |headers: HeaderMap, Path(login_id): Path<String>| {
-                async move {
-                    direct_reset_site_user_password(
-                        headers,
-                        login_id,
-                        site_reset_user_password_service.clone(),
-                    )
-                    .await
-                }
-            }),
+            post(
+                move |
+                    headers: HeaderMap,
+                    Path(login_id): Path<String>,
+                    Query(query): Query<RestSiteDirectUserMutationQuery>|
+                {
+                    async move {
+                        direct_reset_site_user_password(
+                            headers,
+                            login_id,
+                            query.action.as_deref(),
+                            site_reset_user_password_service.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
         )
         .route(
             "/sites/{*site_page}",
@@ -1805,6 +1812,7 @@ pub(crate) fn routes(
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 struct RestSiteDirectUserMutationQuery {
+    action: Option<String>,
     login_id: String,
     query: Option<String>,
     state: Option<String>,
@@ -2108,8 +2116,19 @@ async fn direct_toggle_site_user_guest(
 async fn direct_reset_site_user_password(
     headers: HeaderMap,
     login_id: String,
+    action: Option<&str>,
     service: PilotServiceImpl,
 ) -> Response {
+    if action != Some("resetPassword") {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({
+                "isSuccess": false,
+                "reason": "BAD_REQUEST",
+            })),
+        )
+            .into_response();
+    }
     match rest_reset_site_user_password(headers, login_id, service).await {
         Ok(payload) => payload.into_response(),
         Err(error) => error.into_response(),
@@ -6345,8 +6364,10 @@ async fn rest_send_site_test_mail(
     rest_require_site_admin_repository(&service, &headers, true).await?;
     let from = required_site_mail_field(body.from, "from")?;
     let to = required_site_mail_field(body.to, "to")?;
-    let subject = required_site_mail_field(body.subject, "subject")?;
-    let body = required_site_mail_field(body.body, "body")?;
+    // Legacy mail.scala.html marks only from/to as required. Empty subjects
+    // and bodies are valid drafts and must still reach the configured mailer.
+    let subject = body.subject;
+    let body = body.body;
     deliver_with_config(
         OutboundMail {
             bcc: Vec::new(),

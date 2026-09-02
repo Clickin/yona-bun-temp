@@ -136,6 +136,9 @@ social_login_only = true
 [auth.hashing]
 silent_migration_to_argon2id = true
 
+[github.allow]
+migration = true
+
 [oauth.github]
 client_id = "github-file-client"
 client_secret = "github-file-secret"
@@ -265,6 +268,7 @@ draft_time = "1s"
         Some(vec!["github".to_string(), "google".to_string()])
     );
     assert_eq!(config.auth_social_login_only, Some(true));
+    assert_eq!(config.github_allow_migration, Some(true));
     let oauth = config.oauth_providers.as_ref().expect("oauth providers");
     assert_eq!(
         oauth

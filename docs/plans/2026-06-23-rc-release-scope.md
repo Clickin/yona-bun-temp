@@ -1,7 +1,12 @@
 # RC Release Scope
 
-Status: current RC cut line
+Status: historical/interim RC planning evidence; superseded by the Phase 0 Closure Contract
 Date: 2026-06-23
+
+> This document records an old RC planning checkpoint only. No RC or public
+> release is authorized from `yona-bun-temp`; release is allowed only from a new
+> canonical repository after 100% legacy-product parity and human acceptance.
+> The rows and “Not In This RC” list are not final product-scope exclusions.
 
 This RC is not the modern-product roadmap. The first release goal is a
 user-invisible replacement: if an administrator swaps legacy Yona for the Rust
@@ -54,4 +59,4 @@ db_matrix_testcontainers --features db-matrix -- --nocapture` passed with
 - New calendar/schedule management beyond existing issue/milestone behavior.
 - Markdown renderer rewrite, workerization, or server-side prerendering.
 
-Those are post-RC product roadmap items.
+Those were post-RC planning items, not exclusions from the final parity scope.

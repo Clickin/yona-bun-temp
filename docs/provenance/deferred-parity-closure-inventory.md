@@ -1,15 +1,23 @@
 # Deferred Parity Closure Inventory
 
-> Status: current closure ledger for the deferred parity goal directive.
+> Status: historical/interim closure ledger for the deferred parity goal
+> directive. This is not a final parity or release-approval ledger.
 > Source of truth remains `AGENTS.md`, `SPEC.md`, `docs/plans/2026-06-21-deferred-parity-goal-directive.md`, `docs/plans/2026-06-23-remaining-deferred-parity-execution.md`, and the narrower provenance documents referenced below.
 
 Last updated: 2026-06-23
 
 ## Conclusion
 
-The checked canonical/provenance documents no longer show an active first-priority app-runtime parity blocker. The remaining surfaces below are implemented, retired by re-audit, or explicitly retained as non-blocking/not-applicable/out-of-scope.
+The checked canonical/provenance documents no longer showed an active
+first-priority app-runtime blocker at this snapshot. The remaining surfaces
+below were recorded as implemented, retired by re-audit, or non-blocking/not-
+applicable/out-of-scope for that intermediate scope.
 
-Do not start product-improvement work by treating these as silently implemented. The deferred goal directive is complete only through the row-by-row closeout recorded in `docs/plans/2026-06-23-remaining-deferred-parity-execution.md`.
+Do not start product-improvement work by treating these as silently implemented.
+The row-by-row closeout is historical evidence, not a final product-parity
+claim. Every user-visible legacy surface remains final scope; a deferred row is
+not closed until its behavior is implemented and re-verified under `AGENTS.md`
+and `SPEC.md`.
 
 ## Remaining Items
 
@@ -37,3 +45,8 @@ Do not start product-improvement work by treating these as silently implemented.
 | IMAP mailbox service | Stale deferred label retired; current executable-backed mailbox fetch feeds the same raw RFC822 processing boundary. |
 | Update notification | Implemented/reclassified with site update status, metadata, hide, and download routes. |
 | H2 runtime dialect | Not a Rust runtime DB dialect; covered by the standalone H2-to-SQLite bridge into SQLite adopt validation. |
+
+The `non-blocking`, `not-applicable`, and `out-of-scope` labels above describe
+the snapshot's implementation ordering or evidence boundary only. They do not
+authorize an ordinary observable divergence, leave user-visible deferred work
+in final closure, or authorize a release from this repository.

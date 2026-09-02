@@ -1,7 +1,13 @@
-Status: Current goal directive plan
+Status: historical/interim execution plan; superseded by the Phase 0 Closure Contract
 Date: 2026-06-23
 
 # Remaining Deferred Parity Execution Directive
+
+> This document preserves the row-by-row closeout evidence for an intermediate
+> deferred-scope checkpoint. It is not a final parity or release claim:
+> implementation-order labels do not remove user-visible legacy behavior from
+> final scope, and ordinary observable differences cannot be accepted at final
+> closure.
 
 This is the execution queue for the remaining rows in
 `docs/provenance/deferred-parity-closure-inventory.md`. It exists because the

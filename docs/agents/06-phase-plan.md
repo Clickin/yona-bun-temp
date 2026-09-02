@@ -1,8 +1,22 @@
 # 06) Phase 계획
 
+## Phase 0 Closure Contract
+
+- 최종 목표는 legacy Yona 1.16의 100% legacy-product parity다. 이 phase
+  plan의 `complete`/`closed`는 bounded implementation evidence이며 최종
+  parity 완료를 뜻하지 않는다.
+- 1·2순위는 구현 순서다. 모든 legacy user-visible 기능은 최종 scope이며,
+  최종 `deferred`/`gap`과 일반적인 `accepted observable divergence`는 0이어야
+  한다.
+- JaCoCo는 discovery evidence일 뿐 coverage percentage 목표가 아니다. 기존
+  validation gate를 사용하고 새 validation/reconciliation framework를 만들지
+  않는다.
+- 이 repository에서는 RC/public release를 만들지 않는다. 최종 human
+  acceptance 뒤 새 canonical repository에서만 최초 release를 수행한다.
+
 ## Current UI Parity Gate
 
-- 2026-06-26부터 RC 전환 전 별도 phase로 전체 UI parity 전수조사를 먼저 완료한다.
+- 2026-06-26부터 최종 closure 전 별도 phase로 전체 UI parity 전수조사를 먼저 완료한다.
 - 실행 기준은 `docs/plans/2026-06-26-full-ui-parity-subagent-phase.md`다.
 - 기존 broad smoke/visual sweep 결과는 baseline evidence일 뿐이며, route/page별
   selector/copy/interaction/API-boundary inventory와 subagent report가 있어야
@@ -30,6 +44,8 @@
 - root canonical 문서와 `docs/agents/*` mirror를 Rust 기준으로 재작성
 - `docs/provenance/*` owner/target/current baseline을 Rust 기준으로 갱신
 - historical 문서에 status banner와 Rust pivot 이후 설명 추가
+- closure contract를 freeze한다. product parity 완료 및 release 승인은 별도
+  최종 gate다.
 
 ## Phase 1: 신원과 핵심 소유권
 

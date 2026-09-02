@@ -1,5 +1,10 @@
 # Release Triage — Differential Sweep 2026-08 (baseline: 189ec2479; report: sweep-mt6npd2a)
 
+> **Status: historical/interim evidence, not parity completion or release
+> approval.** The `ACCEPTED_DIVERGENCE` rows below are provisional sweep
+> classifications retained for traceability; ordinary user-visible differences
+> cannot remain accepted at final closure.
+
 Triage of every non-PASS finding in the current differential artifact. The
 artifact is a full dual-app sweep with the corrected harness; the Yoram binary
 was rebuilt from the differential baseline before the run. The current tree adds
@@ -20,7 +25,7 @@ Legacy-term mapping applied: `REAL_PRODUCT_GAP`→PRODUCT_GAP, `HARNESS_BUG`→H
 "known-gap" and every other non-enum name is banned. The harness rules in report.mjs
 mirror these classifications one-to-one.
 
-## Final verdict (current report `sweep-mt6npd2a`, 2026-08-24, coverage 315/315 = 100%)
+## Interim verdict (current report `sweep-mt6npd2a`, 2026-08-24; behavior rows 315/315)
 
 | Class | Count | Blocking? |
 |---|---:|---|
@@ -33,7 +38,9 @@ mirror these classifications one-to-one.
 | UNVERIFIED | 0 | no |
 | **Total** | **136** | **1 blocking** |
 
-Strict gate: **NOT met** — the only blocking finding is PRODUCT_GAP(1).
+Strict differential gate: **NOT met** — the only blocking finding in this
+artifact is PRODUCT_GAP(1). This sweep count is discovery evidence, not a
+product parity percentage or release gate.
 The report has no HARNESS_ERROR, INFRA_ERROR, or UNVERIFIED classifications;
 database projections were compared after teardown. Step errors are reported
 separately and are not findings or coverage failures.
@@ -42,7 +49,7 @@ separately and are not findings or coverage failures.
 
 | ID / Behavior | Legacy observation | Yoram observation | Sources | Disposition |
 | --- | --- | --- | --- | --- |
-| I13 / B-0039 `sharableUsers` empty-query candidate set | Active users and public projects are returned; legacy `IssueApi.java:828-850` has no explicit ordering. | The same user/public-project filters are implemented in `crates/persistence/src/repo/issue_picker.rs:353-409`, and empty-query contract coverage is in `crates/server/tests/issue_sharer_contract.rs:269-357`. The differential pair differs in persisted users, project catalog, avatar URLs, and observed ordering. | `.agent/differential/report.json` (`sweep-mt6npd2a`), legacy `IssueApi.java:828-850`, the source/test paths above | **Human decision:** align the parity fixtures/catalog, or explicitly approve the observed fixture-dependent difference. Do not change candidate filtering without this decision. See `human-verification-2026-08.md`. |
+| I13 / B-0039 `sharableUsers` empty-query candidate set | Active users and public projects are returned; legacy `IssueApi.java:828-850` has no explicit ordering. | The same user/public-project filters are implemented in `crates/persistence/src/repo/issue_picker.rs:353-409`, and empty-query contract coverage is in `crates/server/tests/issue_sharer_contract.rs:269-357`. The differential pair differs in persisted users, project catalog, avatar URLs, and observed ordering. | `.agent/differential/report.json` (`sweep-mt6npd2a`), legacy `IssueApi.java:828-850`, the source/test paths above | **Human decision:** align the parity fixtures/catalog, or prove the difference is implementation-only/legacy-side. Do not approve an ordinary fixture-dependent observable difference or change candidate filtering without evidence…
 
 ## Closed findings at current HEAD
 
@@ -53,8 +60,8 @@ separately and are not findings or coverage failures.
 - U16 `setAsMain` now allows an unvalidated address like legacy; focused
   coverage: `crates/server/tests/auth_workspace_contract.rs:3940-4000`.
 - I23 markdown preview is intentionally client-owned by `react-markdown`;
-  the absent legacy server-render endpoint is an accepted divergence, not a
-  product gap.
+  the absent legacy server-render endpoint is an interim classification, not a
+  final approval for an observable difference.
 - The prior P9/I19 harness chain, SMTP token replay, CDP observation, PR seed,
   and label-residue findings do not appear in the current report's
   classification counts. Their old entries were stale triage, not open work.
@@ -97,6 +104,8 @@ release blockers.
 
 - PRODUCT_GAP ×1: hold for the human fixture/catalog decision in
   `human-verification-2026-08.md`; no ungrounded product patch was applied.
-- ACCEPTED_DIVERGENCE ×127 and LEGACY_BUG ×8: non-blocking with rationale.
-- Coverage is 315/315; the strict differential gate remains blocked only by
-  B-0039/I13.
+- ACCEPTED_DIVERGENCE ×127 and LEGACY_BUG ×8: retained as interim classifications
+  with rationale. They do not authorize final closure or release.
+- Behavior rows are 315/315; this does not measure product parity percentage.
+  The strict differential gate remains blocked only by B-0039/I13 within this
+  artifact.

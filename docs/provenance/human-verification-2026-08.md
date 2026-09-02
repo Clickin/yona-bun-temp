@@ -1,7 +1,9 @@
 # Human Verification — 2026-08 Differential and Release Follow-up
 
-Status: current. This document lists checks that require a product owner,
-credentials, or a release environment. It is not an unimplemented-feature list.
+Status: historical/interim evidence. This document lists checks that require a
+product owner, credentials, or a release environment; it is not final human
+acceptance or release authorization. Any deferred user-visible behavior or
+observable divergence listed here remains closure work.
 
 ## LLM processing completed
 
@@ -114,7 +116,7 @@ credentials, or a release environment. It is not an unimplemented-feature list.
 ### 1. I13 / B-0039 sharable-user catalog decision — release blocker
 
 Current artifact: `.agent/differential/report.json`, run
-`sweep-mt6npd2a` (2026-08-24). Coverage is 315/315; this is the only
+`sweep-mt6npd2a` (2026-08-24). The behavior inventory has 315/315 rows; this is the only
 `PRODUCT_GAP` row.
 
 The legacy pair returns `carol`, `alice`, `admin`, and public projects such as
@@ -131,14 +133,15 @@ The implementation already matches the legacy filter intent:
 - focused empty-query contract:
   `crates/server/tests/issue_sharer_contract.rs:269-357`.
 
-A human must choose one disposition:
+A human must choose one closure disposition:
 
 1. **Align parity fixtures/catalog (recommended):** reconcile the users,
    public projects, avatar inputs, and ordering assumptions, then rerun the
    dual-app sweep.
-2. **Approve the fixture-dependent difference:** classify B-0039 as an
-   accepted divergence and record the product-owner rationale.
-3. **Request a product change:** only after a controlled fixture with identical
+2. **Prove a non-product difference:** provide controlled evidence that B-0039
+   is implementation-only or a proven legacy bug; this is not an approval path
+   for an ordinary observable divergence.
+3. **Request a product change:** after a controlled fixture with identical
    catalogs proves that the candidate filter or ordering is wrong.
 
 Do not change candidate filtering based on the current mismatched catalogs.
@@ -198,7 +201,8 @@ These are outside the parity-preserving fixes in this turn.
 
 ## Completion rule
 
-The LLM-resolvable repository work is complete. Release closure still requires
-the human dispositions above, especially I13. Until I13 is either fixture-
-aligned and rerun or explicitly approved as an accepted divergence, the
-strict differential gate remains blocked by design.
+This artifact does not claim that repository work or product parity is
+complete. Final closure requires the contract in `AGENTS.md` and `SPEC.md`,
+including 100% user-visible parity, zero final deferred/gap rows, and no
+ordinary accepted observable divergence. Until those criteria and human
+acceptance are met, this repository is not authorized to release.

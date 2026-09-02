@@ -10,7 +10,7 @@ test("kubernetes guidance remains reference-only and non-baseline", () => {
   assert.match(guidance, /reference-only, non-baseline/u);
   assert.match(guidance, /SFX, Docker/u);
   assert.match(guidance, /no canonical Kubernetes, k8s, Helm, Deployment, Service, or\s+Ingress manifests/u);
-  assert.match(deploymentStrategy, /release baseline.*SFX.*Docker\/base-path/u);
+  assert.match(deploymentStrategy, /deployment baseline.*SFX.*Docker\/base-path/u);
   assert.match(spec, /Deployment\s+\|\s+Single-file executable \(SFX\) \+ Docker/u);
 });
 

@@ -159,6 +159,7 @@ fn build_router_with_app_config(
         data_root: runtime.data_root.clone(),
         public_origin: public_origin.clone(),
         integrations: runtime.integrations.clone(),
+        github_allow_migration: runtime.github_allow_migration,
         ldap: runtime.ldap.clone(),
         max_uploaded_file_size: runtime.max_uploaded_file_size,
         oauth: runtime.oauth.clone(),
@@ -179,6 +180,17 @@ fn build_router_with_app_config(
         runtime.project_default_scope.clone(),
         app_config.feedback_url.clone(),
         app_config.hide_project_listing,
+        app_config.github_allow_migration,
+        app_config
+            .oauth
+            .configured_provider("github")
+            .map(|provider| provider.client_id.clone())
+            .unwrap_or_default(),
+        app_config
+            .oauth
+            .configured_provider("github")
+            .map(|provider| provider.authorization_url.clone())
+            .unwrap_or_default(),
         app_config.max_uploaded_file_size,
         app_config.navbar_custom_link_name.clone(),
         app_config.navbar_custom_link_url.clone(),

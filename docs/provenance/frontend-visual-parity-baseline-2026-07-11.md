@@ -1,9 +1,14 @@
 # ko-KR Visual Parity Baseline Queue
 
-Status: current, frozen initial full-suite baseline
+Status: current frozen initial full-suite baseline; evidence only, not 100%
+parity completion or release authorization
 Date: 2026-07-11
 
-This queue is the fixed input for focused parity work. Do not rerun the full suite per screen. Use `YORAM_SWEEP_PATHS` for the listed path and rerun the full desktop/mobile suite only for the final closure gate.
+This queue is the fixed input for focused parity work. Do not rerun the full
+suite per screen. Use `YORAM_SWEEP_PATHS` for the listed path and rerun the
+full desktop/mobile suite only for the final closure gate. A green visual queue
+does not waive user-visible functional scope, human acceptance, or the
+no-observable-divergence contract in `AGENTS.md` and `SPEC.md`.
 
 ## Frozen Artifacts
 

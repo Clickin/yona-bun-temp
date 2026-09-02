@@ -673,17 +673,31 @@ async fn site_admin_direct_mutation_aliases_follow_legacy_routes() {
 
     let forbidden_legacy_reset = rest_post(
         app.clone(),
-        "/yona/member",
+        "/yona/member?action=resetPassword",
         Some(&member_cookie),
         Some(&member_csrf),
     )
     .await;
     assert_eq!(forbidden_legacy_reset.status(), StatusCode::FORBIDDEN);
 
+    let missing_legacy_reset_action = rest_post(
+        app.clone(),
+        "/yona/member",
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+    )
+    .await;
+    assert_eq!(missing_legacy_reset_action.status(), StatusCode::BAD_REQUEST);
+    assert_eq!(
+        serde_json::from_str::<Value>(&response_text(missing_legacy_reset_action).await)
+            .expect("legacy reset bad request json"),
+        json!({ "isSuccess": false, "reason": "BAD_REQUEST" })
+    );
+
     let legacy_reset = response_json(
         rest_post(
             app.clone(),
-            "/yona/member",
+            "/yona/member?action=resetPassword",
             Some(&admin_cookie),
             Some(&admin_csrf),
         )
@@ -4295,6 +4309,17 @@ async fn site_admin_user_list_and_toggles_follow_legacy_state_buckets() {
         format!("/yona/files/{}", member_avatar.id)
     );
 
+    let case_insensitive_active = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/site/users?state=ACTIVE&query=MEM",
+            Some(&admin_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(login_ids(&case_insensitive_active), vec!["member".to_string()]);
+
     let protected_revoke = rest_post(
         app.clone(),
         "/yona/api/v1/site/users/siteboss/site-admin/toggle",
@@ -4637,6 +4662,21 @@ async fn site_admin_project_list_and_delete_follow_legacy_surface() {
     assert_eq!(
         filtered["projects"][0]["projectLogoUrl"],
         format!("/yona/files/{}", beta_logo.id)
+    );
+
+    let case_insensitive_filtered = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/site/projects?filter=BETA&page=1",
+            Some(&admin_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(case_insensitive_filtered["total"], 1);
+    assert_eq!(
+        case_insensitive_filtered["projects"][0]["projectName"],
+        "beta-project"
     );
 
     let delete_forbidden = rest_delete(
@@ -5596,7 +5636,7 @@ async fn site_admin_mail_send_and_recipient_lookup_follow_legacy_surface() {
 
     let direct_project_recipients = response_json(
         rest_raw_post(
-            app,
+            app.clone(),
             "/yona/sites/mailList",
             Some(&admin_cookie),
             Some(&admin_csrf),
@@ -5611,6 +5651,30 @@ async fn site_admin_mail_send_and_recipient_lookup_follow_legacy_surface() {
         json!(["member@example.com", "observer@example.com"])
     );
     assert!(direct_project_recipients.as_array().is_some());
+
+    let blank_optional_fields = response_json(
+        rest_json(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/site/mail/test",
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+            json!({
+                "from": "site-admin@yona.local",
+                "to": "blank@example.com",
+                "subject": "",
+                "body": ""
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(blank_optional_fields["sent"], true);
+    let outbox = snapshot_test_outbox();
+    assert_eq!(outbox.len(), 3);
+    assert_eq!(outbox[2].to, "blank@example.com");
+    assert_eq!(outbox[2].subject, "");
+    assert_eq!(outbox[2].body, "");
 }
 
 #[tokio::test]

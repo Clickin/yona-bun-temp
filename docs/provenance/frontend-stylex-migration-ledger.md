@@ -1,9 +1,12 @@
 # Frontend StyleX Migration Ledger
 
-> Status: current ledger. Batch 1108 closes the former screenshot/pixel-lock
+> Status: current slice ledger, not 100% product-parity completion or release
+> authorization. Batch 1108 closes the former screenshot/pixel-lock
 > continuation markers; unchecked boxes in older batch narratives are
 > historical worker handoff notes, not active repository TODOs. New StyleX
 > verification follows the property-based contract recorded in Batch 1108.
+> This visual slice does not waive remaining user-visible scope or authorize
+> ordinary observable divergence.
 
 ### Batch 1108 — property-based StyleX visual lock; screenshot gates retired
 

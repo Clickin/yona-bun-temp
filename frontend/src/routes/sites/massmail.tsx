@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LegacyMessage } from "../../components/legacy-message";
 import { SiteAdminSidebar } from "../../components/site-admin-sidebar";
 import { siteSettingWrapClassName } from "../../components/site-admin-sidebar";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { listProjectsQueryOptions } from "../../api/org-project";
 import { readSiteMailListRest, siteUpdateQueryOptions } from "../../api/site-admin";
@@ -200,7 +200,11 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
         />
         {t("site.massMail.toProjects")}
       </label>
-      <div className="hide" data-owner="site-massmail-project-wrapper" id="project-list-wrap">
+      <div
+        className={mailingType === "projects" ? undefined : "hide"}
+        data-owner="site-massmail-project-wrapper"
+        id="project-list-wrap"
+      >
         <div className="controls">
           <input
             data-owner="site-massmail-project-input"

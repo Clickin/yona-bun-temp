@@ -4,6 +4,10 @@ export interface RuntimeConfig {
   feedbackUrl?: string;
   hideProjectListing?: boolean;
   maxUploadedFileSize?: number;
+  migrationAuthorizationUrl?: string;
+  migrationClientId?: string;
+  migrationEnabled?: boolean;
+  migrationToken?: string;
   navbarCustomLinkName?: string;
   navbarCustomLinkUrl?: string;
   projectDefaultMenus?: string[];
@@ -75,6 +79,10 @@ export function resolveRuntimeConfig(input: RuntimeConfigInput = {}): RuntimeCon
     feedbackUrl: normalizeOptionalString(input.feedbackUrl),
     hideProjectListing: normalizeBoolean(input.hideProjectListing, false),
     maxUploadedFileSize: normalizePositiveInteger(input.maxUploadedFileSize, 2147483454),
+    migrationAuthorizationUrl: normalizeOptionalString(input.migrationAuthorizationUrl),
+    migrationClientId: normalizeOptionalString(input.migrationClientId),
+    migrationEnabled: input.migrationEnabled ?? false,
+    migrationToken: normalizeOptionalString(input.migrationToken),
     navbarCustomLinkName: normalizeOptionalString(input.navbarCustomLinkName),
     navbarCustomLinkUrl: normalizeOptionalString(input.navbarCustomLinkUrl),
     projectDefaultMenus: normalizeProjectDefaultMenus(input.projectDefaultMenus),

@@ -1,7 +1,7 @@
 # Differential Behavior Coverage — Sweep-Excluded Behaviors & Follow-up (2026-08-24, rev.7)
 
-Status: current. 이 문서는 differential sweep이 자동 비교하지 **않는** 행위와 그
-이유를 기록한다. **중요(rev.4 정정): 아래 §1 행위는 대부분 Yoram에 이미 구현되어
+Status: historical/interim evidence. 이 문서는 differential sweep이 자동
+비교하지 **않는** 행위와 그 이유를 기록한다. **중요(rev.4 정정): 아래 §1 행위는 대부분 Yoram에 이미 구현되어
 있다** — SVN은 `crates/server/src/svn_protocol/*` + `crates/vcs`(svn executable),
 git smart-http는 `crates/server/src/smart_http.rs` + git executable, migration/
 import는 migrator 도구(`crates/migration`, `crates/yona-migrate`)로 구현돼 있다.
@@ -11,19 +11,22 @@ SMTP 토큰 전달, 공유 시드 상태 보호)다. rev.3의 "미구현(gap)" �
 `.agent/differential/behavior-coverage.json`, `.agent/differential/report.json`,
 `docs/provenance/behavior-inventory.json` (immutable B-id inventory).
 
-2026-08-23 결정: 기존 deferred 분류는 폐지됐다. 위 행위는 전부 1차 릴리즈
-범위이며, 남은 작업은 "기능 구현"이 아니라 **스윕 하네스가 해당 행위를 자동
+2026-08-23 결정: 기존 deferred 분류는 폐지됐다. 위 행위는 전부 당시
+1차 릴리즈 범위로 기록됐으며, 이 artifact는 최종 release 승인이 아니다.
+남은 작업은 "기능 구현"이 아니라 **스윕 하네스가 해당 행위를 자동
 비교할 수 있게 만드는 것**(예: svn/git 클라이언트 페어 세션, 메일 catch-box,
 격리 프로젝트 생성-삭제 라이프사이클)이다.
 
-## 0. Intentional deviations — deliberately delegated surfaces (제외 확정)
+## 0. Intentional deviations — interim delegated surfaces (최종 제외 아님)
 
 아래는 미구현이 아니라 **SPEC.md 결정에 따라 app runtime이 아니라 migrator
 딜리버러블이 소유하는** `-_-api/v1/**` 행이다. migrator 도구 자체는
 `crates/migration` + `crates/yona-migrate`로 구현돼 있고 legacy Yona의 실제
 `/-_-api/v1` 엔드포인트를 호출한다. 스윕이 이 영역 divergence를 발견하면
-패리티 gap이 아니라 deviation이며, `scripts/differential/report.mjs`의
-migrator-scope 규칙이 명시적 `ACCEPTED_DIVERGENCE`로 자동 분류한다.
+패리티 gap이 아니라 당시 ownership deviation으로 기록한다. `scripts/differential/report.mjs`의
+migrator-scope 규칙이 `ACCEPTED_DIVERGENCE`로 자동 분류하더라도 이는
+interim evidence일 뿐이며, user-visible legacy behavior를 최종 scope에서
+제외하거나 일반적인 observable divergence를 승인하지 않는다.
 
 - `-_-api/v1/owners/:o/:p/exports` (B-0036) — export는 migrator/export tool 소유.
   yoram은 `/api/v1/owners/{o}/projects/{p}/exports`를 별도로 서빙한다(P15 확인).
@@ -105,28 +108,33 @@ the live instances before the fix):
    after checking the linked page response.
 7. `pairRequest`/`pairLenient` now treat agreed outcomes (including identical
    error statuses) as parity; only disagreement is reported.
-Current classified divergences are the 127 documented
+The current artifact classified 127
 `ACCEPTED_DIVERGENCE` rows and 8 `LEGACY_BUG` rows in
 `.agent/differential/report.json` (`sweep-mt6npd2a`, 2026-08-24). The only
 blocking row is B-0039/I13 `sharableUsers`; its implementation and focused
 empty-query contract are present, but the two sweep fixtures expose different
 users, public projects, avatar URLs, and observed ordering. This is a
-human fixture/catalog decision, not an automatically safe product patch;
+human fixture/catalog decision, not an automatically safe product patch or
+final accepted divergence;
 `docs/provenance/human-verification-2026-08.md` records it.
 
 ## 3. Harness status
 
-The current report has no `HARNESS_ERROR`, `INFRA_ERROR`, or `UNVERIFIED`
+The historical report has no `HARNESS_ERROR`, `INFRA_ERROR`, or `UNVERIFIED`
 classification. The historical issue-id, label-residue, SMTP-token, CDP, and
 PR-seed items from the previous sweep were resolved or reclassified and are
-not open work. Step errors remain separately reported by the runner and do
-not reduce 315/315 behavior coverage.
+not open work in that run. Step errors remain separately reported by the runner
+and do not reduce the behavior-row count.
 
-Current artifact summary:
+Historical artifact summary:
 
-- coverage: 315/315 behavior IDs;
+- behavior rows: 315/315 IDs (discovery count, not a product parity percentage);
 - violations: 136 (`ACCEPTED_DIVERGENCE` 127, `LEGACY_BUG` 8,
   `PRODUCT_GAP` 1);
-- blocking findings: B-0039/I13 only;
+- blocking finding in this artifact: B-0039/I13 only;
 - database projections compared after teardown: yes;
 - step errors: 108, reported separately from findings.
+
+This artifact does not authorize final parity or release closure. Final closure
+requires all user-visible deferred/gap work to reach zero and no ordinary
+accepted observable divergence to remain under `AGENTS.md` and `SPEC.md`.

@@ -7,6 +7,14 @@
 - 비교 기준은 `yona-original/`의 legacy source다. `reference/mixed-code/**`는 비교 기준이나 parity evidence로 사용하지 않는다.
 - legacy semantics와 다른 결정을 했다면 `deviation`을 남긴다.
 - pixel parity는 수정 불가로 동결한 legacy `yobi.less` 전체 import graph와 `bootstrap.css`/`bootstrap-responsive.css`만을 styling source로 검증한다. 새 보정 CSS 수치로 screenshot diff가 줄어도 동등성 통과로 보지 않는다.
+- 최종 목표는 legacy Yona 1.16의 100% product parity다. `deferred`/`gap`은
+  진행 중 bookkeeping일 뿐 최종 user-visible scope에서 남길 수 없다.
+- 일반적인 사용자 관찰 가능 차이는 `accepted divergence`로 최종 승인하지
+  않는다. 차이는 implementation-only 또는 proven legacy bug evidence가
+  있어야 한다.
+- JaCoCo는 discovery evidence이며 coverage percentage target이 아니다. 아래
+  기존 gate를 사용하고 새 validation/reconciliation framework를 도입하지
+  않는다.
 
 ## 계층 매핑 규칙
 

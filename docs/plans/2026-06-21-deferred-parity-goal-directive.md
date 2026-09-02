@@ -1,7 +1,13 @@
-Status: Current goal directive plan
+Status: historical/interim plan; superseded by the Phase 0 Closure Contract
 Date: 2026-06-21
 
 # Deferred Parity Goal Directive
+
+> This document preserves the deferred-scope inventory and execution evidence
+> from the first-priority checkpoint. It is not a final parity scope or release
+> authorization: every user-visible legacy feature remains final scope, and
+> `deferred`/`gap` rows must reach zero before closure under `AGENTS.md` and
+> `SPEC.md`.
 
 This plan starts after the first-priority legacy Yona app-runtime parity closure.
 `AGENTS.md`, `SPEC.md`, `yona-original/`, and the provenance documents remain

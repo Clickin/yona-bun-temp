@@ -233,6 +233,21 @@ test("migration route source keeps tabindex, progress width, and title declarati
   );
 });
 
+test("enabled migration screen keeps source export and GitHub import declarative", () => {
+  expect(MIGRATION_ROUTE_SOURCE).toContain("EnabledMigrationScreen");
+  expect(MIGRATION_ROUTE_SOURCE).toContain("fetch(`${migrationBase}/projects`");
+  expect(MIGRATION_ROUTE_SOURCE).toContain(
+    'fetch("https://api.github.com/user/repos?per_page=100&page=1"',
+  );
+  expect(MIGRATION_ROUTE_SOURCE).toContain(
+    "https://api.github.com/repos/${destination.full_name}/import/issues",
+  );
+  expect(MIGRATION_ROUTE_SOURCE).toContain("runtimeConfig.migrationAuthorizationUrl");
+  expect(MIGRATION_ROUTE_SOURCE).not.toContain("document.querySelector");
+  expect(MIGRATION_ROUTE_SOURCE).not.toContain("window.document");
+  expect(MIGRATION_ROUTE_SOURCE).not.toContain("window.location");
+});
+
 test("migration disabled shell matches legacy migration/home.scala.html screen DOM", async ({
   page,
 }) => {

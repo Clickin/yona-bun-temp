@@ -1,5 +1,22 @@
 # AGENTS.md: Yona
 
+## Phase 0 Closure Contract
+
+- 최종 목표는 **legacy Yona 1.16의 100% legacy-product parity**다. 기능적
+  결과와 사용자에게 관찰되는 UX가 모두 포함되며, 현재의 first-priority
+  완료는 최종 완료가 아니다.
+- 1·2순위 표는 구현 순서일 뿐 최종 scope exclusion이 아니다. 최종 완료 시
+  user-visible `deferred`/`gap`은 0이어야 하며, 일반적인
+  `accepted observable divergence`는 허용하지 않는다. 차이는 사용자에게
+  관찰되지 않는 implementation difference이거나 실제 legacy bug라는
+  근거가 있을 때만 남길 수 있다.
+- JaCoCo는 누락된 legacy user-visible 실행 경로를 찾는 discovery evidence일
+  뿐이며 coverage percentage/목표가 아니다. 기존 validation gate를 사용하고
+  새 validation 또는 reconciliation framework를 만들지 않는다.
+- 이 repository에서는 release/RC/public release를 만들지 않는다. 100% parity
+  승인 뒤 새 canonical repository로 source와 필요한 문서만 이전하고 그
+  repository에서 최초 release를 수행한다.
+
 ## 변환 원칙 (Conversion Principles) — 최우선
 
 **이 프로젝트는 기능 변환 프로젝트다. 새로운 구조를 제안하는 프로젝트가 아니다.**
@@ -15,10 +32,11 @@
 | 순위  | 범위                                                                                     | 시기         |
 | ----- | ---------------------------------------------------------------------------------------- | ------------ |
 | 1순위 | 레거시 Yona 핵심 기능 동등 구현(인증, 프로젝트, 이슈, 보드, PR/리뷰, 검색, 알림, 관리)   | 현재         |
-| 2순위 | SVN, LDAP, Import/Export, 마이그레이션 도구 등 구현 난이도가 높거나 우선순위가 낮은 기능 | 변환 완료 후 |
+| 2순위 | SVN, LDAP, Import/Export, 마이그레이션 도구 등 구현 난이도가 높거나 우선순위가 낮은 기능 | 이후 구현 순서 (최종 제외 아님) |
 | 3순위 | 아키텍처 개선, 성능 최적화, 새로운 기능 추가                                             | 개선 단계    |
 
-> "변환 완료" 기준은 `SPEC.md` Section 8 Definition of Done이다.
+> 1·2순위 user-visible 기능을 모두 닫은 뒤에만 "변환 완료"로 간주한다.
+> 최종 기준은 `SPEC.md` Section 8 Definition of Done이다.
 
 ### 명시적 금지
 
@@ -42,7 +60,10 @@
 - Yona를 `Rust + React` 기반의 단일 애플리케이션 워크스페이스로 재정렬해 레거시 Yona의 기능과 UX를 최대한 그대로 변환 구현한다.
 - canonical 구현 경로는 top-level [repo root](/G:/programming/yona)다.
 - 목표는 issue tracker 축소판이 아니라 legacy Yona functional parity와 UX parity다.
-- 일부 기능 누락은 허용되지만, 모든 누락은 `deferred`, `gap`, `deviation` 중 하나로 반드시 기록한다.
+- 최종 목표는 legacy Yona 1.16의 **100% legacy-product parity**다. 진행 중인
+  누락은 `deferred`/`gap`/`deviation`으로 기록하지만, 최종 완료 시
+  user-visible `deferred`/`gap`과 설명되지 않은 observable divergence는
+  허용되지 않는다.
 
 ## Fixed Decisions
 
@@ -83,11 +104,19 @@
 - `reference/mixed-code/**`를 구현 근거로 읽거나 사용하지 않는다. 기능/UX 근거는 `yona-original/`에서만 찾는다.
 - 새 canonical 구현이나 문서 기준선은 `repo root`를 기준으로 적는다.
 - root Bun/Go 혼합 코드, `TanStack Start`, in-process `tRPC`, `createServerFn`, Go backend 관련 결정은 현재 baseline처럼 서술하지 않는다.
-- 일부 기능이 아직 비어 있으면 반드시 세 계층에 남긴다.
+- 기능이 아직 비어 있으면 반드시 세 계층에 남긴다.
   - root canonical 문서: deferred scope
   - provenance 문서: gap 또는 deviation
   - 계획 문서: follow-up item
-- 같은 Phase에 남은 `gap`은 Phase 종료 blocker다. 종료하려면 구현하거나, 이후 Phase/deferred로 재분류하고 root canonical 문서, provenance, phase plan에 사유를 남긴다.
+- 같은 Phase에 남은 `gap`은 Phase 종료 blocker다. 중간 phase에서 이후
+  구현 순서로 재분류할 수 있지만, 최종 완료를 위해서는 구현하고 provenance와
+  phase plan에 근거를 남긴다. 일반적인 사용자 관찰 가능 차이를
+  `accepted divergence`로 승인해 종료하지 않는다.
+- JaCoCo 결과는 user-visible legacy behavior discovery를 위한 기존 evidence로만
+  사용한다. coverage percentage를 목표·KPI·release gate로 삼지 않으며, 새
+  validation/reconciliation framework를 추가하지 않는다.
+- 이 repository는 parity 구현과 evidence를 위한 작업 공간이며 release 대상이
+  아니다. 최초 release는 parity 승인 후 생성하는 새 repository에서만 수행한다.
 - 변환 완료 전에는 기능 구현에 필요한 최소 구조만 사용하고, 추가 구조 제안은 하지 않는다.
 - Agent가 Rust `cargo check`, `cargo test`, `cargo build --timings`, `cargo fmt` 등 cargo/rustc/rustfmt 기반 검증을 실행할 때는 Codex sandbox 안에서 실행하지 않는다. cargo/rustc/rustfmt는 macOS seatbelt sandbox에서 파일 접근 비용이 크게 늘어 feedback loop와 polling token 사용량을 왜곡하므로, cargo를 시작하는 tool invocation 전체를 항상 `require_escalated`로 sandbox 밖에서 실행한다.
 - Agent가 일반 cargo 검증을 실행할 때는 `pnpm agent:cargo -- --outside-sandbox <cargo args>`를 사용한다. 이 wrapper는 로그/가드 harness일 뿐 실행 환경을 분리하지 못하고 sandbox를 탈출하지 못하므로, wrapper를 호출하는 tool invocation 자체가 반드시 `require_escalated`여야 한다. `--outside-sandbox`는 escalated tool call에서만 쓰는 명시적 assertion이며, active `CODEX_SANDBOX` marker가 있는 sandbox 안에서 실행되면 cargo를 시작하지 않고 실패해야 한다. `CODEX_SANDBOX_NETWORK_DISABLED`는 escalated 호출에도 남을 수 있으므로 active sandbox 판별 기준으로 쓰지 않는다.

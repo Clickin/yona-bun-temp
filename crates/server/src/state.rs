@@ -180,6 +180,7 @@ pub(crate) struct RuntimeRegistry {
     pub(crate) password_hashing_silent_migration_to_argon2id: bool,
     pub(crate) data_root: PathBuf,
     pub(crate) integrations: IntegrationConfig,
+    pub(crate) github_allow_migration: bool,
     pub(crate) ldap: LdapRuntimeConfig,
     pub(crate) max_uploaded_file_size: usize,
     pub(crate) oauth: OAuthRuntimeConfig,
@@ -201,6 +202,7 @@ impl RuntimeRegistry {
                 .password_hashing_silent_migration_to_argon2id,
             data_root: config.data_root.clone(),
             integrations: config.integrations.clone(),
+            github_allow_migration: config.github_allow_migration,
             ldap: config.ldap.clone(),
             max_uploaded_file_size: config.max_uploaded_file_size,
             oauth: config.oauth.clone(),
@@ -224,6 +226,7 @@ pub(crate) struct PilotServiceImpl {
     pub(crate) data_root: PathBuf,
     pub(crate) public_origin: String,
     pub(crate) integrations: IntegrationConfig,
+    pub(crate) github_allow_migration: bool,
     pub(crate) ldap: LdapRuntimeConfig,
     pub(crate) max_uploaded_file_size: usize,
     pub(crate) oauth: OAuthRuntimeConfig,
@@ -262,6 +265,14 @@ pub(crate) struct BrowserRuntimeConfig {
     feedback_url: String,
     #[serde(rename = "hideProjectListing")]
     hide_project_listing: bool,
+    #[serde(rename = "migrationEnabled")]
+    migration_enabled: bool,
+    #[serde(rename = "migrationToken", skip_serializing_if = "Option::is_none")]
+    migration_token: Option<String>,
+    #[serde(rename = "migrationClientId")]
+    migration_client_id: String,
+    #[serde(rename = "migrationAuthorizationUrl")]
+    migration_authorization_url: String,
     #[serde(rename = "maxUploadedFileSize")]
     max_uploaded_file_size: usize,
     #[serde(rename = "navbarCustomLinkName")]
@@ -293,6 +304,9 @@ impl BrowserRuntimeConfig {
         project_default_scope: String,
         feedback_url: String,
         hide_project_listing: bool,
+        migration_enabled: bool,
+        migration_client_id: String,
+        migration_authorization_url: String,
         max_uploaded_file_size: usize,
         navbar_custom_link_name: String,
         navbar_custom_link_url: String,
@@ -312,6 +326,10 @@ impl BrowserRuntimeConfig {
             base_path,
             feedback_url,
             hide_project_listing,
+            migration_enabled,
+            migration_token: None,
+            migration_client_id,
+            migration_authorization_url,
             max_uploaded_file_size,
             navbar_custom_link_name,
             navbar_custom_link_url,
@@ -326,6 +344,11 @@ impl BrowserRuntimeConfig {
 
     pub(crate) fn send_yona_usage(&self) -> bool {
         self.send_yona_usage
+    }
+
+    pub(crate) fn with_migration_token(mut self, token: String) -> Self {
+        self.migration_token = Some(token);
+        self
     }
 }
 

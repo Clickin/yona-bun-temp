@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-19T18:01:05.219Z",
+  "generatedAt": "2026-09-02T10:28:43.209Z",
   "gitHead": "ref: refs/heads/main",
   "effectiveLayerOrder": [
     "homeb",
@@ -147116,16 +147116,6 @@
             ]
           },
           {
-            "s": "label[data-owner=\"site-massmail-recipient-radios\"]:has(#mailtoPrj:checked) ~ #project-list-wrap",
-            "d": [
-              {
-                "p": "display",
-                "v": "block",
-                "i": false
-              }
-            ]
-          },
-          {
             "s": "[data-owner=\"site-massmail-project-input\"]",
             "d": [
               {
@@ -182187,6 +182177,107 @@
     ],
     "keyframes": [
       {
+        "layer": "theme",
+        "atRules": [
+          "theme default"
+        ],
+        "name": "spin",
+        "frames": [
+          {
+            "s": "to",
+            "d": [
+              {
+                "p": "transform",
+                "v": "rotate(360deg)",
+                "i": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "layer": "theme",
+        "atRules": [
+          "theme default"
+        ],
+        "name": "ping",
+        "frames": [
+          {
+            "s": "75%, 100%",
+            "d": [
+              {
+                "p": "transform",
+                "v": "scale(2)",
+                "i": false
+              },
+              {
+                "p": "opacity",
+                "v": "0",
+                "i": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "layer": "theme",
+        "atRules": [
+          "theme default"
+        ],
+        "name": "pulse",
+        "frames": [
+          {
+            "s": "50%",
+            "d": [
+              {
+                "p": "opacity",
+                "v": "0.5",
+                "i": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "layer": "theme",
+        "atRules": [
+          "theme default"
+        ],
+        "name": "bounce",
+        "frames": [
+          {
+            "s": "0%, 100%",
+            "d": [
+              {
+                "p": "transform",
+                "v": "translateY(-25%)",
+                "i": false
+              },
+              {
+                "p": "animation-timing-function",
+                "v": "cubic-bezier(0.8, 0, 1, 1)",
+                "i": false
+              }
+            ]
+          },
+          {
+            "s": "50%",
+            "d": [
+              {
+                "p": "transform",
+                "v": "none",
+                "i": false
+              },
+              {
+                "p": "animation-timing-function",
+                "v": "cubic-bezier(0, 0, 0.2, 1)",
+                "i": false
+              }
+            ]
+          }
+        ]
+      },
+      {
         "layer": "legacy",
         "atRules": [],
         "name": "progress-bar-stripes",
@@ -182522,107 +182613,6 @@
               {
                 "p": "transform",
                 "v": "rotate(360deg)",
-                "i": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "layer": "theme",
-        "atRules": [
-          "theme default"
-        ],
-        "name": "spin",
-        "frames": [
-          {
-            "s": "to",
-            "d": [
-              {
-                "p": "transform",
-                "v": "rotate(360deg)",
-                "i": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "layer": "theme",
-        "atRules": [
-          "theme default"
-        ],
-        "name": "ping",
-        "frames": [
-          {
-            "s": "75%, 100%",
-            "d": [
-              {
-                "p": "transform",
-                "v": "scale(2)",
-                "i": false
-              },
-              {
-                "p": "opacity",
-                "v": "0",
-                "i": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "layer": "theme",
-        "atRules": [
-          "theme default"
-        ],
-        "name": "pulse",
-        "frames": [
-          {
-            "s": "50%",
-            "d": [
-              {
-                "p": "opacity",
-                "v": "0.5",
-                "i": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "layer": "theme",
-        "atRules": [
-          "theme default"
-        ],
-        "name": "bounce",
-        "frames": [
-          {
-            "s": "0%, 100%",
-            "d": [
-              {
-                "p": "transform",
-                "v": "translateY(-25%)",
-                "i": false
-              },
-              {
-                "p": "animation-timing-function",
-                "v": "cubic-bezier(0.8, 0, 1, 1)",
-                "i": false
-              }
-            ]
-          },
-          {
-            "s": "50%",
-            "d": [
-              {
-                "p": "transform",
-                "v": "none",
-                "i": false
-              },
-              {
-                "p": "animation-timing-function",
-                "v": "cubic-bezier(0, 0, 0.2, 1)",
                 "i": false
               }
             ]
@@ -184841,20 +184831,14 @@
       {
         "name": "index.html-inline",
         "path": "<inline>",
-        "sha256": "59dc1d88e49b856b0da4cd50563311bde4e5b3de6fb8e90790fb697772f7c101",
-        "bytes": 176
-      },
-      {
-        "name": "legacy-fallback.css",
-        "path": "/Users/senghyunjo/github/yona-bun-temp/frontend/public/legacy-assets/stylesheets/legacy-fallback.css",
-        "sha256": "754ff3b616156208c215c1ff49503d4afc450977ac9206d01297fe9217bd14cd",
-        "bytes": 524740
+        "sha256": "13d4cf9860c99717273fe6fa8d1fc0aa6bd8b7f6c35184c3e9490bd92047e98b",
+        "bytes": 299
       },
       {
         "name": "app.css",
         "path": "/Users/senghyunjo/github/yona-bun-temp/frontend/src/app.css",
-        "sha256": "c7785e90be6afc7b06e66baf436e8c3fdb5b5d75517b55d3e4ae0487dea1b91a",
-        "bytes": 697095
+        "sha256": "547f825e08a7f164a8baec57749c0749394bedccb74d3f265028f94888a19436",
+        "bytes": 1218842
       },
       {
         "name": "import",
@@ -184871,8 +184855,8 @@
     ],
     "layerStatements": [
       "layer homeb",
+      "layer homeb, legacy, theme, utilities",
       "layer legacy",
-      "layer homeb",
       "layer legacy",
       "layer homeb"
     ],
@@ -184978,7 +184962,7 @@
         "count": 1
       }
     ],
-    "ruleCount": 9239,
+    "ruleCount": 9238,
     "bucketCount": 25,
     "fontFaceCount": 2,
     "keyframeCount": 16

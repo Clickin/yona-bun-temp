@@ -1,15 +1,16 @@
 # RC UX Diff Closure Checklist
 
-Status: completed closure evidence (2026-08-24). All checklist rows are closed
-as `pass`, `not-applicable`, or `expected-legacy-non-ok`. Release-environment
-and product-owner checks that cannot be closed by LLM evidence are tracked in
-`docs/provenance/human-verification-2026-08.md`.
+Status: historical/interim closure evidence (2026-08-24). All checklist rows
+were closed as `pass`, `not-applicable`, or `expected-legacy-non-ok` for that
+checkpoint. This is not final parity acceptance or release authorization;
+release-environment and product-owner checks that cannot be closed by LLM
+evidence are tracked in `docs/provenance/human-verification-2026-08.md`.
 
 This checklist is the work queue for closing the remaining legacy Yona to Rust
-Yona UX diff. It is not a pass report. The RC passes this gate only when a
-server administrator can replace legacy Yona with the Rust port and normal
-users do not notice functional, route, copy, or UX differences on the supported
-in-place migration path.
+Yona UX diff. It is not a pass report or a final product-parity claim. The
+historical RC checkpoint is not a release from this repository; final closure
+requires 100% user-visible parity, no ordinary accepted observable divergence,
+and human acceptance under `AGENTS.md` and `SPEC.md`.
 
 ## Inputs
 
@@ -27,7 +28,7 @@ in-place migration path.
 | `pass`                   | Legacy and Rust route, copy, layout, interaction, mutation, and state behavior match.     |
 | `diff`                   | User-visible or behavior-visible mismatch found.                                          |
 | `blocked`                | Cannot verify because required fixture, data, route, browser access, or infra is absent.  |
-| `not-applicable`         | Legacy evidence proves the surface is not part of the supported app-runtime RC path.      |
+| `not-applicable`         | Legacy evidence proves the surface is not part of that historical app-runtime RC path.    |
 | `expected-legacy-non-ok` | Legacy returns non-2xx and Rust behavior is intentionally documented against that source. |
 
 ## RC Pass Rule
@@ -44,8 +45,9 @@ closed:
   intentional.
 - XSS, SQL injection, and pathological Markdown probes remain green on the same
   surfaces that users can reach after in-place migration.
-- The migration/release blockers in
-  `docs/plans/2026-06-23-rc-release-scope.md` remain green.
+- The historical migration/release checks in
+  `docs/plans/2026-06-23-rc-release-scope.md` remain recorded; they do not
+  authorize a release from this repository.
 
 ## Per-Page Checks
 

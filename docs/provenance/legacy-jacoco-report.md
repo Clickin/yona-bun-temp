@@ -1,5 +1,10 @@
 # Legacy Yona JaCoCo report tooling
 
+> JaCoCo is a discovery instrument for locating legacy user-visible execution
+> paths. It has no coverage percentage target, KPI, or release gate. Use the
+> existing toolchain only; do not build a new validation/reconciliation
+> framework around its output.
+
 - **Legacy distribution:** `.agent/legacy-localhost/dist/yona-h2-v1.16.0/yona-1.16.0`; the Yona-owned application artifact is `lib/yona.yona-1.16.0.jar`.
 - **Launcher:** `scripts/legacy-localhost.mjs` starts `<distribution>/bin/yona`.
 - **Java process boundary:** `bin/yona` owns the JVM launch; the launcher adds the JaCoCo option to that child process's argument vector.
@@ -39,7 +44,10 @@
   `INVALID`/`INVALID_EVIDENCE`, and the discovery queue is emitted as blocked
   rather than as a product backlog.
 
-Report generation remains opt-in via `YONA_LEGACY_JACOCO=1`; ordinary validation and sweep runs do not require Maven or Gradle caches. The eventual release repository may remove parity tooling, but this porting repository vendors the binaries for fresh-checkout reproducibility.
+Report generation remains opt-in via `YONA_LEGACY_JACOCO=1`; ordinary validation
+and sweep runs do not require Maven or Gradle caches. The eventual new release
+repository may remove parity tooling, but this porting repository vendors the
+binaries for fresh-checkout reproducibility and is not itself a release source.
 
 ## Play 2.3 compatibility shim
 

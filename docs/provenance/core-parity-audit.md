@@ -1,5 +1,12 @@
 # Core Parity Audit
 
+> **Status: historical/interim evidence baseline.** This audit records route and
+> contract evidence for the Rust pivot; it is not a 100% product-parity,
+> human-acceptance, or release-completion claim. Any `deferred`, `gap`, or
+> observable difference remains subject to the final closure contract in
+> `AGENTS.md` and `SPEC.md`; ordinary accepted observable divergences are not
+> final approval.
+
 - 2026-08-01 workspace profile query-parity note: the legacy public profile and
   member-project projection remain grounded in `yona-original/app/views/user/view.scala.html`
   and its `user/partial_*.scala.html` streams. Yoram keeps the legacy project

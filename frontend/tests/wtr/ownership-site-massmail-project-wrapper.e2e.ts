@@ -1,5 +1,4 @@
 import { readFile } from "../wtr-compat.ts";
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -36,6 +35,8 @@ test.describe("Style site massmail project wrapper", () => {
       readFile(themeSource, "utf8"),
     ]);
     expect(route).toContain('data-owner="site-massmail-project-wrapper"');
+    expect(route).toContain('className={mailingType === "projects" ? undefined : "hide"}');
+    expect(theme).not.toContain("mailtoPrj:checked");
 
     const wrapper = await openMassMail(page);
     await expect(wrapper).toHaveAttribute("id", "project-list-wrap");

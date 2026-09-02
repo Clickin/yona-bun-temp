@@ -1,16 +1,22 @@
 ---
 title: Differential parity verification — closed inventory × live differential sweep × fast loop
 kind: plan
-status: active
+status: historical/interim; superseded by the Phase 0 Closure Contract
 created: 2026-08-22
 ---
 
 # 차등 패리티 검증 계획 (2026-08-22 확정)
 
+> 이 문서는 당시 differential tooling 설계와 현재 evidence를 보존한다.
+> `AGENTS.md`/`SPEC.md`의 Phase 0 Closure Contract가 우선하며, 이 문서를
+> 근거로 새 validation/reconciliation framework, coverage percentage 목표,
+> 또는 이 repository의 release 판정을 추가하지 않는다.
+
 ## 목표
 
-사람의 눈으로 확인하지 않고 Yoram이 Yona의 사용자 기능·경험을 100% 제공하는지를
-프로그램/AI가 판정할 수 있는 체계를 만든다.
+기존 validation lane과 differential evidence로 legacy Yona user-visible
+behavior를 발견·비교한다. 자동 evidence만으로 100% parity 또는 human
+acceptance를 판정하지 않는다.
 
 ## 확정 결정 (사용자 승인, 2026-08-22)
 
@@ -24,16 +30,22 @@ created: 2026-08-22
    듀얼 어댑터가 본대. drag&drop, due-date 캘린더, hover popover 등 소수 상호작용만 양측
    브라우저 시나리오(기존 WTR harness 재사용)로 보강.
 4. **우선순위: 레인 재배치 먼저** — AI 검증 루프가 경제적으로 성립하려면 iteration이 분 단위여야 한다.
-5. **판정 위치: 야간 차등 스윕 + 릴리즈 시 3중 판정** — 매 커밋 gate에 넣지 않는다.
+5. **판정 위치: 기존 야간 차등 스윕과 human acceptance** — 매 커밋 gate에
+   넣지 않으며 새 판정 framework를 추가하지 않는다.
 
-## 릴리즈 판정 공식 (단일 명령)
+## Final closure boundary (이 문서의 release 공식 아님)
 
 ```
-release-ok =
-  behavior-inventory coverage == 100%        // uncovered 항목 0, 프로그램 판정
-  && pnpm test:parity green                  // css-cascade + dom lane + 축소된 chrome lane
-  && 최신 야간 차등 스윕 위반 == 0            // (route × state × 부작용) 리포트 기준
+final-closure =
+  existing validation evidence reviewed
+  && user-visible legacy scope has no deferred/gap rows
+  && no ordinary accepted observable divergence
+  && human acceptance on one HEAD
 ```
+
+위 조건은 release 명령이나 coverage percentage KPI가 아니다. 조건 충족 전에는
+이 repository에서 RC/public release를 만들지 않으며, 충족 뒤 새 canonical
+repository에서만 release한다.
 
 ## Phase
 
@@ -68,9 +80,11 @@ release-ok =
 ### Phase D — 브라우저 보강
 - HTTP로 불가능한 상호작용만 양측 브라우저 시나리오 소수 집합으로. 기존 WTR harness 재사용.
 
-### Phase E — 판정 체계
+### Phase E — 기존 evidence 운영
 - 야간 전체 시나리오 차등 스윕 + 리포트 생성.
-- 릴리즈 판정 단일 명령 스크립트(위 공식 구현).
+- 기존 parity/release checks를 운영하고 결과를 provenance에 남긴다. 새
+  validation/reconciliation framework나 수치형 coverage release gate는
+  추가하지 않는다.
 - 기존 58개 baseline-known 실패와 flake 잔여는 새 체계 흡수 과정에서 재현 여부로 폐기/승격.
 
 ## 근거

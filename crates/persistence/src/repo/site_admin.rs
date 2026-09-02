@@ -50,10 +50,19 @@ impl AppRepositoryImpl<'_> {
             let pattern = format!("%{normalized_query}%");
             user_query = user_query.filter(
                 Condition::any()
-                    .add(n4user::Column::LoginId.like(pattern.clone()))
-                    .add(n4user::Column::Name.like(pattern.clone()))
-                    .add(n4user::Column::EnglishName.like(pattern.clone()))
-                    .add(n4user::Column::Email.like(pattern)),
+                    .add(
+                        Expr::expr(Func::lower(Expr::col(n4user::Column::LoginId)))
+                            .like(pattern.clone()),
+                    )
+                    .add(
+                        Expr::expr(Func::lower(Expr::col(n4user::Column::Name)))
+                            .like(pattern.clone()),
+                    )
+                    .add(
+                        Expr::expr(Func::lower(Expr::col(n4user::Column::EnglishName)))
+                            .like(pattern.clone()),
+                    )
+                    .add(Expr::expr(Func::lower(Expr::col(n4user::Column::Email))).like(pattern)),
             );
         }
 
@@ -399,7 +408,10 @@ impl AppRepositoryImpl<'_> {
         if filter.is_empty() {
             query = query.order_by_desc(project::Column::CreatedDate);
         } else {
-            query = query.filter(project::Column::Name.like(format!("%{filter}%")));
+            query = query.filter(
+                Expr::expr(Func::lower(Expr::col(project::Column::Name)))
+                    .like(format!("%{}%", normalize_identity(&filter))),
+            );
         }
 
         let total = query.clone().count(&self.db).await? as u32;
