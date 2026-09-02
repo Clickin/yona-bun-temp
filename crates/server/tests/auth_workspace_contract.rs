@@ -407,8 +407,8 @@ async fn enabled_legacy_migration_exports_authenticated_project_data() {
         "/yona/migration/migration-owner/projects/source/labels",
         "/yona/migration/migration-owner/projects/source/issuelabel",
         "/yona/migration/migration-owner/projects/source/milestones",
-        "/yona/migration/migration-owner/projects/source/issues",
-        "/yona/migration/migration-owner/projects/source/posts",
+        "/yona/migration/migration-owner/projects/source/issues?withWikiCommit=true",
+        "/yona/migration/migration-owner/projects/source/posts?withWikiCommit=true",
     ] {
         let response = app
             .clone()

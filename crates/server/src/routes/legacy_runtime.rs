@@ -223,6 +223,7 @@ pub(crate) async fn direct_legacy_migration_json_disabled(
 pub(crate) async fn direct_legacy_migration_json(
     headers: HeaderMap,
     AxumPath(legacy_path): AxumPath<String>,
+    Query(query): Query<HashMap<String, String>>,
     service: PilotServiceImpl,
 ) -> Response {
     if !service.github_allow_migration {
@@ -260,10 +261,24 @@ pub(crate) async fn direct_legacy_migration_json(
             migration_milestones(repository, owner, project_name).await
         }
         [owner, "projects", project_name, "issues"] => {
-            migration_issues(repository, owner, project_name, &service.base_path).await
+            migration_issues(
+                repository,
+                owner,
+                project_name,
+                &service.base_path,
+                migration_wiki_commit_requested(&query),
+            )
+            .await
         }
         [owner, "projects", project_name, "posts"] => {
-            migration_posts(repository, owner, project_name, &service.base_path).await
+            migration_posts(
+                repository,
+                owner,
+                project_name,
+                &service.base_path,
+                migration_wiki_commit_requested(&query),
+            )
+            .await
         }
         _ => Err(MigrationRouteError::NotFound),
     };
@@ -276,6 +291,12 @@ pub(crate) async fn direct_legacy_migration_json(
             RestRouteError::internal(error.to_string()).into_response()
         }
     }
+}
+
+fn migration_wiki_commit_requested(query: &HashMap<String, String>) -> bool {
+    query
+        .get("withWikiCommit")
+        .is_some_and(|value| value.trim().ends_with("true"))
 }
 
 enum MigrationRouteError {
@@ -498,12 +519,13 @@ async fn migration_issues(
     owner: &str,
     project_name: &str,
     base_path: &str,
+    with_wiki_commit: bool,
 ) -> Result<serde_json::Value, MigrationRouteError> {
     Ok(serde_json::json!({
         "issues": migration_issue_records(repository, owner, project_name)
             .await?
             .into_iter()
-            .map(|issue| migration_issue_json(&issue, base_path))
+            .map(|issue| migration_issue_json(&issue, base_path, with_wiki_commit))
             .collect::<Vec<_>>()
     }))
 }
@@ -513,12 +535,13 @@ async fn migration_posts(
     owner: &str,
     project_name: &str,
     base_path: &str,
+    with_wiki_commit: bool,
 ) -> Result<serde_json::Value, MigrationRouteError> {
     Ok(serde_json::json!({
         "issues": migration_post_records(repository, owner, project_name)
             .await?
             .into_iter()
-            .map(|post| migration_post_json(&post, base_path))
+            .map(|post| migration_post_json(&post, base_path, with_wiki_commit))
             .collect::<Vec<_>>()
     }))
 }
@@ -645,6 +668,7 @@ async fn migration_post_records(
 fn migration_issue_json(
     issue: &yoram_persistence::IssueRecord,
     base_path: &str,
+    with_wiki_commit: bool,
 ) -> serde_json::Value {
     let link = format!(
         "{}/{}/{}/issue/{}",
@@ -666,6 +690,7 @@ fn migration_issue_json(
             &link,
             base_path,
             &issue.attachments,
+            with_wiki_commit,
         )),
     );
     node.insert(
@@ -696,6 +721,7 @@ fn migration_issue_json(
             base_path,
             &comment.attachments,
             comment.created_at,
+            with_wiki_commit,
         )).collect::<Vec<_>>(),
     })
 }
@@ -703,6 +729,7 @@ fn migration_issue_json(
 fn migration_post_json(
     post: &yoram_persistence::PostingRecord,
     base_path: &str,
+    with_wiki_commit: bool,
 ) -> serde_json::Value {
     let link = format!(
         "{}/{}/{}/post/{}",
@@ -722,6 +749,7 @@ fn migration_post_json(
                 &link,
                 base_path,
                 &post.attachments,
+                with_wiki_commit,
             ),
             "created_at": migration_timestamp(post.created_at),
         },
@@ -733,6 +761,7 @@ fn migration_post_json(
             base_path,
             &comment.attachments,
             comment.created_at,
+            with_wiki_commit,
         )).collect::<Vec<_>>(),
     })
 }
@@ -745,10 +774,20 @@ fn migration_comment_json(
     base_path: &str,
     attachments: &[yoram_persistence::IssueAttachmentRecord],
     created_at: Option<DateTime>,
+    with_wiki_commit: bool,
 ) -> serde_json::Value {
     serde_json::json!({
         "created_at": migration_timestamp(created_at),
-        "body": migration_body(body, author_login, author_name, "코멘트", link, base_path, attachments),
+        "body": migration_body(
+            body,
+            author_login,
+            author_name,
+            "코멘트",
+            link,
+            base_path,
+            attachments,
+            with_wiki_commit,
+        ),
     })
 }
 
@@ -760,9 +799,10 @@ fn migration_body(
     link: &str,
     base_path: &str,
     attachments: &[yoram_persistence::IssueAttachmentRecord],
+    with_wiki_commit: bool,
 ) -> String {
     let base_prefix = base_path.trim_end_matches('/');
-    let absolute_links = body.replace("](/", &format!("]{base_prefix}/"));
+    let absolute_links = migration_body_links(body, base_prefix, with_wiki_commit);
     let mut result = format!(
         "@{} ({}) 님이 작성한 [{}]({})입니다. \n\\---\n\n{}",
         author_login, author_name, kind, link, absolute_links
@@ -771,13 +811,57 @@ fn migration_body(
         result.push_str("\n\n--- attachments ---");
         for attachment in attachments {
             result.push_str(&format!(
-                "\n[{}]({}/files/{})",
+                "\n[{}]({})",
                 attachment.name,
-                base_path.trim_end_matches('/'),
-                attachment.id
+                if with_wiki_commit {
+                    format!(
+                        "../wiki/files/{}/{}",
+                        attachment.id,
+                        attachment.name.replace('#', "%23")
+                    )
+                } else {
+                    format!("{}/files/{}", base_path.trim_end_matches('/'), attachment.id)
+                }
             ));
         }
     }
+    result
+}
+
+fn migration_body_links(body: &str, base_prefix: &str, with_wiki_commit: bool) -> String {
+    let mut result = body
+        .replace(
+            "<img src=\"/",
+            &format!("<img src=\"{base_prefix}/"),
+        )
+        .replace(
+            "<img src='/",
+            &format!("<img src='{base_prefix}/"),
+        );
+    let original = std::mem::take(&mut result);
+    let mut result = String::with_capacity(original.len());
+    let mut rest = original.as_str();
+    while let Some(link_start) = rest.find("](/") {
+        result.push_str(&rest[..link_start + 2]);
+        let target_start = link_start + 3;
+        let Some(target_end) = rest[target_start..].find(')') else {
+            result.push_str(&rest[link_start + 2..]);
+            return result;
+        };
+        let target = &rest[target_start..target_start + target_end];
+        let text = result
+            .rfind('[')
+            .map(|start| result[start + 1..result.len() - 2].to_string())
+            .unwrap_or_default();
+        if with_wiki_commit {
+            result.push_str(&format!("../wiki/{target}/{text}"));
+        } else {
+            result.push_str(&format!("{base_prefix}/{target}"));
+        }
+        result.push(')');
+        rest = &rest[target_start + target_end + 1..];
+    }
+    result.push_str(rest);
     result
 }
 
@@ -1025,9 +1109,32 @@ pub(crate) fn routes(
         )
         .route(
             "/migration/{*legacy_path}",
-            get(move |headers: HeaderMap, path: AxumPath<String>| {
+            get(
+                move |
+                    headers: HeaderMap,
+                    path: AxumPath<String>,
+                    query: Query<HashMap<String, String>>,
+                | {
                 let service = legacy_migration_json_service.clone();
-                async move { direct_legacy_migration_json(headers, path, service).await }
-            }),
+                    async move { direct_legacy_migration_json(headers, path, query, service).await }
+                },
+            ),
         )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::migration_body_links;
+
+    #[test]
+    fn migration_body_links_preserve_legacy_wiki_commit_mode() {
+        assert_eq!(
+            migration_body_links("<img src=\"/image.png\"> [image](/image.png)", "/yona", false),
+            "<img src=\"/yona/image.png\"> [image](/yona/image.png)"
+        );
+        assert_eq!(
+            migration_body_links("[image](/image.png)", "", true),
+            "[image](../wiki/image.png/image)"
+        );
+    }
 }

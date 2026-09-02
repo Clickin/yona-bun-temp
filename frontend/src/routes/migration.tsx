@@ -65,6 +65,17 @@ type GithubProject = {
   owner: { login: string; type: string };
 };
 
+type DestinationWarnings = {
+  milestones: number;
+  issues: number;
+  posts: number;
+  workerMissing: boolean;
+  currentUserNotAdmin: boolean;
+  userProject: boolean;
+  foreignUserProject: boolean;
+  currentUser?: string;
+};
+
 type EnabledMigrationScreenProps = {
   runtimeConfig: ReturnType<typeof Route.useRouteContext>["runtimeConfig"];
 };
@@ -77,6 +88,19 @@ function EnabledMigrationScreen({ runtimeConfig }: EnabledMigrationScreenProps) 
   const [filter, setFilter] = React.useState("");
   const [busy, setBusy] = React.useState("");
   const [message, setMessage] = React.useState("");
+  const [assigneeMap, setAssigneeMap] = React.useState<Record<string, string>>({});
+  const [assigneeValidity, setAssigneeValidity] = React.useState<
+    Record<string, boolean | undefined>
+  >({});
+  const [destinationWarnings, setDestinationWarnings] = React.useState<DestinationWarnings>({
+    milestones: 0,
+    issues: 0,
+    posts: 0,
+    workerMissing: false,
+    currentUserNotAdmin: false,
+    userProject: false,
+    foreignUserProject: false,
+  });
   const milestoneMap = React.useRef<Record<string, number>>({});
   const authorizationUrl = runtimeConfig.migrationAuthorizationUrl;
   const clientId = runtimeConfig.migrationClientId;
@@ -134,12 +158,91 @@ function EnabledMigrationScreen({ runtimeConfig }: EnabledMigrationScreenProps) 
         { credentials: "same-origin" },
       );
       if (!response.ok) throw new Error("Unable to load the source project.");
-      setSource((await response.json()) as MigrationProject);
+      const loadedSource = (await response.json()) as MigrationProject;
+      const storedAssignees = Object.fromEntries(
+        (loadedSource.assignees ?? []).flatMap((assignee) => {
+          const login = window.localStorage.getItem(assignee.login) ?? "";
+          return login.length > 0 ? [[assignee.login, login] as const] : [];
+        }),
+      );
+      setSource(loadedSource);
+      setAssigneeMap(storedAssignees);
+      setAssigneeValidity({});
+      if (destination) {
+        for (const [sourceLogin, destinationLogin] of Object.entries(storedAssignees)) {
+          void validateAssignee(sourceLogin, destinationLogin);
+        }
+      }
       setMessage("");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to load the source project.");
     } finally {
       setBusy("");
+    }
+  };
+
+  const loadDestinationWarnings = async (repo: GithubProject) => {
+    const request = (path: string) =>
+      fetch(`https://api.github.com${path}`, {
+        headers: { Authorization: `token ${token}` },
+      });
+    const [milestonesResponse, issuesResponse, postsResponse, userResponse] = await Promise.all([
+      request(`/repos/${repo.full_name}/milestones?state=all`),
+      request(`/repos/${repo.full_name}/issues?state=all`),
+      request(`/repos/${repo.full_name}/issues?state=all&labels=${encodeURIComponent("게시글")}`),
+      request("/user"),
+    ]);
+    const currentUser = userResponse.ok
+      ? ((await userResponse.json()) as { login?: string }).login
+      : undefined;
+    let workerMissing = false;
+    let currentUserNotAdmin = false;
+    if (repo.owner.type === "Organization" && currentUser) {
+      const membershipResponse = await request(
+        `/orgs/${encodeURIComponent(repo.owner.login)}/memberships/${encodeURIComponent(currentUser)}`,
+      );
+      const membership = membershipResponse.ok
+        ? ((await membershipResponse.json()) as { role?: string })
+        : undefined;
+      workerMissing = membership?.role !== "admin";
+      currentUserNotAdmin = membership?.role !== "admin";
+    }
+    setDestinationWarnings({
+      milestones: milestonesResponse.ok
+        ? ((await milestonesResponse.json()) as unknown[]).length
+        : 0,
+      issues: issuesResponse.ok ? ((await issuesResponse.json()) as unknown[]).length : 0,
+      posts: postsResponse.ok ? ((await postsResponse.json()) as unknown[]).length : 0,
+      workerMissing,
+      currentUserNotAdmin,
+      userProject: repo.owner.type === "User",
+      foreignUserProject: repo.owner.type === "User" && repo.owner.login !== currentUser,
+      currentUser,
+    });
+  };
+
+  const validateAssignee = async (
+    sourceLogin: string,
+    destinationLogin: string,
+    targetDestination = destination,
+  ) => {
+    setAssigneeMap((current) => ({ ...current, [sourceLogin]: destinationLogin }));
+    if (!destinationLogin) {
+      window.localStorage.removeItem(sourceLogin);
+      setAssigneeValidity((current) => ({ ...current, [sourceLogin]: undefined }));
+      return;
+    }
+    if (!targetDestination) return;
+    const response = await fetch(
+      `https://api.github.com/repos/${targetDestination.full_name}/collaborators/${encodeURIComponent(destinationLogin)}`,
+      { headers: { Authorization: `token ${token}` } },
+    );
+    const valid = response.status === 204;
+    setAssigneeValidity((current) => ({ ...current, [sourceLogin]: valid }));
+    if (valid) {
+      window.localStorage.setItem(sourceLogin, destinationLogin);
+    } else {
+      window.localStorage.removeItem(sourceLogin);
     }
   };
 
@@ -151,7 +254,9 @@ function EnabledMigrationScreen({ runtimeConfig }: EnabledMigrationScreenProps) 
     setBusy(kind);
     try {
       const sourcePath = `${migrationBase}/${encodeURIComponent(source.owner)}/projects/${encodeURIComponent(source.projectName)}`;
-      const response = await fetch(`${sourcePath}/${kind}`, { credentials: "same-origin" });
+      const response = await fetch(`${sourcePath}/${kind}?withWikiCommit=true`, {
+        credentials: "same-origin",
+      });
       if (!response.ok) throw new Error(`Unable to read ${kind}.`);
       const payload = (await response.json()) as {
         milestones?: Array<{ milestone: Record<string, unknown> }>;
@@ -202,6 +307,14 @@ function EnabledMigrationScreen({ runtimeConfig }: EnabledMigrationScreenProps) 
                 };
           if (kind === "issues") {
             const issue = body as Record<string, unknown>;
+            if (typeof issue.assignee === "string") {
+              const mappedAssignee = assigneeMap[issue.assignee];
+              if (mappedAssignee && assigneeValidity[issue.assignee] === true) {
+                issue.assignee = mappedAssignee;
+              } else {
+                delete issue.assignee;
+              }
+            }
             const sourceMilestoneId = issue.milestoneId;
             delete issue.milestoneId;
             if (typeof sourceMilestoneId === "number") {
@@ -302,7 +415,26 @@ function EnabledMigrationScreen({ runtimeConfig }: EnabledMigrationScreenProps) 
             busy={false}
             filter={filter}
             onFilter={setFilter}
-            onSelect={(project) => setDestination(project as GithubProject)}
+            destinationWarnings={destinationWarnings}
+            onSelect={(project) => {
+              const selectedDestination = project as GithubProject;
+              setDestination(selectedDestination);
+              setDestinationWarnings({
+                milestones: 0,
+                issues: 0,
+                posts: 0,
+                workerMissing: false,
+                currentUserNotAdmin: false,
+                userProject: false,
+                foreignUserProject: false,
+              });
+              void loadDestinationWarnings(selectedDestination);
+              if (source) {
+                for (const [sourceLogin, destinationLogin] of Object.entries(assigneeMap)) {
+                  void validateAssignee(sourceLogin, destinationLogin, selectedDestination);
+                }
+              }
+            }}
           />
           <div className="span6 status" data-owner="migration-status-column-grid">
             <div className="progress row">
@@ -328,7 +460,40 @@ function EnabledMigrationScreen({ runtimeConfig }: EnabledMigrationScreenProps) 
                   <tr key={kind}>
                     <td className="left-title">{label}</td>
                     <td className="left-title">{source?.[countKey] ?? 0}</td>
-                    <td>
+                    <td
+                      className={
+                        destination && destinationWarnings[kind] > 0 ? "alert-bg" : undefined
+                      }
+                    >
+                      {destination && destinationWarnings[kind] > 0 ? (
+                        <div
+                          className="alert-icon text-align-left"
+                          data-owner={`migration-${kind}-warning`}
+                        >
+                          <div>
+                            <i className="yobicon-alert" />
+                            <span className="alert-icon-text">
+                              {" "}
+                              대상 프로젝트에 <strong>{label}</strong> 데이터가 존재합니다.
+                            </span>
+                          </div>
+                          <div className="text-align-left description">
+                            import 진행시 데이터가 추가됩니다. 기존 데이터를 건드리지는 않으나
+                            중복데이터가 입력될 가능성이 있으니 미리 확인해 주세요
+                          </div>
+                        </div>
+                      ) : null}
+                      {kind === "issues" && destination ? (
+                        <div className="text-align-left caution">
+                          마일스톤이 존재할 경우 마일스톤을 먼저 옮겨 놓지 않으면 마일스톤이
+                          지정되지 않은 상태로 이슈가 이동됩니다.
+                        </div>
+                      ) : null}
+                      {kind === "posts" && destination ? (
+                        <div className="text-align-left caution">
+                          기존 게시글은 '게시글'라벨을 붙여 이슈로 옮겨집니다.
+                        </div>
+                      ) : null}
                       <div className="btn-group">
                         <button
                           className="btn btn-danger"
@@ -351,8 +516,48 @@ function EnabledMigrationScreen({ runtimeConfig }: EnabledMigrationScreenProps) 
                 </tr>
               </tbody>
             </table>
-            <div className="left-title">기존 이슈 담당자</div>
-            <div>{source?.assignees?.map((assignee) => assignee.login).join(", ")}</div>
+            <div className="left-title">
+              기존 이슈 담당자{source?.assignees ? ` (${source.assignees.length})` : ""}
+            </div>
+            {destination && source?.assignees && source.assignees.length > 0 ? (
+              <>
+                <div className="caution">
+                  대응되는 새 프로젝트 소속의 담당자 id를 입력해 주세요. 만약 지정하지 않으면 기존
+                  담당자의 이슈는 담당자가 해제된 상태로 이전됩니다.
+                </div>
+                <table className="table table-bordered">
+                  <tbody>
+                    {source.assignees.map((assignee) => (
+                      <tr key={assignee.login} className="assignee">
+                        <td>
+                          {assignee.name}
+                          <br />
+                          @@{assignee.login}
+                        </td>
+                        <td>
+                          <input
+                            type="text"
+                            placeholder="지정되지 않음"
+                            value={assigneeMap[assignee.login] ?? ""}
+                            onChange={(event) =>
+                              void validateAssignee(assignee.login, event.target.value)
+                            }
+                          />
+                          {assigneeMap[assignee.login] &&
+                          assigneeValidity[assignee.login] === true ? (
+                            <i className="yobicon-check-circle" />
+                          ) : null}
+                          {assigneeMap[assignee.login] &&
+                          assigneeValidity[assignee.login] === false ? (
+                            <i className="yobicon-delete-circle-alt" />
+                          ) : null}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            ) : null}
           </div>
         </div>
       </div>
@@ -368,6 +573,7 @@ function MigrationEnabledProjectPane({
   filter,
   onFilter,
   onSelect,
+  destinationWarnings,
 }: {
   side: "source" | "destination";
   projects: Array<MigrationProject | GithubProject>;
@@ -376,6 +582,7 @@ function MigrationEnabledProjectPane({
   filter: string;
   onFilter: (value: string) => void;
   onSelect: (project: MigrationProject | GithubProject) => void;
+  destinationWarnings?: DestinationWarnings;
 }) {
   const isSource = side === "source";
   return (
@@ -413,6 +620,41 @@ function MigrationEnabledProjectPane({
             >
               <span className="owner">{fullName.split("/")[0]}</span>
               <span className="project-name">{label}</span>
+              {!isSource && fullName === selected && destinationWarnings?.workerMissing ? (
+                <div className="warn-no-worker">
+                  <div className="label label-important">Admin에 유저가 없음</div>
+                  <div>
+                    유저가 대상 프로젝트/그룹의 admin으로 추가되어 있어야 합니다. 그렇지 않을 경우
+                    사용자 아이디가 작성자로 표시됩니다.
+                  </div>
+                  {destinationWarnings.currentUserNotAdmin ? (
+                    <>
+                      <div className="label label-warning">
+                        사용자가 Admin인 프로젝트가 아닙니다.
+                      </div>
+                      <div>
+                        사용자와 {destinationWarnings.currentUser ?? "현재 사용자"} 둘 다 Admin이
+                        아닌 프로젝트로는 마이그레이션을 진행할 수 없습니다!
+                      </div>
+                    </>
+                  ) : null}
+                </div>
+              ) : null}
+              {!isSource && fullName === selected && destinationWarnings?.userProject ? (
+                <div className="warn-user-project">
+                  <div className="label label-important">User Project</div>
+                  <div>
+                    Organization 소속의 프로젝트가 아닌 경우에는 마이그레이션시에 사용자 계정이
+                    사용됩니다.
+                  </div>
+                </div>
+              ) : null}
+              {!isSource && destinationWarnings?.foreignUserProject ? (
+                <div>
+                  <div className="label label-warning">사용자가 Admin인 프로젝트가 아닙니다.</div>
+                  <div>Admin이 아닌 프로젝트로는 마이그레이션을 진행할 수 없습니다!</div>
+                </div>
+              ) : null}
             </button>
           );
         })}

@@ -242,6 +242,16 @@ test("enabled migration screen keeps source export and GitHub import declarative
   expect(MIGRATION_ROUTE_SOURCE).toContain(
     "https://api.github.com/repos/${destination.full_name}/import/issues",
   );
+  expect(MIGRATION_ROUTE_SOURCE).toContain("?withWikiCommit=true");
+  expect(MIGRATION_ROUTE_SOURCE).toContain("migration-${kind}-warning");
+  expect(MIGRATION_ROUTE_SOURCE).toContain("validateAssignee");
+  expect(MIGRATION_ROUTE_SOURCE).toContain("yobicon-check-circle");
+  expect(MIGRATION_ROUTE_SOURCE).toContain(
+    "대상 프로젝트에 <strong>{label}</strong> 데이터가 존재합니다.",
+  );
+  expect(MIGRATION_ROUTE_SOURCE).toContain(
+    "대응되는 새 프로젝트 소속의 담당자 id를 입력해 주세요.",
+  );
   expect(MIGRATION_ROUTE_SOURCE).toContain("runtimeConfig.migrationAuthorizationUrl");
   expect(MIGRATION_ROUTE_SOURCE).not.toContain("document.querySelector");
   expect(MIGRATION_ROUTE_SOURCE).not.toContain("window.document");
