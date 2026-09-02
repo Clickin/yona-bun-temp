@@ -513,7 +513,6 @@ function reconcileYoramFixturesPreboot(databasePath) {
             ? [
                 ["admin", 3],
                 ["admin", 1],
-                ["bob", null],
               ]
             : project.id === 3
             ? [
@@ -536,7 +535,7 @@ function reconcileYoramFixturesPreboot(databasePath) {
         database
           .prepare("update project set owner = 'admin', name = ?, project_scope = 'private' where id = ?")
           .run(`sample-history-${movedSampleId}`, movedSampleId);
-        replaceMembers(movedSampleId, [["admin", 3], ["admin", 1], ["bob", null]]);
+        replaceMembers(movedSampleId, [["admin", 3], ["admin", 1]]);
       }
       database.exec("commit; pragma foreign_keys = on");
     } catch (error) {

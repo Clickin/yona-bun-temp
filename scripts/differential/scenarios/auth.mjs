@@ -450,7 +450,7 @@ export const actionDefinitions = {
     async handler(ctx) {
       const { step, yoramSession, yoramBaseUrl, entry } = ctx;
       const path = `/authenticate/${step.params.provider}`;
-      const result = await yoramSession.request({ method: "GET", path });
+      const result = await yoramSession.request({ method: "GET", path, redirect: "manual" });
       const candidate =
         (result.location && isProviderAuthorizeUrl(result.location) && result.location) ||
         ((result.body ?? "").match(/https?:\/\/[^\s"'<>]*oauth\/authorize[^\s"'<>]*/iu)?.[0] ?? null);
@@ -636,7 +636,7 @@ async function requestAnonymousBoth(ctx, legacyTranslation, yoramTranslation) {
   const sessions = freshSessions(ctx);
   const legacyResult = await sessions.legacy.request(legacyTranslation);
   if (legacyResult.status >= 400) entry.errors.push(`legacy ${step.action} failed: HTTP ${legacyResult.status} @ ${legacyTranslation.path}`);
-  const yoramResult = await sessions.yoram.request(yoramTranslation);
+  const yoramResult = await sessions.yoram.request({ ...yoramTranslation, redirect: "manual" });
   if (yoramResult.status >= 400) entry.errors.push(`yoram ${step.action} failed: HTTP ${yoramResult.status} @ ${yoramTranslation.path}`);
   return { legacyResult, yoramResult };
 }

@@ -2122,6 +2122,45 @@ pub(crate) fn legacy_user_avatar_url(email_address: &str, attachment_id: Option<
     }
 }
 
+pub(crate) async fn legacy_assignable_user_avatar_urls(
+    repository: &PilotRepository,
+    record: &mut persistence::IssueAssignableUserSearchRecord,
+) {
+    let user_login_ids = record
+        .items
+        .iter()
+        .filter(|item| {
+            item.item_type == "user"
+                && !matches!(
+                    item.display_name.as_str(),
+                    "issue.assignToMe" | "issue.assignToAuthor" | "issue.noAssignee"
+                )
+        })
+        .map(|item| item.login_id.clone())
+        .collect::<Vec<_>>();
+    if user_login_ids.is_empty() {
+        return;
+    }
+    if let Ok(avatar_inputs) = repository
+        .list_mention_user_avatar_inputs(&user_login_ids)
+        .await
+    {
+        for item in &mut record.items {
+            if item.item_type == "user"
+                && !matches!(
+                    item.display_name.as_str(),
+                    "issue.assignToMe" | "issue.assignToAuthor" | "issue.noAssignee"
+                )
+            {
+                item.avatar_url = avatar_inputs.get(&item.login_id).map_or_else(
+                    || legacy_user_avatar_url("", None),
+                    |(email, attachment_id)| legacy_user_avatar_url(email, *attachment_id),
+                );
+            }
+        }
+    }
+}
+
 // Legacy IssueApi.isModifiedByOthers hashes trim()+'\r'-stripped contents, so
 // only normalized text differences count as "modified by someone else".
 pub(crate) fn legacy_content_modified_by_others(current: &str, original: &str) -> bool {

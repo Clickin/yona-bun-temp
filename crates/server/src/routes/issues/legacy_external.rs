@@ -1247,7 +1247,15 @@ pub(super) async fn legacy_external_issue_assignable_users(
         Ok(None) => return RestRouteError::not_found("pilot issue not found").into_response(),
         Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
     };
-    Json(legacy_external_assignable_users_result(record)).into_response()
+    let mut record = record;
+    legacy_assignable_user_avatar_urls(repository, &mut record).await;
+    let language =
+        preferred_language_from_headers(&headers, &service.supported_languages);
+    Json(legacy_external_assignable_users_result(
+        record,
+        language.as_deref(),
+    ))
+    .into_response()
 }
 
 pub(super) async fn legacy_external_issue_sharable_users(
@@ -1292,38 +1300,19 @@ pub(super) async fn legacy_external_issue_sharable_users(
     // gravatar of the raw email, else the default avatar asset when the
     // gravatar servers are unreachable (Config.isConnectableToGravatar).
     let mut record = record;
-    let user_login_ids = record
-        .items
-        .iter()
-        .filter(|item| item.item_type == "user")
-        .map(|item| item.login_id.clone())
-        .collect::<Vec<_>>();
-    if !user_login_ids.is_empty() {
-        if let Ok(avatar_inputs) =
-            repository
-                .list_mention_user_avatar_inputs(&user_login_ids)
-                .await
-        {
-            for item in &mut record.items {
-                if item.item_type != "user" {
-                    continue;
-                }
-                item.avatar_url = avatar_inputs
-                    .get(&item.login_id)
-                    .map_or_else(
-                        || legacy_user_avatar_url("", None),
-                        |(email, attachment_id)| {
-                            legacy_user_avatar_url(email, *attachment_id)
-                        },
-                    );
-            }
-        }
-    }
-    Json(legacy_external_assignable_users_result(record)).into_response()
+    legacy_assignable_user_avatar_urls(repository, &mut record).await;
+    let language =
+        preferred_language_from_headers(&headers, &service.supported_languages);
+    Json(legacy_external_assignable_users_result(
+        record,
+        language.as_deref(),
+    ))
+    .into_response()
 }
 
 pub(crate) fn legacy_external_assignable_users_result(
     record: persistence::IssueAssignableUserSearchRecord,
+    language: Option<&str>,
 ) -> Vec<serde_json::Value> {
     record
         .items
@@ -1337,6 +1326,20 @@ pub(crate) fn legacy_external_assignable_users_result(
                     "name": item.display_name,
                     "avatarUrl": item.avatar_url,
                     "type": item.item_type,
+                });
+            }
+            if matches!(
+                item.display_name.as_str(),
+                "issue.assignToMe" | "issue.assignToAuthor" | "issue.noAssignee"
+            ) {
+                return serde_json::json!({
+                    "loginId": if item.display_name == "issue.noAssignee" {
+                        ""
+                    } else {
+                        item.login_id.as_str()
+                    },
+                    "name": super::super::messages::legacy_message(language, &item.display_name),
+                    "avatarUrl": item.avatar_url,
                 });
             }
             serde_json::json!({

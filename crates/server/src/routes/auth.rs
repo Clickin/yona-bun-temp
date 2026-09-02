@@ -1381,7 +1381,8 @@ pub(crate) async fn direct_authenticate_provider(
                 &service.public_origin,
                 Some(0),
             );
-            let mut response = direct_authenticate_provider_denied(provider, service).await;
+            let mut response =
+                direct_authenticate_provider_callback_denied(provider, service).await;
             response.headers_mut().append(
                 axum::http::header::SET_COOKIE,
                 state_cookie_delete.parse().expect("set-cookie header"),
@@ -1395,7 +1396,7 @@ pub(crate) async fn direct_authenticate_provider(
         .map(|value| value.eq_ignore_ascii_case("access_denied"))
         .unwrap_or(false)
     {
-        return direct_authenticate_provider_denied(provider, service).await;
+        return direct_authenticate_provider_callback_denied(provider, service).await;
     }
 
     let (provider_user_id, email, name) = if let Some(identity) = oauth_callback_identity(&query) {
@@ -1426,7 +1427,7 @@ pub(crate) async fn direct_authenticate_provider(
             Ok(identity) => (identity.provider_user_id, identity.email, identity.name),
             Err(error) => {
                 tracing::warn!(provider = %provider, error = %error, "OAuth provider callback exchange failed");
-                return direct_authenticate_provider_denied(provider, service).await;
+                return direct_authenticate_provider_callback_denied(provider, service).await;
             }
         }
     };
@@ -1506,6 +1507,37 @@ pub(crate) async fn direct_authenticate_provider(
 }
 
 pub(crate) async fn direct_authenticate_provider_denied(
+    _provider: String,
+    service: PilotServiceImpl,
+) -> Response {
+    let mut response = Redirect::to(&base_path_href(&service.base_path, "/")).into_response();
+    response.headers_mut().insert(
+        axum::http::header::CACHE_CONTROL,
+        "no-cache, no-store, must-revalidate"
+            .parse()
+            .expect("cache header"),
+    );
+    response.headers_mut().insert(
+        axum::http::header::EXPIRES,
+        "0".parse().expect("expires header"),
+    );
+    response.headers_mut().insert(
+        axum::http::header::PRAGMA,
+        "no-cache".parse().expect("pragma header"),
+    );
+    response.headers_mut().append(
+        axum::http::header::SET_COOKIE,
+        format!(
+            "PLAY_FLASH=error=You+need+to+accept+the+OAuth+connection+in+order+to+use+this+website%21; Path={}; HttpOnly",
+            service.base_path
+        )
+        .parse()
+        .expect("flash cookie"),
+    );
+    response
+}
+
+async fn direct_authenticate_provider_callback_denied(
     provider: String,
     service: PilotServiceImpl,
 ) -> Response {

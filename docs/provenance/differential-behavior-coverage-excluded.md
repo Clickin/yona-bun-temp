@@ -138,3 +138,130 @@ Historical artifact summary:
 This artifact does not authorize final parity or release closure. Final closure
 requires all user-visible deferred/gap work to reach zero and no ordinary
 accepted observable divergence to remain under `AGENTS.md` and `SPEC.md`.
+
+## 4. Finite classification of the current accepted rows (2026-09-02)
+
+This section is the finite review ledger for the prior raw report archived at
+`.agent/differential/archive/sweep-mtk2chyb/report.json`
+(`runId=sweep-mtk2chyb`, `finishedAt=2026-09-02T12:33:21.107Z`; SHA-256
+`40c83ac87ecafe9119f938e32efce8f66f9aaa404f95f2042b8750ad47d6b224`). The
+original `.agent/differential/report.json` was later overwritten by the failed
+focused run `sweep-mtk3s3e8` (mail sink startup failure, zero scenarios
+attempted); that failed report is not parity evidence. The archived report
+remains the raw sweep artifact (125 `ACCEPTED_DIVERGENCE`, 8 `LEGACY_BUG`, 1
+`INFRA_ERROR`, and 4 `UNVERIFIED`); this ledger does not rewrite or suppress
+those observations.
+It classifies all 125 accepted rows against the frozen contract:
+
+| classification | rows | disposition |
+| --- | ---: | --- |
+| `IMPLEMENTATION_DIFFERENCE` | 117 | non-observable on the supported user-visible surface; retained only with the evidence below |
+| `LEGACY_BUG_NOT_REPRODUCED` | 4 | legacy-side permissive/error behavior has concrete legacy source evidence and no Yoram state divergence |
+| `REAL_OBSERVABLE_MISMATCH` | 4 | unresolved until the assigned minimum fixes are rerun |
+| **total accepted rows reviewed** | **125** | no parity-complete or release-closure claim |
+
+### `IMPLEMENTATION_DIFFERENCE` — 117 rows
+
+#### DOM shell rows — 108
+
+The sweep's `dom` findings compare raw SSR/SPA skeleton entries. They do not
+show a user-visible mismatch on the preserved target surface: the focused WTR
+route suites and the production visual baseline compare the visible legacy
+roots/geometry, while direct route contracts cover the stateful boundaries.
+Evidence: `docs/provenance/core-parity-audit.md` (React route/WTR ownership and
+direct route contracts), `docs/provenance/frontend-visual-parity-baseline-2026-07-11.md`
+(the route rows marked `CLOSED`), and the focused files under
+`frontend/tests/wtr/`.
+
+The exact 108 rows are:
+
+| scenario | rows | exact route(s) |
+| --- | ---: | --- |
+| I18-issue-edit-state | 2 | `/admin/sample/issue/302` ×2 |
+| I19-comment-lifecycle | 3 | `/admin/sample/issue/303` ×3 |
+| I20-issue-engagement | 1 | `/admin/sample/issue/304` |
+| I21-issue-label-crud | 1 | `/admin/sample/issue/305` |
+| P1-issue-labels | 3 | `/admin/sample/issue/labels`, `/admin/sample/issue/labelsform`, `/admin/sample/issue/label/categories` |
+| P11-watch-toggle-watchers | 1 | `/admin/sample/watchers` |
+| P15-project-data-surfaces | 2 | `/admin/sample/reviews`, `/info/leave/admin/sample` |
+| P3-milestones | 3 | `/admin/sample/milestone/1`, `/admin/sample/milestone/1/editform`, `/admin/sample/newMilestoneForm` |
+| P4-posts-and-board | 4 | `/admin/sample/posts`, `/admin/sample/postform`, `/admin/sample/post/1`, `/admin/sample/post/1/editform` |
+| P5-project-home-subpages | 9 | `/admin/sample/members`, `/admin/sample/watchers`, `/admin/sample/settingform`, `/admin/sample/deleteform`, `/admin/sample/transfer`, `/admin/sample/webhooks`, `/admin/sample/statistics`, `/admin/sample/go`, `/admin/sample/changeVCS` |
+| R1-pr-lists | 3 | `/admin/sample/pullRequests`, `/admin/sample/closedPullRequests`, `/admin/sample/sentPullRequests` |
+| R11-code-ajax-nobranch | 3 | `/admin/sample/code/!`, `/admin/sample/code/!/`, `/admin/sample/code/!/README.md` |
+| R12-newfork-reviews-attachments | 2 | `/admin/sample/newFork`, `/admin/sample/reviews` |
+| R15-branch-default-toggle | 1 | `/admin/sample/branches` |
+| R2-pr-detail | 3 | `/admin/sample/pullRequest/1`, `/admin/sample/pullRequest/1/state`, `/admin/sample/pullRequest/1/changes/HEAD` |
+| R3-pr-forms | 3 | `/admin/sample/newPullRequestForm`, `/admin/sample/pullRequest/1/editform`, `/admin/sample/newPullRequest/mergeResult` |
+| R4-commits-list | 3 | `/admin/sample/commits`, `/admin/sample/commits/main/`, `/admin/sample/commits/main/README.md` |
+| R5-commit-detail | 1 | `/admin/sample/commit/HEAD` |
+| R6-code-browser | 2 | `/admin/sample/code`, `/admin/sample/code/main` |
+| R7-code-tree-entry | 1 | `/admin/sample/code/main/README.md` |
+| R8-code-ajax | 3 | `/admin/sample/code/main/!`, `/admin/sample/code/main/!/`, `/admin/sample/code/main/!/README.md` |
+| R9-branches | 1 | `/admin/sample/branches` |
+| S2-login-forms | 2 | `/users/login`, `/users/loginform` |
+| S2-view-project | 1 | `/admin/sample` |
+| S3-create-issue | 1 | `/admin/sample/issue/307` |
+| S3-signup-form | 1 | `/users/signupform` |
+| S4-issue-comment | 2 | `/admin/sample/issue/308` ×2 |
+| S4-lost-password | 1 | `/lostPassword` |
+| S5-list-labels | 1 | `/admin/sample/labels` |
+| S6-projectform | 1 | `/projectform` |
+| S7-projects-listing | 1 | `/projects` |
+| S9-help-init-uikit | 3 | `/_help`, `/_init`, `/_UIKit` |
+| U1-user-issues-tabs | 6 | `/user/issues?tab=assigned`, `/user/issues?tab=authored`, `/user/issues?tab=commented`, `/user/issues?tab=mentioned`, `/user/issues?tab=shared`, `/user/issues` |
+| U11-org-screens | 9 | `/organizations/weblabs/boards`, `/organizations/weblabs/pullrequests`, `/organizations/weblabs/closedPullrequests`, `/organizations/weblabs/members`, `/organizations/weblabs/issues`, `/organizations/weblabs/deleteForm`, `/organizations/weblabs/settingform`, `/organizations/weblabs/search?query=sample`, `/organizations/new` |
+| U15-profile-editforms | 4 | `/user/editform`, `/user/editform/emails`, `/user/editform/notifications`, `/user/editform/token` |
+| U18-site-admin-screens | 10 | `/sites/userList`, `/sites/projectList`, `/sites/data`, `/sites/diagnostic`, `/sites/issueList`, `/sites/postList`, `/sites/noAvatarUsers`, `/sites/mail`, `/sites/massmail`, `/sites/update` |
+| U19-files-and-user-api | 1 | `/files` |
+| U3-notifications-list | 2 | `/notifications`, `/notification` |
+| U4-global-search | 1 | `/search?query=sample` |
+| U5-orgs-list | 1 | `/orgs` |
+| U6-org-home | 1 | `/organizations/weblabs` |
+| U7-user-profile | 1 | `/admin` |
+| U8-user-files | 1 | `/user/files` |
+| U9-new-direct-issue-forms | 2 | `/user/issues/new`, `/user/issues/new/mine` |
+
+#### Non-DOM implementation rows — 9
+
+| behavior / scenario | exact route(s) | evidence for non-observable disposition |
+| --- | --- | --- |
+| B-0006 / I18 | `/-_-api/v1/owners/admin/projects/sample/issues/imports` | `SPEC.md:251-253` and `docs/provenance/legacy-external-api.md:138-153,217-219` assign this import namespace to migrator/export-import scope, not the app-server compatibility route. |
+| B-0276 / P14 | `/markdown/admin/sample` | `docs/provenance/core-parity-audit.md:87-95` and the 2026-08-24 product decision make Markdown preview React-client-owned (`react-markdown`); the absent POST server renderer is not used by the supported UI. |
+| B-0225 / P23 | `admin/parity-lc-sweep-mtk2chyb-39/changeVCS`; `admin/parity-fork-sweep-mtk2chyb-39 (cleanup)` | `scripts/differential/scenarios/project.mjs:1939-1948` translates the throwaway REST boundary; `crates/server/tests/project_change_vcs_contract.rs:216-292` proves the direct compatibility route and empty `204`; both generated entities are deleted and residue-checked. |
+| B-0019 / P24 | `/sites/project/delete/:projectId` | `crates/server/src/routes/site_admin.rs:1767,2175` and `crates/server/tests/site_admin_contract.rs:813-850` prove the direct compatibility alias preserves deletion, `303`, and `/sites/projectList`; the sweep row compares the REST response shape instead. |
+| B-0187 / S2 | `/users/login` | `frontend/tests/wtr/auth-aliases.e2e.ts:82-120` proves the browser route renders the original index screen at the original URL; the raw document transport is not the supported visual contract. |
+| B-0024 / S9 | `/_init` | `crates/server/src/routes/legacy_runtime.rs:39-78,1074-1079` and `crates/server/tests/assets_contract.rs:1203-1249` cover provisioning and redirect state; the React shell does not consume the legacy bootstrap document. |
+| B-0298 / U22 | `/user/editform/:tabId` ×2 | `frontend/src/routes/user/editform.tsx:16-47,374-384` and `crates/server/src/routes/workspace.rs:1082-1425` show the supported settings surface is workspace actions/tabs; the sweep's empty legacy POST tab probes are not UI mutations. |
+
+### `LEGACY_BUG_NOT_REPRODUCED` — 4 rows
+
+These are not accepted product behavior. They are legacy-side degenerate
+semantics where the Yoram state remains unchanged or stricter:
+
+| behavior / scenario | exact route | legacy source/runtime evidence | disposition |
+| --- | --- | --- | --- |
+| B-0002 / P26 | `/admin/sample/code/__parity_missing_branch__/` | `yona-original/app/controllers/BranchApp.java:71-78` calls `GitRepository.deleteBranch` and redirects without an existence check; `yona-original/app/playRepository/GitRepository.java:1230-1236` blindly invokes JGit branch deletion. | Treat legacy redirect-on-missing-branch as a legacy bug/quirk; Yoram's `404` reports the same no-op and no branch state is written. |
+| B-0003 / R14 | `/admin/sample/commit/HEAD/comments/673/delete` | `yona-original/app/controllers/CodeHistoryApp.java:102-114` returns not-found for an unresolved commit object; the `HEAD` pseudo-ref is not a legacy commit object. | Treat legacy inability to resolve the pseudo-ref as a legacy limitation; the Yoram `200` extension does not mutate a legacy-visible comment. |
+| B-0221 / S13 | `/user/editform/defultLoginPage` | `yona-original/app/controllers/UserApp.java:1372-1380` reads the query `path` and returns `200` even when it is absent; Yoram `crates/server/src/routes/workspace.rs:1905-1930` rejects the missing/invalid landing path. | Malformed empty boundary payload is not supported UI behavior; no default landing state is accepted by Yoram. |
+| B-0159 / U25 | `/sites/import` | `yona-original/app/controllers/SiteApp.java:368-387` redirects to `/sites/data` when no multipart `data` file exists; invalid import errors use `400`. | Legacy permissive redirect and Yoram `400` both reject the invalid probe and persist no import state; the legacy fallback is not a supported success contract. |
+
+### `REAL_OBSERVABLE_MISMATCH` — 4 rows pending fix/rerun
+
+These four rows (B-0035 contributes two route rows; B-0117 and B-0155 contribute
+one each) remain unresolved and are deliberately not hidden under
+`ACCEPTED_DIVERGENCE`. Separate workers own the minimum fixes; this ledger
+must be rerun against the same report contract before any reclassification:
+
+| behavior / scenario | exact route(s) | observed mismatch | required evidence before reclassification |
+| --- | --- | --- | --- |
+| B-0035 / I12 | `/-_-api/v1/owners/admin/projects/sample/issues/1/assignableUsers`; `/-_-api/v1/owners/admin/projects/sample/assignableUsers` | Legacy `IssueApi.java:789-930` emits localized custom rows without `pureNameOnly`/`type`; Yoram's `crates/persistence/src/repo/issue_picker.rs:35-68,250-344` emits stable keys plus those fields, while `scripts/differential/run.mjs:509-540` adds an extra `bob` project member. The existing `crates/server/tests/issue_assignable_contract.rs:249-391` covers the stable-key contract but not this exact external JSON pair. | Re-run both exact external API rows after the fixture/mapper fix; compare candidate set and complete JSON shape, not only message keys. |
+| B-0117 / S11 | `/authenticate/github/denied` | Legacy answers `303` to `/` with denial flash semantics; the sweep observed Yoram `200` without `Location`. | Reproduce the raw request and verify `303`, destination, denial query/flash rendering, and no session mutation against `yona-original/app/controllers/Application.java:75-80`, `crates/server/src/routes/auth.rs:1508-1520`, and `auth_workspace_contract.rs:1641-1664`. |
+| B-0155 / S18 | `/restricted` | Legacy `Secured` redirects an anonymous request; the sweep observed Yoram `200` auth shell with no `Location` when anonymous access is enabled. | Re-run with anonymous access enabled and disabled; verify anonymous redirect plus authenticated restricted screen, using `yona-original/app/controllers/Restricted.java:9-15`, `Secured.java:19-27`, and `crates/server/src/anonymous_access.rs:11-39`. |
+
+The current non-accepted rows remain actionable: `S6/B-0091` is
+`INFRA_ERROR` because the browser/CDP selector `#two-column-mode-checkbox` was
+not found; `P13/B-0008`, `P18/B-0004`, `U12/B-0201`, and `U20/B-0016` remain
+`UNVERIFIED` because their per-side entity IDs were unresolved or fixture
+state diverged. The prerequisite is a new isolated fixture/selector run, not
+an accepted-divergence rationale. No parity-complete claim is made here.

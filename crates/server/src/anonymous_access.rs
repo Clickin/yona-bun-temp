@@ -15,10 +15,14 @@ pub(crate) async fn anonymous_access_gate(
     base_path: String,
     allow_anonymous_access: bool,
 ) -> Response {
-    if allow_anonymous_access
-        || anonymous_access_path_is_public(request.uri().path())
+    let path = request.uri().path().to_string();
+    let requires_authenticated_session =
+        path == "/restricted" || path == crate::routes::base_path_href(&base_path, "/restricted");
+    if !requires_authenticated_session
+        && (allow_anonymous_access
+        || anonymous_access_path_is_public(&path)
         || smart_http_route_from_path(request.uri().path(), &base_path).is_some()
-        || svn_protocol::route_from_path(request.uri().path(), &base_path).is_some()
+        || svn_protocol::route_from_path(request.uri().path(), &base_path).is_some())
     {
         return next.run(request).await;
     }
@@ -32,7 +36,21 @@ pub(crate) async fn anonymous_access_gate(
     }
 
     let method = request.method().clone();
-    let path = request.uri().path().to_string();
+    if requires_authenticated_session {
+        let mut response =
+            Redirect::to(&crate::routes::base_path_href(&base_path, "/")).into_response();
+        response.headers_mut().append(
+            axum::http::header::SET_COOKIE,
+            format!(
+                "PLAY_FLASH=message=Nice+try%2C+but+you+need+to+log+in+first%21; Path={}; HttpOnly",
+                base_path
+            )
+            .parse()
+            .expect("flash cookie"),
+        );
+        return response;
+    }
+
     if path.starts_with("/api/") {
         return anonymous_access_rest_response();
     }

@@ -130,17 +130,23 @@ export class YoramSession {
       headers["content-type"] = "application/json";
       body = JSON.stringify(translation.json);
     }
-    const response = await fetch(`${this.baseUrl}${translation.path}`, { method: translation.method, headers, body });
+    const response = await fetch(`${this.baseUrl}${translation.path}`, {
+      method: translation.method,
+      headers,
+      body,
+      redirect: translation.redirect ?? "follow",
+    });
     const nextCookies = response.headers.getSetCookie?.() ?? [];
     if (nextCookies.length > 0) this.cookies = mergeCookieHeader(this.cookies, nextCookies);
     const text = await response.text();
+    const location = response.headers.get("location") ?? "";
     let json = null;
     try {
       json = JSON.parse(text);
     } catch {
       // non-JSON response bodies are kept as text
     }
-    return { status: response.status, json, body: text };
+    return { status: response.status, location, json, body: text };
   }
 
   async fetchPage(pagePath) {

@@ -3391,6 +3391,26 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         response_json(legacy_issue_no_sharer).await,
         json!({ "message": "No sharer" })
     );
+    let legacy_project_assignable_default = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/owners/owner/projects/projectYobi/assignable-users/find",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        legacy_project_assignable_default[0],
+        json!({
+            "loginId": "owner",
+            "name": "Assign to me",
+            "avatarUrl": ""
+        })
+    );
     let anonymous_legacy_issue_share = rest(
         app.clone(),
         Method::POST,
@@ -3425,7 +3445,8 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .iter()
         .any(|user| user["loginId"] == "visitor"
             && user["name"] == "visitor"
-            && user["type"] == "user"));
+            && user["type"] == "user"
+            && user["avatarUrl"].as_str().is_some_and(|url| !url.is_empty())));
     let legacy_issue_assignable = ok_json(
         rest(
             app.clone(),
@@ -3438,16 +3459,36 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .await,
     )
     .await;
-    assert!(legacy_issue_assignable
+    let legacy_issue_assignable_items = legacy_issue_assignable
         .as_array()
-        .expect("legacy issue assignable users")
+        .expect("legacy issue assignable users");
+    let assign_to_me = legacy_issue_assignable_items
         .iter()
-        .any(|user| user["loginId"] == "owner" && user["name"] == "issue.assignToMe"));
-    assert!(legacy_issue_assignable
-        .as_array()
-        .expect("legacy issue assignable users")
+        .find(|user| user["name"] == "Assign to me")
+        .expect("legacy assign-to-me row");
+    assert_eq!(
+        assign_to_me,
+        &json!({
+            "loginId": "owner",
+            "name": "Assign to me",
+            "avatarUrl": ""
+        })
+    );
+    let no_assignee = legacy_issue_assignable_items
         .iter()
-        .any(|user| user["loginId"] == "anonymous" && user["name"] == "issue.noAssignee"));
+        .find(|user| user["name"] == "No assignee")
+        .expect("legacy no-assignee row");
+    assert_eq!(
+        no_assignee,
+        &json!({
+            "loginId": "",
+            "name": "No assignee",
+            "avatarUrl": ""
+        })
+    );
+    assert!(!legacy_issue_assignable_items
+        .iter()
+        .any(|user| user["loginId"] == "anonymous"));
     assert!(legacy_issue_assignable
         .as_array()
         .expect("legacy issue assignable users")

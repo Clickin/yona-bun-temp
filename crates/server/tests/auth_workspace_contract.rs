@@ -1638,8 +1638,8 @@ async fn legacy_oauth_callback_identity_hook_works_with_valid_state() {
 }
 
 #[tokio::test]
-// Guards auth denied redirect reuse of the route-utils-owned URI component encoder.
-async fn legacy_authenticate_provider_denied_redirects_to_login_error_state() {
+// Guards legacy Application.oAuthDenied: no-cache + flash, then root redirect.
+async fn legacy_authenticate_provider_denied_redirects_to_base_path_root() {
     let (app, _, _) = build_auth_router_with_anonymous_access(false).await;
 
     let response = app
@@ -1659,7 +1659,69 @@ async fn legacy_authenticate_provider_denied_redirects_to_login_error_state() {
             .headers()
             .get(http::header::LOCATION)
             .and_then(|value| value.to_str().ok()),
-        Some("/yona/users/loginform?error=oauthDenied&provider=github")
+        Some("/yona/")
+    );
+    assert_eq!(
+        response
+            .headers()
+            .get(http::header::CACHE_CONTROL)
+            .and_then(|value| value.to_str().ok()),
+        Some("no-cache, no-store, must-revalidate")
+    );
+    assert_eq!(
+        response
+            .headers()
+            .get(http::header::EXPIRES)
+            .and_then(|value| value.to_str().ok()),
+        Some("0")
+    );
+    assert_eq!(
+        response
+            .headers()
+            .get(http::header::PRAGMA)
+            .and_then(|value| value.to_str().ok()),
+        Some("no-cache")
+    );
+    assert_eq!(
+        response
+            .headers()
+            .get(http::header::SET_COOKIE)
+            .and_then(|value| value.to_str().ok()),
+        Some("PLAY_FLASH=error=You+need+to+accept+the+OAuth+connection+in+order+to+use+this+website%21; Path=/yona; HttpOnly")
+    );
+}
+
+#[tokio::test]
+// Guards legacy Restricted's @Security.Authenticated boundary even when the
+// site-wide anonymous-access switch keeps other SPA routes public.
+async fn restricted_page_redirects_anonymous_users_to_base_path_root() {
+    let (app, _, _) = build_auth_router_with_anonymous_access(true).await;
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/restricted")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        response
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/")
+    );
+    assert_eq!(
+        response
+            .headers()
+            .get(http::header::SET_COOKIE)
+            .and_then(|value| value.to_str().ok()),
+        Some("PLAY_FLASH=message=Nice+try%2C+but+you+need+to+log+in+first%21; Path=/yona; HttpOnly")
     );
 }
 

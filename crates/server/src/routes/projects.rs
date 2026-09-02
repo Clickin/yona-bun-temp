@@ -14,7 +14,8 @@ use std::collections::HashMap;
 use crate::api_types::*;
 use crate::assets::serve_frontend_page;
 use crate::routes::utils::{
-    gravatar_url, project_member_summary_from_record, resolve_project_origin,
+    gravatar_url, legacy_assignable_user_avatar_urls, preferred_language_from_headers,
+    project_member_summary_from_record, resolve_project_origin,
 };
 use crate::{
     absolute_app_url, accepts_legacy_json, attach_session_headers, base_path_href,
@@ -3855,7 +3856,15 @@ async fn legacy_external_project_assignable_users(
         Ok(None) => return RestRouteError::not_found("pilot project not found").into_response(),
         Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
     };
-    Json(legacy_external_assignable_users_result(record)).into_response()
+    let mut record = record;
+    legacy_assignable_user_avatar_urls(repository, &mut record).await;
+    let language =
+        preferred_language_from_headers(&headers, &service.supported_languages);
+    Json(legacy_external_assignable_users_result(
+        record,
+        language.as_deref(),
+    ))
+    .into_response()
 }
 
 async fn legacy_project_create_labels(
