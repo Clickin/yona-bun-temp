@@ -292,3 +292,40 @@ not found; `P13/B-0008`, `P18/B-0004`, `U12/B-0201`, and `U20/B-0016` remain
 `UNVERIFIED` because their per-side entity IDs were unresolved or fixture
 state diverged. The prerequisite is a new isolated fixture/selector run, not
 an accepted-divergence rationale. No parity-complete claim is made here.
+
+## 5. Final same-HEAD sweep and focused blocker classification (2026-09-02)
+
+The final isolated sweep was run at commit `5db580a63adf1c5863e881488b60b2bdebb9ff1b`
+and is retained at
+`.agent/differential/full-post-commit-5db580a63/report.json`
+(`runId=sweep-mtk4hpxy`,
+`startedAt=2026-09-02T13:19:26.614Z`,
+`finishedAt=2026-09-02T13:33:32.853Z`;
+SHA-256
+`6ee84966058a828d40ed8a6e59507a541e498a67a926a566389710def60481a3`).
+All 117 registered scenarios and 315 unique behavior IDs were attempted.
+The report contains 134 violations: 122 `ACCEPTED_DIVERGENCE`, 8
+`LEGACY_BUG`, 3 `UNVERIFIED`, and 1 `INFRA_ERROR`; it contains no
+`PRODUCT_GAP` or `REAL_OBSERVABLE_MISMATCH` rows. There were no global
+infra errors. The run recorded 47 scenarios with step errors and 88 failed
+steps; these step errors are separate from the violation count.
+
+The focused S6 rerun is retained at
+`.agent/differential/focused-s6-mtk4hpxy/report.json`
+(`runId=sweep-mtl1iltz`; SHA-256
+`4dd6076f9af0586324e707e28d3f2b46719e552d1b77c27fab520e09190858a8`).
+It reproduced exactly one `INFRA_ERROR` for `S6/B-0091`: the Yoram browser
+step at `http://127.0.0.1:3196/admin/sample/issues` could not find
+`#two-column-mode-checkbox`. The selector is present in the project issue
+route source and the focused run did not observe a product response
+divergence; this remains a browser/fixture rendering blocker, not a product
+gap.
+
+The unresolved lifecycle rows remain coverage blockers, not actionable
+product gaps: `P13/B-0008` (`legacy=null`, `yoram=4` member ID discovery),
+`P18/B-0004` (`legacy=null`, `yoram=4` member ID discovery), and
+`U20/B-0016` (legacy organization/member IDs unresolved). `U12/B-0201`
+also remains unresolved through two step errors (legacy issue ID and legacy
+organization ID discovery), although the final report emitted no separate
+violation for it. The final report therefore does not authorize a parity or
+100% claim.
