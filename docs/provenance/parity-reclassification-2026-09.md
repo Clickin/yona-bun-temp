@@ -148,3 +148,36 @@ Residual step errors (e.g. the legacy-side 500 on
 enroll/cancel 400 agreement on carol) are recorded per-scenario and do not
 produce violations; scenario-level completion is required for the closure
 claim.
+
+## 6. Real environment / integration checks (Phase F disposition)
+
+Executed on this host (evidence: final sweep lanes and contract tests):
+
+- SVN executable-backed flows: real `svn` client checkout/commit pair
+  against both instances (P22 sweep lane).
+- Git Smart HTTP: real `git clone` + commit + push pair (R17 lane).
+- Email flows: SMTP-backed catch-box fixtures (signup verification, lost
+  password, notification mail lanes).
+- OAuth authorization round trips against local provider fixtures (S11,
+  U24).
+- Supported context paths: root `/`, `/yona`, and nested `/team/yoram`
+  contract tests (`auth_workspace_contract.rs`) plus sweep execution at the
+  root mount.
+- Filesystem/upload identity and throwaway Git repository identity:
+  exercised by the sweep's generated-entity lifecycle lanes with residue
+  checks.
+
+Operator prerequisites (not executable in this environment; missing
+credentials/services are recorded, not converted into accepted parity):
+
+- Real GitHub / Google OAuth authorization round trips (real client
+  credentials and external network consent required).
+- External LDAP directory bind/search/account mapping (no LDAP service on
+  this host; the sweep uses the local LDAP fixture).
+- External migration destination behavior.
+- External SMTP relay delivery (the sweep uses the local SMTP catch-box).
+- Existing Yona MariaDB adoption and the supported DB matrix (no MySQL/
+  MariaDB server available on this macOS arm64 host).
+- Existing SVN repository identity adoption.
+- Linux deployment and Windows MSVC binary verification (no cross target
+  executed here).
