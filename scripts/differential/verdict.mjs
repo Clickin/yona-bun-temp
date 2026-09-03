@@ -27,7 +27,7 @@ export function computeCoverage(inventory, coverage) {
 }
 
 
-const BLOCKING = new Set(['PRODUCT_GAP', 'HARNESS_ERROR', 'INFRA_ERROR', 'UNVERIFIED']);
+const BLOCKING = new Set(['REAL_OBSERVABLE_MISMATCH', 'HARNESS_ERROR', 'INFRA_ERROR', 'UNVERIFIED']);
 
 export function aggregateViolations(report) {
   const all = (report.scenarios ?? []).flatMap((s) => s.violations ?? []);

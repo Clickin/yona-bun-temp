@@ -117,12 +117,22 @@ async function pollPopover(page) {
 // anchor center, then a synthetic mouseover/mouseenter fallback.
 async function hoverAnchor(page, selector) {
   const point = await raceTimeout(
-    page.evaluate((sel) => {
-      const el = document.querySelector(sel);
-      if (!el) throw new Error(`selector not found: ${sel}`);
-      const rect = el.getBoundingClientRect();
-      return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
-    }, selector),
+    (async () => {
+      // The Yoram SPA can commit the anchor into the DOM after the load
+      // event, so poll instead of one-shot querySelector (legacy SSR pages
+      // have it in the initial HTML and resolve on the first probe).
+      for (let waited = 0; waited < 5_000; waited += 100) {
+        const point = await page.evaluate((sel) => {
+          const el = document.querySelector(sel);
+          if (!el) return null;
+          const rect = el.getBoundingClientRect();
+          return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
+        }, selector);
+        if (point) return point;
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      throw new Error(`selector not found: ${selector}`);
+    })(),
     `locate ${selector}`,
   );
   await page.mouse.move(point.x - 24, point.y - 12);
@@ -442,6 +452,42 @@ function reconcileYoramFixturesPreboot(databasePath) {
     database
       .prepare("delete from attachment where container_type = 'USER_AVATAR' and owner_login_id in (?, ?, ?, ?)")
       .run(...PARITY_USERS.map((user) => user.loginId));
+  // Legacy parity foundation seeds the weblabs organization (id 1) with admin
+  // as org_admin and carol as org_member; U12's org-favorite toggle and the
+  // org screens need the org to exist on the Yoram side too. Role ids are not
+  // stable across Yoram DBs (the app authorizes by role NAME, see
+  // project_membership.rs), so resolve org_admin/org_member by name.
+  const userIdByLogin = (loginId) =>
+    Number(database.prepare("select id from n4user where login_id = ? limit 1").get(loginId)?.id ?? 0);
+  const hasWeblabs =
+    database.prepare("select count(*) as n from organization where id = 1 and name = 'weblabs'").get().n > 0;
+  if (!hasWeblabs) {
+    database
+      .prepare("insert into organization (id, name, created, descr) values (1, 'weblabs', ?, 'Parity seed organization for localhost legacy verification')")
+      .run(new Date().toISOString());
+  }
+  const ensureRole = (roleName) => {
+    const existing = database.prepare("select id from role where name = ? limit 1").get(roleName);
+    if (existing?.id) return Number(existing.id);
+    const nextRoleId = Number(database.prepare("select coalesce(max(id), 0) + 1 as id from role").get().id ?? 1);
+    database.prepare("insert into role (id, name, active) values (?, ?, 1)").run(nextRoleId, roleName);
+    return nextRoleId;
+  };
+  const orgAdminRoleId = ensureRole("org_admin");
+  const orgMemberRoleId = ensureRole("org_member");
+  for (const [loginId, orgRoleId] of [["admin", orgAdminRoleId], ["carol", orgMemberRoleId]]) {
+    const userId = userIdByLogin(loginId);
+    if (!userId) continue;
+    const hasMember =
+      database
+        .prepare("select count(*) as n from organization_user where organization_id = 1 and user_id = ?")
+        .get(userId).n > 0;
+    if (!hasMember) {
+      database
+        .prepare("insert into organization_user (user_id, organization_id, role_id) values (?, 1, ?)")
+        .run(userId, orgRoleId);
+    }
+  }
 
     database.exec("pragma foreign_keys = off; begin");
     try {
@@ -597,7 +643,18 @@ async function renderSkeleton(page, url, { spa = false } = {}) {
   await page.goto(url, { waitUntil: "load", timeout: 30_000 });
   if (spa) {
     await page.waitForNetworkIdle({ idleTime: 500, timeout: 15_000 }).catch(() => {});
-    await new Promise((resolve) => setTimeout(resolve, 1_200));
+    // SPA data renders after hydration; under sweep load a fixed wait can
+    // capture mid-render DOM and produce phantom content diffs. Extract only
+    // once two consecutive samples agree (relative-time strings may keep
+    // ticking, so cap the wait).
+    let previous = null;
+    for (let waited = 0; waited < 8_000; waited += 400) {
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      const current = JSON.stringify(await page.evaluate(SKELETON_EXTRACT));
+      if (previous !== null && current === previous) return JSON.parse(current);
+      previous = current;
+    }
+    return JSON.parse(previous ?? "[]");
   }
   return page.evaluate(SKELETON_EXTRACT);
 }
@@ -912,6 +969,26 @@ async function reconcileLegacyFixturesPreboot() {
   shellOnRebuilt(
     "UPDATE n4user SET state = 'DELETED' WHERE login_id LIKE 'paritysweep%' AND state <> 'DELETED'",
   );
+  // Legacy initial-data.yml roles 1-7: project_user.role_id references them.
+  // Without these rows legacy member creation inserts a null role_id and the
+  // member page omits the row, so P13/P18 member IDs cannot be discovered.
+  const LEGACY_ROLE_SEEDS = [
+    [1, "manager"],
+    [2, "member"],
+    [3, "sitemanager"],
+    [4, "anonymous"],
+    [5, "guest"],
+    [6, "org_admin"],
+    [7, "org_member"],
+  ];
+  for (const [roleId, roleName] of LEGACY_ROLE_SEEDS) {
+    const hasRole = scalar(`SELECT COUNT(*) FROM role WHERE id = ${roleId}`) > 0;
+    if (hasRole) {
+      shellOnRebuilt(`UPDATE role SET name = '${roleName}', active = 1 WHERE id = ${roleId}`);
+    } else {
+      shellOnRebuilt(`INSERT INTO role (id, name, active) VALUES (${roleId}, '${roleName}', 1)`);
+    }
+  }
   // Labels referencing residue categories may carry arbitrary names, so
   // delete by category before dropping the categories themselves.
   shellOnRebuilt(
@@ -984,6 +1061,12 @@ async function reconcileLegacyFixturesPreboot() {
   );
   if (activeStaleUsers !== 0) {
     throw new Error(`self-check failed: ${activeStaleUsers} active paritysweep% users remain`);
+  }
+  const missingRoles = LEGACY_ROLE_SEEDS.filter(
+    ([roleId]) => scalar(`SELECT COUNT(*) FROM role WHERE id = ${roleId}`) === 0,
+  );
+  if (missingRoles.length > 0) {
+    throw new Error(`self-check failed: legacy role rows missing: ${missingRoles.map(([id]) => id).join(", ")}`);
   }
   const residueCategories = Number(
     /\d+/.exec(

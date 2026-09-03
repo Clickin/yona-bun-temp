@@ -43,7 +43,7 @@ pub(crate) async fn anonymous_access_gate(
             axum::http::header::SET_COOKIE,
             format!(
                 "PLAY_FLASH=message=Nice+try%2C+but+you+need+to+log+in+first%21; Path={}; HttpOnly",
-                base_path
+                crate::runtime_config::normalize_base_path(&base_path)
             )
             .parse()
             .expect("flash cookie"),
@@ -74,6 +74,7 @@ fn anonymous_access_path_is_public(path: &str) -> bool {
         || path.starts_with("/authenticate/")
         || path == "/user/sidebar"
         || path == "/users/loginform"
+        || path == "/users/login"
         || path == "/users/signupform"
         || path == "/forgot-password"
         || path == "/lostPassword"

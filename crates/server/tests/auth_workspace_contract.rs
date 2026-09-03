@@ -59,6 +59,7 @@ async fn build_auth_router_with_anonymous_access_and_app_config(
         allow_anonymous_access,
         app_config,
         RepositoryConfig::default(),
+        "/yona",
     )
     .await
 }
@@ -67,6 +68,7 @@ async fn build_auth_router_with_configs(
     allow_anonymous_access: bool,
     app_config: AppRuntimeConfig,
     repository_config: RepositoryConfig,
+    base_path: &str,
 ) -> (axum::Router, AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
         .await
@@ -78,7 +80,7 @@ async fn build_auth_router_with_configs(
         create_router_with_repository_and_app_config(
             RuntimeConfig {
                 allow_anonymous_access,
-                base_path: "/yona".to_string(),
+                base_path: base_path.to_string(),
                 public_origin: String::new(),
             },
             app_repo.clone(),
@@ -1726,6 +1728,123 @@ async fn restricted_page_redirects_anonymous_users_to_base_path_root() {
 }
 
 #[tokio::test]
+// Flash cookie paths must never be empty: root mounting yields Path=/ and
+// nested mounting yields the full base path, for both flash emitters.
+async fn flash_cookie_paths_are_normalized_across_base_paths() {
+    for (base_path, cookie_path) in [("/", "/"), ("/team/yoram", "/team/yoram")] {
+        let prefix = if base_path == "/" { "" } else { base_path };
+
+        let (denied_app, _, _) =
+            build_auth_router_with_configs(false, AppRuntimeConfig::default(), RepositoryConfig::default(), base_path)
+                .await;
+        let denied = denied_app
+            .oneshot(
+                Request::builder()
+                    .method(Method::GET)
+                    .uri(format!("{prefix}/authenticate/github/denied"))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(denied.status(), StatusCode::SEE_OTHER);
+        assert_eq!(
+            denied
+                .headers()
+                .get(http::header::LOCATION)
+                .and_then(|value| value.to_str().ok()),
+            Some(format!("{prefix}/").as_str())
+        );
+        let set_cookies: Vec<String> = denied
+            .headers()
+            .get_all(http::header::SET_COOKIE)
+            .iter()
+            .map(|value| value.to_str().unwrap().to_string())
+            .collect();
+        assert!(set_cookies.iter().any(|cookie| cookie == &format!(
+            "PLAY_FLASH=error=You+need+to+accept+the+OAuth+connection+in+order+to+use+this+website%21; Path={cookie_path}; HttpOnly"
+        )));
+        assert!(!set_cookies.iter().any(|cookie| cookie.starts_with("yona_session=")));
+
+        let (restricted_app, _, _) =
+            build_auth_router_with_configs(true, AppRuntimeConfig::default(), RepositoryConfig::default(), base_path)
+                .await;
+        let restricted = restricted_app
+            .oneshot(
+                Request::builder()
+                    .method(Method::GET)
+                    .uri(format!("{prefix}/restricted"))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(restricted.status(), StatusCode::SEE_OTHER);
+        assert_eq!(
+            restricted
+                .headers()
+                .get(http::header::LOCATION)
+                .and_then(|value| value.to_str().ok()),
+            Some(format!("{prefix}/").as_str())
+        );
+        let set_cookies: Vec<String> = restricted
+            .headers()
+            .get_all(http::header::SET_COOKIE)
+            .iter()
+            .map(|value| value.to_str().unwrap().to_string())
+            .collect();
+        assert!(set_cookies.iter().any(|cookie| cookie == &format!(
+            "PLAY_FLASH=message=Nice+try%2C+but+you+need+to+log+in+first%21; Path={cookie_path}; HttpOnly"
+        )));
+        assert!(!set_cookies.iter().any(|cookie| cookie.starts_with("yona_session=")));
+    }
+}
+
+#[tokio::test]
+// Legacy GET /users/login renders the login page; the React router owns the
+// same alias, so the SPA shell must answer the deep link (not a POST-only 405).
+async fn users_login_deep_link_serves_login_page_shell() {
+    let (_, repository, _) = build_auth_router_with_anonymous_access(false).await;
+    let asset_root = std::env::temp_dir().join(format!(
+        "yona-login-deep-link-{}",
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system clock")
+            .as_nanos()
+    ));
+    std::fs::create_dir_all(&asset_root).expect("asset root");
+    std::fs::write(
+        asset_root.join("index.html"),
+        "<html><head></head><body>legacy login shell</body></html>",
+    )
+    .expect("index html");
+    let app = create_router_with_repository_and_filesystem_assets(
+        RuntimeConfig {
+            allow_anonymous_access: false,
+            base_path: "/yona".to_string(),
+            public_origin: String::new(),
+        },
+        repository,
+        asset_root,
+    );
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/users/login")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let html = response_text(response).await;
+    assert!(html.contains("__YONA_RUNTIME_CONFIG__"));
+}
+
+#[tokio::test]
 // Guards auth route-owned session/sign-in/sign-out helpers plus service-snapshot auth capability adapters.
 async fn rest_auth_routes_round_trip_with_shared_session_and_error_envelope() {
     let (app, _, db) = build_auth_router().await;
@@ -3281,6 +3400,7 @@ async fn register_marks_matching_guest_prefix_accounts_as_legacy_guests() {
         true,
         AppRuntimeConfig::default(),
         RepositoryConfig::from_pairs([("YONA_GUEST_LOGIN_PREFIX", "guest_, pt-")]),
+        "/yona",
     )
     .await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
@@ -3332,6 +3452,7 @@ async fn ldap_sign_in_provisions_fixture_user_and_guest_prefix() {
             ..AppRuntimeConfig::default()
         },
         RepositoryConfig::from_pairs([("YONA_GUEST_LOGIN_PREFIX", "pt-")]),
+        "/yona",
     )
     .await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
@@ -3388,6 +3509,7 @@ async fn ldap_sign_in_uses_email_base_login_and_updates_existing_local_user() {
             ..AppRuntimeConfig::default()
         },
         RepositoryConfig::from_pairs([("YONA_GUEST_LOGIN_PREFIX", "pt-")]),
+        "/yona",
     )
     .await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;

@@ -7,19 +7,19 @@ import path from "node:path";
 // (docs/provenance/release-triage-2026-08.md) and the verdict gate.
 export const CLASSIFICATIONS = [
   "PASS",
-  "PRODUCT_GAP",
-  "ACCEPTED_DIVERGENCE",
-  "LEGACY_BUG",
+  "REAL_OBSERVABLE_MISMATCH",
+  "IMPLEMENTATION_DIFFERENCE",
+  "LEGACY_BUG_NOT_REPRODUCED",
   "HARNESS_ERROR",
   "INFRA_ERROR",
   "UNVERIFIED",
 ];
 
 // Blocking classes for the release gate: real product gaps, harness defects,
-// infra failures, and anything unverified. ACCEPTED_DIVERGENCE and LEGACY_BUG
+// infra failures, and anything unverified. IMPLEMENTATION_DIFFERENCE and LEGACY_BUG_NOT_REPRODUCED
 // are non-blocking; PASS is pass.
 export const BLOCKING_CLASSIFICATIONS = new Set([
-  "PRODUCT_GAP",
+  "REAL_OBSERVABLE_MISMATCH",
   "HARNESS_ERROR",
   "INFRA_ERROR",
   "UNVERIFIED",
@@ -48,7 +48,7 @@ export function classify(kind, detail) {
     const text = JSON.stringify(detail);
     if (/yona-root|__YONA_RUNTIME_CONFIG__|react-root/iu.test(text)) {
       return {
-        classification: "ACCEPTED_DIVERGENCE",
+        classification: "IMPLEMENTATION_DIFFERENCE",
         reason:
           "presentation-only: legacy SSR skeleton vs yoram React SPA shell; user-visible DOM/visual parity is enforced by the WTR e2e lanes, not the sweep",
       };
@@ -61,9 +61,16 @@ export function classify(kind, detail) {
 
 // Narrow, evidence-backed classifications for the known residual findings of
 // the current sweep surface (see docs/provenance/release-triage-2026-08.md).
-// Every rule carries a reason; ACCEPTED_DIVERGENCE rules additionally carry a
+// Every rule carries a reason; IMPLEMENTATION_DIFFERENCE rules additionally carry a
 // `rationale` reference. Anything unmatched stays UNVERIFIED.
 const CLASSIFICATION_RULES = [
+  {
+    test: ({ kind, route, detail }) =>
+      kind === "api" && /\/member\/leave$/u.test(route) && /"legacy HTTP 403"/u.test(JSON.stringify(detail)),
+    classification: "LEGACY_BUG_NOT_REPRODUCED",
+    reason:
+      "legacy org-leave authorization defect: AccessControl.java:176-183 handles Operation.LEAVE only for PROJECT resources, so an ORGANIZATION leave falls into the UPDATE/DELETE switch and is authorized as OrganizationUser.isAdmin (AccessControl.java:197); validateForLeave (OrganizationApp.java:297-311) then 403s a plain member in a single-admin org with the atLeastOneAdmin message while still letting the last admin leave. Yoram implements the intended protection (blocks only the last admin, members leave with redirect) covered by organization_leave_mutation_redirects_members_and_blocks_last_admins",
+  },
   {
     test: ({ kind, route }) => kind === "db" && /labels/u.test(route),
     classification: "INFRA_ERROR",
@@ -79,14 +86,14 @@ const CLASSIFICATION_RULES = [
   {
     test: ({ kind, route, detail }) =>
       kind === "api" && /\/share(\?|$)/u.test(route) && /"legacyStatus":500/u.test(JSON.stringify(detail)),
-    classification: "LEGACY_BUG",
+    classification: "LEGACY_BUG_NOT_REPRODUCED",
     reason:
       "legacy -_-api issue-share handler crashes with 500 on the sweep payload where yoram's sharer toggle succeeds/fails cleanly; degenerate legacy crash, not specified behavior",
   },
   {
     test: ({ kind, route, detail }) =>
       kind === "api" && /assignableUsers/u.test(route) && /issue\.assignToMe|pureNameOnly/u.test(JSON.stringify(detail)),
-    classification: "ACCEPTED_DIVERGENCE",
+    classification: "IMPLEMENTATION_DIFFERENCE",
     rationale:
       "i18n-key contract: yoram's API returns stable message keys (issue.assignToMe/issue.noAssignee) and the React frontend localizes them via t() (frontend issue form maps the key set); legacy external API returned pre-localized strings — plan decision fixes the client mapping, not the API",
     reason: "assignableUsers returns stable message keys where legacy returns localized display strings",
@@ -102,14 +109,14 @@ const CLASSIFICATION_RULES = [
   },
   {
     test: ({ kind, route }) => kind === "api" && /\/sites\/(toggle|unwatchUpdate)/u.test(route),
-    classification: "PRODUCT_GAP",
+    classification: "REAL_OBSERVABLE_MISMATCH",
     reason:
       "site-admin mutation routes diverge (yoram site_admin catch-all vs legacy dedicated handlers); handler-level parity not yet implemented",
   },
   {
     test: ({ kind, detail }) =>
       kind === "api" && /"status":401|"legacyStatus":401/u.test(JSON.stringify(detail)),
-    classification: "PRODUCT_GAP",
+    classification: "REAL_OBSERVABLE_MISMATCH",
     reason:
       "legacy -_-api/v1 compat mutations are Authorization-token gated (UserApi.java isAuthored) while yoram accepts cookie sessions; token-auth surface not yet implemented",
   },
@@ -139,20 +146,20 @@ const CLASSIFICATION_RULES = [
   },
   {
     test: ({ kind, route }) => kind === "api" && /(sharableUsers|findSharer)/u.test(route),
-    classification: "PRODUCT_GAP",
+    classification: "REAL_OBSERVABLE_MISMATCH",
     reason:
       "sharableUsers candidate-set comparison remains unresolved after the empty-query implementation; verify parity fixture/catalog alignment or obtain a product decision before changing candidate semantics",
   },
   {
     test: ({ kind, route, detail }) =>
       kind === "api" && /(sharableUsers|findSharer)/u.test(route) && JSON.stringify(detail.actual) === "[]",
-    classification: "PRODUCT_GAP",
+    classification: "REAL_OBSERVABLE_MISMATCH",
     reason:
       "regression: empty-query sharable-user discovery returned no candidates although the legacy contract lists active users and public projects",
   },
   {
     test: ({ kind, route, detail }) => kind === "api" && /\/markdown\//u.test(route) && /"status":404|"yoramStatus":404/u.test(JSON.stringify(detail)),
-    classification: "ACCEPTED_DIVERGENCE",
+    classification: "IMPLEMENTATION_DIFFERENCE",
     rationale:
       "preview rendering is owned by the React client (react-markdown); legacy POST /markdown server-render endpoint intentionally not replicated (product decision 2026-08-24)",
     reason:
@@ -166,37 +173,37 @@ const CLASSIFICATION_RULES = [
   },
   {
     test: ({ kind, route }) => kind === "api" && /\/commit\/HEAD\/comments/u.test(route),
-    classification: "ACCEPTED_DIVERGENCE",
+    classification: "IMPLEMENTATION_DIFFERENCE",
     rationale: "harmless extension: yoram resolves the HEAD pseudo-ref where legacy answers 404; no legacy behavior depends on the 404",
     reason: "shape drift: yoram resolves the HEAD pseudo-ref for commit comments (200) where legacy answers 404",
   },
   {
     test: ({ kind, route, detail }) => kind === "api" && /\/setting$/u.test(route) && /"status":500/u.test(JSON.stringify(detail.expected ?? {})),
-    classification: "LEGACY_BUG",
+    classification: "LEGACY_BUG_NOT_REPRODUCED",
     reason: "legacy quirk: legacy setting-form handler NPEs on the headless payload while yoram persists it; throwaway-project scoped, no shared-state residue",
   },
   {
     test: ({ kind, route }) => kind === "api" && /^\/_init$/u.test(route.split("?")[0]),
-    classification: "ACCEPTED_DIVERGENCE",
+    classification: "IMPLEMENTATION_DIFFERENCE",
     rationale: "presentation-only: legacy /_init uikit bootstrap redirect is meaningless to the React shell, which serves its own init payload",
     reason: "SPA shell: legacy /_init uikit bootstrap redirect is meaningless to the React shell, which serves its own init payload",
   },
   {
     test: ({ kind, route }) => kind === "api" && /^\/users\/login$/u.test(route.split("?")[0]),
-    classification: "ACCEPTED_DIVERGENCE",
+    classification: "IMPLEMENTATION_DIFFERENCE",
     rationale: "presentation-only: auth pages are served client-side by the React shell; rendered parity is enforced by the WTR e2e lanes",
     reason: "SPA shell: yoram serves auth pages client-side and rejects the bare GET with 4xx; rendered parity is enforced by the WTR e2e lanes",
   },
   {
     test: ({ kind, route }) => kind === "api" && /^\/user\/editform\//u.test(route.split("?")[0]),
-    classification: "ACCEPTED_DIVERGENCE",
+    classification: "IMPLEMENTATION_DIFFERENCE",
     rationale:
       "surface-replaced: settings tabs implemented as workspace overview/actions (crates/server/src/routes/workspace.rs:1082-1425); residual compat-tab alias coverage re-checked at Phase 4 rerun",
     reason: "yoram implements the settings surface as workspace actions; legacy /user/editform/:tabId compat tab subset (defultLoginPage/profile) diverges in route shape",
   },
   {
     test: ({ kind, route, detail }) => kind === "api" && /^\/user\/email\//u.test(route.split("?")[0]) && /400|403|415/u.test(JSON.stringify(detail.actual ?? {})),
-    classification: "PRODUCT_GAP",
+    classification: "REAL_OBSERVABLE_MISMATCH",
     reason:
       "regression: Yoram rejects setAsMain for an unvalidated address where legacy accepts it; the current contract test covers the legacy-compatible behavior",
   },
@@ -205,28 +212,28 @@ const CLASSIFICATION_RULES = [
       kind === "api" &&
       (/^\/organizations\/[^/]+(\/member\/leave)?$/u.test(route) || /^\/-_-api\/v1\/favoriteProjects\//u.test(route)) &&
       /403/u.test(JSON.stringify(detail.actual ?? {})),
-    classification: "PRODUCT_GAP",
+    classification: "REAL_OBSERVABLE_MISMATCH",
     reason: "yoram authorization rejects org delete/leave and workspace favorite-toggle calls that legacy accepts with an admin session; org/favorites mutation authorization incomplete",
   },
   {
     test: ({ kind, route, detail }) => kind === "api" && /^\/[^/?]+$/u.test(route) && /"actual":"yoram HTTP 403"/u.test(JSON.stringify(detail)),
-    classification: "PRODUCT_GAP",
+    classification: "REAL_OBSERVABLE_MISMATCH",
     reason: "yoram site-admin user-level toggles reject with 403 where legacy site admin succeeds; per-user site-admin mutation surface incomplete",
   },
   {
     test: ({ kind, route }) => kind === "api" && /\/files\/(:?[^/]+)\/$/u.test(route),
-    classification: "ACCEPTED_DIVERGENCE",
+    classification: "IMPLEMENTATION_DIFFERENCE",
     rationale: "routing nuance: both sides deliver identical file bytes; only trailing-slash normalization differs",
     reason: "routing nuance: legacy 303-normalizes the trailing-slash attachment route while yoram serves it directly; both deliver the file",
   },
   {
     test: ({ kind, route, detail }) => kind === "api" && /postlabel\//u.test(route) && /"status":500/u.test(JSON.stringify(detail.expected ?? {})),
-    classification: "LEGACY_BUG",
+    classification: "LEGACY_BUG_NOT_REPRODUCED",
     reason: "legacy -_-api postlabel handler crashes with 500 on an empty label set where yoram's mapped route answers 404; degenerate-payload crash, not specified behavior",
   },
   {
     test: ({ kind, route, detail }) => kind === "api" && /\(PATCH\)$/u.test(route) && /"status":409/u.test(JSON.stringify(detail.expected ?? {})),
-    classification: "PRODUCT_GAP",
+    classification: "REAL_OBSERVABLE_MISMATCH",
     reason: "regression: legacy stale-original comment PATCH returns 409 while Yoram accepts 200; the current original-check contract is covered by focused tests",
   },
   {
@@ -251,7 +258,7 @@ const CLASSIFICATION_RULES = [
       detail.actual.storedContents.legacy === detail.actual.storedContents.yoram &&
       detail.actual.originalSent !== detail.actual.storedContents.legacy &&
       /"status":200/u.test(JSON.stringify(detail.actual)),
-    classification: "PRODUCT_GAP",
+    classification: "REAL_OBSERVABLE_MISMATCH",
     reason:
       "regression: a genuinely stale original yields 200 on Yoram where legacy answers 409 {message, storedContent}; focused tests cover this contract",
   },
@@ -268,29 +275,29 @@ const CLASSIFICATION_RULES = [
   },
   {
     test: ({ kind, route, detail }) => kind === "api" && /issue\/label\/category\//u.test(route) && /"yoramStatus":403|"legacyStatus":403/u.test(JSON.stringify(detail.actual ?? {})),
-    classification: "PRODUCT_GAP",
+    classification: "REAL_OBSERVABLE_MISMATCH",
     reason: "yoram rejects label-category rename with 403 where legacy updates it (200); category management authorization incomplete",
   },
   {
     test: ({ kind, route, detail }) => kind === "api" && /issue\/label\/category\//u.test(route) && /"legacyStatus":400/u.test(JSON.stringify(detail.actual ?? {})),
-    classification: "LEGACY_BUG",
+    classification: "LEGACY_BUG_NOT_REPRODUCED",
     reason: "legacy DELETE issue-label/category answers 400 headless where yoram deletes (200); legacy fails to answer success for an operation it performs",
   },
   {
     test: ({ kind, route }) => kind === "api" && (/\/changeVCS$/u.test(route) || /\(cleanup\)$/u.test(route)),
-    classification: "ACCEPTED_DIVERGENCE",
+    classification: "IMPLEMENTATION_DIFFERENCE",
     rationale: "throwaway-scoped status semantics: entities are isolated and cleanup residue is checked on both sides, so no shared state can leak",
     reason: "legacy/Yoram changeVCS and generated-fork cleanup expose different status semantics; entities are isolated and cleanup residue is checked",
   },
   {
     test: ({ kind, route }) => kind === "api" && /\/sites\/project\/delete\/:projectId$/u.test(route),
-    classification: "ACCEPTED_DIVERGENCE",
+    classification: "IMPLEMENTATION_DIFFERENCE",
     rationale: "response-shape: the throwaway project is deleted on both sides and absence is asserted; only the post-delete response shape differs",
     reason: "site-admin purge status divergence: legacy direct route redirects while Yoram REST/direct compatibility returns the JSON/SPA result",
   },
   {
     test: ({ kind, route }) => kind === "api" && /\/code\/__parity_missing_branch__\//u.test(route),
-    classification: "ACCEPTED_DIVERGENCE",
+    classification: "IMPLEMENTATION_DIFFERENCE",
     rationale: "error-semantics: no branch state is mutated on either side; yoram's explicit 404 is a stricter report of the same no-op",
     reason: "missing-branch probe divergence: legacy treats delete of a nonexistent branch as a redirect while Yoram returns 404",
   },
@@ -308,19 +315,19 @@ const CLASSIFICATION_RULES = [
   },
   {
     test: ({ kind, route }) => kind === "api" && route === "/restricted",
-    classification: "ACCEPTED_DIVERGENCE",
+    classification: "IMPLEMENTATION_DIFFERENCE",
     rationale: "presentation-only gating: anonymous users are gated on both sides; destination comparison is skipped when no deterministic redirect exists",
     reason: "restricted guard divergence: legacy redirects the anonymous request while Yoram serves its auth shell without a Location",
   },
   {
     test: ({ kind, route }) => kind === "api" && route === "/sites/import",
-    classification: "ACCEPTED_DIVERGENCE",
+    classification: "IMPLEMENTATION_DIFFERENCE",
     rationale: "boundary-status nuance: invalid payloads are rejected on both sides and nothing is persisted; exact rejection code is outside the compatibility contract",
     reason: "invalid site-import boundary divergence: empty/invalid import payloads are rejected with different legacy/Yoram statuses; no import state is written",
   },
   {
     test: ({ kind }) => kind === "dom",
-    classification: "ACCEPTED_DIVERGENCE",
+    classification: "IMPLEMENTATION_DIFFERENCE",
     rationale:
       "presentation-only: legacy SSR HTML vs yoram React render differ structurally; user-visible DOM/visual parity is enforced by the WTR e2e lanes, not the sweep",
     reason: "SPA-shell skeleton drift between legacy SSR and the React shell",
@@ -333,7 +340,7 @@ const CLASSIFICATION_RULES = [
     test: ({ kind, route }) =>
       kind === "api" &&
       /-_-api\/v1\/owners\/[^/?]+\/(projects\/)?[^/?]+\/(exports(\/|$)|issues\/imports)/u.test(route.split("?")[0]),
-    classification: "ACCEPTED_DIVERGENCE",
+    classification: "IMPLEMENTATION_DIFFERENCE",
     rationale:
       "intentional removal: the /-_-api/v1 namespace is outside Yoram's compatibility contract (release contract class C); the function belongs to migrator/export-import scope (SPEC.md Legacy API 접두사 결정; docs/provenance/legacy-external-api.md)",
     reason: "legacy external API row is migrator/export-import scope, deliberately not an app-server route",
@@ -341,7 +348,7 @@ const CLASSIFICATION_RULES = [
   {
     test: ({ kind, route, detail }) =>
       kind === "api" && /setAsDefault/u.test(route) && /"status":500|"legacyStatus":500/u.test(JSON.stringify(detail)),
-    classification: "LEGACY_BUG",
+    classification: "LEGACY_BUG_NOT_REPRODUCED",
     reason:
       "legacy setAsDefault crashes with 500 headless where yoram persists the default branch; degenerate legacy crash, agreed intent verified by the resulting default ref",
   },
@@ -364,7 +371,7 @@ const CLASSIFICATION_RULES = [
   {
     test: ({ kind, route, detail }) =>
       kind === "api" && /comments\/issue\/u?/iu.test(route) && /"legacyStatus":500/u.test(JSON.stringify(detail)),
-    classification: "LEGACY_BUG",
+    classification: "LEGACY_BUG_NOT_REPRODUCED",
     reason:
       "legacy compat comment-delete crashes with 500 where yoram cleanly rejects the same request; degenerate legacy crash",
   },
@@ -374,7 +381,7 @@ const CLASSIFICATION_RULES = [
       /issuelabel\//u.test(route) &&
       /"legacyStatus":500/u.test(JSON.stringify(detail)) &&
       /"yoramStatus":200/u.test(JSON.stringify(detail)),
-    classification: "LEGACY_BUG",
+    classification: "LEGACY_BUG_NOT_REPRODUCED",
     reason:
       "legacy -_-api issuelabel attach crashes with 500 where yoram attaches cleanly; degenerate legacy crash on the same payload",
   },
@@ -400,7 +407,7 @@ const CLASSIFICATION_RULES = [
 ];
 
 // Rule integrity: every rule must name an enum class, carry a reason, and any
-// ACCEPTED_DIVERGENCE rule must reference its rationale. Checked once at load
+// IMPLEMENTATION_DIFFERENCE rule must reference its rationale. Checked once at load
 // so a malformed rule fails fast in every process that imports this module.
 for (const rule of CLASSIFICATION_RULES) {
   if (!CLASSIFICATIONS.includes(rule.classification)) {
@@ -409,8 +416,8 @@ for (const rule of CLASSIFICATION_RULES) {
   if (!rule.reason || typeof rule.reason !== "string") {
     throw new Error(`classification rule (${rule.classification}) requires a reason`);
   }
-  if (rule.classification === "ACCEPTED_DIVERGENCE" && !rule.rationale) {
-    throw new Error(`ACCEPTED_DIVERGENCE rule requires a rationale reference: ${rule.reason}`);
+  if (rule.classification === "IMPLEMENTATION_DIFFERENCE" && !rule.rationale) {
+    throw new Error(`IMPLEMENTATION_DIFFERENCE rule requires a rationale reference: ${rule.reason}`);
   }
 }
 
@@ -424,8 +431,8 @@ export function classifyViolation(kind, route, detail) {
 
 export function violation({ route, behaviorId = null, kind, expected, actual, classification, reason, rationale }) {
   const derived = classifyViolation(kind, route, { expected, actual });
-  if (classification === "ACCEPTED_DIVERGENCE" && !reason && !rationale && !derived.rationale) {
-    throw new Error("ACCEPTED_DIVERGENCE violation requires a rationale");
+  if (classification === "IMPLEMENTATION_DIFFERENCE" && !reason && !rationale && !derived.rationale) {
+    throw new Error("IMPLEMENTATION_DIFFERENCE violation requires a rationale");
   }
   return {
     route,
@@ -503,10 +510,10 @@ export function formatSummary(report) {
       CLASSIFICATIONS.map((c) => `${c}=${counts[c]}`).join(" "),
   );
   const accepted = report.scenarios.flatMap((scenario) =>
-    scenario.violations.filter((entry) => entry.classification === "ACCEPTED_DIVERGENCE"),
+    scenario.violations.filter((entry) => entry.classification === "IMPLEMENTATION_DIFFERENCE"),
   );
   for (const entry of accepted) {
-    lines.push(`    ACCEPTED_DIVERGENCE @ ${entry.route}: ${entry.rationale ?? entry.reason ?? "(no rationale)"}`);
+    lines.push(`    IMPLEMENTATION_DIFFERENCE @ ${entry.route}: ${entry.rationale ?? entry.reason ?? "(no rationale)"}`);
   }
   lines.push(
     `  execution: registered=${execution.registeredScenarios} attempted=${execution.attemptedScenarios} ` +

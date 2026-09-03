@@ -398,7 +398,7 @@ export const actionDefinitions = {
           route: path,
           behaviorId: ctx.entry.behaviorIds[0] ?? null,
           kind: "divergence",
-          classification: "ACCEPTED_DIVERGENCE",
+          classification: "IMPLEMENTATION_DIFFERENCE",
           rationale:
             "route-shape: legacy entry answers a direct 3xx to the provider authorize URL while yoram serves its own auth entry; the functional OAuth contract (authorize endpoint + client_id/state/redirect_uri) is verified by oauth-authorize-contract; docs/provenance/auth-deferred-oauth-ldap.md",
           reason: `legacy ${statusBucket(legacyResult.status)} vs yoram ${statusBucket(yoramResult.status)} on GET ${path}`,
@@ -425,7 +425,7 @@ export const actionDefinitions = {
           route: path,
           behaviorId: ctx.entry.behaviorIds[0] ?? null,
           kind: "divergence",
-          classification: "ACCEPTED_DIVERGENCE",
+          classification: "IMPLEMENTATION_DIFFERENCE",
           rationale:
             "route-shape: provider-denied entry diverges in status class between legacy SSR redirect and the yoram auth shell; rendered parity is enforced by the WTR e2e lanes; docs/provenance/auth-deferred-oauth-ldap.md",
           reason: `legacy ${statusBucket(legacyResult.status)} vs yoram ${statusBucket(yoramResult.status)} on GET ${path}`,

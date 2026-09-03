@@ -229,28 +229,28 @@ test("session adapters send json/form bodies without reference errors", async ()
 
 // --- typed classification model ----------------------------------------------
 
-test("classify maps unmatched findings to UNVERIFIED and dom skeletons to ACCEPTED_DIVERGENCE", () => {
+test("classify maps unmatched findings to UNVERIFIED and dom skeletons to IMPLEMENTATION_DIFFERENCE", () => {
   assert.equal(classifyViolation("api", "/x", { expected: 1, actual: 2 }).classification, "UNVERIFIED");
-  assert.equal(classifyViolation("dom", "/x", { firstDiffs: [] }).classification, "ACCEPTED_DIVERGENCE");
+  assert.equal(classifyViolation("dom", "/x", { firstDiffs: [] }).classification, "IMPLEMENTATION_DIFFERENCE");
   assert.equal(classifyViolation("harness", "step", {}).classification, "HARNESS_ERROR");
   assert.equal(classifyViolation("infra", "render", {}).classification, "INFRA_ERROR");
 });
 
-test("every ACCEPTED_DIVERGENCE rule carries a rationale reference", () => {
+test("every IMPLEMENTATION_DIFFERENCE rule carries a rationale reference", () => {
   // report.mjs validates its own rule table at import; this asserts the enum
   // contract stays closed against banned legacy terms.
   for (const c of CLASSIFICATIONS) {
-    assert.match(c, /^(PASS|PRODUCT_GAP|ACCEPTED_DIVERGENCE|LEGACY_BUG|HARNESS_ERROR|INFRA_ERROR|UNVERIFIED)$/u);
+    assert.match(c, /^(PASS|REAL_OBSERVABLE_MISMATCH|IMPLEMENTATION_DIFFERENCE|LEGACY_BUG_NOT_REPRODUCED|HARNESS_ERROR|INFRA_ERROR|UNVERIFIED)$/u);
   }
 });
 
-test("violation() rejects an ACCEPTED_DIVERGENCE without rationale", () => {
+test("violation() rejects an IMPLEMENTATION_DIFFERENCE without rationale", () => {
   assert.throws(
-    () => violation({ route: "/x", kind: "divergence", classification: "ACCEPTED_DIVERGENCE", expected: 1, actual: 2 }),
+    () => violation({ route: "/x", kind: "divergence", classification: "IMPLEMENTATION_DIFFERENCE", expected: 1, actual: 2 }),
     /rationale/u,
   );
-  const ok = violation({ route: "/x", kind: "divergence", classification: "ACCEPTED_DIVERGENCE", reason: "r", rationale: "docs/x.md", expected: 1, actual: 2 });
-  assert.equal(ok.classification, "ACCEPTED_DIVERGENCE");
+  const ok = violation({ route: "/x", kind: "divergence", classification: "IMPLEMENTATION_DIFFERENCE", reason: "r", rationale: "docs/x.md", expected: 1, actual: 2 });
+  assert.equal(ok.classification, "IMPLEMENTATION_DIFFERENCE");
   assert.equal(ok.rationale, "docs/x.md");
 });
 

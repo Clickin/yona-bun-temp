@@ -244,7 +244,8 @@ async function readPageHandler(ctx) {
   await helpers.renderDomTarget(ctx, {
     legacy: `${options.legacyUrl}/${step.params.owner}/${step.params.project}${leaf}`,
     yoram: `${yoramBaseUrl}/${step.params.owner}/${step.params.project}${leaf}`,
-    spa: false,
+    // The project home route is React-rendered; capture after hydration.
+    spa: true,
   });
 }
 
@@ -394,7 +395,7 @@ export const actionDefinitions = {
     translateYoram(step) {
       return {
         method: "GET",
-        path: `/api/v1/projects/${step.params.owner}/${step.params.project}`,
+        path: `/api/v1/owners/${step.params.owner}/projects/${step.params.project}`,
         pagePath: `/${step.params.owner}/${step.params.project}`,
       };
     },

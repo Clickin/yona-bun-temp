@@ -420,19 +420,28 @@ async function resolveYoramProjectId(ctx, owner, project) {
   return Number(result.json?.projectId ?? result.json?.project_id ?? 0) || null;
 }
 
-async function resolveLegacyIssueId(ctx, owner, project) {
-  // legacy issuesAsJson keys the payload by issue row id.
-  const result = await ctx.legacySession.request({ method: "GET", path: `/${owner}/${project}/issues?format=json` });
-  return Number(Object.keys(result.json ?? {})[0]) || null;
+async function resolveLegacyIssueId(ctx, owner, project, issueNumber) {
+  // The legacy favorite API matches Issue.finder.byId (User.java:1081), so the
+  // row id is required; legacy renders it as data-issue-id on the issue detail
+  // page (yona-original app/views/issue/view.scala.html:123). LegacySession
+  // exposes no parsed json field, and issues?format=json keys by display
+  // number anyway.
+  const result = await ctx.legacySession.request({
+    method: "GET",
+    path: `/${owner}/${project}/issue/${issueNumber}`,
+  });
+  return Number(/data-issue-id="(\d+)"/u.exec(result.body ?? "")?.[1]) || null;
 }
 
 async function resolveLegacyOrganizationId(ctx, organization) {
-  const result = await ctx.legacySession.request({ method: "GET", path: "/orgs" });
-  for (const chunk of String(result.body ?? "").split('data-organization-id="').slice(1)) {
-    const id = /^(\d+)"/u.exec(chunk)?.[1];
-    if (id && chunk.slice(0, 2000).includes(organization)) return Number(id);
-  }
-  return null;
+  // Legacy org pages render no data-organization-id; the organization
+  // settings form carries the numeric id in a hidden field
+  // (yona-original app/views/organization/setting.scala.html:33).
+  const result = await ctx.legacySession.request({
+    method: "GET",
+    path: `/organizations/${encodeURIComponent(organization)}/settingform`,
+  });
+  return Number(/name="id"\s+value="(\d+)"/u.exec(result.body ?? "")?.[1]) || null;
 }
 
 const ADMIN_DISPLAY_NAME = "Site Admin";
@@ -875,7 +884,7 @@ export const actionDefinitions = {
       let legacyPath;
       let yoramPath;
       if (target === "issue") {
-        state.legacyIssueId ??= await resolveLegacyIssueId(ctx, owner, project);
+        state.legacyIssueId ??= await resolveLegacyIssueId(ctx, owner, project, issueNumber);
         if (!state.legacyIssueId) {
           entry.errors.push("toggle-favorite: legacy issue id unresolved");
           return;
@@ -1188,6 +1197,10 @@ export const actionDefinitions = {
         entry.errors.push("delete-org-member: no throwaway organization in state");
         return;
       }
+      state.legacyOrgMemberIds ??= {};
+      state.yoramOrgMemberIds ??= {};
+      state.legacyOrgMemberIds[step.params.user] ??= await resolveLegacyOrgMemberId(ctx, org, step.params.user);
+      state.yoramOrgMemberIds[step.params.user] ??= await resolveYoramOrgMemberId(ctx, org, step.params.user);
       const legacyUserId = state.legacyOrgMemberIds?.[step.params.user];
       const yoramUserId = state.yoramOrgMemberIds?.[step.params.user];
       if (!legacyUserId || !yoramUserId) {

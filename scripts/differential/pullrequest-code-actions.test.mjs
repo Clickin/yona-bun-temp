@@ -47,7 +47,6 @@ test("translators produce expected method/path literals", () => {
     ["new-pullrequest-form", { owner: "admin", project: "sample" }, "/admin/sample/newPullRequestForm"],
     ["merge-result", { owner: "admin", project: "sample" }, "/admin/sample/newPullRequest/mergeResult"],
     ["view-pullrequest", { owner: "admin", project: "sample", prId: 1 }, "/admin/sample/pullRequest/1"],
-    ["view-pullrequest-state", { owner: "admin", project: "sample", prId: 2 }, "/admin/sample/pullRequest/2/state"],
     ["view-pullrequest-changes", { owner: "admin", project: "sample", prId: 3 }, "/admin/sample/pullRequest/3/changes"],
     ["view-specific-change", { owner: "admin", project: "sample", prId: 3, commitId: "abc123" }, "/admin/sample/pullRequest/3/changes/abc123"],
     ["view-pullrequest-editform", { owner: "admin", project: "sample", prId: 4 }, "/admin/sample/pullRequest/4/editform"],
@@ -77,6 +76,21 @@ test("translators produce expected method/path literals", () => {
     assert.equal(yoram.method, "GET", `${action} yoram method`);
     assert.equal(yoram.path, expectedPath, `${action} yoram path (SPA shell serves legacy route)`);
     assert.equal(yoram.pagePath, expectedPath, `${action} yoram pagePath`);
+  }
+  {
+    // Legacy /state is the PR view's XHR polling fragment, not a page; the
+    // Yoram side compares the PR detail page where React owns state display.
+    const yoram = MERGED_DEFINITIONS["view-pullrequest-state"].translateYoram(
+      step("view-pullrequest-state", { owner: "admin", project: "sample", prId: 2 }),
+      {},
+    );
+    assert.equal(yoram.path, "/admin/sample/pullRequest/2", "state yoram path");
+    assert.equal(yoram.pagePath, "/admin/sample/pullRequest/2", "state yoram pagePath");
+    const legacy = MERGED_DEFINITIONS["view-pullrequest-state"].translateLegacy(
+      step("view-pullrequest-state", { owner: "admin", project: "sample", prId: 2 }),
+      {},
+    );
+    assert.equal(legacy.path, "/admin/sample/pullRequest/2/state", "state legacy path");
   }
 
   // Raw rev-path actions: paired GET without a comparable page target.

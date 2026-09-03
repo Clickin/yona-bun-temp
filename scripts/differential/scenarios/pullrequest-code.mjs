@@ -234,9 +234,10 @@ async function readPageHandler(ctx) {
     translateYoram(step, resolved),
   );
   if (legacyResult.status >= 400 || yoramResult.status >= 400) return;
+  const yoramPagePath = translateYoram(step, resolved).pagePath ?? legacyPath(step);
   await helpers.renderDomTarget(ctx, {
     legacy: `${options.legacyUrl}${legacyPath(step)}`,
-    yoram: `${yoramBaseUrl}${legacyPath(step)}`,
+    yoram: `${yoramBaseUrl}${yoramPagePath}`,
     spa: true,
   });
 }
@@ -291,6 +292,14 @@ const readGet = () => ({
     return { method: "GET", path: legacyPath(step) };
   },
   translateYoram(step) {
+    // Legacy /pullRequest/:id/state is the PR view's XHR state-polling
+    // fragment endpoint (yona-original git/view.scala.html sStateUrl), not a
+    // navigable page; Yoram owns state rendering inside the React PR detail
+    // page, so compare the detail page instead of a 404 deep link.
+    if (step.action === "view-pullrequest-state") {
+      const path = legacyPath({ ...step, action: "view-pullrequest" });
+      return { method: "GET", path, pagePath: path };
+    }
     const path = legacyPath(step);
     return { method: "GET", path, pagePath: path };
   },

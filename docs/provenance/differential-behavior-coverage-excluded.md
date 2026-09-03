@@ -367,3 +367,14 @@ instead. SVN and Git smart-HTTP client lanes did execute in the final sweep.
 
 This status records evidence and open prerequisites only. It does not mark
 human acceptance, release approval, parity completion, or a 100% result.
+
+## 7. Phase D reclassification of the 122 accepted rows (2026-09-03)
+
+The 122 `ACCEPTED_DIVERGENCE` rows of sweep-mtk4hpxy were individually
+reviewed and reclassified under the final closure vocabulary
+(`IMPLEMENTATION_DIFFERENCE` / `LEGACY_BUG_NOT_REPRODUCED` /
+`REAL_OBSERVABLE_MISMATCH`); the harness enum was renamed accordingly. One
+real observable mismatch was found and fixed (the `GET /users/login` deep
+link answered `405` instead of the login page shell). The full ledger,
+arbitration evidence, capture-quality repairs, and the Phase H gate are in
+`docs/provenance/parity-reclassification-2026-09.md`.

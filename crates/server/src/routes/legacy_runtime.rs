@@ -296,7 +296,9 @@ pub(crate) async fn direct_legacy_migration_json(
 fn migration_wiki_commit_requested(query: &HashMap<String, String>) -> bool {
     query
         .get("withWikiCommit")
-        .is_some_and(|value| value.trim().ends_with("true"))
+        // Legacy MigrationApp.java: `isNotBlank(v) && v.endsWith("true")` —
+        // blank check trims, endsWith runs on the raw value.
+        .is_some_and(|value| !value.trim().is_empty() && value.ends_with("true"))
 }
 
 enum MigrationRouteError {
@@ -1124,7 +1126,34 @@ pub(crate) fn routes(
 
 #[cfg(test)]
 mod tests {
-    use super::migration_body_links;
+    use super::{migration_body, migration_body_links, migration_wiki_commit_requested};
+    use std::collections::HashMap;
+    use yoram_persistence::IssueAttachmentRecord;
+
+    fn wiki_commit_query(value: Option<&str>) -> HashMap<String, String> {
+        let mut query = HashMap::new();
+        if let Some(value) = value {
+            query.insert("withWikiCommit".to_string(), value.to_string());
+        }
+        query
+    }
+
+    #[test]
+    // Legacy MigrationApp.java:346 `isNotBlank(v) && v.endsWith("true")`.
+    fn migration_wiki_commit_requested_matches_legacy_ends_with_semantics() {
+        assert!(migration_wiki_commit_requested(&wiki_commit_query(Some("true"))));
+        // Legacy accepts any non-blank raw value ending in "true".
+        assert!(migration_wiki_commit_requested(&wiki_commit_query(Some("nottrue"))));
+        // Blank, false, case variants, and trailing-whitespace values are
+        // rejected because endsWith runs on the raw (untrimmed) value; a
+        // leading space still ends with "true".
+        assert!(migration_wiki_commit_requested(&wiki_commit_query(Some(" true"))));
+        assert!(!migration_wiki_commit_requested(&wiki_commit_query(Some("TRUE"))));
+        assert!(!migration_wiki_commit_requested(&wiki_commit_query(Some(""))));
+        assert!(!migration_wiki_commit_requested(&wiki_commit_query(Some("   "))));
+        assert!(!migration_wiki_commit_requested(&wiki_commit_query(Some("true "))));
+        assert!(!migration_wiki_commit_requested(&wiki_commit_query(None)));
+    }
 
     #[test]
     fn migration_body_links_preserve_legacy_wiki_commit_mode() {
@@ -1136,5 +1165,79 @@ mod tests {
             migration_body_links("[image](/image.png)", "", true),
             "[image](../wiki/image.png/image)"
         );
+    }
+
+    #[test]
+    // Legacy injects the raw link text into the wiki commit path
+    // (`[$1](../wiki/$2/$1)`) without any URL encoding.
+    fn migration_body_links_injects_raw_link_text_into_wiki_path() {
+        assert_eq!(
+            migration_body_links("[한글 링크](/가-나.png)", "/yona", true),
+            "[한글 링크](../wiki/가-나.png/한글 링크)"
+        );
+        assert_eq!(
+            migration_body_links("[a b (1)](/dir/file name.png)", "/yona", true),
+            "[a b (1)](../wiki/dir/file name.png/a b (1))"
+        );
+        assert_eq!(
+            migration_body_links("[100%](/query?.png)", "/yona", true),
+            "[100%](../wiki/query?.png/100%)"
+        );
+        // Link text differing from the target path.
+        assert_eq!(
+            migration_body_links("[설명 텍스트](/files/manual.pdf)", "/yona", true),
+            "[설명 텍스트](../wiki/files/manual.pdf/설명 텍스트)"
+        );
+        assert_eq!(
+            migration_body_links("[한글 파일](/한글 파일.png)", "/yona", false),
+            "[한글 파일](/yona/한글 파일.png)"
+        );
+    }
+
+    fn attachment(id: i64, name: &str) -> IssueAttachmentRecord {
+        IssueAttachmentRecord {
+            created_at: None,
+            hash: String::new(),
+            id,
+            mime_type: String::new(),
+            name: name.to_string(),
+            size: 0,
+        }
+    }
+
+    #[test]
+    // Legacy `addAttachmentsStringUsingWikiCommit` escapes only `#` as `%23`
+    // in the attachment file name; every other URL-sensitive character stays raw.
+    fn migration_body_wiki_commit_attachments_escape_only_hash() {
+        let attachments = vec![
+            attachment(1, "screen shot.png"),
+            attachment(2, "a#b.png"),
+            attachment(3, "100%.png"),
+            attachment(4, "query?.png"),
+            attachment(5, "paren(1).png"),
+            attachment(6, "한글 파일.png"),
+        ];
+        let body = migration_body(
+            "", "author", "Author", "이슈", "/owner/project/issue/1", "/yona", &attachments, true,
+        );
+        assert!(body.contains("[screen shot.png](../wiki/files/1/screen shot.png)"));
+        assert!(body.contains("[a#b.png](../wiki/files/2/a%23b.png)"));
+        assert!(body.contains("[100%.png](../wiki/files/3/100%.png)"));
+        assert!(body.contains("[query?.png](../wiki/files/4/query?.png)"));
+        assert!(body.contains("[paren(1).png](../wiki/files/5/paren(1).png)"));
+        assert!(body.contains("[한글 파일.png](../wiki/files/6/한글 파일.png)"));
+    }
+
+    #[test]
+    // Without wiki commit mode legacy links `YONA_SERVER + url`, which yields
+    // the broken protocol-relative `//files/{id}` (YONA_SERVER = "/").
+    // Yoram intentionally emits `{base_path}/files/{id}` instead:
+    // LEGACY_BUG_NOT_REPRODUCED.
+    fn migration_body_plain_attachments_use_working_absolute_path() {
+        let attachments = vec![attachment(7, "a#b.png")];
+        let body = migration_body(
+            "", "author", "Author", "이슈", "/owner/project/issue/1", "/yona", &attachments, false,
+        );
+        assert!(body.contains("[a#b.png](/yona/files/7)"));
     }
 }

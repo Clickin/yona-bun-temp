@@ -21,7 +21,7 @@ const report = {
     // missing classification -> UNVERIFIED (blocking)
     { id: 'S1', violations: [{ classification: 'UNVERIFIED' }] },
     // accepted divergence + legacy bug are NON-blocking
-    { id: 'S2', violations: [{ classification: 'ACCEPTED_DIVERGENCE' }, { classification: 'LEGACY_BUG' }] },
+    { id: 'S2', violations: [{ classification: 'IMPLEMENTATION_DIFFERENCE' }, { classification: 'LEGACY_BUG_NOT_REPRODUCED' }] },
   ],
 };
 
@@ -46,24 +46,24 @@ test('aggregateViolations: flatten and classify (missing -> UNVERIFIED)', () => 
 test('aggregateViolations: counts every class independently', () => {
   const s = aggregateViolations(report);
   assert.equal(s.total, 3);
-  assert.deepEqual(s.byClassification, { UNVERIFIED: 1, ACCEPTED_DIVERGENCE: 1, LEGACY_BUG: 1 });
+  assert.deepEqual(s.byClassification, { UNVERIFIED: 1, IMPLEMENTATION_DIFFERENCE: 1, LEGACY_BUG_NOT_REPRODUCED: 1 });
 });
 
-test('buildVerdict gate: only PRODUCT_GAP/HARNESS_ERROR/INFRA_ERROR/UNVERIFIED block', () => {
+test('buildVerdict gate: only REAL_OBSERVABLE_MISMATCH/HARNESS_ERROR/INFRA_ERROR/UNVERIFIED block', () => {
   const base = { inventory, coverage, report, skipFastLane: true };
   const v = buildVerdict(base);
-  // ACCEPTED_DIVERGENCE + LEGACY_BUG are non-blocking; UNVERIFIED blocks.
+  // IMPLEMENTATION_DIFFERENCE + LEGACY_BUG_NOT_REPRODUCED are non-blocking; UNVERIFIED blocks.
   assert.equal(v.checks.sweep.blocked, 1);
   assert.equal(v.ok, false);
 
   const acceptedOnly = {
     ...base,
-    report: { scenarios: [{ violations: [{ classification: 'ACCEPTED_DIVERGENCE', reason: 'r', rationale: 'doc' }] }] },
+    report: { scenarios: [{ violations: [{ classification: 'IMPLEMENTATION_DIFFERENCE', reason: 'r', rationale: 'doc' }] }] },
   };
   const v2 = buildVerdict(acceptedOnly);
   assert.equal(v2.checks.sweep.blocked, 0);
 
-  for (const c of ['PRODUCT_GAP', 'HARNESS_ERROR', 'INFRA_ERROR', 'UNVERIFIED']) {
+  for (const c of ['REAL_OBSERVABLE_MISMATCH', 'HARNESS_ERROR', 'INFRA_ERROR', 'UNVERIFIED']) {
     const v3 = buildVerdict({ ...base, report: { scenarios: [{ violations: [{ classification: c }] }] } });
     assert.equal(v3.checks.sweep.blocked, 1, `${c} must block`);
   }
@@ -72,16 +72,16 @@ test('buildVerdict gate: only PRODUCT_GAP/HARNESS_ERROR/INFRA_ERROR/UNVERIFIED b
 test('classification enum is the unified model', () => {
   assert.deepEqual(CLASSIFICATIONS, [
     'PASS',
-    'PRODUCT_GAP',
-    'ACCEPTED_DIVERGENCE',
-    'LEGACY_BUG',
+    'REAL_OBSERVABLE_MISMATCH',
+    'IMPLEMENTATION_DIFFERENCE',
+    'LEGACY_BUG_NOT_REPRODUCED',
     'HARNESS_ERROR',
     'INFRA_ERROR',
     'UNVERIFIED',
   ]);
   assert.deepEqual(
     [...BLOCKING_CLASSIFICATIONS].sort(),
-    ['HARNESS_ERROR', 'INFRA_ERROR', 'PRODUCT_GAP', 'UNVERIFIED'],
+    ['HARNESS_ERROR', 'INFRA_ERROR', 'REAL_OBSERVABLE_MISMATCH', 'UNVERIFIED'],
   );
 });
 
@@ -147,7 +147,7 @@ test('CLI: end-to-end writes verdict.json with exit code 1 (blockers present)', 
   // accepted divergences alone never block: fully green run exits 0
   const repAccepted = join(dir, 'report-accepted.json');
   writeFileSync(repAccepted, JSON.stringify({
-    scenarios: [{ violations: [{ classification: 'ACCEPTED_DIVERGENCE', reason: 'r', rationale: 'docs/x.md' }] }],
+    scenarios: [{ violations: [{ classification: 'IMPLEMENTATION_DIFFERENCE', reason: 'r', rationale: 'docs/x.md' }] }],
   }));
   const covFull = join(dir, 'coverage-full.json');
   writeFileSync(covFull, JSON.stringify({ scenarios: [{ behaviorIds: ['B-0001', 'B-0002', 'B-0003'] }] }));

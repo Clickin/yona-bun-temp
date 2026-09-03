@@ -1529,7 +1529,7 @@ pub(crate) async fn direct_authenticate_provider_denied(
         axum::http::header::SET_COOKIE,
         format!(
             "PLAY_FLASH=error=You+need+to+accept+the+OAuth+connection+in+order+to+use+this+website%21; Path={}; HttpOnly",
-            service.base_path
+            crate::runtime_config::normalize_base_path(&service.base_path)
         )
         .parse()
         .expect("flash cookie"),
@@ -1715,6 +1715,8 @@ pub(crate) fn routes(
     let direct_user_logout_service = service.clone();
     let legacy_login_page_assets = assets.clone();
     let legacy_login_page_browser_runtime = browser_runtime.clone();
+    let legacy_login_deep_link_assets = assets.clone();
+    let legacy_login_deep_link_browser_runtime = browser_runtime.clone();
     let legacy_signup_page_assets = assets.clone();
     let legacy_signup_page_browser_runtime = browser_runtime.clone();
     let direct_login_service = service.clone();
@@ -1794,7 +1796,15 @@ pub(crate) fn routes(
         )
         .route(
             "/users/login",
-            post(
+            get(move || {
+                // Legacy GET /users/login renders the login page; the React
+                // router owns the same alias (users/login.tsx), so the SPA
+                // shell must answer the deep link instead of a POST-only 405.
+                let assets = legacy_login_deep_link_assets;
+                let browser_runtime = legacy_login_deep_link_browser_runtime;
+                async move { serve_frontend_page(assets, Method::GET, browser_runtime).await }
+            })
+            .post(
                 move |headers: HeaderMap, Form(form): Form<HashMap<String, String>>| async move {
                     direct_legacy_login(headers, form, direct_login_service.clone()).await
                 },
