@@ -329,3 +329,14 @@ also remains unresolved through two step errors (legacy issue ID and legacy
 organization ID discovery), although the final report emitted no separate
 violation for it. The final report therefore does not authorize a parity or
 100% claim.
+
+Focused fixture inspection found the P13/P18 prerequisite is environmental:
+the legacy parity H2 `ROLE` table had no rows even though
+`yona-original/conf/initial-data.yml` defines role IDs 1–7. Consequently the
+legacy add-member path inserted Bob with a null `role_id`, and the member page
+omitted that row; Yoram returned member ID 4. This is fixture seeding/recovery
+work, not evidence of a Yoram product gap. The U12/U20 organization-ID
+prerequisite is a runner resolver issue: legacy `/orgs` and organization pages
+do not render `data-organization-id`, while the organization setting form
+does render a hidden numeric `id`; the current resolver scans only the absent
+data attribute. These rows require harness/fixture correction and rerun.
