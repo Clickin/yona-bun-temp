@@ -340,3 +340,30 @@ prerequisite is a runner resolver issue: legacy `/orgs` and organization pages
 do not render `data-organization-id`, while the organization setting form
 does render a hidden numeric `id`; the current resolver scans only the absent
 data attribute. These rows require harness/fixture correction and rerun.
+
+## 6. Canonical parity closure status
+
+**Status: incomplete; no human acceptance and no 100% claim.**
+
+The closure target is implementation `HEAD
+db777a1898a38e88dfd3f4873edb2025ab79ccfa`. The final same-HEAD sweep evidence is
+the report in §5 (`sweep-mtk4hpxy`, 117/117 scenarios, 315/315 behaviors,
+134 violations, SHA-256
+`6ee84966058a828d40ed8a6e59507a541e498a67a926a566389710def60481a3`).
+The four historical observable rows were fixed and verified by the focused
+post-commit checks: B-0035/I12 (two assignable-user API rows), B-0117/S11
+(OAuth denied redirect), and B-0155/S18 (anonymous restricted redirect).
+
+Remaining evidence blockers are S6/B-0091 (browser/CDP cannot find
+`#two-column-mode-checkbox`), P13/B-0008 and P18/B-0004 (legacy member ID
+discovery diverges from Yoram), U12/B-0201 (legacy issue/organization IDs
+unresolved without a report violation), and U20/B-0016 (legacy
+organization/member IDs unresolved). These are harness/fixture prerequisites,
+not accepted product parity. The final sweep also did not exercise unavailable
+live integrations: real GitHub/Google OAuth authorization credentials,
+external LDAP directory connectivity, or external migration destinations;
+the sweep uses local provider/LDAP/SMTP fixtures and mock OAuth boundaries
+instead. SVN and Git smart-HTTP client lanes did execute in the final sweep.
+
+This status records evidence and open prerequisites only. It does not mark
+human acceptance, release approval, parity completion, or a 100% result.
