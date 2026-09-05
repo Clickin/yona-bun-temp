@@ -1,9 +1,8 @@
-import { readFile, curatedAppCss } from "../wtr-compat.ts";
+import { readFile } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = new URL("../src/routes/sites/data.tsx", import.meta.url);
-const themeSource = new URL("../src/app.css", import.meta.url);
 const ownerSelector = '[data-owner="site-data-export-action"]';
 
 async function open(page: Page) {
@@ -22,11 +21,11 @@ async function open(page: Page) {
   return owner;
 }
 
-test("export action preserves href, class absence, and legacy copy order", async ({ page }) => {
+test("export action preserves href, legacy class, and copy order", async ({ page }) => {
   const owner = await open(page);
 
   await expect(owner).toHaveAttribute("href", `${basePath}/sites/export`);
-  await expect(owner).not.toHaveClass(/(?:^|\s)ybtn(?:\s|$)/u);
+  await expect(owner).toHaveClass("ybtn ybtn-primary");
   await expect(owner).toHaveText("Export");
   await expect(page.locator('[data-owner="site-data-setting-content-column"] > h3')).toHaveText([
     "Export",
@@ -65,17 +64,24 @@ for (const viewport of [
       lineHeight: "20px",
       padding: "4px 12px",
     });
-    await owner.hover();
-    // The ybtn-success hover paint can lag under shard load (gate flake:
-    // the background stayed at the base #ff7332); poll the hovered state.
-    await expect
-      .poll(() => owner.evaluate((element) => getComputedStyle(element).backgroundColor))
-      .toBe("rgb(233, 94, 1)");
-    await owner.focus();
-    await page.waitForTimeout(350);
-    await expect
-      .poll(() => owner.evaluate((element) => getComputedStyle(element).backgroundColor))
-      .toBe("rgb(233, 94, 1)");
+    expect(
+      await owner.evaluate((element) => {
+        const action = element as HTMLElement;
+        action.focus({ preventScroll: true });
+        const focused = action.ownerDocument.activeElement === action && action.matches(":focus");
+        getComputedStyle(action).backgroundColor;
+        action.getAnimations().forEach((animation) => animation.finish());
+        return {
+          backgroundColor: getComputedStyle(action).backgroundColor,
+          focused,
+          tagName: action.tagName,
+        };
+      }),
+    ).toEqual({
+      backgroundColor: "rgb(233, 94, 1)",
+      focused: true,
+      tagName: "A",
+    });
 
     const geometry = await owner.evaluate((element) => {
       const action = element.getBoundingClientRect();
@@ -104,10 +110,7 @@ test("export owner excludes import controls", async ({ page }) => {
 });
 
 test("export owner does not expose generated selectors", async () => {
-  const [route, theme] = await Promise.all([
-    readFile(routeSource, "utf8"),
-    Promise.resolve(curatedAppCss()),
-  ]);
+  const route = await readFile(routeSource, "utf8");
 
   expect(route).toContain('data-owner="site-data-export-action"');
 

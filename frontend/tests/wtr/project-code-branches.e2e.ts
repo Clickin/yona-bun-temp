@@ -325,9 +325,9 @@ test("svn project branches route matches legacy badrequest_default site shell", 
   await expect(page.locator(".code-browse-wrap")).toHaveCount(0);
   await expect(page.locator(".branch-list-wrap")).toHaveCount(0);
   expect(unexpectedBranchRequests).toEqual([]);
-  expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(page, expectedSvnBranchesBadRequest(basePath)),
-  );
+  await expect
+    .poll(() => canonicalizeScreenRoots(page))
+    .toEqual(await canonicalizeHtml(page, expectedSvnBranchesBadRequest(basePath)));
   expect(await readBranchesBadRequestMetrics(page)).toEqual({
     errorTextAlign: "center",
     gnbBackground: "rgb(27, 27, 27)",

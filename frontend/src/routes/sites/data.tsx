@@ -94,6 +94,7 @@ function SiteDataScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               <p>{t("site.data.export.info")}</p>
 
               <Link
+                className="ybtn ybtn-primary"
                 href={exportDataHref}
                 to={exportDataPath}
                 reloadDocument

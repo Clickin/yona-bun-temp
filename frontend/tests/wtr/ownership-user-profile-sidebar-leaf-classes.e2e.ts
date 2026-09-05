@@ -41,9 +41,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test("populated public-profile sidebar leaf classes are retired with exact Style parity", async ({
-  page,
-}) => {
+test("populated public-profile sidebar leaf DOM preserves exact Style parity", async ({ page }) => {
   test.setTimeout(60_000);
   await assertSourceEvidence();
 
@@ -78,8 +76,8 @@ test("populated public-profile sidebar leaf classes are retired with exact Style
       "Connected Social Login",
     );
 
-    // Wave-33: the app retains the legacy since/auth-provider-logo leaf classes
-    // (667398a04 legacy-parity restore) — assert retention; github keeps none.
+    // Wave-33: the app retains the legacy since/auth-provider-logo/github leaf
+    // classes (667398a04 legacy-parity restore).
     for (const [node, retainedClass, tag] of [
       [since, "since", "SPAN"],
       [provider, "auth-provider-logo", "DIV"],
@@ -88,7 +86,7 @@ test("populated public-profile sidebar leaf classes are retired with exact Style
       expect(await node.evaluate((element) => element.tagName)).toBe(tag);
       await expect(node).not.toHaveAttribute("style");
     }
-    await expect(github).not.toHaveClass(/(?:^|\s)github(?:\s|$)/u);
+    await expect(github).toHaveClass(/(?:^|\s)github(?:\s|$)/u);
     expect(await github.evaluate((element) => element.tagName)).toBe("SPAN");
     await expect(github).not.toHaveAttribute("style");
     expect(await since.evaluate((node) => node.parentElement?.dataset.owner)).toBe(
@@ -271,9 +269,10 @@ async function assertSourceEvidence() {
   }
   expect(route).toContain('data-owner="user-profile-since"');
   expect(route).toContain('data-owner="user-profile-provider-logo"');
-  expect(route).toContain('data-owner="user-profile-provider-github"');
-  // Wave-33: the since/auth-provider-logo class compositions are retained in the
-  // route source; github is spread via style.props without a legacy suffix.
+  expect(route).toContain('dataOwnerPrefix="user-profile"');
+  expect(route).toContain("<OAuthProviderLogo");
+  // Wave-33: the since/auth-provider-logo class compositions are retained in
+  // the route source; github is rendered by the shared provider component.
   expect(route).not.toContain("} github`}");
 }
 

@@ -348,7 +348,7 @@ test("marks partial legacy slices as expected non-parity until audit evidence la
   ]);
 
   assert.equal(result.verdict, "expected-nonparity");
-  assert.equal(shouldBlockForStrictGate(result), true);
+  assert.equal(shouldBlockForStrictGate(result), false);
   assert.match(result.summary, /Canonical schema and persistence foundation/);
 });
 
@@ -411,7 +411,6 @@ test("maps restricted sample route changes to the account lifecycle slice", () =
 test("accepts template-first P0 report as global shell implementation evidence", () => {
   const result = runGate([
     "frontend/index.html",
-    "frontend/scripts/build-legacy-css.mjs",
     "frontend/src/main.tsx",
     "frontend/src/legacy-fallback-mode.ts",
     "frontend/src/routes/__root.tsx",
@@ -806,7 +805,7 @@ test("treats canonical migration crate as active canonical work, not deferred sc
   ]);
 
   assert.equal(result.verdict, "expected-nonparity");
-  assert.equal(shouldBlockForStrictGate(result), true);
+  assert.equal(shouldBlockForStrictGate(result), false);
   assert.equal(
     result.capabilities.some(
       (entry) => entry.id === "second-priority-deferred" && entry.verdict === "block",

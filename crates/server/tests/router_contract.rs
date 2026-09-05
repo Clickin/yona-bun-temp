@@ -653,8 +653,9 @@ async fn legacy_migration_requires_login_when_anonymous_access_is_disabled() {
 }
 
 #[tokio::test]
-// Guards the route-utils-owned custom forbidden REST error constructor.
-async fn legacy_migration_export_paths_stay_disabled_json_surface() {
+// Migration JSON exports are login-only; authenticated callers receive the
+// export or a normal not-found response for an unknown project.
+async fn legacy_migration_export_paths_require_login_and_use_json_errors() {
     let (app, _, _) = build_app_with_repository().await;
     let cookie_header = register_user(app.clone(), "migration-exporter").await;
 
@@ -679,13 +680,16 @@ async fn legacy_migration_export_paths_stay_disabled_json_surface() {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::FORBIDDEN, "{path}");
+        let expected_status = if path == "/yona/migration/projects" {
+            StatusCode::OK
+        } else {
+            StatusCode::NOT_FOUND
+        };
+        assert_eq!(response.status(), expected_status, "{path}");
         let body = response.into_body().collect().await.unwrap().to_bytes();
         let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
-        assert_eq!(payload["error"]["code"], "forbidden", "{path}");
-        assert_eq!(
-            payload["error"]["message"], "error.forbidden.or.not.allowed",
-            "{path}"
-        );
+        if expected_status == StatusCode::NOT_FOUND {
+            assert_eq!(payload["error"]["code"], "not_found", "{path}");
+        }
     }
 }

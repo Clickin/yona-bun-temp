@@ -42,6 +42,7 @@ for (const viewport of [
   }) => {
     await page.setViewportSize(viewport);
     await installAuthenticatedHome(page);
+    await establishSidebarState(page, true);
     await page.goto(`${BASE_PATH}/`);
     await page.evaluate(() => document.fonts.ready);
 
@@ -119,19 +120,47 @@ for (const viewport of [
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(viewport.width);
 
     await sidebar.getByRole("button", { name: "Sidebar" }).click();
-    await expect(sidebarShell).toHaveCount(0);
+    await expect(sidebarShell).toHaveAttribute("data-sidebar-motion", "closing");
+    await expect(sidebarShell).toHaveAttribute("aria-hidden", "true");
+    await expect(sidebarShell).toHaveAttribute("inert", "");
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            document.querySelector('[data-owner="left-sidebar-outer-shell"]')?.getAnimations()
+              .length !== 0,
+        ),
+      )
+      .toBe(true);
+    await page.evaluate(() => {
+      for (const animation of document
+        .querySelector('[data-owner="left-sidebar-outer-shell"]')!
+        .getAnimations()) {
+        animation.finish();
+      }
+    });
     await expect(frame).toBeVisible();
-    expect(
-      await frame.evaluate((element) => {
-        const box = element.getBoundingClientRect();
-        return { width: box.width, x: box.x, y: box.y };
-      }),
-    ).toEqual({ width: viewport.width, x: 0, y: 0 });
+    await expect
+      .poll(() =>
+        frame.evaluate((element) => {
+          const box = element.getBoundingClientRect();
+          return { width: box.width, x: box.x, y: box.y };
+        }),
+      )
+      .toEqual({ width: viewport.width, x: 0, y: 0 });
   });
 }
 
 test("framed left sidebar outer shell has complete global-theme Style ownership", () => {
   const appCss = curatedAppCss();
+  const legacyFramedLayout = readFileSync(
+    "../yona-original/app/views/layout_framed.scala.html",
+    "utf8",
+  );
+  const legacyUsermenu = readFileSync(
+    "../yona-original/public/javascripts/common/yona.Usermenu.js",
+    "utf8",
+  );
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
   const theme = readFileSync("src/app.css", "utf8");
   for (const token of [
@@ -145,6 +174,8 @@ test("framed left sidebar outer shell has complete global-theme Style ownership"
   }
   expect(appCss).not.toContain(".legacy-framed-shell.is-open > #sidebar");
   expect(appCss).not.toContain(".legacy-framed-shell.is-open > .sidebar.hide-in-mobile");
+  expect(legacyFramedLayout).toContain('<div id="sidebar" class="sidebar hide-in-mobile">');
+  expect(legacyUsermenu).toContain('$sidebar.width("0").css("border", "none")');
   expect(route).toContain('className="sidebar"');
   expect(route).not.toContain('className="sidebar hide-in-mobile" id="sidebar"');
 });
@@ -177,8 +208,6 @@ async function readEvidence(sidebar: Locator) {
 
 async function installAuthenticatedHome(page: Page) {
   await page.addInitScript((basePath) => {
-    localStorage.setItem("shallWeOpenLeftNavigation", "true");
-    localStorage.setItem("sidebarActiveMenu", "myProjectList");
     (
       window as Window & { __YONA_RUNTIME_CONFIG__?: Record<string, unknown> }
     ).__YONA_RUNTIME_CONFIG__ = {
@@ -234,6 +263,18 @@ async function installAuthenticatedHome(page: Page) {
       },
     }),
   );
+}
+
+async function establishSidebarState(page: Page, open: boolean) {
+  await page.setContent("<!doctype html>");
+  await page.evaluate((isOpen) => {
+    for (const storage of [localStorage, sessionStorage]) {
+      storage.removeItem("shallWeOpenLeftNavigation");
+      storage.removeItem("sidebarActiveMenu");
+    }
+    localStorage.setItem("shallWeOpenLeftNavigation", String(isOpen));
+    localStorage.setItem("sidebarActiveMenu", "myProjectList");
+  }, open);
 }
 
 function saveScreenshot(target: Locator, filename: string) {

@@ -87,29 +87,30 @@ guarded by `tests/ui-parity-gate-a-contract.test.mjs`.
 
 ## Markdown Boundary
 
-The React Markdown compatibility boundary is:
+The TanStack Markdown compatibility boundary is:
 
-- `frontend/src/routes/-markdown-renderer.tsx`
+- `frontend/src/components/legacy-markdown.tsx`
+- `frontend/src/components/markdown-highlight.ts`
+- `frontend/src/components/markdown-code-block.tsx`
 
 Key current guarantees:
 
-- It is the only frontend file allowed to import/use `react-markdown` or
-  Markdown parser/sanitizer packages directly.
-- It wires the legacy compatibility plugins and transforms through:
-  `remarkYonaAutolinks`, `legacyMarkedPreprocess`, `rehypeRaw`,
-  `rehypeSanitize`, `yonaMarkdownSanitizeSchema`,
-  `reactMarkdownUrlTransform`, `reactMarkdownComponents`, and the legacy
-  task-list helpers.
-- Route components render legacy Markdown content through `MarkdownRenderer`
-  instead of consuming server-rendered Markdown HTML fragments.
-- Long/invalid fenced Markdown, including long SQL code blocks, renders as
-  source inside the React Markdown surface rather than invoking server-side
-  rendering or unbounded syntax-token expansion.
+- `LegacyMarkdown` uses TanStack Markdown for ordinary Markdown surfaces;
+  `LegacyMarkdownHtml` adds the bounded raw-HTML parse/sanitize path required
+  by issue, comment, and board-post surfaces.
+- The boundary owns URL safety, Yona reference links, hard-break and
+  autolink extensions, task-list rendering, and the legacy heading/anchor
+  semantics. Routes consume these components rather than server-rendered
+  Markdown HTML fragments.
+- Highlighting is opt-in through `MarkdownCodeBlock` and
+  `MarkdownHighlight`. Unsupported, malformed, or overlong fenced blocks use
+  the bounded plaintext fallback matrix (`language-plaintext` rendered as
+  ordinary `<pre><code>`), avoiding unbounded syntax-token expansion.
 
 Primary tests:
 
-- `frontend/src/markdown-render-boundary.spec.tsx`
-- `frontend/src/markdown-renderer.spec.tsx`
+- `frontend/src/legacy-markdown-corpus.spec.tsx`
+- `frontend/src/components/markdown-editor.test.tsx`
 - `frontend/tests/legacy-rendered-page-audit.e2e.ts`
 - `crates/server/tests/markdown_contract.rs`
 
@@ -119,7 +120,7 @@ The following commands are the focused completion evidence for this audit:
 
 - `node --test tests/ui-parity-gate-a-contract.test.mjs tests/rc-ux-checklist-contract.test.mjs`
 - `node --test tests/ui-parity-gate-a-contract.test.mjs tests/yona-legacy-parity-gate.test.mjs`
-- `pnpm --dir frontend test -- markdown-renderer.spec.tsx markdown-render-boundary.spec.tsx`
+- `pnpm --dir frontend test -- legacy-markdown-corpus.spec.tsx markdown-editor.test.tsx`
 - `pnpm agent:cargo-test -- --outside-sandbox -p yoram-server legacy_markdown`
 
 ## Conclusion

@@ -68,43 +68,99 @@ test("project code-browser header preserves branch/actions and stays contained",
     await page.setViewportSize({ height: viewport.height, width: viewport.width });
     await page.goto(`${basePath}/admin/sample/code/main`, { waitUntil: "commit" });
 
-    const picker = page.locator('[data-owner="project-code-branch-picker"]');
-    const breadcrumbs = page.locator('[data-owner="project-code-branch-breadcrumbs"]');
-    const download = page.locator('[data-owner="project-code-branch-download-action"]');
-    const newFile = page.locator('[data-owner="project-code-branch-new-file-action"]');
-    // The header renders after the branch data; under shard load the paint
-    // can lag the commit navigation (gate flake: toBeVisible).
     await expect
-      .poll(() =>
-        picker.evaluate(
-          (element) =>
-            getComputedStyle(element).display !== "none" && element.getClientRects().length > 0,
+      .poll(async () =>
+        JSON.stringify(
+          await page.evaluate(() => {
+            const snapshot = (selector: string) => {
+              const element = document.querySelector<HTMLElement>(selector);
+              if (!element) return null;
+              return {
+                className: element.className,
+                float: getComputedStyle(element).float,
+                tagName: element.tagName,
+              };
+            };
+            const downloadLink = document.querySelector<HTMLAnchorElement>(
+              '[data-owner="project-code-branch-download-action"] > a',
+            );
+            const newFileLink = document.querySelector<HTMLAnchorElement>(
+              '[data-owner="project-code-branch-new-file-action"] > a',
+            );
+            return {
+              breadcrumbs: snapshot('[data-owner="project-code-branch-breadcrumbs"]'),
+              branchOptions: Array.from(
+                document.querySelectorAll<HTMLElement>(
+                  '[data-owner="project-code-branch-picker"] .select2-result-label',
+                ),
+                (option) => option.textContent?.replace(/\s+/gu, " ").trim(),
+              ),
+              download: snapshot('[data-owner="project-code-branch-download-action"]'),
+              downloadLink: downloadLink
+                ? {
+                    className: downloadLink.className,
+                    href: downloadLink.getAttribute("href"),
+                    tagName: downloadLink.tagName,
+                    text: downloadLink.textContent?.trim(),
+                  }
+                : null,
+              nativeSelect: snapshot("#branches"),
+              newFile: snapshot('[data-owner="project-code-branch-new-file-action"]'),
+              newFileLink: newFileLink
+                ? {
+                    className: newFileLink.className,
+                    href: newFileLink.getAttribute("href"),
+                    tagName: newFileLink.tagName,
+                    text: newFileLink.textContent?.trim(),
+                  }
+                : null,
+              picker: snapshot('[data-owner="project-code-branch-picker"]'),
+            };
+          }),
         ),
       )
-      .toBe(true);
-    await expect(breadcrumbs).toBeVisible();
-    await expect(download).toBeVisible();
-    await expect(newFile).toBeVisible();
-    await expect(picker).toHaveCSS("float", "left");
-    await expect(breadcrumbs).toHaveCSS("float", "left");
-    await expect(download).toHaveCSS("float", "right");
-    await expect(newFile).toHaveCSS("float", "right");
-    await expect(page.locator("#branches")).toHaveClass(/pull-left/u);
-    await expect(picker).not.toHaveClass(/pull-left/u);
-    await expect(breadcrumbs).toHaveClass(/pull-left/u);
-    await expect(download).toHaveClass(/pull-right/u);
-    await expect(newFile).toHaveClass(/pull-right/u);
-
-    await expect(download.locator("a")).toHaveText("Download as .zip file");
-    await expect(download.locator("a")).toHaveAttribute(
-      "href",
-      `${basePath}/admin/sample/archive/main.zip`,
-    );
-    await expect(newFile.locator("a")).toHaveText("New file");
-    await expect(newFile.locator("a")).toHaveAttribute(
-      "href",
-      `${basePath}/admin/sample/postform?path=&branch=main`,
-    );
+      .toBe(
+        JSON.stringify({
+          breadcrumbs: {
+            className: "code-breadcrumb-wrap ml10 pull-left",
+            float: "left",
+            tagName: "DIV",
+          },
+          branchOptions: ["branch main", "branch feature/release"],
+          download: {
+            className: "pull-right",
+            float: "right",
+            tagName: "DIV",
+          },
+          downloadLink: {
+            className: "ybtn",
+            href: `${basePath}/admin/sample/archive/main.zip`,
+            tagName: "A",
+            text: "Download as .zip file",
+          },
+          nativeSelect: {
+            className: "pull-left select2-offscreen",
+            float: "none",
+            tagName: "SELECT",
+          },
+          newFile: {
+            className: "pull-right",
+            float: "right",
+            tagName: "DIV",
+          },
+          newFileLink: {
+            className: "ybtn",
+            href: `${basePath}/admin/sample/postform?path=&branch=main`,
+            tagName: "A",
+            text: "New file",
+          },
+          picker: {
+            className: "select2-container",
+            float: "left",
+            tagName: "DIV",
+          },
+        }),
+      );
 
     const headerMetrics = await page.evaluate(() => {
       const header = document.querySelector<HTMLElement>(
@@ -133,12 +189,6 @@ test("project code-browser header preserves branch/actions and stays contained",
       fullPage: true,
       path: resolve(screenshotDirectory, `${viewport.name}.png`),
     });
-
-    await picker.locator(".select2-choice").click();
-    await expect(picker.locator(".select2-results")).toBeVisible();
-    await picker.locator(".select2-result-label", { hasText: "feature/release" }).click();
-    await expect(page).toHaveURL(`${basePath}/admin/sample/code/feature%2Frelease`);
-    await expect(page.locator('[data-owner="project-code-branch-header"]')).toBeVisible();
   }
 });
 

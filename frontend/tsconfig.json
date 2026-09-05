@@ -20,7 +20,7 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "types": ["node", "vite/client", "vitest/globals", "react-syntax-highlighter"]
+    "types": ["node", "vite/client", "vitest/globals"]
   },
   "include": [
     "src/main.tsx",

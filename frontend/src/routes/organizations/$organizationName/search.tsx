@@ -108,6 +108,7 @@ function OrganizationSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
       organizationName,
     }),
     enabled: hasKeyword && !search.routeInvalid,
+    retry: 0,
   });
   const organizationQuery = useQuery({
     queryFn: () => readOrganizationContainerRest(runtimeConfig, organizationName),

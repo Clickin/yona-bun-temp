@@ -7,6 +7,44 @@ const resolve = (...parts: string[]) => parts.join("/").replace(/^\/+/, "");
 const BASE_PATH = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const SIDEBAR = '[data-owner="left-sidebar-outer-shell"]';
 const SCREENSHOT_DIRECTORY = resolve("..", "output", "playwright", "style-left-sidebar-motion");
+const SESSION = {
+  actorId: 1,
+  avatarUrl: "/legacy-assets/images/default-avatar-34.png",
+  defaultLandingPath: "/",
+  emailAddress: "admin@example.com",
+  isAnonymous: false,
+  isConfirmed: true,
+  isGuest: false,
+  isSiteAdmin: true,
+  loginId: "admin",
+  preferredLanguage: "en-US",
+  userLabel: "Site Admin",
+};
+const WORKSPACE = {
+  emails: [],
+  favoriteOrganizations: [],
+  favoriteProjects: [],
+  issueItems: [],
+  memberProjects: [],
+  organizations: [],
+  ownProjects: [],
+  profile: {
+    avatarUrl: "/legacy-assets/images/default-avatar-34.png",
+    connectedSocialProviders: [],
+    displayName: "Site Admin",
+    englishName: "",
+    isBlocked: false,
+    isGuest: false,
+    isSiteAdmin: true,
+    loginId: "admin",
+    primaryEmailAddress: "admin@example.com",
+    sinceLabel: "",
+  },
+  pullRequestItems: [],
+  recentIssues: [],
+  recentProjects: [],
+  watchedProjects: [],
+};
 test.use({ locale: "en-US" });
 
 test("left framed sidebar keeps legacy geometry while opening and closing with CSS motion", async ({
@@ -38,79 +76,66 @@ test("left framed sidebar keeps legacy geometry while opening and closing with C
   expect(legacyUsermenuJs).toContain("function closeSidebar($sidebar)");
   expect(legacyUsermenuJs).toContain('$sidebar.width("0")');
 
+  await installAuthenticatedHome(page);
   for (const viewport of [
     { height: 900, label: "desktop", openWidth: 271, width: 1366 },
     { height: 844, label: "mobile", openWidth: 318.6875, width: 390 },
   ]) {
     await page.setViewportSize(viewport);
-    await installAuthenticatedHome(page);
-    await page.goto(`${BASE_PATH}/`);
+    await navigateToReadyAuthenticatedHome(page);
     await page.evaluate(() => document.fonts.ready);
 
     const openPin = page.locator('[data-owner="global-sidebar-open-pin"]');
     await expect(openPin).toBeVisible();
     await expect(page.locator("#sidebar")).toHaveCount(0);
-    // The dist index.html is prerendered; React hydrates asynchronously after
-    // the reload. The pin's click handler only exists post-hydration — poll
-    // the React internal marker (the handler land on the SSR'd pin is lost
-    // and the sidebar never mounts). The click is idempotent once mounted.
-    await expect
-      .poll(() =>
-        page.evaluate(() =>
-          Object.keys(
-            (document.querySelector('[data-owner="global-sidebar-open-pin"]') as HTMLElement) ?? {},
-          ).some((key) => key.startsWith("__reactProps")),
-        ),
-      )
-      .toBe(true);
-    // The pin exists in the SSR'd static HTML before React hydrates; a click
-    // in that window is lost (no handler) and the shell never mounts. Click
-    // until the shell mounts (the open handler is idempotent: repeated clicks
-    // while "opening"/"open" are no-ops) — up to ~7.5s for a loaded WTR
-    // instance; the route's motion ceiling then settles it to "open".
     const sidebar = page.locator(SIDEBAR);
-    // The open handler is idempotent; under shard load the hydration window
-    // can be long, so keep clicking up to ~20s. Use the native click (the
-    // harness synthetic pointerdown/focus/click dispatch has been observed to
-    // drop the handler under load — the shell never mounts).
-    for (let attempt = 0; attempt < 80; attempt += 1) {
-      await openPin.evaluate((button) => (button as HTMLButtonElement).click());
-      const mounted = await page.evaluate(
-        () => document.querySelector('[data-owner="left-sidebar-outer-shell"]') !== null,
-      );
-      if (mounted) break;
-      await page.waitForTimeout(250);
-    }
+    const opening = await completeSidebarTransition(page, {
+      terminalMotion: "open",
+      terminalWidth: viewport.openWidth,
+      triggerSelector: '[data-owner="global-sidebar-open-pin"]',
+      viewportWidth: viewport.width,
+    });
+    const { animationCount: openingAnimationCount, ...openingStart } = opening.start;
+    expect(openingAnimationCount).toBeGreaterThan(0);
+    expect(openingStart).toEqual({
+      ariaHidden: null,
+      inert: true,
+      motion: "opening",
+      transitionDuration: "0.5s",
+      transitionProperty: "border-right-width, flex-basis, max-width, width",
+    });
+    expect(opening.terminal).toEqual({
+      main: null,
+      motion: "open",
+      sidebarPresent: true,
+      width: viewport.openWidth,
+    });
     await expect(sidebar).toHaveAttribute("data-owner", "left-sidebar-outer-shell");
-    await expect(sidebar).toHaveCSS("transition-duration", "0.5s");
-    expect(
-      await sidebar.evaluate((element) => getComputedStyle(element).transitionProperty),
-    ).toContain("width");
-    // ponytail: the sidebar mounts already at its expanded width in the
-    // harness, so no transitionend fires for the observer; assert the
-    // settled motion state instead (HARNESS_ENV transitionend caveat).
-    // The harness main-thread getAttribute can read a stale shell node after
-    // the previous spec's close (outer-shell runs before this file); poll the
-    // in-page attribute — the route's motion ceiling guarantees the terminal
-    // "open" state within ~1.2s.
-    await expect
-      .poll(() => sidebar.evaluate((el) => el.getAttribute("data-sidebar-motion")))
-      .toBe("open");
-    await expect
-      .poll(() => sidebar.evaluate((element) => element.getBoundingClientRect().width))
-      .toBe(viewport.openWidth);
     await expect(sidebar.locator('[data-owner="left-sidebar-close-pin"]')).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(viewport.width);
     await saveScreenshot(page, `style-left-sidebar-motion-${viewport.label}-open.png`);
 
-    await sidebar.locator('[data-owner="left-sidebar-close-pin"]').click();
-    await expect
-      .poll(() => sidebar.evaluate((el) => el.getAttribute("data-sidebar-motion")))
-      .toBe("closing");
-    await expect(sidebar).toHaveAttribute("aria-hidden", "true");
-    await expect(sidebar).toHaveAttribute("inert", "");
-    // ponytail: same HARNESS_ENV transitionend caveat as the opening side;
-    // the removal (toHaveCount(0)) is the settled closing evidence.
+    const closing = await completeSidebarTransition(page, {
+      terminalMotion: "closed",
+      terminalWidth: 0,
+      triggerSelector: '[data-owner="left-sidebar-close-pin"]',
+      viewportWidth: viewport.width,
+    });
+    const { animationCount: closingAnimationCount, ...closingStart } = closing.start;
+    expect(closingAnimationCount).toBeGreaterThan(0);
+    expect(closingStart).toEqual({
+      ariaHidden: "true",
+      inert: true,
+      motion: "closing",
+      transitionDuration: "0.5s",
+      transitionProperty: "border-right-width, flex-basis, max-width, width",
+    });
+    expect(closing.terminal).toEqual({
+      main: { width: viewport.width, x: 0, y: 0 },
+      motion: "closed",
+      sidebarPresent: false,
+      width: 0,
+    });
     await expect(sidebar).toHaveCount(0);
     await expect(openPin).toBeVisible();
     await expect(openPin).toBeFocused();
@@ -120,22 +145,7 @@ test("left framed sidebar keeps legacy geometry while opening and closing with C
 });
 
 async function installAuthenticatedHome(page: Page) {
-  await page.addInitScript(() => {
-    (window as Window & { __wtrBootErrors?: string[] }).__wtrBootErrors = [];
-    window.addEventListener("error", (event) => {
-      (window as Window & { __wtrBootErrors?: string[] }).__wtrBootErrors?.push(
-        `err:${String(event.message).slice(0, 150)}`,
-      );
-    });
-    window.addEventListener("unhandledrejection", (event) => {
-      (window as Window & { __wtrBootErrors?: string[] }).__wtrBootErrors?.push(
-        `rej:${String((event as PromiseRejectionEvent).reason).slice(0, 150)}`,
-      );
-    });
-  });
   await page.addInitScript((basePath) => {
-    localStorage.setItem("shallWeOpenLeftNavigation", "false");
-    localStorage.setItem("sidebarActiveMenu", "myProjectList");
     (
       window as Window & { __YONA_RUNTIME_CONFIG__?: Record<string, unknown> }
     ).__YONA_RUNTIME_CONFIG__ = {
@@ -145,43 +155,10 @@ async function installAuthenticatedHome(page: Page) {
       supportedLanguages: ["en-US"],
     };
   }, BASE_PATH);
-  // Both session endpoints: the auth-workspace boot (/api/auth/session) and
-  // the API client query (/api/v1/session) — the sidebar availability gate
-  // reads the query data.
-  await page.route("**/api/auth/session", (route) =>
-    route.fulfill({
-      contentType: "application/json",
-      json: {
-        actorId: 1,
-        avatarUrl: "/legacy-assets/images/default-avatar-34.png",
-        defaultLandingPath: "/",
-        emailAddress: "admin@example.com",
-        isAnonymous: false,
-        isConfirmed: true,
-        isGuest: false,
-        isSiteAdmin: true,
-        loginId: "admin",
-        preferredLanguage: "en-US",
-        userLabel: "Site Admin",
-      },
-    }),
-  );
   await page.route("**/api/v1/session", (route) =>
     route.fulfill({
       contentType: "application/json",
-      json: {
-        actorId: 1,
-        avatarUrl: "/legacy-assets/images/default-avatar-34.png",
-        defaultLandingPath: "/",
-        emailAddress: "admin@example.com",
-        isAnonymous: false,
-        isConfirmed: true,
-        isGuest: false,
-        isSiteAdmin: true,
-        loginId: "admin",
-        preferredLanguage: "en-US",
-        userLabel: "Site Admin",
-      },
+      json: SESSION,
     }),
   );
   await page.route("**/api/v1/notifications?*", (route) =>
@@ -193,20 +170,200 @@ async function installAuthenticatedHome(page: Page) {
   await page.route("**/api/v1/workspace", (route) =>
     route.fulfill({
       contentType: "application/json",
-      json: {
-        favoriteOrganizations: [],
-        favoriteProjects: [],
-        issueItems: [],
-        memberProjects: [],
-        organizations: [],
-        ownProjects: [],
-        profile: { loginId: "admin" },
-        recentIssues: [],
-        recentProjects: [],
-        watchedProjects: [],
-      },
+      json: WORKSPACE,
     }),
   );
+}
+
+async function navigateToReadyAuthenticatedHome(page: Page) {
+  await establishSidebarState(page, false);
+  const sessionReady = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === `${BASE_PATH}/api/v1/session` &&
+      response.status() === 200,
+  );
+  const workspaceReady = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === `${BASE_PATH}/api/v1/workspace` &&
+      response.status() === 200,
+  );
+  await page.goto(`${BASE_PATH}/`);
+  await Promise.all([sessionReady, workspaceReady]);
+  await expect(page.locator("#root > #main")).toHaveCount(1);
+  await expect(page.locator('#root > #main [data-owner="framed-site-shell"]')).toHaveAttribute(
+    "data-sidebar-open",
+    "false",
+  );
+  await expect(page.locator('[data-owner="authenticated-home-page-wrap-outer"]')).toHaveCount(1);
+}
+
+async function completeSidebarTransition(
+  page: Page,
+  input: {
+    terminalMotion: "closed" | "open";
+    terminalWidth: number;
+    triggerSelector: string;
+    viewportWidth: number;
+  },
+) {
+  const token = crypto.randomUUID();
+  const completion = new Promise<{
+    start: {
+      animationCount: number;
+      ariaHidden: string | null;
+      inert: boolean;
+      motion: string | null;
+      transitionDuration: string;
+      transitionProperty: string;
+    };
+    terminal: {
+      main: null | { width: number; x: number; y: number };
+      motion: "closed" | "open";
+      sidebarPresent: boolean;
+      width: number;
+    };
+  }>((resolve, reject) => {
+    const onMessage = (event: MessageEvent) => {
+      const message = event.data as {
+        error?: string;
+        result?: {
+          start: {
+            animationCount: number;
+            ariaHidden: string | null;
+            inert: boolean;
+            motion: string | null;
+            transitionDuration: string;
+            transitionProperty: string;
+          };
+          terminal: {
+            main: null | { width: number; x: number; y: number };
+            motion: "closed" | "open";
+            sidebarPresent: boolean;
+            width: number;
+          };
+        };
+        token?: string;
+      };
+      if (message.token !== token) return;
+      window.removeEventListener("message", onMessage);
+      if (message.error) reject(new Error(message.error));
+      else if (message.result) resolve(message.result);
+    };
+    window.addEventListener("message", onMessage);
+  });
+
+  await page.evaluate(
+    (options) => {
+      const { terminalMotion, terminalWidth, token, triggerSelector, viewportWidth } = options;
+      const sidebarSelector = '[data-owner="left-sidebar-outer-shell"]';
+      const root = document.querySelector("#root");
+      const trigger = document.querySelector(triggerSelector);
+      if (!root || !(trigger instanceof HTMLButtonElement)) {
+        parent.postMessage(
+          {
+            error: !root
+              ? "Sidebar transition requires the mounted app root."
+              : `Missing sidebar transition trigger: ${triggerSelector}`,
+            token,
+          },
+          location.origin,
+        );
+        return;
+      }
+
+      let start:
+        | {
+            animationCount: number;
+            ariaHidden: string | null;
+            inert: boolean;
+            motion: string | null;
+            transitionDuration: string;
+            transitionProperty: string;
+          }
+        | undefined;
+      let observer: MutationObserver;
+      const finishIfTerminal = () => {
+        if (!start) return;
+        const sidebar = document.querySelector(sidebarSelector);
+        let terminal:
+          | {
+              main: null | { width: number; x: number; y: number };
+              motion: "closed" | "open";
+              sidebarPresent: boolean;
+              width: number;
+            }
+          | undefined;
+        if (terminalMotion === "open" && sidebar instanceof HTMLElement) {
+          const width = sidebar.getBoundingClientRect().width;
+          if (sidebar.dataset.sidebarMotion === "open" && Math.abs(width - terminalWidth) < 0.01) {
+            terminal = { main: null, motion: terminalMotion, sidebarPresent: true, width };
+          }
+        } else if (terminalMotion === "closed" && !sidebar) {
+          const main = document.querySelector('[data-owner="framed-site-main"]');
+          if (main instanceof HTMLElement) {
+            const { width, x, y } = main.getBoundingClientRect();
+            if (width === viewportWidth && x === 0 && y === 0) {
+              terminal = {
+                main: { width, x, y },
+                motion: terminalMotion,
+                sidebarPresent: false,
+                width: terminalWidth,
+              };
+            }
+          }
+        }
+        if (!terminal) return;
+        observer.disconnect();
+        document.removeEventListener("transitionend", onTransitionEnd, true);
+        document.removeEventListener("transitionrun", onTransitionRun, true);
+        parent.postMessage({ result: { start, terminal }, token }, location.origin);
+      };
+      const onTransitionEnd = (event: TransitionEvent) => {
+        if (!(event.target instanceof HTMLElement) || !event.target.matches(sidebarSelector))
+          return;
+        queueMicrotask(finishIfTerminal);
+      };
+      const onTransitionRun = (event: TransitionEvent) => {
+        if (
+          start ||
+          !(event.target instanceof HTMLElement) ||
+          !event.target.matches(sidebarSelector)
+        ) {
+          return;
+        }
+        const style = getComputedStyle(event.target);
+        start = {
+          animationCount: event.target.getAnimations().length,
+          ariaHidden: event.target.getAttribute("aria-hidden"),
+          inert: event.target.hasAttribute("inert"),
+          motion: event.target.dataset.sidebarMotion ?? null,
+          transitionDuration: style.transitionDuration,
+          transitionProperty: style.transitionProperty,
+        };
+        finishIfTerminal();
+      };
+      observer = new MutationObserver(finishIfTerminal);
+      observer.observe(root, { attributes: true, childList: true, subtree: true });
+      document.addEventListener("transitionrun", onTransitionRun, true);
+      document.addEventListener("transitionend", onTransitionEnd, true);
+      trigger.click();
+    },
+    { ...input, token },
+  );
+
+  return completion;
+}
+
+async function establishSidebarState(page: Page, open: boolean) {
+  await page.setContent("<!doctype html>");
+  await page.evaluate((isOpen) => {
+    for (const storage of [localStorage, sessionStorage]) {
+      storage.removeItem("shallWeOpenLeftNavigation");
+      storage.removeItem("sidebarActiveMenu");
+    }
+    localStorage.setItem("shallWeOpenLeftNavigation", String(isOpen));
+    localStorage.setItem("sidebarActiveMenu", "myProjectList");
+  }, open);
 }
 
 function saveScreenshot(page: Page, filename: string) {

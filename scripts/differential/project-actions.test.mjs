@@ -67,7 +67,7 @@ test("translators produce expected method/path literals", () => {
     ["view-change-vcs-form", { owner: "admin", project: "sample" }, "/admin/sample/changeVCS"],
     ["fetch-mention-list", { owner: "admin", project: "sample" }, "/admin/sample/mentionList"],
     ["fetch-mention-list-commit-diff", { owner: "admin", project: "sample" }, "/admin/sample/mentionListAtCommitDiff"],
-    ["fetch-mention-list-pull-request", { owner: "admin", project: "sample" }, "/admin/sample/mentionListAtPullRequest"],
+    ["fetch-mention-list-pull-request", { owner: "admin", project: "sample" }, "/admin/sample/mentionListAtPullRequest?pullRequestId=1"],
   ];
   for (const [action, params, expectedPath] of cases) {
     const legacy = MERGED_DEFINITIONS[action].translateLegacy(step(action, params), {});

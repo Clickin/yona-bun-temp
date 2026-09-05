@@ -200,35 +200,18 @@ fn parse_github_access_token(body: &str) -> Option<String> {
         })
 }
 
-pub(crate) async fn direct_legacy_migration_json_disabled(
-    headers: HeaderMap,
-    service: PilotServiceImpl,
-) -> Response {
-    if service
-        .session_manager
-        .read_session_from_headers(&headers)
-        .and_then(|session| session.user_id)
-        .is_none()
-    {
-        return Redirect::to(&base_path_href(
-            &service.base_path,
-            "/users/loginform?redirectUrl=%2Fmigration",
-        ))
-        .into_response();
-    }
-
-    RestRouteError::forbidden_code("forbidden", "error.forbidden.or.not.allowed").into_response()
-}
-
 pub(crate) async fn direct_legacy_migration_json(
     headers: HeaderMap,
     AxumPath(legacy_path): AxumPath<String>,
     Query(query): Query<HashMap<String, String>>,
     service: PilotServiceImpl,
 ) -> Response {
-    if !service.github_allow_migration {
-        return direct_legacy_migration_json_disabled(headers, service).await;
-    }
+    // Legacy gates only the migration HUB page behind
+    // `github.allow.migration` (MigrationApp.java:51-54); every JSON export
+    // endpoint (projects/project/labels/issuelabel/milestones/issues/posts) is
+    // login-only (`@AnonymousCheck(requiresLogin = true)`,
+    // MigrationApp.java:93-94,121-122,161-162,185-186,204-205,216-217,228-229),
+    // so this catch-all must not require the flag.
     let Some(actor_id) = service
         .session_manager
         .read_session_from_headers(&headers)

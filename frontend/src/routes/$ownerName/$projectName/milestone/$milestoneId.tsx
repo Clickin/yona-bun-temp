@@ -2,8 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter } from "@tanstack/react-router";
 import type { CSSProperties, HTMLAttributes } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { LegacyMarkdown } from "../../../../components/legacy-markdown";
 import defaultAvatarUrl from "../../../../assets/legacy/default-avatar-64.png";
 import { LastOutletTransition } from "../../../-last-outlet-transition";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
@@ -326,9 +325,7 @@ function ProjectMilestoneDetailBody({
           {stringField(milestone.contentsMarkdown) ? (
             <div className="milestone-desc" data-owner="milestone-detail-description">
               <div className="markdown-wrap">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {stringField(milestone.contentsMarkdown)}
-                </ReactMarkdown>
+                <LegacyMarkdown>{stringField(milestone.contentsMarkdown)}</LegacyMarkdown>
               </div>
               <div className="attachments" data-attachments={attachmentsJson}></div>
             </div>

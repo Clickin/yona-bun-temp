@@ -459,6 +459,7 @@ function rootHref(basePath: string) {
 }
 
 async function canonicalizeScreenRoots(page: Page) {
+  await expect(page.locator("#usermenu-tab-content-list")).not.toHaveText("Loading...");
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(

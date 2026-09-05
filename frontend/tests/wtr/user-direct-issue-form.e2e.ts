@@ -23,7 +23,7 @@ test("user direct issue form keeps /user/issues/new while rendering the selected
   await expect
     .poll(() => currentLocationState(page))
     .toEqual({
-      commentId: "",
+      commentId: null,
       pathname: `${basePath}/user/issues/new`,
     });
   await expect(page.locator("header[data-owner=global-gnb-outer]")).toHaveCount(1);
@@ -78,7 +78,7 @@ test("user direct issue form keeps /user/issues/new while rendering the selected
   await expect
     .poll(() => currentLocationState(page))
     .toEqual({
-      commentId: "",
+      commentId: null,
       pathname: `${basePath}/user/issues/new`,
     });
 
@@ -172,7 +172,7 @@ test("user direct mine issue form keeps /user/issues/new/mine while selecting th
   await expect
     .poll(() => currentLocationState(page))
     .toEqual({
-      commentId: "",
+      commentId: null,
       pathname: `${basePath}/user/issues/new/mine`,
     });
   await expect(page.locator("header[data-owner=global-gnb-outer]")).toHaveCount(1);

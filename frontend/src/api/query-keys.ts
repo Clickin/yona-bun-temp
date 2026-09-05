@@ -10,8 +10,10 @@ export const apiQueryKeys = {
       [...apiQueryKeys.v1(), "projects", "form-options", { owner }] as const,
     base: (ownerName: string, projectName: string) =>
       [...apiQueryKeys.v1(), "owners", ownerName, "projects", projectName] as const,
-    container: (ownerName: string, projectName: string) =>
-      [...apiQueryKeys.project.base(ownerName, projectName), "container"] as const,
+    container: (ownerName: string, projectName: string, tabId?: string) =>
+      tabId
+        ? ([...apiQueryKeys.project.base(ownerName, projectName), "container", { tabId }] as const)
+        : ([...apiQueryKeys.project.base(ownerName, projectName), "container"] as const),
     codeBrowser: (
       ownerName: string,
       projectName: string,

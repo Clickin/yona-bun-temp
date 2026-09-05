@@ -835,7 +835,7 @@ export function readProjectContainerQueryOptions(
   runtimeConfig: RuntimeConfig,
   input: ProjectPathInput & { tabId?: ProjectContainerTabId },
 ) {
-  const queryKey = apiQueryKeys.project.container(input.ownerName, input.projectName);
+  const queryKey = apiQueryKeys.project.container(input.ownerName, input.projectName, input.tabId);
   return queryOptions({
     queryFn: () =>
       readProjectContainerRest(
@@ -845,7 +845,7 @@ export function readProjectContainerQueryOptions(
         undefined,
         input.tabId,
       ),
-    queryKey: input.tabId ? [...queryKey, { tabId: input.tabId }] : queryKey,
+    queryKey,
   });
 }
 

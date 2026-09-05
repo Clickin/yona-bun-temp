@@ -59,6 +59,7 @@ test("organization pull request aggregate matches legacy group_pullrequest_list.
   await expect(page.locator("#search")).toBeVisible();
   await expect(page.locator(".project-menu-gruop li.active a")).toHaveText("Pull request");
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
+  await expect(page.locator("#myOrganizationList")).toBeVisible();
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
@@ -80,6 +81,7 @@ test("organization pull request aggregate empty state matches legacy group_pullr
   await expect(page.locator(".error-wrap")).toHaveText("No pull requests have been received");
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(0);
   await expect(page.locator(".post-list-wrap #pagination")).toHaveCount(0);
+  await expect(page.locator("#myOrganizationList")).toBeVisible();
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(

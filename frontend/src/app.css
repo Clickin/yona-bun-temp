@@ -33942,15 +33942,17 @@ img.mfp-img {
 [data-owner="post-detail-comment-media"]:hover {
   box-shadow: 2px 2px 1px 0 rgb(220, 220, 220);
 }
-/* F5 (2026-08-15): :target highlight — the layered legacy rule
+/* F5 (2026-08-15): target highlight — the layered legacy rule
    (.board-view .board-comment-wrap .comments .comment:target .media-body,
    app.css:3415) loses to this unlayered data-owner border/pointer block, so
-   the target state is owned unlayered here (legacy board/view.scala.html
-   #comment-21 anchor; frozen _page.less :target rule). */
-:target > [data-owner="post-detail-comment-media"] {
+   the target state is owned unlayered here. TanStack hash changes use
+   pushState, so the route-owned class preserves the frozen :target behavior. */
+:target > [data-owner="post-detail-comment-media"],
+.comment.is-target > [data-owner="post-detail-comment-media"] {
   border: 2px solid #03a9f4;
 }
-:target > [data-owner="post-detail-comment-media"]::before {
+:target > [data-owner="post-detail-comment-media"]::before,
+.comment.is-target > [data-owner="post-detail-comment-media"]::before {
   border-color: #03a9f4;
   border-width: 0 0 2px 2px;
 }

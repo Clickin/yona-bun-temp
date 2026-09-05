@@ -16,17 +16,13 @@
     "test:e2e:wtr": "node ../scripts/run-wtr-e2e.mjs"
   },
   "dependencies": {
+    "@tanstack/highlight": "^0.0.10",
+    "@tanstack/markdown": "^0.0.13",
     "@tanstack/react-query": "^5.96.2",
     "@tanstack/react-router": "^1.170.18",
     "framer-motion": "^12.42.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-markdown": "^10.1.0",
-    "react-syntax-highlighter": "^15.6.1",
-    "rehype-raw": "^7.0.0",
-    "rehype-sanitize": "^6.0.0",
-    "remark-breaks": "^4.0.0",
-    "remark-gfm": "^4.0.1",
     "tailwindcss": "4.3.3"
   },
   "devDependencies": {
@@ -36,7 +32,6 @@
     "@types/node": "^24.6.0",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
-    "@types/react-syntax-highlighter": "^15.5.13",
     "@vitejs/plugin-react": "^6.0.1",
     "@web/dev-server-esbuild": "^2.0.0",
     "@web/test-runner": "^1.0.0",

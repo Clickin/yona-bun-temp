@@ -380,31 +380,51 @@ test("public user profile renders legacy connected social provider logos", async
     connectedSocialProviders: ["github", "google", "unsupported"],
   });
 
+  const profileResponse = page.waitForResponse((response) =>
+    response.url().includes("/api/v1/users/door/profile"),
+  );
   await page.goto(`${basePath}/door`);
+  await profileResponse;
   await expect(page.locator(".user-box")).toBeVisible();
 
-  const providerLogo = page.locator(
-    '[data-owner="user-profile-user-since"] [data-owner="user-profile-provider-logo"]',
-  );
-  await expect(
-    providerLogo.locator(':scope > [data-owner="user-profile-provider-github"]'),
-  ).toHaveCount(1);
-  await expect(
-    providerLogo.locator(':scope > [data-owner="user-profile-provider-google"]'),
-  ).toHaveCount(1);
-  await expect(providerLogo.locator(":scope > *")).toHaveCount(2);
-  const githubSvg = providerLogo.locator('[data-owner="user-profile-provider-github"] svg');
-  await expect(githubSvg).toHaveAttribute("viewBox", "0 0 16 16");
-  await expect(githubSvg).toHaveAttribute("height", "24");
-  await expect(githubSvg).toHaveAttribute("width", "19");
-  await expect(githubSvg.locator("path")).toHaveCount(1);
-  const googleImage = providerLogo.locator('[data-owner="user-profile-provider-google-image"]');
-  await expect(googleImage).toHaveAttribute(
-    "src",
-    /btn_google_light_normal_ios(-[A-Za-z0-9_-]+)?\.svg/u,
-  );
-  expect(await googleImage.getAttribute("src")).not.toContain("/assets/images/provider-logo/");
-  await expect(page.locator(".provider-name")).toHaveCount(0);
+  expect(
+    await page.evaluate(() => document.querySelectorAll("div.auth-provider-logo").length),
+  ).toBe(1);
+  expect(
+    await page.evaluate(() => {
+      const logo = document.querySelector("div.auth-provider-logo");
+      const github = logo?.querySelector('[data-owner="user-profile-provider-github"]');
+      const svg = github?.querySelector("svg");
+      const google = logo?.querySelector('[data-owner="user-profile-provider-google-image"]');
+      return {
+        children: logo?.children.length,
+        github: Boolean(github),
+        google: Boolean(google),
+        viewBox: svg?.getAttribute("viewBox"),
+        height: svg?.getAttribute("height"),
+        width: svg?.getAttribute("width"),
+        paths: svg?.querySelectorAll("path").length,
+        googleSrc: google?.getAttribute("src"),
+      };
+    }),
+  ).toEqual({
+    children: 2,
+    github: true,
+    google: true,
+    viewBox: "0 0 16 16",
+    height: "24",
+    width: "19",
+    paths: 1,
+    googleSrc: expect.stringMatching(/btn_google_light_normal_ios(-[A-Za-z0-9_-]+)?\.svg/u),
+  });
+  expect(await page.locator(".provider-name")).toHaveCount(0);
+  expect(
+    await page.evaluate(() =>
+      document
+        .querySelector('[data-owner="user-profile-provider-google-image"]')
+        ?.getAttribute("src"),
+    ),
+  ).not.toContain("/assets/images/provider-logo/");
 
   expect(await readConnectedSocialProviderMetrics(page)).toEqual({
     authProviderFontFamily: expect.stringContaining("Roboto"),

@@ -23,8 +23,7 @@ import {
 } from "react";
 import { useLegacyMessages } from "../i18n";
 import { LegacyMarkdownHelp } from "../routes/-legacy-markdown-help";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { LegacyMarkdown } from "./legacy-markdown";
 
 /** Result of `style.props(...)` spread onto an element (className + inline style). */
 // ponytail: stable empty-object default so destructuring never allocates per render.
@@ -33,7 +32,7 @@ const NO_OWNERS = {};
 /** Client-owned preview used by every screen that does not pass previewChildren
  * (product decision 2026-08-24: no server markdown-render roundtrip). */
 const defaultPreview = (active: boolean, value: string) =>
-  active ? <ReactMarkdown remarkPlugins={[remarkGfm]}>{value}</ReactMarkdown> : null;
+  active ? <LegacyMarkdown>{value}</LegacyMarkdown> : null;
 
 export type MarkdownEditorStyleProps = Readonly<{
   className?: string;

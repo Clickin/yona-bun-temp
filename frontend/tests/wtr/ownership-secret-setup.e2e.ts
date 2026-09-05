@@ -62,19 +62,24 @@ test.describe("Style secret setup", () => {
       await expect(loginId).toHaveCSS("font-size", viewport.name === "desktop" ? "12px" : "16px");
       await expect(loginId).toHaveCSS("font-weight", "700");
       await expect(loginId).toHaveCSS("border-bottom-color", "rgb(204, 204, 204)");
-      await loginId.focus();
-      // Re-focus under shard load: a late re-render can blur the input after
-      // the initial focus, so poll the focused paint (gate flake: border
-      // stayed #ccc). Use the native focus() (the harness focus dispatches a
-      // synthetic focusin first, which the app's re-render can clear).
-      await expect
-        .poll(() =>
-          loginId.evaluate((element) => {
-            (element as HTMLInputElement).focus();
-            return getComputedStyle(element).borderBottomColor;
-          }),
-        )
-        .toBe("rgb(243, 108, 34)");
+      expect(
+        await loginId.evaluate((element) => {
+          const input = element as HTMLInputElement;
+          input.focus({ preventScroll: true });
+          const focused = input.ownerDocument.activeElement === input && input.matches(":focus");
+          getComputedStyle(input).borderBottomColor;
+          input.getAnimations().forEach((animation) => animation.finish());
+          return {
+            borderBottomColor: getComputedStyle(input).borderBottomColor,
+            focused,
+            isConnected: input.isConnected,
+          };
+        }),
+      ).toEqual({
+        borderBottomColor: "rgb(243, 108, 34)",
+        focused: true,
+        isConnected: true,
+      });
       const geometry = await owner.evaluate((element) => {
         const ownerBox = element.getBoundingClientRect();
         const box = element.querySelector<HTMLElement>('[data-part="secret-setup-box"]');

@@ -117,7 +117,7 @@ const EXPECTED_USER_LIST_SCREEN = `
         <ul class="user-list-wrap">
           <li class="row-fluid listitem">
             <div class="span3 listitem-col">
-              <a href="__BASE_PATH__/doortts" class="avatar-wrap list-avatar"><img src="/avatars/doortts.png" alt="Door TTS" width="32" height="32"></a>
+              <a href="__BASE_PATH__/doortts" class="avatar-wrap list-avatar"><img src="__BASE_PATH__/legacy-assets/images/default-avatar-34.png" alt="Door TTS" width="32" height="32"></a>
               <a href="__BASE_PATH__/doortts" class="user-name">Door TTS</a>
               <a href="__BASE_PATH__/doortts" class="user-id">@doortts</a>
             </div>
@@ -459,15 +459,12 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   expect(await userListMetrics(page)).toEqual({
     actionColumnRatio: 0.4,
     actionRowButtonCount: 5,
-    // F5 dist-truth (2026-08-11): the doortts fixture avatar renders at the
-    // wrap's 45x45 box (45x40 box minus sprite ratio); the F5 pin of 32
-    // reflected the legacy 32x32 avatar image the mock no longer serves
-    avatarHeight: 40,
+    avatarHeight: 32,
     avatarWrapHeight: 45,
     avatarWrapMarginRight: 10,
     avatarWrapMarginTop: 3,
     avatarWrapWidth: 45,
-    avatarWidth: 45,
+    avatarWidth: 32,
     contentWidthRatio: 0.83,
     emailFontSize: 13,
     emailLineHeight: 43,
@@ -1447,16 +1444,6 @@ async function mockSiteUsers(
     userListSearches: [] as Array<{ page: string; query: string; state: string }>,
   };
 
-  await page.route("**/avatars/*.png", async (route) => {
-    await route.fulfill({
-      body: Buffer.from(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADgwGdrZtEwwAAAABJRU5ErkJggg==",
-        "base64",
-      ),
-      contentType: "image/png",
-    });
-  });
-
   await page.route("**/api/v1/site/users?*", async (route) => {
     const url = new URL(route.request().url());
     const pageNum =
@@ -1481,7 +1468,9 @@ async function mockSiteUsers(
         totalPages: 2,
         users: [
           {
-            avatarUrl: options.avatarUrl ?? "/avatars/doortts.png",
+            avatarUrl:
+              options.avatarUrl ??
+              `${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/legacy-assets/images/default-avatar-34.png`,
             createdAt: "2026-06-28 12:00:00",
             displayName,
             emailAddress,

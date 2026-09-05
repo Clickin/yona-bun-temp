@@ -98,15 +98,15 @@ test("translators produce expected method/path literals", () => {
   assert.deepEqual(yoram("get-user-issues-compat"), { method: "GET", path: "/api/v1/user/issues/search" });
 
   assert.deepEqual(legacy("view-notifications"), { method: "GET", path: "/notifications" });
-  assert.deepEqual(legacy("view-notifications", { path: "/notification" }), { method: "GET", path: "/notification" });
+  assert.deepEqual(legacy("view-notifications", { path: "/notification" }), { method: "GET", path: "/notification?from=0&limit=10" });
   assert.deepEqual(yoram("view-notifications"), {
     method: "GET",
     path: "/api/v1/notifications",
     pagePath: "/notifications",
   });
 
-  assert.deepEqual(legacy("view-global-search", { query: "a b" }), { method: "GET", path: "/search?query=a%20b" });
-  assert.deepEqual(yoram("view-global-search", { query: "sample" }).path, "/api/v1/search?query=sample");
+  assert.deepEqual(legacy("view-global-search", { query: "a b" }), { method: "GET", path: "/search?keyword=a%20b&searchType=issue" });
+  assert.deepEqual(yoram("view-global-search", { query: "sample" }).path, "/api/v1/search?keyword=sample&searchType=issue");
 
   assert.deepEqual(legacy("view-orgs-list"), { method: "GET", path: "/orgs" });
   assert.deepEqual(yoram("view-orgs-list").path, "/api/v1/organizations");

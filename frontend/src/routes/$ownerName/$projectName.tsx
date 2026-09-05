@@ -2,8 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import type { CSSProperties, MouseEvent, ReactNode, SyntheticEvent } from "react";
 import { createContext, useEffect, useRef, useState } from "react";
-import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { basePathUrlTransform, LegacyMarkdown } from "../../components/legacy-markdown";
 import defaultHistoryAvatarUrl from "../../assets/legacy/default-avatar-64.png";
 import defaultProjectBackgroundUrl from "../../assets/legacy/project_default.jpg";
 import defaultProjectLogoUrl from "../../assets/legacy/project_default_logo.png";
@@ -239,10 +238,7 @@ function ProjectHomeRoute() {
                       : codeBranch !== null || codeFilePath !== null
                         ? "code"
                         : routeActive;
-
-  if (!active) {
-    return <Outlet />;
-  }
+  if (!active) return <Outlet />;
 
   return (
     <YoramQueryProvider>
@@ -317,6 +313,7 @@ function ProjectHomeRouteShell({
     },
     retryOnMount: false,
   });
+
   const homeLoadedTabRef = useRef<ProjectContainerTabId>("readme");
   if (active === "home" && query.data && !query.isPlaceholderData) {
     homeLoadedTabRef.current = projectContainerTabId;
@@ -1323,19 +1320,16 @@ export function ProjectHomeBody({
                 <h3 data-owner="project-home-overview-heading">
                   <span id="project-description" className="markdown-wrap">
                     {overviewText ? (
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
+                      <LegacyMarkdown
                         components={{
                           p: ({ children }) => (
                             <p className="project-home-markdown-paragraph">{children}</p>
                           ),
                         }}
-                        urlTransform={(url) =>
-                          projectMarkdownUrlTransform(runtimeConfig.basePath, url)
-                        }
+                        urlTransform={(url) => basePathUrlTransform(runtimeConfig.basePath, url)}
                       >
                         {overviewText}
-                      </ReactMarkdown>
+                      </LegacyMarkdown>
                     ) : (
                       t("project.description.placeholder")
                     )}
@@ -1780,12 +1774,9 @@ function ReadmePane({
             ) : null}
           </header>
           <div className="readme-body markdown-wrap">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              urlTransform={(url) => projectMarkdownUrlTransform(basePath, url)}
-            >
+            <LegacyMarkdown urlTransform={(url) => basePathUrlTransform(basePath, url)}>
               {readmeBody}
-            </ReactMarkdown>
+            </LegacyMarkdown>
           </div>
         </div>
       ) : (
@@ -3127,11 +3118,6 @@ function projectWatchingCountValue(project: ProjectContainer) {
     }
   }
   return undefined;
-}
-
-function projectMarkdownUrlTransform(basePath: string, url: string) {
-  const safeUrl = defaultUrlTransform(url);
-  return url.startsWith("/") && !url.startsWith("//") ? prefixBasePath(basePath, safeUrl) : safeUrl;
 }
 
 function normalizeHistoryHref(basePath: string, href: string) {

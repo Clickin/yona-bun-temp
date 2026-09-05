@@ -26,7 +26,19 @@ export const scenarios = [
     title: "read legacy-compat user issues api",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      { actor: "admin", action: "get-user-issues-compat", params: {} },
+      {
+        actor: "admin",
+        action: "get-user-issues-compat",
+        params: {},
+        // Legacy external -_-api reads are Authorization-token gated
+        // (UserApi.java:295-305); yoram's canonical /api/v1 REST surface
+        // serves the React client by session — documented transport
+        // difference, the sweep adapter carries sessions not tokens.
+        disposition: {
+          classification: "IMPLEMENTATION_DIFFERENCE",
+          evidence: "yona-original/app/controllers/api/UserApi.java:295-305 vs AGENTS.md canonical /api/v1 REST contract",
+        },
+      },
     ],
     behaviorMatcher: { action: /^UserApi\.getIssuesByUser$/ },
   },
@@ -257,7 +269,19 @@ export const scenarios = [
       { actor: "admin", action: "update-organization-info", params: { description: "parity temp description" } },
       { actor: "admin", action: "update-organization-info", params: { description: "" } },
       { actor: "bob", action: "login", params: { loginId: "bob", password: "bobbob" } },
-      { actor: "bob", action: "leave-organization", params: {} },
+      {
+        actor: "bob",
+        action: "leave-organization",
+        params: {},
+        // Legacy org-leave authorization defect: Operation.LEAVE covers only
+        // PROJECT (AccessControl.java:176-183) so an ORGANIZATION leave 403s a
+        // plain member of a single-admin org while yoram implements the
+        // intended protection (2026-09 reclassification B-0016).
+        disposition: {
+          classification: "LEGACY_BUG_NOT_REPRODUCED",
+          evidence: "yona-original/app/utils/AccessControl.java:176-183; yona-original/app/controllers/OrganizationApp.java:297-311",
+        },
+      },
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
       { actor: "admin", action: "add-org-member", params: { user: "carol" } },
       { actor: "admin", action: "delete-org-member", params: { user: "carol" } },
@@ -294,8 +318,27 @@ export const scenarios = [
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
       { actor: "admin", action: "edit-user-profile", params: {} },
-      { actor: "admin", action: "save-user-editform-tab", params: { tab: "notifications" } },
-      { actor: "admin", action: "save-user-editform-tab", params: { tab: "emails" } },
+      {
+        actor: "admin",
+        action: "save-user-editform-tab",
+        params: { tab: "notifications" },
+        // Surface-replaced: yoram owns settings as workspace overview/actions
+        // (crates/server/src/routes/workspace.rs:1858-2103); the legacy
+        // /user/editform/:tabId compat tab answers where yoram 404s by design.
+        disposition: {
+          classification: "IMPLEMENTATION_DIFFERENCE",
+          evidence: "crates/server/src/routes/workspace.rs:1858-2103; 2026-09 reclassification B-0298",
+        },
+      },
+      {
+        actor: "admin",
+        action: "save-user-editform-tab",
+        params: { tab: "emails" },
+        disposition: {
+          classification: "IMPLEMENTATION_DIFFERENCE",
+          evidence: "crates/server/src/routes/workspace.rs:1858-2103; 2026-09 reclassification B-0298",
+        },
+      },
     ],
     behaviorMatcher: {
       action: /^UserApp\.(editUserInfo|editUserInfoByTabForm)$/,
@@ -375,13 +418,34 @@ async function readApiHandler(ctx) {
 const pageTargets = {
   "view-user-issues": (params) => withQuery("/user/issues", params.tab && `tab=${params.tab}`),
   "view-notifications": (params) => params.path ?? "/notifications",
-  "view-global-search": (params) => withQuery("/search", params.query && `query=${encodeURIComponent(params.query)}`),
+  // Legacy search pages bind keyword + searchType; a bare ?query= render is a
+  // legacy 400 error page, not the search screen.
+  "view-global-search": (params) =>
+    withQuery(
+      "/search",
+      [
+        params.query && `keyword=${encodeURIComponent(params.query)}`,
+        `searchType=${encodeURIComponent(params.searchType ?? "issue")}`,
+      ]
+        .filter(Boolean)
+        .join("&"),
+    ),
   "view-orgs-list": () => "/orgs",
   "view-org-home": (params) => `/organizations/${params.organization}`,
   "view-user-files": () => "/user/files",
   "view-new-direct-issue-form": (params) => (params.mine ? "/user/issues/new/mine" : "/user/issues/new"),
   "view-org-subpage": (params) =>
-    withQuery(`/organizations/${params.organization}/${params.page}`, params.query && `query=${encodeURIComponent(params.query)}`),
+    withQuery(
+      `/organizations/${params.organization}/${params.page}`,
+      params.page === "search"
+        ? [
+            params.query && `keyword=${encodeURIComponent(params.query)}`,
+            `searchType=${encodeURIComponent(params.searchType ?? "issue")}`,
+          ]
+            .filter(Boolean)
+            .join("&")
+        : params.query && `query=${encodeURIComponent(params.query)}`,
+    ),
   "view-new-org-form": () => "/organizations/new",
   "view-user-editform": (params) => (params.tab ? `/user/editform/${params.tab}` : "/user/editform"),
   "view-site-screen": (params) => `/sites/${params.screen}`,
@@ -620,9 +684,18 @@ export const actionDefinitions = {
 
   "view-notifications": {
     translateLegacy(step) {
+      // Legacy GET /notification binds from:Integer + limit:Integer with no
+      // defaults; a bare request is a legacy 400. /notifications (the page)
+      // binds nothing.
+      if (step.params.path === "/notification") {
+        return { method: "GET", path: "/notification?from=0&limit=10" };
+      }
       return { method: "GET", path: step.params.path ?? "/notifications" };
     },
     translateYoram(step) {
+      if (step.params.path === "/notification") {
+        return { method: "GET", path: "/notification?from=0&limit=10", pagePath: "/notification?from=0&limit=10" };
+      }
       return { method: "GET", path: "/api/v1/notifications", pagePath: step.params.path ?? "/notifications" };
     },
     handler: readPageHandler,
@@ -630,10 +703,26 @@ export const actionDefinitions = {
 
   "view-global-search": {
     translateLegacy(step) {
-      return { method: "GET", path: withQuery("/search", step.params.query && `query=${encodeURIComponent(step.params.query)}`) };
+      // Legacy SearchApp binds keyword + searchType (both required, 400
+      // otherwise); `query` alone is not the legacy contract.
+      const query = [
+        step.params.query && `keyword=${encodeURIComponent(step.params.query)}`,
+        `searchType=${encodeURIComponent(step.params.searchType ?? "issue")}`,
+      ]
+        .filter(Boolean)
+        .join("&");
+      return {
+        method: "GET",
+        path: withQuery("/search", query),
+      };
     },
     translateYoram(step) {
-      const query = step.params.query && `query=${encodeURIComponent(step.params.query)}`;
+      const query = [
+        step.params.query && `keyword=${encodeURIComponent(step.params.query)}`,
+        `searchType=${encodeURIComponent(step.params.searchType ?? "issue")}`,
+      ]
+        .filter(Boolean)
+        .join("&");
       return { method: "GET", path: withQuery("/api/v1/search", query), pagePath: withQuery("/search", query) };
     },
     handler: readPageHandler,
@@ -708,22 +797,42 @@ export const actionDefinitions = {
 
   "view-org-subpage": {
     translateLegacy(step) {
+      // Legacy SearchApp.searchInAGroup binds keyword + searchType (both
+      // required, 400 otherwise); `query` alone is not the legacy contract.
+      const query =
+        step.params.page === "search"
+          ? [
+              step.params.query && `keyword=${encodeURIComponent(step.params.query)}`,
+              `searchType=${encodeURIComponent(step.params.searchType ?? "issue")}`,
+            ]
+              .filter(Boolean)
+              .join("&")
+          : step.params.query && `query=${encodeURIComponent(step.params.query)}`;
       return {
         method: "GET",
         path: withQuery(
           `/organizations/${step.params.organization}/${step.params.page}`,
-          step.params.query && `query=${encodeURIComponent(step.params.query)}`,
+          query,
         ),
       };
     },
     translateYoram(step) {
-      const { organization, page, query } = step.params;
+      const { organization, page } = step.params;
+      const query =
+        page === "search"
+          ? [
+              step.params.query && `keyword=${encodeURIComponent(step.params.query)}`,
+              `searchType=${encodeURIComponent(step.params.searchType ?? "issue")}`,
+            ]
+              .filter(Boolean)
+              .join("&")
+          : step.params.query && `query=${encodeURIComponent(step.params.query)}`;
       const apiPages = {
         boards: `/api/v1/organizations/${organization}/boards`,
         members: `/api/v1/organizations/${organization}/members`,
         pullrequests: `/api/v1/organizations/${organization}/pull-requests`,
         issues: `/api/v1/organizations/${organization}/issues`,
-        search: withQuery(`/api/v1/organizations/${organization}/search`, query && `query=${encodeURIComponent(query)}`),
+        search: withQuery(`/api/v1/organizations/${organization}/search`, query),
       };
       // closedPullrequests/deleteForm/settingform have no Yoram API; the SPA
       // shell serves the legacy direct route instead.
@@ -2007,8 +2116,30 @@ scenarios.push({
   actions: [
     { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
     { actor: "admin", action: "probe-site-export", params: {} },
-    { actor: "admin", action: "probe-site-import-invalid", params: {} },
-    { actor: "admin", action: "probe-site-mail-invalid", params: {} },
+    {
+      actor: "admin",
+      action: "probe-site-import-invalid",
+      params: {},
+      // Legacy redirects a missing-file import to /sites/data
+      // (SiteApp.java:376-378) where yoram rejects the invalid payload with
+      // 400; reviewed boundary nuance (B-0159), no import state is written.
+      disposition: {
+        classification: "IMPLEMENTATION_DIFFERENCE",
+        evidence: "yona-original/app/controllers/SiteApp.java:368-383; 2026-09 reclassification B-0159",
+      },
+    },
+    {
+      actor: "admin",
+      action: "probe-site-mail-invalid",
+      params: {},
+      // Legacy SiteApp.sendMail lets the EmailException escape on an invalid
+      // from address (500) where yoram answers a clean 400; degenerate legacy
+      // crash on a degenerate payload.
+      disposition: {
+        classification: "LEGACY_BUG_NOT_REPRODUCED",
+        evidence: "yona-original/app/controllers/SiteApp.java:87-95",
+      },
+    },
     { actor: "admin", action: "probe-site-mail-list-invalid", params: {} },
     { actor: "admin", action: "probe-user-reset-password-invalid", params: {} },
   ],

@@ -106,6 +106,7 @@ function ProjectCodeFolderBody({
     code.branches[0]?.name ??
     selectedBranch;
   const encodedBranch = encodeBranch(selectedBranch);
+  const newFilePath = `${projectRoute(ownerName, projectName, "postform")}?path=&branch=${encodeURIComponent(branchItemName(selectedBranch))}`;
   const isGit = project.vcs === "GIT";
   const [branchMenuOpen, setBranchMenuOpen] = useState(false);
 
@@ -355,8 +356,7 @@ function ProjectCodeFolderBody({
                         "data-status": undefined,
                       }}
                       id="new-file-link"
-                      to={projectRoute(ownerName, projectName, "postform")}
-                      search={{ path: "", branch: selectedBranch }}
+                      to={newFilePath}
                       className="ybtn"
                     >
                       {t("code.new.file")}
@@ -534,6 +534,10 @@ function projectRoute(ownerName: string, projectName: string, ...parts: string[]
 
 function encodeBranch(branch: string) {
   return encodeURIComponent(branch);
+}
+
+function branchItemName(branch: string) {
+  return branch.startsWith("refs/") ? branch.slice(branch.indexOf("/", 5) + 1) : branch;
 }
 
 function booleanField(value: unknown) {

@@ -72,7 +72,10 @@ function specFiles() {
   const manifest = JSON.parse(
     readFileSync(resolve(repoRoot, "frontend/tests/e2e-lane-manifest.json"), "utf8"),
   );
-  return manifest.chrome.filter((name) => !name.startsWith("_diag-")).sort();
+  return manifest.chrome
+    .map((name) => basename(name))
+    .filter((name) => !name.startsWith("_diag-"))
+    .sort();
 }
 
 function fileRevision(name) {

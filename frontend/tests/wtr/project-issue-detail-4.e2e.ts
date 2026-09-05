@@ -792,11 +792,18 @@ test("project issue detail renders legacy commit referred timeline event", async
 
   await page.goto(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator("#event-93 .state.changed")).toHaveText("mentioned");
+  await expect(page.locator("#event-93 strong .link")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/commit/abcdef0`,
+  );
 
   expect(await canonicalize(page, ".span-left-pane > #comments")).toEqual(
     await canonicalizeHtml(
       page,
-      LEFT_COMMIT_REFERRED_EVENT_TIMELINE.replaceAll("__BASE_PATH__", basePath),
+      LEFT_COMMIT_REFERRED_EVENT_TIMELINE.replace("?branch=&path=", "").replaceAll(
+        "__BASE_PATH__",
+        basePath,
+      ),
     ),
   );
 });

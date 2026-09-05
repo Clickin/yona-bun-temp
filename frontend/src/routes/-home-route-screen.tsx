@@ -857,30 +857,6 @@ export function SiteLayoutShell({
     setLeftSidebarMotionExpanded(false);
     writeStoredValue(LEGACY_LEFT_SIDEBAR_OPEN_KEY, "true");
   };
-  // Motion deadlock ceiling: the closing/open transition can lose its
-  // transitionend (WTR iframe stalls, OS reduced-motion skips transitions),
-  // which would leave the sidebar stuck mid-motion and never unmount. The
-  // legacy CSS-class sidebar cannot stick; enforce the terminal state after
-  // the 0.5s transition window.
-  React.useEffect(() => {
-    if (leftSidebarMotion !== "opening" && leftSidebarMotion !== "closing") {
-      return;
-    }
-    const timeoutId = window.setTimeout(() => {
-      setLeftSidebarMotion((motion) => {
-        if (motion === "opening") {
-          setLeftSidebarMotionExpanded(true);
-          return "open";
-        }
-        if (motion === "closing") {
-          setLeftSidebarMotionExpanded(false);
-          return "closed";
-        }
-        return motion;
-      });
-    }, 1200);
-    return () => window.clearTimeout(timeoutId);
-  }, [leftSidebarMotion]);
   const handleLeftSidebarClose = () => {
     setIsLeftSidebarOpen(false);
     shouldRestoreSidebarOpenPinFocus.current = true;
@@ -1071,7 +1047,7 @@ export function SiteLayoutShell({
                   <input type="hidden" name="searchType" value="auto" />
                   {hasScopedSearch ? (
                     <div
-                      className={"btn-group"}
+                      className={`btn-group${isSearchScopeMenuOpen ? " open" : ""}`}
                       data-owner="global-gnb-search-scope"
                       onBlur={handleSearchScopeBlur}
                     >

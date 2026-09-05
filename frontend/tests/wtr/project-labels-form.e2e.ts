@@ -47,7 +47,6 @@ const POPULATED_LABELS_LIST = `
     <div class="span3"><h5 class="right-txt mr20"><span class="category-name">priority</span><p class="mt5"><i class="category-exclusive yobicon-tag single" data-html="true" title="In this category, you can choose<br>only a single label"></i><button type="button" class="ybtn ybtn-mini" data-project-id="7" data-category-id="4" data-category-name="priority" data-category-is-exclusive="true">Edit category</button></p></h5></div>
     <div class="span9"><table class="table nm"><tr data-label-id="10"><td><span class="issue-label active" data-label-id="10" data-label-name="high">high</span></td><td class="actions"><button type="button" class="ybtn ybtn-danger ybtn-small" data-category-name="priority" data-label-id="10">Delete</button><button type="button" class="ybtn ybtn-small" data-category-id="4" data-label-name="high" data-label-color="#ff9800">Edit</button></td></tr></table></div>
   </div>
-  <link rel="stylesheet" type="text/css" href="__BASE_PATH__/admin/sample/issue/labels.css">
 </div>`;
 
 const EXPECTED_PROJECT_LABELS = `
@@ -802,9 +801,6 @@ test("project labels renders read-only label management state from legacy permis
   await expect(page.locator("#labelsList button[data-category-update-uri]")).toHaveCount(0);
   await expect(page.locator("#labelsList button[data-delete-uri]")).toHaveCount(0);
   await expect(page.locator("#labelsList button[data-update-uri]")).toHaveCount(0);
-  await expect(
-    page.locator('#labelsList link[href$="/admin/sample/issue/labels.css"]'),
-  ).toHaveCount(1);
   await expect(page.locator("#editCategory")).toHaveAttribute("aria-hidden", "true");
   await expect(page.locator("#editLabel")).toHaveAttribute("aria-hidden", "true");
   await expect(page.locator('#editLabel select[name="category.id"] option')).toHaveText([

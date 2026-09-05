@@ -68,50 +68,12 @@ test("organization search forbidden error wrap preserves legacy Style paint and 
     waitUntil: "commit",
   });
 
-  {
-    let headerVisible = false;
-    const deadline = Date.now() + 60000;
-    while (Date.now() < deadline) {
-      const header = page.locator(".project-header-outer");
-      if ((await header.count()) > 0) {
-        headerVisible = await header.evaluate(
-          (element) =>
-            getComputedStyle(element).display !== "none" && element.getClientRects().length > 0,
-        );
-        if (headerVisible) break;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 250));
-    }
-    expect(headerVisible).toBe(true);
-  }
-  // Same paint-poll as the header: toBeVisible raced the shell render under
-  // shard load (gate flake: 25s timeout with the header settled but the menu
-  // still hidden). Poll with an explicit 30s window, tolerating the
-  // pre-render absence of the menu node.
-  let menuVisible = false;
-  {
-    const deadline = Date.now() + 60000;
-    while (Date.now() < deadline) {
-      const menu = page.locator(".project-menu-outer");
-      if ((await menu.count()) > 0) {
-        menuVisible = await menu.evaluate(
-          (element) =>
-            getComputedStyle(element).display !== "none" && element.getClientRects().length > 0,
-        );
-        if (menuVisible) break;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 250));
-    }
-  }
-  expect(menuVisible).toBe(true);
+  await expect(page.locator(".project-header-outer")).toBeVisible();
+  await expect(page.locator(".project-menu-outer")).toBeVisible();
   const error = page.locator('[data-owner="organization-search-error-wrap"]');
   const icon = page.locator('[data-owner="organization-search-error-icon"]');
   const message = page.locator('[data-owner="organization-search-error-message"]');
-  // The forbidden search result can land after the shell (route data gate);
-  // poll the error wrap's paint (gate flake: toBeVisible raced the render).
-  await expect
-    .poll(() => error.evaluate((node) => getComputedStyle(node).display !== "none"))
-    .toBe(true);
+  await expect(error).toBeVisible();
   await expect(icon).toHaveClass(/ico-err2/u);
   await expect(message).toHaveText("You are not authorized");
   await expect(error.locator(".ybtn")).toHaveCount(0);

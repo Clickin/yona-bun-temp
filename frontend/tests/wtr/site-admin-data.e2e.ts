@@ -99,7 +99,7 @@ const EXPECTED_DATA_SCREEN = `
         </div>
         <h3>Export</h3>
         <p>All data read from DB will be exported to a file.</p>
-        <a href="__BASE_PATH__/sites/export" class=""><strong>Export</strong></a>
+        <a href="__BASE_PATH__/sites/export" class="ybtn ybtn-primary"><strong>Export</strong></a>
         <h3>Import</h3>
         <p>Replace existing data with exported Yoram data file.</p>
         <form action="__BASE_PATH__/sites/import" method="post" enctype="multipart/form-data">
@@ -168,7 +168,7 @@ test("site admin data matches legacy site/data.scala.html DOM", async ({ page })
   ).toHaveAttribute("href", `${basePath}/sites/massmail`);
   const exportLink = page.locator('[data-owner="site-data-export-action"]');
   await expect(exportLink).toHaveAttribute("href", `${basePath}/sites/export`);
-  await expect(exportLink).not.toHaveClass(/(?:^|\s)ybtn(?:\s|$)/u);
+  await expect(exportLink).toHaveClass("ybtn ybtn-primary");
   await expect(exportLink).toHaveText("Export");
   await expect(page.locator('form[action$="/sites/import"]')).toHaveAttribute(
     "enctype",
@@ -266,7 +266,7 @@ test("site admin data export link preserves legacy download href", async ({ page
   const exportLink = page.locator('[data-owner="site-data-export-action"]');
 
   await expect(exportLink).toHaveAttribute("href", `${basePath}/sites/export`);
-  await expect(exportLink).not.toHaveClass(/(?:^|\s)ybtn(?:\s|$)/u);
+  await expect(exportLink).toHaveClass("ybtn ybtn-primary");
   await expect(exportLink).toHaveText("Export");
 });
 

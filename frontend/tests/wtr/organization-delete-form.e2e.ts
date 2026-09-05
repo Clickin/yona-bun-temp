@@ -122,6 +122,7 @@ test("organization delete form matches legacy organization/deleteForm.scala.html
   await expect(page).toHaveTitle("weblabs");
   await expect(page.locator("#btnDelete")).toBeVisible();
   await expect(page.locator("#alertDeletion")).toHaveClass(/hide/);
+  await expect(page.locator("#myOrganizationList")).toBeVisible();
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(

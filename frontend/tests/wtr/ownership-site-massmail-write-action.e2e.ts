@@ -57,12 +57,16 @@ test("write action retires only its ybtn fallback classes and preserves legacy o
 test("write action preserves React mutation and pending behavior", async ({ page }) => {
   await mockSession(page);
   let requestBody: { all?: boolean; projects?: string[] } | null = null;
+  let releaseResponse = () => {};
+  const responseGate = new Promise<void>((resolve) => {
+    releaseResponse = resolve;
+  });
   await page.route("**/api/v1/site/mail-list", async (route) => {
     requestBody = JSON.parse(route.request().postData() ?? "{}") as {
       all?: boolean;
       projects?: string[];
     };
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    await responseGate;
     await route.fulfill({ json: { recipients: ["maintainer@example.com"] } });
   });
   await page.addInitScript(() => {
@@ -75,6 +79,7 @@ test("write action preserves React mutation and pending behavior", async ({ page
   await expect(action).toBeDisabled();
   await expect(action.locator("strong")).toHaveText("loading...");
   await expect.poll(() => requestBody).toEqual({ all: true, projects: [] });
+  releaseResponse();
   await expect(action).toBeEnabled();
   await expect(action.locator("strong")).toHaveText("Write");
 });

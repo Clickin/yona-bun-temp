@@ -5,8 +5,7 @@ import { FileDiffErrorRow } from "../../../../../components/file-diff-error-row"
 import { createFileRoute, Link } from "@tanstack/react-router";
 import type { MouseEvent } from "react";
 import { useState } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { LegacyMarkdown } from "../../../../../components/legacy-markdown";
 import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
 import { LastOutletTransition } from "../../../../-last-outlet-transition";
 import {
@@ -650,13 +649,13 @@ function OriginalMessageMarkdown({
   const originalMessage = viaEmail ? splitOriginalMessageMarkdown(contentsMarkdown) : null;
 
   if (!originalMessage) {
-    return <ReactMarkdown remarkPlugins={[remarkGfm]}>{contentsMarkdown}</ReactMarkdown>;
+    return <LegacyMarkdown>{contentsMarkdown}</LegacyMarkdown>;
   }
 
   return (
     <>
       {originalMessage.visibleMarkdown ? (
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{originalMessage.visibleMarkdown}</ReactMarkdown>
+        <LegacyMarkdown>{originalMessage.visibleMarkdown}</LegacyMarkdown>
       ) : null}
       <button
         type="button"
@@ -670,7 +669,7 @@ function OriginalMessageMarkdown({
         ...
       </button>
       <div data-original-message-owner="route" hidden={!showsOriginalMessage}>
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{originalMessage.hiddenMarkdown}</ReactMarkdown>
+        <LegacyMarkdown>{originalMessage.hiddenMarkdown}</LegacyMarkdown>
       </div>
     </>
   );

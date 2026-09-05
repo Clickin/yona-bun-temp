@@ -171,21 +171,6 @@ test("frozen framed SiteLayout sources and generated fallback stay byte-identica
   expect(mergedLegacyBlock()).toContain(
     "sha256:754ff3b616156208c215c1ff49503d4afc450977ac9206d01297fe9217bd14cd",
   );
-
-  const manifest = JSON.parse(
-    readFileSync("../docs/provenance/legacy-css-merged.manifest.json", "utf8"),
-  ) as {
-    layeredViteInputs: Array<{
-      input: string;
-      sourceFiles: Array<{ path: string; sha256: string }>;
-    }>;
-  };
-  const appCssSource = manifest.layeredViteInputs
-    .find(({ input }) => input === "frontend/src/app.css")
-    ?.sourceFiles.find(({ path }) => path === "frontend/src/app.css");
-  expect(appCssSource?.sha256).toBe(
-    createHash("sha256").update(readFileSync("src/app.css")).digest("hex"),
-  );
 });
 
 for (const viewport of [

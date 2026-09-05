@@ -137,6 +137,7 @@ test("project settings uses the legacy project shell watcher and counting badges
   await expect(projectUtil.locator(".watcher-count")).toHaveText("1");
   await expect(projectUtil.locator(".down-arrow")).toHaveText("그만 지켜보기");
   await expect(page.locator(".project-menu-gruop .project-menu-count")).toHaveText(["1", "1"]);
+  await expect(page.locator('[data-owner="project-setting-cu-desc-share"]')).toBeVisible();
 
   const shell = await page.evaluate(() => {
     const breadcrumb = document.querySelector(".project-breadcrumb-wrap");

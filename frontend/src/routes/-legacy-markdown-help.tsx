@@ -1,8 +1,11 @@
 import { Link, useRouteContext, useRouter } from "@tanstack/react-router";
 import type { ComponentPropsWithoutRef } from "react";
 import { useState } from "react";
-import ReactMarkdown, { type Components, type ExtraProps } from "react-markdown";
-import remarkGfm from "remark-gfm";
+import {
+  gfmAutolinkLiterals,
+  LegacyMarkdown,
+  type MarkdownComponents,
+} from "../components/legacy-markdown";
 import { useLegacyMessages } from "../i18n";
 import { prefixBasePath } from "../runtime-config";
 const MARKDOWN_HELP_TARGETS = [
@@ -152,12 +155,12 @@ const MARKDOWN_HELP_OUTPUT_SAMPLES: Partial<Record<MarkdownHelpTarget, string>> 
   markdownTables: MARKDOWN_TABLE_OUTPUT_SAMPLE,
 };
 
-type MarkdownSampleLinkProps = ComponentPropsWithoutRef<"a"> & ExtraProps;
-type MarkdownSampleImageProps = ComponentPropsWithoutRef<"img"> & ExtraProps;
-type MarkdownSampleCodeProps = ComponentPropsWithoutRef<"code"> & ExtraProps;
-type MarkdownSampleHeadingRendererProps = ComponentPropsWithoutRef<"h1"> & ExtraProps;
+type MarkdownSampleLinkProps = ComponentPropsWithoutRef<"a">;
+type MarkdownSampleImageProps = ComponentPropsWithoutRef<"img">;
+type MarkdownSampleCodeProps = ComponentPropsWithoutRef<"code">;
+type MarkdownSampleHeadingRendererProps = ComponentPropsWithoutRef<"h1">;
 
-function MarkdownSampleLink({ children, href, node: _node, ...props }: MarkdownSampleLinkProps) {
+function MarkdownSampleLink({ children, href, ...props }: MarkdownSampleLinkProps) {
   return href ? (
     <Link to={href} {...props}>
       {children}
@@ -167,7 +170,7 @@ function MarkdownSampleLink({ children, href, node: _node, ...props }: MarkdownS
   );
 }
 
-function MarkdownSampleImage({ alt, node: _node, src, ...props }: MarkdownSampleImageProps) {
+function MarkdownSampleImage({ alt, src, ...props }: MarkdownSampleImageProps) {
   const basePath = useRouteContext({
     from: "__root__",
     select: (context) => context.runtimeConfig.basePath,
@@ -223,24 +226,19 @@ function MarkdownSampleHeading({
   );
 }
 
-function MarkdownSampleH1({ node: _node, ...props }: MarkdownSampleHeadingRendererProps) {
+function MarkdownSampleH1(props: MarkdownSampleHeadingRendererProps) {
   return <MarkdownSampleHeading {...props} headingId="yb-header-this-is-an-h1" level={1} />;
 }
 
-function MarkdownSampleH2({ node: _node, ...props }: MarkdownSampleHeadingRendererProps) {
+function MarkdownSampleH2(props: MarkdownSampleHeadingRendererProps) {
   return <MarkdownSampleHeading {...props} headingId="yb-header-this-is-an-h2" level={2} />;
 }
 
-function MarkdownSampleH3({ node: _node, ...props }: MarkdownSampleHeadingRendererProps) {
+function MarkdownSampleH3(props: MarkdownSampleHeadingRendererProps) {
   return <MarkdownSampleHeading {...props} headingId="yb-header-this-is-an-h3" level={3} />;
 }
 
-function MarkdownSampleCode({
-  children,
-  className,
-  node: _node,
-  ...props
-}: MarkdownSampleCodeProps) {
+function MarkdownSampleCode({ children, className, ...props }: MarkdownSampleCodeProps) {
   if (className !== "language-javascript") {
     return (
       <code {...props} className={`${className ?? ""}`} data-owner="markdown-help-output-code">
@@ -264,31 +262,19 @@ function MarkdownSampleCode({
   );
 }
 
-function MarkdownSamplePre({
-  node: _node,
-  ...props
-}: ComponentPropsWithoutRef<"pre"> & ExtraProps) {
-  return <pre {...props} data-owner="markdown-help-output-pre" />;
+function MarkdownSamplePre({ children }: ComponentPropsWithoutRef<"pre">) {
+  return <pre data-owner="markdown-help-output-pre">{children}</pre>;
 }
 
-function MarkdownSampleTable({
-  node: _node,
-  ...props
-}: ComponentPropsWithoutRef<"table"> & ExtraProps) {
+function MarkdownSampleTable(props: ComponentPropsWithoutRef<"table">) {
   return <table {...props} data-owner="markdown-help-table" />;
 }
 
-function MarkdownSampleTableHeader({
-  node: _node,
-  ...props
-}: ComponentPropsWithoutRef<"th"> & ExtraProps) {
+function MarkdownSampleTableHeader(props: ComponentPropsWithoutRef<"th">) {
   return <th {...props} />;
 }
 
-function MarkdownSampleTableCell({
-  node: _node,
-  ...props
-}: ComponentPropsWithoutRef<"td"> & ExtraProps) {
+function MarkdownSampleTableCell(props: ComponentPropsWithoutRef<"td">) {
   return <td {...props} />;
 }
 
@@ -303,7 +289,7 @@ const MARKDOWN_SAMPLE_COMPONENTS = {
   table: MarkdownSampleTable,
   td: MarkdownSampleTableCell,
   th: MarkdownSampleTableHeader,
-} satisfies Components;
+} satisfies MarkdownComponents;
 
 function markdownHelpContentId(target: MarkdownHelpTarget) {
   return `markdown-help-${target}`;
@@ -312,9 +298,9 @@ function markdownHelpContentId(target: MarkdownHelpTarget) {
 function MarkdownSampleOutput({ sample }: { sample: string }) {
   return (
     <div className={"markdown-wrap"} data-owner="markdown-help-output">
-      <ReactMarkdown components={MARKDOWN_SAMPLE_COMPONENTS} remarkPlugins={[remarkGfm]}>
+      <LegacyMarkdown components={MARKDOWN_SAMPLE_COMPONENTS} extensions={[gfmAutolinkLiterals]}>
         {sample}
-      </ReactMarkdown>
+      </LegacyMarkdown>
     </div>
   );
 }

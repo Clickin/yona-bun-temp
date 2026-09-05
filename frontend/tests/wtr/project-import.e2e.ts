@@ -204,6 +204,7 @@ test("project import form matches legacy project/importing.scala.html DOM", asyn
     "data-avatar-url",
     /.*/u,
   );
+  await expect(page.locator(".select2-chosen .usf-group .name")).toHaveText("admin");
   const vcsSelect = page.locator(".advanced-options .cu-desc select.mb10.mt5");
   await expect(vcsSelect).toBeDisabled();
   await expect(vcsSelect).toHaveClass("mb10 mt5 select2-offscreen");

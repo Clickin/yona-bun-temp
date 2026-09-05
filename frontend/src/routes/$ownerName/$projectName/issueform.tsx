@@ -25,14 +25,23 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
-import rehypeRaw from "rehype-raw";
-import rehypeSanitize, {
-  defaultSchema,
-  type Options as RehypeSanitizeOptions,
-} from "rehype-sanitize";
-import ReactMarkdown, { type Components, type ExtraProps } from "react-markdown";
-import remarkBreaks from "remark-breaks";
-import remarkGfm from "remark-gfm";
+import {
+  createMarkdownReferenceIndex,
+  createYonaReferenceExtension,
+  decorateMarkdownReferenceLink,
+  gfmAutolinkLiterals,
+  HEAD_ANCHOR_DECORATION,
+  LegacyMarkdownHtml,
+  legacyHardBreaks,
+  legacyHeadingAnchors,
+  LEGACY_SANITIZE_BASE_SCHEMA,
+  reactNodeText,
+  type LegacySanitizeSchema,
+  type MarkdownComponents,
+  type MarkdownReferenceDecoration,
+  type MarkdownReferenceIndex,
+  type MarkdownReferenceReplacement,
+} from "../../../components/legacy-markdown";
 import {
   deleteTemporaryAttachment,
   uploadTemporaryAttachment,
@@ -86,50 +95,33 @@ const EMPTY_MARKDOWN_REFERENCES: ProjectMarkdownReferencesResponse = {
   issueReferences: [],
   mentionReferences: [],
 };
-const LEGACY_GLOBAL_MARKDOWN_ATTRIBUTES = new Set(["className", "id", "style", "width", "height"]);
-const ISSUE_MARKDOWN_BASE_ATTRIBUTES = Object.fromEntries(
-  Object.entries(defaultSchema.attributes ?? {}).map(([tagName, attributes]) => [
-    tagName,
-    attributes.filter(
-      (attribute) =>
-        !Array.isArray(attribute) || !LEGACY_GLOBAL_MARKDOWN_ATTRIBUTES.has(String(attribute[0])),
-    ),
-  ]),
-) as NonNullable<RehypeSanitizeOptions["attributes"]>;
-
-const ISSUE_MARKDOWN_SANITIZE_SCHEMA: RehypeSanitizeOptions = {
-  ...defaultSchema,
+// Legacy owasp policy (yona-original/app/utils/Markdown.java) on top of the
+// hast-util-sanitize defaultSchema base; attribute names are DOM-form because
+// the TanStack HTML path sanitizes DOMParser output.
+const ISSUE_MARKDOWN_SANITIZE_SCHEMA: LegacySanitizeSchema = {
+  ...LEGACY_SANITIZE_BASE_SCHEMA,
   clobber: [],
   attributes: {
-    ...ISSUE_MARKDOWN_BASE_ATTRIBUTES,
+    ...LEGACY_SANITIZE_BASE_SCHEMA.attributes,
     "*": [
-      ...(ISSUE_MARKDOWN_BASE_ATTRIBUTES["*"] ?? []),
-      "className",
+      ...(LEGACY_SANITIZE_BASE_SCHEMA.attributes["*"] ?? []),
+      "class",
       "id",
       "style",
       "width",
       "height",
     ],
-    a: [...(ISSUE_MARKDOWN_BASE_ATTRIBUTES.a ?? []), "href", "name", "target"],
-    iframe: [
-      ...(ISSUE_MARKDOWN_BASE_ATTRIBUTES.iframe ?? []),
-      "width",
-      "height",
-      "src",
-      "frameBorder",
-      "allow",
-      "allowFullScreen",
-    ],
-    input: [...(ISSUE_MARKDOWN_BASE_ATTRIBUTES.input ?? []), "type", "disabled", "checked"],
-    ol: [...(ISSUE_MARKDOWN_BASE_ATTRIBUTES.ol ?? []), "start"],
-    source: [...(ISSUE_MARKDOWN_BASE_ATTRIBUTES.source ?? []), "src", "type", "target"],
+    a: [...(LEGACY_SANITIZE_BASE_SCHEMA.attributes.a ?? []), "href", "name", "target"],
+    iframe: ["width", "height", "src", "frameborder", "allow", "allowfullscreen"],
+    input: [...(LEGACY_SANITIZE_BASE_SCHEMA.attributes.input ?? []), "type", "disabled", "checked"],
+    ol: [...(LEGACY_SANITIZE_BASE_SCHEMA.attributes.ol ?? []), "start"],
+    source: ["src", "type", "target"],
     video: [
-      ...(ISSUE_MARKDOWN_BASE_ATTRIBUTES.video ?? []),
-      "dataSetup",
+      "data-setup",
       "controls",
       "preload",
       "type",
-      "autoPlay",
+      "autoplay",
       "responsive",
       "height",
       "width",
@@ -139,13 +131,13 @@ const ISSUE_MARKDOWN_SANITIZE_SCHEMA: RehypeSanitizeOptions = {
     ],
   },
   protocols: {
-    ...defaultSchema.protocols,
+    ...LEGACY_SANITIZE_BASE_SCHEMA.protocols,
     href: ["http", "https", "mailto", "file", "zpl"],
     src: ["http", "https", "mailto", "file", "zpl"],
   },
   tagNames: [
     ...new Set([
-      ...(defaultSchema.tagNames ?? []),
+      ...LEGACY_SANITIZE_BASE_SCHEMA.tagNames,
       "video",
       "source",
       "a",
@@ -263,37 +255,15 @@ type EditorMentionSuggestion = {
   label: string;
 };
 
-type MarkdownAstNode = {
-  children?: MarkdownAstNode[];
-  data?: {
-    hName?: string;
-    hProperties?: Record<string, unknown>;
-  };
-  type: string;
-  url?: string;
-  value?: string;
+type IssueMarkdownLinkProps = ComponentPropsWithoutRef<"a"> & {
+  basePath: string;
+  decoration?: MarkdownReferenceDecoration;
 };
 
-type MarkdownHastNode = {
-  children?: MarkdownHastNode[];
-  properties?: Record<string, unknown>;
-  type: string;
+type IssueMarkdownReferenceKit = {
+  extension: ReturnType<typeof createYonaReferenceExtension>;
+  index: MarkdownReferenceIndex;
 };
-
-type MarkdownReferenceKind = "commit" | "issue" | "mention";
-
-type MarkdownReferenceReplacement = {
-  children: MarkdownAstNode[];
-  className?: string[];
-  kind: MarkdownReferenceKind;
-  token: string;
-  url: string;
-};
-
-type IssueMarkdownLinkProps = ComponentPropsWithoutRef<"a"> &
-  ExtraProps & {
-    basePath: string;
-  };
 
 const plainLinkActiveOptions = {
   exact: true,
@@ -1843,28 +1813,61 @@ function IssueBodyMarkdownEditor({
     }),
     [t],
   );
-  const markdownAutoLinkPlugin = useMemo(
+  const markdownReferenceKit = useMemo(
     () =>
-      createIssueMarkdownAutoLinkPlugin(
+      createIssueMarkdownReferenceKit(
         markdownReferencesQuery.data ?? EMPTY_MARKDOWN_REFERENCES,
         issueStateLabels,
       ),
     [issueStateLabels, markdownReferencesQuery.data],
   );
-  const markdownComponents = useMemo<Components>(
+  const markdownExtensions = useMemo(
+    () => [
+      gfmAutolinkLiterals,
+      legacyHeadingAnchors(),
+      markdownReferenceKit.extension,
+      legacyHardBreaks,
+    ],
+    [markdownReferenceKit],
+  );
+  const markdownComponents = useMemo<MarkdownComponents>(
     () => ({
-      a: (props) => <IssueMarkdownLink {...props} basePath={runtimeConfig.basePath} />,
-      video: ({ className, node: _node, ...props }) => {
+      a: (props: ComponentPropsWithoutRef<"a">) => {
+        const { href, ...rest } = props;
+        const decoration =
+          (href &&
+            markdownReferenceKit.index.replacementFor(href, reactNodeText(props.children))
+              ?.decoration) ||
+          (href?.startsWith("#yb-header-") ? HEAD_ANCHOR_DECORATION : undefined);
+        const decorated = decorateMarkdownReferenceLink(
+          props.className,
+          props.children,
+          decoration,
+        );
+        return (
+          <IssueMarkdownLink
+            {...rest}
+            {...decorated}
+            basePath={runtimeConfig.basePath}
+            href={href}
+          />
+        );
+      },
+      video: (props: ComponentPropsWithoutRef<"video">) => {
+        const { className, ...rest } = props;
         return (
           <video
-            {...props}
+            {...rest}
             className={className ?? ""}
             data-owner="project-issue-form-markdown-preview-video"
           />
         );
       },
+      iframe: (props: ComponentPropsWithoutRef<"iframe">) => (
+        <iframe title="Embedded content" {...props} allowFullScreen />
+      ),
     }),
-    [runtimeConfig.basePath],
+    [markdownReferenceKit, runtimeConfig.basePath],
   );
 
   useEffect(() => {
@@ -2177,23 +2180,15 @@ function IssueBodyMarkdownEditor({
       previewClassName="markdown-preview markdown-wrap content-body"
       previewOwner="project-issue-form-markdown-preview"
       previewChildren={() => (
-        <ReactMarkdown
+        <LegacyMarkdownHtml
           components={markdownComponents}
-          rehypePlugins={[
-            rehypeRaw,
-            rehypeLegacyStylePolicy,
-            [rehypeSanitize, ISSUE_MARKDOWN_SANITIZE_SCHEMA],
-          ]}
-          remarkPlugins={[
-            remarkGfm,
-            remarkBreaks,
-            remarkLegacyHeadingAnchors,
-            markdownAutoLinkPlugin,
-          ]}
+          extensions={markdownExtensions}
+          sanitize={ISSUE_MARKDOWN_SANITIZE_SCHEMA}
+          styleFilter={sanitizeLegacyStyle}
           urlTransform={legacyMarkdownUrlTransform}
         >
           {bodyMarkdown}
-        </ReactMarkdown>
+        </LegacyMarkdownHtml>
       )}
     />
   );
@@ -2821,43 +2816,15 @@ function legacyPastedImageFile(file: File, now = new Date()): File {
   });
 }
 
-function createIssueMarkdownAutoLinkPlugin(
+function createIssueMarkdownReferenceKit(
   references: ProjectMarkdownReferencesResponse,
   issueStateLabels: Record<string, string>,
-) {
+): IssueMarkdownReferenceKit {
   const replacements = markdownReferenceReplacements(references, issueStateLabels);
-  return function issueMarkdownAutoLinkPlugin() {
-    return (tree: MarkdownAstNode) => {
-      for (const kind of ["issue", "commit", "mention"] as const) {
-        transformMarkdownAutoLinks(
-          tree,
-          replacements.filter((replacement) => replacement.kind === kind),
-        );
-      }
-    };
+  return {
+    extension: createYonaReferenceExtension(replacements),
+    index: createMarkdownReferenceIndex(replacements),
   };
-}
-
-function transformMarkdownAutoLinks(
-  node: MarkdownAstNode,
-  replacements: MarkdownReferenceReplacement[],
-) {
-  if (
-    replacements.length === 0 ||
-    !node.children ||
-    ["code", "definition", "html", "image", "inlineCode", "link", "linkReference"].includes(
-      node.type,
-    )
-  ) {
-    return;
-  }
-  node.children = node.children.flatMap((child) => {
-    if (child.type !== "text" || child.value === undefined) {
-      transformMarkdownAutoLinks(child, replacements);
-      return [child];
-    }
-    return markdownAutoLinkTextNodes(child.value, replacements);
-  });
 }
 
 function markdownReferenceReplacements(
@@ -2873,11 +2840,10 @@ function markdownReferenceReplacements(
   ];
   const seen = new Set<string>();
   return replacements.filter((replacement) => {
-    const key = `${replacement.kind}:${replacement.token}`;
-    if (!replacement.token || seen.has(key)) {
+    if (!replacement.token || seen.has(replacement.token)) {
       return false;
     }
-    seen.add(key);
+    seen.add(replacement.token);
     return true;
   });
 }
@@ -2890,22 +2856,14 @@ function markdownIssueReplacement(
   const displayToken = reference.token.replace(/^@/u, "");
   const display = `${displayToken}.${reference.title}`;
   return {
-    children: [
-      {
-        type: "text",
-        value: reference.token.startsWith("#") ? display : `${display}${display}`,
+    decoration: {
+      className: ["issueLink"],
+      stateSpan: {
+        className: `issue-state ${state}`,
+        label: issueStateLabels[state] ?? reference.state,
       },
-      {
-        data: {
-          hName: "span",
-          hProperties: { className: ["issue-state", state] },
-        },
-        type: "text",
-        value: issueStateLabels[state] ?? reference.state,
-      },
-    ],
-    className: ["issueLink"],
-    kind: "issue",
+    },
+    label: reference.token.startsWith("#") ? display : `${display}${display}`,
     token: reference.token,
     url: `/${reference.ownerName}/${reference.projectName}/issue/${reference.issueNumber}`,
   };
@@ -2917,13 +2875,7 @@ function markdownCommitReplacement(
   const separator = reference.token.lastIndexOf("@");
   const prefix = separator > 0 ? reference.token.slice(0, separator) : "";
   return {
-    children: [
-      {
-        type: "text",
-        value: prefix ? `${prefix}@${reference.shortId}` : reference.shortId,
-      },
-    ],
-    kind: "commit",
+    label: prefix ? `${prefix}@${reference.shortId}` : reference.shortId,
     token: reference.token,
     url: `/${reference.ownerName}/${reference.projectName}/commit/${reference.commitId}`,
   };
@@ -2935,184 +2887,31 @@ function markdownMentionReplacement(
   const label = `@${reference.label || reference.loginId}`;
   if (reference.kind === "project") {
     return {
-      children: [markdownReferenceLabel(label, "project-link")],
-      kind: "mention",
+      decoration: { childWrapperClass: { className: "project-link" } },
+      label,
       token: reference.token,
       url: `/${reference.ownerName}/${reference.projectName}`,
     };
   }
   if (reference.kind === "organization") {
     return {
-      children: [markdownReferenceLabel(label, "org-link")],
-      kind: "mention",
+      decoration: { childWrapperClass: { className: "org-link" } },
+      label,
       token: reference.token,
       url: `/organizations/${reference.loginId}`,
     };
   }
   return {
-    children: [markdownReferenceLabel(label)],
-    className: ["no-text-decoration", "user-link"],
-    kind: "mention",
+    decoration: { className: ["no-text-decoration", "user-link"] },
+    label,
     token: reference.token,
     url: `/${reference.loginId}`,
   };
 }
 
-function markdownReferenceLabel(value: string, className?: string): MarkdownAstNode {
-  return className
-    ? {
-        data: { hName: "span", hProperties: { className: [className] } },
-        type: "text",
-        value,
-      }
-    : { type: "text", value };
-}
-
-function markdownAutoLinkTextNodes(value: string, replacements: MarkdownReferenceReplacement[]) {
-  const nodes: MarkdownAstNode[] = [];
-  const replacementsByFirstCharacter = new Map<string, MarkdownReferenceReplacement[]>();
-  for (const replacement of replacements) {
-    const firstCharacter = replacement.token[0];
-    const matches = replacementsByFirstCharacter.get(firstCharacter);
-    if (matches) {
-      matches.push(replacement);
-    } else {
-      replacementsByFirstCharacter.set(firstCharacter, [replacement]);
-    }
-  }
-  let cursor = 0;
-  while (cursor < value.length) {
-    const match = nextMarkdownReference(value, cursor, replacementsByFirstCharacter);
-    if (!match) {
-      nodes.push({ type: "text", value: value.slice(cursor) });
-      break;
-    }
-    if (match.index > cursor) {
-      nodes.push({ type: "text", value: value.slice(cursor, match.index) });
-    }
-    nodes.push({
-      children: match.replacement.children,
-      data: match.replacement.className
-        ? { hProperties: { className: match.replacement.className } }
-        : undefined,
-      type: "link",
-      url: match.replacement.url,
-    });
-    cursor = match.index + match.replacement.token.length;
-  }
-  return nodes.length > 0 ? nodes : [{ type: "text", value }];
-}
-
-function nextMarkdownReference(
-  value: string,
-  cursor: number,
-  replacementsByFirstCharacter: Map<string, MarkdownReferenceReplacement[]>,
-) {
-  for (let index = cursor; index < value.length; index += 1) {
-    const replacements = replacementsByFirstCharacter.get(value[index]);
-    if (!replacements) {
-      continue;
-    }
-    let best: MarkdownReferenceReplacement | null = null;
-    for (const replacement of replacements) {
-      if (
-        value.startsWith(replacement.token, index) &&
-        markdownReferenceBoundaryIsValid(value, index, replacement.token) &&
-        (!best || replacement.token.length > best.token.length)
-      ) {
-        best = replacement;
-      }
-    }
-    if (best) {
-      return { index, replacement: best };
-    }
-  }
-  return null;
-}
-
-function markdownReferenceBoundaryIsValid(value: string, index: number, token: string) {
-  const previousCharacter = value.slice(0, index).match(/.$/u)?.[0] ?? "";
-  const nextCharacter = value.slice(index + token.length).match(/^./u)?.[0] ?? "";
-  const wordCharacter = /[A-Za-z0-9_]/u;
-  return !wordCharacter.test(previousCharacter) && !wordCharacter.test(nextCharacter);
-}
-
-function remarkLegacyHeadingAnchors() {
-  return (tree: MarkdownAstNode) => {
-    const seen = new Map<string, number>();
-    appendLegacyHeadingAnchors(tree, seen);
-  };
-}
-
-function appendLegacyHeadingAnchors(node: MarkdownAstNode, seen: Map<string, number>) {
-  if (node.type === "heading") {
-    const headingId = `yb-header-${nextLegacyHeadingSlug(markdownAstText(node), seen)}`;
-    node.data = {
-      ...node.data,
-      hProperties: { ...node.data?.hProperties, id: headingId },
-    };
-    node.children = [
-      ...(node.children ?? []),
-      {
-        children: [{ type: "text", value: "#" }],
-        data: { hProperties: { className: ["head-anchor"] } },
-        type: "link",
-        url: `#${headingId}`,
-      },
-    ];
-  }
-  node.children?.forEach((child) => appendLegacyHeadingAnchors(child, seen));
-}
-
-function markdownAstText(node: MarkdownAstNode): string {
-  return node.value ?? node.children?.map(markdownAstText).join("") ?? "";
-}
-
-function nextLegacyHeadingSlug(value: string, seen: Map<string, number>) {
-  const originalSlug = legacyHeadingSlug(value);
-  let slug = originalSlug;
-  let occurrence = seen.get(originalSlug) ?? 0;
-  if (seen.has(slug)) {
-    do {
-      occurrence += 1;
-      slug = `${originalSlug}-${occurrence}`;
-    } while (seen.has(slug));
-  }
-  seen.set(originalSlug, occurrence);
-  seen.set(slug, 0);
-  return slug;
-}
-
-function legacyHeadingSlug(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/<[!/a-z].*?>/giu, "")
-    .replace(/[\u2000-\u206f\u2e00-\u2e7f\\'!"#$%&()*+,./:;<=>?@[\]^`{|}~]/gu, "")
-    .replace(/[^\w|ㄱ-ㅎ|ㅏ-ㅣ|가-힣]+/gu, "-")
-    .replace(/\s/gu, "-");
-}
-
 function legacyMarkdownUrlTransform(value: string) {
   const protocol = value.match(/^([a-z][a-z\d+.-]*):/iu)?.[1]?.toLowerCase();
   return !protocol || ["http", "https", "mailto", "file", "zpl"].includes(protocol) ? value : "";
-}
-
-function rehypeLegacyStylePolicy() {
-  return (tree: MarkdownHastNode) => sanitizeLegacyStyleProperties(tree);
-}
-
-function sanitizeLegacyStyleProperties(node: MarkdownHastNode) {
-  const style = node.properties?.["style"];
-  if (typeof style === "string") {
-    const sanitizedStyle = sanitizeLegacyStyle(style);
-    if (sanitizedStyle) {
-      node.properties!["style"] = sanitizedStyle;
-    } else {
-      delete node.properties!["style"];
-    }
-  }
-  node.children?.forEach(sanitizeLegacyStyleProperties);
 }
 
 function sanitizeLegacyStyle(style: string) {
@@ -3199,7 +2998,6 @@ function IssueMarkdownLink({
   basePath,
   children,
   href,
-  node: _node,
   rel: _rel,
   target,
   ...props

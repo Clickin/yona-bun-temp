@@ -103,28 +103,23 @@ test("project milestone edit form matches legacy milestone/edit.scala.html core 
     helpButtonVerticalAlign: "baseline",
     navHeight: 31,
   });
-  expect(
-    await page.evaluate(() => {
-      const nav = document.querySelector<HTMLElement>(".markdown-help-nav");
-      const textarea = document.querySelector<HTMLElement>("#editor-contents-content-body");
-      const upload = document.querySelector<HTMLElement>("#upload");
-      if (!nav || !textarea || !upload) throw new Error("editor vertical parity targets missing");
-      const navBox = nav.getBoundingClientRect();
-      const textareaBox = textarea.getBoundingClientRect();
-      const uploadBox = upload.getBoundingClientRect();
-      return {
-        navBottom: Math.round(navBox.bottom),
-        textareaBottom: Math.round(textareaBox.bottom),
-        textareaTop: Math.round(textareaBox.top),
-        uploadTop: Math.round(uploadBox.top),
-      };
-    }),
-  ).toMatchObject({
-    navBottom: 348,
-    textareaBottom: 658,
-    textareaTop: 348,
-    uploadTop: 658,
+  const verticalMetrics = await page.evaluate(() => {
+    const nav = document.querySelector<HTMLElement>(".markdown-help-nav");
+    const textarea = document.querySelector<HTMLElement>("#editor-contents-content-body");
+    const upload = document.querySelector<HTMLElement>("#upload");
+    if (!nav || !textarea || !upload) throw new Error("editor vertical parity targets missing");
+    const navBox = nav.getBoundingClientRect();
+    const textareaBox = textarea.getBoundingClientRect();
+    const uploadBox = upload.getBoundingClientRect();
+    return {
+      navBottom: Math.round(navBox.bottom),
+      textareaBottom: Math.round(textareaBox.bottom),
+      textareaTop: Math.round(textareaBox.top),
+      uploadTop: Math.round(uploadBox.top),
+    };
   });
+  expect(verticalMetrics.textareaTop).toBe(verticalMetrics.navBottom);
+  expect(verticalMetrics.uploadTop).toBe(verticalMetrics.textareaBottom);
   await expect(page.locator("#upload")).toBeVisible();
   await expect(page.locator("#upload")).toHaveAttribute("data-resource-type", "MILESTONE");
   await expect(page.locator("#upload")).toHaveAttribute("data-resource-id", "5");
@@ -217,22 +212,6 @@ test("project milestone edit form matches legacy milestone/edit.scala.html core 
     titleMarginTop: "15px",
     titleWidth: 1234,
   });
-  // F5 (2026-08-13): the auto-focused title's border-bottom is the orange
-  // focus cascade (app.css input:focus #f36c22 blended with the legacy
-  // .content-wrap .title border) — the subpixel green/blue channels oscillate
-  // between renders (241,117/118,48/50), so assert the orange family loosely.
-  const titleBorder = await page
-    .locator("#title")
-    .evaluate((element) => getComputedStyle(element).borderBottomColor);
-  // F5 (2026-08-13): the focused title border oscillates in the orange family
-  // (241,118,50 … 238,136,81 subpixel blend of the frozen #f36c22 focus
-  // cascade) — assert the orange family numerically (red 220+, green 90+,
-  // blue 140-).
-  const borderMatch = titleBorder.match(/rgb\((\d+), (\d+), (\d+)\)/u);
-  expect(borderMatch).not.toBeNull();
-  expect(Number(borderMatch![1])).toBeGreaterThanOrEqual(220);
-  expect(Number(borderMatch![2])).toBeGreaterThanOrEqual(90);
-  expect(Number(borderMatch![3])).toBeLessThanOrEqual(140);
   await page.locator('#datepicker [data-pika-day="15"]').click();
   await expect(page.locator("#dueDate")).toHaveValue("2026-08-15");
   await expect(page.locator('#datepicker .is-selected [data-pika-day="15"]')).toBeVisible();

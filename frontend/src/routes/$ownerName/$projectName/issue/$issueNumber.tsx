@@ -16,18 +16,12 @@ import {
   type MouseEvent,
   type ReactNode,
 } from "react";
-import rehypeRaw from "rehype-raw";
-import rehypeSanitize, {
-  defaultSchema,
-  type Options as RehypeSanitizeOptions,
-} from "rehype-sanitize";
-import ReactMarkdown, {
-  defaultUrlTransform,
-  type Components,
-  type ExtraProps,
-} from "react-markdown";
-import remarkGfm from "remark-gfm";
-import { MarkdownCodeBlock } from "../../../../components/markdown-code-block";
+import {
+  basePathUrlTransform,
+  LegacyMarkdownHtml,
+  LEGACY_SANITIZE_BASE_SCHEMA,
+  type LegacySanitizeSchema,
+} from "../../../../components/legacy-markdown";
 import {
   PostingHistoryModal,
   closeOnEscape,
@@ -84,60 +78,30 @@ const LEGACY_LINK_PROPS = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
-const LEGACY_GLOBAL_MARKDOWN_ATTRIBUTES: Record<string, true> = {
-  className: true,
-  height: true,
-  id: true,
-  width: true,
-};
-const ISSUE_MARKDOWN_BASE_ATTRIBUTES = Object.fromEntries(
-  Object.entries(defaultSchema.attributes ?? {}).map(([tagName, attributes]) => [
-    tagName,
-    attributes.filter(
-      (attribute) =>
-        !Array.isArray(attribute) || !(String(attribute[0]) in LEGACY_GLOBAL_MARKDOWN_ATTRIBUTES),
-    ),
-  ]),
-) as NonNullable<RehypeSanitizeOptions["attributes"]>;
-const ISSUE_MARKDOWN_SANITIZE_SCHEMA: RehypeSanitizeOptions = {
-  ...defaultSchema,
+// Legacy owasp policy (yona-original/app/utils/Markdown.java) on top of the
+// hast-util-sanitize defaultSchema base; attribute names are DOM-form because
+// the TanStack HTML path sanitizes DOMParser output.
+const ISSUE_MARKDOWN_SANITIZE_SCHEMA: LegacySanitizeSchema = {
+  ...LEGACY_SANITIZE_BASE_SCHEMA,
   clobber: [],
   attributes: {
-    ...ISSUE_MARKDOWN_BASE_ATTRIBUTES,
-    "*": [...(ISSUE_MARKDOWN_BASE_ATTRIBUTES["*"] ?? []), "className", "id", "width", "height"],
-    a: [...(ISSUE_MARKDOWN_BASE_ATTRIBUTES.a ?? []), "href", "name", "target"],
-    iframe: [
-      ...(ISSUE_MARKDOWN_BASE_ATTRIBUTES.iframe ?? []),
-      "width",
-      "height",
-      "src",
-      "frameBorder",
-      "allow",
-      "allowFullScreen",
-    ],
-    input: [...(ISSUE_MARKDOWN_BASE_ATTRIBUTES.input ?? []), "type", "disabled", "checked"],
-    ol: [...(ISSUE_MARKDOWN_BASE_ATTRIBUTES.ol ?? []), "start"],
-    source: [...(ISSUE_MARKDOWN_BASE_ATTRIBUTES.source ?? []), "src", "type"],
-    video: [
-      ...(ISSUE_MARKDOWN_BASE_ATTRIBUTES.video ?? []),
-      "dataSetup",
-      "controls",
-      "preload",
-      "type",
-      "autoPlay",
-      "height",
-      "width",
-      "src",
-    ],
+    ...LEGACY_SANITIZE_BASE_SCHEMA.attributes,
+    "*": [...(LEGACY_SANITIZE_BASE_SCHEMA.attributes["*"] ?? []), "class", "id", "width", "height"],
+    a: [...(LEGACY_SANITIZE_BASE_SCHEMA.attributes.a ?? []), "href", "name", "target"],
+    iframe: ["width", "height", "src", "frameborder", "allow", "allowfullscreen"],
+    input: [...(LEGACY_SANITIZE_BASE_SCHEMA.attributes.input ?? []), "type", "disabled", "checked"],
+    ol: [...(LEGACY_SANITIZE_BASE_SCHEMA.attributes.ol ?? []), "start"],
+    source: ["src", "type"],
+    video: ["data-setup", "controls", "preload", "type", "autoplay", "height", "width", "src"],
   },
   protocols: {
-    ...defaultSchema.protocols,
+    ...LEGACY_SANITIZE_BASE_SCHEMA.protocols,
     href: ["http", "https", "mailto", "file", "zpl"],
     src: ["http", "https", "file", "zpl"],
   },
   tagNames: [
     ...new Set([
-      ...(defaultSchema.tagNames ?? []),
+      ...LEGACY_SANITIZE_BASE_SCHEMA.tagNames,
       "video",
       "source",
       "iframe",
@@ -150,20 +114,12 @@ const ISSUE_MARKDOWN_SANITIZE_SCHEMA: RehypeSanitizeOptions = {
     ]),
   ],
 };
-type IssueMarkdownLinkProps = ComponentPropsWithoutRef<"a"> &
-  ExtraProps & {
-    basePath: string;
-  };
+type IssueMarkdownLinkProps = ComponentPropsWithoutRef<"a"> & {
+  basePath: string;
+  node?: unknown;
+};
 
-function IssueMarkdownLink({
-  basePath,
-  children,
-  href,
-  node: _node,
-  rel: _rel,
-  target,
-  ...props
-}: IssueMarkdownLinkProps) {
+function IssueMarkdownLink({ basePath, children, href, target, ...props }: IssueMarkdownLinkProps) {
   if (!href) {
     return <>{children}</>;
   }
@@ -227,46 +183,20 @@ function IssueMarkdownLink({
 
 function IssueMarkdownPre({
   children,
-  className,
-  node: _node,
+  className: _className,
+  ["data-lang"]: _dataLang,
   ...props
-}: ComponentPropsWithoutRef<"pre"> & ExtraProps) {
-  const code = Array.isArray(children) ? children[0] : children;
-  if (isValidElement<{ children?: ReactNode; className?: string }>(code)) {
-    const language = code.props.className?.match(/(?:^|\s)language-([^\s]+)/u)?.[1];
-    if (language) {
-      return (
-        <MarkdownCodeBlock className={code.props.className} language={language}>
-          {code.props.children}
-        </MarkdownCodeBlock>
-      );
-    }
-  }
+}: ComponentPropsWithoutRef<"pre"> & { "data-lang"?: string }) {
   return (
-    <pre {...props} className={className ?? ""} data-owner="project-issue-detail-markdown-pre">
+    <pre {...props} data-owner="project-issue-detail-markdown-pre">
       {children}
     </pre>
   );
 }
 
-const ISSUE_MARKDOWN_COMPONENTS: Components = {
-  blockquote: ({ node: _node, ...props }) => <blockquote {...props} />,
-  code: ({ className, node: _node, ...props }) => {
-    return <code {...props} className={className ?? ""} />;
-  },
-  h1: ({ node: _node, ...props }) => <h1 {...props} />,
-  h2: ({ node: _node, ...props }) => <h2 {...props} />,
-  h3: ({ node: _node, ...props }) => <h3 {...props} />,
-  img: ({ node: _node, ...props }) => <img {...props} />,
-  li: ({ node: _node, ...props }) => <li {...props} />,
-  ol: ({ node: _node, ...props }) => <ol {...props} />,
-  p: ({ node: _node, ...props }) => <p {...props} />,
+const ISSUE_MARKDOWN_COMPONENTS = {
   pre: IssueMarkdownPre,
-  table: ({ node: _node, ...props }) => <table {...props} />,
-  td: ({ node: _node, ...props }) => <td {...props} />,
-  th: ({ node: _node, ...props }) => <th {...props} />,
-  ul: ({ node: _node, ...props }) => <ul {...props} />,
-  video: ({ className, node: _node, ...props }) => {
+  video: ({ className, ...props }: ComponentPropsWithoutRef<"video">) => {
     return (
       <video
         {...props}
@@ -278,28 +208,24 @@ const ISSUE_MARKDOWN_COMPONENTS: Components = {
 };
 
 function IssueMarkdown({ basePath, children }: { basePath: string; children: string }) {
-  const components = useMemo<Components>(
+  const components = useMemo(
     () => ({
       ...ISSUE_MARKDOWN_COMPONENTS,
-      a: (props) => <IssueMarkdownLink {...props} basePath={basePath} />,
+      a: (props: ComponentPropsWithoutRef<"a">) => (
+        <IssueMarkdownLink {...props} basePath={basePath} />
+      ),
     }),
     [basePath],
   );
   return (
-    <ReactMarkdown
+    <LegacyMarkdownHtml
       components={components}
-      rehypePlugins={[rehypeRaw, [rehypeSanitize, ISSUE_MARKDOWN_SANITIZE_SCHEMA]]}
-      remarkPlugins={[remarkGfm]}
-      urlTransform={(url) => issueMarkdownUrlTransform(basePath, url)}
+      sanitize={ISSUE_MARKDOWN_SANITIZE_SCHEMA}
+      urlTransform={(url) => basePathUrlTransform(basePath, url)}
     >
       {children}
-    </ReactMarkdown>
+    </LegacyMarkdownHtml>
   );
-}
-
-function issueMarkdownUrlTransform(basePath: string, url: string) {
-  const safeUrl = defaultUrlTransform(url);
-  return url.startsWith("/") && !url.startsWith("//") ? prefixBasePath(basePath, safeUrl) : safeUrl;
 }
 
 function markdownInternalPath(href: string, basePath: string) {

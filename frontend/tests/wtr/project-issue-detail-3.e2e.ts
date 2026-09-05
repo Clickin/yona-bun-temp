@@ -410,12 +410,12 @@ test("project issue detail renders legacy read-only metadata fields", async ({ p
       "__BASE_PATH__",
       basePath,
     );
-  expect(await canonicalize(page, ".issue-info form dl:has(dt:text('Milestone')) > dd")).toEqual(
-    await canonicalizeHtml(page, expectedMilestone),
-  );
   await expect(
     page.locator(".issue-info form dl:has(dt:text('Milestone')) > dd a"),
   ).toHaveAttribute("href", `${basePath}/admin/sample/milestone/5`);
+  expect(await canonicalize(page, ".issue-info form dl:has(dt:text('Milestone')) > dd")).toEqual(
+    await canonicalizeHtml(page, expectedMilestone),
+  );
 
   expect(await canonicalize(page, ".issue-info form dl:has(dt:text('Due date')) > dd")).toEqual(
     await canonicalizeHtml(page, `<dd>Jul 5, 2026</dd>`),

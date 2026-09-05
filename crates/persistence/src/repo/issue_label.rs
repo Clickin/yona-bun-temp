@@ -1,6 +1,76 @@
 use super::*;
 
 impl AppRepositoryImpl<'_> {
+    // Legacy global label-typeahead reads (LabelApp.labels/categories,
+    // yona-original/app/controllers/LabelApp.java:51-120): scan every label,
+    // resolve its category name, and let the caller apply the legacy
+    // icontains filtering / limit / Content-Range semantics. ponytail: in-memory
+    // scan instead of a SQL join — fixture-scale data only, move to SQL if a
+    // real deployment ever feels it.
+    pub async fn list_all_label_names(
+        &self,
+        query: &str,
+        category: &str,
+        limit: u64,
+    ) -> Result<(Vec<String>, u64), DbErr> {
+        let categories = issue_label_category::Entity::find()
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|row| (row.id, row.name.clone().unwrap_or_default()))
+            .collect::<std::collections::HashMap<i64, String>>();
+        let labels = issue_label::Entity::find().all(&self.db).await?;
+        let mut names = Vec::new();
+        for label in labels {
+            let name = label.name.clone().unwrap_or_default();
+            let category_name = label
+                .category_id
+                .and_then(|id| categories.get(&id).cloned())
+                .unwrap_or_default();
+            if icontains_legacy(&name, query) && icontains_legacy(&category_name, category) {
+                names.push(name);
+            }
+        }
+        let total = names.len() as u64;
+        if total > limit {
+            names.truncate(limit as usize);
+        }
+        Ok((names, total))
+    }
+
+    pub async fn list_all_label_category_names(
+        &self,
+        query: &str,
+        limit: u64,
+    ) -> Result<(Vec<String>, u64), DbErr> {
+        let categories = issue_label_category::Entity::find()
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|row| (row.id, row.name.clone().unwrap_or_default()))
+            .collect::<std::collections::HashMap<i64, String>>();
+        let labels = issue_label::Entity::find().all(&self.db).await?;
+        let mut seen = std::collections::HashSet::new();
+        let mut names = Vec::new();
+        for label in labels {
+            let Some(category_name) = label
+                .category_id
+                .and_then(|id| categories.get(&id).cloned())
+                .filter(|name| !name.is_empty())
+            else {
+                continue;
+            };
+            if seen.insert(category_name.clone()) && icontains_legacy(&category_name, query) {
+                names.push(category_name);
+            }
+        }
+        let total = names.len() as u64;
+        if total > limit {
+            names.truncate(limit as usize);
+        }
+        Ok((names, total))
+    }
+
     pub async fn list_project_labels(
         &self,
         owner_name: &str,
@@ -386,4 +456,10 @@ impl AppRepositoryImpl<'_> {
             .await;
         Ok(true)
     }
+}
+
+// Play's Expr.icontains semantics (LabelApp.java:61,70): case-insensitive
+// contains; an empty needle matches everything.
+fn icontains_legacy(haystack: &str, needle: &str) -> bool {
+    haystack.to_lowercase().contains(&needle.to_lowercase())
 }

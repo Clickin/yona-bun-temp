@@ -121,9 +121,12 @@ test("project fork form matches legacy git/fork.scala.html DOM", async ({ page }
       page,
       EXPECTED_PROJECT_FORK_FORM.replaceAll("__BASE_PATH__", basePath)
         .replace("/assets/images/fork-pull/fork.jpg", "/legacy-assets/images/fork-pull/fork.jpg")
+        .replace(/ selected=""/gu, "")
         .replaceAll("__ROOT_PATH__", rootPath),
     ),
   );
+  await expect(page.locator('select[name="owner"]')).toHaveValue("admin");
+  await expect(page.locator('select[name="owner"] option:checked')).toHaveText("admin");
   const metrics = await projectForkHeaderSearchScopeMetrics(page);
   expect(metrics.formAction).toBe(`${basePath}/admin/sample/search`);
   expect(metrics.form.top).toBeGreaterThanOrEqual(metrics.header.top);
@@ -238,9 +241,14 @@ test("project fork owner route renders legacy existing-fork state", async ({ pag
   expect(await canonicalizePageWrap(page)).toEqual(
     await canonicalizeHtml(
       page,
-      EXPECTED_PROJECT_FORK_EXISTING_BODY.replaceAll("__BASE_PATH__", basePath),
+      EXPECTED_PROJECT_FORK_EXISTING_BODY.replaceAll("__BASE_PATH__", basePath).replace(
+        / selected=""/gu,
+        "",
+      ),
     ),
   );
+  await expect(page.locator('select[name="owner"]')).toHaveValue("devs");
+  await expect(page.locator('select[name="owner"] option:checked')).toHaveText("devs");
 });
 
 test("project fork non-git access renders the legacy bad-request site shell", async ({ page }) => {

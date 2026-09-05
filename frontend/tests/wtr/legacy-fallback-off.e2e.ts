@@ -814,7 +814,11 @@ test("source-less sr-only bridge has no app.css arm", () => {
   const appCss = curatedAppCss();
   expect(appCss).not.toContain(".sr-only {");
   const runtimeSources = globSync("src/**/*.{ts,tsx}", { nodir: true });
-  expect(runtimeSources.some((file) => readFileSync(file, "utf8").includes("sr-only"))).toBe(false);
+  expect(
+    runtimeSources.some((file) =>
+      /className\s*=\s*["'`][^"'`]*\bsr-only\b/u.test(readFileSync(file, "utf8")),
+    ),
+  ).toBe(false);
 });
 
 test("source-less ml20 utility bridge has no app.css arm", () => {

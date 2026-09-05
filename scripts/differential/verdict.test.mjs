@@ -15,6 +15,10 @@ const coverage = {
   scenarios: [
     { scenarioId: 'S1', behaviorIds: ['B-0001', 'B-0002'] },
   ],
+  behaviorVerification: {
+    'B-0001': { verified: true, failedSteps: 0, skippedSteps: 0 },
+    'B-0002': { verified: true, failedSteps: 0, skippedSteps: 0 },
+  },
 };
 const report = {
   scenarios: [
@@ -33,7 +37,13 @@ test('computeCoverage: ratio and uncovered list', () => {
 });
 
 test('computeCoverage: full coverage and empty inventory edge case', () => {
-  assert.deepEqual(computeCoverage(inventory, { scenarios: [{ behaviorIds: ['B-0001', 'B-0002', 'B-0003'] }] }).uncovered, []);
+  assert.deepEqual(computeCoverage(inventory, {
+    behaviorVerification: {
+      'B-0001': { verified: true },
+      'B-0002': { verified: true },
+      'B-0003': { verified: true },
+    },
+  }).uncovered, []);
   assert.equal(computeCoverage({ behaviors: [] }, coverage).ratio, 1);
 });
 
@@ -86,7 +96,14 @@ test('classification enum is the unified model', () => {
 });
 
 test('buildVerdict: ok requires coverage=100, no blockers, fast lane', () => {
-  const full = { scenarios: [{ behaviorIds: ['B-0001', 'B-0002', 'B-0003'] }] };
+  const full = {
+    scenarios: [{ behaviorIds: ['B-0001', 'B-0002', 'B-0003'] }],
+    behaviorVerification: {
+      'B-0001': { verified: true },
+      'B-0002': { verified: true },
+      'B-0003': { verified: true },
+    },
+  };
   const clean = { scenarios: [{ violations: [] }] };
 
   const good = buildVerdict({
@@ -106,6 +123,28 @@ test('buildVerdict: ok requires coverage=100, no blockers, fast lane', () => {
   }).ok, false); // coverage < 1
 
   assert.equal(typeof good.generatedAt, 'string');
+});
+
+test('buildVerdict blocks required FAILED and SKIPPED steps', () => {
+  const cleanReport = { scenarios: [{ violations: [] }] };
+  for (const field of ['failedSteps', 'skippedSteps']) {
+    const blockedCoverage = {
+      behaviorVerification: {
+        'B-0001': { verified: true, [field]: 1 },
+        'B-0002': { verified: true },
+        'B-0003': { verified: true },
+      },
+    };
+    const verdict = buildVerdict({
+      inventory,
+      coverage: blockedCoverage,
+      report: cleanReport,
+      fastLanePass: true,
+      skipFastLane: false,
+    });
+    assert.equal(verdict.ok, false, `${field} must block`);
+    assert.equal(verdict.checks.steps[field === 'failedSteps' ? 'failedRequiredSteps' : 'skippedRequiredSteps'], 1);
+  }
 });
 
 function writeFixtures() {
@@ -150,7 +189,13 @@ test('CLI: end-to-end writes verdict.json with exit code 1 (blockers present)', 
     scenarios: [{ violations: [{ classification: 'IMPLEMENTATION_DIFFERENCE', reason: 'r', rationale: 'docs/x.md' }] }],
   }));
   const covFull = join(dir, 'coverage-full.json');
-  writeFileSync(covFull, JSON.stringify({ scenarios: [{ behaviorIds: ['B-0001', 'B-0002', 'B-0003'] }] }));
+  writeFileSync(covFull, JSON.stringify({
+    behaviorVerification: {
+      'B-0001': { verified: true },
+      'B-0002': { verified: true },
+      'B-0003': { verified: true },
+    },
+  }));
   const code3 = await main([
     'node', 'verdict.mjs', '--fast-lane-pass', 'true',
     '--inventory', join(dir, 'inventory.json'),

@@ -229,11 +229,50 @@ test("session adapters send json/form bodies without reference errors", async ()
 
 // --- typed classification model ----------------------------------------------
 
-test("classify maps unmatched findings to UNVERIFIED and dom skeletons to IMPLEMENTATION_DIFFERENCE", () => {
+test("classify keeps unknown DOM and visible loss blocking", () => {
   assert.equal(classifyViolation("api", "/x", { expected: 1, actual: 2 }).classification, "UNVERIFIED");
-  assert.equal(classifyViolation("dom", "/x", { firstDiffs: [] }).classification, "IMPLEMENTATION_DIFFERENCE");
+  assert.equal(classifyViolation("dom", "/x", { firstDiffs: [] }).classification, "UNVERIFIED");
+  for (const firstDiff of [
+    { side: "yoram", tag: "button", text: "Delete" },
+    { side: "yoram", tag: "p", text: "Required explanation" },
+    { side: "yoram", tag: "a", text: "Open issue" },
+    { side: "yoram", tag: "input", text: "Title" },
+    { side: "yoram", tag: "span", text: "3 comments", class: "badge" },
+  ]) {
+    assert.equal(
+      classifyViolation("dom", "/x", { actual: { firstDiffs: [firstDiff] } }).classification,
+      "UNVERIFIED",
+      `visible loss must remain blocking: ${firstDiff.tag}`,
+    );
+  }
   assert.equal(classifyViolation("harness", "step", {}).classification, "HARNESS_ERROR");
   assert.equal(classifyViolation("infra", "render", {}).classification, "INFRA_ERROR");
+});
+
+test("DOM allow rules require reviewed fingerprints and preserve first-match strictness", () => {
+  assert.equal(
+    classifyViolation("dom", "/admin/sample", {
+      actual: { firstDiffs: [{ side: "order", tag: "div", text: "react-root" }] },
+    }).classification,
+    "IMPLEMENTATION_DIFFERENCE",
+  );
+  assert.equal(
+    classifyViolation("dom", "/admin/sample", {
+      actual: {
+        firstDiffs: [
+          { side: "legacy-only", expected: "button:Delete" },
+          { side: "yoram-only", actual: "div:react-root" },
+        ],
+      },
+    }).classification,
+    "UNVERIFIED",
+  );
+  assert.equal(
+    classifyViolation("api", "/admin/sample/issue/label/1", {
+      actual: { legacyStatus: 400, yoramStatus: 400 },
+    }).classification,
+    "HARNESS_ERROR",
+  );
 });
 
 test("every IMPLEMENTATION_DIFFERENCE rule carries a rationale reference", () => {

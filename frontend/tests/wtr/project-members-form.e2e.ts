@@ -756,6 +756,7 @@ test("project members pins the localhost protected org-owned weblabs/portal bran
   await page.goto(`${basePath}/weblabs/portal/members`);
 
   await expect(page).toHaveTitle("Member list - weblabs/portal");
+  await expect(page.locator(".members.project .member")).toHaveCount(2);
   await expect(page.locator(".project-breadcrumb .project-protected")).toHaveText("G");
   await expect(page.locator(".project-page-wrap > .nav.nav-tabs .num-badge")).toHaveCount(0);
   await expect(page.locator(".project-setting .project-menu-count")).toHaveCount(0);
@@ -2248,6 +2249,7 @@ function projectSettings({
 }
 
 async function canonicalizeScreenRoots(page: Page) {
+  await expect(page.locator("#usermenu-tab-content-list")).not.toHaveText("Loading...");
   return page.evaluate(() => {
     const legacyClassesByOwner: Record<string, string> = {
       "project-members-add-member-bubble": "inner-bubble",

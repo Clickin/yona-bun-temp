@@ -1,8 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Fragment, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { LegacyMarkdown } from "../../../../components/legacy-markdown";
 import legacySpriteUrl from "../../../../assets/legacy/sprite.png";
 import {
   acceptPullRequestRest,
@@ -260,7 +259,7 @@ function PullRequestOverviewBody({
               <PullRequestBranchInfo pullRequest={pullRequest} />
             </div>
             <div className="content markdown-wrap" data-owner="pull-request-detail-content">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{pullRequest.bodyMarkdown}</ReactMarkdown>
+              <LegacyMarkdown>{pullRequest.bodyMarkdown}</LegacyMarkdown>
             </div>
             <div
               className="attachments"

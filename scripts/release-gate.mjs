@@ -261,6 +261,9 @@ try {
   if (!containerId) fail("docker run did not return a container id");
 
   await waitForSql(containerId, "SELECT COUNT(*) FROM yona.n4user;");
+  // n4user is loaded before the remaining dump tables. Wait for the first
+  // runtime domain table too, otherwise snapshots can race the init script.
+  await waitForSql(containerId, "SELECT COUNT(*) FROM yona.project;");
   const databaseUrl = `mysql://root@127.0.0.1:${mariadbPort}/yona`;
 
   console.error("[gate] BEFORE snapshot...");

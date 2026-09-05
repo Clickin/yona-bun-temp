@@ -2872,19 +2872,15 @@ pub(crate) fn routes(
             get({
                 let assets = milestone_list_assets.clone();
                 let browser_runtime = milestone_list_browser_runtime.clone();
-                move |headers: HeaderMap| {
+                move |_headers: HeaderMap| {
                     let assets = assets.clone();
                     let browser_runtime = browser_runtime.clone();
                     async move {
-                        if headers
-                            .get("accept")
-                            .and_then(|value| value.to_str().ok())
-                            .is_some_and(|accept| accept.contains("text/html"))
-                        {
-                            serve_frontend_page(assets, Method::GET, browser_runtime).await
-                        } else {
-                            StatusCode::METHOD_NOT_ALLOWED.into_response()
-                        }
+                        // Legacy renders the milestone list page for every GET
+                        // regardless of Accept (MilestoneApp.java:67-77 has no
+                        // content negotiation), so a non-HTML Accept must serve
+                        // the page too, not 405.
+                        serve_frontend_page(assets, Method::GET, browser_runtime).await
                     }
                 }
             })

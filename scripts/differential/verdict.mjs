@@ -15,8 +15,12 @@ const DEFAULTS = {
 export function computeCoverage(inventory, coverage) {
   const all = new Set(inventory.behaviors.map((b) => b.id));
   const covered = new Set();
-  for (const s of coverage.scenarios ?? []) {
-    for (const id of s.behaviorIds ?? []) covered.add(id);
+  // Execution-aware: a behavior is covered only when its runtime verification
+  // record says verified (every required step executed or dispositioned).
+  // Coverage files without behaviorVerification (pre-corrective-plan
+  // artifacts) cover nothing: registered ids alone are not verification.
+  for (const [behaviorId, record] of Object.entries(coverage.behaviorVerification ?? {})) {
+    if (record?.verified === true) covered.add(behaviorId);
   }
   const uncovered = [...all].filter((id) => !covered.has(id)).sort();
   return {
@@ -24,6 +28,20 @@ export function computeCoverage(inventory, coverage) {
     uncovered,
     totalBehaviors: all.size,
   };
+}
+
+// Strict step gate: FAILED/SKIPPED required steps block the verdict unless the
+// producer already accounted them under an accepted non-product disposition
+// (behaviorVerification counts those separately, never as failed/skipped).
+export function aggregateRequiredSteps(coverage) {
+  return Object.values(coverage.behaviorVerification ?? {}).reduce(
+    (totals, record) => ({
+      failedRequiredSteps: totals.failedRequiredSteps + (record?.failedSteps ?? 0),
+      skippedRequiredSteps: totals.skippedRequiredSteps + (record?.skippedSteps ?? 0),
+      acceptedStepDispositions: totals.acceptedStepDispositions + (record?.dispositionedSteps ?? 0),
+    }),
+    { failedRequiredSteps: 0, skippedRequiredSteps: 0, acceptedStepDispositions: 0 },
+  );
 }
 
 
@@ -48,6 +66,7 @@ export function buildVerdict({
 }) {
   const cov = computeCoverage(inventory, coverage);
   const sweep = aggregateViolations(report);
+  const steps = aggregateRequiredSteps(coverage);
 
   const blocked = Object.entries(sweep.byClassification)
     .filter(([c]) => BLOCKING.has(c))
@@ -57,6 +76,8 @@ export function buildVerdict({
   const ok =
     cov.ratio === 1 &&
     blocked === 0 &&
+    steps.failedRequiredSteps === 0 &&
+    steps.skippedRequiredSteps === 0 &&
     (fastLane.skipped || fastLane.pass === true);
 
   return {
@@ -64,6 +85,7 @@ export function buildVerdict({
     checks: {
       coverage: { ratio: cov.ratio, totalBehaviors: cov.totalBehaviors, uncovered: cov.uncovered },
       sweep: { total: sweep.total, byClassification: sweep.byClassification, blocked },
+      steps,
       fastLane,
     },
     generatedAt: new Date().toISOString(),
@@ -128,6 +150,9 @@ export async function main(argv = process.argv) {
     console.log(`uncovered: ${c.coverage.uncovered.join(', ')}`);
   }
   console.log(`sweep    : ${c.sweep.total} violation(s) -> ${c.sweep.blocked} blocking`);
+  console.log(
+    `steps    : failedRequired=${c.steps.failedRequiredSteps} skippedRequired=${c.steps.skippedRequiredSteps} dispositioned=${c.steps.acceptedStepDispositions}`,
+  );
   console.log(
     `classes  : ` + CLASSIFICATIONS.map((k) => `${k}=${c.sweep.byClassification[k] ?? 0}`).join(' '),
   );

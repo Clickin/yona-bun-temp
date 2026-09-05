@@ -162,11 +162,8 @@ test("anonymous public landing matches legacy index partial intro screen DOM", a
     ogType: "website",
     ogUrl: "/",
     stylesheetHrefs: [
-      `${basePath}/assets/-home-route-screen-8oXcZy-S.css`,
-      // F5 (2026-08-20): index CSS asset hash re-pinned after the single-global-baseline merge (legacy fallback moved into app.css)
-      // button border reset + markdown code-block copy button rules
-      // (sha d13b2c98a74d…).
-      `${basePath}/assets/index-yA23O6kL.css`,
+      `${basePath}/assets/-home-route-screen-[hash].css`,
+      `${basePath}/assets/index-[hash].css`,
     ],
     twitterCard: "summary",
     twitterDescription: "Yoram",
@@ -241,7 +238,11 @@ async function readLegacyLayoutShell(page: Page) {
     const legacyAssetPath = (href: string) => {
       const pathname = new URL(href, location.href).pathname;
       const legacyAssetStart = pathname.indexOf("/legacy-assets/");
-      return legacyAssetStart === -1 ? pathname : pathname.slice(legacyAssetStart);
+      const assetPath = legacyAssetStart === -1 ? pathname : pathname.slice(legacyAssetStart);
+      return assetPath.replace(
+        /\/assets\/(-home-route-screen|index)-[^/]+\.css$/u,
+        "/assets/$1-[hash].css",
+      );
     };
     const href = (selector: string) =>
       legacyAssetPath(document.querySelector<HTMLLinkElement>(selector)?.href ?? "");

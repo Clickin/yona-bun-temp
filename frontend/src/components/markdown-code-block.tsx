@@ -1,20 +1,20 @@
-import { Children, isValidElement } from "react";
+import { isValidElement } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { useRef, useState } from "react";
-import SyntaxHighlighter from "react-syntax-highlighter/dist/esm/prism";
-import { ghcolors } from "react-syntax-highlighter/dist/esm/styles/prism";
-
-const CODE_BLOCK_THEME = {
-  ...ghcolors,
-  'pre[class*="language-"]': {},
-  'code[class*="language-"]': {},
-};
+import { highlightCodeToInnerHtml, injectMarkdownHighlightTheme } from "./markdown-highlight";
 
 /**
- * Shared markdown code-block renderer: prism highlighting + a floating copy
+ * Shared markdown code-block renderer: TanStack Highlight + a floating copy
  * button. This is an intentional modern improvement over legacy Yona's plain
- * <pre> (per design direction, code blocks are not 100% legacy-parity).
+ * <pre> (per design direction, code blocks are not 100% legacy-parity). The
+ * outer <pre>/<code> DOM (including the legacy `language-*` class) is
+ * preserved from the previous prism renderer; only token spans changed from
+ * prism inline styles to `th-*` theme classes.
  */
+if (typeof document !== "undefined") {
+  injectMarkdownHighlightTheme();
+}
+
 export function MarkdownCodeBlock({
   children,
   className,
@@ -56,6 +56,7 @@ export function MarkdownCodeBlock({
   };
 
   if (language) {
+    injectMarkdownHighlightTheme();
     return (
       <div ref={divRef} style={codeBlockStyle} data-owner="markdown-code-block">
         <button
@@ -71,14 +72,14 @@ export function MarkdownCodeBlock({
         >
           {copied ? "✓" : "Copy"}
         </button>
-        <SyntaxHighlighter
-          language={language}
-          style={CODE_BLOCK_THEME}
-          PreTag="pre"
-          codeTagProps={{ className }}
-        >
-          {codeText.replace(/\n$/u, "")}
-        </SyntaxHighlighter>
+        <pre>
+          <code
+            className={className}
+            dangerouslySetInnerHTML={{
+              __html: highlightCodeToInnerHtml(codeText.replace(/\n$/u, ""), language),
+            }}
+          />
+        </pre>
       </div>
     );
   }

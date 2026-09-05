@@ -282,7 +282,9 @@ function readPath(step) {
     case "view-change-vcs-form": return `${base}/changeVCS`;
     case "fetch-mention-list": return `${base}/mentionList`;
     case "fetch-mention-list-commit-diff": return `${base}/mentionListAtCommitDiff`;
-    case "fetch-mention-list-pull-request": return `${base}/mentionListAtPullRequest`;
+    // Legacy's route binds pullRequestId:Long with no default; omitting it is
+    // a legacy 400, so the probe pins the seeded main->feature/ui PR.
+    case "fetch-mention-list-pull-request": return `${base}/mentionListAtPullRequest?pullRequestId=1`;
     case "fetch-project-exports": return `/-_-api/v1/owners/${p.owner}/projects/${p.project}/exports`;
     case "list-review-threads": return `${base}/reviews`;
     case "view-project-leave-info": return `/info/leave/${p.owner}/${p.project}`;
@@ -297,7 +299,9 @@ function readPath(step) {
     case "fetch-attachment-list": return "/files";
     case "fetch-unknown-path": return `${base}/parity-missing-${step.params.missing ?? "page"}`;
     case "fetch-git-info-refs": return `${base}/info/refs`;
-    case "search-in-project": return `${base}/search?query=${encodeURIComponent(p.query ?? "")}`;
+    // Legacy SearchApp binds keyword + searchType (both required, 400
+    // otherwise); `query` alone is not the legacy contract.
+    case "search-in-project": return `${base}/search?keyword=${encodeURIComponent(p.query ?? "")}&searchType=${encodeURIComponent(p.searchType ?? "issue")}`;
     default: throw new Error(`unmapped action path: ${step.action}`);
   }
 }
@@ -2181,7 +2185,18 @@ scenarios.push({
   title: "missing branch and invalid import probes",
   actions: [
     { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-    { actor: "admin", action: "probe-delete-branch-missing", params: { user: "admin", project: "sample", branch: "__parity_missing_branch__" } },
+    {
+      actor: "admin",
+      action: "probe-delete-branch-missing",
+      params: { user: "admin", project: "sample", branch: "__parity_missing_branch__" },
+      // Reviewed error-semantics difference (B-0002): legacy redirects the
+      // delete of a nonexistent branch while yoram answers an explicit 404;
+      // no branch state is mutated on either side.
+      disposition: {
+        classification: "IMPLEMENTATION_DIFFERENCE",
+        evidence: "yona-original/app/controllers/BranchApp.java:71-79; yona-original/app/playRepository/GitRepository.java:1230-1236",
+      },
+    },
     { actor: "admin", action: "probe-import-form", params: {} },
     { actor: "admin", action: "probe-import-project-invalid", params: {} },
   ],

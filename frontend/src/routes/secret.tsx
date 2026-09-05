@@ -98,7 +98,11 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
     },
   });
 
-  if (capabilities?.secretSetupRequired === false) {
+  if (capabilities === undefined) {
+    return null;
+  }
+
+  if (capabilities.secretSetupRequired === false) {
     return <NotFoundPage runtimeConfig={runtimeConfig} />;
   }
 

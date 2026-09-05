@@ -8,6 +8,7 @@ import { currentSessionQueryOptions } from "../api/session";
 import { RestApiError } from "../api/rest-client";
 import { readPublicUserProfileQueryOptions, type PublicUserProfileResponse } from "../api/users";
 import legacySpriteUrl from "../assets/legacy/sprite.png";
+import googleProviderLogoUrl from "../assets/legacy/provider-logo/btn_google_light_normal_ios.svg?no-inline";
 import type {
   WorkspaceIssueItem,
   WorkspaceMemberProjectItem,
@@ -16,7 +17,7 @@ import type {
   YoramLabel,
   YoramRecord,
 } from "../api/types";
-import { OAuthProviderLogo } from "../components/oauth-provider-link";
+import { normalizeOAuthProviderKind, OAuthProviderLogo } from "../components/oauth-provider-link";
 import { IssueLabel } from "../components/issue-label";
 import { issueLabelStyle } from "../legacy-issue-label-style";
 import { TwoColumnModeCheckbox } from "../components/two-column-mode-checkbox";
@@ -37,6 +38,33 @@ const LEGACY_LINK_PROPS = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
+
+function ConnectedSocialProviderLogo({
+  basePath,
+  provider,
+}: {
+  basePath: string;
+  provider: string;
+}) {
+  const normalized = normalizeOAuthProviderKind(provider);
+  if (normalized === "github") {
+    return (
+      <OAuthProviderLogo basePath={basePath} dataOwnerPrefix="user-profile" kind={normalized} />
+    );
+  }
+  if (normalized === "google") {
+    return (
+      <span data-owner="user-profile-provider-google">
+        <img
+          alt="login with Google"
+          data-owner="user-profile-provider-google-image"
+          src={googleProviderLogoUrl}
+        />
+      </span>
+    );
+  }
+  return null;
+}
 
 export const Route = createFileRoute("/$user")({
   component: PublicProfileRoute,
@@ -400,16 +428,13 @@ function PublicProfileBody({
                   <strong>{t("user.connected.social.login")}</strong>
                 </div>
                 <div className={"auth-provider-logo"} data-owner="user-profile-provider-logo">
-                  {profile.connectedSocialProviders.map((provider) =>
-                    typeof provider === "string" ? (
-                      <OAuthProviderLogo
-                        basePath={runtimeConfig.basePath}
-                        dataOwnerPrefix="user-profile"
-                        key={provider}
-                        kind={provider}
-                      />
-                    ) : null,
-                  )}
+                  {profile.connectedSocialProviders.map((provider) => (
+                    <ConnectedSocialProviderLogo
+                      basePath={runtimeConfig.basePath}
+                      key={provider}
+                      provider={provider}
+                    />
+                  ))}
                 </div>
               </div>
             </div>
@@ -962,21 +987,7 @@ function ProfileIssueChildRow({
             {...LEGACY_LINK_PROPS}
             className={"twoColumeModeTarget"}
             color={label.color}
-            to="/$ownerName/$projectName/issues"
-            params={{ ownerName, projectName }}
-            search={{
-              assigneeId: "",
-              authorId: "",
-              commenterId: "",
-              dueDate: "",
-              filter: "",
-              labelIds: [String(label.id)],
-              milestoneId: "",
-              orderBy: "updatedDate",
-              orderDir: "desc",
-              pageNum: 1,
-              state: "open",
-            }}
+            to={`${projectPath}/issues?state=open&labelIds=${label.id}` as "/"}
             data-category-id={String(label.categoryId ?? "")}
             labelId={String(label.id)}
             key={String(label.id)}

@@ -214,7 +214,7 @@ const PARITY_SLICES = [
     label: "Shared legacy parity UI components",
     status: "parity",
     implementationPatterns: [
-      /^frontend\/src\/components\/[\w-]+\.(?:tsx|stylex\.ts)$/i,
+      /^frontend\/src\/components\/[\w-]+\.(?:tsx?|stylex\.ts)$/i,
       // In-browser e2e harness (WTR migration): runner config, knip ignore,
       // and the browser-side Playwright-compat shim are parity tooling.
       /^frontend\/web-test-runner\.config\.mjs$/i,

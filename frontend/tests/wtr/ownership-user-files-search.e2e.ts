@@ -73,14 +73,25 @@ test("pins the empty-state search output and React navigation", async ({ page })
   ] as const) {
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/user/files`);
-    await page.evaluate(() => document.fonts.ready);
 
     const root = owner(page, "user-files-search");
-    await expect(owner(page, "user-files-page")).toBeVisible();
-    await expect(owner(page, "user-files-files")).toBeVisible();
+    const affix = owner(page, "site-admin-affix");
+    const gnb = owner(page, "global-gnb-outer");
     const input = owner(page, "user-files-search-input");
     const action = owner(page, "user-files-search-action");
     const icon = action.locator("i.yobicon-search");
+    await expect(affix).toBeVisible();
+    await expect(gnb).toBeVisible();
+    await expect(owner(page, "authenticated-site-user-menu")).toBeVisible();
+    await expect(owner(page, "user-files-page")).toBeVisible();
+    await expect(owner(page, "user-files-files")).toBeVisible();
+    expect(
+      await page.evaluate(async () => {
+        await document.fonts.ready;
+        await document.fonts.load('12px "yobicon"', "\ue225");
+        return document.fonts.check('12px "yobicon"', "\ue225");
+      }),
+    ).toBe(true);
     await expect(page.locator(".attachment-file-detail")).toHaveCount(0);
     await expect(input).toHaveAttribute("name", "filter");
     await expect(input).toHaveAttribute("placeholder", "검색");
@@ -110,8 +121,13 @@ test("pins the empty-state search output and React navigation", async ({ page })
         const rect = target.getBoundingClientRect();
         return { height: rect.height, width: rect.width, x: rect.x, y: rect.y };
       };
+      const affix = document.querySelector('[data-owner="site-admin-affix"]');
+      const gnb = document.querySelector('[data-owner="global-gnb-outer"]');
+      if (!affix || !gnb) throw new Error("hydrated site shell is missing");
       return {
         action: box(element.querySelector('[data-owner="user-files-search-action"]')!),
+        affix: box(affix),
+        gnb: box(gnb),
         input: box(element.querySelector('[data-owner="user-files-search-input"]')!),
         root: box(element),
         scrollWidth: document.documentElement.scrollWidth,
@@ -139,6 +155,18 @@ test("pins the empty-state search output and React navigation", async ({ page })
       : viewport.action;
     expect(geometry).toEqual({
       action: expectedAction,
+      affix: {
+        height: viewport.name === "desktop" ? 43 : 66,
+        width: viewport.width,
+        x: 0,
+        y: 0,
+      },
+      gnb: {
+        height: 40,
+        width: viewport.width,
+        x: 0,
+        y: viewport.name === "desktop" ? 43 : 66,
+      },
       input: expectedInput,
       root: expectedRoot,
       scrollWidth: viewport.width,

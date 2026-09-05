@@ -161,10 +161,7 @@ test("populated code-file comment count owns the legacy revision span", async ({
   await page.goto(`${basePath}/admin/sample/code/main/README.md`, { waitUntil: "networkidle" });
   await page.locator('[data-owner="project-code-file-comment-count"]').click();
   await expect(page).toHaveURL(
-    new RegExp(
-      `${basePath}/admin/sample/commit/1234567890abcdef\\?branch=main&path=#README\\.md$`,
-      "u",
-    ),
+    new RegExp(`${basePath}/admin/sample/commit/1234567890abcdef\\?branch=main#README\\.md$`, "u"),
   );
 });
 

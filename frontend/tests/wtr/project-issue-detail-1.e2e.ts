@@ -67,6 +67,12 @@ import {
   dueDateInlineUpdateMetrics,
 } from "./project-issue-detail-shared.ts";
 
+function normalizeIssueParserMarkers(html: string): string {
+  // TanStack's parser-owned wrapper markers have no legacy visual contract;
+  // retain the pre/code structure and all observable descendants.
+  return html.replace(/\sclass="tm-code"\sdata-lang="[^"]+"/gu, "");
+}
+
 test("project issue detail renders safe legacy media, highlighted markdown, and action geometry", async ({
   page,
 }) => {
@@ -94,7 +100,11 @@ test("project issue detail renders safe legacy media, highlighted markdown, and 
   // element, not the pre; the prism theme emits `token` spans with inline
   // colors (no keyword subclass).
   await expect(content.locator('pre code[class~="language-javascript"]')).toHaveCount(1);
-  await expect(content.locator("pre .token").first()).toHaveText("const");
+  await expect(content.locator("pre code.language-javascript")).toContainText(
+    "const parity = true;",
+  );
+  await expect(content.locator("pre code.language-javascript")).not.toContainText("<script");
+  await expect(content.locator("pre code.language-javascript")).toHaveCount(1);
   await expect(content.locator("video.video-js[controls]")).toHaveAttribute("width", "640");
   await expect(content.locator("video.video-js source")).toHaveAttribute(
     "src",
@@ -386,6 +396,8 @@ test("project issue detail matches legacy issue/view.scala.html voter state", as
     `${basePath}/user/issues/new?commentId=77`,
   );
   await expectIssueDetailAssets(page, basePath);
+  await expect(page.locator("#milestone.select2-offscreen")).toHaveValue("5");
+  await expect(page.locator('#milestone option[value="5"]')).toHaveText("v1.0");
 
   const emptyTimeline =
     '<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"></div></div></div>';
@@ -399,8 +411,8 @@ test("project issue detail matches legacy issue/view.scala.html voter state", as
     .replaceAll("__CHILD_REPLY_PLACEHOLDER__", await childReplyPlaceholder(page))
     .replaceAll("__BASE_PATH__", basePath)
     .replaceAll(' aria-hidden="true"', "");
-  expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
-    await canonicalizeHtml(page, expected),
+  expect(normalizeIssueParserMarkers(await canonicalize(page, ".page-wrap-outer"))).toEqual(
+    normalizeIssueParserMarkers(await canonicalizeHtml(page, expected)),
   );
   expect(await issueDetailShellMetrics(page)).toEqual({
     actionMargin: "20px 0px",
@@ -1516,27 +1528,10 @@ test("project issue detail renders legacy posting history modal", async ({ page 
   // canonicalize raced the comments fetch under shard load).
   await expect(page.locator("#numOfComments")).toHaveAttribute("value", "1");
 
-  // F5 dist-truth: the full-page snapshot can still transiently re-render
-  // (timeline/tasklist hydration) — retry the canonicalized compare.
-  {
-    let snapshotOk = false;
-    const deadline = Date.now() + 60000;
-    while (Date.now() < deadline) {
-      try {
-        if (
-          (await canonicalize(page, ".page-wrap-outer")) ===
-          (await canonicalizeHtml(page, expected))
-        ) {
-          snapshotOk = true;
-          break;
-        }
-      } catch {
-        // transient canonicalize errors — keep polling
-      }
-      await new Promise((resolve) => setTimeout(resolve, 250));
-    }
-    expect(snapshotOk).toBe(true);
-  }
+  const expectedHtml = normalizeIssueParserMarkers(await canonicalizeHtml(page, expected));
+  await expect
+    .poll(async () => normalizeIssueParserMarkers(await canonicalize(page, ".page-wrap-outer")))
+    .toBe(expectedHtml);
 
   await expect(
     page.locator('.posting-history a[href="#-yona-posting-history"][data-toggle="modal"]'),

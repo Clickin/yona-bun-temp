@@ -29,6 +29,7 @@ import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-confi
 import { SiteLayoutShell } from "../../../../-home-route-screen";
 import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
 import { ProjectNestedShellContext } from "../../../$projectName";
+import type { ProjectIssuesSearch } from "../../issues";
 
 const legacyRouteLocalActiveProps = {
   "aria-current": undefined,
@@ -128,19 +129,7 @@ function ProjectIssueEditNotFoundBody({
           <Link
             to="/$ownerName/$projectName/issues"
             params={{ ownerName, projectName }}
-            search={{
-              state: "all",
-              assigneeId: "",
-              authorId: "",
-              commenterId: "",
-              dueDate: "",
-              filter: "",
-              labelIds: [],
-              milestoneId: "",
-              orderBy: "updatedDate",
-              orderDir: "desc",
-              pageNum: 1,
-            }}
+            search={{ state: "all" } as ProjectIssuesSearch}
             className="ybtn ybtn-primary"
             data-owner="project-issue-editform-error-list"
           >

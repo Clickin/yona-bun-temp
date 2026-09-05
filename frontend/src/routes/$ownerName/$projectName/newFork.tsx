@@ -199,9 +199,7 @@ function ProjectForkBody({
     ? forkOwnerName
     : undefined;
   const selectedOwner = requestedOwner ?? stringField(options.selected?.ownerName, ownerName);
-  const firstOwner = stringField(options.ownerOptions[0]?.ownerName, "");
-  const selectedOwnerProps =
-    selectedOwner === firstOwner ? {} : ({ defaultValue: selectedOwner } as const);
+
   const selectedName = stringField(options.selected?.projectName, projectName);
   const sourceOwnerName = stringField(options.source?.ownerName, ownerName);
   const sourceProjectName = stringField(options.source?.projectName, projectName);
@@ -359,12 +357,16 @@ function ProjectForkBody({
                     id="project-owner"
                     name="owner"
                     onChange={onChangeOwner}
-                    {...selectedOwnerProps}
+                    value={selectedOwner}
                   >
                     {options.ownerOptions.map((ownerOption) => {
                       const optionOwnerName = stringField(ownerOption.ownerName, "");
                       return (
-                        <option key={optionOwnerName} value={optionOwnerName}>
+                        <option
+                          key={optionOwnerName}
+                          value={optionOwnerName}
+                          selected={optionOwnerName === selectedOwner}
+                        >
                           {optionOwnerName}
                         </option>
                       );

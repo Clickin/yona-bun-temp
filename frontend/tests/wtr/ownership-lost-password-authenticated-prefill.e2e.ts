@@ -103,19 +103,24 @@ test.describe("Style authenticated lost-password prefill", () => {
     await expect(form).toHaveCSS("width", "400px");
     await expect(loginId).toHaveCSS("width", "386px");
     await expect(loginId).toHaveCSS("font-size", "12px");
-    await loginId.focus();
-    // Re-focus under shard load: a late re-render can blur the input after
-    // the initial focus, so poll the focused paint (gate flake: border
-    // stayed #ccc). Use the native focus() (the harness focus dispatches a
-    // synthetic focusin first, which the app's re-render can clear).
-    await expect
-      .poll(() =>
-        loginId.evaluate((element) => {
-          (element as HTMLInputElement).focus();
-          return getComputedStyle(element).borderBottomColor;
-        }),
-      )
-      .toBe("rgb(243, 108, 34)");
+    expect(
+      await loginId.evaluate((element) => {
+        const input = element as HTMLInputElement;
+        input.focus({ preventScroll: true });
+        const focused = input.ownerDocument.activeElement === input && input.matches(":focus");
+        getComputedStyle(input).borderBottomColor;
+        input.getAnimations().forEach((animation) => animation.finish());
+        return {
+          borderBottomColor: getComputedStyle(input).borderBottomColor,
+          focused,
+          isConnected: input.isConnected,
+        };
+      }),
+    ).toEqual({
+      borderBottomColor: "rgb(243, 108, 34)",
+      focused: true,
+      isConnected: true,
+    });
     expect(await form.boundingBox()).toMatchObject({ height: 134, width: 400, x: 483, y: 246 });
     expect(await loginId.boundingBox()).toMatchObject({ height: 36, width: 398, x: 483, y: 246 });
     expect(await email.boundingBox()).toMatchObject({ height: 36, width: 398, x: 483, y: 292 });

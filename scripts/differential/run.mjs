@@ -32,7 +32,7 @@ import { launchWtrBrowser } from "../wtr-browser.mjs";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const defaultOutputDir = path.join(repoRoot, ".agent/differential");
 let outputDir = path.resolve(process.env.YONA_DIFFERENTIAL_OUTPUT_DIR ?? defaultOutputDir);
-import { matchBehaviors, validateScenarios } from "./dsl.mjs";
+import { buildBehaviorVerification, matchBehaviors, validateScenarios } from "./dsl.mjs";
 import { ACTION_DEFINITIONS, scenarios } from "./scenarios/index.mjs";
 let yoramRuntimeDir = path.join(outputDir, "yoram");
 
@@ -1155,15 +1155,22 @@ function mergeCookieHeader(oldHeader, setCookies) {
 
 // Shared step utilities handed to domain handlers via ctx.helpers.
 export const stepHelpers = {
-  // Translate + request both sides; >=400 lands in entry.errors (not violations).
+  // Translate + request both sides. A >=400 observation only fails the step
+  // when the sides DIVERGE (one failed, or both failed differently): an agreed
+  // boundary rejection (same status both sides) is a successful probe of the
+  // shared contract, not a step error. Divergences land in entry.errors (and
+  // become FAILED step results) so the strict gate sees them.
   async requestBoth(ctx, legacyTranslation, yoramTranslation) {
     const { step, entry, legacySession, yoramSession } = ctx;
     const legacyResult = await legacySession.request(legacyTranslation);
-    if (legacyResult.status >= 400) {
+    const yoramResult = await yoramSession.request(yoramTranslation);
+    const legacyFailed = legacyResult.status >= 400;
+    const yoramFailed = yoramResult.status >= 400;
+    const agreedFailure = legacyFailed && yoramFailed && legacyResult.status === yoramResult.status;
+    if (legacyFailed && !agreedFailure) {
       entry.errors.push(`legacy ${step.action} failed: HTTP ${legacyResult.status} @ ${legacyTranslation.path}`);
     }
-    const yoramResult = await yoramSession.request(yoramTranslation);
-    if (yoramResult.status >= 400) {
+    if (yoramFailed && !agreedFailure) {
       entry.errors.push(`yoram ${step.action} failed: HTTP ${yoramResult.status} @ ${yoramTranslation.path}`);
     }
     return { legacyResult, yoramResult };
@@ -1319,6 +1326,7 @@ export const stepHelpers = {
 export async function executeStep(context) {
   const { step, entry } = context;
   const result = { action: step.action, status: "EXECUTED", error: null };
+  if (step.disposition) result.disposition = step.disposition;
   entry.stepResults ??= [];
   entry.stepResults.push(result);
   const definition = ACTION_DEFINITIONS[step.action];
@@ -1581,6 +1589,7 @@ async function main() {
   const coverage = {
     runId: report.runId,
     version: 1,
+    behaviorVerification: buildBehaviorVerification(report.scenarios),
     scenarios: selectedScenarios.map((scenario) => {
       const runtime = runtimeScenarios.get(scenario.id);
       return {

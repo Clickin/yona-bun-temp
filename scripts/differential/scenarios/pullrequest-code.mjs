@@ -144,7 +144,18 @@ export const scenarios = [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
       { actor: "admin", action: "view-newfork-page", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "list-reviews", params: { owner: "admin", project: "sample" } },
-      { actor: "admin", action: "list-project-files", params: { owner: "admin", project: "sample" } },
+      {
+        actor: "admin",
+        action: "list-project-files",
+        params: { owner: "admin", project: "sample" },
+        // Legacy has no bare /:user/:project/files route — the code browser
+        // binds files/:rev/*path — so legacy answers 404 while yoram serves a
+        // deep-linkable file list page; no legacy behavior depends on the 404.
+        disposition: {
+          classification: "IMPLEMENTATION_DIFFERENCE",
+          evidence: "yona-original/conf/routes:342 GET /:user/:project/files/:rev/*path (no bare route)",
+        },
+      },
     ],
     behaviorMatcher: { action: /^(PullRequestApp\.newFork|ReviewThreadApp\.reviewThreads|AttachmentApp\.getFileList)$/, route: /(newFork|reviews|files)$/ },
   },
@@ -173,7 +184,18 @@ export const scenarios = [
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
       { actor: "admin", action: "comment-commit", params: { owner: "admin", project: "sample", commitId: "HEAD" } },
-      { actor: "admin", action: "delete-commit-comment", params: { owner: "admin", project: "sample", commitId: "HEAD" } },
+      {
+        actor: "admin",
+        action: "delete-commit-comment",
+        params: { owner: "admin", project: "sample", commitId: "HEAD" },
+        // Legacy answers 404 for the HEAD pseudo-ref where yoram resolves it;
+        // reviewed harmless extension (B-0003) — no legacy behavior depends on
+        // the pseudo-ref 404.
+        disposition: {
+          classification: "IMPLEMENTATION_DIFFERENCE",
+          evidence: "yona-original/app/controllers/CodeHistoryApp.java:102-114 getCommit(commitId); 2026-09 reclassification B-0003",
+        },
+      },
     ],
     behaviorMatcher: { action: /^CodeHistoryApp\.(newComment|deleteComment)$/, route: /commit/ },
   },
@@ -182,9 +204,30 @@ export const scenarios = [
     title: "toggle default branch to feature/ui and back to main",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      { actor: "admin", action: "set-default-branch", params: { owner: "admin", project: "sample", branch: "feature/ui" } },
+      {
+        actor: "admin",
+        action: "set-default-branch",
+        params: { owner: "admin", project: "sample", branch: "feature/ui" },
+        // Legacy BranchApp.setAsDefault throws IOException/GitAPIException out
+        // of the handler (500 headless) where yoram persists the default
+        // branch; degenerate legacy crash, agreed intent verified by the
+        // resulting default ref.
+        disposition: {
+          classification: "LEGACY_BUG_NOT_REPRODUCED",
+          evidence: "yona-original/app/controllers/BranchApp.java:81-89",
+        },
+      },
       { actor: "admin", action: "list-branches", params: { owner: "admin", project: "sample" } },
-      { actor: "admin", action: "set-default-branch", params: { owner: "admin", project: "sample", branch: "main" } },
+      {
+        actor: "admin",
+        action: "set-default-branch",
+        params: { owner: "admin", project: "sample", branch: "main" },
+        // Same legacy setAsDefault 500 as above (BranchApp.java:81-89).
+        disposition: {
+          classification: "LEGACY_BUG_NOT_REPRODUCED",
+          evidence: "yona-original/app/controllers/BranchApp.java:81-89",
+        },
+      },
     ],
     behaviorMatcher: { action: /^BranchApp\.setAsDefault$/, route: /setAsDefault/ },
   },
@@ -268,7 +311,10 @@ function legacyPath(step) {
     case "browse-code-ajax-slash": return `${base}/code/${p.branch}/!/`;
     case "browse-code-ajax-path": return `${base}/code/${p.branch}/!/${p.path}`;
     case "list-branches": return `${base}/branches`;
-    case "code-compare": return `${base}/compare/${p.revA}..${p.revB}`;
+    // Legacy's route is /:user/:project/compare/:revA..:revB — a slash inside
+    // a branch name (feature/ui) must arrive percent-encoded or Play never
+    // matches the route and answers 404.
+    case "code-compare": return `${base}/compare/${encodeURIComponent(p.revA)}..${encodeURIComponent(p.revB)}`;
     case "view-code-file": return `${base}/files/${p.rev}/${p.path}`;
     case "fetch-raw-file": return `${base}/rawcode/${p.rev}/${p.path}`;
     case "fetch-image-file": return `${base}/image/${p.rev}/${p.path}`;
@@ -496,6 +542,10 @@ const MUTATION_DEFINITIONS = {
       });
       const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
       state.prNumberLegacy = Number((/\/pullRequest\/(\d+)/u.exec(legacyResult.location ?? "") ?? [])[1]) || null;
+      // Yoram's REST create answers the detail payload (camelCase); its PR
+      // number is required for every dependent lifecycle step.
+      state.prNumberYoram =
+        Number(yoramResult.json?.pullRequestNumber ?? yoramResult.json?.number ?? yoramResult.json?.id ?? 0) || null;
       state.prFromBranch = step.params.fromBranch;
       state.prToBranch = step.params.toBranch;
       const ok = ensureOutcomeParity(ctx, legacyTranslation.path, legacyResult, yoramResult);

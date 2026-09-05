@@ -4,8 +4,7 @@ import { UploadForm } from "../../../../components/file-uploader";
 import { FileDiffErrorRow } from "../../../../components/file-diff-error-row";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { LegacyMarkdown } from "../../../../components/legacy-markdown";
 import {
   codeCommitDetailQueryOptions,
   closeCommitDiscussionThreadRest,
@@ -1423,12 +1422,12 @@ function OriginalMessageMarkdown({
   const originalMessage = viaEmail ? splitOriginalMessageMarkdown(contentsMarkdown) : null;
 
   if (!originalMessage) {
-    return <ReactMarkdown remarkPlugins={[remarkGfm]}>{contentsMarkdown}</ReactMarkdown>;
+    return <LegacyMarkdown>{contentsMarkdown}</LegacyMarkdown>;
   }
 
   return (
     <>
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{originalMessage.visibleMarkdown}</ReactMarkdown>
+      <LegacyMarkdown>{originalMessage.visibleMarkdown}</LegacyMarkdown>
       <button
         type="button"
         data-owner="commit-detail-original-message-toggle"
@@ -1441,7 +1440,7 @@ function OriginalMessageMarkdown({
         ...
       </button>
       <div data-original-message-owner="route" hidden={!showsOriginalMessage}>
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{originalMessage.hiddenMarkdown}</ReactMarkdown>
+        <LegacyMarkdown>{originalMessage.hiddenMarkdown}</LegacyMarkdown>
       </div>
     </>
   );

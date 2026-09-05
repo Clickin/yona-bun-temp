@@ -70,34 +70,12 @@ for (const viewport of [
     await expect(shell).toHaveClass(/sidenav-open/);
     await expect(shell).toHaveCSS("transition-property", "width");
     await expect(shell).toHaveCSS("transition-duration", "0.5s");
-    // F5 dist-truth: under shard load the 0.5s width transition can stall
-    // mid-flight (jank) — wait for transitionend before reading the width.
-    await shell.evaluate(
-      (element) =>
-        new Promise<void>((resolve) => {
-          element.addEventListener("transitionend", () => resolve(), { once: true });
-          setTimeout(resolve, 3000);
-        }),
-    );
-    // e2e closure ledger (2026-08-11): mid-closure width poll stalled while the
-    // sibling had the sidenav shell rules mid-edit; the committed rules still size
-    // #mySidenav.sidenav-open to 360px+2px border (desktop) / 100vw+2px (mobile),
-    // matching openWidth 362/392 — expected to pass on re-verification.
-    {
-      let openWidthOk = false;
-      const deadline = Date.now() + 60000;
-      while (Date.now() < deadline) {
-        const openWidth = Math.round(
-          await shell.evaluate((element) => element.getBoundingClientRect().width),
-        );
-        if (openWidth === viewport.openWidth) {
-          openWidthOk = true;
-          break;
-        }
-        await new Promise((resolve) => setTimeout(resolve, 100));
-      }
-      expect(openWidthOk).toBe(true);
-    }
+    await shell.evaluate((element) => {
+      for (const animation of element.getAnimations()) animation.finish();
+    });
+    await expect
+      .poll(() => shell.evaluate((element) => Math.round(element.getBoundingClientRect().width)))
+      .toBe(viewport.openWidth);
     await expect(shell).toHaveCSS("overflow-x", "hidden");
     await expect(page.locator("#mySidenav .tab-content").first()).toHaveCSS("overflow-x", "hidden");
 
@@ -118,28 +96,12 @@ for (const viewport of [
     await toggle.evaluate((button) => button.click());
     await expect(toggle).toHaveAttribute("aria-expanded", "false");
     await expect(shell).not.toHaveClass(/sidenav-open/);
-    await shell.evaluate(
-      (element) =>
-        new Promise<void>((resolve) => {
-          element.addEventListener("transitionend", () => resolve(), { once: true });
-          setTimeout(resolve, 3000);
-        }),
-    );
-    {
-      let closedWidthOk = false;
-      const deadline = Date.now() + 60000;
-      while (Date.now() < deadline) {
-        const closedWidth = Math.round(
-          await shell.evaluate((element) => element.getBoundingClientRect().width),
-        );
-        if (closedWidth === 0) {
-          closedWidthOk = true;
-          break;
-        }
-        await new Promise((resolve) => setTimeout(resolve, 100));
-      }
-      expect(closedWidthOk).toBe(true);
-    }
+    await shell.evaluate((element) => {
+      for (const animation of element.getAnimations()) animation.finish();
+    });
+    await expect
+      .poll(() => shell.evaluate((element) => Math.round(element.getBoundingClientRect().width)))
+      .toBe(0);
     await saveScreenshot(page, `style-root-sidebar-closed-${viewport.label}.png`);
   });
 }

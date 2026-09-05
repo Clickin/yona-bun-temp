@@ -223,8 +223,8 @@ test("public profile parent and child issue labels own their complete final pres
     // Bucket-3 (wave 33): the parent label carries the legacy label/issue-label
     // list-label runtime classes again (667398a04 restore) — assert them.
     await expect(parent).toHaveClass(/(?:label|issue-label|list-label|active)/u);
-    // Bucket-3 (wave 33): the parent label link renders the bare labelIds=17
-    // query (current route) instead of the legacy encoded-array + orderBy form.
+    // Legacy user/partial_issues.scala.html appends the scalar label id to
+    // IssueApp.issues(..., state = "open").
     await expect(parent).toHaveAttribute(
       "href",
       `${basePath}/door/sample/issues?state=open&labelIds=17`,
@@ -243,10 +243,7 @@ test("public profile parent and child issue labels own their complete final pres
     await expect(child).not.toHaveClass(/(?:^|\s)(?:label|list-label)(?:\s|$)/u);
     await expect(child).toHaveAttribute(
       "href",
-      new RegExp(
-        `${basePath}/door/sample/issues\\?.*labelIds=%5B%2222%22%5D.*orderBy=updatedDate.*state=open`,
-        "u",
-      ),
+      `${basePath}/door/sample/issues?state=open&labelIds=22`,
     );
 
     const base = async (locator: typeof parent) =>

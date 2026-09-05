@@ -12,79 +12,60 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
   useEffect,
+  useMemo,
   useRef,
   use,
   useState,
 } from "react";
-import ReactMarkdown, { type Components, type ExtraProps } from "react-markdown";
+import {
+  childCommentParagraphMarkers,
+  CHILD_COMMENT_BLOCKQUOTE_MARKER,
+  CHILD_COMMENT_METADATA_MARKER,
+  createMarkdownReferenceIndex,
+  createYonaReferenceExtension,
+  decorateMarkdownReferenceLink,
+  gfmAutolinkLiterals,
+  LegacyMarkdown,
+  LegacyMarkdownHtml,
+  LEGACY_SANITIZE_BASE_SCHEMA,
+  reactNodeText,
+  type LegacySanitizeSchema,
+  type MarkdownComponents,
+  type MarkdownReferenceReplacement,
+} from "../../../../components/legacy-markdown";
 import {
   PostingHistoryModal,
   insulateModalButtonClick,
   stripMarkdownComments,
 } from "../../../../components/posting-history-modal";
-import rehypeRaw from "rehype-raw";
-import rehypeSanitize, { type Options as RehypeSanitizeOptions } from "rehype-sanitize";
-import { defaultSchema } from "rehype-sanitize";
-import remarkGfm from "remark-gfm";
 
 // Post body/history markdown carries legacy HTML (history-made-by diff wraps,
 // video/iframe embeds) — legacy Markdown.render sanitizes and emits the HTML.
-// Reuse the issue-detail sanitize contract so issue/post history parity holds.
-const POST_LEGACY_GLOBAL_MARKDOWN_ATTRIBUTES: Record<string, true> = {
-  className: true,
-  height: true,
-  id: true,
-  width: true,
-};
-const POST_MARKDOWN_BASE_ATTRIBUTES = Object.fromEntries(
-  Object.entries(defaultSchema.attributes ?? {}).map(([tagName, attributes]) => [
-    tagName,
-    attributes.filter(
-      (attribute) =>
-        !Array.isArray(attribute) ||
-        !(String(attribute[0]) in POST_LEGACY_GLOBAL_MARKDOWN_ATTRIBUTES),
-    ),
-  ]),
-) as NonNullable<RehypeSanitizeOptions["attributes"]>;
-const POST_MARKDOWN_SANITIZE_SCHEMA: RehypeSanitizeOptions = {
-  ...defaultSchema,
+// Legacy owasp policy (yona-original/app/utils/Markdown.java) on top of the
+// hast-util-sanitize defaultSchema base; attribute names are DOM-form because
+// the TanStack HTML path sanitizes DOMParser output. Reuses the issue-detail
+// sanitize contract so issue/post history parity holds.
+const POST_MARKDOWN_SANITIZE_SCHEMA: LegacySanitizeSchema = {
+  ...LEGACY_SANITIZE_BASE_SCHEMA,
   clobber: [],
   attributes: {
-    ...POST_MARKDOWN_BASE_ATTRIBUTES,
-    "*": [...(POST_MARKDOWN_BASE_ATTRIBUTES["*"] ?? []), "className", "id", "width", "height"],
-    a: [...(POST_MARKDOWN_BASE_ATTRIBUTES.a ?? []), "href", "name", "target"],
-    iframe: [
-      ...(POST_MARKDOWN_BASE_ATTRIBUTES.iframe ?? []),
-      "width",
-      "height",
-      "src",
-      "frameBorder",
-      "allow",
-      "allowFullScreen",
-    ],
-    input: [...(POST_MARKDOWN_BASE_ATTRIBUTES.input ?? []), "type", "disabled", "checked"],
-    ol: [...(POST_MARKDOWN_BASE_ATTRIBUTES.ol ?? []), "start"],
-    source: [...(POST_MARKDOWN_BASE_ATTRIBUTES.source ?? []), "src", "type"],
-    video: [
-      ...(POST_MARKDOWN_BASE_ATTRIBUTES.video ?? []),
-      "dataSetup",
-      "controls",
-      "preload",
-      "type",
-      "autoPlay",
-      "height",
-      "width",
-      "src",
-    ],
+    ...LEGACY_SANITIZE_BASE_SCHEMA.attributes,
+    "*": [...(LEGACY_SANITIZE_BASE_SCHEMA.attributes["*"] ?? []), "class", "id", "width", "height"],
+    a: [...(LEGACY_SANITIZE_BASE_SCHEMA.attributes.a ?? []), "href", "name", "target"],
+    iframe: ["width", "height", "src", "frameborder", "allow", "allowfullscreen"],
+    input: [...(LEGACY_SANITIZE_BASE_SCHEMA.attributes.input ?? []), "type", "disabled", "checked"],
+    ol: [...(LEGACY_SANITIZE_BASE_SCHEMA.attributes.ol ?? []), "start"],
+    source: ["src", "type"],
+    video: ["data-setup", "controls", "preload", "type", "autoplay", "height", "width", "src"],
   },
   protocols: {
-    ...defaultSchema.protocols,
+    ...LEGACY_SANITIZE_BASE_SCHEMA.protocols,
     href: ["http", "https", "mailto", "file", "zpl"],
     src: ["http", "https", "file", "zpl"],
   },
   tagNames: [
     ...new Set([
-      ...(defaultSchema.tagNames ?? []),
+      ...LEGACY_SANITIZE_BASE_SCHEMA.tagNames,
       "video",
       "source",
       "iframe",
@@ -97,6 +78,7 @@ const POST_MARKDOWN_SANITIZE_SCHEMA: RehypeSanitizeOptions = {
     ]),
   ],
 };
+
 import {
   createPostCommentRest,
   deleteProjectPostRest,
@@ -554,13 +536,7 @@ function ProjectPostDetailBody({
                     data-owner="post-detail-content"
                     data-allowed-update={String(canUpdate)}
                   >
-                    <ReactMarkdown
-                      components={POST_BODY_MARKDOWN_COMPONENTS}
-                      rehypePlugins={[rehypeRaw, [rehypeSanitize, POST_MARKDOWN_SANITIZE_SCHEMA]]}
-                      remarkPlugins={[remarkGfm]}
-                    >
-                      {post.bodyMarkdown}
-                    </ReactMarkdown>
+                    <PostBodyMarkdown>{post.bodyMarkdown}</PostBodyMarkdown>
                   </div>
                 </div>
               </>
@@ -813,13 +789,7 @@ function PostingHistory({
         {t("change.history")}
       </button>
       <PostingHistoryModal dataOwner="post-detail-history-modal" onClose={onClose} open={open}>
-        <ReactMarkdown
-          components={POST_BODY_MARKDOWN_COMPONENTS}
-          rehypePlugins={[rehypeRaw, [rehypeSanitize, POST_MARKDOWN_SANITIZE_SCHEMA]]}
-          remarkPlugins={[remarkGfm]}
-        >
-          {stripMarkdownComments(historyMarkdown)}
-        </ReactMarkdown>
+        <PostBodyMarkdown>{stripMarkdownComments(historyMarkdown)}</PostBodyMarkdown>
       </PostingHistoryModal>
     </div>
   );
@@ -1412,7 +1382,7 @@ function PostCommentRow({
 
   return (
     <li
-      className="comment"
+      className={`comment${hash === `comment-${commentId}` ? " is-target" : ""}`}
       data-owner="post-detail-comment-row"
       id={`comment-${commentId}`}
       ref={commentRef}
@@ -1594,30 +1564,18 @@ function OriginalMessageMarkdown({
 }) {
   const [showsOriginalMessage, setShowsOriginalMessage] = useState(false);
   const originalMessage = viaEmail ? splitOriginalMessageMarkdown(contentsMarkdown) : null;
-  const markdownAutoLinkPlugin = createParentCommentMarkdownAutoLinkPlugin(comment);
-  const components = createParentCommentMarkdownComponents();
 
   if (!originalMessage) {
-    return (
-      <ReactMarkdown
-        components={components}
-        rehypePlugins={[rehypeRaw, [rehypeSanitize, POST_MARKDOWN_SANITIZE_SCHEMA]]}
-        remarkPlugins={[remarkGfm, markdownAutoLinkPlugin]}
-      >
-        {contentsMarkdown}
-      </ReactMarkdown>
-    );
+    return <PostParentCommentMarkdown comment={comment} contentsMarkdown={contentsMarkdown} />;
   }
 
   return (
     <>
-      <ReactMarkdown
-        components={components}
-        rehypePlugins={[rehypeRaw, [rehypeSanitize, POST_MARKDOWN_SANITIZE_SCHEMA]]}
-        remarkPlugins={[remarkGfm, markdownAutoLinkPlugin]}
-      >
-        {originalMessage.visibleMarkdown}
-      </ReactMarkdown>
+      <PostParentCommentMarkdown
+        comment={comment}
+        contentsMarkdown={originalMessage.visibleMarkdown}
+      />
+
       <button
         type="button"
         data-owner="post-detail-original-message-toggle"
@@ -1630,13 +1588,10 @@ function OriginalMessageMarkdown({
         ...
       </button>
       <div data-original-message-owner="route" hidden={!showsOriginalMessage}>
-        <ReactMarkdown
-          components={components}
-          rehypePlugins={[rehypeRaw, [rehypeSanitize, POST_MARKDOWN_SANITIZE_SCHEMA]]}
-          remarkPlugins={[remarkGfm, markdownAutoLinkPlugin]}
-        >
-          {originalMessage.hiddenMarkdown}
-        </ReactMarkdown>
+        <PostParentCommentMarkdown
+          comment={comment}
+          contentsMarkdown={originalMessage.hiddenMarkdown}
+        />
       </div>
     </>
   );
@@ -1658,27 +1613,92 @@ function splitOriginalMessageMarkdown(contentsMarkdown: string) {
   };
 }
 
-function createParentCommentMarkdownAutoLinkPlugin(comment: BoardPostComment) {
-  return createChildCommentMarkdownAutoLinkPlugin(comment);
+function PostParentCommentMarkdown({
+  comment,
+  contentsMarkdown,
+}: {
+  comment: BoardPostComment;
+  contentsMarkdown: string;
+}) {
+  const referenceKit = useMemo(
+    () => createPostCommentReferenceKit(comment, "post-detail-parent-comment"),
+    [comment],
+  );
+  const extensions = useMemo(() => [gfmAutolinkLiterals, referenceKit.extension], [referenceKit]);
+  const components = useMemo<MarkdownComponents>(
+    () => ({
+      ...createParentCommentMarkdownComponents(),
+      a: (props: ComponentPropsWithoutRef<"a">) => {
+        const { href, ...rest } = props;
+        if (!href) return <>{props.children}</>;
+        const decoration = referenceKit.index.replacementFor(
+          href,
+          reactNodeText(props.children),
+        )?.decoration;
+        const decorated = decorateMarkdownReferenceLink(
+          props.className,
+          props.children,
+          decoration,
+        );
+        const noTextDecoration =
+          decorated.className?.split(" ").includes("no-text-decoration") ?? false;
+        return (
+          <Link
+            {...rest}
+            {...decorated}
+            to={href as "/"}
+            className={noTextDecoration ? `${decorated.className} user-link` : decorated.className}
+            data-owner={noTextDecoration ? "post-detail-parent-comment-user-link" : undefined}
+            activeProps={legacyRouteLocalActiveProps}
+          >
+            {noTextDecoration ? (
+              <span data-owner="post-detail-parent-comment-no-text-decoration">
+                {decorated.children}
+              </span>
+            ) : (
+              decorated.children
+            )}
+          </Link>
+        );
+      },
+    }),
+    [referenceKit],
+  );
+  return (
+    <LegacyMarkdownHtml
+      components={components}
+      extensions={extensions}
+      sanitize={POST_MARKDOWN_SANITIZE_SCHEMA}
+    >
+      {contentsMarkdown}
+    </LegacyMarkdownHtml>
+  );
 }
 
-const POST_BODY_MARKDOWN_COMPONENTS: Components = {
-  code: ({ className, node: _node, ...props }) => {
+function PostBodyMarkdown({ children }: { children: string }) {
+  return (
+    <LegacyMarkdownHtml
+      components={POST_BODY_MARKDOWN_COMPONENTS}
+      extensions={[gfmAutolinkLiterals]}
+      sanitize={POST_MARKDOWN_SANITIZE_SCHEMA}
+    >
+      {children}
+    </LegacyMarkdownHtml>
+  );
+}
+
+const POST_BODY_MARKDOWN_COMPONENTS: MarkdownComponents = {
+  code: ({ className, ...props }: ComponentPropsWithoutRef<"code">) => {
     return <code {...props} className={className ?? ""} />;
   },
   pre: PostMarkdownPre,
 };
 
-function PostMarkdownPre({
-  children,
-  className,
-  node: _node,
-  ...props
-}: ComponentPropsWithoutRef<"pre"> & ExtraProps) {
+function PostMarkdownPre({ children, className, ...props }: ComponentPropsWithoutRef<"pre">) {
   const code = Array.isArray(children) ? children[0] : children;
   if (isValidElement<{ children?: ReactNode; className?: string }>(code)) {
     const language = code.props.className?.match(/(?:^|\s)language-([^\s]+)/u)?.[1];
-    if (language) {
+    if (language && language !== "plaintext") {
       return (
         <MarkdownCodeBlock className={code.props.className} language={language}>
           {code.props.children}
@@ -1693,13 +1713,13 @@ function PostMarkdownPre({
   );
 }
 
-function createParentCommentMarkdownComponents(): Components {
+function createParentCommentMarkdownComponents(): MarkdownComponents {
   return {
-    code: ({ className, node: _node, ...props }) => {
+    code: ({ className, ...props }: ComponentPropsWithoutRef<"code">) => {
       return <code {...props} className={className ?? ""} />;
     },
     pre: PostMarkdownPre,
-    span: ({ children, className, node: _node, ...props }) => {
+    span: ({ children, className, ...props }: ComponentPropsWithoutRef<"span">) => {
       if (className === "issue-state open") {
         return (
           <span
@@ -1748,33 +1768,6 @@ function createParentCommentMarkdownComponents(): Components {
         <span {...props} className={className}>
           {children}
         </span>
-      );
-    },
-    a: ({ children, className, href, node: _node, ...props }) => {
-      if (!href) return <>{children}</>;
-      const noTextDecoration = className?.split(" ").includes("no-text-decoration") ?? false;
-      if (noTextDecoration) {
-        return (
-          <Link
-            {...props}
-            to={href as "/"}
-            className={`${className} user-link`}
-            data-owner="post-detail-parent-comment-user-link"
-            activeProps={legacyRouteLocalActiveProps}
-          >
-            <span data-owner="post-detail-parent-comment-no-text-decoration">{children}</span>
-          </Link>
-        );
-      }
-      return (
-        <Link
-          {...props}
-          to={href as "/"}
-          className={className}
-          activeProps={legacyRouteLocalActiveProps}
-        >
-          {children}
-        </Link>
       );
     },
   };
@@ -2046,7 +2039,14 @@ function PostChildComment({
   const commentId = stringField(comment.id);
   const authorLoginId = stringField(comment.authorLoginId);
   const authorLabel = stringField(comment.authorLabel, authorLoginId);
-  const markdownAutoLinkPlugin = createChildCommentMarkdownAutoLinkPlugin(comment);
+  const referenceKit = useMemo(
+    () => createPostCommentReferenceKit(comment, "post-detail-child-comment"),
+    [comment],
+  );
+  const extensions = useMemo(
+    () => [gfmAutolinkLiterals, referenceKit.extension, childCommentParagraphMarkers()],
+    [referenceKit],
+  );
   const metadata = (
     <>
       -{" "}
@@ -2089,242 +2089,162 @@ function PostChildComment({
       ) : null}
     </>
   );
-  const components: Components = {
-    p: ({ children, node: _node, ...props }) => {
-      const {
-        [CHILD_COMMENT_BLOCKQUOTE_PARAGRAPH_ATTRIBUTE]: blockquoteParagraph,
-        [CHILD_COMMENT_METADATA_ATTRIBUTE]: metadataPlacement,
-        ...paragraphProps
-      } = props as Record<string, unknown>;
-      if (metadataPlacement === "root") {
-        return metadata;
-      }
-      if (blockquoteParagraph === "true") {
+  const components = useMemo<MarkdownComponents>(
+    () => ({
+      p: ({ children, ...props }: ComponentPropsWithoutRef<"p">) => {
+        const marked = stripChildCommentMarkers(children);
+        if (marked.hasMetadataMark && reactNodeText(marked.children) === "") {
+          return metadata;
+        }
         return (
-          <p {...paragraphProps} data-owner="post-detail-child-comment-blockquote-paragraph">
-            {children}
-            {metadataPlacement === "paragraph" ? metadata : null}
+          <p
+            {...props}
+            data-owner={
+              marked.hasBlockquoteMark
+                ? "post-detail-child-comment-blockquote-paragraph"
+                : "post-detail-child-comment-paragraph"
+            }
+          >
+            {marked.children}
+            {marked.hasMetadataMark ? metadata : null}
           </p>
         );
-      }
-      return (
-        <p {...paragraphProps} data-owner="post-detail-child-comment-paragraph">
+      },
+      strong: ({ children, ...props }: ComponentPropsWithoutRef<"strong">) => (
+        <strong {...props} data-owner="post-detail-child-comment-strong">
           {children}
-          {metadataPlacement === "paragraph" ? metadata : null}
-        </p>
-      );
-    },
-    strong: ({ children, node: _node, ...props }) => (
-      <strong {...props} data-owner="post-detail-child-comment-strong">
-        {children}
-      </strong>
-    ),
-    span: ({ children, className, node: _node, ...props }) => {
-      if (className === "issue-state open") {
-        return (
-          <span
-            {...props}
-            className={className}
-            data-owner="post-detail-child-comment-issue-state-open"
-          >
-            {children}
-          </span>
+        </strong>
+      ),
+      a: (props: ComponentPropsWithoutRef<"a">) => {
+        const { href, ...rest } = props;
+        if (!href) return <>{props.children}</>;
+        const decoration = referenceKit.index.replacementFor(
+          href,
+          reactNodeText(props.children),
+        )?.decoration;
+        const decorated = decorateMarkdownReferenceLink(
+          props.className,
+          props.children,
+          decoration,
         );
-      }
-      if (className === "issue-state closed") {
-        return (
-          <span
-            {...props}
-            className={className}
-            data-owner="post-detail-child-comment-issue-state-closed"
-          >
-            {children}
-          </span>
-        );
-      }
-      if (className === "org-link") {
-        return (
-          <span
-            {...props}
-            className={className}
-            data-owner="post-detail-child-comment-organization-link"
-          >
-            {children}
-          </span>
-        );
-      }
-      if (className === "project-link") {
-        return (
-          <span
-            {...props}
-            className={className}
-            data-owner="post-detail-child-comment-project-link"
-          >
-            {children}
-          </span>
-        );
-      }
-      return (
-        <span {...props} className={className}>
-          {children}
-        </span>
-      );
-    },
-    a: ({ children, className, href, node: _node, ...props }) => {
-      if (!href) return <>{children}</>;
-      const issueLink = className?.split(" ").includes("issueLink") ?? false;
-      const noTextDecoration = className?.split(" ").includes("no-text-decoration") ?? false;
-      if (issueLink) {
+        const classes = decorated.className?.split(" ") ?? [];
+        const owner = classes.includes("issueLink")
+          ? "post-detail-child-comment-issue-link"
+          : classes.includes("no-text-decoration")
+            ? "post-detail-child-comment-no-text-decoration"
+            : undefined;
         return (
           <Link
-            {...props}
+            {...rest}
+            {...decorated}
             to={href as "/"}
-            className={className}
-            data-owner="post-detail-child-comment-issue-link"
+            data-owner={owner}
             activeProps={legacyRouteLocalActiveProps}
           >
-            {children}
+            {decorated.children}
           </Link>
         );
-      }
-      if (noTextDecoration) {
-        return (
-          <Link
-            {...props}
-            to={href as "/"}
-            className={className}
-            data-owner="post-detail-child-comment-no-text-decoration"
-            activeProps={legacyRouteLocalActiveProps}
-          >
-            {children}
-          </Link>
-        );
-      }
-      return (
-        <Link
-          {...props}
-          to={href as "/"}
-          className={className}
-          activeProps={legacyRouteLocalActiveProps}
-        >
+      },
+      blockquote: ({ children, ...props }: ComponentPropsWithoutRef<"blockquote">) => (
+        <blockquote {...props} data-owner="post-detail-child-comment-blockquote">
           {children}
-        </Link>
-      );
-    },
-    blockquote: ({ children, node: _node, ...props }) => (
-      <blockquote {...props} data-owner="post-detail-child-comment-blockquote">
-        {children}
-      </blockquote>
-    ),
-  };
+        </blockquote>
+      ),
+    }),
+    [metadata, referenceKit],
+  );
   return (
     <div className="one-line-comment">
       <div className="contents" data-owner="post-detail-child-comment-contents">
-        <ReactMarkdown
-          components={components}
-          remarkPlugins={[remarkGfm, markdownAutoLinkPlugin, remarkChildCommentMetadata]}
-        >
+        <LegacyMarkdown components={components} extensions={extensions}>
           {comment.contentsMarkdown}
-        </ReactMarkdown>
+        </LegacyMarkdown>
       </div>
     </div>
   );
 }
 
-const CHILD_COMMENT_METADATA_ATTRIBUTE = "data-child-comment-metadata";
-const CHILD_COMMENT_BLOCKQUOTE_PARAGRAPH_ATTRIBUTE = "data-child-comment-blockquote-paragraph";
-
-type ChildCommentMarkdownNode = {
-  children?: ChildCommentMarkdownNode[];
-  data?: { hName?: string; hProperties?: Record<string, unknown> };
-  type: string;
-  url?: string;
-  value?: string;
-};
-
-type ChildCommentMarkdownReplacement = {
-  children: ChildCommentMarkdownNode[];
-  className?: string[];
-  token: string;
-  url: string;
-};
-
-function createChildCommentMarkdownAutoLinkPlugin(comment: BoardPostComment) {
-  const commitReferences = comment.commitReferences ?? [];
-  const replacements: ChildCommentMarkdownReplacement[] = (comment.issueReferences ?? []).map(
-    (reference) => ({
-      children: [
-        { type: "text", value: `#${reference.issueNumber}.${reference.title}` },
-        {
-          data: {
-            hName: "span",
-            hProperties: { className: ["issue-state", reference.state.toLowerCase()] },
+// Reference replacements for board-post comments. Classes/state spans cannot
+// ride the TanStack AST, so they travel as decorations applied by the `a`
+// component; `dataOwner` keeps the React-owned test markers of the previous
+// AST-span renderers.
+function createPostCommentReferenceKit(
+  comment: BoardPostComment,
+  ownerPrefix: string,
+): {
+  extension: ReturnType<typeof createYonaReferenceExtension>;
+  index: ReturnType<typeof createMarkdownReferenceIndex>;
+} {
+  const replacements: MarkdownReferenceReplacement[] = (comment.issueReferences ?? []).map(
+    (reference) => {
+      const state = reference.state.toLowerCase();
+      return {
+        decoration: {
+          className: ["issueLink"],
+          stateSpan: {
+            className: `issue-state ${state}`,
+            dataOwner: `${ownerPrefix}-issue-state-${state}`,
+            label: reference.state,
           },
-          type: "text",
-          value: reference.state,
         },
-      ],
-      className: ["issueLink"],
-      token: `#${reference.issueNumber}`,
-      url: `/${reference.ownerName}/${reference.projectName}/issue/${reference.issueNumber}`,
-    }),
+        label: `#${reference.issueNumber}.${reference.title}`,
+        token: `#${reference.issueNumber}`,
+        url: `/${reference.ownerName}/${reference.projectName}/issue/${reference.issueNumber}`,
+      };
+    },
   );
-  for (const reference of commitReferences) {
+  for (const reference of comment.commitReferences ?? []) {
     const token = commitReferenceToken(comment.contentsMarkdown, reference);
-    if (token) {
-      const separator = token.lastIndexOf("@");
-      const prefix = separator > 0 ? token.slice(0, separator) : "";
-      replacements.push({
-        children: [
-          {
-            type: "text",
-            value: prefix ? `${prefix}@${reference.shortId}` : reference.shortId,
-          },
-        ],
-        token,
-        url: `/${reference.ownerName}/${reference.projectName}/commit/${reference.commitId}`,
-      });
-    }
+    if (!token) continue;
+    const separator = token.lastIndexOf("@");
+    const prefix = separator > 0 ? token.slice(0, separator) : "";
+    replacements.push({
+      label: prefix ? `${prefix}@${reference.shortId}` : reference.shortId,
+      token,
+      url: `/${reference.ownerName}/${reference.projectName}/commit/${reference.commitId}`,
+    });
   }
   for (const reference of comment.mentionReferences ?? []) {
+    const label = `@${reference.label || reference.loginId}`;
+    const token = `@${reference.loginId}`;
     if (reference.kind === "organization") {
       replacements.push({
-        children: [
-          {
-            data: { hName: "span", hProperties: { className: ["org-link"] } },
-            type: "text",
-            value: `@${reference.label || reference.loginId}`,
+        decoration: {
+          childWrapperClass: {
+            className: "org-link",
+            dataOwner: `${ownerPrefix}-organization-link`,
           },
-        ],
-        token: `@${reference.loginId}`,
+        },
+        label,
+        token,
         url: `/organizations/${reference.loginId}`,
       });
       continue;
     }
     if (reference.kind === "project") {
       replacements.push({
-        children: [
-          {
-            data: { hName: "span", hProperties: { className: ["project-link"] } },
-            type: "text",
-            value: `@${reference.label || reference.loginId}`,
+        decoration: {
+          childWrapperClass: {
+            className: "project-link",
+            dataOwner: `${ownerPrefix}-project-link`,
           },
-        ],
-        token: `@${reference.loginId}`,
+        },
+        label,
+        token,
         url: `/${reference.ownerName}/${reference.projectName}`,
       });
       continue;
     }
     replacements.push({
-      children: [{ type: "text", value: `@${reference.label || reference.loginId}` }],
-      className: ["no-text-decoration", "user-link"],
-      token: `@${reference.loginId}`,
+      decoration: { className: ["no-text-decoration", "user-link"] },
+      label,
+      token,
       url: `/${reference.loginId}`,
     });
   }
-  return function childCommentMarkdownAutoLinkPlugin() {
-    return (tree: ChildCommentMarkdownNode) =>
-      transformChildCommentMarkdownAutoLinks(tree, replacements);
+  return {
+    extension: createYonaReferenceExtension(replacements),
+    index: createMarkdownReferenceIndex(replacements),
   };
 }
 
@@ -2337,118 +2257,32 @@ function commitReferenceToken(markdown: string, reference: CommitReferenceMetada
   return candidates.find((candidate) => markdown.includes(candidate));
 }
 
-const CHILD_COMMENT_MARKDOWN_AUTOLINK_EXCLUDED_NODES = new Set([
-  "code",
-  "definition",
-  "html",
-  "image",
-  "inlineCode",
-  "link",
-  "linkReference",
-]);
-
-function transformChildCommentMarkdownAutoLinks(
-  node: ChildCommentMarkdownNode,
-  replacements: ChildCommentMarkdownReplacement[],
-) {
-  if (!node.children || CHILD_COMMENT_MARKDOWN_AUTOLINK_EXCLUDED_NODES.has(node.type)) {
-    return;
-  }
-  node.children = node.children.flatMap((child) => {
-    if (child.type !== "text" || child.value === undefined) {
-      transformChildCommentMarkdownAutoLinks(child, replacements);
-      return [child];
-    }
-    return childCommentMarkdownAutoLinkTextNodes(child.value, replacements);
-  });
-}
-
-function childCommentMarkdownAutoLinkTextNodes(
-  value: string,
-  replacements: ChildCommentMarkdownReplacement[],
-) {
-  const nodes: ChildCommentMarkdownNode[] = [];
-  let cursor = 0;
-  while (cursor < value.length) {
-    let index = value.length;
-    let match: ChildCommentMarkdownReplacement | undefined;
-    for (const replacement of replacements) {
-      const relativeCandidate = value.slice(cursor).search(escapeRegExp(replacement.token));
-      const candidate = relativeCandidate < 0 ? -1 : cursor + relativeCandidate;
-      if (
-        candidate >= 0 &&
-        candidate < index &&
-        childCommentMarkdownReferenceBoundaryIsValid(value, candidate, replacement.token)
-      ) {
-        index = candidate;
-        match = replacement;
+/** Removes the child-comment placement markers (see
+ * `childCommentParagraphMarkers`) from rendered paragraph children. */
+function stripChildCommentMarkers(children: ReactNode): {
+  children: ReactNode;
+  hasBlockquoteMark: boolean;
+  hasMetadataMark: boolean;
+} {
+  let hasBlockquoteMark = false;
+  let hasMetadataMark = false;
+  const walk = (node: ReactNode): ReactNode => {
+    if (typeof node === "string") {
+      let next = node;
+      if (next.includes(CHILD_COMMENT_BLOCKQUOTE_MARKER)) {
+        hasBlockquoteMark = true;
+        next = next.replaceAll(CHILD_COMMENT_BLOCKQUOTE_MARKER, "");
       }
-    }
-    if (!match) {
-      nodes.push({ type: "text", value: value.slice(cursor) });
-      break;
-    }
-    if (index > cursor) nodes.push({ type: "text", value: value.slice(cursor, index) });
-    nodes.push({
-      children: match.children,
-      data: { hProperties: { className: match.className } },
-      type: "link",
-      url: match.url,
-    });
-    cursor = index + match.token.length;
-  }
-  return nodes.length > 0 ? nodes : [{ type: "text", value }];
-}
-
-function escapeRegExp(value: string) {
-  return new RegExp(value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u");
-}
-
-function childCommentMarkdownReferenceBoundaryIsValid(value: string, index: number, token: string) {
-  const previousCharacter = value.slice(0, index).match(/.$/u)?.[0] ?? "";
-  const nextCharacter = value.slice(index + token.length).match(/^./u)?.[0] ?? "";
-  const wordCharacter = /[A-Za-z0-9_]/u;
-  return !wordCharacter.test(previousCharacter) && !wordCharacter.test(nextCharacter);
-}
-
-function remarkChildCommentMetadata() {
-  return (tree: ChildCommentMarkdownNode) => {
-    let lastParagraph: ChildCommentMarkdownNode | undefined;
-    const visit = (node: ChildCommentMarkdownNode, insideBlockquote = false) => {
-      if (node.type === "paragraph") {
-        lastParagraph = node;
-        if (insideBlockquote) {
-          node.data = {
-            ...node.data,
-            hProperties: {
-              ...node.data?.hProperties,
-              [CHILD_COMMENT_BLOCKQUOTE_PARAGRAPH_ATTRIBUTE]: "true",
-            },
-          };
-        }
+      if (next.includes(CHILD_COMMENT_METADATA_MARKER)) {
+        hasMetadataMark = true;
+        next = next.replaceAll(CHILD_COMMENT_METADATA_MARKER, "");
       }
-      node.children?.forEach((child) =>
-        visit(child, insideBlockquote || node.type === "blockquote"),
-      );
-    };
-    visit(tree);
-    if (lastParagraph) {
-      lastParagraph.data = {
-        ...lastParagraph.data,
-        hProperties: {
-          ...lastParagraph.data?.hProperties,
-          [CHILD_COMMENT_METADATA_ATTRIBUTE]: "paragraph",
-        },
-      };
-      return;
+      return next;
     }
-    tree.children ??= [];
-    tree.children.push({
-      type: "paragraph",
-      children: [],
-      data: { hProperties: { [CHILD_COMMENT_METADATA_ATTRIBUTE]: "root" } },
-    });
+    if (Array.isArray(node)) return node.map(walk);
+    return node;
   };
+  return { children: walk(children), hasBlockquoteMark, hasMetadataMark };
 }
 
 function postDetailMarkdownEditorProps(
@@ -2549,7 +2383,7 @@ function postDetailMarkdownEditorProps(
     previewPaneOwner: "post-detail-editor-pane",
     previewClassName: `markdown-preview markdown-wrap ${editorMode}`,
     previewChildren: (active, editorValue) =>
-      active ? <ReactMarkdown remarkPlugins={[remarkGfm]}>{editorValue}</ReactMarkdown> : null,
+      active ? <LegacyMarkdown>{editorValue}</LegacyMarkdown> : null,
     notificationClassName: "notification-receiver",
     notificationOwner: isCommentUpdateEditor
       ? "post-detail-comment-update-notification-receiver"

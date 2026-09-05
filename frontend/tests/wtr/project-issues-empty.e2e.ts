@@ -4220,6 +4220,28 @@ async function mockProjectIssues(
       }),
     });
   });
+  await page.route("**/api/v1/workspace", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        favoriteOrganizations: [],
+        favoriteProjects: [],
+        issueItems: [],
+        memberProjects: [],
+        ownProjects: [],
+        profile: {
+          avatarUrl: "/assets/images/default-avatar-32.png",
+          displayName: "Site Admin",
+          isGuest: false,
+          isSiteAdmin: true,
+          loginId: "admin",
+        },
+        pullRequestItems: [],
+        recentProjects: [],
+        watchedProjects: [],
+      }),
+    }),
+  );
   await page.route("**/api/v1/owners/admin/projects/sample/container**", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -5095,6 +5117,7 @@ async function attributes(page: Page, selector: string, name: string) {
 }
 
 async function canonicalizeScreenRoots(page: Page) {
+  await expect(page.locator("#usermenu-tab-content-list")).not.toHaveText("Loading...");
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(

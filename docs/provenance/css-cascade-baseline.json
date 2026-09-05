@@ -113116,7 +113116,7 @@
             ]
           },
           {
-            "s": ":target > [data-owner=\"post-detail-comment-media\"]",
+            "s": ":target > [data-owner=\"post-detail-comment-media\"], .comment.is-target > [data-owner=\"post-detail-comment-media\"]",
             "d": [
               {
                 "p": "border",
@@ -113126,7 +113126,7 @@
             ]
           },
           {
-            "s": ":target > [data-owner=\"post-detail-comment-media\"]::before",
+            "s": ":target > [data-owner=\"post-detail-comment-media\"]::before, .comment.is-target > [data-owner=\"post-detail-comment-media\"]::before",
             "d": [
               {
                 "p": "border-color",

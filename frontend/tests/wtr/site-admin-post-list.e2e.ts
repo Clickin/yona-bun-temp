@@ -95,7 +95,7 @@ const EXPECTED_POST_LIST_SCREEN = `
         <ul class="post-list-wrap">
           <li class="row-fluid listitem">
             <a href="__BASE_PATH__/acme/roadmap" class="avatar-wrap list-avatar">
-              <img src="/assets/images/default-project-logo.png" alt="roadmap">
+              <img src="__BASE_PATH__/legacy-assets/images/project_default_logo.png" alt="roadmap">
             </a>
             <div class="post-info-wrap">
               <a href="__BASE_PATH__/acme/roadmap" class="post-project">acme/roadmap</a>
@@ -329,8 +329,23 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
   );
 
   expect(actual).toEqual(expected);
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+    const image = document.querySelector<HTMLImageElement>(
+      '[data-owner="site-post-list-project-avatar-image"]',
+    );
+    if (!image) throw new Error("Missing project avatar image");
+    if (!image.complete) {
+      await new Promise<void>((resolve) => {
+        image.addEventListener("load", () => resolve(), { once: true });
+        image.addEventListener("error", () => resolve(), { once: true });
+      });
+    }
+    if (image.naturalWidth > 0) await image.decode();
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+  });
   expect(await postListMetrics(page)).toEqual({
-    avatarImageHeight: 86,
+    avatarImageHeight: 34,
     avatarImageWidth: 45,
     avatarWrapHeight: 45,
     avatarWrapMarginRight: 10,
@@ -1031,7 +1046,7 @@ function baseSiteAdminPostFixture(): SiteAdminPostFixture {
     notice: false,
     ownerName: "acme",
     postNumber: "7",
-    projectLogoUrl: "/assets/images/default-project-logo.png",
+    projectLogoUrl: `${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/legacy-assets/images/project_default_logo.png`,
     projectName: "roadmap",
     readme: false,
     title: "Release checklist",

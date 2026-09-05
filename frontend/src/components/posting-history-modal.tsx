@@ -6,7 +6,13 @@
  * the history matches the post body (XML comments stripped, highlight and
  * markdown syntax applied).
  */
-import { useEffect, useRef, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
+import {
+  useLayoutEffect,
+  useRef,
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactNode,
+} from "react";
 import { useLegacyMessages } from "../i18n";
 
 export function stripMarkdownComments(markdown: string) {
@@ -29,7 +35,7 @@ export function closeOnEscape(event: KeyboardEvent<HTMLElement>, close: () => vo
 export function useModalFocus(open: boolean) {
   const modalRef = useRef<HTMLDivElement>(null);
   // oxlint-disable-next-line react-doctor/no-effect-event-handler -- focus-on-open is the standard modal accessibility pattern (legacy bootstrap `.modal in` + autofocus), not an event simulation.
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (open) {
       modalRef.current?.focus();
     }

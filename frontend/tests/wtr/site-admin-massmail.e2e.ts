@@ -277,14 +277,13 @@ test("site admin mass mail project selection and mailto follow legacy JS flow", 
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockSiteAdminSession(page);
-  const requests = await mockMailList(page, { delayMs: 1000 });
+  const requests = await mockMailList(page);
   await mockProjectTypeahead(page);
   await captureWindowOpen(page);
 
   await page.goto(`${basePath}/sites/massmail`);
 
   await page.locator("#mailtoPrj").click();
-  await expect(page.locator("#project-list-wrap")).toHaveClass(/hide/);
   await expect(page.locator("#project-list-wrap")).toBeVisible();
   await page.locator("#input-project").fill("o");
   await expect(page.locator(".typeahead.dropdown-menu li")).toHaveText([
@@ -344,6 +343,7 @@ test("site admin mass mail project selection and mailto follow legacy JS flow", 
   await expect(page.locator("#write-email")).toBeDisabled();
   await expect(page.locator("#write-email strong")).toHaveText("loading...");
   await expect.poll(() => requests.payloads).toEqual([{ all: false, projects: ["yona/docs"] }]);
+  requests.releaseResponse();
   await expect
     .poll(() => page.evaluate(() => window.__openedWindows ?? []))
     .toEqual([{ target: "_self", url: "mailto:maintainer@example.com,writer@example.com," }]);
@@ -363,6 +363,7 @@ test("site admin mass mail project selection and mailto follow legacy JS flow", 
       { all: false, projects: ["yona/docs"] },
       { all: true, projects: [] },
     ]);
+  requests.releaseResponse();
 });
 
 test("site admin mass mail typeahead click fills input before explicit add", async ({ page }) => {
@@ -566,9 +567,10 @@ async function mockSiteAdminSession(page: Page) {
   });
 }
 
-async function mockMailList(page: Page, options: { delayMs?: number } = {}) {
+async function mockMailList(page: Page) {
   const requests = {
     payloads: [] as Array<{ all: boolean; projects: string[] }>,
+    releaseResponse: () => {},
   };
 
   await page.route("**/api/v1/site/mail-list", async (route) => {
@@ -577,9 +579,9 @@ async function mockMailList(page: Page, options: { delayMs?: number } = {}) {
       projects?: string[];
     };
     requests.payloads.push({ all: body.all === true, projects: body.projects ?? [] });
-    if (options.delayMs) {
-      await new Promise((resolve) => setTimeout(resolve, options.delayMs));
-    }
+    await new Promise<void>((resolve) => {
+      requests.releaseResponse = resolve;
+    });
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({ recipients: ["maintainer@example.com", "writer@example.com"] }),

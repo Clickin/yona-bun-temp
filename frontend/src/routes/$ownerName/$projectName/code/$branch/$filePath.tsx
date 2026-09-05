@@ -1,76 +1,11 @@
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import SyntaxHighlighter from "react-syntax-highlighter/dist/esm/prism-light";
-import { ghcolors } from "react-syntax-highlighter/dist/esm/styles/prism";
-import bash from "react-syntax-highlighter/dist/esm/languages/prism/bash";
-import c from "react-syntax-highlighter/dist/esm/languages/prism/c";
-import cpp from "react-syntax-highlighter/dist/esm/languages/prism/cpp";
-import csharp from "react-syntax-highlighter/dist/esm/languages/prism/csharp";
-import css from "react-syntax-highlighter/dist/esm/languages/prism/css";
-import diff from "react-syntax-highlighter/dist/esm/languages/prism/diff";
-import docker from "react-syntax-highlighter/dist/esm/languages/prism/docker";
-import go from "react-syntax-highlighter/dist/esm/languages/prism/go";
-import groovy from "react-syntax-highlighter/dist/esm/languages/prism/groovy";
-import ini from "react-syntax-highlighter/dist/esm/languages/prism/ini";
-import java from "react-syntax-highlighter/dist/esm/languages/prism/java";
-import javascript from "react-syntax-highlighter/dist/esm/languages/prism/javascript";
-import json from "react-syntax-highlighter/dist/esm/languages/prism/json";
-import jsx from "react-syntax-highlighter/dist/esm/languages/prism/jsx";
-import kotlin from "react-syntax-highlighter/dist/esm/languages/prism/kotlin";
-import markdown from "react-syntax-highlighter/dist/esm/languages/prism/markdown";
-import markup from "react-syntax-highlighter/dist/esm/languages/prism/markup";
-import php from "react-syntax-highlighter/dist/esm/languages/prism/php";
-import properties from "react-syntax-highlighter/dist/esm/languages/prism/properties";
-import python from "react-syntax-highlighter/dist/esm/languages/prism/python";
-import ruby from "react-syntax-highlighter/dist/esm/languages/prism/ruby";
-import rust from "react-syntax-highlighter/dist/esm/languages/prism/rust";
-import scala from "react-syntax-highlighter/dist/esm/languages/prism/scala";
-import scss from "react-syntax-highlighter/dist/esm/languages/prism/scss";
-import sql from "react-syntax-highlighter/dist/esm/languages/prism/sql";
-import tsx from "react-syntax-highlighter/dist/esm/languages/prism/tsx";
-import typescript from "react-syntax-highlighter/dist/esm/languages/prism/typescript";
-import yaml from "react-syntax-highlighter/dist/esm/languages/prism/yaml";
-
-SyntaxHighlighter.registerLanguage("bash", bash);
-SyntaxHighlighter.registerLanguage("c", c);
-SyntaxHighlighter.registerLanguage("cpp", cpp);
-SyntaxHighlighter.registerLanguage("csharp", csharp);
-SyntaxHighlighter.registerLanguage("css", css);
-SyntaxHighlighter.registerLanguage("diff", diff);
-SyntaxHighlighter.registerLanguage("docker", docker);
-SyntaxHighlighter.registerLanguage("go", go);
-SyntaxHighlighter.registerLanguage("groovy", groovy);
-SyntaxHighlighter.registerLanguage("ini", ini);
-SyntaxHighlighter.registerLanguage("java", java);
-SyntaxHighlighter.registerLanguage("javascript", javascript);
-SyntaxHighlighter.registerLanguage("json", json);
-SyntaxHighlighter.registerLanguage("jsx", jsx);
-SyntaxHighlighter.registerLanguage("kotlin", kotlin);
-SyntaxHighlighter.registerLanguage("markdown", markdown);
-SyntaxHighlighter.registerLanguage("xml", markup);
-SyntaxHighlighter.registerLanguage("php", php);
-SyntaxHighlighter.registerLanguage("properties", properties);
-SyntaxHighlighter.registerLanguage("python", python);
-SyntaxHighlighter.registerLanguage("ruby", ruby);
-SyntaxHighlighter.registerLanguage("rust", rust);
-SyntaxHighlighter.registerLanguage("scala", scala);
-SyntaxHighlighter.registerLanguage("scss", scss);
-SyntaxHighlighter.registerLanguage("sql", sql);
-SyntaxHighlighter.registerLanguage("tsx", tsx);
-SyntaxHighlighter.registerLanguage("typescript", typescript);
-SyntaxHighlighter.registerLanguage("yaml", yaml);
-
-// The legacy code viewer renders the pre with route-scoped style geometry
-// (no inline style); the prism theme is applied only to token spans.
-const codeFileTheme = {
-  ...ghcolors,
-  'pre[class*="language-"]': {},
-  'code[class*="language-"]': {},
-};
-
+import { LegacyMarkdown } from "../../../../../components/legacy-markdown";
+import {
+  highlightCodeToReactNodes,
+  injectMarkdownHighlightTheme,
+} from "../../../../../components/markdown-highlight";
 const MIME_TYPE_LANGUAGE: Record<string, string> = {
   "text/javascript": "javascript",
   "application/javascript": "javascript",
@@ -974,28 +909,41 @@ function FileView({
           className="markdown-wrap codebrowser-markdown"
           data-owner="project-code-file-markdown"
         >
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{fileText}</ReactMarkdown>
+          <LegacyMarkdown>{fileText}</LegacyMarkdown>
         </div>
       ) : (
         <>
           <div id="codeVal" className="hidden">
             {fileText}
           </div>
-          <SyntaxHighlighter
-            language={codeLanguage(mimeType, filePath)}
-            style={codeFileTheme}
-            PreTag="pre"
-            id="showCode"
+          <CodeFileHighlighter
             className="code-wrap"
+            code={fileText}
             data-mimetype={mimeType}
             data-owner="project-code-file-source"
-            codeTagProps={{ className: "code-content" }}
-          >
-            {fileText}
-          </SyntaxHighlighter>
+            id="showCode"
+            language={codeLanguage(mimeType, filePath)}
+          />
         </>
       )}
     </div>
+  );
+}
+
+type CodeFileHighlighterProps = Omit<React.ComponentPropsWithoutRef<"pre">, "children"> & {
+  code: string;
+  language?: string;
+};
+
+// Same outer DOM as the previous react-syntax-highlighter render:
+// <pre id class data-mimetype data-owner><code class="code-content">tokens</code></pre>.
+// Tokens now come from TanStack Highlight (escaped class-based markup).
+function CodeFileHighlighter({ code, language, ...props }: CodeFileHighlighterProps) {
+  injectMarkdownHighlightTheme();
+  return (
+    <pre {...props}>
+      <code className="code-content">{highlightCodeToReactNodes(code, language)}</code>
+    </pre>
   );
 }
 

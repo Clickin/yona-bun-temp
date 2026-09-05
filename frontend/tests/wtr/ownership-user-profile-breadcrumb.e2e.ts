@@ -103,11 +103,8 @@ test("public profile renders connected OAuth provider logos without crashing on 
   await expect(page.locator('[data-owner="user-profile-provider-logo"]')).toBeVisible();
   await expect(
     page.locator('[data-owner^="user-profile-provider-"][data-owner$="-image"]'),
-  ).toHaveCount(2);
-  await expect(page.locator('[data-owner="user-profile-provider-naver-image"]')).toHaveAttribute(
-    "alt",
-    "login with Naver",
-  );
+  ).toHaveCount(1);
+  await expect(page.locator('[data-owner="user-profile-provider-naver-image"]')).toHaveCount(0);
   await expect(page.locator('[data-owner="user-profile-provider-google-image"]')).toHaveAttribute(
     "alt",
     "login with Google",

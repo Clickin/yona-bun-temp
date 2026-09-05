@@ -142,7 +142,20 @@ export const scenarios = [
     title: "read legacy-compat issue API",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      { actor: "admin", action: "issue-api-probe", params: { api: "/-_-api/v1/owners/admin/projects/sample/issues/1" } },
+      {
+        actor: "admin",
+        action: "issue-api-probe",
+        params: { api: "/-_-api/v1/owners/admin/projects/sample/issues/1" },
+        // Legacy external -_-api reads are Authorization-token gated
+        // (UserApi.java:295-305) while yoram's canonical /api/v1 REST surface
+        // authenticates the React client by session (and honors API tokens);
+        // the sweep adapter carries sessions, so this legacy-side 401 is the
+        // documented transport difference, not a token-surface gap.
+        disposition: {
+          classification: "IMPLEMENTATION_DIFFERENCE",
+          evidence: "yona-original/app/controllers/api/UserApi.java:295-305 token gate vs AGENTS.md canonical /api/v1 REST contract",
+        },
+      },
     ],
     behaviorMatcher: { action: /^IssueApi\.getIssue$/ },
   },
@@ -218,7 +231,19 @@ export const scenarios = [
       { actor: "admin", action: "resolve-issue-pk", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "change-issue-state", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "update-issue-assignees", params: { owner: "admin", project: "sample" } },
-      { actor: "admin", action: "probe-issue-imports", params: { owner: "admin", project: "sample" } },
+      {
+        actor: "admin",
+        action: "probe-issue-imports",
+        params: { owner: "admin", project: "sample" },
+        // The /-_-api/v1 imports namespace is intentionally migrator-owned
+        // (SPEC.md Legacy API 접두사; docs/provenance/legacy-external-api.md),
+        // so the legacy-400/yoram-404 pair is the planned exclusion, not a
+        // route gap.
+        disposition: {
+          classification: "IMPLEMENTATION_DIFFERENCE",
+          evidence: "SPEC.md Legacy API 접두사 결정; docs/provenance/legacy-external-api.md exports/imports rows",
+        },
+      },
       { actor: "admin", action: "delete-issue", params: { owner: "admin", project: "sample" } },
     ],
     behaviorMatcher: {
@@ -239,7 +264,18 @@ export const scenarios = [
       { actor: "admin", action: "unvote-comment", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "delete-comment", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "create-issue-comment", params: { owner: "admin", project: "sample" } },
-      { actor: "admin", action: "delete-comment-compat", params: { owner: "admin", project: "sample" } },
+      {
+        actor: "admin",
+        action: "delete-comment-compat",
+        params: { owner: "admin", project: "sample" },
+        // Legacy compat comment-delete crashes with 500 on the same request
+        // yoram cleanly rejects; degenerate legacy crash (2026-09
+        // reclassification, legacy-side defect family).
+        disposition: {
+          classification: "LEGACY_BUG_NOT_REPRODUCED",
+          evidence: "docs/provenance/parity-reclassification-2026-09.md legacy comment-delete 500 family",
+        },
+      },
       { actor: "admin", action: "delete-issue", params: { owner: "admin", project: "sample" } },
     ],
     behaviorMatcher: {
@@ -260,7 +296,17 @@ export const scenarios = [
       { actor: "admin", action: "unwatch-issue-get", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "toggle-favorite-issue", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "issue-weight-votes", params: { owner: "admin", project: "sample" } },
-      { actor: "admin", action: "update-sharer", params: { owner: "admin", project: "sample" } },
+      {
+        actor: "admin",
+        action: "update-sharer",
+        params: { owner: "admin", project: "sample" },
+        // Legacy -_-api issue-share handler crashes with 500 on the sweep
+        // payload where yoram's sharer toggle succeeds/fails cleanly.
+        disposition: {
+          classification: "LEGACY_BUG_NOT_REPRODUCED",
+          evidence: "docs/provenance/parity-reclassification-2026-09.md legacy issue-share 500 family",
+        },
+      },
       { actor: "admin", action: "comment-noti-receivers", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "detect-issue-change", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "delete-issue", params: { owner: "admin", project: "sample" } },
@@ -387,7 +433,7 @@ const yoramApiBase = (step) => `/api/v1/owners/${step.params.owner}/projects/${s
 // rules below are the renamed rows of restful-uri-mapping v1.
 function compatToRest(path) {
   return `/api/v1${path.slice("/-_-api/v1".length)}`
-    .replace(/^\/favorite(Issues|Projects|Organizations)(?=\/|$)/u, (_, kind) => `/user/favorites/${kind.toLowerCase()}`)
+    .replace(/^\/api\/v1\/favorite(Issues|Projects|Organizations)(?=\/|$)/u, (_, kind) => `/api/v1/user/favorites/${kind.toLowerCase()}`)
     .replace(/\/issuelabel\/([^/?]+)/u, "/issues/$1/labels")
     .replace(/\/postlabel\/([^/?]+)/u, "/posts/$1/labels")
     .replace(/\/assignableUsers(?=\/|\?|$)/u, "/assignable-users/find")
@@ -568,6 +614,30 @@ function findIdByName(node, name) {
     for (const value of Object.values(node)) {
       const found = findIdByName(value, name);
       if (found !== null) return found;
+    }
+  }
+  return null;
+}
+
+// Depth-first search for the first object NODE named `name` (by name-ish key);
+// unlike findIdByName this returns the containing object so sibling fields
+// (e.g. categoryId) stay reachable.
+function findNodeByName(node, name) {
+  const matches = (candidate) => candidate === name;
+  if (Array.isArray(node)) {
+    for (const child of node) {
+      const found = findNodeByName(child, name);
+      if (found) return found;
+    }
+    return null;
+  }
+  if (node && typeof node === "object") {
+    for (const key of ["name", "labelName", "categoryName"]) {
+      if (matches(node[key]) && Number(node.id) > 0) return node;
+    }
+    for (const value of Object.values(node)) {
+      const found = findNodeByName(value, name);
+      if (found) return found;
     }
   }
   return null;
@@ -811,13 +881,16 @@ export const actionDefinitions = {
       const { step, resolved, helpers } = ctx;
       const legacyTranslation = translateLegacy(step, resolved);
       const yoramTranslation = translateYoram(step, resolved);
-      const { legacyResult } = await helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
-      const categoryId = firstCategoryId(JSON.parse(legacyResult.body || "null"));
-      if (!categoryId) return;
+      // Each side's category id space is its own; probing the LEGACY id on
+      // yoram (or vice versa) measures a phantom row, not the category read.
+      const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
+      const legacyCategoryId = firstCategoryId(JSON.parse(legacyResult.body || "null"));
+      const yoramCategoryId = firstCategoryId(yoramResult.json);
+      if (!legacyCategoryId && !yoramCategoryId) return;
       await helpers.requestBoth(
         ctx,
-        { method: "GET", path: ownerPath(step, `/issue/label/category/${categoryId}`) },
-        { method: "GET", path: ownerPath(step, `/issue/label/category/${categoryId}`) },
+        { method: "GET", path: ownerPath(step, `/issue/label/category/${legacyCategoryId ?? yoramCategoryId}`) },
+        { method: "GET", path: ownerPath(step, `/issue/label/category/${yoramCategoryId ?? legacyCategoryId}`) },
       );
     },
   },
@@ -1270,6 +1343,13 @@ export const actionDefinitions = {
       state.categoryIdYoram = findIdByName(cats.yoramResult.json, `parity-cat-${suffix}`);
       state.labelIdLegacy = findIdByName(legacyJson, `parity-label-${suffix}`);
       state.labelIdYoram = findIdByName(yoramResult.json, `parity-label-${suffix}`);
+      // The category of THIS scenario's label is authoritative from the label
+      // row itself: create-issue-label may attach to an existing category, and
+      // a name-searched category id can drift from the label's real category.
+      const legacyLabel = findNodeByName(legacyJson, `parity-label-${suffix}`);
+      const yoramLabel = findNodeByName(yoramResult.json, `parity-label-${suffix}`);
+      if (Number(legacyLabel?.categoryId) > 0) state.categoryIdLegacy = Number(legacyLabel.categoryId);
+      if (Number(yoramLabel?.categoryId) > 0) state.categoryIdYoram = Number(yoramLabel.categoryId);
       if (!state.labelIdLegacy && !state.labelIdYoram && !state.categoryIdLegacy && !state.categoryIdYoram) {
         entry.errors.push(`label/category ids unresolved (${step.action}) [${suffix}]: nothing matched the sweep-suffixed names`);
       }
@@ -1285,10 +1365,13 @@ export const actionDefinitions = {
   ),
 
   "update-issue-label": pairMutation(
-    (step, v) => ({ method: "PUT", path: `/${step.params.owner}/${step.params.project}/issue/label/${v.labelId}`, form: { name: `${v.labelName}-renamed`, color: "#654321" } }),
-    (step, v) => ({ method: "PUT", path: `/${step.params.owner}/${step.params.project}/issue/label/${v.labelId}`, form: { name: `${v.labelName}-renamed`, color: "#654321" } }),
+    // Legacy binds Form<IssueLabel> whose @Required category must arrive as
+    // category.id (models/IssueLabel.java); without it legacy 400s and the
+    // pair never reaches the update contract.
+    (step, v) => ({ method: "PUT", path: `/${step.params.owner}/${step.params.project}/issue/label/${v.labelId}`, form: { name: `${v.labelName}-renamed`, color: "#654321", "category.id": String(v.categoryIdLegacy ?? "") } }),
+    (step, v) => ({ method: "PUT", path: `/${step.params.owner}/${step.params.project}/issue/label/${v.labelId}`, form: { name: `${v.labelName}-renamed`, color: "#654321", "category.id": String(v.categoryIdYoram ?? "") } }),
     null,
-    whenIds(["labelIdLegacy", "labelIdYoram"]),
+    whenIds(["labelIdLegacy", "labelIdYoram", "categoryIdLegacy", "categoryIdYoram"]),
   ),
 
   "delete-issue-label": pairMutation(
@@ -1312,6 +1395,9 @@ export const actionDefinitions = {
       const page = await helpers.sendRaw(ctx, "legacy", { method: "GET", path: `/${step.params.owner}/${step.params.project}` });
       const legacyProjectId = Number((/data-project-id="(\d+)"/u.exec(page.body ?? "") ?? [])[1]) || null;
       if (!legacyProjectId) entry.errors.push(`create-label-category: legacy project id unresolved [${suffix}]`);
+      // Persisted for the update-label-category pair, whose legacy form binds
+      // the @Required project field.
+      if (legacyProjectId) state.legacyProjectId = legacyProjectId;
       const categoryName = `parity-cat-${suffix}`;
       const legacyResult = await helpers.sendRaw(ctx, "legacy", this.translateLegacy(step, { categoryName, legacyProjectId }));
       const yoramResult = await helpers.sendRaw(ctx, "yoram", this.translateYoram(step, { categoryName }));
@@ -1333,8 +1419,11 @@ export const actionDefinitions = {
   },
 
   "update-label-category": pairMutation(
-    (step, v) => ({ method: "PUT", path: `/${step.params.owner}/${step.params.project}/issue/label/category/${v.categoryIdLegacy}`, form: { name: `${v.categoryName}-renamed` } }),
-    (step, v) => ({ method: "PUT", path: `/${step.params.owner}/${step.params.project}/issue/label/category/${v.categoryIdYoram}`, form: { name: `${v.categoryName}-renamed` } }),
+    // Legacy binds Form<IssueLabelCategory> whose @Required project must
+    // arrive as project.id (models/IssueLabelCategory.java); without it
+    // legacy 400s while yoram's compat route accepts the bare name.
+    (step, v) => ({ method: "PUT", path: `/${step.params.owner}/${step.params.project}/issue/label/category/${v.categoryIdLegacy}`, form: { name: `${v.categoryName}-renamed`, "project.id": String(v.legacyProjectId ?? "") } }),
+    (step, v) => ({ method: "PUT", path: `/${step.params.owner}/${step.params.project}/issue/label/category/${v.categoryIdYoram}`, form: { name: `${v.categoryName}-renamed`, "project.id": String(v.legacyProjectId ?? "") } }),
     null,
     whenIds(["categoryIdLegacy", "categoryIdYoram"]),
   ),

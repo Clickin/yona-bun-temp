@@ -123,6 +123,5 @@ export async function restFetch<T>(
       restResponseCache.set(requestUrl, { etag, payload });
     }
   }
-
   return payload as T;
 }

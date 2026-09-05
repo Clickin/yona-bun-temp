@@ -77,6 +77,38 @@ export function diffSkeletons(legacyEntries, yoramEntries, limit = 20) {
   return diffs;
 }
 
+// Elements whose absence from the Yoram render is a user-visible loss, not a
+// structural re-wrap: controls and form/nav affordances. Text-bearing entries
+// are handled below regardless of tag.
+const VISIBLE_LOSS_TAGS = new Set(["a", "button", "input", "select", "textarea", "label", "form"]);
+
+function skeletonEntryOf(value) {
+  return normalizeSkeletonEntries([String(value ?? "")])[0] ?? "";
+}
+
+// Does a skeleton diff indicate a VISIBLE loss on the Yoram side (missing
+// text, button, link, form control, count/badge, validation message, nav
+// label, modal content)? A legacy-only entry that also appears among the
+// yoram-only entries is the same tuple re-wrapped in React-owned markup —
+// structural drift, not a loss. Used by the DOM classification rules so no
+// allow rule can ever accept a visible loss (plan Phase B3).
+export function domVisibleLoss(detail) {
+  const diffs = detail?.actual?.firstDiffs;
+  if (!Array.isArray(diffs)) return false;
+  const yoramEntries = new Set(
+    diffs.filter((diff) => diff.side === "yoram-only").map((diff) => skeletonEntryOf(diff.actual)).filter(Boolean),
+  );
+  return diffs.some((diff) => {
+    if (diff.side !== "legacy-only") return false;
+    const entry = skeletonEntryOf(diff.expected);
+    if (!entry || yoramEntries.has(entry)) return false;
+    const separator = entry.indexOf(":");
+    const tag = (separator === -1 ? entry : entry.slice(0, separator)).split(".")[0].toLowerCase();
+    const text = separator === -1 ? "" : entry.slice(separator + 1).trim();
+    return text.length > 0 || VISIBLE_LOSS_TAGS.has(tag);
+  });
+}
+
 // --- DB semantic projection -------------------------------------------------
 
 function normalizeColumnKey(key) {

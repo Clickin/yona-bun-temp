@@ -2,6 +2,7 @@
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { domVisibleLoss } from "./diff.mjs";
 
 // Unified classification enum shared by the triage doc
 // (docs/provenance/release-triage-2026-08.md) and the verdict gate.
@@ -39,30 +40,34 @@ function normalizeClassification(value) {
   return CLASSIFICATIONS.includes(value) ? value : "UNVERIFIED";
 }
 
-// A violation is {route, behaviorId?, kind: "api"|"dom"|"db"|"browser"|"harness"|"infra"|"divergence",
-// expected, actual, classification, reason}.
-export function classify(kind, detail) {
-  if (kind === "api" || kind === "dom") {
-    // Yoram serves the SPA shell over plain HTML; skeleton drift rooted in
-    // React-owned markup is tracked by the WTR lanes and is not a sweep gap.
-    const text = JSON.stringify(detail);
-    if (/yona-root|__YONA_RUNTIME_CONFIG__|react-root/iu.test(text)) {
-      return {
-        classification: "IMPLEMENTATION_DIFFERENCE",
-        reason:
-          "presentation-only: legacy SSR skeleton vs yoram React SPA shell; user-visible DOM/visual parity is enforced by the WTR e2e lanes, not the sweep",
-      };
-    }
-  }
-  // Anything unmatched stays UNVERIFIED so new divergences remain visible and
-  // block the strict gate instead of silently passing.
-  return { classification: "UNVERIFIED", reason: null };
-}
-
 // Narrow, evidence-backed classifications for the known residual findings of
 // the current sweep surface (see docs/provenance/release-triage-2026-08.md).
 // Every rule carries a reason; IMPLEMENTATION_DIFFERENCE rules additionally carry a
 // `rationale` reference. Anything unmatched stays UNVERIFIED.
+//
+// First-match order matters: specific rules must precede their broader family
+// catch-alls (see the label-route and sharableUsers chains). There is NO
+// blanket dom -> IMPLEMENTATION_DIFFERENCE rule: unknown DOM divergence falls
+// through to UNVERIFIED (blocking) unless an explicit, evidence-backed rule
+// below matches — and no allow rule can match a visible loss
+// (diff.mjs#domVisibleLoss), so missing text/buttons/controls stay blocking.
+function pairStatuses(detail) {
+  const actual = detail?.actual;
+  const legacy =
+    Number(actual?.legacyStatus ?? /"expected":"legacy HTTP (\d+)"/u.exec(JSON.stringify(detail))?.[1]) || null;
+  const yoram =
+    Number(actual?.yoramStatus ?? /"actual":"yoram HTTP (\d+)"/u.exec(JSON.stringify(detail))?.[1]) || null;
+  return { legacy, yoram };
+}
+
+// Fallback for findings no rule claims: UNVERIFIED so new divergences remain
+// visible and block the strict gate instead of silently passing.
+export function classify(kind, detail) {
+  void kind;
+  void detail;
+  return { classification: "UNVERIFIED", reason: null };
+}
+
 const CLASSIFICATION_RULES = [
   {
     test: ({ kind, route, detail }) =>
@@ -108,22 +113,30 @@ const CLASSIFICATION_RULES = [
       "harness id-resolution failure: one side did not yield the created-entity id, so the pair was not comparable; fix the discovery step rather than treating this as a product gap",
   },
   {
-    test: ({ kind, route }) => kind === "api" && /\/sites\/(toggle|unwatchUpdate)/u.test(route),
-    classification: "REAL_OBSERVABLE_MISMATCH",
-    reason:
-      "site-admin mutation routes diverge (yoram site_admin catch-all vs legacy dedicated handlers); handler-level parity not yet implemented",
-  },
-  {
-    test: ({ kind, detail }) =>
-      kind === "api" && /"status":401|"legacyStatus":401/u.test(JSON.stringify(detail)),
-    classification: "REAL_OBSERVABLE_MISMATCH",
-    reason:
-      "legacy -_-api/v1 compat mutations are Authorization-token gated (UserApi.java isAuthored) while yoram accepts cookie sessions; token-auth surface not yet implemented",
+    // Legacy's external -_-api/v1 surface is Authorization-token gated by
+    // design (UserApi.isAuthored) while yoram's canonical /api/v1 REST API
+    // (AGENTS.md canonical-contract decision) serves its React client with
+    // sessions and additionally honors API tokens (Authorization: Bearer /
+    // Yona-Token). Legacy 401 + yoram success is that documented transport
+    // difference — NOT an unimplemented token surface (token auth exists:
+    // /api/v1/auth/token exchange, admin token gating). Legacy success +
+    // yoram 401 does NOT match and stays UNVERIFIED (blocking).
+    test: ({ kind, detail }) => {
+      if (kind !== "api") return false;
+      const { legacy, yoram } = pairStatuses(detail);
+      return legacy === 401 && yoram !== null && yoram < 400;
+    },
+    classification: "IMPLEMENTATION_DIFFERENCE",
+    rationale:
+      "transport difference: legacy external -_-api/v1 routes are Authorization-token gated (yona-original/app/controllers/api/UserApi.java:295-305) while yoram's canonical /api/v1 REST API authenticates the React client by session and additionally resolves API tokens (crates/server/src/routes/utils.rs Yona-Token/Bearer); the sweep adapter carries sessions, not tokens",
+    reason: "legacy answers 401 (token-gated external API) where yoram serves the canonical REST surface by session",
   },
   {
     // Fixture-state asymmetry: legacy-only candidates are stale throwaway
     // accounts from prior persistent-MariaDB runs (or yoram-only pilot seed
-    // projects) — environment state, not candidate-filter logic.
+    // projects) — environment state, not candidate-filter logic. The >0 guard
+    // keeps this rule from shadowing the general sharableUsers mismatch below
+    // when nothing actually differs on the legacy side.
     test: ({ kind, route, detail }) => {
       if (kind !== "api" || !/(sharableUsers|findSharer)/u.test(route)) return false;
       const legacyItems = Array.isArray(detail?.expected) ? detail.expected : [];
@@ -132,7 +145,7 @@ const CLASSIFICATION_RULES = [
       );
       const legacyOnly = legacyItems.filter((i) => !actualKeys.has(`${i.loginId}|${i.name}`));
       return (
-        legacyOnly.length >= 0 &&
+        legacyOnly.length > 0 &&
         legacyOnly.every(
           (i) =>
             i.type === "user" &&
@@ -148,22 +161,15 @@ const CLASSIFICATION_RULES = [
     test: ({ kind, route }) => kind === "api" && /(sharableUsers|findSharer)/u.test(route),
     classification: "REAL_OBSERVABLE_MISMATCH",
     reason:
-      "sharableUsers candidate-set comparison remains unresolved after the empty-query implementation; verify parity fixture/catalog alignment or obtain a product decision before changing candidate semantics",
-  },
-  {
-    test: ({ kind, route, detail }) =>
-      kind === "api" && /(sharableUsers|findSharer)/u.test(route) && JSON.stringify(detail.actual) === "[]",
-    classification: "REAL_OBSERVABLE_MISMATCH",
-    reason:
-      "regression: empty-query sharable-user discovery returned no candidates although the legacy contract lists active users and public projects",
+      "regression detector: the empty-query sharable-user contract is implemented (crates/persistence/src/repo/issue_picker.rs, contract coverage crates/server/tests/issue_sharer_contract.rs); a candidate-set divergence now means fixture/catalog drift or a filter regression — verify fixtures or obtain a product decision before changing candidate semantics",
   },
   {
     test: ({ kind, route, detail }) => kind === "api" && /\/markdown\//u.test(route) && /"status":404|"yoramStatus":404/u.test(JSON.stringify(detail)),
     classification: "IMPLEMENTATION_DIFFERENCE",
     rationale:
-      "preview rendering is owned by the React client (react-markdown); legacy POST /markdown server-render endpoint intentionally not replicated (product decision 2026-08-24)",
+      "preview rendering is owned by the React client (frontend Markdown component); the legacy POST /markdown server-render endpoint is intentionally not replicated (product decision 2026-08-24)",
     reason:
-      "preview rendering is owned by the React client (react-markdown); legacy POST /markdown server-render endpoint intentionally not replicated (product decision 2026-08-24)",
+      "preview rendering is owned by the React client (frontend Markdown component); legacy POST /markdown server-render endpoint intentionally not replicated (product decision 2026-08-24)",
   },
   {
     test: ({ kind, route, detail }) => kind === "api" && /pullRequest\/\d+\/(un)?review/u.test(route) && /"status":403|"status":404/u.test(JSON.stringify(detail.actual ?? {})),
@@ -189,52 +195,17 @@ const CLASSIFICATION_RULES = [
     reason: "SPA shell: legacy /_init uikit bootstrap redirect is meaningless to the React shell, which serves its own init payload",
   },
   {
-    test: ({ kind, route }) => kind === "api" && /^\/users\/login$/u.test(route.split("?")[0]),
-    classification: "IMPLEMENTATION_DIFFERENCE",
-    rationale: "presentation-only: auth pages are served client-side by the React shell; rendered parity is enforced by the WTR e2e lanes",
-    reason: "SPA shell: yoram serves auth pages client-side and rejects the bare GET with 4xx; rendered parity is enforced by the WTR e2e lanes",
-  },
-  {
     test: ({ kind, route }) => kind === "api" && /^\/user\/editform\//u.test(route.split("?")[0]),
     classification: "IMPLEMENTATION_DIFFERENCE",
     rationale:
-      "surface-replaced: settings tabs implemented as workspace overview/actions (crates/server/src/routes/workspace.rs:1082-1425); residual compat-tab alias coverage re-checked at Phase 4 rerun",
+      "surface-replaced: settings tabs implemented as workspace overview/actions (crates/server/src/routes/workspace.rs:1858-2103 hosts the editform/defultLoginPage compat surface); residual compat-tab alias coverage re-checked at Phase 4 rerun",
     reason: "yoram implements the settings surface as workspace actions; legacy /user/editform/:tabId compat tab subset (defultLoginPage/profile) diverges in route shape",
-  },
-  {
-    test: ({ kind, route, detail }) => kind === "api" && /^\/user\/email\//u.test(route.split("?")[0]) && /400|403|415/u.test(JSON.stringify(detail.actual ?? {})),
-    classification: "REAL_OBSERVABLE_MISMATCH",
-    reason:
-      "regression: Yoram rejects setAsMain for an unvalidated address where legacy accepts it; the current contract test covers the legacy-compatible behavior",
-  },
-  {
-    test: ({ kind, route, detail }) =>
-      kind === "api" &&
-      (/^\/organizations\/[^/]+(\/member\/leave)?$/u.test(route) || /^\/-_-api\/v1\/favoriteProjects\//u.test(route)) &&
-      /403/u.test(JSON.stringify(detail.actual ?? {})),
-    classification: "REAL_OBSERVABLE_MISMATCH",
-    reason: "yoram authorization rejects org delete/leave and workspace favorite-toggle calls that legacy accepts with an admin session; org/favorites mutation authorization incomplete",
-  },
-  {
-    test: ({ kind, route, detail }) => kind === "api" && /^\/[^/?]+$/u.test(route) && /"actual":"yoram HTTP 403"/u.test(JSON.stringify(detail)),
-    classification: "REAL_OBSERVABLE_MISMATCH",
-    reason: "yoram site-admin user-level toggles reject with 403 where legacy site admin succeeds; per-user site-admin mutation surface incomplete",
-  },
-  {
-    test: ({ kind, route }) => kind === "api" && /\/files\/(:?[^/]+)\/$/u.test(route),
-    classification: "IMPLEMENTATION_DIFFERENCE",
-    rationale: "routing nuance: both sides deliver identical file bytes; only trailing-slash normalization differs",
-    reason: "routing nuance: legacy 303-normalizes the trailing-slash attachment route while yoram serves it directly; both deliver the file",
   },
   {
     test: ({ kind, route, detail }) => kind === "api" && /postlabel\//u.test(route) && /"status":500/u.test(JSON.stringify(detail.expected ?? {})),
     classification: "LEGACY_BUG_NOT_REPRODUCED",
-    reason: "legacy -_-api postlabel handler crashes with 500 on an empty label set where yoram's mapped route answers 404; degenerate-payload crash, not specified behavior",
-  },
-  {
-    test: ({ kind, route, detail }) => kind === "api" && /\(PATCH\)$/u.test(route) && /"status":409/u.test(JSON.stringify(detail.expected ?? {})),
-    classification: "REAL_OBSERVABLE_MISMATCH",
-    reason: "regression: legacy stale-original comment PATCH returns 409 while Yoram accepts 200; the current original-check contract is covered by focused tests",
+    reason:
+      "legacy -_-api postlabel handler crashes with 500 on an empty label set where yoram's mapped route answers 404; degenerate-payload crash, not specified behavior (yona-original/app/controllers/api/BoardApi.java:42-52 parses each label node unconditionally)",
   },
   {
     // Stored-state drift: both sides hold DIFFERENT contents at patch time, so
@@ -249,20 +220,6 @@ const CLASSIFICATION_RULES = [
       "stored-comment drift between sides at PATCH time (see actual.storedContents): the scenario chain diverged upstream, so the pair does not measure the original-check contract",
   },
   {
-    // Genuinely-stale original (both sides store the same, != sent original):
-    // legacy correctly 409s while yoram accepts -> real contract divergence.
-    test: ({ kind, route, detail }) =>
-      kind === "api" &&
-      /\(PATCH\)$/u.test(route) &&
-      detail?.actual?.storedContents !== undefined &&
-      detail.actual.storedContents.legacy === detail.actual.storedContents.yoram &&
-      detail.actual.originalSent !== detail.actual.storedContents.legacy &&
-      /"status":200/u.test(JSON.stringify(detail.actual)),
-    classification: "REAL_OBSERVABLE_MISMATCH",
-    reason:
-      "regression: a genuinely stale original yields 200 on Yoram where legacy answers 409 {message, storedContent}; focused tests cover this contract",
-  },
-  {
     // States agree AND original matches them, yet statuses diverge: unexplained
     // observation drift — treat as harness error pending investigation.
     test: ({ kind, route, detail }) =>
@@ -271,17 +228,7 @@ const CLASSIFICATION_RULES = [
       detail?.actual?.storedContents !== undefined,
     classification: "HARNESS_ERROR",
     reason:
-      "PATCH pair diverged although both sides' stored contents match the sent original — unexplained observation drift, needs investigation",
-  },
-  {
-    test: ({ kind, route, detail }) => kind === "api" && /issue\/label\/category\//u.test(route) && /"yoramStatus":403|"legacyStatus":403/u.test(JSON.stringify(detail.actual ?? {})),
-    classification: "REAL_OBSERVABLE_MISMATCH",
-    reason: "yoram rejects label-category rename with 403 where legacy updates it (200); category management authorization incomplete",
-  },
-  {
-    test: ({ kind, route, detail }) => kind === "api" && /issue\/label\/category\//u.test(route) && /"legacyStatus":400/u.test(JSON.stringify(detail.actual ?? {})),
-    classification: "LEGACY_BUG_NOT_REPRODUCED",
-    reason: "legacy DELETE issue-label/category answers 400 headless where yoram deletes (200); legacy fails to answer success for an operation it performs",
+      "PATCH original-check pair diverged unexpectedly at HEAD (yoram answers 409 {message, storedContent} on a stale original since the optimistic-concurrency fix; focused coverage crates/server/tests/issue_core_contract.rs) — investigate the pair before treating it as product behavior",
   },
   {
     test: ({ kind, route }) => kind === "api" && (/\/changeVCS$/u.test(route) || /\(cleanup\)$/u.test(route)),
@@ -314,23 +261,10 @@ const CLASSIFICATION_RULES = [
       "per-side reset tokens are single-use and the shared sweep session consumes/contaminates one side's token before its POST replays: config is already matched (email verification enabled both sides), yet statuses diverge; capture and replay each side's token in isolation",
   },
   {
-    test: ({ kind, route }) => kind === "api" && route === "/restricted",
-    classification: "IMPLEMENTATION_DIFFERENCE",
-    rationale: "presentation-only gating: anonymous users are gated on both sides; destination comparison is skipped when no deterministic redirect exists",
-    reason: "restricted guard divergence: legacy redirects the anonymous request while Yoram serves its auth shell without a Location",
-  },
-  {
     test: ({ kind, route }) => kind === "api" && route === "/sites/import",
     classification: "IMPLEMENTATION_DIFFERENCE",
     rationale: "boundary-status nuance: invalid payloads are rejected on both sides and nothing is persisted; exact rejection code is outside the compatibility contract",
     reason: "invalid site-import boundary divergence: empty/invalid import payloads are rejected with different legacy/Yoram statuses; no import state is written",
-  },
-  {
-    test: ({ kind }) => kind === "dom",
-    classification: "IMPLEMENTATION_DIFFERENCE",
-    rationale:
-      "presentation-only: legacy SSR HTML vs yoram React render differ structurally; user-visible DOM/visual parity is enforced by the WTR e2e lanes, not the sweep",
-    reason: "SPA-shell skeleton drift between legacy SSR and the React shell",
   },
   {
     // Intentional exclusion per SPEC.md "Legacy API 접두사": broad
@@ -350,7 +284,7 @@ const CLASSIFICATION_RULES = [
       kind === "api" && /setAsDefault/u.test(route) && /"status":500|"legacyStatus":500/u.test(JSON.stringify(detail)),
     classification: "LEGACY_BUG_NOT_REPRODUCED",
     reason:
-      "legacy setAsDefault crashes with 500 headless where yoram persists the default branch; degenerate legacy crash, agreed intent verified by the resulting default ref",
+      "legacy setAsDefault crashes with 500 headless where yoram persists the default branch; degenerate legacy crash, agreed intent verified by the resulting default ref (yona-original/app/controllers/BranchApp.java:81-89 declares throws IOException/GitAPIException and mutates the git config)",
   },
   {
     test: ({ kind, route, detail }) =>
@@ -391,6 +325,43 @@ const CLASSIFICATION_RULES = [
     classification: "HARNESS_ERROR",
     reason:
       "label attach/update/delete pair diverged: the discovery-resolved id/payload contract for this label route is still imperfect; fix id resolution and payload shape rather than comparing agreed failures",
+  },
+  // --- explicit DOM allow rules (plan Phase B) --------------------------------
+  // No blanket dom rule exists: only these two reviewed, evidence-backed
+  // fingerprints may classify a DOM divergence as IMPLEMENTATION_DIFFERENCE,
+  // and neither can match a visible loss (domVisibleLoss guard below).
+  {
+    // Reviewed selector/content tuple: the legacy SSR document carries the SPA
+    // shell bootstrap markers (yona-root / __YONA_RUNTIME_CONFIG__ /
+    // react-root); drift mentioning them is React-owned shell markup, whose
+    // rendered parity is owned by the WTR e2e lanes and the frozen visual
+    // baseline (docs/provenance/frontend-visual-parity-baseline-2026-07-11.md,
+    // arbitration in docs/provenance/parity-reclassification-2026-09.md §3).
+    test: ({ kind, route, detail }) => {
+      void route;
+      if (kind !== "dom" && kind !== "api") return false;
+      if (kind === "dom" && domVisibleLoss(detail)) return false;
+      return /yona-root|__YONA_RUNTIME_CONFIG__|react-root/iu.test(JSON.stringify(detail));
+    },
+    classification: "IMPLEMENTATION_DIFFERENCE",
+    rationale:
+      "presentation-only: the diff payload carries the React SPA shell bootstrap markers (yona-root/__YONA_RUNTIME_CONFIG__/react-root) — legacy SSR skeleton vs yoram React shell markup; rendered user-visible parity is enforced by the WTR e2e lanes and the frozen visual baseline, not the sweep",
+    reason: "SPA-shell bootstrap drift between legacy SSR and the React shell",
+  },
+  {
+    // Reviewed alignment artifact: every diffing entry exists on BOTH sides at
+    // a different position (multiset-equal, order-only). Content is identical;
+    // geometry/order parity is owned by the WTR lanes + frozen visual baseline
+    // (docs/provenance/parity-reclassification-2026-09.md §3 arbitration).
+    test: ({ kind, detail }) => {
+      if (kind !== "dom" || domVisibleLoss(detail)) return false;
+      const diffs = detail?.actual?.firstDiffs;
+      return Array.isArray(diffs) && diffs.length > 0 && diffs.every((diff) => diff.side === "order");
+    },
+    classification: "IMPLEMENTATION_DIFFERENCE",
+    rationale:
+      "alignment artifact: the skeleton multisets are equal and only entry order differs (all firstDiffs sides are 'order'), the reviewed SSR-vs-SPA alignment drift from the 2026-09 reclassification arbitration; visual order/geometry parity is owned by the WTR e2e lanes",
+    reason: "skeleton order drift with identical content on both sides",
   },
   {
     test: ({ kind }) => kind === "harness",

@@ -71,6 +71,7 @@ test("SVN pull request create route renders the legacy Git-only bad request", as
     "href",
     `${basePath}/`,
   );
+  await expect(page.locator('[data-owner="site-admin-affix"]')).toBeVisible();
   const geometry = await page.evaluate(() => {
     const pageWrap = document.querySelector<HTMLElement>(".page-wrap-outer")!;
     const projectPage = document.querySelector<HTMLElement>(".project-page-wrap")!;
@@ -802,9 +803,14 @@ test("pull request create form preserves legacy yobi.git.Write submit validation
   await page.goto(
     `${basePath}/admin/sample/newPullRequestForm?fromBranch=feature/ui&toBranch=main`,
   );
-  const noChangesDialog = nextDialogMessage(page);
+  await expect(page.locator("#status")).toHaveText("No changes have been made.");
+  const noChangesMessages: string[] = [];
+  page.once("dialog", async (dialog) => {
+    noChangesMessages.push(dialog.message());
+    await dialog.dismiss();
+  });
   await page.click('form.nm button[type="submit"]');
-  await expect(noChangesDialog).resolves.toBe("No changes have been made.");
+  await expect.poll(() => noChangesMessages).toEqual(["No changes have been made."]);
   expect(postRequests).toEqual([]);
 
   await page.unrouteAll({ behavior: "ignoreErrors" });
@@ -812,10 +818,16 @@ test("pull request create form preserves legacy yobi.git.Write submit validation
   await page.goto(
     `${basePath}/admin/sample/newPullRequestForm?fromBranch=feature/ui&toBranch=main`,
   );
+  await expect(page.locator("#status")).toHaveText("This pull request can be merged safely.");
+  await expect(page.locator("#title")).toHaveValue("Add UI");
   await page.fill("#title", "");
-  const titleDialog = nextDialogMessage(page);
+  const titleMessages: string[] = [];
+  page.once("dialog", async (dialog) => {
+    titleMessages.push(dialog.message());
+    await dialog.dismiss();
+  });
   await page.click('form.nm button[type="submit"]');
-  await expect(titleDialog).resolves.toBe("Title is a required field.");
+  await expect.poll(() => titleMessages).toEqual(["Title is a required field."]);
   expect(postRequests).toEqual([]);
 
   expect(ROUTE_SOURCE).not.toContain("window.confirm(");

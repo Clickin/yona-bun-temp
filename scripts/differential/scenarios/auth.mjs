@@ -125,7 +125,18 @@ export const scenarios = [
     title: "compat default login page mutation (boundary payload)",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      { actor: "admin", action: "post-compat-default-login-page", params: {} },
+      {
+        actor: "admin",
+        action: "post-compat-default-login-page",
+        params: {},
+        // Legacy setDefaultLoginPage persists any path string without
+        // validation (permissive 200) where yoram validates the payload and
+        // answers 400; legacy-side permissiveness is the defect (B-0221).
+        disposition: {
+          classification: "LEGACY_BUG_NOT_REPRODUCED",
+          evidence: "yona-original/app/controllers/UserApp.java:1372-1382",
+        },
+      },
     ],
     behaviorMatcher: { action: /^UserApp\.setDefaultLoginPage$/, route: /defultLoginPage/ },
   },
@@ -661,9 +672,13 @@ async function renderDomTargetPath(ctx, target, { spa = true } = {}) {
 // (restful-uri-mapping v1) while legacy keeps its external /-_-api/v1
 // namespace; each callsite passes both spellings explicitly.
 async function requestCompatApi(ctx, legacyPath, yoramPath) {
-  const yoramResult = await ctx.yoramSession.request({ method: "GET", path: yoramPath });
-  const legacyResult = await ctx.legacySession.request({ method: "GET", path: legacyPath });
-  if (legacyResult.status >= 400) ctx.entry.errors.push(`legacy GET failed: HTTP ${legacyResult.status} @ ${legacyPath}`);
+  // Route through the shared requestBoth so both sides' >=400 observations are
+  // recorded consistently (agreed boundary failures stay step-successes).
+  const { legacyResult, yoramResult } = await ctx.helpers.requestBoth(
+    ctx,
+    { method: "GET", path: legacyPath },
+    { method: "GET", path: yoramPath },
+  );
   pushStatusDivergence(ctx, legacyPath, legacyResult, yoramResult);
   return { legacyResult, yoramResult };
 }

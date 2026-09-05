@@ -2,6 +2,7 @@ import { readFile } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const routeSource = new URL("../src/routes/users/loginform.tsx", import.meta.url);
+const providerSource = new URL("../src/components/oauth-provider-link.tsx", import.meta.url);
 const fallbackSource = new URL("../src/app.css", import.meta.url);
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const desktop = { height: 900, width: 1366 };
@@ -48,8 +49,9 @@ async function openStandardLogin(page: Page) {
 
 test.describe("Style standalone login form", () => {
   test("declares globally themed standard-login ownership while retaining shared fallback consumers", async () => {
-    const [route, fallback] = await Promise.all([
+    const [route, provider, fallback] = await Promise.all([
       readFile(routeSource, "utf8"),
+      readFile(providerSource, "utf8"),
       readFile(fallbackSource, "utf8"),
     ]);
 
@@ -61,10 +63,11 @@ test.describe("Style standalone login form", () => {
       "standalone-login-title-highlight",
       "standalone-login-provider-row",
       "standalone-login-provider-title",
-      "standalone-login-provider-button",
     ]) {
       expect(route).toContain(`data-owner="${owner}"`);
     }
+    expect(route).toContain('dataOwnerPrefix="standalone-login"');
+    expect(provider).toContain("`${dataOwnerPrefix}-provider-button`");
     expect(route).toContain('className="btns-row nm"');
     expect(fallback).toContain(".login-form-wrap .text");
     expect(fallback).toContain(".oauth-login-btn");

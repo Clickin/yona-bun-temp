@@ -25,6 +25,7 @@ test("organization home matches legacy organization/view.scala.html DOM", async 
   await expect(page.locator("#mylist-filter")).toBeVisible();
   await expect(page.locator(".all-projects .project")).toHaveCount(1);
   await expect(page.locator("#alertLeave")).toHaveClass(/hide/);
+  await expect(page.locator('[data-owner="authenticated-site-user-menu"]')).toBeVisible();
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, EXPECTED_ORGANIZATION_HOME.replaceAll("__BASE_PATH__", basePath)),

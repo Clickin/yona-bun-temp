@@ -28,6 +28,7 @@ const IGNORED_PREFIXES = [
   "dist/",
   "build/",
   "coverage/",
+  "frontend/coverage/",
   ".husky/_/",
 ];
 const GENERATED_FILE_SUFFIXES = ["routeTree.gen.ts"];

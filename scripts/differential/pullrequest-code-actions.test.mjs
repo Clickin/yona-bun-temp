@@ -62,7 +62,7 @@ test("translators produce expected method/path literals", () => {
     ["browse-code-ajax-path", { owner: "admin", project: "sample", branch: "main", path: "app.js" }, "/admin/sample/code/main/!/app.js"],
     ["list-branches", { owner: "admin", project: "sample" }, "/admin/sample/branches"],
     // R10–R12 read extensions
-    ["code-compare", { owner: "admin", project: "sample", revA: "main", revB: "feature/ui" }, "/admin/sample/compare/main..feature/ui"],
+    ["code-compare", { owner: "admin", project: "sample", revA: "main", revB: "feature/ui" }, "/admin/sample/compare/main..feature%2Fui"],
     ["view-newfork-page", { owner: "admin", project: "sample" }, "/admin/sample/newFork"],
     ["list-reviews", { owner: "admin", project: "sample" }, "/admin/sample/reviews"],
     ["browse-code-ajax-nobranch", { owner: "admin", project: "sample" }, "/admin/sample/code/!"],

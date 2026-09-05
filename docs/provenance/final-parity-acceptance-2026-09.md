@@ -1,6 +1,12 @@
 # Final Parity Acceptance Package (2026-09-03)
 
-Status: closure evidence for human review. This package records the final
+> **SUPERSEDED / INVALIDATED (Phase G, 2026-09-04):** This historical
+> `40e1bb42c` package is invalidated by the corrective plan and MUST NOT be
+> treated as acceptance or release evidence. Preserve this document for
+> provenance only. The replacement machine-readable package will live at
+> `.agent/differential/final-corrected-20260904/acceptance-package.json`.
+
+Status: historical closure evidence for human review. This package records the final
 same-HEAD differential state for the fix plan
 `/tmp/yoram/yoram-parity-closure-fix-plan.md`. `yona-bun-temp` itself is NOT
 a release repository: per `AGENTS.md`, repository migration and the first

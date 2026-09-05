@@ -337,5 +337,18 @@ test("filter submit preserves the query contract", async ({ page }) => {
   const input = page.locator(`[data-owner="${owners.input}"]`);
   await input.fill("road map");
   await page.locator(`[data-owner="${owners.button}"]`).click();
-  await expect(page).toHaveURL(/\/projects\?filter=road\+map(&labelIds=)?$/u);
+  await expect
+    .poll(() => {
+      const url = new URL(page.url());
+      return {
+        filter: url.searchParams.get("filter"),
+        labelIds: url.searchParams.getAll("labelIds"),
+        pathname: url.pathname,
+      };
+    })
+    .toEqual({
+      filter: "road map",
+      labelIds: [],
+      pathname: `${basePath}/projects`,
+    });
 });

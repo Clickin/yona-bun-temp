@@ -2,6 +2,12 @@ use yoram_integrations::{
     clear_test_webhook_outbox, deliver_webhook_with_config, queue_test_webhook_failure,
     queue_test_webhook_response, snapshot_test_webhook_outbox, IntegrationConfig, OutboundWebhook,
 };
+use std::sync::{Mutex, OnceLock};
+
+fn webhook_test_lock() -> &'static Mutex<()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
+}
 
 #[test]
 fn webhook_delivery_retry_count_accepts_legacy_yona_alias() {
@@ -31,6 +37,7 @@ fn webhook_delivery_retry_count_accepts_legacy_yona_alias() {
 
 #[test]
 fn webhook_delivery_retries_transient_failures_before_returning_success() {
+    let _guard = webhook_test_lock().lock().unwrap();
     clear_test_webhook_outbox();
     let config = IntegrationConfig::from_pairs([("YONA_WEBHOOK_DELIVERY_RETRIES", "1")]);
     queue_test_webhook_failure("temporary webhook failure");
@@ -62,6 +69,7 @@ fn webhook_delivery_retries_transient_failures_before_returning_success() {
 
 #[test]
 fn webhook_https_delivery_uses_executable_fetcher_and_preserves_legacy_headers() {
+    let _guard = webhook_test_lock().lock().unwrap();
     clear_test_webhook_outbox();
     let fake_curl_dir = std::env::temp_dir().join(format!(
         "yona-webhook-https-{}-{}",

@@ -499,6 +499,7 @@ function MergeResult({
                 <td className="commit-id">
                   <Link
                     to="/$ownerName/$projectName/commit/$commitId"
+                    reloadDocument
                     params={{ commitId: commit.commitId, ownerName, projectName }}
                     search={{ branch: "", path: "" }}
                   >

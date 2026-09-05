@@ -37,7 +37,7 @@ test("project issue edit not-found error wrap keeps legacy source, paint, naviga
   expect(route).toContain('data-owner="project-issue-editform-error-message"');
   expect(route).toContain('data-owner="project-issue-editform-error-list"');
 
-  expect(route).toContain("labelIds: []");
+  expect(route).toContain('search={{ state: "all" }');
 
   await mockMissingIssue(page);
   // Route-fetch-lock: WTR's goto settles on iframe load, not network idle —
@@ -68,19 +68,7 @@ test("project issue edit not-found error wrap keeps legacy source, paint, naviga
   expect(listHref).not.toBeNull();
   const listUrl = new URL(listHref!, "http://localhost");
   expect(listUrl.pathname).toBe(`${basePath}/admin/sample/issues`);
-  expect(Object.fromEntries(listUrl.searchParams)).toEqual({
-    state: "all",
-    assigneeId: "",
-    authorId: "",
-    commenterId: "",
-    dueDate: "",
-    filter: "",
-    labelIds: "[]",
-    milestoneId: "",
-    orderBy: "updatedDate",
-    orderDir: "desc",
-    pageNum: "1",
-  });
+  expect(Object.fromEntries(listUrl.searchParams)).toEqual({ state: "all" });
   await list.click();
   await expect(page).toHaveURL(new RegExp(`${basePath}/admin/sample/issues\\?.*state=all`));
 

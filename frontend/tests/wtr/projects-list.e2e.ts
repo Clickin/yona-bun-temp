@@ -106,7 +106,7 @@ const EXPECTED_PROJECTS_LIST = `
       <li class="project">
         <div class="info-wrap">
           <div class="owner-avatar-wrap">
-            <a href="__BASE_PATH__/admin/sample"><img src="/assets/images/project_default_logo.png" alt="sample"></a>
+            <a href="__BASE_PATH__/admin/sample"><img src="__BASE_PATH__/legacy-assets/images/project_default_logo.png" alt="sample"></a>
           </div>
           <div style="float:left">
             <div class="header">
@@ -164,26 +164,11 @@ test("projects list matches legacy project/list.scala.html DOM", async ({ page }
     )
     .toContain("Project list");
 
-  // F5 dist-truth: the projects directory can transiently re-render under
-  // shard load — retry the canonicalized snapshot instead of a single read.
-  let snapshotOk = false;
-  {
-    const expected = () =>
-      canonicalizeHtml(page, EXPECTED_PROJECTS_LIST.replaceAll("__BASE_PATH__", basePath));
-    const deadline = Date.now() + 60000;
-    while (Date.now() < deadline) {
-      try {
-        if ((await canonicalizeScreenRoots(page)) === (await expected())) {
-          snapshotOk = true;
-          break;
-        }
-      } catch {
-        // transient canonicalize errors — keep polling
-      }
-      await new Promise((resolve) => setTimeout(resolve, 250));
-    }
-  }
-  expect(snapshotOk).toBe(true);
+  const expected = await canonicalizeHtml(
+    page,
+    EXPECTED_PROJECTS_LIST.replaceAll("__BASE_PATH__", basePath),
+  );
+  await expect.poll(() => canonicalizeScreenRoots(page)).toBe(expected);
 
   const expectedMetrics = {
     avatarBorderRadius: "3px",
@@ -218,24 +203,24 @@ test("projects list matches legacy project/list.scala.html DOM", async ({ page }
     statsTextAlign: "right",
     statsWidth: "120px",
   };
-  let metricsOk = false;
-  {
-    const deadline = Date.now() + 60000;
-    while (Date.now() < deadline) {
-      try {
-        if (
-          JSON.stringify(await readProjectsListMetrics(page)) === JSON.stringify(expectedMetrics)
-        ) {
-          metricsOk = true;
-          break;
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+    await Promise.all(
+      Array.from(
+        document.querySelectorAll<HTMLImageElement>('[data-owner="projects-directory-row"] img'),
+      ).map(async (image) => {
+        if (!image.complete) {
+          await new Promise<void>((resolve) => {
+            image.addEventListener("load", () => resolve(), { once: true });
+            image.addEventListener("error", () => resolve(), { once: true });
+          });
         }
-      } catch {
-        // transient missing nodes — keep polling
-      }
-      await new Promise((resolve) => setTimeout(resolve, 250));
-    }
-  }
-  expect(metricsOk).toBe(true);
+        if (image.naturalWidth > 0) await image.decode();
+      }),
+    );
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+  });
+  expect(await readProjectsListMetrics(page)).toEqual(expectedMetrics);
 });
 
 test("projects list filter input keeps legacy initial focus without lowercase autofocus injection", async ({
@@ -783,7 +768,7 @@ function makeReadableProjectDirectoryItem(
       },
     ],
     lastPushedLabel: "just now",
-    logoUrl: "/assets/images/project_default_logo.png",
+    logoUrl: `${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/legacy-assets/images/project_default_logo.png`,
     memberCount: 2,
     members: [
       {

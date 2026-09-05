@@ -405,11 +405,17 @@ test("project pull request two-column mode follows legacy persisted row behavior
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const listUrl = `${basePath}/admin/sample/pullRequests?filter=row`;
   await mockProjectPullRequests(page);
 
-  await page.goto(`${basePath}/admin/sample/pullRequests?filter=row`);
-  await page.evaluate(() => localStorage.removeItem("useTwoColumnMode"));
-  await page.reload();
+  await page.goto(listUrl);
+  await page.evaluate(() => {
+    localStorage.setItem("useTwoColumnMode", "false");
+    sessionStorage.removeItem("useTwoColumnMode");
+  });
+  // Legacy enables the mode only for the exact localStorage string "true".
+  // Same-URL goto gives WTR an awaited document remount after storage is seeded.
+  await page.goto(listUrl);
   const toggle = page.locator("#two-column-mode");
   const wrapper = page.locator("#two-column-mode-checkbox");
   const row = page.locator(".post-list-wrap .post-item").first();
@@ -454,7 +460,7 @@ test("project pull request two-column mode follows legacy persisted row behavior
     .poll(() => page.evaluate(() => localStorage.getItem("useTwoColumnMode")))
     .toBe("true");
 
-  await page.reload();
+  await page.goto(listUrl);
   await expect(page.locator("#two-column-mode")).toBeChecked();
   await expect(page.locator(".post-list-wrap .post-item").first()).toHaveCSS("cursor", "pointer");
 

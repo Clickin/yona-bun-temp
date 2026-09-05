@@ -166,9 +166,13 @@ test("project issue detail shows notification receiver on editor focus", async (
   const receiver = page.locator(
     '[data-owner="project-issue-detail-markdown-editor-notification-receiver"][data-owner-instance="contents"]',
   );
+  const textarea = page.locator("#comment-form #editor-contents-contents");
+  await expect(receiver).toHaveCount(1);
+  await expect(textarea).toBeVisible();
   await expect(receiver).toBeHidden();
 
-  await page.locator('textarea[data-editor-mode="comment-body"]').focus();
+  await textarea.evaluate((element) => (element as HTMLTextAreaElement).focus());
+  await expect(textarea).toBeFocused();
   await expect(receiver).toBeVisible();
   await expect(receiver).toHaveCSS("display", "block");
   await expect(receiver.locator(".notification-receiver-title")).toHaveText(
