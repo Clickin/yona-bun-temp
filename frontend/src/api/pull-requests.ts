@@ -510,6 +510,7 @@ function normalizeEvent(event: Partial<PullRequestEvent>): PullRequestEvent {
 }
 
 function normalizeDetail(response: Partial<PullRequestDetailResponse>): PullRequestDetailResponse {
+  const raw = response as Partial<PullRequestDetailResponse> & { is_merging?: boolean };
   return {
     attachments: response.attachments ?? [],
     bodyHtml: response.bodyHtml ?? "",
@@ -523,7 +524,7 @@ function normalizeDetail(response: Partial<PullRequestDetailResponse>): PullRequ
     fromOwnerName: response.fromOwnerName ?? "",
     fromProjectName: response.fromProjectName ?? "",
     id: response.id ?? 0,
-    isMerging: response.isMerging ?? false,
+    isMerging: raw.isMerging ?? raw.is_merging ?? false,
     issueReferences: normalizeIssueReferences(response.issueReferences),
     isWatching: response.isWatching ?? false,
     lackingReviewerCount: response.lackingReviewerCount ?? 0,

@@ -46,8 +46,8 @@ test("translators produce expected method/path literals", () => {
     ["list-issue-label-categories", { owner: "admin", project: "sample" }, "/admin/sample/issue/label/categories"],
     ["view-issue-label-category", { owner: "admin", project: "sample", categoryId: 1 }, "/admin/sample/issue/label/category/1"],
     ["fetch-issue-label-styles", { owner: "admin", project: "sample" }, "/admin/sample/issue/labels.css"],
-    ["view-site-labels", {}, "/labels"],
-    ["view-site-label-categories", {}, "/categories"],
+    ["view-site-labels", {}, "/labels?limit=1000"],
+    ["view-site-label-categories", {}, "/categories?limit=1000"],
     ["list-milestones", { owner: "admin", project: "sample" }, "/admin/sample/milestones"],
     ["view-milestone", { owner: "admin", project: "sample", milestoneId: 1 }, "/admin/sample/milestone/1"],
     ["view-milestone-editform", { owner: "admin", project: "sample", milestoneId: 2 }, "/admin/sample/milestone/2/editform"],
@@ -71,11 +71,15 @@ test("translators produce expected method/path literals", () => {
   ];
   for (const [action, params, expectedPath] of cases) {
     const legacy = MERGED_DEFINITIONS[action].translateLegacy(step(action, params), {});
-    assert.deepEqual(legacy, { method: "GET", path: expectedPath }, `${action} legacy translation`);
+    const expectedHeaders =
+      action === "view-site-labels" || action === "view-site-label-categories"
+        ? { headers: { Accept: "application/json" } }
+        : {};
+    assert.deepEqual(legacy, { method: "GET", path: expectedPath, ...expectedHeaders }, `${action} legacy translation`);
     const yoram = MERGED_DEFINITIONS[action].translateYoram(step(action, params), {});
     assert.equal(yoram.method, "GET", `${action} yoram method`);
     assert.equal(yoram.path, expectedPath, `${action} yoram path (SPA shell serves legacy route)`);
-    assert.equal(yoram.pagePath, expectedPath, `${action} yoram pagePath`);
+    if (yoram.pagePath !== undefined) assert.equal(yoram.pagePath, expectedPath, `${action} yoram pagePath`);
   }
 });
 
@@ -93,6 +97,46 @@ test("compat reads keep legacy /-_-api/v1 paths and map yoram to RESTful", () =>
     MERGED_DEFINITIONS["list-post-watchers"].translateLegacy(step("list-post-watchers", { owner: "admin", project: "sample", postNumber: 1 }), {}).path,
     "/-_-api/v1/owners/admin/projects/sample/posts/1/watchers",
   );
+});
+
+test("leave-info is compared as a manual redirect, never as a DOM page", () => {
+  const step = { action: "view-project-leave-info", params: { owner: "admin", project: "sample" } };
+  assert.deepEqual(MERGED_DEFINITIONS[step.action].translateLegacy(step), {
+    method: "GET",
+    path: "/info/leave/admin/sample",
+    redirect: "manual",
+  });
+  assert.deepEqual(MERGED_DEFINITIONS[step.action].translateYoram(step), {
+    method: "GET",
+    path: "/info/leave/admin/sample",
+    redirect: "manual",
+  });
+  assert.notEqual(
+    MERGED_DEFINITIONS[step.action].handler,
+    MERGED_DEFINITIONS["view-project"].handler,
+    "redirect action must not render a page",
+  );
+});
+
+test("project reviews DOM comparison scopes to the shared content root", async () => {
+  let target;
+  const step = { action: "list-review-threads", params: { owner: "admin", project: "sample" } };
+  await MERGED_DEFINITIONS[step.action].handler({
+    step,
+    resolved: {},
+    options: { legacyUrl: "http://legacy.test" },
+    yoramBaseUrl: "http://yoram.test",
+    helpers: {
+      async requestBoth() {
+        return { legacyResult: { status: 200 }, yoramResult: { status: 200 } };
+      },
+      async renderDomTarget(_ctx, domTarget) {
+        target = domTarget;
+      },
+    },
+  });
+  assert.equal(target.selector, ".project-page-wrap");
+  assert.equal(target.spa, true);
 });
 
 test("matchBehaviors returns non-empty B-id lists for every scenario", () => {
@@ -314,7 +358,11 @@ test("mutation translators produce expected method/path literals", () => {
       assert.equal(t.path, expected.path, `${action}/${kind} path`);
     } else {
       const t = def.translateLegacy(step(action, kind), {});
-      assert.deepEqual(t, { method: "GET", path: expected }, `${action} read translation`);
+      assert.deepEqual(
+        t,
+        { method: "GET", path: expected, ...(action === "view-project-leave-info" ? { redirect: "manual" } : {}) },
+        `${action} read translation`,
+      );
     }
   }
 });

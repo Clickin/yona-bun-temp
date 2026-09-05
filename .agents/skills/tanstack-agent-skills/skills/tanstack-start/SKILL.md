@@ -9,6 +9,8 @@ Comprehensive guidelines for implementing TanStack Start patterns in full-stack 
 
 ## When to Apply
 
+Apply only to explicitly scoped TanStack Start code. The current Yona application uses Rust REST APIs and a React SPA under `frontend/`; authentication or data mutations there do not trigger this skill. Follow root `AGENTS.md` and do not introduce Start server functions, SSR, or a new runtime into that application.
+
 - Creating server functions for data mutations
 - Setting up middleware for auth/logging
 - Configuring SSR and hydration

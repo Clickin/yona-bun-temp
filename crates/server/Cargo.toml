@@ -130,6 +130,10 @@ name = "issue_label_contract"
 path = "tests/issue_label_contract.rs"
 
 [[test]]
+name = "global_label_typeahead_contract"
+path = "tests/global_label_typeahead_contract.rs"
+
+[[test]]
 name = "issue_mention_contract"
 path = "tests/issue_mention_contract.rs"
 

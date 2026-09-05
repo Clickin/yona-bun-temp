@@ -47,7 +47,9 @@ test("read-page actions translate to legacy-direct GET paths on both sides", () 
     ["issue-labels", { owner: "admin", project: "sample" }, "/admin/sample/issue/labels"],
     ["issue-label-styles", { owner: "admin", project: "sample" }, "/admin/sample/issue/labels.css"],
     ["issue-labels-form", { owner: "admin", project: "sample" }, "/admin/sample/issue/labelsform"],
-    ["org-issues", { organization: "weblabs", state: "open" }, "/weblabs/issues?state=open"],
+    // Legacy route is GET /organizations/:organizationName/issues
+    // (yona-original/conf/routes:100), not /:org/issues.
+    ["org-issues", { organization: "weblabs", state: "open" }, "/organizations/weblabs/issues?state=open"],
     ["site-issue-list", {}, "/sites/issueList"],
   ];
   for (const [action, params, expected] of cases) {
@@ -257,5 +259,16 @@ test("mutation actions translate to the legacy form route vs the Yoram REST rout
     assert.equal(translateLegacy(step(action, { owner: "admin", project: "sample" }), vars).path, path);
     assert.equal(translateYoram(step(action, { owner: "admin", project: "sample" }), vars).path, path);
   }
-  assert.deepEqual(translateLegacy(step("global-labels", {})), { method: "GET", path: "/labels" });
+  // Legacy LabelApp.labels requires limit and Accept: application/json
+  // (LabelApp.java:52-58); the probe pins both sides to that contract.
+  assert.deepEqual(translateLegacy(step("global-labels", {})), {
+    method: "GET",
+    path: "/labels?limit=1000",
+    headers: { Accept: "application/json" },
+  });
+  assert.deepEqual(translateYoram(step("global-labels", {})), {
+    method: "GET",
+    path: "/labels?limit=1000",
+    headers: { Accept: "application/json" },
+  });
 });

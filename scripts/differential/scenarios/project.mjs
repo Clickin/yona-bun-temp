@@ -342,7 +342,40 @@ async function spaReadHandler(ctx) {
     legacy: `${options.legacyUrl}${path}`,
     yoram: `${yoramBaseUrl}${path}`,
     spa: true,
+    ...(step.action === "list-review-threads" ? { selector: ".project-page-wrap" } : {}),
   });
+}
+
+// `/info/leave/:owner/:project` is an action redirect, not a page. Keep both
+// responses manual so the comparison observes the status and Location header
+// without following into an unrelated screen.
+async function redirectReadHandler(ctx) {
+  const { step, options, yoramBaseUrl, helpers } = ctx;
+  const path = readPath(step);
+  const [legacyResult, yoramResult] = await Promise.all([
+    helpers.sendRaw(ctx, "legacy", { method: "GET", path, redirect: "manual" }),
+    helpers.sendRaw(ctx, "yoram", { method: "GET", path, redirect: "manual" }),
+  ]);
+  const canonicalLocation = (location, baseUrl) => {
+    if (!location) return "";
+    try {
+      const url = new URL(location, baseUrl);
+      return `${url.pathname}${url.search}${url.hash}`;
+    } catch {
+      return location;
+    }
+  };
+  const legacy = {
+    status: legacyResult.status,
+    location: canonicalLocation(legacyResult.location, options.legacyUrl),
+  };
+  const yoram = {
+    status: yoramResult.status,
+    location: canonicalLocation(yoramResult.location, yoramBaseUrl),
+  };
+  if (legacy.status !== yoram.status || legacy.location !== yoram.location) {
+    pushApiViolation(ctx, path, legacy, yoram);
+  }
 }
 
 const READ_ACTION_NAMES = [
@@ -435,6 +468,70 @@ export const actionDefinitions = {
       handler: spaReadHandler,
     },
   ])),
+  "view-project-leave-info": {
+    translateLegacy(step) {
+      return { method: "GET", path: readPath(step), redirect: "manual" };
+    },
+    translateYoram(step) {
+      return { method: "GET", path: readPath(step), redirect: "manual" };
+    },
+    handler: redirectReadHandler,
+  },
+  "view-site-labels": {
+    translateLegacy() {
+      return { method: "GET", path: "/labels?limit=1000", headers: { Accept: "application/json" } };
+    },
+    translateYoram() {
+      return { method: "GET", path: "/labels?limit=1000", headers: { Accept: "application/json" } };
+    },
+    async handler(ctx) {
+      await ctx.helpers.requestBoth(ctx, translateLegacy(ctx.step), translateYoram(ctx.step));
+    },
+  },
+  "view-site-label-categories": {
+    translateLegacy() {
+      return { method: "GET", path: "/categories?limit=1000", headers: { Accept: "application/json" } };
+    },
+    translateYoram() {
+      return { method: "GET", path: "/categories?limit=1000", headers: { Accept: "application/json" } };
+    },
+    async handler(ctx) {
+      await ctx.helpers.requestBoth(ctx, translateLegacy(ctx.step), translateYoram(ctx.step));
+    },
+  },
+  "fetch-unknown-path": {
+    translateLegacy(step) {
+      return { method: "GET", path: readPath(step) };
+    },
+    translateYoram(step) {
+      return { method: "GET", path: readPath(step), pagePath: readPath(step) };
+    },
+    async handler(ctx) {
+      const { entry, step, legacySession, yoramSession } = ctx;
+      const path = `/${step.params.owner}/${step.params.project}/parity-missing-${step.params.missing ?? "page"}`;
+      const [legacyResult, yoramResult] = await Promise.all([
+        legacySession.request({ method: "GET", path }),
+        yoramSession.request({ method: "GET", path }),
+      ]);
+      if (legacyResult.status === 404 && yoramResult.status === 200) {
+        entry.violations.push(
+          violation({
+            route: path,
+            behaviorId: entry.behaviorIds[0] ?? null,
+            kind: "api",
+            expected: { status: 404 },
+            actual: { status: 200 },
+            classification: "IMPLEMENTATION_DIFFERENCE",
+            reason: "Legacy has no route for the explicit parity-missing path; the SPA fallback serves its shell.",
+          }),
+        );
+      } else if (legacyResult.status !== yoramResult.status) {
+        entry.errors.push(
+          `unknown-path status diverged: legacy ${legacyResult.status}, yoram ${yoramResult.status} @ ${path}`,
+        );
+      }
+    },
+  },
 };
 
 // --- mutation wave -----------------------------------------------------------

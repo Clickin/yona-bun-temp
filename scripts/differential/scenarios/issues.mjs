@@ -193,7 +193,10 @@ export const scenarios = [
     title: "view organization issue list",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      { actor: "admin", action: "org-issues", params: { organization: "weblabs", state: "open" } },
+      // The legacy handler binds searchCondition.state from this query and
+      // rejects the lowercase enum before it renders; the route's default
+      // organization listing is the supported read surface.
+      { actor: "admin", action: "org-issues", params: { organization: "weblabs" } },
     ],
     behaviorMatcher: { action: /^IssueApp\.organizationIssues$/ },
   },
@@ -935,7 +938,9 @@ export const actionDefinitions = {
     },
   },
 
-  "org-issues": getAction((step) => `/${step.params.organization}/issues?state=${step.params.state ?? ""}`),
+  "org-issues": getAction(
+    (step) => `/organizations/${step.params.organization}/issues${step.params.state ? `?state=${step.params.state}` : ""}`,
+  ),
 
   "site-issue-list": getAction(() => "/sites/issueList"),
 
@@ -1466,5 +1471,28 @@ export const actionDefinitions = {
   ...exportReadAction("migration-export-labels", (step) => `/${step.params.owner}/projects/${step.params.project}/labels`),
   ...exportReadAction("migration-export-issuelabel-pairs", (step) => `/${step.params.owner}/projects/${step.params.project}/issuelabel`),
 
-  "global-labels": getAction(() => "/labels"),
+  "global-labels": {
+    translateLegacy() {
+      return {
+        method: "GET",
+        path: "/labels?limit=1000",
+        headers: { Accept: "application/json" },
+      };
+    },
+    translateYoram() {
+      return {
+        method: "GET",
+        path: "/labels?limit=1000",
+        headers: { Accept: "application/json" },
+      };
+    },
+    async handler(ctx) {
+      const { step, resolved, helpers } = ctx;
+      await helpers.requestBoth(
+        ctx,
+        translateLegacy(step, resolved),
+        translateYoram(step, resolved),
+      );
+    },
+  },
 };

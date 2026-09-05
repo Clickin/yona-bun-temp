@@ -352,17 +352,11 @@ function ProjectPullRequestChangesBody({
                 />
                 {selectedCommit ? <SelectedCommitInfo commit={selectedCommit} /> : null}
                 <div className="diff-body diffs-wrap-scroll">
-                  <div
-                    id="state"
-                    className="pullRequest-stateInfo"
-                    data-owner="pull-request-changes-state"
-                  >
-                    <PullRequestStateInfo
-                      currentUserLoginId={currentUser.loginId}
-                      pullRequest={pullRequest}
-                      runtimeConfig={runtimeConfig}
-                    />
-                  </div>
+                  <PullRequestStateInfo
+                    currentUserLoginId={currentUser.loginId}
+                    pullRequest={pullRequest}
+                    runtimeConfig={runtimeConfig}
+                  />
                   {changes.files.map((file) => (
                     <PullRequestFileDiff
                       activeInlineReview={activeInlineReview}

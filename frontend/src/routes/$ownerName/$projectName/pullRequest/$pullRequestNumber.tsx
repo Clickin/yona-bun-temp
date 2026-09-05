@@ -239,7 +239,7 @@ function PullRequestOverviewBody({
             runtimeConfig={runtimeConfig}
           />
           <div className="board-body" data-owner="pull-request-detail-body">
-            <div className="author-info" data-owner="pull-request-detail-author">
+            <div className="author-info left-txt" data-owner="pull-request-detail-author">
               <Link
                 to="/$user"
                 params={{ user: pullRequest.contributor.loginId }}
@@ -263,7 +263,7 @@ function PullRequestOverviewBody({
             </div>
             <div
               className="attachments"
-              data-attachments={JSON.stringify(pullRequest.attachments ?? [])}
+              data-attachments={JSON.stringify(pullRequest.attachments)}
             ></div>
           </div>
 
@@ -330,7 +330,7 @@ function PullRequestOverviewBody({
             <PullRequestEvents pullRequest={pullRequest} />
           </div>
 
-          <div data-owner="pull-request-detail-help-actions">
+          <div className="right-txt" data-owner="pull-request-detail-help-actions">
             <button
               type="button"
               className="ybtn ybtn-inverse ybtn-mini"
@@ -359,11 +359,11 @@ function PullRequestEvents({ pullRequest }: { pullRequest: PullRequestDetailResp
       : [],
   );
 
-  return renderedEvents.length > 0 ? (
+  return (
     <ul className="comments" id="comments">
       {renderedEvents}
     </ul>
-  ) : null;
+  );
 }
 
 function PullRequestEventItem({
@@ -715,7 +715,7 @@ export function PullRequestHeader({
       <div className="board-header issue">
         <div className="pull-right mr10 mt10" data-owner="pull-request-detail-header-state-date">
           <div className="date" title={pullRequest.createdLabel}>
-            {pullRequest.createdLabel}
+            {legacyPullRequestDateLabel(pullRequest.createdLabel)}
           </div>
           <span
             className={`badge nm badge-issue-${stateKey}`}
@@ -847,7 +847,7 @@ export function PullRequestBranchInfo({
   const toBranchName = branchItemName(pullRequest.toBranch);
   return (
     <div className="pullRequest-branchInfo">
-      <i className="yobicon-branch" data-owner="pull-request-detail-branch-start-icon"></i>
+      <i className="yobicon-branch ml0" data-owner="pull-request-detail-branch-start-icon"></i>
       <code className="from" title={t("pullRequest.from")}>
         <Link to="/$user" params={{ user: pullRequest.fromOwnerName }} {...LEGACY_LINK_PROPS}>
           {pullRequest.fromOwnerName}
@@ -1204,6 +1204,20 @@ function branchItemName(branch: string) {
   }
   const branchTypeEnd = branch.indexOf("/", refsPrefix.length);
   return branchTypeEnd === -1 ? branch : branch.slice(branchTypeEnd + 1);
+}
+
+function legacyPullRequestDateLabel(label: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/u.exec(label);
+  if (!match) return label;
+  const now = new Date();
+  if (
+    Number(match[1]) === now.getFullYear() &&
+    Number(match[2]) === now.getMonth() + 1 &&
+    Number(match[3]) === now.getDate()
+  ) {
+    return "방금 전";
+  }
+  return `${match[2]}-${match[3]}`;
 }
 
 function isRenderableEvent(event: PullRequestEvent) {

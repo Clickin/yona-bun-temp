@@ -26,7 +26,14 @@ import {
   projectLabelRows,
 } from "./diff.mjs";
 import { dedupeH2RecoverSequences, dedupeRebuiltTableRows, h2JarPath, queryLegacyH2, queryYoramSqlite, replayH2Script } from "./db-projection.mjs";
-import { HarnessError, formatSummary, summarizeExecution, violation, writeReport } from "./report.mjs";
+import {
+  HarnessError,
+  formatSummary,
+  reclassifyScenarioViolations,
+  summarizeExecution,
+  violation,
+  writeReport,
+} from "./report.mjs";
 import { launchWtrBrowser } from "../wtr-browser.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -43,6 +50,26 @@ const PARITY_USERS = [
   { loginId: "carol", name: "Carol Lee", email: "carol@example.com" },
 ];
 
+// Keep the default-dev pull-request contract intact, but make the comparison
+// fixture deterministic on both database engines. R13 creates PR #2 after
+// this seed, so stale rows must not affect number allocation.
+export const PARITY_PULL_REQUEST = Object.freeze({
+  body: "",
+  fromBranch: "main",
+  number: 1,
+  state: 1,
+  title: "Add feature branch change",
+  toBranch: "feature/ui",
+});
+export const PARITY_REVIEW = Object.freeze({
+  contents: "Review the feature branch parity fixture.",
+  path: "parity-feature.txt",
+});
+
+export function registrationStatusIsUsable(status) {
+  return status === 200 || status === 409;
+}
+
 // Keep the public expression-list catalog stable even though old sweeps leave
 // behind projects with auto-generated names. These are the rows present in the
 // legacy parity fixture and therefore the only project rows Yoram needs.
@@ -56,7 +83,9 @@ const PARITY_SHARABLE_PROJECTS = [
 ];
 
 
-const SKELETON_EXTRACT = () => {
+export const SKELETON_EXTRACT = (selector) => {
+  const root = selector ? document.querySelector(selector) : document.body;
+  if (!root) throw new Error(`selector not found: ${selector}`);
   const skip = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "SVG", "HEAD", "META", "LINK", "BR", "PATH", "TEMPLATE"]);
   const entries = [];
   const visit = (element) => {
@@ -68,12 +97,28 @@ const SKELETON_EXTRACT = () => {
       }
       text = text.replace(/\s+/gu, " ").trim();
       if (className || text) {
-        entries.push(`${element.tagName.toLowerCase()}${className ? `.${className.split(/\s+/u).join(".")}` : ""}:${text}`);
+        let tag = element.tagName.toLowerCase();
+        // Sanctioned side-effect anchor marker — must decide exactly like
+        // sideEffectAnchorTag in diff.mjs (this function is serialized into
+        // the browser, so the logic is inlined here; run.spec.mjs sync-guards
+        // the pair). Marked anchors normalize to the button tag for
+        // comparison only; navigational anchors stay plain `a` and keep
+        // anchor-vs-button role drift visible.
+        if (tag === "a") {
+          const href = (element.getAttribute("href") ?? "").trim().toLowerCase();
+          const navigational = href !== "" && !href.startsWith("#") && !href.startsWith("javascript:");
+          const dataToggle = element.getAttribute("data-toggle");
+          const behavioralToggle = dataToggle !== null && !/^(tooltip|popover)$/iu.test(dataToggle);
+          if (!navigational || element.hasAttribute("data-request-method") || element.hasAttribute("data-request-uri") || behavioralToggle) {
+            tag = "a#";
+          }
+        }
+        entries.push(`${tag}${className ? `.${className.split(/\s+/u).join(".")}` : ""}:${text}`);
       }
     }
     for (const child of element.children) visit(child);
   };
-  visit(document.body);
+  visit(root);
   return entries;
 };
 
@@ -420,7 +465,10 @@ async function provisionYoramParityAccounts(baseUrl) {
         retypedPassword: user.password,
       },
     });
-    if (result.status !== 200) {
+    // Bootstrap may already have created the default admin before this
+    // idempotent parity registration runs. The subsequent admin login below
+    // verifies that the existing account is the expected one.
+    if (!registrationStatusIsUsable(result.status)) {
       throw new Error(`yoram parity register ${user.loginId} failed: ${result.status} ${String(result.body).slice(0, 200)}`);
     }
   }
@@ -620,6 +668,7 @@ async function bootYoram(port) {
   const seedModule = await import(pathToFileURL(path.join(repoRoot, "scripts/run-dev-backend-once.mjs")).href);
   seedModule.reconcileDefaultDevSiteAdmin(databasePath);
   seedModule.reconcileDefaultDevParitySeed(databasePath, yoramRuntimeDir);
+  reconcileYoramPullRequestFixtures(databasePath);
 
   await writeYoramConfig(databaseUrl, dataRoot, false, port, true);
   const child = startYoramProcess(port);
@@ -639,7 +688,7 @@ async function launchBrowserHandle() {
   return { browser, close: () => browser.close() };
 }
 
-async function renderSkeleton(page, url, { spa = false } = {}) {
+async function renderSkeleton(page, url, { spa = false, selector } = {}) {
   await page.goto(url, { waitUntil: "load", timeout: 30_000 });
   if (spa) {
     await page.waitForNetworkIdle({ idleTime: 500, timeout: 15_000 }).catch(() => {});
@@ -650,13 +699,13 @@ async function renderSkeleton(page, url, { spa = false } = {}) {
     let previous = null;
     for (let waited = 0; waited < 8_000; waited += 400) {
       await new Promise((resolve) => setTimeout(resolve, 400));
-      const current = JSON.stringify(await page.evaluate(SKELETON_EXTRACT));
+      const current = JSON.stringify(await page.evaluate(SKELETON_EXTRACT, selector));
       if (previous !== null && current === previous) return JSON.parse(current);
       previous = current;
     }
     return JSON.parse(previous ?? "[]");
   }
-  return page.evaluate(SKELETON_EXTRACT);
+  return page.evaluate(SKELETON_EXTRACT, selector);
 }
 
 async function setCookiesFromHeader(page, baseUrl, header) {
@@ -704,13 +753,53 @@ function seedRepoBranches(repoPath) {
   git(["symbolic-ref", "HEAD", "refs/heads/main"]);
 }
 
+// Existing parity repositories may have been created by the old fallback
+// seed, where main and feature/ui point at one commit. Keep the fixture's
+// branch names but add one deterministic file to feature/ui so PR changes and
+// merge flows exercise a real diff instead of legacy's null merge path.
+function ensureDiffableRepoBranches(repoPath) {
+  if (!gitRepoHasBranches(repoPath)) {
+    seedRepoBranches(repoPath);
+    return;
+  }
+  const git = (args, input) => {
+    const result = spawnSync("git", ["--git-dir", repoPath, ...args], { encoding: "utf8", input });
+    if (result.status !== 0) throw new Error(`git ${args[0]} failed: ${result.stderr}`);
+    return (result.stdout ?? "").trim();
+  };
+  // Rebuild the feature commit with fixed identity/time even when an older
+  // sweep left a same-content commit with a different author. This gives both
+  // sides the same commit id, not merely the same branch name.
+  const env = {
+    ...process.env,
+    GIT_AUTHOR_NAME: "parity",
+    GIT_AUTHOR_EMAIL: "parity@example.com",
+    GIT_COMMITTER_NAME: "parity",
+    GIT_COMMITTER_EMAIL: "parity@example.com",
+    GIT_AUTHOR_DATE: "2026-01-01T00:00:00Z",
+    GIT_COMMITTER_DATE: "2026-01-01T00:00:00Z",
+  };
+  const stableGit = (args, input) => {
+    const result = spawnSync("git", ["--git-dir", repoPath, ...args], { encoding: "utf8", env, input });
+    if (result.status !== 0) throw new Error(`git ${args[0]} failed: ${result.stderr}`);
+    return (result.stdout ?? "").trim();
+  };
+  const main = stableGit(["rev-parse", "refs/heads/main"]);
+  const entries = stableGit(["ls-tree", "refs/heads/main"]);
+  const blob = stableGit(["hash-object", "-w", "--stdin"], "parity feature branch\n");
+  const tree = stableGit(["mktree"], `${entries}\n100644 blob ${blob}\tparity-feature.txt\n`);
+  const commit = stableGit(["commit-tree", tree, "-p", main, "-m", "parity feature branch"]);
+  stableGit(["update-ref", "refs/heads/feature/ui", commit]);
+}
+
 async function alignParityFixtures(options) {
   const repos = [
     path.join(repoRoot, ".agent/legacy-localhost/instances/parity/data/repo/git/admin/sample.git"),
     path.join(outputDir, "yoram/data/repo/git/admin/sample.git"),
+    path.join(outputDir, "yoram/repo/3.git"),
   ];
   for (const repo of repos) {
-    if (existsSync(repo) && !gitRepoHasBranches(repo)) seedRepoBranches(repo);
+    if (existsSync(repo)) ensureDiffableRepoBranches(repo);
   }
   // Mirror yoram's dev-parity label seed into the legacy instance so the
   // unfiltered label projection compares like-for-like, and clear residue
@@ -862,7 +951,7 @@ function legacyH2Url() {
   return (
     "jdbc:h2:" +
     path.join(repoRoot, LEGACY_H2_URL_BASE) +
-    ";MODE=PostgreSQL;MV_STORE=FALSE;MVCC=FALSE;IFEXISTS=TRUE"
+    ";MODE=PostgreSQL;MV_STORE=FALSE;MVCC=FALSE;FILE_LOCK=NO;IFEXISTS=TRUE"
   );
 }
 
@@ -876,6 +965,190 @@ function legacyH2Shell(sql) {
     throw new Error(`h2 shell failed: ${(result.stderr || result.stdout || "").slice(0, 300)}`);
   }
   return result.stdout ?? "";
+}
+
+function sqlQuote(value) {
+  return `'${String(value).replaceAll("'", "''")}'`;
+}
+
+function featureCommitFor(repoPath) {
+  ensureDiffableRepoBranches(repoPath);
+  const result = spawnSync("git", ["--git-dir", repoPath, "rev-parse", "refs/heads/feature/ui"], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0 || !result.stdout.trim()) {
+    throw new Error(`feature branch missing in parity repository ${repoPath}`);
+  }
+  return result.stdout.trim();
+}
+
+function reconcileYoramPullRequestFixtures(databasePath) {
+  const database = new DatabaseSync(databasePath);
+  try {
+    database.exec("pragma foreign_keys = off; begin");
+    const sample = database
+      .prepare("select id from project where owner = 'admin' and name = 'sample' limit 1")
+      .get();
+    const admin = database.prepare("select id from n4user where login_id = 'admin' limit 1").get();
+    if (!sample?.id || !admin?.id) throw new Error("Yoram parity PR fixture requires admin/sample and admin");
+    const featureCommit = featureCommitFor(path.join(yoramRuntimeDir, "data/repo/git/admin/sample.git"));
+    const seed = database
+      .prepare("select id from pull_request where to_project_id = ? and number = 1 order by id limit 1")
+      .get(sample.id);
+    const seedId = Number(seed?.id ?? database.prepare("select coalesce(max(id), 0) + 1 as id from pull_request").get().id);
+    const stale = database
+      .prepare("select id from pull_request where to_project_id = ? and id <> ? and title like 'Differential sweep PR %'")
+      .all(sample.id, seedId)
+      .map((row) => Number(row.id));
+    const ids = stale.length > 0 ? stale.join(",") : "0";
+    for (const table of ["pull_request_commit", "pull_request_event", "pull_request_reviewers"]) {
+      database.exec(`delete from ${table} where pull_request_id in (${ids})`);
+    }
+    database.exec(
+      `delete from review_comment where thread_id in
+        (select id from comment_thread where pull_request_id in (${ids}))`,
+    );
+    database.exec(`delete from comment_thread where pull_request_id in (${ids})`);
+    database.exec(
+      `delete from watch where resource_type = 'PULL_REQUEST' and resource_id in (${stale.map((id) => sqlQuote(id)).join(",") || sqlQuote(0)})`,
+    );
+    database.exec(
+      `delete from notification_event_n4user where notification_event_id in
+        (select id from notification_event where resource_type = 'PULL_REQUEST' and resource_id in
+          (${stale.map((id) => sqlQuote(id)).join(",") || sqlQuote(0)}))`,
+    );
+    database.exec(
+      `delete from notification_mail where notification_event_id in
+        (select id from notification_event where resource_type = 'PULL_REQUEST' and resource_id in
+          (${stale.map((id) => sqlQuote(id)).join(",") || sqlQuote(0)}))`,
+    );
+    database.exec(
+      `delete from notification_event where resource_type = 'PULL_REQUEST' and resource_id in (${stale.map((id) => sqlQuote(id)).join(",") || sqlQuote(0)})`,
+    );
+    database.exec(`delete from pull_request where id in (${ids})`);
+    const remainingSweepPullRequests = database
+      .prepare("select count(*) as count from pull_request where to_project_id = ? and id <> ? and title like 'Differential sweep PR %'")
+      .get(sample.id, seedId).count;
+    if (Number(remainingSweepPullRequests) !== 0) {
+      throw new Error(`Yoram stale differential PR cleanup left ${remainingSweepPullRequests} rows`);
+    }
+    if (seed?.id) {
+      database
+        .prepare(
+          `update pull_request set title = ?, body = ?, to_project_id = ?, from_project_id = ?,
+             to_branch = ?, from_branch = ?, contributor_id = ?, receiver_id = ?,
+             created = ?, updated = ?, received = null, state = ?, is_conflict = 0,
+             is_merging = 0, last_commit_id = ?, merged_commit_id_from = null,
+             merged_commit_id_to = null, number = 1 where id = ?`,
+        )
+        .run(
+          PARITY_PULL_REQUEST.title,
+          PARITY_PULL_REQUEST.body,
+          sample.id,
+          sample.id,
+          PARITY_PULL_REQUEST.toBranch,
+          PARITY_PULL_REQUEST.fromBranch,
+          admin.id,
+          admin.id,
+          "2026-07-07 11:24:00.000",
+          "2026-07-07 11:24:00.000",
+          PARITY_PULL_REQUEST.state,
+          featureCommit,
+          seedId,
+        );
+    } else {
+      database
+        .prepare(
+          `insert into pull_request
+            (id, title, body, to_project_id, from_project_id, to_branch, from_branch,
+             contributor_id, receiver_id, created, updated, received, state, is_conflict,
+             is_merging, last_commit_id, merged_commit_id_from, merged_commit_id_to, number)
+           values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, null, ?, 0, 0, ?, null, null, 1)`,
+        )
+        .run(
+          seedId,
+          PARITY_PULL_REQUEST.title,
+          PARITY_PULL_REQUEST.body,
+          sample.id,
+          sample.id,
+          PARITY_PULL_REQUEST.toBranch,
+          PARITY_PULL_REQUEST.fromBranch,
+          admin.id,
+          admin.id,
+          "2026-07-07 11:24:00.000",
+          "2026-07-07 11:24:00.000",
+          PARITY_PULL_REQUEST.state,
+          featureCommit,
+        );
+    }
+    database.prepare("delete from pull_request_commit where pull_request_id = ?").run(seedId);
+    database
+      .prepare(
+        `insert into pull_request_commit
+          (pull_request_id, commit_id, author_date, created, commit_message,
+           commit_short_id, author_email, state)
+         values (?, ?, ?, ?, ?, ?, ?, 'CURRENT')`,
+      )
+      .run(
+        seedId,
+        featureCommit,
+        "2026-01-01 00:00:00.000",
+        "2026-01-01 00:00:00.000",
+        "parity feature branch",
+        featureCommit.slice(0, 7),
+        "parity@example.com",
+      );
+    database.prepare("delete from pull_request_event where pull_request_id = ?").run(seedId);
+    database
+      .prepare(
+        `insert into pull_request_event
+          (sender_login_id, pull_request_id, event_type, created, old_value, new_value)
+         values ('admin', ?, 'NEW_PULL_REQUEST', ?, '', ?)`,
+      )
+      .run(seedId, "2026-07-07 11:24:00.000", PARITY_PULL_REQUEST.title);
+    database
+      .prepare("delete from watch where resource_type = 'PULL_REQUEST' and resource_id = ?")
+      .run(String(seedId));
+    database
+      .prepare("insert into watch (user_id, resource_type, resource_id) values (?, 'PULL_REQUEST', ?)")
+      .run(admin.id, String(seedId));
+    database.exec(
+      `delete from review_comment where thread_id in
+        (select id from comment_thread where project_id = ${sample.id})`,
+    );
+    database.prepare("delete from comment_thread where project_id = ?").run(sample.id);
+    database
+      .prepare(
+        `insert into comment_thread
+          (dtype, author_id, author_login_id, author_name, state, created_date, pull_request_id,
+           project_id, prev_commit_id, commit_id, path, start_side, start_line, start_column,
+           end_side, end_line, end_column)
+         values ('ranged', ?, 'admin', 'Site Admin', 'OPEN', ?, null, ?, null, ?, ?, 'B', 1, 1, 'B', 1, 1)`,
+      )
+      .run(
+        admin.id,
+        "2026-07-07 11:24:00.000",
+        sample.id,
+        featureCommit,
+        PARITY_REVIEW.path,
+      );
+    const reviewThreadId = Number(
+      database.prepare("select id from comment_thread where project_id = ? order by id desc limit 1").get(sample.id).id,
+    );
+    database
+      .prepare(
+        `insert into review_comment
+          (contents, created_date, author_id, author_login_id, author_name, thread_id)
+         values (?, ?, ?, 'admin', 'Site Admin', ?)`,
+      )
+      .run(PARITY_REVIEW.contents, "2026-07-07 11:24:00.000", admin.id, reviewThreadId);
+    database.exec("commit; pragma foreign_keys = on");
+  } catch (error) {
+    database.exec("rollback; pragma foreign_keys = on");
+    throw new Error(`Yoram pull-request fixture reconciliation failed: ${error.message}`, { cause: error });
+  } finally {
+    database.close();
+  }
 }
 
 // Runs while NO instance holds the H2 file (before bootLegacy): deactivate
@@ -920,6 +1193,13 @@ async function reconcileLegacyFixturesPreboot() {
     const dataLine = (shellOnRebuilt(sql).split("\n")[1] ?? "").trim();
     return Number(/(\d+)/.exec(dataLine)?.[0] ?? "0");
   };
+  // Some recovered parity databases predate the PR sequence even though the
+  // legacy Ebean model requests it on the first PR insert.
+  shellOnRebuilt(
+    `CREATE SEQUENCE IF NOT EXISTS PUBLIC.PULL_REQUEST_SEQ START WITH ${
+      scalar("SELECT COALESCE(MAX(id), 0) FROM pull_request") + 1
+    }`,
+  );
   const parityUserValues = {
     admin: ["Site Admin", "admin@example.com"],
     alice: ["Alice Kim", "alice@example.com"],
@@ -969,6 +1249,7 @@ async function reconcileLegacyFixturesPreboot() {
   shellOnRebuilt(
     "UPDATE n4user SET state = 'DELETED' WHERE login_id LIKE 'paritysweep%' AND state <> 'DELETED'",
   );
+  shellOnRebuilt("DELETE FROM email WHERE email LIKE '%@parity.example.com'");
   // Legacy initial-data.yml roles 1-7: project_user.role_id references them.
   // Without these rows legacy member creation inserts a null role_id and the
   // member page omits the row, so P13/P18 member IDs cannot be discovered.
@@ -1008,6 +1289,158 @@ async function reconcileLegacyFixturesPreboot() {
   // Several 'sample' projects can exist across owners; the parity fixture is
   // the lowest-id one, matching what the sweep scenarios address.
   const sampleProjectId = scalar("SELECT id FROM project WHERE name = 'sample' ORDER BY id LIMIT 1");
+  // Replayed legacy H2 keeps rows created by earlier sweeps. Keep the two
+  // deterministic seed records and remove only their dependent rows; the
+  // migration export must not compare old throwaway history against Yoram's
+  // fresh parity fixture.
+  const staleIssueIds =
+    `(SELECT id FROM issue WHERE project_id = ${sampleProjectId} AND title <> 'Review rail parity check')`;
+  const staleIssueCommentIds =
+    `(SELECT id FROM issue_comment WHERE issue_id IN ${staleIssueIds})`;
+  const stalePostingIds =
+    `(SELECT id FROM posting WHERE project_id = ${sampleProjectId} AND title <> 'Seed notes' AND readme = 0)`;
+  shellOnRebuilt("SET REFERENTIAL_INTEGRITY FALSE");
+  for (const table of ["issue_comment_voter", "issue_comment", "issue_event", "issue_issue_label", "issue_voter", "issue_sharer"]) {
+    shellOnRebuilt(
+      `DELETE FROM ${table} WHERE ${
+        table === "issue_comment_voter" ? `issue_comment_id IN ${staleIssueCommentIds}` : `issue_id IN ${staleIssueIds}`
+      }`,
+    );
+  }
+  shellOnRebuilt(`DELETE FROM issue WHERE id IN ${staleIssueIds}`);
+  shellOnRebuilt(`DELETE FROM posting_comment WHERE posting_id IN ${stalePostingIds}`);
+  shellOnRebuilt(`DELETE FROM posting_issue_label WHERE posting_id IN ${stalePostingIds}`);
+  shellOnRebuilt(`DELETE FROM posting WHERE id IN ${stalePostingIds}`);
+  shellOnRebuilt("SET REFERENTIAL_INTEGRITY TRUE");
+  const seedIssueId = scalar(
+    `SELECT id FROM issue WHERE project_id = ${sampleProjectId} AND title = 'Review rail parity check' LIMIT 1`,
+  );
+  if (seedIssueId) {
+    const adminId = scalar("SELECT id FROM n4user WHERE login_id = 'admin' LIMIT 1");
+    const aliceId = scalar("SELECT id FROM n4user WHERE login_id = 'alice' LIMIT 1");
+    const aliceAssigneeId = scalar(`SELECT id FROM assignee WHERE user_id = ${aliceId} LIMIT 1`);
+    const milestoneId = scalar(
+      `SELECT id FROM milestone WHERE project_id = ${sampleProjectId} AND title = 'Parity launch' LIMIT 1`,
+    );
+    shellOnRebuilt(
+      `UPDATE issue SET state = 1, num_of_comments = 1, author_id = ${adminId}, author_login_id = 'admin', ` +
+        `author_name = 'Site Admin', assignee_id = ${aliceAssigneeId}, milestone_id = ${milestoneId}, ` +
+        "body = 'Use this issue to verify labels, assignee, milestone, and timeline rendering in the converted frontend.' " +
+        `WHERE id = ${seedIssueId}`,
+    );
+  }
+  const legacyRepositoryPath = path.join(
+    repoRoot,
+    ".agent/legacy-localhost/instances/parity/data/repo/git/admin/sample.git",
+  );
+  const featureCommit = featureCommitFor(legacyRepositoryPath);
+  const seededPullRequestId = scalar(
+    `SELECT id FROM pull_request WHERE to_project_id = ${sampleProjectId} AND number = 1 ORDER BY id LIMIT 1`,
+  );
+  if (!featureCommit || !seededPullRequestId) throw new Error("legacy parity PR seed is missing");
+  const stalePullRequestIds = shellOnRebuilt(
+    `SELECT id FROM pull_request WHERE to_project_id = ${sampleProjectId} AND id <> ${seededPullRequestId} ` +
+      `AND title LIKE 'Differential sweep PR %'`,
+  )
+    .split("\n")
+    .slice(1)
+    .map((line) => Number(line.trim()))
+    .filter(Boolean);
+  shellOnRebuilt("SET REFERENTIAL_INTEGRITY FALSE");
+  const staleIdsSql = stalePullRequestIds.join(",") || "0";
+  for (const table of ["pull_request_commit", "pull_request_event", "pull_request_reviewers"]) {
+    shellOnRebuilt(`DELETE FROM ${table} WHERE pull_request_id IN (${staleIdsSql})`);
+  }
+  shellOnRebuilt(
+    `DELETE FROM review_comment WHERE thread_id IN
+      (SELECT id FROM comment_thread WHERE pull_request_id IN (${staleIdsSql}))`,
+  );
+  shellOnRebuilt(`DELETE FROM comment_thread WHERE pull_request_id IN (${staleIdsSql})`);
+  shellOnRebuilt(
+    `DELETE FROM watch WHERE resource_type = 'PULL_REQUEST' AND resource_id IN (${stalePullRequestIds.map(sqlQuote).join(",") || sqlQuote(0)})`,
+  );
+  shellOnRebuilt(
+    `DELETE FROM notification_event_n4user WHERE notification_event_id IN
+      (SELECT id FROM notification_event WHERE resource_type = 'PULL_REQUEST' AND resource_id IN
+        (${stalePullRequestIds.map(sqlQuote).join(",") || sqlQuote(0)}))`,
+  );
+  shellOnRebuilt(
+    `DELETE FROM notification_mail WHERE notification_event_id IN
+      (SELECT id FROM notification_event WHERE resource_type = 'PULL_REQUEST' AND resource_id IN
+        (${stalePullRequestIds.map(sqlQuote).join(",") || sqlQuote(0)}))`,
+  );
+  shellOnRebuilt(
+    `DELETE FROM notification_event WHERE resource_type = 'PULL_REQUEST' AND resource_id IN (${stalePullRequestIds.map(sqlQuote).join(",") || sqlQuote(0)})`,
+  );
+  shellOnRebuilt(`DELETE FROM pull_request WHERE id IN (${staleIdsSql})`);
+  const remainingSweepPullRequests = scalar(
+    `SELECT COUNT(*) FROM pull_request WHERE to_project_id = ${sampleProjectId} AND id <> ${seededPullRequestId} ` +
+      `AND title LIKE 'Differential sweep PR %'`,
+  );
+  if (remainingSweepPullRequests !== 0) {
+    throw new Error(`legacy stale differential PR cleanup left ${remainingSweepPullRequests} rows`);
+  }
+  shellOnRebuilt("SET REFERENTIAL_INTEGRITY TRUE");
+  const adminId = scalar("SELECT id FROM n4user WHERE login_id = 'admin' LIMIT 1");
+  shellOnRebuilt(
+    `UPDATE pull_request SET title = ${sqlQuote(PARITY_PULL_REQUEST.title)}, body = ${sqlQuote(PARITY_PULL_REQUEST.body)}, ` +
+      `to_project_id = ${sampleProjectId}, from_project_id = ${sampleProjectId}, ` +
+      `to_branch = ${sqlQuote(PARITY_PULL_REQUEST.toBranch)}, from_branch = ${sqlQuote(PARITY_PULL_REQUEST.fromBranch)}, ` +
+      `contributor_id = ${adminId}, receiver_id = ${adminId}, created = '2026-07-07 11:24:00', ` +
+      `updated = '2026-07-07 11:24:00', received = NULL, state = ${PARITY_PULL_REQUEST.state}, ` +
+      `is_conflict = FALSE, is_merging = FALSE, last_commit_id = ${sqlQuote(featureCommit)}, ` +
+      `merged_commit_id_from = NULL, merged_commit_id_to = NULL, number = 1 WHERE id = ${seededPullRequestId}`,
+  );
+  shellOnRebuilt(`DELETE FROM pull_request_commit WHERE pull_request_id = ${seededPullRequestId}`);
+  shellOnRebuilt(
+    `INSERT INTO pull_request_commit (id, pull_request_id, commit_id, author_date, created, commit_message, ` +
+      `commit_short_id, author_email, state) VALUES (` +
+      `${scalar("SELECT COALESCE(MAX(id), 0) FROM pull_request_commit") + 1}, ${seededPullRequestId}, ` +
+      `${sqlQuote(featureCommit)}, '2026-01-01 00:00:00', '2026-01-01 00:00:00', ` +
+      `'parity feature branch', ${sqlQuote(featureCommit.slice(0, 7))}, 'parity@example.com', 'CURRENT')`,
+  );
+  shellOnRebuilt(`DELETE FROM pull_request_event WHERE pull_request_id = ${seededPullRequestId}`);
+  shellOnRebuilt(
+    `INSERT INTO pull_request_event (id, sender_login_id, pull_request_id, event_type, created, old_value, new_value) ` +
+      `VALUES (${scalar("SELECT COALESCE(MAX(id), 0) FROM pull_request_event") + 1}, 'admin', ${seededPullRequestId}, ` +
+      `'NEW_PULL_REQUEST', '2026-07-07 11:24:00', '', ${sqlQuote(PARITY_PULL_REQUEST.title)})`,
+  );
+  shellOnRebuilt(
+    `DELETE FROM watch WHERE resource_type = 'PULL_REQUEST' AND resource_id = ${sqlQuote(seededPullRequestId)}`,
+  );
+  shellOnRebuilt(
+    `INSERT INTO watch (id, user_id, resource_type, resource_id) VALUES (` +
+      `${scalar("SELECT COALESCE(MAX(id), 0) FROM watch") + 1}, ${adminId}, 'PULL_REQUEST', ${sqlQuote(seededPullRequestId)})`,
+  );
+  // The seeded project is watched by admin in the default Yoram parity
+  // bootstrap. Keep the legacy project header's watcher state identical.
+  shellOnRebuilt(
+    `DELETE FROM watch WHERE resource_type = 'PROJECT' AND resource_id = ${sqlQuote(sampleProjectId)}`,
+  );
+  shellOnRebuilt(
+    `INSERT INTO watch (id, user_id, resource_type, resource_id) VALUES (` +
+      `${scalar("SELECT COALESCE(MAX(id), 0) FROM watch") + 1}, ${adminId}, 'PROJECT', ${sqlQuote(sampleProjectId)})`,
+  );
+  // Project reviews are a separate screen but share this project fixture. Reset
+  // stale rows, then seed one commit discussion identically on both engines.
+  shellOnRebuilt(
+    `DELETE FROM review_comment WHERE thread_id IN (SELECT id FROM comment_thread WHERE project_id = ${sampleProjectId})`,
+  );
+  shellOnRebuilt(`DELETE FROM comment_thread WHERE project_id = ${sampleProjectId}`);
+  const reviewThreadId = scalar("SELECT COALESCE(MAX(id), 0) FROM comment_thread") + 1;
+  const reviewCommentId = scalar("SELECT COALESCE(MAX(id), 0) FROM review_comment") + 1;
+  shellOnRebuilt(
+    `INSERT INTO comment_thread (dtype, id, author_id, author_login_id, author_name, state, created_date, ` +
+      `pull_request_id, project_id, prev_commit_id, commit_id, path, start_side, start_line, start_column, ` +
+      `end_side, end_line, end_column) VALUES ('ranged', ${reviewThreadId}, ${adminId}, 'admin', 'Site Admin', ` +
+      `'OPEN', '2026-07-07 11:24:00', NULL, ${sampleProjectId}, NULL, ${sqlQuote(featureCommit)}, ` +
+      `${sqlQuote(PARITY_REVIEW.path)}, 'B', 1, 1, 'B', 1, 1)`,
+  );
+  shellOnRebuilt(
+    `INSERT INTO review_comment (id, contents, created_date, author_id, author_login_id, author_name, thread_id) ` +
+      `VALUES (${reviewCommentId}, ${sqlQuote(PARITY_REVIEW.contents)}, '2026-07-07 11:24:00', ${adminId}, ` +
+      `'admin', 'Site Admin', ${reviewThreadId})`,
+  );
   for (const seed of PARITY_LABEL_SEEDS) {
     const hasCategory =
       scalar(
@@ -1049,6 +1482,26 @@ async function reconcileLegacyFixturesPreboot() {
       scalar(`SELECT COUNT(*) FROM project_label WHERE project_id = ${sampleProjectId} AND label_id = ${labelId}`) > 0;
     if (!hasLink) {
       shellOnRebuilt(`INSERT INTO project_label (project_id, label_id) VALUES (${sampleProjectId}, ${labelId})`);
+    }
+  }
+  // Keep the seeded issue's label associations aligned with the content
+  // contract used by both migration export and issue-detail probes. The
+  // original H2 fixture can retain only the first association after repeated
+  // recover/replay cycles even though the page seed selected both labels.
+  const sampleIssueId = scalar(
+    `SELECT id FROM issue WHERE project_id = ${sampleProjectId} AND number = 1 LIMIT 1`,
+  );
+  if (sampleIssueId) {
+    for (const seed of PARITY_LABEL_SEEDS) {
+      const labelId = labelIdOf(seed.labelName);
+      const hasAssociation = scalar(
+        `SELECT COUNT(*) FROM issue_issue_label WHERE issue_id = ${sampleIssueId} AND issue_label_id = ${labelId}`,
+      ) > 0;
+      if (!hasAssociation) {
+        shellOnRebuilt(
+          `INSERT INTO issue_issue_label (issue_id, issue_label_id) VALUES (${sampleIssueId}, ${labelId})`,
+        );
+      }
     }
   }
 
@@ -1155,6 +1608,30 @@ function mergeCookieHeader(oldHeader, setCookies) {
 
 // Shared step utilities handed to domain handlers via ctx.helpers.
 export const stepHelpers = {
+  async resolveLegacyPullRequest(ctx, number, title) {
+    const deadline = Date.now() + 5_000;
+    while (Date.now() < deadline) {
+      const output = legacyH2Shell(
+        `SELECT pr.ID || '|' || pr.NUMBER || '|' || COALESCE(pr.LAST_COMMIT_ID, '')
+           FROM PULL_REQUEST pr
+          WHERE pr.NUMBER = ${Number(number)}
+            AND pr.TO_PROJECT_ID = ${Number(ctx.state.projectIdLegacy)}
+            AND pr.TITLE = ${sqlQuote(title)}
+          ORDER BY pr.ID DESC LIMIT 1`,
+      );
+      const [id, resolvedNumber, lastCommitId] = (output.split("\n")[1] ?? "").trim().split("|");
+      if (id) {
+        return {
+          id: Number(id) || null,
+          number: Number(resolvedNumber) || null,
+          lastCommitId,
+        };
+      }
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    throw new Error(`legacy PR DB id readiness timed out for display number ${number}`);
+  },
+
   // Translate + request both sides. A >=400 observation only fails the step
   // when the sides DIVERGE (one failed, or both failed differently): an agreed
   // boundary rejection (same status both sides) is a successful probe of the
@@ -1268,8 +1745,22 @@ export const stepHelpers = {
     const observe = async () => {
       await setCookiesFromHeader(ctx.legacyPage, options.legacyUrl, legacySession.cookies);
       await setCookiesFromHeader(ctx.yoramPage, ctx.yoramBaseUrl, yoramSession.cookies);
-      const legacySkeleton = await renderSkeleton(ctx.legacyPage, domTarget.legacy);
-      const yoramSkeleton = await renderSkeleton(ctx.yoramPage, domTarget.yoram, { spa: domTarget.spa });
+      const legacySkeleton = await renderSkeleton(ctx.legacyPage, domTarget.legacy, {
+        selector: domTarget.legacySelector ?? domTarget.selector,
+      });
+      const yoramSkeleton = await renderSkeleton(ctx.yoramPage, domTarget.yoram, {
+        spa: domTarget.spa,
+        selector: domTarget.yoramSelector ?? domTarget.selector,
+      });
+      if (domTarget.currentToken) {
+        for (const [page, side] of [[ctx.legacyPage, "legacy"], [ctx.yoramPage, "yoram"]]) {
+          const hasToken = await page.evaluate(
+            (token) => document.body?.innerText?.includes(token) ?? false,
+            domTarget.currentToken,
+          );
+          if (!hasToken) throw new Error(`${side} DOM missing current differential token "${domTarget.currentToken}"`);
+        }
+      }
       return { diffs: diffSkeletons(legacySkeleton, yoramSkeleton), legacyCount: legacySkeleton.length, yoramCount: yoramSkeleton.length };
     };
     const recordInfraError = (error) => {
@@ -1490,6 +1981,7 @@ export async function runSweep(options = {}) {
           entry.errors.push(`${step.action}: ${error.message}`);
         }
       }
+      reclassifyScenarioViolations(entry);
       report.scenarios.push(entry);
       const partialPath = options.partialReportPath ?? process.env.YONA_DIFFERENTIAL_PARTIAL_REPORT;
       if (partialPath) {

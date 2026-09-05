@@ -19,6 +19,75 @@ async function git(args, options = {}) {
   });
 }
 
+const STATE_SKELETON_EXTRACT = (selector) => {
+  const root = selector === "body" ? document.body : document.querySelector(selector);
+  if (!root) throw new Error(`state DOM root not found: ${selector}`);
+  const skip = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "SVG", "HEAD", "META", "LINK", "BR", "PATH", "TEMPLATE"]);
+  const entries = [];
+  const visit = (element) => {
+    if (!skip.has(element.tagName)) {
+      const className = typeof element.className === "string" ? element.className.trim() : "";
+      let text = "";
+      for (const node of element.childNodes) {
+        if (node.nodeType === 3) text += node.textContent;
+      }
+      text = text.replace(/\s+/gu, " ").trim();
+      if (className || text) {
+        entries.push(`${element.tagName.toLowerCase()}${className ? `.${className.split(/\s+/u).join(".")}` : ""}:${text}`);
+      }
+    }
+    for (const child of element.children) visit(child);
+  };
+  for (const child of root.children) visit(child);
+  return entries;
+};
+
+async function renderPullRequestStateFragment(ctx) {
+  const { step, entry, legacySession, yoramSession, options, yoramBaseUrl, helpers } = ctx;
+  const pages = { legacy: ctx.legacyPage, yoram: ctx.yoramPage };
+  const sessions = { legacy: legacySession, yoram: yoramSession };
+  const urls = {
+    legacy: `${options.legacyUrl}${legacyPath(step)}`,
+    yoram: `${yoramBaseUrl}${translateYoram(step, {}).pagePath}`,
+  };
+  const selectors = { legacy: "body", yoram: '[data-owner="pull-request-detail-state"]' };
+  const skeletons = {};
+  try {
+    for (const side of ["legacy", "yoram"]) {
+      await helpers.setCookiesFromHeader(pages[side], urls[side], sessions[side].cookies);
+      await pages[side].goto(urls[side], { waitUntil: "load", timeout: 30_000 });
+      if (side === "yoram") {
+        await pages[side].waitForNetworkIdle({ idleTime: 500, timeout: 15_000 }).catch(() => {});
+      }
+      skeletons[side] = await pages[side].evaluate(STATE_SKELETON_EXTRACT, selectors[side]);
+    }
+  } catch (error) {
+    entry.errors.push(`dom render (${step.action}): ${error.message}`);
+    entry.violations.push(
+      violation({
+        route: legacyPath(step),
+        behaviorId: entry.behaviorIds[0] ?? null,
+        kind: "infra",
+        expected: "pull request state fragment render observable on both sides",
+        actual: error.message,
+      }),
+    );
+    return;
+  }
+  const diffs = diffSkeletons(skeletons.legacy, skeletons.yoram);
+  if (diffs.length > 0) {
+    entry.violations.push(
+      violation({
+        route: legacyPath(step),
+        behaviorId: entry.behaviorIds[0] ?? null,
+        kind: "dom",
+        expected: { skeletonEntries: skeletons.legacy.length },
+        actual: { skeletonEntries: skeletons.yoram.length, firstDiffs: diffs },
+      }),
+    );
+  }
+}
+
 export const scenarios = [
   {
     id: "R1-pr-lists",
@@ -168,7 +237,7 @@ export const scenarios = [
     title: "create/edit/comment/close/open/accept a pull request, then close it",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      { actor: "admin", action: "create-pullrequest", params: { owner: "admin", project: "sample", fromBranch: "main", toBranch: "feature/ui" } },
+      { actor: "admin", action: "create-pullrequest", params: { owner: "admin", project: "sample", fromBranch: "feature/ui", toBranch: "main" } },
       { actor: "admin", action: "edit-pullrequest", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "comment-pullrequest", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "close-pullrequest", params: { owner: "admin", project: "sample" } },
@@ -277,11 +346,20 @@ async function readPageHandler(ctx) {
     translateYoram(step, resolved),
   );
   if (legacyResult.status >= 400 || yoramResult.status >= 400) return;
+  if (step.action === "view-pullrequest-state") {
+    await renderPullRequestStateFragment(ctx);
+    return;
+  }
   const yoramPagePath = translateYoram(step, resolved).pagePath ?? legacyPath(step);
+  const targetKey = `${legacyPath(step)}|${yoramPagePath}|.project-page-wrap`;
+  ctx.state.domTargets ??= new Set();
+  if (ctx.state.domTargets.has(targetKey)) return;
+  ctx.state.domTargets.add(targetKey);
   await helpers.renderDomTarget(ctx, {
     legacy: `${options.legacyUrl}${legacyPath(step)}`,
     yoram: `${yoramBaseUrl}${yoramPagePath}`,
     spa: true,
+    selector: ".project-page-wrap",
   });
 }
 
@@ -298,7 +376,12 @@ function legacyPath(step) {
     case "view-pullrequest": return pr;
     case "view-pullrequest-state": return `${pr}/state`;
     case "view-pullrequest-changes": return `${pr}/changes`;
-    case "view-specific-change": return `${pr}/changes/${p.commitId}`;
+    // HEAD is the differential fixture's sentinel for the aggregate diff.
+    // Legacy's specific-change template dereferences that literal as a Git
+    // object, while Yoram's REST adapter normalizes it to the same aggregate
+    // view. Use the canonical aggregate route on both sides.
+    case "view-specific-change":
+      return p.commitId === "HEAD" ? `${pr}/changes` : `${pr}/changes/${p.commitId}`;
     case "view-pullrequest-editform": return `${pr}/editform`;
     case "list-commits": return `${base}/commits`;
     case "list-commits-branch": return `${base}/commits/${p.branch}/`;
@@ -411,7 +494,7 @@ const RAW_ACTIONS = [
 // --- mutation definitions (R13–R16) -----------------------------------------
 
 import { HarnessError, violation } from "../report.mjs";
-import { normalizeApiValue } from "../diff.mjs";
+import { diffSkeletons, normalizeApiValue } from "../diff.mjs";
 
 function prSuffixTitle(ctx, mark = "") {
   return `Differential sweep PR ${ctx.suffix}${mark}`;
@@ -439,11 +522,15 @@ function ensureOutcomeParity(ctx, route, legacyResult, yoramResult) {
 
 function requireCreatedPullRequest(ctx) {
   const { state, entry, suffix } = ctx;
-  if (!state.prNumberLegacy || !state.prNumberYoram) {
+  if (!state.prIdLegacy || !state.prNumberYoram) {
     entry.errors.push(`${ctx.step.action} skipped [${suffix}]: no pull request created earlier in this scenario`);
     return false;
   }
   return true;
+}
+
+function legacyBranchRef(branch) {
+  return branch.startsWith("refs/") ? branch : `refs/heads/${branch}`;
 }
 
 async function resolveProjectIds(ctx) {
@@ -534,7 +621,11 @@ const MUTATION_DEFINITIONS = {
         fromProjectId: state.projectIdLegacy,
         toProjectId: state.projectIdLegacy,
       };
-      const legacyTranslation = translateLegacy(step, shared);
+      const legacyTranslation = translateLegacy(step, {
+        ...shared,
+        fromBranch: legacyBranchRef(shared.fromBranch),
+        toBranch: legacyBranchRef(shared.toBranch),
+      });
       const yoramTranslation = translateYoram(step, {
         ...shared,
         fromProjectId: state.projectIdYoram,
@@ -542,12 +633,20 @@ const MUTATION_DEFINITIONS = {
       });
       const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
       state.prNumberLegacy = Number((/\/pullRequest\/(\d+)/u.exec(legacyResult.location ?? "") ?? [])[1]) || null;
+      try {
+        const legacyIdentity = await helpers.resolveLegacyPullRequest(ctx, state.prNumberLegacy, shared.title);
+        state.prIdLegacy = legacyIdentity.id;
+        state.prNumberLegacy = legacyIdentity.number ?? state.prNumberLegacy;
+        state.prCommitLegacy = legacyIdentity.lastCommitId;
+      } catch (error) {
+        entry.errors.push(`legacy create-pullrequest readiness failed: ${error.message}`);
+      }
       // Yoram's REST create answers the detail payload (camelCase); its PR
       // number is required for every dependent lifecycle step.
       state.prNumberYoram =
         Number(yoramResult.json?.pullRequestNumber ?? yoramResult.json?.number ?? yoramResult.json?.id ?? 0) || null;
-      state.prFromBranch = step.params.fromBranch;
-      state.prToBranch = step.params.toBranch;
+      state.prFromBranch = legacyBranchRef(step.params.fromBranch);
+      state.prToBranch = legacyBranchRef(step.params.toBranch);
       const ok = ensureOutcomeParity(ctx, legacyTranslation.path, legacyResult, yoramResult);
       if (ok && state.prNumberLegacy && state.prNumberYoram) {
         const semantic = {
@@ -563,6 +662,8 @@ const MUTATION_DEFINITIONS = {
           legacy: `${ctx.options.legacyUrl}/${step.params.owner}/${step.params.project}/pullRequest/${state.prNumberLegacy}`,
           yoram: `${ctx.yoramBaseUrl}/${step.params.owner}/${step.params.project}/pullRequest/${state.prNumberYoram}`,
           spa: true,
+          selector: ".project-page-wrap",
+          currentToken: shared.title,
         });
       }
     },
@@ -618,8 +719,12 @@ const MUTATION_DEFINITIONS = {
     translateLegacy(step, resolved) {
       return {
         method: "POST",
-        path: `/${step.params.owner}/${step.params.project}/pullRequest/${resolved.prId}/comments`,
-        form: { body: resolved.body },
+        // The legacy form requires the current pull-request commit id; HEAD is
+        // only a repository ref and is not a PullRequestCommit row.
+        path: `/${step.params.owner}/${step.params.project}/pullRequest/${resolved.prId}/comments?commitId=${encodeURIComponent(resolved.commitId ?? "HEAD")}`,
+        // ReviewComment binds its required field as `contents`; `body` is
+        // the pull-request entity field and makes the legacy form reject 400.
+        form: { contents: resolved.body },
       };
     },
     translateYoram(step, resolved) {
@@ -633,7 +738,11 @@ const MUTATION_DEFINITIONS = {
       const { step, state, suffix, helpers } = ctx;
       if (!requireCreatedPullRequest(ctx)) return;
       const shared = { body: `Differential sweep PR comment ${suffix}` };
-      const legacyTranslation = translateLegacy(step, { ...shared, prId: state.prNumberLegacy });
+      const legacyTranslation = translateLegacy(step, {
+        ...shared,
+        prId: state.prIdLegacy,
+        commitId: state.prCommitLegacy ?? "HEAD",
+      });
       const yoramTranslation = translateYoram(step, { ...shared, prId: state.prNumberYoram });
       const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
       ensureOutcomeParity(ctx, legacyTranslation.path, legacyResult, yoramResult);
@@ -643,7 +752,7 @@ const MUTATION_DEFINITIONS = {
 
 // Simple state-toggle mutations on the scenario-created pull request; legacy
 // uses its direct form route while Yoram exposes the same operation via REST.
-function pullRequestStateMutation(name, yoramTail) {
+function pullRequestStateMutation(name, yoramTail, legacyKnownFailure = null) {
   return {
     translateLegacy(step, resolved) {
       return {
@@ -662,7 +771,52 @@ function pullRequestStateMutation(name, yoramTail) {
       if (!requireCreatedPullRequest(ctx)) return;
       const legacyTranslation = translateLegacy(step, { ...step.params, prId: state.prNumberLegacy });
       const yoramTranslation = translateYoram(step, { ...step.params, prId: state.prNumberYoram });
-      const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
+      const legacyResult = await ctx.legacySession.request(legacyTranslation);
+      const yoramResult = await ctx.yoramSession.request(yoramTranslation);
+      if (
+        legacyKnownFailure &&
+        legacyResult.status === legacyKnownFailure.legacyStatus &&
+        yoramResult.status === legacyKnownFailure.yoramStatus
+      ) {
+        if (name === "accept") ctx.state.legacyAcceptFailed = true;
+        ctx.entry.violations.push(
+          violation({
+            route: legacyTranslation.path,
+            behaviorId: ctx.entry.behaviorIds[0] ?? null,
+            kind: "api",
+            expected: { status: legacyResult.status },
+            actual: { status: yoramResult.status },
+            classification: legacyKnownFailure.classification,
+            reason: legacyKnownFailure.reason,
+          }),
+        );
+        return;
+      }
+      if (name === "close" && ctx.state.legacyAcceptFailed && legacyResult.status === 303 && yoramResult.status === 400) {
+        ctx.entry.violations.push(
+          violation({
+            route: legacyTranslation.path,
+            behaviorId: ctx.entry.behaviorIds[0] ?? null,
+            kind: "api",
+            expected: { status: legacyResult.status },
+            actual: { status: yoramResult.status },
+            classification: "LEGACY_BUG_NOT_REPRODUCED",
+            reason: "The legacy accept endpoint failed before the final close; the resulting lifecycle states are not comparable.",
+          }),
+        );
+        return;
+      }
+      if (legacyResult.status >= 400 && legacyResult.status !== yoramResult.status) {
+        ctx.entry.errors.push(
+          `legacy ${step.action} failed: HTTP ${legacyResult.status} @ ${legacyTranslation.path}; ` +
+            `yoram failed: HTTP ${yoramResult.status} @ ${yoramTranslation.path}`,
+        );
+      } else if (yoramResult.status >= 400 && legacyResult.status !== yoramResult.status) {
+        ctx.entry.errors.push(
+          `yoram ${step.action} failed: HTTP ${yoramResult.status} @ ${yoramTranslation.path}; ` +
+            `legacy failed: HTTP ${legacyResult.status} @ ${legacyTranslation.path}`,
+        );
+      }
       ensureOutcomeParity(ctx, legacyTranslation.path, legacyResult, yoramResult);
     },
   };
@@ -671,7 +825,12 @@ function pullRequestStateMutation(name, yoramTail) {
 const PR_STATE_MUTATIONS = {
   "close-pullrequest": pullRequestStateMutation("close", "/close"),
   "open-pullrequest": pullRequestStateMutation("open", "/open"),
-  "accept-pullrequest": pullRequestStateMutation("accept", "/accept"),
+  "accept-pullrequest": pullRequestStateMutation("accept", "/accept", {
+    legacyStatus: 500,
+    yoramStatus: 200,
+    classification: "LEGACY_BUG_NOT_REPRODUCED",
+    reason: "Legacy PullRequest.Merger.Success dereferences a null reusable merge tree during accept.",
+  }),
 };
 
 const REVIEW_MUTATIONS = {

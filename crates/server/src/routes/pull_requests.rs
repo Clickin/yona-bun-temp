@@ -7,6 +7,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::path::PathBuf;
 use yoram_vcs::{CodeCommitFileDiffRecord, VcsError};
 
 use crate::api_types::IssueAttachment;
@@ -102,6 +103,72 @@ async fn direct_update_pull_request_source_branch(
         Ok(Json(_)) => redirect_to(&base_path, &redirect_path),
         Err(error) => error.into_response(),
     }
+}
+
+fn spawn_pull_request_merge_check(
+    repository: PilotRepository,
+    data_root: PathBuf,
+    owner_name: String,
+    project_name: String,
+    pull_request_number: i64,
+    from_owner_name: String,
+    from_project_name: String,
+    from_branch: String,
+    to_branch: String,
+) {
+    tokio::spawn(async move {
+        let source_repo_path =
+            match yoram_vcs::repository_path(&data_root, &from_owner_name, &from_project_name) {
+                Ok(path) => path,
+                Err(_) => {
+                    let _ = repository
+                        .complete_pull_request_merge_check(
+                            &owner_name,
+                            &project_name,
+                            pull_request_number,
+                            false,
+                        )
+                        .await;
+                    return;
+                }
+            };
+        let target_repo_path =
+            match yoram_vcs::repository_path(&data_root, &owner_name, &project_name) {
+                Ok(path) => path,
+                Err(_) => {
+                    let _ = repository
+                        .complete_pull_request_merge_check(
+                            &owner_name,
+                            &project_name,
+                            pull_request_number,
+                            false,
+                        )
+                        .await;
+                    return;
+                }
+            };
+        let conflict = match tokio::task::spawn_blocking(move || {
+            yoram_vcs::preview_pull_request_merge(
+                &source_repo_path,
+                &target_repo_path,
+                &from_branch,
+                &to_branch,
+            )
+        })
+        .await
+        {
+            Ok(Ok(preview)) => preview.conflict,
+            _ => false,
+        };
+        let _ = repository
+            .complete_pull_request_merge_check(
+                &owner_name,
+                &project_name,
+                pull_request_number,
+                conflict,
+            )
+            .await;
+    });
 }
 
 async fn direct_pull_request_state(
@@ -1767,7 +1834,7 @@ fn rest_pull_request_detail_from_record_with_issue_references(
             can_restore_source_branch: source_branch_state.can_restore,
             can_update,
             can_update_state: can_update,
-            can_watch: actor_id.is_some(),
+            can_watch: pull_request_watch_allowed(authorization, actor_id),
         },
         project_name: project_name.clone(),
         pull_request_number: record.pull_request_number,
@@ -1992,6 +2059,21 @@ fn require_pull_request_create_allowed(
     Err(RestRouteError::from_connect_error(
         ConnectError::permission_denied("Guest is not allowed this request"),
     ))
+}
+
+fn pull_request_watch_allowed(
+    authorization: &persistence::ProjectAuthorizationRecord,
+    actor_id: Option<i64>,
+) -> bool {
+    let scope = normalize_identifier(&authorization.project.project_scope);
+    let viewer = &authorization.viewer;
+    actor_id.is_some()
+        && ((!viewer.is_guest && scope == "public")
+            || viewer.is_project_member
+            || viewer.is_organization_admin
+            || (viewer.is_organization_member
+                && authorization.project.organization_id.is_some()
+                && scope == "protected"))
 }
 
 async fn rest_pull_request_detail_response(
@@ -2323,6 +2405,17 @@ pub(crate) async fn rest_create_pull_request(
         .ok_or_else(|| RestRouteError::not_found("project not found"))?;
     let record = match detail {
         persistence::CreatePullRequestResult::Created(record) => {
+            spawn_pull_request_merge_check(
+                repository.clone(),
+                service.data_root.clone(),
+                record.owner_name.clone(),
+                record.project_name.clone(),
+                record.pull_request_number,
+                record.from_owner_name.clone(),
+                record.from_project_name.clone(),
+                record.from_branch.clone(),
+                record.to_branch.clone(),
+            );
             dispatch_pull_request_webhooks(
                 repository,
                 &record,
@@ -3021,6 +3114,15 @@ fn rest_review_thread_is_non_ranged_for_changes(
     selected_commit_id.is_empty() || thread.commit_id.trim() == selected_commit_id
 }
 
+fn normalize_pull_request_changes_commit_id(value: &str) -> &str {
+    let value = value.trim();
+    if value.eq_ignore_ascii_case("HEAD") {
+        ""
+    } else {
+        value
+    }
+}
+
 pub(crate) async fn rest_read_pull_request_changes(
     headers: HeaderMap,
     owner_name: String,
@@ -3072,7 +3174,7 @@ pub(crate) async fn rest_read_pull_request_changes(
         .map_err(code_browser_error)
         .map_err(RestRouteError::from_connect_error)?
     };
-    let selected_commit_id = query.commit_id.trim();
+    let selected_commit_id = normalize_pull_request_changes_commit_id(&query.commit_id);
     let known_commit_state_by_id: HashMap<String, String> = detail
         .commits
         .iter()
@@ -3269,4 +3371,19 @@ pub(crate) async fn rest_list_organization_pull_requests(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
     Ok(Json(rest_pull_request_list_from_record(record, actor_id)))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::normalize_pull_request_changes_commit_id;
+
+    #[test]
+    fn changes_head_selects_pull_request_diff() {
+        assert_eq!(normalize_pull_request_changes_commit_id("HEAD"), "");
+        assert_eq!(normalize_pull_request_changes_commit_id(" head "), "");
+        assert_eq!(
+            normalize_pull_request_changes_commit_id("abcdef123"),
+            "abcdef123"
+        );
+    }
 }

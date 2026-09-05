@@ -58,6 +58,7 @@ export function DiffLineView({
       data-line={line.lineNumber}
       data-line-key={dataLineKey}
       data-side={line.type === "remove" ? "A" : "B"}
+      data-type={line.type}
     >
       <td
         {...styles.lineNumber}

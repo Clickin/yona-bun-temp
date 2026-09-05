@@ -9,6 +9,7 @@ import { buildCoverage, matchBehaviors, smokeScenarios, validateScenarios } from
 import {
   ISSUE_STATE_ENCODINGS,
   diffProjections,
+  domVisibleLoss,
   filterRowsByTag,
   diffSkeletons,
   normalizeApiValue,
@@ -16,10 +17,19 @@ import {
   projectCommentRows,
   projectIssueRows,
   projectLabelRows,
+  PULL_REQUEST_MERGE_PENDING_SIGNATURE,
+  PULL_REQUEST_MERGE_SUCCESS_SIGNATURE,
+  sideEffectAnchorTag,
 } from "./diff.mjs";
 import { parseH2ShellOutput } from "./db-projection.mjs";
 import { ACTION_DEFINITIONS } from "./scenarios/index.mjs";
-import { CLASSIFICATIONS, HarnessError, classifyViolation, violation } from "./report.mjs";
+import {
+  CLASSIFICATIONS,
+  HarnessError,
+  classifyViolation,
+  reclassifyScenarioViolations,
+  violation,
+} from "./report.mjs";
 
 const knownActions = Object.keys(ACTION_DEFINITIONS);
 
@@ -139,6 +149,104 @@ test("diffSkeletons reports only real differences", () => {
 
 test("normalizeSkeletonEntries collapses whitespace and drops empties", () => {
   assert.deepEqual(normalizeSkeletonEntries(["div.a:  hello    world  ", "   "]), ["div.a: hello world"]);
+});
+
+// --- sanctioned side-effect anchor <=> button translation -------------------
+// The ONLY DOM comparator equivalence: legacy href="#"/javascript:/empty
+// anchors (and anchors whose behavior is carried by legacy request/toggle
+// attributes) translate to React buttons. No route/class/state allowlists —
+// class list, text, and role semantics stay strict.
+
+test("sideEffectAnchorTag decides side-effect anchors from href semantics and legacy behavior attrs", () => {
+  // non-navigating hrefs are side-effect anchors
+  assert.equal(sideEffectAnchorTag("a", { href: "#" }), "a#");
+  assert.equal(sideEffectAnchorTag("a", { href: "#helpMessage" }), "a#");
+  assert.equal(sideEffectAnchorTag("a", { href: "JavaScript:void(0)" }), "a#");
+  assert.equal(sideEffectAnchorTag("a", { href: "  " }), "a#");
+  assert.equal(sideEffectAnchorTag("a", {}), "a#");
+  // legacy request attrs carry the behavior even over an http-looking href
+  assert.equal(sideEffectAnchorTag("a", { href: "/x/close", hasRequestMethod: true }), "a#");
+  assert.equal(sideEffectAnchorTag("a", { href: "/x/delete", hasRequestUri: true }), "a#");
+  // behavioral data-toggle (modal/order/filter/button) marks a side effect
+  assert.equal(sideEffectAnchorTag("a", { href: "#helpMessage", dataToggle: "modal" }), "a#");
+  assert.equal(sideEffectAnchorTag("a", { href: "#", dataToggle: "filter" }), "a#");
+  // navigational anchors stay anchors — presentational toggles do not count
+  assert.equal(sideEffectAnchorTag("a", { href: "/users/admin" }), "a");
+  assert.equal(sideEffectAnchorTag("a", { href: "/users/admin", dataToggle: "tooltip" }), "a");
+  assert.equal(sideEffectAnchorTag("a", { href: "/users/admin", dataToggle: "popover" }), "a");
+  // only anchors translate
+  assert.equal(sideEffectAnchorTag("button", { href: "#" }), "button");
+  assert.equal(sideEffectAnchorTag("div", { href: "#" }), "div");
+});
+
+test("normalizeSkeletonEntries compares marked anchors as buttons, plain anchors stay anchors", () => {
+  assert.deepEqual(normalizeSkeletonEntries(["a#.ybtn:닫기", "a.nav:메뉴", "button.ybtn:열기"]), [
+    "a.nav:메뉴",
+    "button.ybtn:닫기",
+    "button.ybtn:열기",
+  ]);
+});
+
+test("sanctioned anchor-to-button translation holds only with equal class list and text", () => {
+  // equal class + text: the sanctioned translation produces no diff
+  assert.deepEqual(diffSkeletons(["a#.ybtn:닫기"], ["button.ybtn:닫기"]), []);
+  // class drift still diffs (the multiset reports both sides)
+  assert.deepEqual(diffSkeletons(["a#.ybtn:닫기"], ["button.ybtn.primary:닫기"]), [
+    { side: "legacy-only", expected: "button.ybtn:닫기", actual: "button.ybtn.primary:닫기" },
+    { side: "yoram-only", expected: "<absent>", actual: "button.ybtn.primary:닫기" },
+  ]);
+  // text drift still diffs
+  assert.deepEqual(diffSkeletons(["a#.ybtn:닫기"], ["button.ybtn:열기"]), [
+    { side: "legacy-only", expected: "button.ybtn:닫기", actual: "button.ybtn:열기" },
+    { side: "yoram-only", expected: "<absent>", actual: "button.ybtn:열기" },
+  ]);
+  // a real navigational anchor rendered as a button remains a role change
+  assert.deepEqual(diffSkeletons(["a.nav:메뉴"], ["button.nav:메뉴"]), [
+    { side: "legacy-only", expected: "a.nav:메뉴", actual: "button.nav:메뉴" },
+    { side: "yoram-only", expected: "<absent>", actual: "button.nav:메뉴" },
+  ]);
+  // a missing side-effect control is still a missing control
+  assert.deepEqual(diffSkeletons(["a#.ybtn:닫기"], ["div.x:"]), [
+    { side: "legacy-only", expected: "button.ybtn:닫기", actual: "div.x:" },
+    { side: "yoram-only", expected: "<absent>", actual: "div.x:" },
+  ]);
+});
+
+test("visible-loss strictness is unchanged by anchor normalization", () => {
+  // a translated (button) control gone missing is a visible loss
+  assert.equal(
+    domVisibleLoss({ actual: { firstDiffs: [{ side: "legacy-only", expected: "button.ybtn:닫기" }] } }),
+    true,
+  );
+  // so is a missing navigational anchor with text
+  assert.equal(
+    domVisibleLoss({ actual: { firstDiffs: [{ side: "legacy-only", expected: "a.nav:메뉴" }] } }),
+    true,
+  );
+  // a marked anchor whose tuple survives on the yoram side is a re-wrap, not
+  // a loss (the normalized a# tuple equals the yoram-only entry)
+  assert.equal(
+    domVisibleLoss({
+      actual: {
+        firstDiffs: [
+          { side: "legacy-only", expected: "a#.ybtn:닫기" },
+          { side: "yoram-only", actual: "button.ybtn:닫기" },
+        ],
+      },
+    }),
+    false,
+  );
+});
+
+test("non-anchor diffs are unaffected by the anchor marker", () => {
+  // the marked anchor translates cleanly; an unrelated container drift still
+  // reports both sides of the multiset mismatch
+  assert.deepEqual(diffSkeletons(["div.x:", "a#.ybtn:닫기"], ["button.ybtn:닫기", "div.y:"]), [
+    { side: "legacy-only", expected: "div.x:", actual: "div.y:" },
+    { side: "yoram-only", expected: "<absent>", actual: "div.y:" },
+  ]);
+  // full sanctioned translation with otherwise-equal skeletons: no diff
+  assert.deepEqual(diffSkeletons(["div.x:", "a#.ybtn:닫기"], ["button.ybtn:닫기", "div.x:"]), []);
 });
 
 test("db projections map legacy and yoram column spellings", () => {
@@ -273,6 +381,98 @@ test("DOM allow rules require reviewed fingerprints and preserve first-match str
     }).classification,
     "HARNESS_ERROR",
   );
+});
+
+test("PR merge-bug DOM rule requires exact state and same-scenario B-0227 evidence", () => {
+  const knownAcceptFailure = {
+    kind: "api",
+    behaviorId: "B-0227",
+    route: "/admin/sample/pullRequest/2/accept",
+    expected: { status: 500 },
+    actual: { status: 200 },
+    reason: "Legacy PullRequest.Merger.Success dereferences a null reusable merge tree during accept.",
+  };
+  const firstDiffs = [
+    ...PULL_REQUEST_MERGE_PENDING_SIGNATURE.map((expected, index) => ({
+      side: "legacy-only",
+      expected,
+      actual: PULL_REQUEST_MERGE_SUCCESS_SIGNATURE[index],
+    })),
+    // The success signature is represented by `actual` entries in the
+    // comparator; include the finite, reviewed structural companions only.
+    { side: "yoram-only", expected: "<absent>", actual: PULL_REQUEST_MERGE_SUCCESS_SIGNATURE[0] },
+    { side: "legacy-only", expected: PULL_REQUEST_MERGE_PENDING_SIGNATURE[1], actual: PULL_REQUEST_MERGE_SUCCESS_SIGNATURE[1] },
+    { side: "yoram-only", expected: "<absent>", actual: "div.attachments:" },
+    { side: "yoram-only", expected: "<absent>", actual: "i.yobicon-right-2.ml10:" },
+    { side: "yoram-only", expected: "<absent>", actual: "i.yobicon-check-circle-alt.mr5:" },
+    { side: "legacy-only", expected: "i.yobicon-supportrequest.mr5:", actual: "<absent>" },
+    { side: "yoram-only", expected: "<absent>", actual: "li.active:" },
+  ];
+  const scenario = {
+    violations: [
+      knownAcceptFailure,
+      {
+        kind: "dom",
+        route: "/admin/sample/pullRequest/2",
+        expected: { skeletonEntries: 51 },
+        actual: { skeletonEntries: 48, firstDiffs },
+      },
+    ],
+  };
+  reclassifyScenarioViolations(scenario);
+  assert.equal(scenario.violations[1].classification, "LEGACY_BUG_NOT_REPRODUCED");
+});
+
+test("PR merge-bug DOM rule leaves unrelated comments/list and near-miss text blocking", () => {
+  const knownAcceptFailure = {
+    kind: "api",
+    behaviorId: "B-0227",
+    route: "/admin/sample/pullRequest/2/accept",
+    expected: { status: 500 },
+    actual: { status: 200 },
+    reason: "Legacy PullRequest.Merger.Success dereferences a null reusable merge tree during accept.",
+  };
+  const exact = PULL_REQUEST_MERGE_PENDING_SIGNATURE.map((expected, index) => ({
+    side: "legacy-only",
+    expected,
+    actual: PULL_REQUEST_MERGE_SUCCESS_SIGNATURE[index],
+  }));
+  const scenario = {
+    violations: [
+      knownAcceptFailure,
+      {
+        kind: "dom",
+        route: "/admin/sample/pullRequest/2",
+        expected: {},
+        actual: {
+          firstDiffs: [
+            ...exact,
+            { side: "legacy-only", expected: "ul.comments:", actual: "ul.nav.nav-tabs.nm:" },
+          ],
+        },
+      },
+    ],
+  };
+  reclassifyScenarioViolations(scenario);
+  assert.equal(scenario.violations[1].classification, "UNVERIFIED");
+
+  const nearMiss = {
+    violations: [
+      knownAcceptFailure,
+      {
+        kind: "dom",
+        route: "/admin/sample/pullRequest/2",
+        expected: {},
+        actual: {
+          firstDiffs: exact.map((diff, index) =>
+            index === 2 ? { ...diff, expected: "span:코드가 안전한지 확인하고 있습니다." } : diff,
+          ),
+        },
+      },
+    ],
+  };
+  reclassifyScenarioViolations(nearMiss);
+  assert.equal(nearMiss.violations[1].classification, "UNVERIFIED");
 });
 
 test("every IMPLEMENTATION_DIFFERENCE rule carries a rationale reference", () => {

@@ -2,31 +2,23 @@ use super::*;
 
 impl AppRepositoryImpl<'_> {
     // Legacy global label-typeahead reads (LabelApp.labels/categories,
-    // yona-original/app/controllers/LabelApp.java:51-120): scan every label,
-    // resolve its category name, and let the caller apply the legacy
-    // icontains filtering / limit / Content-Range semantics. ponytail: in-memory
-    // scan instead of a SQL join — fixture-scale data only, move to SQL if a
-    // real deployment ever feels it.
+    // yona-original/app/controllers/LabelApp.java:51-120) use the legacy
+    // `label` table, not the project-scoped issue-label tables. Let the caller
+    // apply the legacy icontains filtering / limit / Content-Range semantics.
+    // ponytail: in-memory scan instead of a SQL filter — fixture-scale data
+    // only, move to SQL if a real deployment ever feels it.
     pub async fn list_all_label_names(
         &self,
         query: &str,
         category: &str,
         limit: u64,
     ) -> Result<(Vec<String>, u64), DbErr> {
-        let categories = issue_label_category::Entity::find()
-            .all(&self.db)
-            .await?
-            .into_iter()
-            .map(|row| (row.id, row.name.clone().unwrap_or_default()))
-            .collect::<std::collections::HashMap<i64, String>>();
-        let labels = issue_label::Entity::find().all(&self.db).await?;
+        let labels = label::Entity::find().all(&self.db).await?;
         let mut names = Vec::new();
         for label in labels {
-            let name = label.name.clone().unwrap_or_default();
-            let category_name = label
-                .category_id
-                .and_then(|id| categories.get(&id).cloned())
-                .unwrap_or_default();
+            let (Some(name), Some(category_name)) = (label.name, label.category) else {
+                continue;
+            };
             if icontains_legacy(&name, query) && icontains_legacy(&category_name, category) {
                 names.push(name);
             }
@@ -43,21 +35,11 @@ impl AppRepositoryImpl<'_> {
         query: &str,
         limit: u64,
     ) -> Result<(Vec<String>, u64), DbErr> {
-        let categories = issue_label_category::Entity::find()
-            .all(&self.db)
-            .await?
-            .into_iter()
-            .map(|row| (row.id, row.name.clone().unwrap_or_default()))
-            .collect::<std::collections::HashMap<i64, String>>();
-        let labels = issue_label::Entity::find().all(&self.db).await?;
+        let labels = label::Entity::find().all(&self.db).await?;
         let mut seen = std::collections::HashSet::new();
         let mut names = Vec::new();
         for label in labels {
-            let Some(category_name) = label
-                .category_id
-                .and_then(|id| categories.get(&id).cloned())
-                .filter(|name| !name.is_empty())
-            else {
+            let Some(category_name) = label.category else {
                 continue;
             };
             if seen.insert(category_name.clone()) && icontains_legacy(&category_name, query) {

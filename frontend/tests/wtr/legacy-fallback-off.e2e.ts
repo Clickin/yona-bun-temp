@@ -648,19 +648,6 @@ test("primary text fallback arm has Style ownership", () => {
   expect(route).toContain('data-owner="project-fork-existing-link"');
 });
 
-test("pull request author left alignment has Style ownership", () => {
-  const appCss = curatedAppCss();
-  const route = readFileSync(
-    "src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber.tsx",
-    "utf8",
-  );
-  const styleSource = readFileSync("src/app.css", "utf8");
-
-  expect(appCss).not.toContain(".left-txt {");
-  expect(route).not.toContain("left-txt");
-  expect(route).toContain('data-owner="pull-request-detail-author"');
-});
-
 test("issue edit number secondary color has Style ownership", () => {
   const appCss = curatedAppCss();
   const route = readFileSync(

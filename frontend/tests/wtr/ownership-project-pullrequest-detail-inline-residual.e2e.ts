@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -6,13 +6,11 @@ const routeSource = readFileSync(
   "src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber.tsx",
   "utf8",
 );
-const styleSource = readFileSync("src/app.css", "utf8");
 const legacyPartial = readFileSync(
   "../yona-original/app/views/git/partial_info.scala.html",
   "utf8",
 );
 const legacyRoot = readFileSync("../yona-original/app/views/git/view.scala.html", "utf8");
-const appCss = curatedAppCss();
 const legacyCommon = readFileSync(
   "../yona-original/app/assets/stylesheets/less/_common.less",
   "utf8",
@@ -22,7 +20,6 @@ test("pull request detail owns static author and reviewer spacing in Style", asy
   expect(legacyPartial).toContain('style="display:inline-block; margin-right:5px;"');
   expect(legacyRoot).toContain('<div class="author-info left-txt"');
   expect(legacyCommon).toContain(".left-txt      { text-align:left;  }");
-  expect(appCss).not.toContain(".left-txt {");
   expect(legacyRoot).toContain('<div class="mr5" style="display:inline-block;">');
   expect(legacyPartial).toContain(
     'style="font-size: 13px; vertical-align: middle; margin: 0 10px;"',
@@ -31,8 +28,6 @@ test("pull request detail owns static author and reviewer spacing in Style", asy
   expect(routeSource).toContain('data-owner="pull-request-detail-reviewers"');
   expect(routeSource).toContain('data-owner="pull-request-detail-reviewer-summary"');
   expect(routeSource).toContain('data-owner="pull-request-detail-action-wrapper"');
-
-  expect(routeSource).not.toContain("author-info left-txt");
 
   await mockDetail(page);
   for (const viewport of [

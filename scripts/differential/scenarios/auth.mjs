@@ -646,9 +646,16 @@ async function requestAnonymousBoth(ctx, legacyTranslation, yoramTranslation) {
   const { step, entry } = ctx;
   const sessions = freshSessions(ctx);
   const legacyResult = await sessions.legacy.request(legacyTranslation);
-  if (legacyResult.status >= 400) entry.errors.push(`legacy ${step.action} failed: HTTP ${legacyResult.status} @ ${legacyTranslation.path}`);
   const yoramResult = await sessions.yoram.request({ ...yoramTranslation, redirect: "manual" });
-  if (yoramResult.status >= 400) entry.errors.push(`yoram ${step.action} failed: HTTP ${yoramResult.status} @ ${yoramTranslation.path}`);
+  const legacyFailed = legacyResult.status >= 400;
+  const yoramFailed = yoramResult.status >= 400;
+  const agreedFailure = legacyFailed && yoramFailed && legacyResult.status === yoramResult.status;
+  if (legacyFailed && !agreedFailure) {
+    entry.errors.push(`legacy ${step.action} failed: HTTP ${legacyResult.status} @ ${legacyTranslation.path}`);
+  }
+  if (yoramFailed && !agreedFailure) {
+    entry.errors.push(`yoram ${step.action} failed: HTTP ${yoramResult.status} @ ${yoramTranslation.path}`);
+  }
   return { legacyResult, yoramResult };
 }
 

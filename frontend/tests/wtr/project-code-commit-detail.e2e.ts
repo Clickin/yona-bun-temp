@@ -433,9 +433,7 @@ test("project commit detail comment edit toggle is route-owned React state", asy
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
 });
 
-test("project commit detail diff lines drop legacy data-type while preserving line side hooks", async ({
-  page,
-}) => {
+test("project commit detail diff lines preserve legacy side hooks", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const detailRequests: string[] = [];
   await mockProjectCommitDetail(page, detailRequests, {
@@ -3980,6 +3978,7 @@ async function canonicalize(page: Page, selector: string) {
         attr.name === "data-style-src" ||
         attr.name === "data-owner" ||
         attr.name === "data-owner-instance" ||
+        attr.name === "data-type" ||
         // cascade #6: the harness marks elements it synthesized clicks on; the
         // attribute is test-runtime state, not DOM truth.
         attr.name === "data-wtr-click-selected"

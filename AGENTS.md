@@ -124,9 +124,9 @@
 - Agent가 pnpm job(검증, E2E, build, goal automation, turn commit)을 실행할 때도 tool invocation 전체를 `require_escalated`로 sandbox 밖에서 실행하고, 항상 중앙 store를 명시한다: `pnpm --config.store-dir=/Users/senghyunjo/.pnpm-store ...`. workspace 안에 `.pnpm-store`를 만들거나 이동하지 않으며, 로컬 store가 생기면 즉시 제거하고 재발하지 않도록 `.gitignore`로 차단한다.
 - Agent가 WTR E2E 또는 screenshot parity를 실행할 때는 Chrome 프로세스까지 포함한 tool invocation 전체를 `require_escalated`로 sandbox 밖에서 실행한다. `frontend/web-test-runner.config.mjs`의 `@web/test-runner-chrome` launcher가 시스템 Chrome을 소유하며, WTR spec은 `frontend/tests/wtr/wtr-compat.ts`의 Page/Locator/Route facade만 사용한다. bundled Chromium이나 `PW_CHANNEL` 환경 변수에 의존하지 않는다.
 - StyleX migration wave의 검증은 두 프로파일로 운영한다. 활성 wave에서는 `pnpm --config.store-dir=/Users/senghyunjo/.pnpm-store --dir frontend test:e2e:stylex-fast -- <focused-spec>`로 fallback-off target-level 검증(Chrome, desktop/mobile metric, interaction/source ownership)을 빠르게 수행한다. live legacy screenshot pair, global fallback consumer audit, full fallback-off suite, production build/StyleX verifier는 매 wave의 blocker가 아니라 final visual-lock 단계에서 수행한다. 최종 산출물은 반드시 fallback CSS/LESS 없이 legacy와 pixel-perfect parity를 통과해야 하며, fast 프로파일을 최종 완료로 기록하지 않는다.
-- 매 turn 종료 전 변경이 있으면 반드시 turn commit hook을 `require_escalated`로 실행한다: `pnpm agent:turn-commit -- -m "<concise summary>"`.
-- turn commit hook은 `git add -A`, `tools/precommit-verify.mjs`, `git commit`을 같은 경로로 수행한다. hook이 실패하면 최종 응답 전에 blocker를 수정하거나 실패 사유를 보고한다.
-- 변경이 없을 때는 hook이 no-op으로 종료될 수 있으며, 이 경우 최종 응답에 clean 상태를 명시한다.
+- 승인된 구현 작업에서 task-owned 변경이 있으면 turn 종료 전 turn commit hook을 `require_escalated`로 실행한다: `pnpm agent:turn-commit -- -m "<concise summary>"`. 검토·보고만 요청한 작업이나 지침 문서 유지보수에는 자동 커밋을 적용하지 않는다. 별도의 명시적 커밋 요청은 따른다.
+- turn commit hook은 `git add -A`, `tools/precommit-verify.mjs`, `git commit`을 같은 경로로 수행한다. 실행 전에 staged·unstaged·untracked 변경의 소유 범위를 확인한다. 다른 작업의 변경을 함께 담게 되면 이 hook을 실행하지 말고, 해당 변경을 보존한 채 독립적으로 가능한 검증을 마친 뒤 커밋을 보류한 이유를 보고한다. hook이 실패하면 최종 응답 전에 blocker를 수정하거나 실패 사유를 보고한다.
+- 이번 작업의 변경 유무와 worktree 전체의 clean 상태를 구분한다. `git status`로 확인한 경우에만 clean이라고 보고한다.
 
 ## Document Index
 

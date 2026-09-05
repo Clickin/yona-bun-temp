@@ -30,7 +30,8 @@ test("pull request state info owns scoped alert paint in Style", async () => {
   expect(partial).toContain('class="alert alert-success"');
   expect(partial).toContain('class="alert alert-error"');
 
-  expect(changes).toContain('data-owner="pull-request-changes-state"');
+  expect(changes).not.toContain('data-owner="pull-request-changes-state"');
+  expect(changes).toContain("<PullRequestStateInfo");
 
   expect(css).not.toContain(".pullRequest-stateInfo {");
   expect(css).not.toContain(".pullRequest-stateInfo .alert {");

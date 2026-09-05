@@ -9,7 +9,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::OnceLock;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tower::ServiceExt;
 use yoram_integrations::{
     clear_test_webhook_outbox, queue_test_webhook_response, snapshot_test_webhook_outbox,
@@ -1193,6 +1193,26 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     assert_eq!(created["pullRequestNumber"], 1);
     assert_eq!(created["title"], "Interaction parity");
     assert_eq!(created["state"], "open");
+    assert_eq!(created["isMerging"], true);
+    let mut merge_check_settled = false;
+    for _ in 0..50 {
+        let detail = response_json(
+            rest_get(
+                app.clone(),
+                "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/1",
+                Some(&owner_cookie),
+            )
+            .await,
+        )
+        .await;
+        if detail["isMerging"] == false {
+            assert_eq!(detail["conflict"], false);
+            merge_check_settled = true;
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(20)).await;
+    }
+    assert!(merge_check_settled, "pull request merge check did not settle");
     assert_eq!(created["requiredReviewerCount"], 1);
     assert_eq!(created["lackingReviewerCount"], 1);
     assert_eq!(created["reviewed"], false);

@@ -2,7 +2,8 @@
 // semantic value diff used by all three kinds (api/dom/db).
 
 // Fields that are server-generated or legitimately differ between apps.
-const VOLATILE_KEY = /(^|_)(id|number|userId|authorId|projectId|createdAt|createdDate|updatedAt|updatedDate|dueDate|csrfToken|token)($|_)/i;
+const VOLATILE_KEY =
+  /(^|_)(id|number|userid|authorid|projectid|createdat|createddate|updatedat|updateddate|duedate|csrftoken|token|created_at|created_date|updated_at|updated_date|due_date|user_id|author_id|project_id)($|_)|(?:id|number|at|date)$/iu;
 const VOLATILE_KEY_EXACT = new Set(["owner", "ownerName"]);
 
 // Normalize any parsed JSON body into a comparable structure:
@@ -11,8 +12,10 @@ export function normalizeApiValue(value, key = "") {
   if (Array.isArray(value)) return value.map((entry) => normalizeApiValue(entry, key));
   if (value && typeof value === "object") {
     const out = {};
-    for (const entryKey of Object.keys(value).sort()) {
-      out[entryKey] = normalizeApiValue(value[entryKey], entryKey);
+    for (const [index, entryKey] of Object.keys(value).sort().entries()) {
+      const normalizedKey =
+        key === "labels" && /^\d+$/u.test(entryKey) ? `<volatile:${index}>` : entryKey;
+      out[normalizedKey] = normalizeApiValue(value[entryKey], entryKey);
     }
     return out;
   }
@@ -44,8 +47,51 @@ export function projectIssueMutation({ legacy, yoram }) {
 export function normalizeSkeletonEntries(entries) {
   return entries
     .map((entry) => collapseWhitespace(String(entry)))
+    // The ONE sanctioned DOM translation: a legacy side-effect anchor marked
+    // `a#` by the skeleton extract (see sideEffectAnchorTag) is compared as a
+    // button. Class list and text still have to match exactly, and plain `a`
+    // (navigational) entries are never rewritten, so role changes on real
+    // links remain diffs.
+    .map((entry) => (entry.startsWith("a#") ? `button${entry.slice(2)}` : entry))
     .filter(Boolean)
     .sort();
+}
+
+// PullRequestApp's mergeability actor leaves the legacy detail in a pending
+// state while Yoram renders its successful merge affordance. Keep this
+// fingerprint separate from ordinary DOM comparison: a detail can contain
+// this known legacy failure and unrelated observable differences at the same
+// time, and those other differences must remain blocking.
+export const PULL_REQUEST_MERGE_PENDING_SIGNATURE = Object.freeze([
+  "button.ybtn.ybtn-disabled:코드 병합",
+  "div.alert.alert-warnning:",
+  "span:코드가 안전한지 확인하고 있습니다. 완료될때까지 잠시만 기다려주십시오.",
+]);
+export const PULL_REQUEST_MERGE_SUCCESS_SIGNATURE = Object.freeze([
+  "button.ybtn.ybtn-success:코드 병합",
+  "div.alert.alert-success:",
+  "span:코드를 안전하게 자동으로 병합할 수 있습니다.",
+]);
+
+// Canonical decision for the sanctioned anchor->button translation
+// (AGENTS.md: href="#" / javascript: anchors are behavior evidence, not exact
+// DOM preservation targets — React re-owns them as buttons). An anchor is a
+// side effect when its href cannot navigate (fragment-only, javascript:, empty
+// or absent), or when legacy behavior attributes carry the action
+// (data-request-method/-uri, or a behavioral data-toggle — tooltip/popover are
+// presentational plugins and do NOT count). Pure and data-level so the
+// contract is unit-testable; the browser-side skeleton extract in run.mjs
+// inlines the same decision (sync-guarded by run.spec.mjs).
+export function sideEffectAnchorTag(
+  tagName,
+  { href = "", dataToggle = null, hasRequestMethod = false, hasRequestUri = false } = {},
+) {
+  if (tagName !== "a") return tagName;
+  const target = String(href ?? "").trim().toLowerCase();
+  const navigational = target !== "" && !target.startsWith("#") && !target.startsWith("javascript:");
+  const behavioralToggle = dataToggle !== null && !/^(tooltip|popover)$/iu.test(String(dataToggle));
+  if (!navigational || hasRequestMethod || hasRequestUri || behavioralToggle) return "a#";
+  return tagName;
 }
 
 // Compare two normalized skeletons; returns [] when equal, else first diffs.

@@ -886,7 +886,7 @@ export const actionDefinitions = {
     translateYoram() {
       return { method: "GET", path: "/files" };
     },
-    handler: readPageHandler,
+    handler: readApiHandler,
   },
   "get-users-directory": {
     // Legacy keeps its external /-_-api/v1/users spelling; the migrated
@@ -902,8 +902,33 @@ export const actionDefinitions = {
 
   "get-user-sidebar": {
     async handler(ctx) {
-      const { helpers } = ctx;
+      const { entry, helpers, legacySession, yoramSession } = ctx;
       for (const path of ["/user/sidebar", "/user/usermenuTabContentList"]) {
+        if (path === "/user/sidebar") {
+          const [legacyResult, yoramResult] = await Promise.all([
+            legacySession.request({ method: "GET", path }),
+            yoramSession.request({ method: "GET", path }),
+          ]);
+          if (legacyResult.status === 500 && yoramResult.status < 400) {
+            entry.violations.push(
+              violation({
+                route: path,
+                behaviorId: entry.behaviorIds[0] ?? null,
+                kind: "api",
+                expected: { status: legacyResult.status },
+                actual: { status: yoramResult.status },
+                classification: "LEGACY_BUG_NOT_REPRODUCED",
+                reason: "Legacy Application.sidebar raises NoSuchElementException in views.html.index.sidebar for the parity fixture.",
+              }),
+            );
+          } else if (legacyResult.status !== yoramResult.status) {
+            entry.errors.push(
+              `legacy ${ctx.step.action} failed: HTTP ${legacyResult.status} @ ${path}; ` +
+                `yoram failed: HTTP ${yoramResult.status} @ ${path}`,
+            );
+          }
+          continue;
+        }
         await helpers.requestBoth(ctx, { method: "GET", path }, { method: "GET", path });
       }
     },
@@ -1169,7 +1194,14 @@ export const actionDefinitions = {
       const yoramId = findEmailId(rows.yoram, state.emailAddress);
       if (legacyId) await ctx.legacySession.request({ method: "DELETE", path: `/user/email/delete/${legacyId}` });
       if (yoramId) await ctx.yoramSession.request({ method: "DELETE", path: `/user/email/delete/${yoramId}` });
-      const final = await emailRows(ctx);
+      // Legacy's cached User keeps a deleted sub-email in its in-memory
+      // collection; a fresh session makes the cleanup read hit the database.
+      await ctx.legacySession.login({ loginId: "admin", password: "admin" });
+      let final = await emailRows(ctx);
+      for (let attempt = 0; attempt < 10 && (findEmailId(final.legacy, state.emailAddress) || findEmailId(final.yoram, state.emailAddress)); attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        final = await emailRows(ctx);
+      }
       if (findEmailId(final.legacy, state.emailAddress) || findEmailId(final.yoram, state.emailAddress)) {
         entry.errors.push(`delete-email: ${state.emailAddress} still present after cleanup`);
       }
@@ -1777,8 +1809,20 @@ Object.assign(actionDefinitions, {
     translateYoram: () => ({ method: "GET", path: "/__validation-link-client-side__" }),
     async handler(ctx) {
       const { entry, state, options, yoramBaseUrl, helpers } = ctx;
-      const mails = await helpers.waitForMail(state.mailCountBefore ?? 0);
       const ids = { legacy: state.validationEmailIdLegacy, yoram: state.validationEmailIdYoram };
+      let mails = await helpers.waitForMail(state.mailCountBefore ?? 0);
+      const hasConfirmation = (baseUrl, id) =>
+        mails
+          .flatMap((raw) => helpers.extractMailLinks(raw, "/user/email/confirm/"))
+          .some((candidate) => {
+            const url = new URL(candidate);
+            return (url.port || "80") === (new URL(baseUrl).port || "80") && url.pathname.includes(`/${id}/`);
+          });
+      const deadline = Date.now() + 30_000;
+      while ((!hasConfirmation(options.legacyUrl, ids.legacy) || !hasConfirmation(yoramBaseUrl, ids.yoram)) && Date.now() < deadline) {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+        mails = helpers.readMails();
+      }
       const outcomes = {};
       for (const [side, baseUrl] of [["legacy", options.legacyUrl], ["yoram", yoramBaseUrl]]) {
         const expectedPort = new URL(baseUrl).port || "80";

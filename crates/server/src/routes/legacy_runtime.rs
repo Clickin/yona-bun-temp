@@ -698,16 +698,19 @@ fn migration_issue_json(
     );
     serde_json::json!({
         "issue": node,
-        "comments": issue.comments.iter().map(|comment| migration_comment_json(
-            &comment.contents_markdown,
-            &comment.author_login_id,
-            &comment.author_label,
-            &link,
-            base_path,
-            &comment.attachments,
-            comment.created_at,
-            with_wiki_commit,
-        )).collect::<Vec<_>>(),
+        "comments": issue.comments.iter().map(|comment| {
+            let comment_link = format!("{link}#comment-{}", comment.id);
+            migration_comment_json(
+                &comment.contents_markdown,
+                &comment.author_login_id,
+                &comment.author_label,
+                &comment_link,
+                base_path,
+                &comment.attachments,
+                comment.created_at,
+                with_wiki_commit,
+            )
+        }).collect::<Vec<_>>(),
     })
 }
 
@@ -738,16 +741,19 @@ fn migration_post_json(
             ),
             "created_at": migration_timestamp(post.created_at),
         },
-        "comments": post.comments.iter().map(|comment| migration_comment_json(
-            &comment.contents_markdown,
-            &comment.author_login_id,
-            &comment.author_label,
-            &link,
-            base_path,
-            &comment.attachments,
-            comment.created_at,
-            with_wiki_commit,
-        )).collect::<Vec<_>>(),
+        "comments": post.comments.iter().map(|comment| {
+            let comment_link = format!("{link}#comment-{}", comment.id);
+            migration_comment_json(
+                &comment.contents_markdown,
+                &comment.author_login_id,
+                &comment.author_label,
+                &comment_link,
+                base_path,
+                &comment.attachments,
+                comment.created_at,
+                with_wiki_commit,
+            )
+        }).collect::<Vec<_>>(),
     })
 }
 
@@ -1041,6 +1047,111 @@ fn legacy_plain_response(status: StatusCode, body: &str) -> Response {
     (status, body.to_string()).into_response()
 }
 
+// --- legacy global label typeahead -------------------------------------------
+// LabelApp.labels/categories (yona-original/app/controllers/LabelApp.java:51-120):
+// anonymous (@AnonymousCheck on LabelApp), JSON-only content negotiation,
+// required `limit`, response = JSON array of label/category names with a
+// Content-Range `items <limit>/<total>` header exactly when total > limit.
+
+const LEGACY_MAX_FETCH_LABELS: u64 = 1000;
+
+// Play `request().accepts("application/json")`: an absent Accept header means
+// */* (accepts); otherwise any listed media range matching application/json,
+// application/* or */* accepts. q-value weighting is not modeled — the probe
+// pins Accept: application/json and page fetches send text/html, which the
+// media match already 406s.
+fn accepts_application_json(headers: &HeaderMap) -> bool {
+    let Some(accept) = headers
+        .get(axum::http::header::ACCEPT)
+        .and_then(|value| value.to_str().ok())
+    else {
+        return true;
+    };
+    accept.split(',').any(|part| {
+        let media = part.split(';').next().unwrap_or("").trim().to_ascii_lowercase();
+        media == "application/json" || media == "application/*" || media == "*/*"
+    })
+}
+
+// Legacy binds `limit: Integer` with no default, so missing/blank answers 400
+// "No limit" (LabelApp.java:56-58); unparseable values are a Play binding
+// failure, which also answers 400.
+fn parse_label_limit(query: &HashMap<String, String>) -> Option<u64> {
+    let raw = query.get("limit").map(String::as_str).map(str::trim)?;
+    if raw.is_empty() {
+        return None;
+    }
+    raw.parse::<u64>().ok()
+}
+
+// 200 JSON array of names; the Content-Range header uses the (possibly
+// clamped) page limit and the pre-paging total.
+fn label_typeahead_response(names: Vec<String>, total: u64, limit: u64) -> Response {
+    let mut response = Json(names).into_response();
+    if total > limit {
+        if let Ok(value) = format!("items {limit}/{total}").parse() {
+            response
+                .headers_mut()
+                .insert(axum::http::header::CONTENT_RANGE, value);
+        }
+    }
+    response
+}
+
+async fn direct_global_labels(
+    headers: HeaderMap,
+    Query(query): Query<HashMap<String, String>>,
+    service: PilotServiceImpl,
+) -> Response {
+    if !accepts_application_json(&headers) {
+        return StatusCode::NOT_ACCEPTABLE.into_response();
+    }
+    let Some(limit) = parse_label_limit(&query) else {
+        return legacy_plain_response(StatusCode::BAD_REQUEST, "No limit");
+    };
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return RestRouteError::not_implemented("labels requires repository backend").into_response();
+    };
+    let query_text = query.get("query").map(String::as_str).unwrap_or("");
+    let category = query.get("category").map(String::as_str).unwrap_or("");
+    match repository
+        .list_all_label_names(query_text, category, limit)
+        .await
+    {
+        Ok((names, total)) => label_typeahead_response(names, total, limit),
+        Err(error) => RestRouteError::internal(error.to_string()).into_response(),
+    }
+}
+
+async fn direct_global_label_categories(
+    headers: HeaderMap,
+    Query(query): Query<HashMap<String, String>>,
+    service: PilotServiceImpl,
+) -> Response {
+    if !accepts_application_json(&headers) {
+        return StatusCode::NOT_ACCEPTABLE.into_response();
+    }
+    let Some(mut limit) = parse_label_limit(&query) else {
+        return legacy_plain_response(StatusCode::BAD_REQUEST, "No limit");
+    };
+    // Categories clamp the limit to MAX_FETCH_LABELS before paging
+    // (LabelApp.java:112-114); labels() does not clamp.
+    if limit > LEGACY_MAX_FETCH_LABELS {
+        limit = LEGACY_MAX_FETCH_LABELS;
+    }
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return RestRouteError::not_implemented("labels requires repository backend").into_response();
+    };
+    let query_text = query.get("query").map(String::as_str).unwrap_or("");
+    match repository
+        .list_all_label_category_names(query_text, limit)
+        .await
+    {
+        Ok((names, total)) => label_typeahead_response(names, total, limit),
+        Err(error) => RestRouteError::internal(error.to_string()).into_response(),
+    }
+}
+
 pub(crate) fn routes(
     service: PilotServiceImpl,
     assets: AssetMode,
@@ -1051,7 +1162,9 @@ pub(crate) fn routes(
     let legacy_init_service = service.clone();
     let project_import_service = service.clone();
     let legacy_migration_service = service.clone();
-    let legacy_migration_json_service = service;
+    let legacy_migration_json_service = service.clone();
+    let global_categories_service = service.clone();
+    let global_labels_service = service;
 
     Router::new()
         .route("/", post(direct_legacy_fake))
@@ -1102,6 +1215,24 @@ pub(crate) fn routes(
                 | {
                 let service = legacy_migration_json_service.clone();
                     async move { direct_legacy_migration_json(headers, path, query, service).await }
+                },
+            ),
+        )
+        .route(
+            "/labels",
+            get(
+                move |headers: HeaderMap, query: Query<HashMap<String, String>>| {
+                    let service = global_labels_service.clone();
+                    async move { direct_global_labels(headers, query, service).await }
+                },
+            ),
+        )
+        .route(
+            "/categories",
+            get(
+                move |headers: HeaderMap, query: Query<HashMap<String, String>>| {
+                    let service = global_categories_service.clone();
+                    async move { direct_global_label_categories(headers, query, service).await }
                 },
             ),
         )

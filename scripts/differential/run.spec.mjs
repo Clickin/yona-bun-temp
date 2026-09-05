@@ -1,6 +1,14 @@
 import { strict as assert } from "node:assert";
 import test from "node:test";
-import { executeStep, parseArgs, selectScenarios } from "./run.mjs";
+import {
+  executeStep,
+  parseArgs,
+  selectScenarios,
+  PARITY_PULL_REQUEST,
+  PARITY_REVIEW,
+  registrationStatusIsUsable,
+  SKELETON_EXTRACT,
+} from "./run.mjs";
 import { HarnessError, summarizeExecution } from "./report.mjs";
 import { ACTION_DEFINITIONS } from "./scenarios/index.mjs";
 
@@ -19,6 +27,42 @@ test("differential runner accepts repeated and comma-separated scenario IDs", ()
 
 test("differential runner rejects unknown scenario IDs", () => {
   assert.throws(() => selectScenarios(["does-not-exist"]), /unknown scenario id/u);
+});
+
+test("parity PR fixture preserves run-dev seed contract and stable review seed", () => {
+  assert.deepEqual(PARITY_PULL_REQUEST, {
+    body: "",
+    // R13's create-pullrequest opens main -> feature/ui (the direction the
+    // restore/accept lifecycle scenarios and the deterministic seed use).
+    fromBranch: "main",
+    number: 1,
+    state: 1,
+    title: "Add feature branch change",
+    toBranch: "feature/ui",
+  });
+  assert.deepEqual(PARITY_REVIEW, {
+    contents: "Review the feature branch parity fixture.",
+    path: "parity-feature.txt",
+  });
+});
+
+test("SKELETON_EXTRACT stays in sync with the sanctioned side-effect anchor marker", () => {
+  // The browser-side extract inlines the sideEffectAnchorTag decision (it is
+  // serialized into the page, so it cannot import diff.mjs). These guards fail
+  // if the inlined copy is dropped or its marker/behavior attributes drift.
+  const source = SKELETON_EXTRACT.toString();
+  assert.match(source, /a#/u);
+  assert.match(source, /data-request-method/u);
+  assert.match(source, /data-request-uri/u);
+  assert.match(source, /data-toggle/u);
+  assert.match(source, /javascript:/u);
+});
+
+test("fresh parity account bootstrap reuses an existing account on duplicate registration", () => {
+  assert.equal(registrationStatusIsUsable(200), true);
+  assert.equal(registrationStatusIsUsable(409), true);
+  assert.equal(registrationStatusIsUsable(422), false);
+  assert.equal(registrationStatusIsUsable(500), false);
 });
 
 function stepContext(action, entry = { behaviorIds: [], violations: [], errors: [] }) {

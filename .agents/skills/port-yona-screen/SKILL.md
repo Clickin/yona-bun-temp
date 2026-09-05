@@ -13,6 +13,8 @@ For harness details and command selection, read [references/harnesses.md](refere
 
 ## Roles And Write Scope
 
+- For a review-only request, inspect the screen and report findings using the parity criteria. The implementation, staging, and commit steps below apply only to an authorized port or fix.
+
 - If you are the main agent on a `/goal` turn, do not write route TSX (`frontend/src/routes/**/*.tsx`) or focused E2E (`frontend/tests/*.e2e.ts`) yourself. Spawn one worker subagent per screen state, each with an explicit write scope limited to its own route file and its own focused E2E file. Hand each worker the legacy Scala HTML root, partials, LESS/JS/messages evidence and this skill.
 - If you are a worker subagent, stay strictly within the assigned write scope. Do not edit sibling routes, shared components outside your screen, or unrelated E2E files.
 - Serialize workers only when they share a route, file, or ordering dependency; otherwise spawn them concurrently.

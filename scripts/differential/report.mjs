@@ -2,7 +2,11 @@
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { domVisibleLoss } from "./diff.mjs";
+import {
+  domVisibleLoss,
+  PULL_REQUEST_MERGE_PENDING_SIGNATURE,
+  PULL_REQUEST_MERGE_SUCCESS_SIGNATURE,
+} from "./diff.mjs";
 
 // Unified classification enum shared by the triage doc
 // (docs/provenance/release-triage-2026-08.md) and the verdict gate.
@@ -49,8 +53,9 @@ function normalizeClassification(value) {
 // catch-alls (see the label-route and sharableUsers chains). There is NO
 // blanket dom -> IMPLEMENTATION_DIFFERENCE rule: unknown DOM divergence falls
 // through to UNVERIFIED (blocking) unless an explicit, evidence-backed rule
-// below matches — and no allow rule can match a visible loss
-// (diff.mjs#domVisibleLoss), so missing text/buttons/controls stay blocking.
+// below matches. Ordinary DOM allow rules cannot match a visible loss
+// (diff.mjs#domVisibleLoss); the dedicated merge-bug rule below is narrower
+// still, requiring the exact state fingerprint plus same-scenario API evidence.
 function pairStatuses(detail) {
   const actual = detail?.actual;
   const legacy =
@@ -58,6 +63,78 @@ function pairStatuses(detail) {
   const yoram =
     Number(actual?.yoramStatus ?? /"actual":"yoram HTTP (\d+)"/u.exec(JSON.stringify(detail))?.[1]) || null;
   return { legacy, yoram };
+}
+
+const PULL_REQUEST_MERGE_COMPANION_ENTRIES = new Set([
+  // Empty attachment wrapper and icon-only/status wrappers are the finite
+  // structural residue reviewed with the merge-state fixture. User-visible
+  // controls, text, and list entries are intentionally absent.
+  "div.attachments:",
+  "i.yobicon-right-2.ml10:",
+  "i.yobicon-check-circle-alt.mr5:",
+  "i.yobicon-supportrequest.mr5:",
+  "li.active:",
+]);
+
+function primaryDomDiffEntries(firstDiffs) {
+  return firstDiffs.flatMap((diff) => {
+    if (diff.side === "legacy-only") return [diff.expected];
+    if (diff.side === "yoram-only") return [diff.actual];
+    if (diff.side === "order") return [diff.expected, diff.actual];
+    return [];
+  });
+}
+
+function hasLegacyPendingEntry(firstDiffs, entry) {
+  return firstDiffs.some((diff) => diff.side === "legacy-only" && diff.expected === entry);
+}
+
+function hasCurrentSuccessEntry(firstDiffs, entry) {
+  return firstDiffs.some(
+    (diff) =>
+      (diff.side === "legacy-only" || diff.side === "yoram-only") &&
+      diff.actual === entry,
+  );
+}
+
+function hasExactMergeStateDiff(detail) {
+  const firstDiffs = detail?.actual?.firstDiffs;
+  if (!Array.isArray(firstDiffs)) return false;
+  if (
+    firstDiffs.some(
+      (diff) => !["legacy-only", "yoram-only", "order"].includes(diff?.side),
+    )
+  ) {
+    return false;
+  }
+  if (!PULL_REQUEST_MERGE_PENDING_SIGNATURE.every((entry) => hasLegacyPendingEntry(firstDiffs, entry))) {
+    return false;
+  }
+  if (!PULL_REQUEST_MERGE_SUCCESS_SIGNATURE.every((entry) => hasCurrentSuccessEntry(firstDiffs, entry))) {
+    return false;
+  }
+  const signatureEntries = new Set([
+    ...PULL_REQUEST_MERGE_PENDING_SIGNATURE,
+    ...PULL_REQUEST_MERGE_SUCCESS_SIGNATURE,
+  ]);
+  return primaryDomDiffEntries(firstDiffs).every(
+    (entry) => signatureEntries.has(entry) || PULL_REQUEST_MERGE_COMPANION_ENTRIES.has(entry),
+  );
+}
+
+const LEGACY_MERGE_FAILURE_REASON =
+  "Legacy PullRequest.Merger.Success dereferences a null reusable merge tree during accept.";
+
+function hasSameScenarioMergeFailure(scenarioViolations) {
+  return (scenarioViolations ?? []).some(
+    (finding) =>
+      finding?.kind === "api" &&
+      finding.behaviorId === "B-0227" &&
+      /\/pullRequest\/\d+\/accept$/u.test(finding.route ?? "") &&
+      finding.expected?.status === 500 &&
+      finding.actual?.status === 200 &&
+      finding.reason === LEGACY_MERGE_FAILURE_REASON,
+  );
 }
 
 // Fallback for findings no rule claims: UNVERIFIED so new divergences remain
@@ -331,6 +408,19 @@ const CLASSIFICATION_RULES = [
   // fingerprints may classify a DOM divergence as IMPLEMENTATION_DIFFERENCE,
   // and neither can match a visible loss (domVisibleLoss guard below).
   {
+    // Narrow exception for the one known PR merge actor failure. This rule is
+    // intentionally scenario-aware and only accepts an exact pending/current
+    // state pair with the matching B-0227 accept evidence. Any extra text,
+    // control, list, or near-miss entry stays UNVERIFIED.
+    test: ({ kind, route, detail, scenarioViolations }) =>
+      kind === "dom" &&
+      /^\/[^/]+\/[^/]+\/pullRequest\/\d+$/u.test(route.split("?")[0]) &&
+      hasExactMergeStateDiff(detail) &&
+      hasSameScenarioMergeFailure(scenarioViolations),
+    classification: "LEGACY_BUG_NOT_REPRODUCED",
+    reason: LEGACY_MERGE_FAILURE_REASON,
+  },
+  {
     // Reviewed selector/content tuple: the legacy SSR document carries the SPA
     // shell bootstrap markers (yona-root / __YONA_RUNTIME_CONFIG__ /
     // react-root); drift mentioning them is React-owned shell markup, whose
@@ -392,12 +482,40 @@ for (const rule of CLASSIFICATION_RULES) {
   }
 }
 
-export function classifyViolation(kind, route, detail) {
-  const hit = CLASSIFICATION_RULES.find((rule) => rule.test({ kind, route, detail }));
+export function classifyViolation(kind, route, detail, context = {}) {
+  const hit = CLASSIFICATION_RULES.find((rule) =>
+    rule.test({
+      kind,
+      route,
+      detail,
+      ...context,
+      scenarioViolations: context.scenarioViolations ?? detail?.scenarioViolations,
+    }),
+  );
   if (hit) {
     return { classification: hit.classification, reason: hit.reason, ...(hit.rationale ? { rationale: hit.rationale } : {}) };
   }
   return classify(kind, detail);
+}
+
+// DOM findings are created while a scenario is still running, before later
+// mutation steps can establish the matching legacy-bug evidence. Re-run
+// classification once the scenario is complete so the rule can require
+// evidence from that same scenario without weakening ordinary DOM strictness.
+export function reclassifyScenarioViolations(scenario) {
+  const scenarioViolations = scenario?.violations;
+  if (!Array.isArray(scenarioViolations)) return scenario;
+  for (const finding of scenarioViolations) {
+    if (finding?.kind !== "dom") continue;
+    const classified = classifyViolation(
+      finding.kind,
+      finding.route,
+      { expected: finding.expected, actual: finding.actual },
+      { scenarioViolations },
+    );
+    Object.assign(finding, classified);
+  }
+  return scenario;
 }
 
 export function violation({ route, behaviorId = null, kind, expected, actual, classification, reason, rationale }) {

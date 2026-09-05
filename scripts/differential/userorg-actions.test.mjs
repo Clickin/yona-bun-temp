@@ -164,6 +164,16 @@ test("translators produce expected method/path literals", () => {
   assert.deepEqual(legacy("view-files-list"), { method: "GET", path: "/files" });
   assert.deepEqual(yoram("get-users-directory"), { method: "GET", path: "/api/v1/users/directory" });
   assert.deepEqual(legacy("check-email-exists", { email: "a@b.co" }), { method: "GET", path: "/user/isEmailExist?email=a%40b.co" });
+  assert.equal(
+    actionDefinitions["view-files-list"].handler,
+    actionDefinitions["get-users-directory"].handler,
+    "bare /files is an API probe, not a DOM page",
+  );
+  assert.notEqual(
+    actionDefinitions["view-files-list"].handler,
+    actionDefinitions["view-site-screen"].handler,
+    "bare /files must not use the page renderer",
+  );
 
   // --- mutations ---------------------------------------------------------------
   assert.deepEqual(legacy("toggle-favorite", { target: "issue" }), { method: "POST", path: "/-_-api/v1/favoriteIssues/1" });

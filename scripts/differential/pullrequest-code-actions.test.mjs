@@ -140,7 +140,7 @@ test("mutation translators produce expected method/path/body shapes", () => {
   );
   assert.equal(
     def("comment-pullrequest").translateLegacy(step("comment-pullrequest", base), { prId: 5 }).path,
-    "/admin/sample/pullRequest/5/comments",
+    "/admin/sample/pullRequest/5/comments?commitId=HEAD",
   );
   assert.equal(
     def("comment-pullrequest").translateYoram(step("comment-pullrequest", base), { prId: 5 }).path,
@@ -184,6 +184,78 @@ test("mutation translators produce expected method/path/body shapes", () => {
   const defaultBranchYoram = def("set-default-branch").translateYoram(step("set-default-branch", { ...base, branch: "feature/ui" }), {});
   assert.equal(defaultBranchYoram.path, "/api/v1/projects/admin/sample/branches/default");
   assert.deepEqual(defaultBranchYoram.json, { branchName: "feature/ui" });
+});
+
+test("comment-pullrequest uses the created display route and DB id without a resolver request", async () => {
+  const def = MERGED_DEFINITIONS["comment-pullrequest"];
+  const calls = [];
+  const rawRequests = [];
+  const ctx = {
+    step: { action: "comment-pullrequest", params: { owner: "admin", project: "sample" } },
+    state: { prIdLegacy: 801, prNumberLegacy: 42, prNumberYoram: 84, prCommitLegacy: null },
+    suffix: "contract",
+    entry: { errors: [], violations: [], behaviorIds: [] },
+    legacySession: {
+      request() {
+        throw new Error("comment-pullrequest must not use a session-level PR resolver");
+      },
+    },
+    helpers: {
+      async sendRaw(_ctx, side, request) {
+        rawRequests.push({ side, request });
+        return { status: 200, body: "<html>detail without commit list</html>" };
+      },
+      async requestBoth(_ctx, legacy, yoram) {
+        calls.push({ legacy, yoram });
+        return {
+          legacyResult: { status: 200, body: "" },
+          yoramResult: { status: 200, body: "" },
+        };
+      },
+    },
+  };
+
+  await def.handler(ctx);
+
+  assert.equal(rawRequests.length, 0);
+  assert.equal(calls.length, 1);
+  assert.match(calls[0].legacy.path, /\/pullRequest\/801\/comments\?commitId=HEAD$/u);
+  assert.match(calls[0].yoram.path, /\/pull-requests\/84\/comments$/u);
+});
+
+test("legacy PR cleanup and readiness are scoped to the current differential token", () => {
+  const runSource = readFileSync(
+    path.join(path.dirname(fileURLToPath(import.meta.url)), "run.mjs"),
+    "utf8",
+  );
+  assert.match(
+    runSource,
+    /title like 'Differential sweep PR %'/u,
+    "preboot cleanup must target every prior differential PR title",
+  );
+  assert.match(
+    runSource,
+    /async resolveLegacyPullRequest\(ctx, number, title\)/u,
+    "readiness must resolve from the Location number and current title",
+  );
+  assert.match(
+    runSource,
+    /AND pr\.TITLE = \$\{sqlQuote\(title\)\}/u,
+    "readiness must reject stale rows with the same display number",
+  );
+  assert.match(
+    runSource,
+    /await new Promise\(\(resolve\) => setTimeout\(resolve, 100\)\)/u,
+    "readiness must poll with a bounded condition rather than a fixed sleep",
+  );
+  assert.match(
+    readFileSync(
+      path.join(path.dirname(fileURLToPath(import.meta.url)), "scenarios/pullrequest-code.mjs"),
+      "utf8",
+    ),
+    /currentToken: shared\.title/u,
+    "DOM comparison must be gated on the current run token",
+  );
 });
 
 test("matchBehaviors returns non-empty B-id lists for every scenario", () => {

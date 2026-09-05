@@ -192,17 +192,17 @@ test("project code compare non-empty patch renders legacy diff table rows", asyn
   await expect(diffTable.locator("tbody > tr")).toHaveCount(4);
   await expect(diffTable.locator("tbody > tr.range .hunk")).toHaveText("@@ -1,2 +1,2 @@");
   await expect(diffTable.locator("tbody > tr.context")).toHaveAttribute("data-side", "B");
-  await expect(diffTable.locator("tbody > tr.context")).not.toHaveAttribute("data-type", /.*/u);
+  await expect(diffTable.locator("tbody > tr.context")).toHaveAttribute("data-type", "context");
   await expect(diffTable.locator("tbody > tr.context .diff-partial-codeline")).toHaveText(
     " fn main() {",
   );
   await expect(diffTable.locator("tbody > tr.remove")).toHaveAttribute("data-side", "A");
-  await expect(diffTable.locator("tbody > tr.remove")).not.toHaveAttribute("data-type", /.*/u);
+  await expect(diffTable.locator("tbody > tr.remove")).toHaveAttribute("data-type", "remove");
   await expect(diffTable.locator("tbody > tr.remove .diff-partial-codeline")).toHaveText(
     '-    println!("old");',
   );
   await expect(diffTable.locator("tbody > tr.add")).toHaveAttribute("data-side", "B");
-  await expect(diffTable.locator("tbody > tr.add")).not.toHaveAttribute("data-type", /.*/u);
+  await expect(diffTable.locator("tbody > tr.add")).toHaveAttribute("data-type", "add");
   await expect(diffTable.locator("tbody > tr.add .diff-partial-codeline")).toHaveText(
     '+    println!("new");',
   );
@@ -252,9 +252,10 @@ test("project code compare added file renders legacy added-path metadata", async
   );
 });
 
-test("project code compare route drops legacy comment JS-only diff line type marker", () => {
+test("project code compare route preserves legacy diff line type markers", () => {
   expect(DIFF_LINE_VIEW_SOURCE).toContain("data-line={line.lineNumber}");
   expect(DIFF_LINE_VIEW_SOURCE).toContain('data-side={line.type === "remove" ? "A" : "B"}');
+  expect(DIFF_LINE_VIEW_SOURCE).toContain("data-type={line.type}");
   expect(ROUTE_SOURCE).not.toContain("data-type={line.type}");
   expect(ROUTE_SOURCE).not.toMatch(/<tr[\s\S]*data-type=/u);
 });
@@ -436,6 +437,7 @@ async function canonicalize(page: Page, selector: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
+            attr.name !== "data-type" &&
             attr.name !== "data-owner",
         )
         .sort((left, right) => left.name.localeCompare(right.name))

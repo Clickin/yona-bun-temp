@@ -646,7 +646,10 @@ impl AppRepositoryImpl<'_> {
                 received: Set(None),
                 state: Set(Some(1)),
                 is_conflict: Set(Some(0)),
-                is_merging: Set(Some(0)),
+                // Legacy creation starts the mergeability actor before the
+                // redirect, so a freshly-created detail is pending until
+                // that check completes.
+                is_merging: Set(Some(1)),
                 last_commit_id: Set(None),
                 merged_commit_id_from: Set(None),
                 merged_commit_id_to: Set(None),
@@ -715,6 +718,32 @@ impl AppRepositoryImpl<'_> {
             .pull_request_detail_from_model(created, &to_project, Some(input.actor_id))
             .await?;
         Ok(Some(CreatePullRequestResult::Created(detail)))
+    }
+
+    pub async fn complete_pull_request_merge_check(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        pull_request_number: i64,
+        conflict: bool,
+    ) -> Result<Option<PullRequestDetailRecord>, DbErr> {
+        let Some((project, model)) = self
+            .read_project_pull_request_model(owner_name, project_name, pull_request_number)
+            .await?
+        else {
+            return Ok(None);
+        };
+        if model.is_merging != Some(1) {
+            return Ok(None);
+        }
+        let mut active = pull_request::ActiveModel::from(model);
+        active.is_merging = Set(Some(0));
+        active.is_conflict = Set(Some(if conflict { 1 } else { 0 }));
+        active.updated = Set(Some(current_datetime()));
+        let updated = active.update(&self.db).await?;
+        self.pull_request_detail_from_model(updated, &project, None)
+            .await
+            .map(Some)
     }
 
     pub async fn update_pull_request(
