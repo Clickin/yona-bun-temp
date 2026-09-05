@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-02T10:28:43.209Z",
+  "generatedAt": "2026-09-05T15:25:50.535Z",
   "gitHead": "ref: refs/heads/main",
   "effectiveLayerOrder": [
     "homeb",
@@ -115056,76 +115056,11 @@
             ]
           },
           {
-            "s": "[data-owner=\"pull-request-changes-page\"]",
-            "d": [
-              {
-                "p": "margin",
-                "v": "20px auto 0px",
-                "i": false
-              },
-              {
-                "p": "padding",
-                "v": "0px 10px",
-                "i": false
-              },
-              {
-                "p": "width",
-                "v": "100%",
-                "i": false
-              },
-              {
-                "p": "box-sizing",
-                "v": "border-box",
-                "i": false
-              }
-            ]
-          },
-          {
             "s": "[data-owner=\"pull-request-changes-browse\"]",
             "d": [
               {
                 "p": "width",
                 "v": "100%",
-                "i": false
-              }
-            ]
-          },
-          {
-            "s": "[data-owner=\"pull-request-changes-author\"]",
-            "d": [
-              {
-                "p": "color",
-                "v": "#999",
-                "i": false
-              }
-            ]
-          },
-          {
-            "s": "[data-owner=\"pull-request-changes-diffs\"]",
-            "d": [
-              {
-                "p": "background-color",
-                "v": "#333",
-                "i": false
-              },
-              {
-                "p": "color",
-                "v": "#ffffff",
-                "i": false
-              },
-              {
-                "p": "overflow-x",
-                "v": "auto",
-                "i": false
-              }
-            ]
-          },
-          {
-            "s": "[data-owner=\"pull-request-changes-state\"]",
-            "d": [
-              {
-                "p": "color",
-                "v": "var(--color-yona-muted)",
                 "i": false
               }
             ]
@@ -184837,8 +184772,8 @@
       {
         "name": "app.css",
         "path": "/Users/senghyunjo/github/yona-bun-temp/frontend/src/app.css",
-        "sha256": "547f825e08a7f164a8baec57749c0749394bedccb74d3f265028f94888a19436",
-        "bytes": 1218842
+        "sha256": "623f585ae837ecadc2b511b6f082ed84d69c8020653cf6b9b336e74bae3d81a0",
+        "bytes": 1218610
       },
       {
         "name": "import",
@@ -184962,7 +184897,7 @@
         "count": 1
       }
     ],
-    "ruleCount": 9238,
+    "ruleCount": 9234,
     "bucketCount": 25,
     "fontFaceCount": 2,
     "keyframeCount": 16

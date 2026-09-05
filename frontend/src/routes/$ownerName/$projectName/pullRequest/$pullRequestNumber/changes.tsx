@@ -300,7 +300,7 @@ function ProjectPullRequestChangesBody({
 
   return (
     <>
-      <div className="page-wrap-outer" data-owner="pull-request-changes-page">
+      <div className="page-wrap-outer">
         <div className="project-page-wrap" data-owner="pull-request-changes-shell">
           <div className="code-browse-wrap" data-owner="pull-request-changes-browse">
             <PullRequestHeader

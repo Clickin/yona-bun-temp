@@ -34590,12 +34590,6 @@ img.mfp-img {
 }
 
 /* --- -pull-request-changes (pullRequest/$pullRequestNumber/changes.tsx) --- */
-[data-owner="pull-request-changes-page"] {
-  margin: 10px 0px 0px;
-  padding: 0px 10px;
-  width: 100%;
-  box-sizing: border-box;
-}
 [data-owner="pull-request-changes-browse"] {
   width: 100%;
 }

@@ -6,6 +6,9 @@ test("records pull request changes owner boundary", () => {
     "src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes.tsx",
     "utf8",
   );
+  expect(route).toContain('className="page-wrap-outer"');
+  expect(route).not.toContain('data-owner="pull-request-changes-page"');
+  expect(route).toContain('data-owner="pull-request-changes-shell"');
   expect(route).toContain('data-owner="pull-request-changes-diffs"');
   expect(route).toContain('data-owner="pull-request-changes-author"');
   expect(readFileSync("../yona-original/app/views/git/partial_list.scala.html", "utf8")).toContain(
