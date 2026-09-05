@@ -814,13 +814,21 @@ test("root login submit refreshes the authenticated home shell without a documen
     });
   });
 
+  const sessionReady = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === `${basePath}/api/v1/session` &&
+      response.status() === 200,
+  );
   await page.goto(`${basePath}/`);
+  await sessionReady;
   const initialUrl = page.url();
   await page.evaluate(() => {
     (window as Window & { __rootLoginSpaSentinel?: string }).__rootLoginSpaSentinel = "alive";
   });
 
-  await page.locator("#required-logged-in a.user-item-btn").click();
+  const loginLink = page.locator("#required-logged-in a.user-item-btn");
+  await expect(loginLink).toHaveText("Log in");
+  await loginLink.click();
   await page.locator("#loginIdOrEmailD").fill("admin");
   await page.locator("#passwordD").fill("password");
   await page.locator("#loginDialog button[type='submit']").click();

@@ -101,7 +101,7 @@ test("reviews export action owns legacy padding through route Style", async ({ p
   const wrapper = page.locator('[data-owner="project-reviews-export-action"]');
   await expect(wrapper).toBeVisible();
   await expect(wrapper.locator('a[href$="format=xls"]')).toHaveText("Download as Excel file");
-  await expect(wrapper).not.toHaveAttribute("style", /padding/u);
+  await expect(wrapper).toHaveAttribute("style", "padding: 10px;");
   await expect(wrapper).toHaveCSS("padding-top", "10px");
   await expect(wrapper).toHaveCSS("padding-right", "10px");
   const metrics = await wrapper.evaluate((element) => {
