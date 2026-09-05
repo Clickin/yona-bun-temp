@@ -946,6 +946,12 @@ async function alignParityFixtures(options) {
 // --- pre-boot H2 fixture reconciliation --------------------------------------
 
 const LEGACY_H2_URL_BASE = ".agent/legacy-localhost/instances/parity/data/db/yona";
+// Old destructive sweeps can leave project_user rows after their PROJECT row
+// was deleted. Legacy MigrationApp.projects() lazy-loads every membership's
+// project while sorting, so those orphan rows turn the otherwise valid
+// /migration/projects request into EntityNotFoundException/HTTP 500.
+export const LEGACY_ORPHAN_PROJECT_MEMBERSHIP_CLEANUP_SQL =
+  "DELETE FROM PROJECT_USER WHERE NOT EXISTS (SELECT 1 FROM PROJECT WHERE PROJECT.ID = PROJECT_USER.PROJECT_ID)";
 
 function legacyH2Url() {
   return (
@@ -1250,6 +1256,10 @@ async function reconcileLegacyFixturesPreboot() {
     "UPDATE n4user SET state = 'DELETED' WHERE login_id LIKE 'paritysweep%' AND state <> 'DELETED'",
   );
   shellOnRebuilt("DELETE FROM email WHERE email LIKE '%@parity.example.com'");
+  // Keep the persisted legacy fixture relationally sound. This is a
+  // harness-state repair, not a product behavior change: MigrationApp's
+  // source route cannot represent a membership whose project was deleted.
+  shellOnRebuilt(LEGACY_ORPHAN_PROJECT_MEMBERSHIP_CLEANUP_SQL);
   // Legacy initial-data.yml roles 1-7: project_user.role_id references them.
   // Without these rows legacy member creation inserts a null role_id and the
   // member page omits the row, so P13/P18 member IDs cannot be discovered.
@@ -1514,6 +1524,12 @@ async function reconcileLegacyFixturesPreboot() {
   );
   if (activeStaleUsers !== 0) {
     throw new Error(`self-check failed: ${activeStaleUsers} active paritysweep% users remain`);
+  }
+  const orphanProjectMemberships = scalar(
+    "SELECT COUNT(*) FROM PROJECT_USER pu LEFT JOIN PROJECT p ON p.ID = pu.PROJECT_ID WHERE p.ID IS NULL",
+  );
+  if (orphanProjectMemberships !== 0) {
+    throw new Error(`self-check failed: ${orphanProjectMemberships} orphan project memberships remain`);
   }
   const missingRoles = LEGACY_ROLE_SEEDS.filter(
     ([roleId]) => scalar(`SELECT COUNT(*) FROM role WHERE id = ${roleId}`) === 0,

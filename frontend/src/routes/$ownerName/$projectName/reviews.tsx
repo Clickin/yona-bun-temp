@@ -166,7 +166,10 @@ function ProjectReviewsBody({
                 <li className={search.participantId === 0 && search.authorId === 0 ? "active" : ""}>
                   <button type="button" onClick={() => filterClick({})}>
                     {t("review.allReview")}
-                    <span className="num-badge" data-owner="project-reviews-sidebar-count-all">
+                    <span
+                      className="num-badge pull-right"
+                      data-owner="project-reviews-sidebar-count-all"
+                    >
                       {reviews.allCount}
                     </span>
                   </button>
@@ -178,7 +181,7 @@ function ProjectReviewsBody({
                   >
                     {t("review.involvingYou")}
                     <span
-                      className="num-badge"
+                      className="num-badge pull-right"
                       data-owner="project-reviews-sidebar-count-participant"
                     >
                       {reviews.participantCount}
@@ -188,7 +191,10 @@ function ProjectReviewsBody({
                 <li className={search.authorId === currentUserId ? "active" : ""}>
                   <button type="button" onClick={() => filterClick({ authorId: currentUserId })}>
                     {t("review.createdByYou")}
-                    <span className="num-badge" data-owner="project-reviews-sidebar-count-author">
+                    <span
+                      className="num-badge pull-right"
+                      data-owner="project-reviews-sidebar-count-author"
+                    >
                       {reviews.authorCount}
                     </span>
                   </button>
@@ -217,7 +223,7 @@ function ProjectReviewsBody({
             </div>
           </div>
           <div className="span10 span-hard-wrap">
-            <div className="filters" data-owner="project-reviews-filters">
+            <div className="pull-right filters" data-owner="project-reviews-filters">
               <button
                 type="button"
                 className="filter"
@@ -269,7 +275,11 @@ function ProjectReviewsBody({
                 reviews={reviews}
               />
             </div>
-            <div data-owner="project-reviews-export-action">
+            <div
+              className="pull-left"
+              style={{ padding: "10px" }}
+              data-owner="project-reviews-export-action"
+            >
               {/* e2e closure ledger (2026-08-11): legacy reviewthread/list.scala.html:90
                   href="@addQueryString(removeQueryString(requestHeader.uri, "pageNum"), "format=xls")"
                   — the export URL carries format=xls. TanStack Link overrides an explicit
@@ -366,7 +376,16 @@ function ProjectReviewRow({
 
   return (
     <li className="post-item" data-owner="project-reviews-row">
-      <Link to={authorRoute} className="avatar-wrap mlarge hide-in-mobile" title={authorLoginId}>
+      <Link
+        activeProps={{
+          "aria-current": undefined,
+          className: undefined,
+          "data-status": undefined,
+        }}
+        to={authorRoute}
+        className="avatar-wrap mlarge hide-in-mobile"
+        title={authorLoginId}
+      >
         <img
           src={firstComment?.authorAvatarUrl || thread.authorAvatarUrl || defaultAvatarUrl}
           alt={authorLabel}
@@ -387,14 +406,23 @@ function ProjectReviewRow({
       </div>
       <div className="infos">
         {authorLabel ? (
-          <Link to={authorRoute} className="infos-item infos-link-item" title={authorLoginId}>
+          <Link
+            activeProps={{
+              "aria-current": undefined,
+              className: undefined,
+              "data-status": undefined,
+            }}
+            to={authorRoute}
+            className="infos-item infos-link-item"
+            title={authorLoginId}
+          >
             {authorLabel}
           </Link>
         ) : (
           <span className="infos-item">{t("issue.noAuthor")}</span>
         )}
         <span className="infos-item" title={thread.createdLabel}>
-          {thread.createdLabel}
+          {formatReviewDate(thread.createdLabel, t)}
         </span>
         {commentCount > 0 ? (
           <span className="infos-item item-count-groups">
@@ -485,4 +513,58 @@ function effectiveOrderBy(search: ProjectReviewsSearch) {
 
 function effectiveOrderDir(search: ProjectReviewsSearch) {
   return search.orderDir || "desc";
+}
+
+function formatReviewDate(
+  value: string,
+  t: ReturnType<typeof useLegacyMessages>["t"],
+  now = Date.now(),
+) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/u.exec(value.trim());
+  if (!match) {
+    return value;
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+  if (!Number.isFinite(date.getTime())) {
+    return value;
+  }
+
+  const elapsedMilliseconds = Math.max(0, now - date.getTime());
+  const elapsedSeconds = Math.floor(elapsedMilliseconds / 1_000);
+  const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+  const elapsedHours = Math.floor(elapsedMinutes / 60);
+  const elapsedDays = Math.floor(elapsedHours / 24);
+  if (elapsedDays < 8) {
+    if (elapsedDays > 0) {
+      return t(elapsedDays === 1 ? "common.time.day" : "common.time.days", {
+        args: [elapsedDays],
+      });
+    }
+    if (elapsedHours > 0) {
+      return t(elapsedHours === 1 ? "common.time.hour" : "common.time.hours", {
+        args: [elapsedHours],
+      });
+    }
+    if (elapsedMinutes > 0) {
+      return t(elapsedMinutes === 1 ? "common.time.minute" : "common.time.minutes", {
+        args: [elapsedMinutes],
+      });
+    }
+    if (elapsedSeconds > 0) {
+      return t(elapsedSeconds === 1 ? "common.time.second" : "common.time.seconds", {
+        args: [elapsedSeconds],
+      });
+    }
+    return t("common.time.just");
+  }
+
+  const monthLabel = String(month).padStart(2, "0");
+  const dayLabel = String(day).padStart(2, "0");
+  return year === new Date(now).getFullYear()
+    ? `${monthLabel}-${dayLabel}`
+    : `${year}-${monthLabel}-${dayLabel}`;
 }

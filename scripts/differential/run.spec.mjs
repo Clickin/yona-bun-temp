@@ -2,6 +2,7 @@ import { strict as assert } from "node:assert";
 import test from "node:test";
 import {
   executeStep,
+  LEGACY_ORPHAN_PROJECT_MEMBERSHIP_CLEANUP_SQL,
   parseArgs,
   selectScenarios,
   PARITY_PULL_REQUEST,
@@ -63,6 +64,12 @@ test("fresh parity account bootstrap reuses an existing account on duplicate reg
   assert.equal(registrationStatusIsUsable(409), true);
   assert.equal(registrationStatusIsUsable(422), false);
   assert.equal(registrationStatusIsUsable(500), false);
+});
+
+test("legacy preboot cleanup removes memberships whose project row was deleted", () => {
+  assert.match(LEGACY_ORPHAN_PROJECT_MEMBERSHIP_CLEANUP_SQL, /^DELETE FROM PROJECT_USER /u);
+  assert.match(LEGACY_ORPHAN_PROJECT_MEMBERSHIP_CLEANUP_SQL, /NOT EXISTS/u);
+  assert.match(LEGACY_ORPHAN_PROJECT_MEMBERSHIP_CLEANUP_SQL, /PROJECT\.ID = PROJECT_USER\.PROJECT_ID/u);
 });
 
 function stepContext(action, entry = { behaviorIds: [], violations: [], errors: [] }) {

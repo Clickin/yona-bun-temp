@@ -162,6 +162,24 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
       EXPECTED_PROJECT_REVIEWS_PAGE_WRAP.replaceAll("__BASE_PATH__", basePath)
         .replaceAll("__PROJECT_BASE_PATH__", projectBasePath)
         .replaceAll("__PROJECT_REVIEWS_PATH__", projectReviewsPath)
+        .replace('<div class="filters">', '<div class="pull-right filters">')
+        .replace('<span class="num-badge">2', '<span class="num-badge pull-right">2')
+        .replace(
+          'Participated.<span class="num-badge">1',
+          'Participated.<span class="num-badge pull-right">1',
+        )
+        .replace(
+          '<span class="num-badge">1</span></button></li><li class="">Created',
+          '<span class="num-badge pull-right">1</span></button></li><li class="">Created',
+        )
+        .replace(
+          '<span class="num-badge">1</span></button></li></ul><form',
+          '<span class="num-badge pull-right">1</span></button></li></ul><form',
+        )
+        .replace(
+          `<div><a href="${projectReviewsPath}?filter=comment&format=xls"`,
+          `<div class="pull-left" style="padding:10px"><a href="${projectReviewsPath}?filter=comment&format=xls"`,
+        )
         .replace(/^\s*<div class="page-wrap-outer">/u, "")
         .replace(/<\/div>\s*$/u, ""),
     ),
@@ -202,6 +220,7 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
   ).toBeVisible();
   await expect(page.locator(".lst-stacked button").filter({ hasText: "Created" })).toBeVisible();
   await expect(page.locator(".filters button.filter")).toHaveText("Created");
+  await expect(page.locator(".filters")).toHaveClass(/pull-right/u);
   await expect(page.locator(".span10 > .nav-tabs li.active button")).toHaveText("Open2");
   await expect(
     page.locator(".span10 > .nav-tabs button").filter({ hasText: "Closed" }),
@@ -220,6 +239,7 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
     "title",
     "dev",
   );
+  await expect(page.locator(".review-list-wrap .avatar-wrap").first()).not.toHaveClass(/active/u);
   await expect(page.locator(".review-list-wrap .avatar-wrap").first()).not.toHaveAttribute(
     "data-placement",
   );
@@ -228,6 +248,9 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
     "dev",
   );
   await expect(page.locator(".review-list-wrap .infos-link-item").first()).toHaveText("Dev Member");
+  await expect(page.locator(".review-list-wrap .infos-link-item").first()).not.toHaveClass(
+    /active/u,
+  );
   await expect(page.locator(".review-list-wrap .infos-link-item").first()).not.toHaveAttribute(
     "data-placement",
   );
@@ -372,6 +395,18 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
   await expect(page).toHaveURL(/filter=needle/u);
 
   expect(requests.some((url) => url.searchParams.get("filter") === "comment")).toBe(true);
+});
+
+test("project review dates use the legacy same-year MM-dd label", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const projectReviewsPath = `${basePath}${PROJECT_REVIEWS_ROUTE}`;
+  await mockProjectReviews(page, { isoDate: true });
+
+  await page.goto(`${projectReviewsPath}?state=open&filter=comment`);
+
+  const date = page.locator(".review-list-wrap .post-item").first().locator(".infos-item").nth(1);
+  await expect(date).toHaveAttribute("title", "2026-07-01");
+  await expect(date).toHaveText("07-01");
 });
 
 test("review pagination preserves the legacy two-page SPA controls", async ({ page }) => {
@@ -541,6 +576,7 @@ async function mockProjectReviews(
   page: Page,
   options: {
     empty?: boolean;
+    isoDate?: boolean;
     ownerName?: string;
     pagination?: boolean;
     projectName?: string;
@@ -549,6 +585,8 @@ async function mockProjectReviews(
 ) {
   const ownerName = options.ownerName ?? PROJECT_OWNER_NAME;
   const projectName = options.projectName ?? PROJECT_NAME;
+  const firstCreatedLabel = options.isoDate ? "2026-07-01" : "Jul 1, 2026";
+  const secondCreatedLabel = options.isoDate ? "2026-07-02" : "Jul 2, 2026";
   const requests: URL[] = [];
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -626,7 +664,7 @@ async function mockProjectReviews(
                       authorLabel: "Dev Member",
                       authorLoginId: "dev",
                       contentsMarkdown: "Please check this change",
-                      createdLabel: "Jul 1, 2026",
+                      createdLabel: firstCreatedLabel,
                       id: 1001,
                       threadId: 31,
                     },
@@ -636,13 +674,13 @@ async function mockProjectReviews(
                       authorLabel: "Site Admin",
                       authorLoginId: "admin",
                       contentsMarkdown: "Follow-up",
-                      createdLabel: "Jul 1, 2026",
+                      createdLabel: firstCreatedLabel,
                       id: 1002,
                       threadId: 31,
                     },
                   ],
                   commitId: "",
-                  createdLabel: "Jul 1, 2026",
+                  createdLabel: firstCreatedLabel,
                   id: 31,
                   path: "",
                   pullRequestNumber: 3,
@@ -660,7 +698,7 @@ async function mockProjectReviews(
                       authorLabel: "",
                       authorLoginId: "ghost",
                       contentsMarkdown: "Commit-specific pull request thread",
-                      createdLabel: "Jul 2, 2026",
+                      createdLabel: secondCreatedLabel,
                       id: 2001,
                       threadId: 32,
                     },
@@ -670,13 +708,13 @@ async function mockProjectReviews(
                       authorLabel: "Site Admin",
                       authorLoginId: "admin",
                       contentsMarkdown: "Ack",
-                      createdLabel: "Jul 2, 2026",
+                      createdLabel: secondCreatedLabel,
                       id: 2002,
                       threadId: 32,
                     },
                   ],
                   commitId: "fedcba987654",
-                  createdLabel: "Jul 2, 2026",
+                  createdLabel: secondCreatedLabel,
                   id: 32,
                   path: "src/commit-specific-thread.rs",
                   pullRequestNumber: 4,
