@@ -335,10 +335,52 @@ test("session adapters send json/form bodies without reference errors", async ()
   }
 });
 
+test("session adapters support explicit status-only requests without consuming a stream", async () => {
+  const originalFetch = globalThis.fetch;
+  let consumed = false;
+  globalThis.fetch = async () => ({
+    status: 200,
+    headers: { getSetCookie: () => [], get: () => null },
+    text: async () => {
+      consumed = true;
+      throw new Error("terminated");
+    },
+  });
+  try {
+    const legacy = new LegacySession("http://legacy.test");
+    const legacyResult = await legacy.request({ method: "GET", path: "/sites/export", readBody: false });
+    const yoram = new YoramSession("http://yoram.test");
+    const yoramResult = await yoram.request({ method: "GET", path: "/sites/export", readBody: false });
+    assert.equal(legacyResult.status, 200);
+    assert.equal(yoramResult.status, 200);
+    assert.equal(legacyResult.body, "");
+    assert.equal(yoramResult.body, "");
+    assert.equal(consumed, false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 // --- typed classification model ----------------------------------------------
 
 test("classify keeps unknown DOM and visible loss blocking", () => {
   assert.equal(classifyViolation("api", "/x", { expected: 1, actual: 2 }).classification, "UNVERIFIED");
+  assert.equal(
+    classifyViolation("api", "/admin/sample/parity-missing-page", {
+      expected: { status: 404 },
+      actual: { status: 200 },
+    }).classification,
+    "UNVERIFIED",
+    "unknown nested route fallback must remain blocking",
+  );
+  assert.equal(
+    classifyViolation("api", "/admin/sample/commit/HEAD/comments/673/delete", {
+      expected: { status: 404 },
+      actual: { status: 200 },
+    }).classification,
+    "UNVERIFIED",
+    "HEAD pseudo-ref comment mismatch must remain blocking",
+  );
   assert.equal(classifyViolation("dom", "/x", { firstDiffs: [] }).classification, "UNVERIFIED");
   for (const firstDiff of [
     { side: "yoram", tag: "button", text: "Delete" },

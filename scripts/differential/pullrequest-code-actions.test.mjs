@@ -10,7 +10,12 @@ import path from "node:path";
 
 import { ACTION_DEFINITIONS } from "./scenarios/index.mjs";
 import { validateScenarios, matchBehaviors } from "./dsl.mjs";
-import { scenarios, actionDefinitions } from "./scenarios/pullrequest-code.mjs";
+import {
+  scenarios,
+  actionDefinitions,
+  pullRequestNumberFromPayload,
+  resolveYoramPullRequestNumber,
+} from "./scenarios/pullrequest-code.mjs";
 
 const MERGED_DEFINITIONS = { ...ACTION_DEFINITIONS, ...actionDefinitions };
 const knownActions = Object.keys(MERGED_DEFINITIONS);
@@ -107,6 +112,91 @@ test("translators produce expected method/path literals", () => {
     const yoram = MERGED_DEFINITIONS[action].translateYoram(step(action, params), {});
     assert.deepEqual(yoram, { method: "GET", path: expectedPath }, `${action} yoram translation`);
   }
+});
+
+test("fragment reads do not require a full-page DOM wrapper", async () => {
+  const actions = [
+    "merge-result",
+    "browse-code-ajax-root",
+    "browse-code-ajax-slash",
+    "browse-code-ajax-path",
+    "browse-code-ajax-nobranch",
+    "browse-code-ajax-nobranch-slash",
+    "browse-code-ajax-nobranch-path",
+  ];
+  for (const action of actions) {
+    let requested = false;
+    const step = {
+      action,
+      params: { owner: "admin", project: "sample", branch: "main", path: "README.md" },
+    };
+    await MERGED_DEFINITIONS[action].handler({
+      step,
+      resolved: {},
+      options: { legacyUrl: "http://legacy.test" },
+      yoramBaseUrl: "http://yoram.test",
+      state: {},
+      entry: { errors: [], violations: [], behaviorIds: [] },
+      helpers: {
+        async requestBoth() {
+          requested = true;
+          return {
+            legacyResult: { status: 200, body: "<li>fragment</li>" },
+            yoramResult: { status: 200, body: "<li>fragment</li>" },
+          };
+        },
+        async renderDomTarget() {
+          throw new Error(`${action} must not render as a full page`);
+        },
+      },
+    });
+    assert.equal(requested, true, `${action} keeps the request/status boundary`);
+  }
+});
+
+test("PR identity uses display numbers and never database ids", async () => {
+  assert.equal(pullRequestNumberFromPayload({ pullRequestNumber: 12, id: 901 }), 12);
+  assert.equal(pullRequestNumberFromPayload({ number: 13, id: 902 }), 13);
+  assert.equal(pullRequestNumberFromPayload({ number: 14, title: "seeded", id: 903 }, "new"), null);
+  assert.equal(pullRequestNumberFromPayload({ id: 903 }), null);
+  const calls = [];
+  const number = await resolveYoramPullRequestNumber(
+    {
+      step: { params: { owner: "admin", project: "sample" } },
+      helpers: {
+        async sendRaw(_ctx, side, request) {
+          calls.push({ side, request });
+          return { status: 200, json: { items: [{ title: "Differential sweep PR test", id: 904, number: 17 }] } };
+        },
+      },
+    },
+    "Differential sweep PR test",
+  );
+  assert.equal(number, 17);
+  assert.equal(calls.length, 1);
+  assert.equal(
+    await resolveYoramPullRequestNumber(
+      {
+        step: { params: { owner: "admin", project: "sample" } },
+        helpers: {
+          async sendRaw() {
+            return { status: 200, json: { items: [{ title: "wrong", id: 905 }] } };
+          },
+        },
+      },
+      "missing",
+    ),
+    null,
+  );
+});
+
+test("R16 creates the review probe on the non-seeded branch direction", () => {
+  const scenario = scenarios.find((entry) => entry.id === "R16-pr-review-points");
+  const create = scenario.actions.find((step) => step.action === "create-pullrequest");
+  assert.deepEqual(
+    { fromBranch: create.params.fromBranch, toBranch: create.params.toBranch },
+    { fromBranch: "feature/ui", toBranch: "main" },
+  );
 });
 
 test("mutation translators produce expected method/path/body shapes", () => {

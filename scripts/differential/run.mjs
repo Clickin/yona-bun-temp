@@ -946,6 +946,59 @@ async function alignParityFixtures(options) {
 // --- pre-boot H2 fixture reconciliation --------------------------------------
 
 const LEGACY_H2_URL_BASE = ".agent/legacy-localhost/instances/parity/data/db/yona";
+
+// These are the sequence-backed Ebean entities in the legacy model. The list
+// is taken from the legacy parity export (application.2026-08-30.log), rather
+// than inferred from the few rows exercised by the current sweep. Recovering
+// an H2 file can omit sequence objects while retaining their entity tables.
+export const LEGACY_MODEL_SEQUENCE_TABLES = Object.freeze([
+  ["ASSIGNEE_SEQ", "ASSIGNEE"],
+  ["ATTACHMENT_SEQ", "ATTACHMENT"],
+  ["COMMENT_THREAD_SEQ", "COMMENT_THREAD"],
+  ["COMMIT_COMMENT_SEQ", "COMMIT_COMMENT"],
+  ["EMAIL_SEQ", "EMAIL"],
+  ["ISSUE_SEQ", "ISSUE"],
+  ["ISSUE_COMMENT_SEQ", "ISSUE_COMMENT"],
+  ["ISSUE_EVENT_SEQ", "ISSUE_EVENT"],
+  ["ISSUE_LABEL_SEQ", "ISSUE_LABEL"],
+  ["ISSUE_LABEL_CATEGORY_SEQ", "ISSUE_LABEL_CATEGORY"],
+  ["LABEL_SEQ", "LABEL"],
+  ["MENTION_SEQ", "MENTION"],
+  ["MILESTONE_SEQ", "MILESTONE"],
+  ["N4USER_SEQ", "N4USER"],
+  ["NOTIFICATION_EVENT_SEQ", "NOTIFICATION_EVENT"],
+  ["NOTIFICATION_MAIL_SEQ", "NOTIFICATION_MAIL"],
+  ["ORGANIZATION_SEQ", "ORGANIZATION"],
+  ["ORGANIZATION_USER_SEQ", "ORGANIZATION_USER"],
+  ["ORIGINAL_EMAIL_SEQ", "ORIGINAL_EMAIL"],
+  ["POSTING_SEQ", "POSTING"],
+  ["POSTING_COMMENT_SEQ", "POSTING_COMMENT"],
+  ["PROJECT_SEQ", "PROJECT"],
+  ["PROJECT_MENU_SETTING_SEQ", "PROJECT_MENU_SETTING"],
+  ["PROJECT_PUSHED_BRANCH_SEQ", "PROJECT_PUSHED_BRANCH"],
+  ["PROJECT_TRANSFER_SEQ", "PROJECT_TRANSFER"],
+  ["PROJECT_USER_SEQ", "PROJECT_USER"],
+  ["PROJECT_VISITATION_SEQ", "PROJECT_VISITATION"],
+  ["PROPERTY_SEQ", "PROPERTY"],
+  ["PULL_REQUEST_SEQ", "PULL_REQUEST"],
+  ["PULL_REQUEST_COMMIT_SEQ", "PULL_REQUEST_COMMIT"],
+  ["PULL_REQUEST_EVENT_SEQ", "PULL_REQUEST_EVENT"],
+  ["RECENTLY_VISITED_PROJECTS_SEQ", "RECENTLY_VISITED_PROJECTS"],
+  ["REVIEW_COMMENT_SEQ", "REVIEW_COMMENT"],
+  ["ROLE_SEQ", "ROLE"],
+  ["SITE_ADMIN_SEQ", "SITE_ADMIN"],
+  ["UNWATCH_SEQ", "UNWATCH"],
+  ["USER_PROJECT_NOTIFICATION_SEQ", "USER_PROJECT_NOTIFICATION"],
+  ["WATCH_SEQ", "WATCH"],
+]);
+
+export function buildLegacySequenceReconciliationSql(sequenceName, maxId) {
+  const nextId = Number(maxId) + 1;
+  return [
+    `CREATE SEQUENCE IF NOT EXISTS PUBLIC.${sequenceName} START WITH ${nextId}`,
+    `ALTER SEQUENCE PUBLIC.${sequenceName} RESTART WITH ${nextId}`,
+  ];
+}
 // Old destructive sweeps can leave project_user rows after their PROJECT row
 // was deleted. Legacy MigrationApp.projects() lazy-loads every membership's
 // project while sorting, so those orphan rows turn the otherwise valid
@@ -953,7 +1006,7 @@ const LEGACY_H2_URL_BASE = ".agent/legacy-localhost/instances/parity/data/db/yon
 export const LEGACY_ORPHAN_PROJECT_MEMBERSHIP_CLEANUP_SQL =
   "DELETE FROM PROJECT_USER WHERE NOT EXISTS (SELECT 1 FROM PROJECT WHERE PROJECT.ID = PROJECT_USER.PROJECT_ID)";
 
-function legacyH2Url() {
+export function legacyH2Url() {
   return (
     "jdbc:h2:" +
     path.join(repoRoot, LEGACY_H2_URL_BASE) +
@@ -1199,13 +1252,37 @@ async function reconcileLegacyFixturesPreboot() {
     const dataLine = (shellOnRebuilt(sql).split("\n")[1] ?? "").trim();
     return Number(/(\d+)/.exec(dataLine)?.[0] ?? "0");
   };
-  // Some recovered parity databases predate the PR sequence even though the
-  // legacy Ebean model requests it on the first PR insert.
-  shellOnRebuilt(
-    `CREATE SEQUENCE IF NOT EXISTS PUBLIC.PULL_REQUEST_SEQ START WITH ${
-      scalar("SELECT COALESCE(MAX(id), 0) FROM pull_request") + 1
-    }`,
-  );
+  const reconcileLegacyModelSequences = () => {
+    const maxIds = new Map();
+    for (const [sequenceName, tableName] of LEGACY_MODEL_SEQUENCE_TABLES) {
+      const maxId = scalar(`SELECT COALESCE(MAX(ID), 0) FROM ${tableName}`);
+      maxIds.set(sequenceName, maxId);
+      for (const statement of buildLegacySequenceReconciliationSql(sequenceName, maxId)) {
+        shellOnRebuilt(statement);
+      }
+    }
+
+    const sequenceNames = LEGACY_MODEL_SEQUENCE_TABLES.map(([sequenceName]) => sqlQuote(sequenceName)).join(", ");
+    const present = scalar(
+      `SELECT COUNT(*) FROM INFORMATION_SCHEMA.SEQUENCES ` +
+        `WHERE SEQUENCE_SCHEMA = 'PUBLIC' AND SEQUENCE_NAME IN (${sequenceNames})`,
+    );
+    if (present !== LEGACY_MODEL_SEQUENCE_TABLES.length) {
+      throw new Error(
+        `self-check failed: legacy sequence set has ${present}/${LEGACY_MODEL_SEQUENCE_TABLES.length} declarations`,
+      );
+    }
+    for (const [sequenceName] of LEGACY_MODEL_SEQUENCE_TABLES) {
+      const current = scalar(
+        `SELECT CURRENT_VALUE FROM INFORMATION_SCHEMA.SEQUENCES ` +
+          `WHERE SEQUENCE_SCHEMA = 'PUBLIC' AND SEQUENCE_NAME = '${sequenceName}'`,
+      );
+      const expected = maxIds.get(sequenceName);
+      if (current !== expected) {
+        throw new Error(`self-check failed: ${sequenceName} current value ${current} != table max ${expected}`);
+      }
+    }
+  };
   const parityUserValues = {
     admin: ["Site Admin", "admin@example.com"],
     alice: ["Alice Kim", "alice@example.com"],
@@ -1515,6 +1592,10 @@ async function reconcileLegacyFixturesPreboot() {
     }
   }
 
+  // Recover can omit any Ebean sequence object. Reconcile after every fixture
+  // mutation so each sequence is deterministic and strictly above its table's
+  // current maximum before the legacy JVM opens the rebuilt file.
+  reconcileLegacyModelSequences();
 
   // Self-check gates the boot: fixture must be clean afterwards.
   const activeStaleUsers = Number(
@@ -1874,6 +1955,12 @@ export async function executeStep(context) {
   }
 }
 
+export function runtimeVerifiedBehaviorIds(scenarioEntries) {
+  return Object.entries(buildBehaviorVerification(scenarioEntries))
+    .filter(([, verification]) => verification.verified)
+    .map(([behaviorId]) => behaviorId);
+}
+
 // --- sweep ------------------------------------------------------------------
 
 export async function runSweep(options = {}) {
@@ -2014,7 +2101,7 @@ export async function runSweep(options = {}) {
       }
     }
 
-    report.behaviorsCovered = [...new Set(report.scenarios.flatMap((scenario) => scenario.behaviorIds))];
+    report.behaviorsCovered = runtimeVerifiedBehaviorIds(report.scenarios);
     report.executionAccounting = summarizeExecution(report, selectedScenarios.length);
 
     // Teardown before DB projections: the H2 file lock releases on stop.
@@ -2026,6 +2113,7 @@ export async function runSweep(options = {}) {
     return report;
   } catch (error) {
     infraErrors.push(`sweep: ${error.message}`);
+    report.behaviorsCovered = runtimeVerifiedBehaviorIds(report.scenarios);
     report.executionAccounting = summarizeExecution(report, selectedScenarios.length);
     return report;
   } finally {

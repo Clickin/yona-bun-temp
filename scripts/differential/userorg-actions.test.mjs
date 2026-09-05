@@ -285,6 +285,19 @@ test("translators produce expected method/path literals", () => {
   }
 });
 
+test("site export status probe opts out of streaming body reads", () => {
+  assert.deepEqual(actionDefinitions["probe-site-export"].translateLegacy({ params: {} }), {
+    method: "GET",
+    path: "/sites/export",
+    readBody: false,
+  });
+  assert.deepEqual(actionDefinitions["probe-site-export"].translateYoram({ params: {} }), {
+    method: "GET",
+    path: "/sites/export",
+    readBody: false,
+  });
+});
+
 test("matchBehaviors returns non-empty distinct B-id lists for every scenario", () => {
   const covered = new Set();
   for (const scenario of scenarios) {

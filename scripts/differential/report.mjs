@@ -255,12 +255,6 @@ const CLASSIFICATION_RULES = [
       "seed asymmetry: review/unreview routes are implemented at HEAD (crates/server/src/routes/pull_requests.rs:958,983) but the yoram parity seed provisions no pull requests, so the static seeded PR id 404s; align parity seeds or resolve a live PR in the scenario",
   },
   {
-    test: ({ kind, route }) => kind === "api" && /\/commit\/HEAD\/comments/u.test(route),
-    classification: "IMPLEMENTATION_DIFFERENCE",
-    rationale: "harmless extension: yoram resolves the HEAD pseudo-ref where legacy answers 404; no legacy behavior depends on the 404",
-    reason: "shape drift: yoram resolves the HEAD pseudo-ref for commit comments (200) where legacy answers 404",
-  },
-  {
     test: ({ kind, route, detail }) => kind === "api" && /\/setting$/u.test(route) && /"status":500/u.test(JSON.stringify(detail.expected ?? {})),
     classification: "LEGACY_BUG_NOT_REPRODUCED",
     reason: "legacy quirk: legacy setting-form handler NPEs on the headless payload while yoram persists it; throwaway-project scoped, no shared-state residue",
@@ -306,18 +300,6 @@ const CLASSIFICATION_RULES = [
     classification: "HARNESS_ERROR",
     reason:
       "PATCH original-check pair diverged unexpectedly at HEAD (yoram answers 409 {message, storedContent} on a stale original since the optimistic-concurrency fix; focused coverage crates/server/tests/issue_core_contract.rs) — investigate the pair before treating it as product behavior",
-  },
-  {
-    test: ({ kind, route }) => kind === "api" && (/\/changeVCS$/u.test(route) || /\(cleanup\)$/u.test(route)),
-    classification: "IMPLEMENTATION_DIFFERENCE",
-    rationale: "throwaway-scoped status semantics: entities are isolated and cleanup residue is checked on both sides, so no shared state can leak",
-    reason: "legacy/Yoram changeVCS and generated-fork cleanup expose different status semantics; entities are isolated and cleanup residue is checked",
-  },
-  {
-    test: ({ kind, route }) => kind === "api" && /\/sites\/project\/delete\/:projectId$/u.test(route),
-    classification: "IMPLEMENTATION_DIFFERENCE",
-    rationale: "response-shape: the throwaway project is deleted on both sides and absence is asserted; only the post-delete response shape differs",
-    reason: "site-admin purge status divergence: legacy direct route redirects while Yoram REST/direct compatibility returns the JSON/SPA result",
   },
   {
     test: ({ kind, route }) => kind === "api" && /\/code\/__parity_missing_branch__\//u.test(route),

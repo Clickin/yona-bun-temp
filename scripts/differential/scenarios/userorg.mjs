@@ -2111,8 +2111,11 @@ async function residualStatusProbe(ctx, legacyTranslation, yoramTranslation, rou
 
 const RESIDUAL_PROBE_ACTIONS = {
   "probe-site-export": {
-    translateLegacy: () => ({ method: "GET", path: "/sites/export" }),
-    translateYoram: () => ({ method: "GET", path: "/sites/export" }),
+    // Export streams a site archive. The residual probe only owns its HTTP
+    // status contract; consuming the stream can make undici report a
+    // terminated body after the server has already answered.
+    translateLegacy: () => ({ method: "GET", path: "/sites/export", readBody: false }),
+    translateYoram: () => ({ method: "GET", path: "/sites/export", readBody: false }),
     handler(ctx) {
       const legacy = this.translateLegacy();
       return residualStatusProbe(ctx, legacy, this.translateYoram(), legacy.path);

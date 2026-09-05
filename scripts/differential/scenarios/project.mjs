@@ -209,7 +209,12 @@ export const scenarios = [
       { actor: "admin", action: "export-migration-posts", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "export-migration-projects-list", params: {} },
       { actor: "admin", action: "fetch-attachment-list", params: {} },
-      { actor: "admin", action: "fetch-unknown-path", params: { owner: "admin", project: "sample", missing: "page" } },
+      {
+        actor: "admin",
+        action: "fetch-unknown-path",
+        params: { owner: "admin", project: "sample", missing: "page" },
+        behaviorId: "B-0116",
+      },
       { actor: "admin", action: "fetch-git-info-refs", params: { owner: "admin", project: "sample" } },
     ],
     behaviorMatcher: { action: /^(MigrationApp\.|ProjectApi\.exports$|ReviewThreadApp\.reviewThreads$|UserApp\.leave$|AttachmentApp\.getFileList$|Application\.removeTrailer$|GitApp\.advertise$)/ },
@@ -521,8 +526,6 @@ export const actionDefinitions = {
             kind: "api",
             expected: { status: 404 },
             actual: { status: 200 },
-            classification: "IMPLEMENTATION_DIFFERENCE",
-            reason: "Legacy has no route for the explicit parity-missing path; the SPA fallback serves its shell.",
           }),
         );
       } else if (legacyResult.status !== yoramResult.status) {
@@ -548,7 +551,7 @@ function statusClass(status) {
 
 function pushApiViolation(ctx, route, expected, actual) {
   ctx.entry.violations.push(
-    violation({ route, behaviorId: ctx.entry.behaviorIds[0] ?? null, kind: "api", expected, actual }),
+    violation({ route, behaviorId: ctx.step.behaviorId ?? null, kind: "api", expected, actual }),
   );
 }
 
@@ -1400,7 +1403,7 @@ async function discoverClosedRestorePr(ctx, owner, project) {
   const items = Array.isArray(yoramList.json?.items) ? yoramList.json.items : [];
   const yoramNumber = items
     .filter((item) => (item.fromBranch ?? item.from_branch) === "main" && (item.toBranch ?? item.to_branch) === "feature/ui")
-    .map((item) => Number(item.pullRequestNumber ?? item.pull_request_number ?? item.id))
+    .map((item) => Number(item.pullRequestNumber ?? item.pull_request_number ?? item.number))
     .filter(Boolean)
     .sort((a, b) => b - a)[0] ?? null;
 
@@ -1928,7 +1931,7 @@ scenarios.push(
       { actor: "admin", action: "copy-labels", params: { owner: "admin", sourceProject: "sample" } },
       { actor: "admin", action: "add-created-member", params: { owner: "admin" } },
       { actor: "admin", action: "edit-created-member", params: { owner: "admin" } },
-      { actor: "admin", action: "update-created-setting", params: { owner: "admin" } },
+      { actor: "admin", action: "update-created-setting", params: { owner: "admin" }, behaviorId: "B-0267" },
       { actor: "admin", action: "request-project-transfer", params: { owner: "admin" } },
       { actor: "admin", action: "delete-project", params: { owner: "admin" } },
     ],
@@ -2013,7 +2016,7 @@ LIFECYCLE_ACTIONS["fork-created-project"] = {
     const { step, state, entry, suffix } = ctx;
     if (!state.projectName) return;
     const name = `parity-fork-${suffix}`;
-    const result = await ctx.helpers.pairLenient(
+    const result = await pairRequest(
       ctx,
       this.translateLegacy(step, { sourceProject: state.projectName, name }),
       this.translateYoram(step, { sourceProject: state.projectName, name }),
@@ -2049,7 +2052,7 @@ LIFECYCLE_ACTIONS["clone-created-project"] = {
     const { step, state, entry, suffix } = ctx;
     if (!state.projectName) return;
     const name = `parity-clone-${suffix}`;
-    const result = await ctx.helpers.pairLenient(
+    const result = await pairRequest(
       ctx,
       this.translateLegacy(step, { sourceProject: state.projectName, name }),
       this.translateYoram(step, { sourceProject: state.projectName, name }),
@@ -2068,7 +2071,7 @@ LIFECYCLE_ACTIONS["change-created-project-vcs"] = {
     return { method: "POST", path: `/${step.params.owner}/${resolved.projectName ?? projectNameOf(step, resolved)}/changeVCS` };
   },
   translateYoram(step, resolved) {
-    return { method: "POST", path: `/api/v1/owners/${step.params.owner}/projects/${resolved.projectName ?? projectNameOf(step, resolved)}/changeVCS` };
+    return { method: "POST", path: `/api/v1/owners/${step.params.owner}/projects/${resolved.projectName ?? projectNameOf(step, resolved)}/change-vcs` };
   },
   async handler(ctx) {
     const { step, state } = ctx;
@@ -2129,7 +2132,7 @@ LIFECYCLE_ACTIONS["site-purge-created-project"] = {
     return { method: "DELETE", path: `/sites/project/delete/${resolved.projectId}` };
   },
   translateYoram(step, resolved) {
-    return { method: "DELETE", path: `/api/v1/site/projects/${resolved.projectId}` };
+    return { method: "DELETE", path: `/sites/project/delete/${resolved.projectId}` };
   },
   async handler(ctx) {
     const { step, state, entry, suffix, helpers } = ctx;
@@ -2193,9 +2196,9 @@ scenarios.push(
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
       { actor: "admin", action: "create-project", params: { owner: "admin" } },
-      { actor: "admin", action: "fork-created-project", params: { owner: "admin" } },
-      { actor: "admin", action: "clone-created-project", params: { owner: "admin" } },
-      { actor: "admin", action: "change-created-project-vcs", params: { owner: "admin" } },
+      { actor: "admin", action: "fork-created-project", params: { owner: "admin" }, behaviorId: "B-0226" },
+      { actor: "admin", action: "clone-created-project", params: { owner: "admin" }, behaviorId: "B-0225" },
+      { actor: "admin", action: "change-created-project-vcs", params: { owner: "admin" }, behaviorId: "B-0236" },
       { actor: "admin", action: "cleanup-created-projects", params: { owner: "admin" } },
     ],
     behaviorMatcher: {
@@ -2209,7 +2212,7 @@ scenarios.push(
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
       { actor: "admin", action: "create-project", params: { owner: "admin" } },
-      { actor: "admin", action: "site-purge-created-project", params: { owner: "admin" } },
+      { actor: "admin", action: "site-purge-created-project", params: { owner: "admin" }, behaviorId: "B-0019" },
     ],
     behaviorMatcher: { action: /^SiteApp\.deleteProject$/, route: /^DELETE \/sites\/project\/delete\/:projectId$/ },
   },

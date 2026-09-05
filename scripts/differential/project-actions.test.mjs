@@ -248,7 +248,7 @@ test("mutation actions avoid forbidden destructive routes", () => {
 });
 
 test("mutation translators produce expected method/path literals", () => {
-  const resolved = { title: "t", body: "b", content: "c", dueDate: "2026-12-31", milestoneId: 7, postNumber: 3, commentId: 5, labelId: 9, webhookId: 11, userId: 13, overview: "ov", name: "n", category: "cat", loginId: "bob", issueNumber: 17, phase: "labels", payloadUrl: "u", original: "o", attachmentId: 21, prId: 31, probeName: "pn", destination: "alice" };
+  const resolved = { title: "t", body: "b", content: "c", dueDate: "2026-12-31", milestoneId: 7, postNumber: 3, commentId: 5, labelId: 9, webhookId: 11, userId: 13, overview: "ov", name: "n", category: "cat", loginId: "bob", issueNumber: 17, phase: "labels", payloadUrl: "u", original: "o", attachmentId: 21, prId: 31, projectId: 31, probeName: "pn", destination: "alice" };
   const step = (action, params) => ({ action, params });
   const cases = [
     ["create-milestone", "translateLegacy", { method: "POST", path: "/o/p/milestones" }],
@@ -324,6 +324,14 @@ test("mutation translators produce expected method/path literals", () => {
     ["edit-created-member", "translateYoram", { method: "POST", path: "/o/p/member/13/edit" }],
     ["update-created-setting", "translateLegacy", { method: "POST", path: "/o/p/setting" }],
     ["update-created-setting", "translateYoram", { method: "PATCH", path: "/api/v1/owners/o/projects/p" }],
+    ["fork-created-project", "translateLegacy", { method: "POST", path: "/o/p/fork" }],
+    ["fork-created-project", "translateYoram", { method: "POST", path: "/api/v1/owners/o/projects/p/fork" }],
+    ["clone-created-project", "translateLegacy", { method: "POST", path: "/o/p/clone" }],
+    ["clone-created-project", "translateYoram", { method: "POST", path: "/o/p/clone" }],
+    ["change-created-project-vcs", "translateLegacy", { method: "POST", path: "/o/p/changeVCS" }],
+    ["change-created-project-vcs", "translateYoram", { method: "POST", path: "/api/v1/owners/o/projects/p/change-vcs" }],
+    ["site-purge-created-project", "translateLegacy", { method: "DELETE", path: "/sites/project/delete/31" }],
+    ["site-purge-created-project", "translateYoram", { method: "DELETE", path: "/sites/project/delete/31" }],
     ["request-project-transfer", "translateLegacy", { method: "PUT", path: "/o/p/transfer?owner=alice" }],
     ["request-project-transfer", "translateYoram", { method: "PUT", path: "/o/p/transfer?owner=alice" }],
     ["delete-project", "translateLegacy", { method: "DELETE", path: "/o/p/delete" }],
@@ -365,4 +373,16 @@ test("mutation translators produce expected method/path literals", () => {
       );
     }
   }
+});
+
+test("destructive scenario steps carry the behavior id for their own route", () => {
+  const find = (id, action, value) => scenarios.find((scenario) => scenario.id === id)?.actions.find(
+    (step) => step.action === action && (value === undefined || step.params?.tab === value),
+  );
+  assert.equal(find("P18-throwaway-project-lifecycle", "update-created-setting")?.behaviorId, "B-0267");
+  assert.equal(find("P23-wave-d-project-destructive", "fork-created-project")?.behaviorId, "B-0226");
+  assert.equal(find("P23-wave-d-project-destructive", "clone-created-project")?.behaviorId, "B-0225");
+  assert.equal(find("P23-wave-d-project-destructive", "change-created-project-vcs")?.behaviorId, "B-0236");
+  assert.equal(find("P24-site-project-purge", "site-purge-created-project")?.behaviorId, "B-0019");
+  assert.equal(find("P15-project-data-surfaces", "fetch-unknown-path")?.behaviorId, "B-0116");
 });

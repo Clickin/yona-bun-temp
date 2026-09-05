@@ -90,7 +90,7 @@ export class LegacySession {
     const nextCookies = response.headers.getSetCookie?.() ?? [];
     if (nextCookies.length > 0) this.cookies = mergeCookieHeader(this.cookies, nextCookies);
     let text = "";
-    if (!location) text = await response.text();
+    if (!location && translation.readBody !== false) text = await response.text();
     return { status: response.status, location, body: text };
   }
 }
@@ -138,7 +138,7 @@ export class YoramSession {
     });
     const nextCookies = response.headers.getSetCookie?.() ?? [];
     if (nextCookies.length > 0) this.cookies = mergeCookieHeader(this.cookies, nextCookies);
-    const text = await response.text();
+    const text = translation.readBody === false ? "" : await response.text();
     const location = response.headers.get("location") ?? "";
     let json = null;
     try {

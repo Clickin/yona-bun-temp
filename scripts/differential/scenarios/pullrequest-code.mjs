@@ -305,7 +305,10 @@ export const scenarios = [
     title: "add and remove a review point on a live pull request",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      { actor: "admin", action: "create-pullrequest", params: { owner: "admin", project: "sample", fromBranch: "main", toBranch: "feature/ui" } },
+      // The parity seed already owns an open main -> feature/ui PR. Use the
+      // opposite seeded branch direction so Yoram does not reject this
+      // independent review-point probe as a duplicate.
+      { actor: "admin", action: "create-pullrequest", params: { owner: "admin", project: "sample", fromBranch: "feature/ui", toBranch: "main" } },
       { actor: "admin", action: "review-pullrequest", params: { owner: "admin", project: "sample", prId: 1 } },
       { actor: "admin", action: "unreview-pullrequest", params: { owner: "admin", project: "sample", prId: 1 } },
     ],
@@ -350,6 +353,11 @@ async function readPageHandler(ctx) {
     await renderPullRequestStateFragment(ctx);
     return;
   }
+  // These routes return legacy AJAX fragments, not navigable full pages.
+  // Their status contract is already checked by requestBoth; sending them
+  // through renderDomTarget would manufacture a `.project-page-wrap`
+  // requirement that neither fragment promises.
+  if (FRAGMENT_ACTIONS.has(step.action)) return;
   const yoramPagePath = translateYoram(step, resolved).pagePath ?? legacyPath(step);
   const targetKey = `${legacyPath(step)}|${yoramPagePath}|.project-page-wrap`;
   ctx.state.domTargets ??= new Set();
@@ -362,6 +370,16 @@ async function readPageHandler(ctx) {
     selector: ".project-page-wrap",
   });
 }
+
+const FRAGMENT_ACTIONS = new Set([
+  "merge-result",
+  "browse-code-ajax-root",
+  "browse-code-ajax-slash",
+  "browse-code-ajax-path",
+  "browse-code-ajax-nobranch",
+  "browse-code-ajax-nobranch-slash",
+  "browse-code-ajax-nobranch-path",
+]);
 
 function legacyPath(step) {
   const p = step.params;
@@ -579,6 +597,28 @@ function firstCommitCommentId(json) {
   return null;
 }
 
+export function pullRequestNumberFromPayload(payload, expectedTitle = null) {
+  if (!payload || typeof payload !== "object") return null;
+  if (expectedTitle !== null && typeof payload.title === "string" && payload.title !== expectedTitle) return null;
+  const value = Number(payload.pullRequestNumber ?? payload.pull_request_number ?? payload.number);
+  return value > 0 ? value : null;
+}
+
+export async function resolveYoramPullRequestNumber(ctx, title) {
+  const { step, helpers } = ctx;
+  const result = await helpers.sendRaw(ctx, "yoram", {
+    method: "GET",
+    path: `/api/v1/owners/${step.params.owner}/projects/${step.params.project}/pull-requests`,
+  });
+  const items = Array.isArray(result.json?.items)
+    ? result.json.items
+    : Array.isArray(result.json)
+      ? result.json
+      : [];
+  const match = items.find((item) => item?.title === title);
+  return pullRequestNumberFromPayload(match);
+}
+
 const MUTATION_DEFINITIONS = {
   "create-pullrequest": {
     translateLegacy(step, resolved) {
@@ -643,8 +683,18 @@ const MUTATION_DEFINITIONS = {
       }
       // Yoram's REST create answers the detail payload (camelCase); its PR
       // number is required for every dependent lifecycle step.
-      state.prNumberYoram =
-        Number(yoramResult.json?.pullRequestNumber ?? yoramResult.json?.number ?? yoramResult.json?.id ?? 0) || null;
+      if (yoramResult.status < 400) {
+        try {
+          state.prNumberYoram =
+            pullRequestNumberFromPayload(yoramResult.json, shared.title) ??
+            await resolveYoramPullRequestNumber(ctx, shared.title);
+          if (!state.prNumberYoram) {
+            entry.errors.push(`yoram create-pullrequest returned no display number for "${shared.title}"`);
+          }
+        } catch (error) {
+          entry.errors.push(`yoram create-pullrequest identity resolution failed: ${error.message}`);
+        }
+      }
       state.prFromBranch = legacyBranchRef(step.params.fromBranch);
       state.prToBranch = legacyBranchRef(step.params.toBranch);
       const ok = ensureOutcomeParity(ctx, legacyTranslation.path, legacyResult, yoramResult);
@@ -1196,7 +1246,7 @@ const THROWAWAY_PR_ACTIONS = {
         });
         const items = Array.isArray(list.json?.items) ? list.json.items : Array.isArray(list.json) ? list.json : [];
         const match = items.find((item) => (item.title ?? "") === title);
-        return Number(match?.pullRequestNumber ?? match?.pull_request_number ?? match?.number ?? match?.id) || null;
+        return pullRequestNumberFromPayload(match);
       };
 
       try {
