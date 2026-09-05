@@ -675,6 +675,10 @@ test("project post detail to exact post edit form keeps the legacy project shell
     dispatchEvent(new PopStateEvent("popstate"));
   });
   await expect(page).toHaveURL(/\/admin\/sample\/post\/404\/editform(?:\?|$)/);
+  await expect(page.locator('[data-owner="project-post-edit-page"]')).toHaveAttribute(
+    "aria-busy",
+    "false",
+  );
   await expect(page.locator(".error-wrap > p")).toHaveText(
     "Server error occurred; service is not available",
   );
@@ -688,6 +692,10 @@ test("missing post edit form keeps the legacy site-only error shell", async ({ p
   await mockProjectHomeAndIssues(page);
 
   await page.goto(`${basePath}/admin/sample/post/404/editform`);
+  await expect(page.locator('[data-owner="project-post-edit-page"]')).toHaveAttribute(
+    "aria-busy",
+    "false",
+  );
   await expect(page.locator(".error-wrap > p")).toHaveText(
     "Server error occurred; service is not available",
   );

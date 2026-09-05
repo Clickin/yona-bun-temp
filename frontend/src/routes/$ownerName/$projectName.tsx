@@ -550,6 +550,9 @@ function ProjectHomeRouteShell({
     active === "postEdit" &&
     (!query.data || (!postEditQuery.data && !preservePostEditShellRef.current))
   ) {
+    if (!query.error && !postEditQuery.error) {
+      return <ProjectPostEditLoadingRouteShell runtimeConfig={runtimeConfig} />;
+    }
     return <Outlet />;
   }
 
@@ -786,7 +789,7 @@ function ProjectPostEditNotFoundRouteShell({ runtimeConfig }: { runtimeConfig: R
   return (
     <SiteLayoutShell runtimeConfig={runtimeConfig}>
       <title>{t("error.internalServerError")}</title>
-      <div className="page-wrap-outer">
+      <div className="page-wrap-outer" data-owner="project-post-edit-page" aria-busy="false">
         <div className="project-page-wrap">
           <div className="error-wrap" data-owner="project-post-edit-internal-error-wrap">
             <i
@@ -811,6 +814,14 @@ function ProjectPostEditNotFoundRouteShell({ runtimeConfig }: { runtimeConfig: R
           </div>
         </div>
       </div>
+    </SiteLayoutShell>
+  );
+}
+
+function ProjectPostEditLoadingRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  return (
+    <SiteLayoutShell runtimeConfig={runtimeConfig}>
+      <div className="page-wrap-outer" data-owner="project-post-edit-page" aria-busy="true" />
     </SiteLayoutShell>
   );
 }
