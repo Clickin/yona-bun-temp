@@ -157,12 +157,12 @@ export function ProjectPostDetailIndexScreen({ runtimeConfig }: { runtimeConfig:
 
   if (!projectQuery.data) {
     if (nestedProjectShell) {
-      return null;
+      return <ProjectPostDetailLoadingBody />;
     }
     const projectSearchScope = { ownerName, projectName };
     return (
       <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-        {null}
+        <ProjectPostDetailLoadingBody />
       </SiteLayoutShell>
     );
   }
@@ -180,6 +180,10 @@ export function ProjectPostDetailIndexScreen({ runtimeConfig }: { runtimeConfig:
       runtimeConfig={runtimeConfig}
     />
   );
+}
+
+function ProjectPostDetailLoadingBody() {
+  return <div className="page-wrap-outer" aria-busy="true" />;
 }
 
 function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
@@ -225,7 +229,14 @@ function ProjectPostDetailScreen({
   }
 
   if (!postQuery.data) {
-    return null;
+    if (nestedProjectShell) {
+      return <ProjectPostDetailLoadingBody />;
+    }
+    return (
+      <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+        <ProjectPostDetailLoadingBody />
+      </SiteLayoutShell>
+    );
   }
 
   return (
@@ -447,7 +458,7 @@ function ProjectPostDetailBody({
   };
 
   return (
-    <div className="page-wrap-outer">
+    <div className="page-wrap-outer" aria-busy="false">
       <link
         rel="stylesheet"
         href={prefixBasePath(

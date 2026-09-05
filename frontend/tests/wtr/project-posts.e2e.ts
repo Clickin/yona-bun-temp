@@ -5011,16 +5011,18 @@ test("project board detail opens legacy keymap modal through route state", async
   await mockProjectPosts(page);
 
   await page.goto(`${basePath}/admin/sample/post/3`);
+  await expect(page.locator(".page-wrap-outer")).toHaveAttribute("aria-busy", "false");
+  const keymapModal = page.locator("#helpKeys");
+  const keymapButton = page.locator(
+    '.board-footer button[type="button"].ybtn.ybtn-inverse.ybtn-mini',
+  );
+  await expect(keymapModal).toHaveClass(/hide/);
   await installRootModalBridgeGuard(page, ["helpKeys"]);
   await page.evaluate(() => {
     (window as typeof window & { __spaMarker?: string }).__spaMarker = "post-keymap-modal";
   });
-  await expect(page.locator("#helpKeys")).toHaveClass(/hide/);
   await expect(page.locator('.board-footer a[href="#helpKeys"][data-toggle="modal"]')).toHaveCount(
     0,
-  );
-  const keymapButton = page.locator(
-    '.board-footer button[type="button"].ybtn.ybtn-inverse.ybtn-mini',
   );
   await expect(keymapButton).toHaveClass(/ybtn ybtn-inverse ybtn-mini/);
   await expect(keymapButton).toHaveText("Keyboard shortcuts");
