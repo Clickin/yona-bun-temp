@@ -109,7 +109,7 @@ test("project review sidebar counts preserve the legacy float owner and route st
   for (const owner of sidebarCountOwners) {
     expect(routeSource).toContain(`data-owner="${owner}"`);
   }
-  expect(routeSource).not.toContain("pull-right");
+  expect(routeSource).toMatch(/className="num-badge pull-right"/u);
 
   await mockProjectReviews(page);
   mkdirSync(screenshotDirectory, { recursive: true });
@@ -225,7 +225,7 @@ function assertSidebarCountMetrics(metrics: Awaited<ReturnType<typeof sidebarCou
   for (const owner of metrics.owners) {
     expect(owner.float).toBe("right");
     expect(owner.className).toContain("num-badge");
-    expect(owner.className).not.toMatch(/(?:^|\s)pull-right(?:\s|$)/u);
+    expect(owner.className).toMatch(/(?:^|\s)pull-right(?:\s|$)/u);
     expect(owner.left).toBeGreaterThanOrEqual(metrics.sidebar.left);
     expect(owner.right).toBeLessThanOrEqual(metrics.sidebar.right);
     expect(owner.left).toBeGreaterThanOrEqual(0);

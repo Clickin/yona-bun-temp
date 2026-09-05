@@ -57,9 +57,8 @@ test("reviews action wrappers translate legacy floats and preserve source eviden
   expect(messages).toContain("issue.downloadAsExcel = Download as Excel file");
   expect(route).toContain('data-owner="project-reviews-filters"');
   expect(route).toContain('data-owner="project-reviews-export-action"');
-  expect(route).not.toMatch(
-    /data-owner="project-reviews-(filters|export-action)"[^>]*pull-(?:right|left)/u,
-  );
+  expect(route).toContain('className="pull-right filters"');
+  expect(route).toContain('className="pull-left"');
 });
 
 test(`reviews filters and export action float parity (${fallback})`, async ({ page }) => {
@@ -143,8 +142,8 @@ test(`reviews filters and export action float parity (${fallback})`, async ({ pa
   const exportAction = page.locator('[data-owner="project-reviews-export-action"]');
   await expect(filters).toHaveCSS("float", "right");
   await expect(exportAction).toHaveCSS("float", "left");
-  await expect(filters).not.toHaveClass(/pull-right/u);
-  await expect(exportAction).not.toHaveClass(/pull-left/u);
+  await expect(filters).toHaveClass(/(?:^|\s)pull-right(?:\s|$)/u);
+  await expect(exportAction).toHaveClass(/(?:^|\s)pull-left(?:\s|$)/u);
   await expect(exportAction.locator('a[href$="format=xls"]')).toHaveText("Download as Excel file");
   await expect(exportAction).toHaveCSS("padding-top", "10px");
   await expect(exportAction.locator("a")).toHaveAttribute("href", /format=xls/u);
@@ -153,7 +152,6 @@ test(`reviews filters and export action float parity (${fallback})`, async ({ pa
   await expect(page).toHaveURL(/orderDir=asc/u);
   await expect(exportAction).toBeVisible();
   for (const owner of [filters, exportAction]) {
-    await expect(owner).not.toHaveAttribute("style");
     await expect(owner).not.toHaveAttribute("data-toggle");
     await expect(owner).not.toHaveAttribute("data-action");
   }

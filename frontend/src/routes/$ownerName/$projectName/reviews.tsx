@@ -275,11 +275,7 @@ function ProjectReviewsBody({
                 reviews={reviews}
               />
             </div>
-            <div
-              className="pull-left"
-              style={{ padding: "10px" }}
-              data-owner="project-reviews-export-action"
-            >
+            <div className="pull-left" data-owner="project-reviews-export-action">
               {/* e2e closure ledger (2026-08-11): legacy reviewthread/list.scala.html:90
                   href="@addQueryString(removeQueryString(requestHeader.uri, "pageNum"), "format=xls")"
                   — the export URL carries format=xls. TanStack Link overrides an explicit
