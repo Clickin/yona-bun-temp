@@ -2,6 +2,7 @@ use std::ffi::OsString;
 use std::io::{Read, Write};
 use std::path::{Component, Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -15,6 +16,7 @@ const HEADER_BODY_DELIMITER_CRLF: &[u8] = b"\r\n\r\n";
 const HEADER_BODY_DELIMITER_LF: &[u8] = b"\n\n";
 const DEFAULT_GIT_AUTHOR_EMAIL: &str = "yoram@example.invalid";
 const DEFAULT_GIT_AUTHOR_NAME: &str = "Yoram";
+static TEMP_WORK_DIR_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
 pub fn svn_executable(name: &str) -> PathBuf {
     let executable_name = if cfg!(windows) && !name.ends_with(".exe") {
@@ -4495,15 +4497,23 @@ struct TempWorkDir {
 
 impl TempWorkDir {
     fn create(label: &str) -> Result<Self, VcsError> {
-        let nanos = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map_err(|error| VcsError::FilesystemFailed(error.to_string()))?
-            .as_nanos();
-        let path =
-            std::env::temp_dir().join(format!("yona-vcs-{label}-{}-{nanos}", std::process::id()));
-        std::fs::create_dir_all(&path)
-            .map_err(|error| VcsError::FilesystemFailed(error.to_string()))?;
-        Ok(Self { path })
+        let temp_dir = std::env::temp_dir();
+        loop {
+            let nanos = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map_err(|error| VcsError::FilesystemFailed(error.to_string()))?
+                .as_nanos();
+            let sequence = TEMP_WORK_DIR_SEQUENCE.fetch_add(1, Ordering::Relaxed);
+            let path = temp_dir.join(format!(
+                "yona-vcs-{label}-{}-{nanos}-{sequence}",
+                std::process::id()
+            ));
+            match std::fs::create_dir(&path) {
+                Ok(()) => return Ok(Self { path }),
+                Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+                Err(error) => return Err(VcsError::FilesystemFailed(error.to_string())),
+            }
+        }
     }
 
     fn path(&self) -> &Path {
