@@ -2540,7 +2540,9 @@ test("direct notifications route matches legacy Application.notifications empty 
   await page.goto(`${basePath}/notifications`, { waitUntil: "domcontentloaded" });
   await expect(page).toHaveTitle("Yoram");
   await expect(page.locator("head > title").first()).toHaveText(/Yoram/u);
-  await expect(page.locator('[data-owner="authenticated-home-page-wrap-outer"]')).toBeVisible();
+  const notificationsScreen = page.locator('[data-owner="authenticated-home-page-wrap-outer"]');
+  await expect(notificationsScreen).toHaveAttribute("aria-busy", "false");
+  await expect(notificationsScreen).toBeVisible();
   await expect(page.locator('[data-owner="authenticated-home-notification-list"]')).toBeVisible();
   const emptyNotification = page.locator(
     "ul.activity-streams.notification-wrap.unstyled > div.warning-none",
@@ -2758,10 +2760,15 @@ test("direct notifications route matches legacy Application.notifications empty 
     .toBe("notifications-my-issues-tab");
 
   await mockWorkspaceFiles(page);
-  await page.goto(`${basePath}/notifications`);
-  const myFilesTab = page.locator(
-    '[data-owner="authenticated-home-series-tabs"] a:has-text("My Files")',
-  );
+  await page.evaluate(() => window.history.back());
+  await expect(page).toHaveURL(`${basePath}/notifications`);
+  await expect(notificationsScreen).toHaveAttribute("aria-busy", "false");
+  await expect(mainStreamTabs.locator("> li > a")).toHaveText([
+    "Notification",
+    "My Issues",
+    "My Files",
+  ]);
+  const myFilesTab = mainStreamTabs.locator('a:has-text("My Files")');
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
       "notifications-my-files-tab";

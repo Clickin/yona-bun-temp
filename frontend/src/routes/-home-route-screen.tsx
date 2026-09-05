@@ -184,6 +184,7 @@ function HomeScreen({
   const defaultLandingPopoverTimer = React.useRef<number | null>(null);
   const [notificationItems, setNotificationItems] = React.useState<NotificationItem[]>([]);
   const [notificationHasMore, setNotificationHasMore] = React.useState(false);
+  const [renderedNotificationsUpdatedAt, setRenderedNotificationsUpdatedAt] = React.useState(0);
   const [isLoadingMoreNotifications, setIsLoadingMoreNotifications] = React.useState(false);
   const flashMessage = flashMessageKey ? t(flashMessageKey) : "";
   const defaultLandingButtonTitle = t("button.setDefaultLoginPage");
@@ -246,7 +247,16 @@ function HomeScreen({
     }
     setNotificationItems(notificationsQuery.data.items);
     setNotificationHasMore(notificationsQuery.data.hasMore);
-  }, [notificationsQuery.data]);
+    setRenderedNotificationsUpdatedAt(notificationsQuery.dataUpdatedAt);
+  }, [notificationsQuery.data, notificationsQuery.dataUpdatedAt]);
+
+  const isAuthenticatedHomeBusy =
+    sessionQuery.isFetching ||
+    !sessionQuery.isSuccess ||
+    notificationsQuery.isFetching ||
+    !notificationsQuery.isSuccess ||
+    renderedNotificationsUpdatedAt !== notificationsQuery.dataUpdatedAt ||
+    isLoadingMoreNotifications;
 
   function toggleIntro() {
     setIsIntroVisible((current) => {
@@ -317,7 +327,11 @@ function HomeScreen({
     return (
       <SiteLayoutShell runtimeConfig={runtimeConfig} sidenavUsesAdminAffixTop>
         <HomeFlashToast message={flashMessage} />
-        <div className={"page-wrap-outer"} data-owner="authenticated-home-page-wrap-outer">
+        <div
+          aria-busy={isAuthenticatedHomeBusy}
+          className={"page-wrap-outer"}
+          data-owner="authenticated-home-page-wrap-outer"
+        >
           <div className={"page-wrap"} data-owner="authenticated-home-page-wrap">
             <div
               className={`site-guide-outer${isIntroVisible ? "" : " hide"}`}
