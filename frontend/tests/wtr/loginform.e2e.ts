@@ -759,6 +759,10 @@ test("root login dialog visible state matches legacy common/loginDialog.scala.ht
   });
   await page.goto(`${basePath}/users/login?from=legacy`);
   await expect(page).toHaveURL(new RegExp(`${basePath}/users/login\\?from=legacy$`, "u"));
+  await expect(page.locator('[data-owner="anonymous-site-user-menu"]')).toHaveAttribute(
+    "data-auth-ready",
+    "true",
+  );
   const rootLoginLink = page.locator("#required-logged-in > a.user-item-btn");
   await expect(rootLoginLink).not.toHaveAttribute("data-login");
   await rootLoginLink.click();
@@ -862,7 +866,27 @@ test("root login dialog visible state matches legacy common/loginDialog.scala.ht
     "../yona-original/app/assets/stylesheets/less/_common.less",
     "utf8",
   );
+  const shellSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
+  const legacyNavbar = readFileSync("../yona-original/app/views/common/navbar.scala.html", "utf8");
+  const legacyUsermenu = readFileSync(
+    "../yona-original/app/views/common/usermenu.scala.html",
+    "utf8",
+  );
+  const legacyPageLess = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_page.less",
+    "utf8",
+  );
+  const legacyMessages = readFileSync("../yona-original/conf/messages", "utf8");
   expect(commonLess).toContain(".right-txt     { text-align:right; }");
+  expect(shellSource).toContain(
+    "const anonymousShellAuthReady = sessionQuery.isSuccess && !sessionQuery.isFetching;",
+  );
+  expect(shellSource).toContain('data-auth-ready={authReady ? "true" : "false"}');
+  expect(legacyNavbar).toContain("@common.usermenu()");
+  expect(legacyUsermenu).toContain('id="required-logged-in"');
+  expect(legacyPageLess).toContain(".gnb-usermenu");
+  expect(legacyMessages).toContain("title.login = Log in");
+  expect(legacyMessages).toContain("title.signup = Sign up");
   const rootLoginDialogSource = source.slice(
     source.indexOf("function RootLoginDialog"),
     source.indexOf("function RootOAuthProviderLink"),
@@ -921,6 +945,10 @@ test("root login dialog localizes the required-login API error in Korean", async
   );
 
   await page.goto(`${basePath}/users/login?from=legacy`);
+  await expect(page.locator('[data-owner="anonymous-site-user-menu"]')).toHaveAttribute(
+    "data-auth-ready",
+    "true",
+  );
   await page.locator("#required-logged-in > a.user-item-btn").click();
   await page.locator("#loginIdOrEmailD").fill("admin");
   await page.locator("#passwordD").fill("password");
@@ -942,6 +970,10 @@ test("root login dialog owns legacy action and OAuth row geometry without fallba
   await mockAnonymousSession(page);
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/users/login?from=legacy`);
+  await expect(page.locator('[data-owner="anonymous-site-user-menu"]')).toHaveAttribute(
+    "data-auth-ready",
+    "true",
+  );
   await page.locator("#required-logged-in > a.user-item-btn").click();
 
   const desktop = await readRootLoginDialogFormMetrics(page);
@@ -964,6 +996,10 @@ test("root login dialog owns legacy action and OAuth row geometry without fallba
   await expect(page.locator("#loginDialog")).toBeHidden();
 
   await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator('[data-owner="anonymous-site-user-menu"]')).toHaveAttribute(
+    "data-auth-ready",
+    "true",
+  );
   await page.locator("#required-logged-in > a.user-item-btn").click();
   const mobile = await readRootLoginDialogFormMetrics(page);
   expect(mobile).toEqual({

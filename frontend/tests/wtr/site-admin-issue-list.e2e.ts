@@ -166,6 +166,7 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   await expect
     .poll(() => new URL(page.url()).pathname + new URL(page.url()).search)
     .toBe(`${basePath}/sites/issueList`);
+  await expect(page.locator("#usermenu-tab-content-list")).toHaveAttribute("aria-busy", "false");
   await expect(page.locator('[data-owner="site-issue-list-setting-wrap"]')).toBeVisible();
   await expect(page.locator('[data-owner="global-gnb-nav"] > li > a')).toHaveText([
     "Y",
@@ -465,6 +466,7 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   ).toBe("site-posts-nav");
 
   const routeSource = readFileSync("src/routes/sites/issueList.tsx", "utf8");
+  const shellSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
   expect(routeSource).toContain('<title>{t("title.siteSetting")}</title>');
   expect(routeSource).not.toContain("useLegacySiteIssueListDocumentTitle");
   expect(routeSource).not.toContain("document.title");
@@ -493,6 +495,8 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   expect(routeSource).not.toContain("data-status={undefined}");
   expect(routeSource).not.toContain("pjax-page");
   expect(routeSource).not.toContain("pjaxPage");
+  expect(shellSource).toContain('id="usermenu-tab-content-list"');
+  expect(shellSource).toContain('aria-busy={workspace === undefined ? "true" : "false"}');
 });
 
 test("site admin issue list renders legacy closed issue rows with closed pagination state", async ({

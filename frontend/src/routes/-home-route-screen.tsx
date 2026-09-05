@@ -771,6 +771,7 @@ export function SiteLayoutShell({
     queryFn: () => readWorkspaceOverviewRest(runtimeConfig),
     queryKey: ["workspace", "overview", "sidebar"],
   });
+  const anonymousShellAuthReady = sessionQuery.isSuccess && !sessionQuery.isFetching;
   const workspaceProfile = recordValue(navbarWorkspaceQuery.data?.profile);
   const shouldRenderAnonymousUserMenu = session?.isAnonymous !== false;
   const isGuest = session
@@ -1124,7 +1125,7 @@ export function SiteLayoutShell({
               </li>
             </ul>
             {shouldRenderAnonymousUserMenu ? (
-              <AnonymousSiteUserMenu />
+              <AnonymousSiteUserMenu authReady={anonymousShellAuthReady} />
             ) : (
               <AuthenticatedSiteUserMenu
                 basePath={runtimeConfig.basePath}
@@ -1410,7 +1411,11 @@ function AuthenticatedSiteUserMenu({
             </li>
           </ul>
           <div className={"tab-content tab-box"} data-owner="authenticated-sidenav-tab-panel">
-            <div id="usermenu-tab-content-list" className={"tab-content"}>
+            <div
+              aria-busy={workspace === undefined ? "true" : "false"}
+              id="usermenu-tab-content-list"
+              className={"tab-content"}
+            >
               {workspace ? (
                 <SidebarTabContent
                   activeTab={activeSidebarTab}
@@ -1528,7 +1533,7 @@ function AuthenticatedSiteUserMenu({
   );
 }
 
-function AnonymousSiteUserMenu() {
+function AnonymousSiteUserMenu({ authReady }: { authReady: boolean }) {
   const openRootLoginDialog = useRootLoginDialog();
   const [activeSidebarTab, setActiveSidebarTab] = React.useState<"favorite" | "project" | "recent">(
     "favorite",
@@ -1540,7 +1545,7 @@ function AnonymousSiteUserMenu() {
         activeSidebarTab={activeSidebarTab}
         onSelectSidebarTab={setActiveSidebarTab}
       />
-      <AnonymousGnbUserMenu onOpenLoginDialog={openRootLoginDialog} />
+      <AnonymousGnbUserMenu authReady={authReady} onOpenLoginDialog={openRootLoginDialog} />
     </>
   );
 }
@@ -1627,10 +1632,20 @@ function AnonymousSidenav({
   );
 }
 
-function AnonymousGnbUserMenu({ onOpenLoginDialog }: { onOpenLoginDialog: () => boolean }) {
+function AnonymousGnbUserMenu({
+  authReady,
+  onOpenLoginDialog,
+}: {
+  authReady: boolean;
+  onOpenLoginDialog: () => boolean;
+}) {
   const { t } = useLegacyMessages();
   return (
-    <ul className="gnb-usermenu" data-owner="anonymous-site-user-menu">
+    <ul
+      className="gnb-usermenu"
+      data-auth-ready={authReady ? "true" : "false"}
+      data-owner="anonymous-site-user-menu"
+    >
       <li className={"gnb-usermenu-item"} id="required-logged-in">
         <Link
           to="/users/loginform"
