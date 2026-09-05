@@ -257,13 +257,7 @@ export const scenarios = [
         actor: "admin",
         action: "delete-commit-comment",
         params: { owner: "admin", project: "sample", commitId: "HEAD" },
-        // Legacy answers 404 for the HEAD pseudo-ref where yoram resolves it;
-        // reviewed harmless extension (B-0003) — no legacy behavior depends on
-        // the pseudo-ref 404.
-        disposition: {
-          classification: "IMPLEMENTATION_DIFFERENCE",
-          evidence: "yona-original/app/controllers/CodeHistoryApp.java:102-114 getCommit(commitId); 2026-09 reclassification B-0003",
-        },
+        behaviorId: "B-0003",
       },
     ],
     behaviorMatcher: { action: /^CodeHistoryApp\.(newComment|deleteComment)$/, route: /commit/ },
@@ -277,25 +271,14 @@ export const scenarios = [
         actor: "admin",
         action: "set-default-branch",
         params: { owner: "admin", project: "sample", branch: "feature/ui" },
-        // Legacy BranchApp.setAsDefault throws IOException/GitAPIException out
-        // of the handler (500 headless) where yoram persists the default
-        // branch; degenerate legacy crash, agreed intent verified by the
-        // resulting default ref.
-        disposition: {
-          classification: "LEGACY_BUG_NOT_REPRODUCED",
-          evidence: "yona-original/app/controllers/BranchApp.java:81-89",
-        },
+        behaviorId: "B-0237",
       },
       { actor: "admin", action: "list-branches", params: { owner: "admin", project: "sample" } },
       {
         actor: "admin",
         action: "set-default-branch",
         params: { owner: "admin", project: "sample", branch: "main" },
-        // Same legacy setAsDefault 500 as above (BranchApp.java:81-89).
-        disposition: {
-          classification: "LEGACY_BUG_NOT_REPRODUCED",
-          evidence: "yona-original/app/controllers/BranchApp.java:81-89",
-        },
+        behaviorId: "B-0237",
       },
     ],
     behaviorMatcher: { action: /^BranchApp\.setAsDefault$/, route: /setAsDefault/ },
@@ -527,7 +510,7 @@ function ensureOutcomeParity(ctx, route, legacyResult, yoramResult) {
     ctx.entry.violations.push(
       violation({
         route,
-        behaviorId: ctx.entry.behaviorIds[0] ?? null,
+        behaviorId: ctx.step.behaviorId ?? null,
         kind: "api",
         expected: { status: legacyResult.status },
         actual: { status: yoramResult.status },
@@ -1008,12 +991,13 @@ const COMMIT_COMMENT_MUTATIONS = {
 const BRANCH_MUTATIONS = {
   // Toggles the default branch and restores it within R15; Yoram exposes the
   // same operation as a REST default-branch POST instead of the legacy direct
-  // form route. Legacy branch names are URL-encoded like the UI does.
+  // form route. BranchApp.setDefaultBranch links a full Git ref, not a short
+  // branch name; encode the complete refs/heads/... path segment.
   "set-default-branch": {
     translateLegacy(step) {
       return {
         method: "POST",
-        path: `/${step.params.owner}/${step.params.project}/code/${encodeURIComponent(step.params.branch)}/setAsDefault`,
+        path: `/${step.params.owner}/${step.params.project}/code/${encodeURIComponent(legacyBranchRef(step.params.branch))}/setAsDefault`,
       };
     },
     translateYoram(step) {
@@ -1030,7 +1014,23 @@ const BRANCH_MUTATIONS = {
         translateLegacy(step, step.params),
         translateYoram(step, step.params),
       );
-      ensureOutcomeParity(ctx, `/${step.params.owner}/${step.params.project}/code setAsDefault ${step.params.branch}`, legacyResult, yoramResult);
+      const route = `/${step.params.owner}/${step.params.project}/code setAsDefault ${step.params.branch}`;
+      if (ensureOutcomeParity(ctx, route, legacyResult, yoramResult)) {
+        const expectedRef = legacyBranchRef(step.params.branch);
+        const repositoryUrl = (baseUrl) =>
+          `${baseUrl.replace("://", "://admin:admin@")}/${step.params.owner}/${step.params.project}`;
+        for (const [side, baseUrl] of [["legacy", ctx.options.legacyUrl], ["yoram", ctx.yoramBaseUrl]]) {
+          try {
+            const { stdout } = await git(["ls-remote", "--symref", repositoryUrl(baseUrl), "HEAD"]);
+            const actualRef = /^ref:\s+(\S+)\s+HEAD$/mu.exec(stdout)?.[1] ?? null;
+            if (actualRef !== expectedRef) {
+              ctx.entry.errors.push(`${side} default ref mismatch: expected=${expectedRef} actual=${actualRef ?? "(missing)"}`);
+            }
+          } catch (error) {
+            ctx.entry.errors.push(`${side} default ref verification failed: ${error.message}`);
+          }
+        }
+      }
     },
   },
 };

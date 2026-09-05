@@ -58,6 +58,52 @@ test("read-page actions translate to legacy-direct GET paths on both sides", () 
   }
 });
 
+test("JSON issue label and category reads use parsed API comparison without DOM rendering", async () => {
+  const step = { actor: "admin", action: "issue-labels", params: { owner: "admin", project: "sample" } };
+  const calls = [];
+  const ctx = {
+    step,
+    resolved: {},
+    helpers: {
+      async requestJsonBoth(_ctx, legacy, yoram) {
+        calls.push({ legacy, yoram });
+        return { legacyResult: { json: [] }, yoramResult: { json: [] } };
+      },
+      renderDomTarget() {
+        throw new Error("JSON route must not render a DOM target");
+      },
+    },
+  };
+  await ACTION_DEFINITIONS["issue-labels"].handler(ctx);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].legacy.path, "/admin/sample/issue/labels");
+
+  let categoryCall = 0;
+  const categoryCtx = {
+    step: { ...step, action: "issue-label-categories" },
+    resolved: {},
+    helpers: {
+      async requestJsonBoth(_ctx, legacy, yoram) {
+        calls.push({ legacy, yoram });
+        categoryCall += 1;
+        return categoryCall === 1
+          ? {
+              legacyResult: { json: { categories: [{ id: 7 }] } },
+              yoramResult: { json: { categories: [{ id: 9 }] } },
+            }
+          : { legacyResult: { json: {} }, yoramResult: { json: {} } };
+      },
+      renderDomTarget() {
+        throw new Error("JSON route must not render a DOM target");
+      },
+    },
+  };
+  await ACTION_DEFINITIONS["issue-label-categories"].handler(categoryCtx);
+  assert.equal(categoryCall, 2);
+  assert.match(calls.at(-1).legacy.path, /\/issue\/label\/category\/7$/u);
+  assert.match(calls.at(-1).yoram.path, /\/issue\/label\/category\/9$/u);
+});
+
 test("list-issues encodes state/milestone/search filter params", () => {
   const step = { actor: "admin", action: "list-issues", params: { owner: "admin", project: "sample", state: "closed", milestoneId: 1 } };
   assert.equal(translateLegacy(step).path, "/admin/sample/issues?state=closed&milestoneId=1");

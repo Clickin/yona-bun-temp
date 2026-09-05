@@ -285,6 +285,29 @@ test("translators produce expected method/path literals", () => {
   }
 });
 
+test("no-avatar site screen uses parsed API comparison without DOM rendering", async () => {
+  const calls = [];
+  const ctx = {
+    step: { actor: "admin", action: "view-site-screen", params: { screen: "noAvatarUsers" } },
+    resolved: {},
+    helpers: {
+      async requestJsonBoth(_ctx, legacy, yoram, route, normalize) {
+        calls.push({ legacy, yoram, route, normalize });
+        return { legacyResult: { json: { users: [] } }, yoramResult: { json: { users: [] } } };
+      },
+      renderDomTarget() {
+        throw new Error("JSON route must not render a DOM target");
+      },
+    },
+  };
+  await ACTION_DEFINITIONS["view-site-screen"].handler(ctx);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].legacy.path, "/sites/noAvatarUsers");
+  assert.equal(calls[0].yoram.path, "/sites/noAvatarUsers");
+  assert.equal(calls[0].route, "/sites/noAvatarUsers");
+  assert.equal(typeof calls[0].normalize, "function");
+});
+
 test("site export status probe opts out of streaming body reads", () => {
   assert.deepEqual(actionDefinitions["probe-site-export"].translateLegacy({ params: {} }), {
     method: "GET",

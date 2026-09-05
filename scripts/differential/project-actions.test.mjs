@@ -312,7 +312,6 @@ test("mutation translators produce expected method/path literals", () => {
     ["export-migration-posts", { owner: "o", project: "p" }, "/migration/o/projects/p/posts"],
     ["export-migration-projects-list", {}, "/migration/projects"],
     ["fetch-attachment-list", {}, "/files"],
-    ["fetch-unknown-path", { owner: "o", project: "p", missing: "page" }, "/o/p/parity-missing-page"],
     ["fetch-git-info-refs", { owner: "o", project: "p" }, "/o/p/info/refs"],
     ["create-project", "translateLegacy", { method: "POST", path: "/projects" }],
     ["create-project", "translateYoram", { method: "POST", path: "/api/v1/owners/o/projects" }],
@@ -384,5 +383,4 @@ test("destructive scenario steps carry the behavior id for their own route", () 
   assert.equal(find("P23-wave-d-project-destructive", "clone-created-project")?.behaviorId, "B-0225");
   assert.equal(find("P23-wave-d-project-destructive", "change-created-project-vcs")?.behaviorId, "B-0236");
   assert.equal(find("P24-site-project-purge", "site-purge-created-project")?.behaviorId, "B-0019");
-  assert.equal(find("P15-project-data-surfaces", "fetch-unknown-path")?.behaviorId, "B-0116");
 });

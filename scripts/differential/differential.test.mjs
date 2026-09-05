@@ -22,7 +22,7 @@ import {
   sideEffectAnchorTag,
 } from "./diff.mjs";
 import { parseH2ShellOutput } from "./db-projection.mjs";
-import { ACTION_DEFINITIONS } from "./scenarios/index.mjs";
+import { ACTION_DEFINITIONS, scenarios } from "./scenarios/index.mjs";
 import {
   CLASSIFICATIONS,
   HarnessError,
@@ -123,6 +123,18 @@ test("yoram session attaches csrf header after login", async () => {
     const mutation = calls.at(-1);
     assert.equal(mutation.init.headers["x-csrf-token"], "csrf-1");
     assert.equal(mutation.init.headers.cookie, "yona_session=tok");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("legacy session exposes parsed JSON responses alongside raw bodies", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response(JSON.stringify({ users: [{ loginId: "admin" }] }), { status: 200 });
+  try {
+    const result = await new LegacySession("http://x").request({ method: "GET", path: "/sites/noAvatarUsers" });
+    assert.deepEqual(result.json, { users: [{ loginId: "admin" }] });
+    assert.equal(result.body, '{"users":[{"loginId":"admin"}]}');
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -397,6 +409,46 @@ test("classify keeps unknown DOM and visible loss blocking", () => {
   }
   assert.equal(classifyViolation("harness", "step", {}).classification, "HARNESS_ERROR");
   assert.equal(classifyViolation("infra", "render", {}).classification, "INFRA_ERROR");
+});
+
+test("malformed residual findings require their exact step behavior id", () => {
+  const cases = [
+    ["B-0185", "/user/sidebar", { expected: { status: 500 }, actual: { status: 200 } }, "LEGACY_BUG_NOT_REPRODUCED"],
+    ["B-0267", "/admin/parity-setting/setting", { expected: { status: 500 }, actual: { status: 200 } }, "LEGACY_BUG_NOT_REPRODUCED"],
+    ["B-0002", "/admin/sample/code/__parity_missing_branch__/", { expected: "legacy HTTP 302", actual: "yoram HTTP 404" }, "LEGACY_BUG_NOT_REPRODUCED"],
+    ["B-0221", "/user/editform/defultLoginPage", { expected: "2xx", actual: "4xx" }, "LEGACY_BUG_NOT_REPRODUCED"],
+    ["B-0286", "/sites/import", { expected: "legacy HTTP 302", actual: "yoram HTTP 400" }, "IMPLEMENTATION_DIFFERENCE"],
+    ["B-0014", "/comments/issue/9", { expected: { status: "<400" }, actual: { legacyStatus: 500, yoramStatus: 400 } }, "LEGACY_BUG_NOT_REPRODUCED"],
+    ["B-0212", "/-_-api/v1/owners/admin/projects/sample/issues/7/share", { expected: { status: "<400" }, actual: { legacyStatus: 500, yoramStatus: 404 } }, "LEGACY_BUG_NOT_REPRODUCED"],
+    ["B-0214", "/-_-api/v1/owners/admin/projects/sample/issues/imports", { expected: { status: "<400" }, actual: { legacyStatus: 400, yoramStatus: 404 } }, "IMPLEMENTATION_DIFFERENCE"],
+    ["B-0287", "/sites/mail", { expected: "legacy HTTP 500", actual: "yoram HTTP 400" }, "LEGACY_BUG_NOT_REPRODUCED"],
+  ];
+  for (const [behaviorId, route, detail, classification] of cases) {
+    assert.equal(classifyViolation("api", route, detail, { behaviorId }).classification, classification, behaviorId);
+    assert.equal(classifyViolation("api", route, detail).classification, "UNVERIFIED", `${behaviorId} must be attributed`);
+  }
+  assert.equal(
+    classifyViolation(
+      "api",
+      "/admin/sample/commit/HEAD/comments/673/delete",
+      { expected: { status: 404 }, actual: { status: 200 } },
+      { behaviorId: "B-0003" },
+    ).classification,
+    "UNVERIFIED",
+  );
+});
+
+test("strict residual step metadata is explicit and cleanup remains unclaimed", () => {
+  const find = (scenarioId, action) =>
+    scenarios.find((scenario) => scenario.id === scenarioId)?.actions.find((step) => step.action === action);
+  assert.equal(find("I18-issue-edit-state", "probe-issue-imports")?.behaviorId, "B-0214");
+  assert.equal(find("I19-comment-lifecycle", "delete-comment-compat")?.behaviorId, "B-0014");
+  assert.equal(find("I20-issue-engagement", "update-sharer")?.behaviorId, "B-0212");
+  assert.equal(find("U19-files-and-user-api", "get-user-sidebar")?.behaviorId, "B-0185");
+  assert.equal(find("U25-residual-site-user-probes", "probe-site-import-invalid")?.behaviorId, "B-0286");
+  assert.equal(find("U25-residual-site-user-probes", "probe-site-mail-invalid")?.behaviorId, "B-0287");
+  assert.equal(find("P23-wave-d-project-destructive", "cleanup-created-projects")?.behaviorId, undefined);
+  assert.equal(find("P15-project-data-surfaces", "fetch-unknown-path"), undefined);
 });
 
 test("DOM allow rules require reviewed fingerprints and preserve first-match strictness", () => {

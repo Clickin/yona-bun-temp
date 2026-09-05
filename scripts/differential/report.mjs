@@ -65,6 +65,22 @@ function pairStatuses(detail) {
   return { legacy, yoram };
 }
 
+function exactStatus(detail, side) {
+  const values =
+    side === "legacy"
+      ? [[detail?.expected, true], [detail?.actual, false]]
+      : [[detail?.actual, true], [detail?.expected, false]];
+  for (const [value, primary] of values) {
+    const paired = Number(value?.[`${side}Status`]);
+    if (Number.isFinite(paired) && paired > 0) return paired;
+    const direct = primary ? Number(value?.status) : NaN;
+    if (Number.isFinite(direct) && direct > 0) return direct;
+    const match = new RegExp(`${side} HTTP (\\d+)`, "u").exec(String(value ?? ""));
+    if (match) return Number(match[1]);
+  }
+  return null;
+}
+
 const PULL_REQUEST_MERGE_COMPANION_ENTRIES = new Set([
   // Empty attachment wrapper and icon-only/status wrappers are the finite
   // structural residue reviewed with the merge-state fixture. User-visible
@@ -147,6 +163,109 @@ export function classify(kind, detail) {
 
 const CLASSIFICATION_RULES = [
   {
+    test: ({ kind, route, detail, behaviorId }) =>
+      kind === "api" &&
+      behaviorId === "B-0185" &&
+      route === "/user/sidebar" &&
+      exactStatus(detail, "legacy") === 500 &&
+      exactStatus(detail, "yoram") === 200,
+    classification: "LEGACY_BUG_NOT_REPRODUCED",
+    reason:
+      "legacy Application.sidebar dereferences a missing sidebar hash entry and raises NoSuchElementException for the direct endpoint (yona-original/app/views/html/index/sidebar.scala.html); the malformed fixture is not supported behavior",
+  },
+  {
+    test: ({ kind, route, detail, behaviorId }) =>
+      kind === "api" &&
+      behaviorId === "B-0267" &&
+      /\/[^/]+\/[^/]+\/setting$/u.test(route) &&
+      exactStatus(detail, "legacy") === 500 &&
+      exactStatus(detail, "yoram") === 200,
+    classification: "LEGACY_BUG_NOT_REPRODUCED",
+    reason:
+      "legacy ProjectApp.settingProject raises an NPE when the headless multipart payload omits the project id; the malformed throwaway-setting probe is not supported behavior (yona-original/app/controllers/ProjectApp.java:427-448)",
+  },
+  {
+    test: ({ kind, route, detail, behaviorId }) =>
+      kind === "api" &&
+      behaviorId === "B-0002" &&
+      /^\/[^/]+\/[^/]+\/code\/__parity_missing_branch__\/$/u.test(route) &&
+      exactStatus(detail, "legacy") === 302 &&
+      exactStatus(detail, "yoram") === 404,
+    classification: "LEGACY_BUG_NOT_REPRODUCED",
+    reason:
+      "legacy BranchApp.deleteBranch redirects after blindly deleting a nonexistent branch, while Yoram reports the same no-op as 404; the malformed missing-branch probe is not supported behavior (yona-original/app/controllers/BranchApp.java:71-79; yona-original/app/playRepository/GitRepository.java:1230-1236)",
+  },
+  {
+    test: ({ kind, route, detail, behaviorId }) =>
+      kind === "api" &&
+      behaviorId === "B-0221" &&
+      route === "/user/editform/defultLoginPage" &&
+      detail?.expected === "2xx" &&
+      detail?.actual === "4xx",
+    classification: "LEGACY_BUG_NOT_REPRODUCED",
+    reason:
+      "legacy UserApp.setDefaultLoginPage accepts a missing query path and persists the malformed empty boundary payload, while Yoram rejects it; no valid default landing page is represented (yona-original/app/controllers/UserApp.java:1372-1380)",
+  },
+  {
+    test: ({ kind, route, detail, behaviorId }) =>
+      kind === "api" &&
+      behaviorId === "B-0286" &&
+      route === "/sites/import" &&
+      exactStatus(detail, "legacy") === 302 &&
+      exactStatus(detail, "yoram") === 400,
+    classification: "IMPLEMENTATION_DIFFERENCE",
+    rationale:
+      "boundary-status nuance: malformed multipart import is rejected on both sides and no state is persisted; the exact legacy redirect status is outside the supported compatibility contract",
+    reason:
+      "SiteApp.importData redirects a missing multipart data file to /sites/data while Yoram rejects it with 400; this unsupported malformed boundary writes no import state (yona-original/app/controllers/SiteApp.java:368-387)",
+  },
+  {
+    test: ({ kind, route, detail, behaviorId }) =>
+      kind === "api" &&
+      behaviorId === "B-0014" &&
+      /^\/comments\/issue\/\d+$/u.test(route) &&
+      exactStatus(detail, "legacy") === 500 &&
+      exactStatus(detail, "yoram") === 400,
+    classification: "LEGACY_BUG_NOT_REPRODUCED",
+    reason:
+      "legacy compat CommentApp.delete crashes on the malformed issue-comment request while Yoram rejects it cleanly; the degenerate delete payload is not supported behavior",
+  },
+  {
+    test: ({ kind, route, detail, behaviorId }) =>
+      kind === "api" &&
+      behaviorId === "B-0212" &&
+      /\/-_-api\/v1\/owners\/[^/]+\/projects\/[^/]+\/issues\/\d+\/share$/u.test(route) &&
+      exactStatus(detail, "legacy") === 500 &&
+      exactStatus(detail, "yoram") === 404,
+    classification: "LEGACY_BUG_NOT_REPRODUCED",
+    reason:
+      "legacy IssueApi share handler dereferences the malformed sharer payload and crashes, while Yoram rejects the missing target with 404; the add/remove probe is not supported behavior",
+  },
+  {
+    test: ({ kind, route, detail, behaviorId }) =>
+      kind === "api" &&
+      behaviorId === "B-0214" &&
+      /\/-_-api\/v1\/owners\/[^/]+\/projects\/[^/]+\/issues\/imports$/u.test(route) &&
+      exactStatus(detail, "legacy") === 400 &&
+      exactStatus(detail, "yoram") === 404,
+    classification: "IMPLEMENTATION_DIFFERENCE",
+    rationale:
+      "intentional removal: IssueApi.imports remains in the legacy external migrator namespace, outside Yoram's app-server compatibility contract (SPEC.md Legacy API 접두사; docs/provenance/legacy-external-api.md)",
+    reason:
+      "legacy external issue-import route is migrator scope; the malformed probe is not an app-server compatibility requirement",
+  },
+  {
+    test: ({ kind, route, detail, behaviorId }) =>
+      kind === "api" &&
+      behaviorId === "B-0287" &&
+      route === "/sites/mail" &&
+      exactStatus(detail, "legacy") === 500 &&
+      exactStatus(detail, "yoram") === 400,
+    classification: "LEGACY_BUG_NOT_REPRODUCED",
+    reason:
+      "legacy SiteApp.sendMail lets EmailException escape for the malformed empty form while Yoram rejects it cleanly; no mail is sent or persisted (yona-original/app/controllers/SiteApp.java:87-95)",
+  },
+  {
     test: ({ kind, route, detail }) =>
       kind === "api" && /\/member\/leave$/u.test(route) && /"legacy HTTP 403"/u.test(JSON.stringify(detail)),
     classification: "LEGACY_BUG_NOT_REPRODUCED",
@@ -165,13 +284,7 @@ const CLASSIFICATION_RULES = [
     reason:
       "comment projection diverges because a legacy-side comment step failed during the sweep (see the scenario error list); the projection compares only this run's rows, so a failed legacy write shows as yoram-only",
   },
-  {
-    test: ({ kind, route, detail }) =>
-      kind === "api" && /\/share(\?|$)/u.test(route) && /"legacyStatus":500/u.test(JSON.stringify(detail)),
-    classification: "LEGACY_BUG_NOT_REPRODUCED",
-    reason:
-      "legacy -_-api issue-share handler crashes with 500 on the sweep payload where yoram's sharer toggle succeeds/fails cleanly; degenerate legacy crash, not specified behavior",
-  },
+
   {
     test: ({ kind, route, detail }) =>
       kind === "api" && /assignableUsers/u.test(route) && /issue\.assignToMe|pureNameOnly/u.test(JSON.stringify(detail)),
@@ -255,23 +368,12 @@ const CLASSIFICATION_RULES = [
       "seed asymmetry: review/unreview routes are implemented at HEAD (crates/server/src/routes/pull_requests.rs:958,983) but the yoram parity seed provisions no pull requests, so the static seeded PR id 404s; align parity seeds or resolve a live PR in the scenario",
   },
   {
-    test: ({ kind, route, detail }) => kind === "api" && /\/setting$/u.test(route) && /"status":500/u.test(JSON.stringify(detail.expected ?? {})),
-    classification: "LEGACY_BUG_NOT_REPRODUCED",
-    reason: "legacy quirk: legacy setting-form handler NPEs on the headless payload while yoram persists it; throwaway-project scoped, no shared-state residue",
-  },
-  {
     test: ({ kind, route }) => kind === "api" && /^\/_init$/u.test(route.split("?")[0]),
     classification: "IMPLEMENTATION_DIFFERENCE",
     rationale: "presentation-only: legacy /_init uikit bootstrap redirect is meaningless to the React shell, which serves its own init payload",
     reason: "SPA shell: legacy /_init uikit bootstrap redirect is meaningless to the React shell, which serves its own init payload",
   },
-  {
-    test: ({ kind, route }) => kind === "api" && /^\/user\/editform\//u.test(route.split("?")[0]),
-    classification: "IMPLEMENTATION_DIFFERENCE",
-    rationale:
-      "surface-replaced: settings tabs implemented as workspace overview/actions (crates/server/src/routes/workspace.rs:1858-2103 hosts the editform/defultLoginPage compat surface); residual compat-tab alias coverage re-checked at Phase 4 rerun",
-    reason: "yoram implements the settings surface as workspace actions; legacy /user/editform/:tabId compat tab subset (defultLoginPage/profile) diverges in route shape",
-  },
+
   {
     test: ({ kind, route, detail }) => kind === "api" && /postlabel\//u.test(route) && /"status":500/u.test(JSON.stringify(detail.expected ?? {})),
     classification: "LEGACY_BUG_NOT_REPRODUCED",
@@ -302,12 +404,6 @@ const CLASSIFICATION_RULES = [
       "PATCH original-check pair diverged unexpectedly at HEAD (yoram answers 409 {message, storedContent} on a stale original since the optimistic-concurrency fix; focused coverage crates/server/tests/issue_core_contract.rs) — investigate the pair before treating it as product behavior",
   },
   {
-    test: ({ kind, route }) => kind === "api" && /\/code\/__parity_missing_branch__\//u.test(route),
-    classification: "IMPLEMENTATION_DIFFERENCE",
-    rationale: "error-semantics: no branch state is mutated on either side; yoram's explicit 404 is a stricter report of the same no-op",
-    reason: "missing-branch probe divergence: legacy treats delete of a nonexistent branch as a redirect while Yoram returns 404",
-  },
-  {
     test: ({ kind, route }) => kind === "api" && /^\/resetPassword\?s=/u.test(route),
     classification: "HARNESS_ERROR",
     reason:
@@ -318,32 +414,6 @@ const CLASSIFICATION_RULES = [
     classification: "HARNESS_ERROR",
     reason:
       "per-side reset tokens are single-use and the shared sweep session consumes/contaminates one side's token before its POST replays: config is already matched (email verification enabled both sides), yet statuses diverge; capture and replay each side's token in isolation",
-  },
-  {
-    test: ({ kind, route }) => kind === "api" && route === "/sites/import",
-    classification: "IMPLEMENTATION_DIFFERENCE",
-    rationale: "boundary-status nuance: invalid payloads are rejected on both sides and nothing is persisted; exact rejection code is outside the compatibility contract",
-    reason: "invalid site-import boundary divergence: empty/invalid import payloads are rejected with different legacy/Yoram statuses; no import state is written",
-  },
-  {
-    // Intentional exclusion per SPEC.md "Legacy API 접두사": broad
-    // /-_-api/v1/** external compatibility belongs to the separate
-    // migrator/export/import deliverable; only rows marked implemented in
-    // docs/provenance/legacy-external-api.md are app-owned routes.
-    test: ({ kind, route }) =>
-      kind === "api" &&
-      /-_-api\/v1\/owners\/[^/?]+\/(projects\/)?[^/?]+\/(exports(\/|$)|issues\/imports)/u.test(route.split("?")[0]),
-    classification: "IMPLEMENTATION_DIFFERENCE",
-    rationale:
-      "intentional removal: the /-_-api/v1 namespace is outside Yoram's compatibility contract (release contract class C); the function belongs to migrator/export-import scope (SPEC.md Legacy API 접두사 결정; docs/provenance/legacy-external-api.md)",
-    reason: "legacy external API row is migrator/export-import scope, deliberately not an app-server route",
-  },
-  {
-    test: ({ kind, route, detail }) =>
-      kind === "api" && /setAsDefault/u.test(route) && /"status":500|"legacyStatus":500/u.test(JSON.stringify(detail)),
-    classification: "LEGACY_BUG_NOT_REPRODUCED",
-    reason:
-      "legacy setAsDefault crashes with 500 headless where yoram persists the default branch; degenerate legacy crash, agreed intent verified by the resulting default ref (yona-original/app/controllers/BranchApp.java:81-89 declares throws IOException/GitAPIException and mutates the git config)",
   },
   {
     test: ({ kind, route, detail }) =>
@@ -361,13 +431,7 @@ const CLASSIFICATION_RULES = [
     reason:
       "both sides rejected the label mutation pair: the discovery-resolved id/payload contract is still imperfect; fix id resolution rather than comparing agreed failures",
   },
-  {
-    test: ({ kind, route, detail }) =>
-      kind === "api" && /comments\/issue\/u?/iu.test(route) && /"legacyStatus":500/u.test(JSON.stringify(detail)),
-    classification: "LEGACY_BUG_NOT_REPRODUCED",
-    reason:
-      "legacy compat comment-delete crashes with 500 where yoram cleanly rejects the same request; degenerate legacy crash",
-  },
+
   {
     test: ({ kind, route, detail }) =>
       kind === "api" &&
@@ -493,7 +557,7 @@ export function reclassifyScenarioViolations(scenario) {
       finding.kind,
       finding.route,
       { expected: finding.expected, actual: finding.actual },
-      { scenarioViolations },
+      { behaviorId: finding.behaviorId, scenarioViolations },
     );
     Object.assign(finding, classified);
   }
@@ -501,7 +565,7 @@ export function reclassifyScenarioViolations(scenario) {
 }
 
 export function violation({ route, behaviorId = null, kind, expected, actual, classification, reason, rationale }) {
-  const derived = classifyViolation(kind, route, { expected, actual });
+  const derived = classifyViolation(kind, route, { expected, actual }, { behaviorId });
   if (classification === "IMPLEMENTATION_DIFFERENCE" && !reason && !rationale && !derived.rationale) {
     throw new Error("IMPLEMENTATION_DIFFERENCE violation requires a rationale");
   }

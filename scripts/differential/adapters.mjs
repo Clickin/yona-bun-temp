@@ -91,7 +91,13 @@ export class LegacySession {
     if (nextCookies.length > 0) this.cookies = mergeCookieHeader(this.cookies, nextCookies);
     let text = "";
     if (!location && translation.readBody !== false) text = await response.text();
-    return { status: response.status, location, body: text };
+    let json = null;
+    try {
+      json = JSON.parse(text);
+    } catch {
+      // non-JSON response bodies are kept as text
+    }
+    return { status: response.status, location, json, body: text };
   }
 }
 

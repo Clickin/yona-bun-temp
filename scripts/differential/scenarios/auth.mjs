@@ -129,12 +129,10 @@ export const scenarios = [
         actor: "admin",
         action: "post-compat-default-login-page",
         params: {},
-        // Legacy setDefaultLoginPage persists any path string without
-        // validation (permissive 200) where yoram validates the payload and
-        // answers 400; legacy-side permissiveness is the defect (B-0221).
+        behaviorId: "B-0221",
         disposition: {
           classification: "LEGACY_BUG_NOT_REPRODUCED",
-          evidence: "yona-original/app/controllers/UserApp.java:1372-1382",
+          evidence: "yona-original/app/controllers/UserApp.java:1372-1380",
         },
       },
     ],
@@ -265,25 +263,22 @@ export const actionDefinitions = {
       const yoramLocation = normalizeLocation(yoramResult.location);
 
       if (legacyRedirect || yoramRedirect) {
-        if (!legacyLocation || !yoramLocation) {
-          entry.errors.push(
-            `view-restricted-page: skipped redirect/render comparison; Yoram GET ${path} returned ${yoramResult.status} without a deterministic Location`,
-          );
-          return;
-        }
-        if (legacyLocation !== yoramLocation) {
+        if (
+          legacyResult.status !== yoramResult.status ||
+          !legacyLocation ||
+          !yoramLocation ||
+          legacyLocation !== yoramLocation
+        ) {
           entry.violations.push(
             violation({
               route: path,
               behaviorId: entry.behaviorIds[0] ?? null,
               kind: "api",
-              expected: { redirect: legacyLocation },
-              actual: { redirect: yoramLocation },
+              expected: { status: legacyResult.status, location: legacyLocation || null },
+              actual: { status: yoramResult.status, location: yoramLocation || null },
             }),
           );
-          return;
         }
-        await renderDomTargetPath(ctx, legacyLocation);
         return;
       }
 
@@ -496,11 +491,11 @@ export const actionDefinitions = {
       return { method: "POST", path: `/api/v1/translation`, json: { owner: step.params.owner, projectName: step.params.project, type: "issue", number: 1 } };
     },
     async handler(ctx) {
-      const { helpers, entry } = ctx;
+      const { helpers } = ctx;
       const legacy = this.translateLegacy(ctx.step);
       const yoram = this.translateYoram(ctx.step);
       const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacy, yoram);
-      pushStatusDivergence(ctx, entry.behaviorIds[0] ?? legacy.path, legacyResult, yoramResult);
+      pushStatusDivergence(ctx, legacy.path, legacyResult, yoramResult);
     },
   },
   "post-compat-default-login-page": {
@@ -518,11 +513,11 @@ export const actionDefinitions = {
     translateLegacy: () => ({ method: "POST", path: "/-_-api/v1/users", json: {} }),
     translateYoram: () => ({ method: "POST", path: "/api/v1/users/bulk", json: {} }),
     async handler(ctx) {
-      const { entry, helpers } = ctx;
+      const { helpers } = ctx;
       const legacy = { method: "POST", path: "/-_-api/v1/users", json: {} };
       const yoram = { method: "POST", path: "/api/v1/users/bulk", json: {} };
       const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacy, yoram);
-      pushStatusDivergence(ctx, entry.behaviorIds[0] ?? legacy.path, legacyResult, yoramResult);
+      pushStatusDivergence(ctx, legacy.path, legacyResult, yoramResult);
     },
   },
   "post-compat-token-invalid": {
@@ -664,7 +659,7 @@ function pushStatusDivergence(ctx, route, legacyResult, yoramResult) {
   const expected = statusBucket(legacyResult.status);
   const actual = statusBucket(yoramResult.status);
   if (expected !== actual) {
-    ctx.entry.violations.push(violation({ route, behaviorId: ctx.entry.behaviorIds[0] ?? null, kind: "api", expected, actual }));
+    ctx.entry.violations.push(violation({ route, behaviorId: ctx.step.behaviorId ?? null, kind: "api", expected, actual }));
   }
 }
 

@@ -238,6 +238,7 @@ export const scenarios = [
         actor: "admin",
         action: "probe-issue-imports",
         params: { owner: "admin", project: "sample" },
+        behaviorId: "B-0214",
         // The /-_-api/v1 imports namespace is intentionally migrator-owned
         // (SPEC.md Legacy API 접두사; docs/provenance/legacy-external-api.md),
         // so the legacy-400/yoram-404 pair is the planned exclusion, not a
@@ -271,6 +272,7 @@ export const scenarios = [
         actor: "admin",
         action: "delete-comment-compat",
         params: { owner: "admin", project: "sample" },
+        behaviorId: "B-0014",
         // Legacy compat comment-delete crashes with 500 on the same request
         // yoram cleanly rejects; degenerate legacy crash (2026-09
         // reclassification, legacy-side defect family).
@@ -303,6 +305,7 @@ export const scenarios = [
         actor: "admin",
         action: "update-sharer",
         params: { owner: "admin", project: "sample" },
+        behaviorId: "B-0212",
         // Legacy -_-api issue-share handler crashes with 500 on the sweep
         // payload where yoram's sharer toggle succeeds/fails cleanly.
         disposition: {
@@ -390,6 +393,21 @@ function getAction(pathFor, { dom = false, spa = true } = {}) {
         yoram: `${yoramBaseUrl}${target}`,
         spa,
       });
+    },
+  };
+}
+
+function getJsonAction(pathFor) {
+  return {
+    translateLegacy(step) {
+      return { method: "GET", path: pathFor(step) };
+    },
+    translateYoram(step) {
+      return { method: "GET", path: pathFor(step) };
+    },
+    async handler(ctx) {
+      const { step, resolved, helpers } = ctx;
+      await helpers.requestJsonBoth(ctx, translateLegacy(step, resolved), translateYoram(step, resolved));
     },
   };
 }
@@ -531,7 +549,7 @@ async function mutationPair(ctx, legacyBuild, yoramBuild, extraVars = {}) {
   const legacyTranslation = legacyBuild(ctx.step, sideVars("Legacy"));
   const yoramTranslation = yoramBuild(ctx.step, sideVars("Yoram"));
   const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
-  const behaviorId = entry.behaviorIds[0] ?? null;
+  const behaviorId = ctx.step.behaviorId ?? null;
   // Agreed failures are parity (same rule as pairLenient); only success/failure
   // disagreement or differing failure statuses are violations.
   const agreedFailure =
@@ -676,7 +694,7 @@ function exportReadAction(name, pathFor) {
         const actual = normalizeApiValue(yoramResult.json);
         if (JSON.stringify(expected) !== JSON.stringify(actual)) {
           entry.violations.push(
-            violation({ route: translateLegacy(step).path, behaviorId: entry.behaviorIds[0] ?? null, kind: "api", expected, actual }),
+            violation({ route: translateLegacy(step).path, behaviorId: step.behaviorId ?? null, kind: "api", expected, actual }),
           );
         }
       },
@@ -737,7 +755,7 @@ export const actionDefinitions = {
         entry.violations.push(
           violation({
             route,
-            behaviorId: entry.behaviorIds[0] ?? null,
+            behaviorId: step.behaviorId ?? null,
             kind: "api",
             expected: semantic.legacy,
             actual: semantic.yoram,
@@ -823,7 +841,7 @@ export const actionDefinitions = {
         } catch (error) {
           entry.errors.push(`browser ${side} (${step.action}) [${suffix}]: ${error.message}`);
           entry.violations.push(
-            violation({ route: url, behaviorId: entry.behaviorIds[0] ?? null, kind: "infra", expected: "hover observable", actual: error.message }),
+            violation({ route: url, behaviorId: step.behaviorId ?? null, kind: "infra", expected: "hover observable", actual: error.message }),
           );
           skeletons[side] = null;
         }
@@ -834,7 +852,7 @@ export const actionDefinitions = {
         entry.violations.push(
           violation({
             route,
-            behaviorId: entry.behaviorIds[0] ?? null,
+            behaviorId: step.behaviorId ?? null,
             kind: "browser",
             expected: { visiblePopovers: skeletons.legacy.length },
             actual: { visiblePopovers: skeletons.yoram.length },
@@ -845,7 +863,7 @@ export const actionDefinitions = {
       const diffs = diffSkeletons(skeletons.legacy, skeletons.yoram);
       if (diffs.length > 0) {
         entry.violations.push(
-          violation({ route, behaviorId: entry.behaviorIds[0] ?? null, kind: "browser", expected: skeletons.legacy, actual: skeletons.yoram }),
+          violation({ route, behaviorId: step.behaviorId ?? null, kind: "browser", expected: skeletons.legacy, actual: skeletons.yoram }),
         );
       }
     },
@@ -865,7 +883,7 @@ export const actionDefinitions = {
 
   "list-issues": getAction(listIssuesPath),
 
-  "issue-labels": getAction((step) => ownerPath(step, "/issue/labels")),
+  "issue-labels": getJsonAction((step) => ownerPath(step, "/issue/labels")),
 
   "issue-label-styles": getAction((step) => ownerPath(step, "/issue/labels.css"), { dom: false }),
 
@@ -886,11 +904,15 @@ export const actionDefinitions = {
       const yoramTranslation = translateYoram(step, resolved);
       // Each side's category id space is its own; probing the LEGACY id on
       // yoram (or vice versa) measures a phantom row, not the category read.
-      const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
-      const legacyCategoryId = firstCategoryId(JSON.parse(legacyResult.body || "null"));
+      const { legacyResult, yoramResult } = await helpers.requestJsonBoth(
+        ctx,
+        legacyTranslation,
+        yoramTranslation,
+      );
+      const legacyCategoryId = firstCategoryId(legacyResult.json);
       const yoramCategoryId = firstCategoryId(yoramResult.json);
       if (!legacyCategoryId && !yoramCategoryId) return;
-      await helpers.requestBoth(
+      await helpers.requestJsonBoth(
         ctx,
         { method: "GET", path: ownerPath(step, `/issue/label/category/${legacyCategoryId ?? yoramCategoryId}`) },
         { method: "GET", path: ownerPath(step, `/issue/label/category/${yoramCategoryId ?? legacyCategoryId}`) },
@@ -932,7 +954,7 @@ export const actionDefinitions = {
       const actual = normalizeApiValue(yoramResult.json);
       if (stable(expected) !== stable(actual)) {
         entry.violations.push(
-          violation({ route: step.params.api, behaviorId: entry.behaviorIds[0] ?? null, kind: "api", expected, actual }),
+          violation({ route: step.params.api, behaviorId: step.behaviorId ?? null, kind: "api", expected, actual }),
         );
       }
     },
@@ -1011,7 +1033,7 @@ export const actionDefinitions = {
           if (attempt >= 2) {
             entry.errors.push(`browser ${side} (${step.action}) [${suffix}]: ${error.message}`);
             entry.violations.push(
-              violation({ route: url, behaviorId: entry.behaviorIds[0] ?? null, kind: "infra", expected: "comment-edit trigger observable", actual: error.message }),
+              violation({ route: url, behaviorId: step.behaviorId ?? null, kind: "infra", expected: "comment-edit trigger observable", actual: error.message }),
             );
             revealed[side] = null;
           }
@@ -1025,7 +1047,7 @@ export const actionDefinitions = {
         entry.violations.push(
           violation({
             route,
-            behaviorId: entry.behaviorIds[0] ?? null,
+            behaviorId: step.behaviorId ?? null,
             kind: "browser",
             expected: { revealedForms: revealed.legacy.length },
             actual: { revealedForms: revealed.yoram.length },
@@ -1036,7 +1058,7 @@ export const actionDefinitions = {
       const diffs = diffSkeletons(revealed.legacy, revealed.yoram);
       if (diffs.length > 0) {
         entry.violations.push(
-          violation({ route, behaviorId: entry.behaviorIds[0] ?? null, kind: "browser", expected: revealed.legacy, actual: revealed.yoram }),
+          violation({ route, behaviorId: step.behaviorId ?? null, kind: "browser", expected: revealed.legacy, actual: skeletons.yoram }),
         );
       }
     },
@@ -1329,21 +1351,13 @@ export const actionDefinitions = {
         this.translateLegacy(step),
         this.translateYoram(step),
       );
-      let legacyJson = null;
-      try {
-        legacyJson = JSON.parse(legacyResult.body || "null");
-      } catch {
-        // non-JSON labels body: discovery falls through to the error below
-      }
+      const legacyJson = legacyResult.json;
       const cats = await helpers.requestBoth(
         ctx,
         { method: "GET", path: ownerPath(ctx.step, "/issue/label/categories") },
         { method: "GET", path: ownerPath(ctx.step, "/issue/label/categories") },
       );
-      let legacyCats = null;
-      try {
-        legacyCats = JSON.parse(cats.legacyResult.body || "null");
-      } catch {}
+      const legacyCats = cats.legacyResult.json;
       state.categoryIdLegacy = findIdByName(legacyCats, `parity-cat-${suffix}`);
       state.categoryIdYoram = findIdByName(cats.yoramResult.json, `parity-cat-${suffix}`);
       state.labelIdLegacy = findIdByName(legacyJson, `parity-label-${suffix}`);
@@ -1413,7 +1427,7 @@ export const actionDefinitions = {
         entry.violations.push(
           violation({
             route: `/${step.params.owner}/${step.params.project}/issue/label/categories`,
-            behaviorId: entry.behaviorIds[0] ?? null,
+            behaviorId: step.behaviorId ?? null,
             kind: "api",
             expected: { status: legacyResult.status },
             actual: { yoramStatus: yoramResult.status },
@@ -1457,7 +1471,7 @@ export const actionDefinitions = {
         entry.violations.push(
           violation({
             route: `/markdown/${step.params.owner}/${step.params.project}`,
-            behaviorId: entry.behaviorIds[0] ?? null,
+            behaviorId: step.behaviorId ?? null,
             kind: "api",
             expected: { status: 404 },
             actual: { yoramStatus: yoramResult.status },

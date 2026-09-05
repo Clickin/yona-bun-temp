@@ -269,7 +269,7 @@ test("mutation translators produce expected method/path/body shapes", () => {
   );
   assert.equal(
     def("set-default-branch").translateLegacy(step("set-default-branch", { ...base, branch: "feature/ui" }), {}).path,
-    "/admin/sample/code/feature%2Fui/setAsDefault",
+    "/admin/sample/code/refs%2Fheads%2Ffeature%2Fui/setAsDefault",
   );
   const defaultBranchYoram = def("set-default-branch").translateYoram(step("set-default-branch", { ...base, branch: "feature/ui" }), {});
   assert.equal(defaultBranchYoram.path, "/api/v1/projects/admin/sample/branches/default");

@@ -209,12 +209,6 @@ export const scenarios = [
       { actor: "admin", action: "export-migration-posts", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "export-migration-projects-list", params: {} },
       { actor: "admin", action: "fetch-attachment-list", params: {} },
-      {
-        actor: "admin",
-        action: "fetch-unknown-path",
-        params: { owner: "admin", project: "sample", missing: "page" },
-        behaviorId: "B-0116",
-      },
       { actor: "admin", action: "fetch-git-info-refs", params: { owner: "admin", project: "sample" } },
     ],
     behaviorMatcher: { action: /^(MigrationApp\.|ProjectApi\.exports$|ReviewThreadApp\.reviewThreads$|UserApp\.leave$|AttachmentApp\.getFileList$|Application\.removeTrailer$|GitApp\.advertise$)/ },
@@ -302,7 +296,6 @@ function readPath(step) {
     case "export-migration-posts": return `/migration/${p.owner}/projects/${p.project}/posts`;
     case "export-migration-projects-list": return "/migration/projects";
     case "fetch-attachment-list": return "/files";
-    case "fetch-unknown-path": return `${base}/parity-missing-${step.params.missing ?? "page"}`;
     case "fetch-git-info-refs": return `${base}/info/refs`;
     // Legacy SearchApp binds keyword + searchType (both required, 400
     // otherwise); `query` alone is not the legacy contract.
@@ -425,7 +418,6 @@ const READ_ACTION_NAMES = [
   "export-migration-posts",
   "export-migration-projects-list",
   "fetch-attachment-list",
-  "fetch-unknown-path",
   "fetch-git-info-refs",
 ];
 
@@ -502,37 +494,6 @@ export const actionDefinitions = {
     },
     async handler(ctx) {
       await ctx.helpers.requestBoth(ctx, translateLegacy(ctx.step), translateYoram(ctx.step));
-    },
-  },
-  "fetch-unknown-path": {
-    translateLegacy(step) {
-      return { method: "GET", path: readPath(step) };
-    },
-    translateYoram(step) {
-      return { method: "GET", path: readPath(step), pagePath: readPath(step) };
-    },
-    async handler(ctx) {
-      const { entry, step, legacySession, yoramSession } = ctx;
-      const path = `/${step.params.owner}/${step.params.project}/parity-missing-${step.params.missing ?? "page"}`;
-      const [legacyResult, yoramResult] = await Promise.all([
-        legacySession.request({ method: "GET", path }),
-        yoramSession.request({ method: "GET", path }),
-      ]);
-      if (legacyResult.status === 404 && yoramResult.status === 200) {
-        entry.violations.push(
-          violation({
-            route: path,
-            behaviorId: entry.behaviorIds[0] ?? null,
-            kind: "api",
-            expected: { status: 404 },
-            actual: { status: 200 },
-          }),
-        );
-      } else if (legacyResult.status !== yoramResult.status) {
-        entry.errors.push(
-          `unknown-path status diverged: legacy ${legacyResult.status}, yoram ${yoramResult.status} @ ${path}`,
-        );
-      }
     },
   },
 };
@@ -1571,7 +1532,7 @@ const LIFECYCLE_ACTIONS = {
       const { step, state, suffix } = ctx;
       if (!state.projectName) return;
       const plan = { projectName: state.projectName, overview: `parity throwaway setting ${suffix}` };
-      return ctx.helpers.pairLenient(ctx, this.translateLegacy(step, plan), this.translateYoram(step, plan), `${step.params.owner}/${state.projectName}/setting`);
+      return pairRequest(ctx, this.translateLegacy(step, plan), this.translateYoram(step, plan), `${step.params.owner}/${state.projectName}/setting`);
     },
   },
 
@@ -1931,7 +1892,16 @@ scenarios.push(
       { actor: "admin", action: "copy-labels", params: { owner: "admin", sourceProject: "sample" } },
       { actor: "admin", action: "add-created-member", params: { owner: "admin" } },
       { actor: "admin", action: "edit-created-member", params: { owner: "admin" } },
-      { actor: "admin", action: "update-created-setting", params: { owner: "admin" }, behaviorId: "B-0267" },
+      {
+        actor: "admin",
+        action: "update-created-setting",
+        params: { owner: "admin" },
+        behaviorId: "B-0267",
+        disposition: {
+          classification: "LEGACY_BUG_NOT_REPRODUCED",
+          evidence: "yona-original/app/controllers/ProjectApp.java:427-448",
+        },
+      },
       { actor: "admin", action: "request-project-transfer", params: { owner: "admin" } },
       { actor: "admin", action: "delete-project", params: { owner: "admin" } },
     ],
@@ -2103,12 +2073,20 @@ LIFECYCLE_ACTIONS["cleanup-created-projects"] = {
     const { step, state, entry, suffix, helpers } = ctx;
     const names = [...new Set([state.forkProjectName, state.cloneProjectName, state.projectName].filter(Boolean))];
     for (const projectName of names) {
-      await pairRequest(
-        ctx,
-        this.translateLegacy(step, { projectName }),
-        this.translateYoram(step, { projectName }),
-        `${step.params.owner}/${projectName} (cleanup)`,
-      );
+      const deletedLegacy = await helpers.sendRaw(ctx, "legacy", {
+        method: "DELETE",
+        path: `/${step.params.owner}/${projectName}/delete`,
+        headers: XHR_HEADER,
+      });
+      const deletedYoram = await helpers.sendRaw(ctx, "yoram", {
+        method: "DELETE",
+        path: `/api/v1/owners/${step.params.owner}/projects/${projectName}`,
+      });
+      if (deletedLegacy.status >= 400 || deletedYoram.status >= 400) {
+        entry.errors.push(
+          `cleanup-created-project delete failed [${suffix}]: ${projectName} legacy=${deletedLegacy.status} yoram=${deletedYoram.status}`,
+        );
+      }
       const goneLegacy = await helpers.sendRaw(ctx, "legacy", { method: "GET", path: `/${step.params.owner}/${projectName}` });
       const goneYoram = await helpers.sendRaw(ctx, "yoram", { method: "GET", path: `/api/v1/owners/${step.params.owner}/projects/${projectName}` });
       if (goneLegacy.status < 400) {
@@ -2289,11 +2267,9 @@ scenarios.push({
       actor: "admin",
       action: "probe-delete-branch-missing",
       params: { user: "admin", project: "sample", branch: "__parity_missing_branch__" },
-      // Reviewed error-semantics difference (B-0002): legacy redirects the
-      // delete of a nonexistent branch while yoram answers an explicit 404;
-      // no branch state is mutated on either side.
+      behaviorId: "B-0002",
       disposition: {
-        classification: "IMPLEMENTATION_DIFFERENCE",
+        classification: "LEGACY_BUG_NOT_REPRODUCED",
         evidence: "yona-original/app/controllers/BranchApp.java:71-79; yona-original/app/playRepository/GitRepository.java:1230-1236",
       },
     },

@@ -245,7 +245,7 @@ export const scenarios = [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
       { actor: "admin", action: "view-files-list", params: {} },
       { actor: "admin", action: "get-users-directory", params: {} },
-      { actor: "admin", action: "get-user-sidebar", params: {} },
+      { actor: "admin", action: "get-user-sidebar", params: {}, behaviorId: "B-0185" },
       { actor: "admin", action: "check-email-exists", params: { email: "nobody@parity.example.com" } },
     ],
     behaviorMatcher: {
@@ -413,6 +413,31 @@ async function readApiHandler(ctx) {
   await helpers.requestBoth(ctx, translateLegacy(step, resolved), translateYoram(step, resolved));
 }
 
+function normalizeNoAvatarUsers(value) {
+  if (!value || typeof value !== "object" || !Array.isArray(value.users)) return normalizeApiValue(value);
+  const users = [...value.users].sort((left, right) =>
+    String(left.loginId ?? left.login_id ?? left.id ?? "").localeCompare(
+      String(right.loginId ?? right.login_id ?? right.id ?? ""),
+    ),
+  );
+  return normalizeApiValue({ ...value, users });
+}
+
+async function readSiteScreenHandler(ctx) {
+  const { step, resolved, helpers } = ctx;
+  if (step.params.screen === "noAvatarUsers") {
+    await helpers.requestJsonBoth(
+      ctx,
+      translateLegacy(step, resolved),
+      translateYoram(step, resolved),
+      "/sites/noAvatarUsers",
+      normalizeNoAvatarUsers,
+    );
+    return;
+  }
+  await readPageHandler(ctx);
+}
+
 // Page path each DOM-compared action renders; identical on both sides because
 // Yoram serves these screens via the SPA shell at the legacy direct routes.
 const pageTargets = {
@@ -461,7 +486,7 @@ const pageTargets = {
 
 function pushApiViolation(ctx, route, expected, actual) {
   ctx.entry.violations.push(
-    violation({ route, behaviorId: ctx.entry.behaviorIds[0] ?? null, kind: "api", expected, actual }),
+    violation({ route, behaviorId: ctx.step.behaviorId ?? null, kind: "api", expected, actual }),
   );
 }
 
@@ -876,7 +901,7 @@ export const actionDefinitions = {
     translateYoram(step) {
       return { method: "GET", path: `/sites/${step.params.screen}` };
     },
-    handler: readPageHandler,
+    handler: readSiteScreenHandler,
   },
 
   "view-files-list": {
@@ -902,7 +927,7 @@ export const actionDefinitions = {
 
   "get-user-sidebar": {
     async handler(ctx) {
-      const { entry, helpers, legacySession, yoramSession } = ctx;
+      const { entry, step, helpers, legacySession, yoramSession } = ctx;
       for (const path of ["/user/sidebar", "/user/usermenuTabContentList"]) {
         if (path === "/user/sidebar") {
           const [legacyResult, yoramResult] = await Promise.all([
@@ -913,12 +938,10 @@ export const actionDefinitions = {
             entry.violations.push(
               violation({
                 route: path,
-                behaviorId: entry.behaviorIds[0] ?? null,
+                behaviorId: step.behaviorId ?? null,
                 kind: "api",
                 expected: { status: legacyResult.status },
                 actual: { status: yoramResult.status },
-                classification: "LEGACY_BUG_NOT_REPRODUCED",
-                reason: "Legacy Application.sidebar raises NoSuchElementException in views.html.index.sidebar for the parity fixture.",
               }),
             );
           } else if (legacyResult.status !== yoramResult.status) {
@@ -2167,18 +2190,17 @@ scenarios.push({
       actor: "admin",
       action: "probe-site-import-invalid",
       params: {},
-      // Legacy redirects a missing-file import to /sites/data
-      // (SiteApp.java:376-378) where yoram rejects the invalid payload with
-      // 400; reviewed boundary nuance (B-0159), no import state is written.
+      behaviorId: "B-0286",
       disposition: {
         classification: "IMPLEMENTATION_DIFFERENCE",
-        evidence: "yona-original/app/controllers/SiteApp.java:368-383; 2026-09 reclassification B-0159",
+        evidence: "yona-original/app/controllers/SiteApp.java:368-387; malformed multipart boundary persists no import state",
       },
     },
     {
       actor: "admin",
       action: "probe-site-mail-invalid",
       params: {},
+      behaviorId: "B-0287",
       // Legacy SiteApp.sendMail lets the EmailException escape on an invalid
       // from address (500) where yoram answers a clean 400; degenerate legacy
       // crash on a degenerate payload.

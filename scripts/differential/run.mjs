@@ -20,6 +20,7 @@ import {
   diffProjections,
   diffSkeletons,
   filterRowsByTag,
+  normalizeApiValue,
   projectCommentRows,
   projectIssueRows,
   ISSUE_STATE_ENCODINGS,
@@ -688,22 +689,33 @@ async function launchBrowserHandle() {
   return { browser, close: () => browser.close() };
 }
 
-async function renderSkeleton(page, url, { spa = false, selector } = {}) {
+// React route shells expose these markers while their registered query group
+// is still fetching. Waiting on the marker (after network idle) is stronger
+// than accepting two equal samples: a wireframe is allowed to stay unchanged
+// for an arbitrary number of renders and must never be a settled observation.
+export const ROUTE_CONTENT_READY = (selector) => {
+  const root = selector ? document.querySelector(selector) : document.body;
+  if (!root) return false;
+  const boundary = selector
+    ? root.closest("[data-content-ready], [aria-busy], [data-wireframe]") ?? root
+    : root;
+  const pending = [
+    boundary,
+    ...boundary.querySelectorAll("[data-content-ready], [aria-busy], [data-wireframe]"),
+  ];
+  return !pending.some(
+    (element) =>
+      element.getAttribute("data-content-ready") === "false" ||
+      element.getAttribute("aria-busy") === "true" ||
+      element.hasAttribute("data-wireframe"),
+  );
+};
+
+export async function renderSkeleton(page, url, { spa = false, selector } = {}) {
   await page.goto(url, { waitUntil: "load", timeout: 30_000 });
   if (spa) {
     await page.waitForNetworkIdle({ idleTime: 500, timeout: 15_000 }).catch(() => {});
-    // SPA data renders after hydration; under sweep load a fixed wait can
-    // capture mid-render DOM and produce phantom content diffs. Extract only
-    // once two consecutive samples agree (relative-time strings may keep
-    // ticking, so cap the wait).
-    let previous = null;
-    for (let waited = 0; waited < 8_000; waited += 400) {
-      await new Promise((resolve) => setTimeout(resolve, 400));
-      const current = JSON.stringify(await page.evaluate(SKELETON_EXTRACT, selector));
-      if (previous !== null && current === previous) return JSON.parse(current);
-      previous = current;
-    }
-    return JSON.parse(previous ?? "[]");
+    await page.waitForFunction(ROUTE_CONTENT_READY, selector, { timeout: 15_000 });
   }
   return page.evaluate(SKELETON_EXTRACT, selector);
 }
@@ -718,10 +730,33 @@ async function setCookiesFromHeader(page, baseUrl, header) {
 
 // --- sweep fixture alignment -------------------------------------------------
 
-const PARITY_LABEL_SEEDS = [
+export const PARITY_LABEL_SEEDS = Object.freeze([
   { labelName: "bug", categoryName: "type", color: "#f44336" },
   { labelName: "parity", categoryName: "area", color: "#2196f3" },
-];
+]);
+
+export async function alignParityLabelSeeds(session, base, labels) {
+  for (const seed of PARITY_LABEL_SEEDS) {
+    const row = labels.find((label) => label.name === seed.labelName);
+    const matches =
+      row &&
+      (row.category ?? "").toLowerCase() === seed.categoryName.toLowerCase() &&
+      (row.color ?? "").toLowerCase() === seed.color.toLowerCase();
+    if (matches) continue;
+    if (row) {
+      await session.request({
+        method: "POST",
+        path: `${base}/admin/sample/issue/label/${row.id}/delete`,
+        form: { _method: "delete" },
+      });
+    }
+    await session.request({
+      method: "POST",
+      path: `${base}/admin/sample/issue/labels`,
+      form: { labelName: seed.labelName, categoryName: seed.categoryName, labelColor: seed.color },
+    });
+  }
+}
 
 function gitRepoHasBranches(repoPath) {
   const result = spawnSync("git", ["--git-dir", repoPath, "for-each-ref", "refs/heads"], { encoding: "utf8" });
@@ -801,9 +836,9 @@ async function alignParityFixtures(options) {
   for (const repo of repos) {
     if (existsSync(repo)) ensureDiffableRepoBranches(repo);
   }
-  // Mirror yoram's dev-parity label seed into the legacy instance so the
-  // unfiltered label projection compares like-for-like, and clear residue
-  // labels/categories left behind by earlier sweeps' failed cleanups.
+  // Align only fixture-owned labels/categories on both sides, and clear
+  // residue left behind by earlier sweeps' failed cleanups. Runtime-created
+  // label CRUD rows remain untouched.
   const legacySession = new LegacySession(options.legacyUrl ?? process.env.YONA_LEGACY_URL ?? "http://127.0.0.1:9000");
   await legacySession.login({ loginId: "admin", password: "admin" });
   const yoramSession = new YoramSession(options.yoramUrl ?? "http://127.0.0.1:3101");
@@ -842,37 +877,17 @@ async function alignParityFixtures(options) {
       }
     }
   }
-  // Align on the FULL (name, category, color) tuple from the labels listing:
-  // a name-only match left a yoram-only row when legacy's tuple differed.
+  // The legacy parity fixture is the canonical source for these two stable
+  // rows. Apply the same tuple to Yoram too; the old one-way mirror left a
+  // legacy-only row when Yoram started empty.
   const labels = JSON.parse(
     (await legacySession.request({ method: "GET", path: "/admin/sample/issue/labels" })).body || "[]",
   );
-  for (const seed of PARITY_LABEL_SEEDS) {
-    const row = labels.find((label) => label.name === seed.labelName);
-    if (!row) {
-      await legacySession.request({
-        method: "POST",
-        path: "/admin/sample/issue/labels",
-        form: { labelName: seed.labelName, categoryName: seed.categoryName, labelColor: seed.color },
-      });
-    } else {
-      const category = (row.category ?? "").toLowerCase();
-      const color = (row.color ?? "").toLowerCase();
-      if (category !== seed.categoryName.toLowerCase() || color !== seed.color.toLowerCase()) {
-        // Replace the mismatched row so the projected tuple matches exactly.
-        await legacySession.request({
-          method: "POST",
-          path: `/admin/sample/issue/label/${row.id}/delete`,
-          form: { _method: "delete" },
-        });
-        await legacySession.request({
-          method: "POST",
-          path: "/admin/sample/issue/labels",
-          form: { labelName: seed.labelName, categoryName: seed.categoryName, labelColor: seed.color },
-        });
-      }
-    }
-  }
+  await alignParityLabelSeeds(legacySession, "", labels);
+  const yoramLabels = JSON.parse(
+    (await yoramSession.request({ method: "GET", path: "/admin/sample/issue/labels" })).body || "[]",
+  );
+  await alignParityLabelSeeds(yoramSession, "", yoramLabels);
 
   // Provision the legacy parity comparison users (alice/bob/carol) on yoram
   // via REST signup so both sides' active-user sets match for the sweep
@@ -1748,6 +1763,39 @@ export const stepHelpers = {
       entry.errors.push(`yoram ${step.action} failed: HTTP ${yoramResult.status} @ ${yoramTranslation.path}`);
     }
     return { legacyResult, yoramResult };
+  },
+
+  // JSON route pair: compare parsed payloads after the shared API
+  // normalization, never their raw <pre> text or a DOM shell.
+  async requestJsonBoth(
+    ctx,
+    legacyTranslation,
+    yoramTranslation,
+    route = legacyTranslation.path,
+    normalize = normalizeApiValue,
+  ) {
+    const pair = await this.requestBoth(ctx, legacyTranslation, yoramTranslation);
+    if (pair.legacyResult.status >= 400 || pair.yoramResult.status >= 400) return pair;
+    const parse = (result) => {
+      if (result.json !== null && result.json !== undefined) return result.json;
+      try {
+        return JSON.parse(result.body ?? "");
+      } catch {
+        return null;
+      }
+    };
+    const legacyJson = parse(pair.legacyResult);
+    const yoramJson = parse(pair.yoramResult);
+    if (legacyJson === null || yoramJson === null) {
+      pushHelperViolation(ctx, route, { json: "<parseable>" }, { json: "<unparseable>" });
+      return pair;
+    }
+    const expected = normalize(legacyJson);
+    const actual = normalize(yoramJson);
+    if (JSON.stringify(expected) !== JSON.stringify(actual)) {
+      pushHelperViolation(ctx, route, expected, actual);
+    }
+    return pair;
   },
 
   // Canonical raw request used by mutation pairing. side: "legacy" | "yoram".

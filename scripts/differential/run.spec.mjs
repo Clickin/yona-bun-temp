@@ -1,6 +1,8 @@
 import { strict as assert } from "node:assert";
 import test from "node:test";
 import {
+  alignParityLabelSeeds,
+  PARITY_LABEL_SEEDS,
   executeStep,
   buildLegacySequenceReconciliationSql,
   LEGACY_MODEL_SEQUENCE_TABLES,
@@ -12,6 +14,9 @@ import {
   PARITY_REVIEW,
   registrationStatusIsUsable,
   runtimeVerifiedBehaviorIds,
+  renderSkeleton,
+  ROUTE_CONTENT_READY,
+  stepHelpers,
   SKELETON_EXTRACT,
 } from "./run.mjs";
 import { HarnessError, summarizeExecution } from "./report.mjs";
@@ -63,6 +68,38 @@ test("SKELETON_EXTRACT stays in sync with the sanctioned side-effect anchor mark
   assert.match(source, /javascript:/u);
 });
 
+test("SPA skeleton rendering waits for explicit route readiness, not equal wireframes", () => {
+  const renderSource = renderSkeleton.toString();
+  const readinessSource = ROUTE_CONTENT_READY.toString();
+  assert.match(renderSource, /waitForNetworkIdle/u);
+  assert.match(renderSource, /waitForFunction/u);
+  assert.doesNotMatch(renderSource, /setTimeout|previous|current ===/u);
+  assert.match(readinessSource, /data-content-ready/u);
+  assert.match(readinessSource, /aria-busy/u);
+  assert.match(readinessSource, /data-wireframe/u);
+});
+
+test("JSON route helper compares parsed normalized payloads without a DOM render", async () => {
+  const entry = { behaviorIds: [], violations: [], errors: [] };
+  const ctx = {
+    step: { action: "json-probe" },
+    entry,
+    legacySession: {
+      async request() {
+        return { status: 200, body: '{"b":2,"a":"x"}', json: null };
+      },
+    },
+    yoramSession: {
+      async request() {
+        return { status: 200, body: "", json: { a: "x", b: 2 } };
+      },
+    },
+  };
+  await stepHelpers.requestJsonBoth(ctx, { method: "GET", path: "/json" }, { method: "GET", path: "/json" });
+  assert.deepEqual(entry.violations, []);
+  assert.deepEqual(entry.errors, []);
+});
+
 test("fresh parity account bootstrap reuses an existing account on duplicate registration", () => {
   assert.equal(registrationStatusIsUsable(200), true);
   assert.equal(registrationStatusIsUsable(409), true);
@@ -74,6 +111,23 @@ test("legacy preboot cleanup removes memberships whose project row was deleted",
   assert.match(LEGACY_ORPHAN_PROJECT_MEMBERSHIP_CLEANUP_SQL, /^DELETE FROM PROJECT_USER /u);
   assert.match(LEGACY_ORPHAN_PROJECT_MEMBERSHIP_CLEANUP_SQL, /NOT EXISTS/u);
   assert.match(LEGACY_ORPHAN_PROJECT_MEMBERSHIP_CLEANUP_SQL, /PROJECT\.ID = PROJECT_USER\.PROJECT_ID/u);
+});
+
+test("parity label alignment seeds canonical legacy tuples into an empty Yoram fixture", async () => {
+  const requests = [];
+  await alignParityLabelSeeds(
+    { request: async (request) => requests.push(request) },
+    "",
+    [{ name: "parity-label-sweep-live", category: "runtime", color: "#000000", id: 99 }],
+  );
+  assert.deepEqual(
+    requests.map(({ method, path, form }) => ({ method, path, form })),
+    PARITY_LABEL_SEEDS.map((seed) => ({
+      method: "POST",
+      path: "/admin/sample/issue/labels",
+      form: { labelName: seed.labelName, categoryName: seed.categoryName, labelColor: seed.color },
+    })),
+  );
 });
 
 test("legacy H2 preboot keeps PostgreSQL mode and reconciles every exported model sequence", () => {

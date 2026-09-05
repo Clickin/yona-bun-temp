@@ -114,3 +114,28 @@ test("buildCoverage emits per-scenario non-empty behaviorIds", () => {
     assert.ok(entry.behaviorIds.length > 0, `${entry.scenarioId}: empty coverage entry`);
   }
 });
+
+test("restricted guard compares matching redirect status/location without rendering landing page", async () => {
+  const originalFetch = globalThis.fetch;
+  let rendered = false;
+  globalThis.fetch = async () => new Response(null, { status: 302, headers: { location: "/" } });
+  try {
+    const ctx = {
+      step: { actor: "anonymous", action: "view-restricted-page", params: {} },
+      entry: { behaviorIds: ["B-restricted"], violations: [], errors: [] },
+      options: { legacyUrl: "http://legacy.test" },
+      yoramBaseUrl: "http://yoram.test",
+      helpers: {
+        renderDomTarget() {
+          rendered = true;
+        },
+      },
+    };
+    await ACTION_DEFINITIONS["view-restricted-page"].handler(ctx);
+    assert.equal(rendered, false);
+    assert.deepEqual(ctx.entry.violations, []);
+    assert.deepEqual(ctx.entry.errors, []);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
