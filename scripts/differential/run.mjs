@@ -1957,7 +1957,13 @@ export async function executeStep(context) {
 
 export function runtimeVerifiedBehaviorIds(scenarioEntries) {
   return Object.entries(buildBehaviorVerification(scenarioEntries))
-    .filter(([, verification]) => verification.verified)
+    .filter(
+      ([, verification]) =>
+        verification.verified &&
+        verification.failedSteps === 0 &&
+        verification.skippedSteps === 0 &&
+        verification.requiredSteps === verification.executedSteps + verification.dispositionedSteps,
+    )
     .map(([behaviorId]) => behaviorId);
 }
 

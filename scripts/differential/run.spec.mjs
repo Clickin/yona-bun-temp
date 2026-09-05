@@ -133,6 +133,8 @@ test("behavior coverage excludes failed and skipped runtime steps", () => {
       { behaviorIds: ["B-executed"], stepResults: [{ status: "EXECUTED" }] },
       { behaviorIds: ["B-failed"], stepResults: [{ status: "FAILED" }] },
       { behaviorIds: ["B-skipped"], stepResults: [{ status: "SKIPPED" }] },
+      { behaviorIds: ["B-partial"], stepResults: [{ status: "FAILED" }] },
+      { behaviorIds: ["B-partial"], stepResults: [{ status: "EXECUTED" }] },
     ]),
     ["B-executed"],
   );
