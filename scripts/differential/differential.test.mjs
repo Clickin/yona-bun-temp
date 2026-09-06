@@ -31,6 +31,7 @@ import {
   PROJECT_ISSUE_DOM_IMPLEMENTATION_FINGERPRINTS,
   PROJECT_ISSUE_LABELS_DOM_IMPLEMENTATION_FINGERPRINTS,
   PROJECT_PULL_REQUEST_DOM_IMPLEMENTATION_FINGERPRINTS,
+  PROJECT_ROUTE_DOM_IMPLEMENTATION_FINGERPRINTS,
   SITE_ADMIN_DOM_IMPLEMENTATION_FINGERPRINTS,
   violation,
 } from "./report.mjs";
@@ -524,7 +525,7 @@ function firstVisibleFingerprintDiffIndex(firstDiffs) {
 }
 
 function fingerprintRoute(fingerprint, index = 0) {
-  return fingerprint.scenarioId?.startsWith("I")
+  return fingerprint.route === "/admin/sample/issue/<issue-number>"
     ? `/admin/sample/issue/${701 + index}`
     : fingerprint.route;
 }
@@ -544,6 +545,7 @@ test("site-admin DOM fingerprints cite the exact WTR contract and classify only 
     ...SITE_ADMIN_DOM_IMPLEMENTATION_FINGERPRINTS,
     ...PROJECT_PULL_REQUEST_DOM_IMPLEMENTATION_FINGERPRINTS,
     ...PROJECT_ISSUE_DOM_IMPLEMENTATION_FINGERPRINTS,
+    ...PROJECT_ROUTE_DOM_IMPLEMENTATION_FINGERPRINTS,
   ].entries()) {
     const result = classifyViolation(
       "dom",
@@ -562,6 +564,7 @@ test("site-admin DOM fingerprint near misses keep visible changes blocking", () 
     ...SITE_ADMIN_DOM_IMPLEMENTATION_FINGERPRINTS,
     ...PROJECT_PULL_REQUEST_DOM_IMPLEMENTATION_FINGERPRINTS,
     ...PROJECT_ISSUE_DOM_IMPLEMENTATION_FINGERPRINTS,
+    ...PROJECT_ROUTE_DOM_IMPLEMENTATION_FINGERPRINTS,
   ].entries()) {
     const visibleIndex = firstVisibleFingerprintDiffIndex(fingerprint.firstDiffs);
     assert.notEqual(visibleIndex, -1, `${fingerprint.route}: fingerprint must contain a visible entry`);
@@ -607,137 +610,42 @@ test("site-admin DOM fingerprint near misses keep visible changes blocking", () 
   }
 });
 
-test("R3 pull-request form fingerprints accept only exact captures", () => {
-  const fingerprints = PROJECT_PULL_REQUEST_DOM_IMPLEMENTATION_FINGERPRINTS.filter(
-    (fingerprint) => fingerprint.scenarioId === "R3-pr-forms",
-  );
-  assert.deepEqual(
-    fingerprints.map((fingerprint) => fingerprint.route),
-    ["/admin/sample/newPullRequestForm", "/admin/sample/pullRequest/1/editform"],
-  );
-  assert.equal(
-    fingerprints.some((fingerprint) => fingerprint.route === "/admin/sample/pullRequest/2"),
-    false,
-    "R16 pull-request detail must not acquire a form fingerprint",
-  );
-
-  for (const fingerprint of fingerprints) {
-    const context = { scenarioId: fingerprint.scenarioId };
-    const exact = classifyViolation(
-      "dom",
-      fingerprint.route,
-      siteAdminFingerprintDetail(fingerprint),
-      context,
-    );
-    assert.equal(exact.classification, "IMPLEMENTATION_DIFFERENCE", fingerprint.route);
-    assert.match(exact.rationale, new RegExp(fingerprint.wtrTest.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u"));
-    assert.match(exact.rationale, new RegExp(fingerprint.wtrSource.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u"));
-
-    const visibleControlIndex = fingerprint.firstDiffs.findIndex((diff) =>
-      [diff.expected, diff.actual].some((entry) =>
-        /(?:button\.add-task-list|button\.select2-choice|markdown-help-nav-button)/u.test(
-          String(entry),
+test("DOM fingerprints reject every canonical tuple near miss", () => {
+  for (const fingerprint of [
+    ...SITE_ADMIN_DOM_IMPLEMENTATION_FINGERPRINTS,
+    ...PROJECT_PULL_REQUEST_DOM_IMPLEMENTATION_FINGERPRINTS,
+    ...PROJECT_ISSUE_DOM_IMPLEMENTATION_FINGERPRINTS,
+    ...PROJECT_ROUTE_DOM_IMPLEMENTATION_FINGERPRINTS,
+  ]) {
+    const route = fingerprintRoute(fingerprint);
+    const context = fingerprintContext(fingerprint);
+    const cases = [
+      ["count", siteAdminFingerprintDetail(fingerprint, {
+        skeletonEntries: fingerprint.actualSkeletonEntries + 1,
+      }), route, context],
+      ["route", siteAdminFingerprintDetail(fingerprint), `${route}/near-miss`, context],
+      ["scenario", siteAdminFingerprintDetail(fingerprint), route, {
+        ...context,
+        scenarioId: `${context.scenarioId ?? "unknown"}-near-miss`,
+      }],
+      ["action", siteAdminFingerprintDetail(fingerprint), route, {
+        ...context,
+        scenarioActions: ["near-miss-action"],
+      }],
+      ["tuple", siteAdminFingerprintDetail(fingerprint, {
+        firstDiffs: fingerprint.firstDiffs.map((diff, index) =>
+          index === 0 ? { ...diff, expected: `${diff.expected} changed` } : diff,
         ),
-      ),
-    );
-    assert.notEqual(visibleControlIndex, -1, `${fingerprint.route}: form control signature missing`);
-
-    const missingControl = fingerprint.firstDiffs.filter(
-      (_diff, index) => index !== visibleControlIndex,
-    );
-    assert.equal(
-      classifyViolation(
-        "dom",
-        fingerprint.route,
-        siteAdminFingerprintDetail(fingerprint, {
-          skeletonEntries: fingerprint.actualSkeletonEntries - 1,
-          firstDiffs: missingControl,
-        }),
-        context,
-      ).classification,
-      "UNVERIFIED",
-      `${fingerprint.route}: missing visible control must block`,
-    );
-
-    const textIndex = fingerprint.firstDiffs.findIndex((diff) =>
-      [diff.expected, diff.actual].some((entry) => /@(?:yobi|example|<example>)/u.test(String(entry))),
-    );
-    assert.notEqual(textIndex, -1, `${fingerprint.route}: rebrand text signature missing`);
-    const changedText = fingerprint.firstDiffs.map((diff, index) =>
-      index === textIndex ? { ...diff, expected: `${diff.expected} changed` } : diff,
-    );
-    assert.equal(
-      classifyViolation(
-        "dom",
-        fingerprint.route,
-        siteAdminFingerprintDetail(fingerprint, { firstDiffs: changedText }),
-        context,
-      ).classification,
-      "UNVERIFIED",
-      `${fingerprint.route}: changed visible text must block`,
-    );
-
-    assert.equal(
-      classifyViolation(
-        "dom",
-        fingerprint.route,
-        siteAdminFingerprintDetail(fingerprint, {
-          skeletonEntries: fingerprint.actualSkeletonEntries + 1,
-        }),
-        context,
-      ).classification,
-      "UNVERIFIED",
-      `${fingerprint.route}: changed skeleton count must block`,
-    );
+      }), route, context],
+    ];
+    for (const [dimension, detail, candidateRoute, candidateContext] of cases) {
+      assert.equal(
+        classifyViolation("dom", candidateRoute, detail, candidateContext).classification,
+        "UNVERIFIED",
+        `${fingerprint.route}: ${dimension} near miss must remain blocking`,
+      );
+    }
   }
-});
-
-test("R16 pull-request detail fingerprint accepts only the exact settled capture", () => {
-  const fingerprint = PROJECT_PULL_REQUEST_DOM_IMPLEMENTATION_FINGERPRINTS.find(
-    (candidate) => candidate.scenarioId === "R16-pr-review-points",
-  );
-  assert.ok(fingerprint);
-  const context = fingerprintContext(fingerprint);
-
-  assert.equal(
-    classifyViolation(
-      "dom",
-      fingerprint.route,
-      siteAdminFingerprintDetail(fingerprint),
-      context,
-    ).classification,
-    "IMPLEMENTATION_DIFFERENCE",
-  );
-
-  const changedDiff = fingerprint.firstDiffs.map((diff, index) =>
-    index === 0 ? { ...diff, actual: "a:changed" } : diff,
-  );
-  for (const [index, detail] of [
-    { firstDiffs: changedDiff },
-    { firstDiffs: fingerprint.firstDiffs, skeletonEntries: fingerprint.actualSkeletonEntries + 1 },
-  ].entries()) {
-    assert.equal(
-      classifyViolation(
-        "dom",
-        fingerprint.route,
-        siteAdminFingerprintDetail(fingerprint, detail),
-        context,
-      ).classification,
-      "UNVERIFIED",
-      `R16 near-miss ${index} must remain blocking`,
-    );
-  }
-
-  assert.equal(
-    classifyViolation(
-      "dom",
-      fingerprint.route,
-      siteAdminFingerprintDetail(fingerprint),
-      { scenarioId: "R2-pr-detail" },
-    ).classification,
-    "UNVERIFIED",
-    "R16 fingerprint must not apply to another scenario",
-  );
 });
 
 test("project issue-detail DOM fingerprints keep label/avatar control loss blocking", () => {
@@ -860,7 +768,9 @@ test("project labelsform rebrand fingerprint keeps form/button/label near-misses
 
 test("project issue-detail fingerprints normalize mutable comment time and sweep identity", () => {
   const fingerprint = PROJECT_ISSUE_DOM_IMPLEMENTATION_FINGERPRINTS.find(
-    (candidate) => candidate.state === "comment-created",
+    (candidate) =>
+      candidate.normalizeIssueDiffs &&
+      candidate.firstDiffs.some((diff) => String(diff.actual).includes("Differential sweep issue body")),
   );
   assert.ok(fingerprint);
   const variedTimes = ["a.ago:2시간 전", "a.ago:3일 전"];

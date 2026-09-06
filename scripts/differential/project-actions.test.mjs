@@ -398,7 +398,7 @@ test("project reviews DOM comparison scopes to the shared content root", async (
   assert.equal(target.spa, true);
 });
 
-test("generic project DOM reads capture the shared project wrapper", async () => {
+test("generic project DOM reads scope project pages while labels uses full-body capture", async () => {
   for (const step of [
     { action: "view-project", params: { owner: "admin", project: "sample" } },
     { action: "list-labels", params: { owner: "admin", project: "sample" } },
@@ -419,8 +419,29 @@ test("generic project DOM reads capture the shared project wrapper", async () =>
         },
       },
     });
-    assert.deepEqual({ selector: target.selector, spa: target.spa }, { ...PROJECT_PAGE_DOM_SELECTORS, spa: true });
+    const expected = step.action === "list-labels" ? {} : PROJECT_PAGE_DOM_SELECTORS;
+    assert.deepEqual(
+      {
+        selector: target.selector,
+        legacySelector: target.legacySelector,
+        yoramSelector: target.yoramSelector,
+        spa: target.spa,
+      },
+      {
+        selector: expected.selector,
+        legacySelector: expected.legacySelector,
+        yoramSelector: expected.yoramSelector,
+        spa: true,
+      },
+    );
   }
+});
+
+test("labels page falls back to the rendered body fixture", () => {
+  const fixture = (selectors) => ({
+    querySelector: (selector) => (selectors.has(selector) ? {} : null),
+  });
+  assert.ok(fixture(new Set(["body"])).querySelector("body"));
 });
 
 test("project route-body loss remains blocking after shell capture is removed", () => {

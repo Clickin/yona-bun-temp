@@ -246,7 +246,7 @@ async function readPageHandler(ctx) {
     yoram: `${yoramBaseUrl}/${step.params.owner}/${step.params.project}${leaf}`,
     // The project home route is React-rendered; capture after hydration.
     spa: true,
-    ...PROJECT_PAGE_DOM_SELECTORS,
+    ...(step.action === "list-labels" ? {} : PROJECT_PAGE_DOM_SELECTORS),
   });
 }
 

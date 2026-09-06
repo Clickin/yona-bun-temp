@@ -310,9 +310,15 @@ test("I23 restores both seed issue-label associations immediately before export"
   assert.equal(restoreIndex + 1, exportIndex);
   const calls = [];
   const rows = [
-    { id: 11, name: "bug", category: { name: "type" }, color: "#f44336" },
-    { id: 12, name: "parity", category: { name: "area" }, color: "#2196f3" },
+    { id: 11, name: "bug", category: "type", color: "#f44336" },
+    { id: 12, name: "parity", category: "area", color: "#2196f3" },
   ];
+  const categories = [
+    { id: 21, name: "type" },
+    { id: 22, name: "area" },
+  ];
+  const labelsBySide = { legacy: [], yoram: [] };
+  const categoriesBySide = { legacy: [], yoram: [] };
   const definition = ACTION_DEFINITIONS["restore-migration-issue-labels"];
   const ctx = {
     step: { action: "restore-migration-issue-labels", params: { owner: "admin", project: "sample" } },
@@ -320,10 +326,40 @@ test("I23 restores both seed issue-label associations immediately before export"
     helpers: {
       async sendRaw(_ctx, side, request) {
         calls.push({ side, request });
-        return { status: 200, json: { labels: rows } };
+        if (request.method === "GET" && request.path.endsWith("/issue/labels")) {
+          return { status: 200, json: labelsBySide[side] };
+        }
+        if (request.method === "GET" && request.path.endsWith("/issue/label/categories")) {
+          return { status: 200, json: categoriesBySide[side] };
+        }
+        if (request.method === "GET" && request.path === "/admin/sample") {
+          return { status: 200, body: '<main data-project-id="7"></main>' };
+        }
+        if (request.method === "GET" && /\/issues?\/1$/u.test(request.path)) {
+          return side === "legacy"
+            ? { status: 200, body: "<a>bug</a><a>parity</a>" }
+            : { status: 200, json: { labels: rows } };
+        }
+        if (request.method === "POST" && request.path.endsWith("/issue/label/categories")) {
+          const category = categories.find((item) => item.name === request.form.name);
+          categoriesBySide[side].push(category);
+          return { status: 201, json: category };
+        }
+        if (request.method === "POST" && request.path.endsWith("/issue/labels")) {
+          const row = rows.find((item) => item.name === request.form.labelName);
+          labelsBySide[side].push(row);
+          return { status: 201, json: row };
+        }
+        return { status: 200 };
       },
       async requestBoth(_ctx, legacy, yoram) {
         calls.push({ legacy, yoram });
+        if (legacy.method === "GET") {
+          return {
+            legacyResult: { status: 200, json: null, body: "<a>bug</a><a>parity</a>" },
+            yoramResult: { status: 200, json: { labels: rows } },
+          };
+        }
         return {
           legacyResult: { status: 200, json: { labels: rows } },
           yoramResult: { status: 200, json: { labels: rows } },
@@ -336,6 +372,8 @@ test("I23 restores both seed issue-label associations immediately before export"
   assert.equal(writes.length, 1);
   assert.deepEqual(writes[0].legacy.json, ["11", "12"]);
   assert.deepEqual(writes[0].yoram.json, ["11", "12"]);
+  assert.equal(calls.filter((call) => call.request?.method === "POST" && call.request.path.endsWith("/issue/label/categories")).length, 4);
+  assert.equal(calls.filter((call) => call.request?.method === "POST" && call.request.path.endsWith("/issue/labels")).length, 4);
   assert.ok(calls.some((call) => call.legacy?.method === "GET" && call.yoram?.method === "GET"));
   assert.deepEqual(ctx.entry.errors, []);
 });

@@ -468,3 +468,72 @@ No product route was changed by this ledger. Any future reclassification must
 add the complete route/scenario/count/`firstDiffs` fingerprint plus a focused
 WTR source and a near-miss test; shared shell copy, skeleton counts, or a
 common first-20 diff prefix alone is insufficient.
+
+## 13. Final-corrected-03b683 DOM fingerprints (2026-09-06)
+
+The authoritative source for this pass is
+`.agent/differential/final-corrected-03b683/report.json`
+(`runId=sweep-mtpqyait`). The in-memory replay found 76 DOM violations. It
+accepts 22 rows through 20 exact literals in
+`scripts/differential/report.mjs` (the repeated I18/I19/S4 captures account for
+the extra rows), and leaves 54 rows `UNVERIFIED`. The existing API rules and
+both P1 labels-form literals are unchanged. S5 `/admin/sample/labels`,
+U3 `/notification`, U9 `/user/issues/new`, and I23 migration findings are not
+fingerprinted: the selector/harness or migration work is still in progress.
+
+Every accepted literal carries the complete scenario/action/state/normalized
+route, both skeleton counts, and the complete saved `firstDiffs` array. The
+table below is the provenance contract for each accepted family:
+
+| family | scenarios/routes | focused WTR evidence | legacy template |
+|---|---|---|---|
+| issue detail | I1 `/admin/sample/issue/<issue-number>`; I18/I19/I20/I21 issue captures; S3/S4 created/comment captures | `frontend/tests/wtr/project-issue-detail-1.e2e.ts`, `project-issue-detail-2.e2e.ts`, `project-issue-detail-3.e2e.ts` | `yona-original/app/views/issue/view.scala.html` and its comment/editor partials |
+| pull-request lists | R1 `/admin/sample/pullRequests`, `/admin/sample/closedPullRequests`, `/admin/sample/sentPullRequests` | `frontend/tests/wtr/project-pullrequests.e2e.ts` | `yona-original/app/views/git/partial_list.scala.html`, `git/list.scala.html` |
+| site-admin screens | U18 `/sites/userList`, `/sites/projectList`, `/sites/data`, `/sites/issueList`, `/sites/postList`, `/sites/mail`, `/sites/massmail`, `/sites/update` | `frontend/tests/wtr/site-admin-user-list.e2e.ts`, `site-admin-project-list.e2e.ts`, `site-admin-data.e2e.ts`, `site-admin-issue-list.e2e.ts`, `site-admin-post-list.e2e.ts`, `site-admin-mail.e2e.ts`, `site-admin-massmail.e2e.ts`, `site-admin-update.e2e.ts` | matching `yona-original/app/views/site/*.scala.html` templates |
+
+The following exact findings had no sufficient focused WTR contract for this
+replay and remain `UNVERIFIED`:
+
+| scenario | route |
+|---|---|
+| P3 | `/admin/sample/milestones`; `/admin/sample/milestone/1`; `/admin/sample/milestone/1/editform`; `/admin/sample/newMilestoneForm` |
+| P4 | `/admin/sample/posts`; `/admin/sample/postform`; `/admin/sample/post/1`; `/admin/sample/post/1/editform` |
+| P5/P7 | `/admin/sample/members`; `/admin/sample/watchers`; `/admin/sample/settingform`; `/admin/sample/webhooks`; `/admin/sample/statistics`; `/admin/sample/go`; `/admin/sample/search?keyword=welcome&searchType=issue` |
+| R2/R3/R4/R5/R6/R7/R9/R10/R12/R15 | `/admin/sample/compare/main..feature%2Fui`; `/admin/sample/newFork`; `/admin/sample/branches`; `/admin/sample/pullRequest/1/changes`; `/admin/sample/newPullRequestForm`; `/admin/sample/pullRequest/1/editform`; `/admin/sample/commits`; `/admin/sample/commits/main/`; `/admin/sample/commits/main/README.md`; `/admin/sample/commit/HEAD`; `/admin/sample/code`; `/admin/sample/code/main`; `/admin/sample/code/main/README.md` |
+| S2/S3/S4/S6/S7/S9 | `/users/login`; `/users/loginform`; `/admin/sample`; `/users/signupform`; `/lostPassword`; `/projectform`; `/projects`; `/_help`; `/_init`; `/_UIKit` |
+| U11/U15 | `/organizations/weblabs/boards`; `/organizations/weblabs/members`; `/organizations/weblabs/issues`; `/organizations/new`; `/user/editform`; `/user/editform/emails`; `/user/editform/notifications`; `/user/editform/token` |
+| U3/U4/U5/U6/U7/U8/U9 | `/notifications`; `/search?keyword=sample&searchType=issue`; `/orgs`; `/organizations/weblabs`; `/admin`; `/user/files`; `/user/issues/new/mine` |
+
+Changing a count, route, scenario, action, or one residual tuple makes the
+classifier fall through to `UNVERIFIED`; the parameterized near-miss coverage
+is in `scripts/differential/differential.test.mjs`.
+
+## 14. Evidence-gap triage after focused-WTR expansion (2026-09-06)
+
+The route-specific WTR inventory was rechecked before adding fingerprints.
+Forty-five additional exact route/scenario literals are now backed by focused
+WTR contracts, changing the fresh artifact replay to 67 accepted
+`IMPLEMENTATION_DIFFERENCE` DOM rows and 9 `UNVERIFIED` rows. The accepted
+families include milestones, board posts, project sub-pages, project search,
+compare/fork/branch/code/commit routes, pull-request forms and changes,
+anonymous/auth forms, project and organization screens, global search, the
+public profile, and user files. The new literals cite their individual WTR
+source and legacy Scala template in `report.mjs`; they are covered by the
+parameterized route/count/action/first-diff near-miss tests.
+
+The remaining nine rows are classified by evidence gap rather than collapsed
+under a shared shell rule:
+
+| evidence category | scenario/route | reason |
+|---|---|---|
+| named WTR, missing a required dimension | U15 `/user/editform`, `/user/editform/emails`, `/user/editform/notifications`, `/user/editform/token` | `user-profile-settings.e2e.ts` and the ownership field-row tests cover the profile shell, field ownership, and tab navigation, but not a complete body role/copy/order/geometry/interaction contract for each tab route |
+| named WTR, missing a required dimension | U3 `/notifications` | `notification-page-target.test.mjs` establishes route/body targeting only; it does not provide a complete notification-page body contract |
+| no exact WTR contract | S9 `/_init`, `/_UIKit` | no focused WTR source asserts the complete route body against its legacy static template |
+| no exact WTR contract | U9 `/user/issues/new/mine` | the issue-form WTR covers the project issue form, not this personal-inbox route and its complete body |
+| clear product/route mismatch | P5 `/admin/sample/go` | this is the project “go” convention/menu endpoint, not a standalone screen; the project-home WTR proves the destination page and menu, not an independent `/go` body |
+
+The selector-scoped notification route and the direct personal issue-form
+route remain intentionally unclassified until their route-body contracts are
+available. No remaining row has a complete role/copy/order/geometry/interaction
+contract, so no further exact fingerprint is justified by the current WTR
+evidence.

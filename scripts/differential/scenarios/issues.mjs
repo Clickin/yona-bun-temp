@@ -826,6 +826,31 @@ function findSemanticLabel(node, seed) {
   return null;
 }
 
+function findNamedRow(node, name, keys) {
+  if (Array.isArray(node)) {
+    for (const child of node) {
+      const match = findNamedRow(child, name, keys);
+      if (match) return match;
+    }
+    return null;
+  }
+  if (!node || typeof node !== "object") return null;
+  if (keys.some((key) => node[key] === name)) return node;
+  for (const value of Object.values(node)) {
+    const match = findNamedRow(value, name, keys);
+    if (match) return match;
+  }
+  return null;
+}
+
+function findNamedLabel(node, name) {
+  return findNamedRow(node, name, ["name", "labelName"]);
+}
+
+function findNamedCategory(node, name) {
+  return findNamedRow(node, name, ["name", "categoryName"]);
+}
+
 function labelNamesFromIssue(node) {
   if (typeof node === "string") {
     return MIGRATION_LABEL_SEEDS
@@ -841,6 +866,93 @@ function labelNamesFromIssue(node) {
     });
   }
   return Object.values(node).flatMap(labelNamesFromIssue);
+}
+
+async function ensureMigrationLabels(ctx) {
+  const { step, helpers } = ctx;
+  const labelPath = ownerPath(step, "/issue/labels");
+  const categoryPath = ownerPath(step, "/issue/label/categories");
+  const sides = ["legacy", "yoram"];
+  const resolved = {};
+  let legacyProjectId;
+
+  for (const side of sides) {
+    let labels = await helpers.sendRaw(ctx, side, { method: "GET", path: labelPath });
+    let categories = await helpers.sendRaw(ctx, side, { method: "GET", path: categoryPath });
+    if (labels.status >= 400 || categories.status >= 400) {
+      throw new HarnessError(
+        `restore-migration-issue-labels: label fixture read failed ${side}=labels:${labels.status} categories:${categories.status}`,
+      );
+    }
+
+    for (const seed of MIGRATION_LABEL_SEEDS) {
+      let category = findNamedCategory(categories.json, seed.category);
+      if (!category) {
+        if (side === "legacy" && !legacyProjectId) {
+          const page = await helpers.sendRaw(ctx, "legacy", {
+            method: "GET",
+            path: `/${step.params.owner}/${step.params.project}`,
+          });
+          legacyProjectId = Number((/data-project-id="(\d+)"/u.exec(page.body ?? "") ?? [])[1]) || null;
+          if (!legacyProjectId) {
+            throw new HarnessError("restore-migration-issue-labels: legacy project id unresolved");
+          }
+        }
+        const categoryResult = await helpers.sendRaw(ctx, side, {
+          method: "POST",
+          path: categoryPath,
+          form: {
+            name: seed.category,
+            ...(side === "legacy" ? { "project.id": String(legacyProjectId) } : {}),
+          },
+        });
+        if (categoryResult.status >= 400) {
+          throw new HarnessError(
+            `restore-migration-issue-labels: ${side} category ${seed.category} create failed (${categoryResult.status})`,
+          );
+        }
+        categories = await helpers.sendRaw(ctx, side, { method: "GET", path: categoryPath });
+        category = findNamedCategory(categories.json, seed.category);
+      }
+
+      const semantic = findSemanticLabel(labels.json, seed);
+      if (!semantic) {
+        const existing = findNamedLabel(labels.json, seed.name);
+        const categoryId = Number(category?.id ?? category?.categoryId) || null;
+        const labelResult = existing?.id && categoryId
+          ? await helpers.sendRaw(ctx, side, {
+            method: "PUT",
+            path: ownerPath(step, `/issue/label/${existing.id}`),
+            form: {
+              name: seed.name,
+              color: seed.color,
+              "category.id": String(categoryId),
+            },
+          })
+          : await helpers.sendRaw(ctx, side, {
+            method: "POST",
+            path: labelPath,
+            form: {
+              labelName: seed.name,
+              categoryName: seed.category,
+              labelColor: seed.color,
+            },
+          });
+        if (labelResult.status >= 400) {
+          throw new HarnessError(
+            `restore-migration-issue-labels: ${side} label ${seed.name} create/update failed (${labelResult.status})`,
+          );
+        }
+        labels = await helpers.sendRaw(ctx, side, { method: "GET", path: labelPath });
+      }
+    }
+
+    resolved[side] = MIGRATION_LABEL_SEEDS.map((seed) => findSemanticLabel(labels.json, seed));
+    if (resolved[side].some((row) => !row)) {
+      throw new HarnessError(`restore-migration-issue-labels: ${side} canonical label rows are missing`);
+    }
+  }
+  return resolved;
 }
 
 export const actionDefinitions = {
@@ -1646,24 +1758,7 @@ export const actionDefinitions = {
     },
     async handler(ctx) {
       const { step, entry, helpers } = ctx;
-      const legacyLabels = await helpers.sendRaw(ctx, "legacy", {
-        method: "GET",
-        path: ownerPath(step, "/issue/labels"),
-      });
-      const yoramLabels = await helpers.sendRaw(ctx, "yoram", {
-        method: "GET",
-        path: `${spaRestBase(step)}/issues/1`,
-      });
-      if (legacyLabels.status >= 400 || yoramLabels.status >= 400) {
-        throw new HarnessError(
-          `restore-migration-issue-labels: issue read failed legacy=${legacyLabels.status} yoram=${yoramLabels.status}`,
-        );
-      }
-      const legacyRows = MIGRATION_LABEL_SEEDS.map((seed) => findSemanticLabel(legacyLabels.json, seed));
-      const yoramRows = MIGRATION_LABEL_SEEDS.map((seed) => findSemanticLabel(yoramLabels.json, seed));
-      if (legacyRows.some((row) => !row) || yoramRows.some((row) => !row)) {
-        throw new HarnessError("restore-migration-issue-labels: aligned label rows are missing");
-      }
+      const { legacy: legacyRows, yoram: yoramRows } = await ensureMigrationLabels(ctx);
       const setResult = await helpers.requestBoth(
         ctx,
         {
@@ -1685,7 +1780,7 @@ export const actionDefinitions = {
       );
       const expectedNames = new Set(MIGRATION_LABEL_SEEDS.map((seed) => seed.name));
       const readbackNames = [
-        new Set(labelNamesFromIssue(readback.legacyResult.json)),
+        new Set(labelNamesFromIssue(readback.legacyResult.json ?? readback.legacyResult.body)),
         new Set(labelNamesFromIssue(readback.yoramResult.json)),
       ];
       if (

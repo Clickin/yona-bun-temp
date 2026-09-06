@@ -498,15 +498,22 @@ const pageTargets = {
 function sharedRouteRootSelector(step) {
   switch (step.action) {
     case "view-user-issues":
-    case "view-notifications":
     case "view-user-profile":
     case "view-user-files":
       return ".page-wrap";
+    case "view-notifications":
+      // `/notification` is the legacy partial endpoint; both sides render the
+      // notification fragment without the full-page `.page-wrap`.
+      return step.params.path === "/notification" ? null : ".page-wrap";
     case "view-global-search":
     case "view-org-home":
-    case "view-new-direct-issue-form":
     case "view-new-org-form":
       return ".project-page-wrap";
+    case "view-new-direct-issue-form":
+      // The canonical `/mine` route has a project wrapper on both sides.
+      // Bare `/new` is only a legacy form endpoint; Yoram renders its route
+      // shell without that wrapper, so capture legacy narrowly and Yoram body.
+      return step.params.mine ? ".project-page-wrap" : null;
     case "view-org-subpage":
       return step.params.page === "issues" ? ".page-wrap" : ".project-page-wrap";
     default:

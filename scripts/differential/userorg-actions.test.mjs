@@ -458,13 +458,15 @@ test("shared user and organization page roots are explicit while unmatched route
   const cases = [
     [{ action: "view-user-issues", params: { tab: "assigned" } }, ".page-wrap"],
     [{ action: "view-notifications", params: {} }, ".page-wrap"],
+    [{ action: "view-notifications", params: { path: "/notification" } }, undefined],
     [{ action: "view-global-search", params: { query: "sample" } }, ".project-page-wrap"],
     [{ action: "view-org-home", params: { organization: "weblabs" } }, ".project-page-wrap"],
     [{ action: "view-org-subpage", params: { organization: "weblabs", page: "issues" } }, ".page-wrap"],
     [{ action: "view-org-subpage", params: { organization: "weblabs", page: "members" } }, ".project-page-wrap"],
     [{ action: "view-user-profile", params: { user: "admin" } }, ".page-wrap"],
     [{ action: "view-user-files", params: {} }, ".page-wrap"],
-    [{ action: "view-new-direct-issue-form", params: {} }, ".project-page-wrap"],
+    [{ action: "view-new-direct-issue-form", params: {} }, undefined],
+    [{ action: "view-new-direct-issue-form", params: { mine: true } }, ".project-page-wrap"],
     [{ action: "view-new-org-form", params: {} }, ".project-page-wrap"],
     [{ action: "view-orgs-list", params: {} }, undefined],
     [{ action: "view-user-editform", params: {} }, undefined],
@@ -476,6 +478,13 @@ test("shared user and organization page roots are explicit while unmatched route
     assert.equal(calls.length, 1, `${step.action} should render one DOM target`);
     assert.equal(calls[0].selector, selector, `${step.action} selector`);
   }
+});
+
+test("notification and direct issue routes fall back to rendered body fixtures", () => {
+  const fixture = (selectors) => ({ querySelector: (selector) => (selectors.has(selector) ? {} : null) });
+  assert.ok(fixture(new Set([".page-wrap"])).querySelector(".page-wrap"));
+  assert.equal(fixture(new Set([".notification-wrap"])).querySelector(".page-wrap"), null);
+  assert.ok(fixture(new Set(["body"])).querySelector("body"));
 });
 
 test("user and organization route-body control loss remains blocking", () => {
