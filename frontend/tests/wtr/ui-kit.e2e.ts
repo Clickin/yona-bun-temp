@@ -83,7 +83,7 @@ test("standalone UI kit matches legacy help/UIKit.scala.html body DOM", async ({
     gnbOuterHeight: "40px",
     gnbTextAlign: "center",
     pageFooterLineHeight: "34px",
-    pageFooterOuterPadding: "10px 0px",
+    pageFooterOuterPadding: "10px",
     pageWrapOuterMarginTop: "10px",
     pageWrapOuterMinHeight: "450px",
     pageWrapOuterMinWidth: "1100px",
@@ -95,6 +95,92 @@ test("standalone UI kit matches legacy help/UIKit.scala.html body DOM", async ({
     subtitleHeight: "55px",
     subtitleLineHeight: "55px",
     subtitleVerticalAlign: "bottom",
+  });
+});
+
+test("standalone UI kit preserves legacy desktop shell and widget geometry", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/_UIKit`);
+  await expect(page.locator(".page-wrap-outer")).toBeVisible();
+
+  const metrics = await page.evaluate(() => {
+    const round = (value: number) => Math.round(value);
+    const box = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing UIKit geometry target: ${selector}`);
+      const rect = element.getBoundingClientRect();
+      return {
+        x: round(rect.x),
+        y: round(rect.y),
+        width: round(rect.width),
+        height: round(rect.height),
+      };
+    };
+    const body = document.body.getBoundingClientRect();
+    return {
+      body: { width: round(body.width), height: round(body.height) },
+      header: box(".gnb-outer"),
+      pageWrapOuter: box(".page-wrap-outer"),
+      pageWrap: box(".page-wrap"),
+      footer: box(".page-footer-outer"),
+      provider: box(".provider"),
+      avatarNaturalWidth:
+        document.querySelector<HTMLImageElement>(".avatar-wrap img")?.naturalWidth,
+      tabs: box(".nav-tabs"),
+      tabItems: Array.from(document.querySelectorAll(".nav-tabs > li")).map((item) => {
+        const rect = item.getBoundingClientRect();
+        return {
+          x: round(rect.x),
+          y: round(rect.y),
+          width: round(rect.width),
+          height: round(rect.height),
+        };
+      }),
+      switches: Array.from(document.querySelectorAll(".switch")).map((item) => {
+        const rect = item.getBoundingClientRect();
+        return {
+          className: item.className,
+          x: round(rect.x),
+          y: round(rect.y),
+          width: round(rect.width),
+          height: round(rect.height),
+        };
+      }),
+    };
+  });
+
+  expect(metrics).toEqual({
+    body: { width: 1366, height: 2735 },
+    header: { x: 0, y: 0, width: 87, height: 40 },
+    pageWrapOuter: { x: 87, y: 10, width: 1189, height: 2725 },
+    pageWrap: { x: 212, y: 10, width: 940, height: 2725 },
+    footer: { x: 1276, y: 0, width: 90, height: 2735 },
+    provider: { x: 1300, y: 23, width: 47, height: 47 },
+    avatarNaturalWidth: 128,
+    tabs: { x: 212, y: 2527, width: 940, height: 38 },
+    tabItems: [
+      { x: 212, y: 2527, width: 87, height: 38 },
+      { x: 298, y: 2527, width: 87, height: 38 },
+    ],
+    switches: [
+      { className: "switch has-switch", x: 212, y: 2701, width: 80, height: 29 },
+      {
+        className: "switch deactivate has-switch",
+        x: 295,
+        y: 2701,
+        width: 80,
+        height: 29,
+      },
+      {
+        className: "switch switch-square has-switch",
+        x: 379,
+        y: 2701,
+        width: 80,
+        height: 29,
+      },
+    ],
   });
 });
 
@@ -274,7 +360,7 @@ test("root shell owns login dialog state without delegated document modal mutati
   expect(ROOT_ROUTE_SOURCE).toContain("onClickCapture={handleRootShellClick}");
   expect(ROOT_ROUTE_SOURCE).toContain("onSubmit={handleRootLoginDialogSubmit}");
   expect(ROOT_ROUTE_SOURCE).toContain("RootLoginDialog");
-  expect(ROOT_ROUTE_SOURCE).toContain('visible={rootShellModal === "loginDialog"}');
+  expect(ROOT_ROUTE_SOURCE).toContain('visible={activeRootShellModal === "loginDialog"}');
   expect(ROOT_ROUTE_SOURCE).not.toContain('["loginDialog", rootLoginDialogProps.className]');
   // Bucket-3 (wave 36): the backdrop className is composed from an array
   // literal — `"modal-backdrop in"` is a token, not a whole className attr.
@@ -999,6 +1085,9 @@ async function readLoginDialogHiddenMetrics(page: Page) {
 async function canonicalizeUIKitRoots(page: Page) {
   return page.evaluate(() => {
     function visit(current: Element): string {
+      if (current.classList.contains("has-switch")) {
+        return visitRenderedSwitch(current);
+      }
       const stableAttributes = [
         "id",
         "class",
@@ -1018,7 +1107,11 @@ async function canonicalizeUIKitRoots(page: Page) {
         "data-off-label",
       ];
       const attrs = stableAttributes
-        .filter((name) => hasStableAttribute(current, name))
+        .filter(
+          (name) =>
+            !(name === "id" && current.matches('.has-switch input[data-toggle="switch"]')) &&
+            hasStableAttribute(current, name),
+        )
         .map((name) => [name, stableAttributeValue(current, name)] as const)
         .filter(([name, value]) => value !== "" || name !== "class")
         .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
@@ -1039,6 +1132,20 @@ async function canonicalizeUIKitRoots(page: Page) {
         .join("");
 
       return `${open}${children}</${tagName}>`;
+    }
+
+    function visitRenderedSwitch(current: Element) {
+      const className = (current.getAttribute("class") ?? "")
+        .split(/\s+/u)
+        .filter((token) => token && token !== "has-switch")
+        .join(" ");
+      const attrs = [
+        `class=${JSON.stringify(className)}`,
+        `data-on-label=${JSON.stringify(current.getAttribute("data-on-label") ?? "")}`,
+        `data-off-label=${JSON.stringify(current.getAttribute("data-off-label") ?? "")}`,
+      ].join(" ");
+      const input = current.querySelector(':scope > .switch-animate > input[data-toggle="switch"]');
+      return `<div ${attrs}>${input ? visit(input) : ""}</div>`;
     }
 
     function stableTagName(current: Element) {

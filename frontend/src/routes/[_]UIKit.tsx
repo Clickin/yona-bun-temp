@@ -1,5 +1,6 @@
 import * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import defaultAvatarUrl from "../assets/legacy/default-avatar-128.png";
 import { prefixBasePath } from "../runtime-config";
 export const Route = createFileRoute("/_UIKit")({
   component: UIKitRoute,
@@ -19,7 +20,26 @@ function UIKitRoute() {
       .gnb-logo { display:inline-block !important; }
       .gnb-outer { text-align:center; }
       .subtitle { font-size:24px; font-weight:bold; height:55px; line-height:55px; vertical-align:bottom; }
-      .css { font-family: Consolas; color: #222; background: #C9EBB5; padding: 3px; border-radius: 3px; border: 1px solid #4CB848; }`}</style>
+      .css { font-family: Consolas; color: #222; background: #C9EBB5; padding: 3px; border-radius: 3px; border: 1px solid #4CB848; }
+      .page-wrap { width:940px; max-width:none; }
+      .page-footer-outer { padding:10px; }
+      .nav-tabs > li > button {
+        appearance:none; background:transparent; border:1px solid transparent;
+        box-sizing:border-box; color:#3592b5; display:block; font:inherit;
+        font-weight:700; line-height:20px; padding:8px 30px;
+      }
+      .nav-tabs > li.active > button { background:#fff; color:#555; }
+      .nav-tabs > li { width:86.5px; }
+      button.avatar-wrap { appearance:none; border:0; }
+      body:has(.page-wrap-outer) > #root,
+      body:has(.page-wrap-outer) > #root > #main,
+      body:has(.page-wrap-outer) > #root > #main > [data-root-boundary] { display:contents; }
+      .has-switch input[data-toggle="switch"] {
+        display:block; opacity:0; position:absolute; left:0; top:0;
+        width:80px; height:29px; margin:0; z-index:101;
+      }
+      .has-switch > .switch-animate.switch-off input[data-toggle="switch"] { left:63%; }
+      `}</style>
       <UIKitPageHeader />
       <div className="page-wrap-outer">
         <div className="container page-wrap">
@@ -82,13 +102,15 @@ function UIKitButtonsSection() {
             Disabled
           </button>
         </p>
-        <CodeSample>{`${legacyAnchorMarkup('href="#" class="ybtn"', "Default")}
+        <CodeSample>{`
+${legacyAnchorMarkup('href="#" class="ybtn"', "Default")}
       <button type="button" class="ybtn ybtn-primary">Primary</button>
       ${legacyAnchorMarkup('href="#" class="ybtn ybtn-inverse"', "Inverse")}
       <button type="button" class="ybtn ybtn-info">Info</button>
       ${legacyAnchorMarkup('href="#" class="ybtn ybtn-watching"', "Watching")}
       <button type="button" class="ybtn ybtn-warning">Warning</button>
-      ${legacyAnchorMarkup('href="#" class="ybtn ybtn-danger"', "Danger")}`}</CodeSample>
+      ${legacyAnchorMarkup('href="#" class="ybtn ybtn-danger"', "Danger")}
+ `}</CodeSample>
         <hr />
         <div className="btn-wrap">
           <div className="nbtn medium white fake-file-wrap">
@@ -102,7 +124,8 @@ function UIKitButtonsSection() {
               <i class="ico ico-plus-blue"></i>Upload
               <input type="file" class="file" name="filePath" accept="image/*">
           </div>
-      </div>`}</CodeSample>
+      </div>
+ `}</CodeSample>
       </div>
       <hr />
     </>
@@ -126,7 +149,8 @@ function UIKitSelectSection() {
               <li data-value="" data-selected="true" class="active">${legacyAnchorMarkup('href="javascript:void(0)"', "전체")}</li>
               <li data-value="0">${legacyAnchorMarkup('href="javascript:void(0)"', "담당자 없음")}</li>
           </ul>
-      </div>`}</CodeSample>
+      </div>
+ `}</CodeSample>
       </div>
       <hr />
     </>
@@ -163,7 +187,8 @@ function UIKitSearchFormSection() {
               <input name="filter" class="textbox full" type="text">
               <button type="submit" class="search-btn"><i class="yobicon-search"></i></button>
           </div>
-      </div>`}</CodeSample>
+      </div>
+ `}</CodeSample>
       </div>
       <hr />
     </>
@@ -260,29 +285,60 @@ function UIKitSwitchesSection({
       <h3>Switches</h3>
       <CodeSample>{`<input type="checkbox" data-toggle="switch">`}</CodeSample>
       <div>
-        <div className="switch" data-on-label="미해결" data-off-label="해결">
-          <input type="checkbox" data-toggle="switch" defaultChecked />
-        </div>
-        <div className="switch deactivate" data-on-label="미해결" data-off-label="해결">
-          <input
-            type="checkbox"
-            data-toggle="switch"
-            checked={showsViaEmailDemo}
-            onChange={(event) => {
-              onToggleViaEmailDemo(event.currentTarget.checked);
-            }}
-          />
-        </div>
-        <div
-          className="switch switch-square"
-          data-on-label="<i class='yobicon-eye-close'></i>"
-          data-off-label="<i class='yobicon-eye-open'></i>"
-        >
-          <input type="checkbox" data-toggle="switch" />
-        </div>
+        <UIKitSwitch initialChecked />{" "}
+        <UIKitSwitch deactivate checked={showsViaEmailDemo} onChange={onToggleViaEmailDemo} />{" "}
+        <UIKitSwitch square />
       </div>
       {showsViaEmailDemo ? <OriginalMessageDemo /> : null}
     </>
+  );
+}
+
+function UIKitSwitch({
+  checked,
+  deactivate = false,
+  initialChecked = false,
+  onChange,
+  square = false,
+}: {
+  checked?: boolean;
+  deactivate?: boolean;
+  initialChecked?: boolean;
+  onChange?: (checked: boolean) => void;
+  square?: boolean;
+}) {
+  const [internalChecked, setInternalChecked] = React.useState(initialChecked);
+  const inputId = React.useId();
+  const isChecked = checked ?? internalChecked;
+  const updateSwitchState = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const nextChecked = event.currentTarget.checked;
+    if (checked === undefined) {
+      setInternalChecked(nextChecked);
+    }
+    onChange?.(nextChecked);
+  };
+
+  return (
+    <div
+      className={`switch${deactivate ? " deactivate" : ""}${square ? " switch-square" : ""} has-switch`}
+      data-on-label={square ? "<i class='yobicon-eye-close'></i>" : "미해결"}
+      data-off-label={square ? "<i class='yobicon-eye-open'></i>" : "해결"}
+    >
+      <div className={`switch-animate switch-${isChecked ? "on" : "off"}`}>
+        <input
+          type="checkbox"
+          data-toggle="switch"
+          checked={isChecked}
+          id={inputId}
+          onChange={updateSwitchState}
+        />
+        <span className="switch-left">
+          {square ? <i className="yobicon-eye-close" /> : "미해결"}
+        </span>
+        <label htmlFor={inputId}>&nbsp;</label>
+        <span className="switch-right">{square ? <i className="yobicon-eye-open" /> : "해결"}</span>
+      </div>
+    </div>
   );
 }
 
@@ -453,10 +509,7 @@ function AvatarDemo({ label, size }: { label: string; size: string }) {
       </dt>
       <dd>
         <button type="button" className={`avatar-wrap ${size}`}>
-          <img
-            src={prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-128.png")}
-            alt=""
-          />
+          <img src={prefixBasePath(runtimeConfig.basePath, defaultAvatarUrl)} alt="" />
         </button>
       </dd>
     </dl>

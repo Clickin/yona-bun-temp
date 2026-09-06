@@ -528,13 +528,12 @@ under a shared shell rule:
 | evidence category | scenario/route | reason |
 |---|---|---|
 | clear product/route mismatch | P5 `/admin/sample/go` | this is the project “go” convention/menu endpoint, not a standalone screen; the project-home WTR proves the destination page and menu, not an independent `/go` body |
-| no exact WTR contract | S9 `/_init`, `/_UIKit` | no focused WTR source asserts the complete route body against its legacy static template |
+| focused parity completion | S9 `/_init`, `/_UIKit` | `/_init` has an exact live 303/Location fingerprint in `.agent/s9-live/s9-parity.json`; `/_UIKit` is fixed and covered by `frontend/tests/wtr/ui-kit.e2e.ts` DOM, desktop-geometry, dropdown, and original-message contracts |
 | no exact WTR contract | U9 `/user/issues/new/mine` | the issue-form WTR covers the project issue form, not this personal-inbox route and its complete body |
 
 The U15 and U3 live evidence is complete: `.agent/u19-live-audit/u15-settings-live.json`,
 `u15-settings-mobile-live.json`, the email/notification/token interaction JSONs,
-`u3-notifications-live.json`, and `u3-notifications-pagination.json`, together
-with focused WTR artifact `artifact://4361` (32/32), now back the exact
-fingerprints. No product gap is claimed for those routes. The S9/U9/P5 rows
-remain intentionally out of the fingerprint table while their route work or
-product decision is pending.
+together with focused WTR artifact `artifact://4361` (32/32), now back the
+exact fingerprints. No product gap is claimed for those routes. S9 is closed
+by the focused live artifact and WTR contract; U9/P5 remain intentionally out
+of the fingerprint table while their route work or product decision is pending.
