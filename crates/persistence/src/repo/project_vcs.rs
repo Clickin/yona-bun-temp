@@ -254,6 +254,70 @@ impl AppRepositoryImpl<'_> {
         Ok(changed)
     }
 
+    pub async fn record_initial_pull_request_commits(
+        &self,
+        pull_request_id: i64,
+        actor_login_id: &str,
+        commits: &[PullRequestPushedCommitInput],
+    ) -> Result<(), DbErr> {
+        if commits.is_empty() {
+            return Ok(());
+        }
+        let Some(row) = pull_request::Entity::find_by_id(pull_request_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(());
+        };
+
+        let now = current_datetime();
+        let mut commit_row_ids = Vec::new();
+        let mut last_commit_id = None;
+        for commit in commits {
+            let commit_id = commit.commit_id.trim();
+            if commit_id.is_empty() {
+                continue;
+            }
+            let created = pull_request_commit::ActiveModel {
+                id: NotSet,
+                pull_request_id: Set(Some(pull_request_id)),
+                commit_id: Set(Some(commit_id.to_string())),
+                author_date: Set(Some(now)),
+                created: Set(Some(now)),
+                commit_short_id: Set(Some(commit_id.chars().take(7).collect())),
+                author_email: Set(empty_to_none(Some(commit.author_email.clone()))),
+                state: Set(Some("CURRENT".to_string())),
+            }
+            .insert(&self.db)
+            .await?;
+            self.write_text_column(
+                "pull_request_commit",
+                "commit_message",
+                created.id,
+                &commit.commit_message,
+            )
+            .await?;
+            commit_row_ids.push(created.id.to_string());
+            last_commit_id = Some(commit_id.to_string());
+        }
+        if commit_row_ids.is_empty() {
+            return Ok(());
+        }
+
+        let mut active = pull_request::ActiveModel::from(row);
+        active.updated = Set(Some(now));
+        active.last_commit_id = Set(last_commit_id);
+        active.update(&self.db).await?;
+        self.create_pull_request_event(
+            pull_request_id,
+            actor_login_id,
+            "PULL_REQUEST_COMMIT_CHANGED",
+            "",
+            &commit_row_ids.join(","),
+        )
+        .await
+    }
+
     pub async fn delete_project_pushed_branch(
         &self,
         project_id: i64,

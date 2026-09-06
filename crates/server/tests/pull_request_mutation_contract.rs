@@ -1195,6 +1195,7 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     assert_eq!(created["state"], "open");
     assert_eq!(created["isMerging"], true);
     let mut merge_check_settled = false;
+    let mut settled_detail = None;
     for _ in 0..50 {
         let detail = response_json(
             rest_get(
@@ -1208,15 +1209,27 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         if detail["isMerging"] == false {
             assert_eq!(detail["conflict"], false);
             merge_check_settled = true;
+            settled_detail = Some(detail);
             break;
         }
         tokio::time::sleep(Duration::from_millis(20)).await;
     }
     assert!(merge_check_settled, "pull request merge check did not settle");
+    let settled_detail = settled_detail.expect("settled pull request detail");
     assert_eq!(created["requiredReviewerCount"], 1);
     assert_eq!(created["lackingReviewerCount"], 1);
     assert_eq!(created["reviewed"], false);
     assert_eq!(created["events"][0]["eventType"], "NEW_PULL_REQUEST");
+    let commit_changed_event = settled_detail["events"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|event| event["eventType"] == "PULL_REQUEST_COMMIT_CHANGED")
+        .expect("initial commit changed event");
+    assert_eq!(
+        commit_changed_event["commits"][0]["commitMessage"],
+        "topic"
+    );
     assert_eq!(created["contributor"]["userId"], owner_id);
     assert_eq!(created["receiver"]["userId"], owner_id);
     assert_eq!(

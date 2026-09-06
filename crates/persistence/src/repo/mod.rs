@@ -42,6 +42,7 @@ use crate::repo_types::{
     PullRequestCommitChangedInput, PullRequestCommitChangedRecord, PullRequestCommitRecord,
     PullRequestDetailRecord, PullRequestEventRecord, PullRequestListFilter,
     PullRequestListItemRecord, PullRequestListRecord, PullRequestMergeInput,
+    PullRequestPushedCommitInput,
     PullRequestPushedBranchRecord, PullRequestReviewInput, PullRequestStateInput,
     PullRequestThreadStateInput, PullRequestUserRecord, ReviewCommentRecord,
     ReviewThreadListFilter, ReviewThreadListRecord, ReviewThreadRecord, ReviewThreadRouteContext,

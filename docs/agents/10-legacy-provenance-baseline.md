@@ -22,7 +22,7 @@
 | ACL | `AccessControlTest.java`, `RoleTest.java`, `ProjectUserTest.java` | resource-scoped create/read/update/delete matrix | Rust domain ACL test, route authorization test | `crates/domain`, `crates/server` |
 | Issue | `IssueAppTest.java`, `IssueTest.java`, `WatchTest.java`, `IssueApp.newDirectIssueForm`, `IssueApp.newDirectMyIssueForm`, `IssueComment` | issue lifecycle, watcher/voter/assignee semantics, comment-derived issue creation, direct my-issue project target selection, parent-comment linkage, permission boundaries | Rust domain test, Rust contract test, WTR E2E | `crates/domain`, `crates/persistence`, `frontend` |
 | Project | `ProjectAppTest.java`, `EnrollProjectAppTest.java`, `ProjectTest.java`, `OrganizationTest.java`, `RecentlyVisitedProjectsTest.java` | project/org CRUD, enrollment, visibility, recent/favorite semantics | Rust domain test, Rust contract test, WTR E2E | `crates/domain`, `crates/persistence`, `crates/server`, `frontend` |
-| PR / Review | `PullRequestAppTest.java`, `ReviewThreadAppTest.java`, `PullRequestTest.java`, `PullRequestEventTest.java` | PR state machine, reviewer constraints, review-thread lifecycle | Rust domain test, Rust contract test, WTR E2E | `crates/domain`, `crates/server`, `frontend` |
+| PR / Review | `PullRequestAppTest.java`, `PullRequestActor.java`, `ReviewThreadAppTest.java`, `PullRequestTest.java`, `PullRequestEventTest.java`, `PullRequestEvent.java` | PR creation starts the merge actor; the actor persists the initial diff commits and `PULL_REQUEST_COMMIT_CHANGED` timeline event before the detail timeline is rendered, alongside PR state machine, reviewer constraints, and review-thread lifecycle | Rust domain test, Rust persistence, Rust contract test, WTR E2E | `crates/domain`, `crates/persistence`, `crates/server`, `frontend` |
 | Git / Repository | `GitRepositoryTest.java`, `RepositoryServiceTest.java`, `CommitCommentTest.java`, `CommentThreadTest.java` | smart HTTP, inline edit conflict handling, commit discussion lifecycle | protocol integration test, server route test, Rust domain test | `crates/vcs`, `crates/server`, `frontend` |
 | Search | `SearchTests.java`, `SearchResultTests.java`, `AccessControlTest.java` | permission-filtered search scope and filter semantics | Rust domain test, DB parity test, Rust contract test, WTR E2E | `crates/search`, `crates/persistence`, `crates/server`, `frontend` |
 
@@ -37,3 +37,17 @@
   split keeps the legacy `IssueApi.commentNotiRecivers` translation contract unchanged
   and was verified with `cargo check -p yoram-persistence` (cold sandbox check:
   5m25s; immediate no-change check: 0.36s).
+- PR creation timeline parity is grounded in
+  `yona-original/app/controllers/PullRequestApp.java` (`newPullRequest` starts the
+  actor), `yona-original/app/actors/PullRequestActor.java`
+  (`processPullRequestMerging` calls `saveCommits` and `PullRequestEvent.addCommitEvents`),
+  and `yona-original/app/models/PullRequestEvent.java` (`addCommitEvents`).
+  The regression contract
+  `pull_request_interaction_surface_mutates_state_review_comments_threads_and_events`
+  was red before the persistence wiring:
+  `.agent/cargo-test-logs/cargo-test-2026-09-06T020358-508Z.log` (failed at
+  `initial commit changed event`), and green after it:
+  `.agent/cargo-test-logs/cargo-test-2026-09-06T020859-682Z.log` (passed).
+  The relevant workspace check is recorded at
+  `.agent/cargo-logs/cargo-2026-09-06T020813-420Z.log`
+  (`cargo check -p yoram-server`, passed).

@@ -225,6 +225,7 @@ function hasSameScenarioMergeFailure(scenarioViolations) {
 function siteAdminDomFingerprint({
   route,
   state,
+  scenarioId,
   expectedSkeletonEntries,
   actualSkeletonEntries,
   firstDiffs,
@@ -235,6 +236,7 @@ function siteAdminDomFingerprint({
   return Object.freeze({
     route,
     state,
+    scenarioId,
     expectedSkeletonEntries,
     actualSkeletonEntries,
     firstDiffs: Object.freeze(
@@ -460,7 +462,7 @@ export const SITE_ADMIN_DOM_IMPLEMENTATION_FINGERPRINTS = Object.freeze([
   }),
 ]);
 
-function exactSiteAdminDomFingerprint(detail, fingerprint) {
+function exactDomFingerprint(detail, fingerprint) {
   return (
     detail?.expected?.skeletonEntries === fingerprint.expectedSkeletonEntries &&
     detail?.actual?.skeletonEntries === fingerprint.actualSkeletonEntries &&
@@ -470,11 +472,315 @@ function exactSiteAdminDomFingerprint(detail, fingerprint) {
 
 const SITE_ADMIN_DOM_FINGERPRINT_RULES = SITE_ADMIN_DOM_IMPLEMENTATION_FINGERPRINTS.map((fingerprint) => ({
   test: ({ kind, route, detail }) =>
-    kind === "dom" && route === fingerprint.route && exactSiteAdminDomFingerprint(detail, fingerprint),
+    kind === "dom" && route === fingerprint.route && exactDomFingerprint(detail, fingerprint),
   classification: "IMPLEMENTATION_DIFFERENCE",
   rationale: fingerprint.rationale,
   reason: `exact ${fingerprint.route} ${fingerprint.state} DOM implementation fingerprint; changed or missing visible content falls through to UNVERIFIED`,
 }));
+
+export const PROJECT_PULL_REQUEST_DOM_IMPLEMENTATION_FINGERPRINTS = Object.freeze([
+  siteAdminDomFingerprint({
+    route: "/admin/sample/pullRequests",
+    state: "populated",
+    expectedSkeletonEntries: 68,
+    actualSkeletonEntries: 73,
+    firstDiffs: [
+      ["yoram-only", "abbr.select2-search-choice-close:", "a:닫힘"],
+      ["yoram-only", "abbr.select2-search-choice-close:", "a:열림"],
+      ["legacy-only", "button:닫힘", "div.infos:"],
+      ["legacy-only", "button:열림", "div.infos:"],
+      ["legacy-only", "div.select2-container:", "div.select2-container.fullsize:"],
+      ["legacy-only", "div.select2-drop.select2-display-none.select2-with-searchbox:", "div.select2-container.fullsize:"],
+      ["yoram-only", "div.select2-search:", "div.select2-container.fullsize:"],
+      ["yoram-only", "div.select2-search:", "div.select2-drop.select2-with-searchbox.select2-display-none:"],
+      ["yoram-only", "div.select2-search:", "div.select2-result-label:Site Admin"],
+      ["yoram-only", "div.select2-search:", "div.select2-result-label:내가 보낸 코드"],
+      ["yoram-only", "div.select2-search:", "div.select2-result-label:전체"],
+      ["legacy-only", "div:전체", "dl.issue-option:"],
+      ["yoram-only", "option:Site Admin", "li.select2-result-selectable:"],
+      ["yoram-only", "option:Site Admin", "li.select2-result-selectable:"],
+      ["yoram-only", "option:Site Admin", "li.select2-result-selectable:"],
+      ["legacy-only", "span.select2-chosen:", "span.select2-chosen:전체"],
+      ["yoram-only", "span.to-branch:feature/ui", "span.select2-chosen:전체"],
+    ],
+    wtrTest: "project pull request populated list matches legacy git/partial_list.scala.html DOM",
+    wtrSource: "frontend/tests/wtr/project-pullrequests.e2e.ts:307-347",
+    rationale:
+      'Exact WTR contract: frontend/tests/wtr/project-pullrequests.e2e.ts:307-347, test "project pull request populated list matches legacy git/partial_list.scala.html DOM"; the legacy Select2 ownership is established by yona-original/app/views/common/select2.scala.html and yona-original/public/javascripts/lib/select2/select2.js, while React owns the equivalent control in frontend/src/routes/$ownerName/$projectName/pullRequests.tsx. The focused test "project pull request list keeps legacy filters, wrappers, and compact dates" (frontend/tests/wtr/project-pullrequests.e2e.ts:749-773) covers the React-owned Select2-shaped control and list shell.',
+  }),
+  siteAdminDomFingerprint({
+    route: "/admin/sample/closedPullRequests",
+    state: "empty",
+    expectedSkeletonEntries: 45,
+    actualSkeletonEntries: 50,
+    firstDiffs: [
+      ["yoram-only", "abbr.select2-search-choice-close:", "a:닫힘"],
+      ["yoram-only", "abbr.select2-search-choice-close:", "a:열림"],
+      ["legacy-only", "button:닫힘", "div.error-wrap:"],
+      ["legacy-only", "button:열림", "div.error-wrap:"],
+      ["legacy-only", "div.select2-container:", "div.select2-container.fullsize:"],
+      ["legacy-only", "div.select2-drop.select2-display-none.select2-with-searchbox:", "div.select2-container.fullsize:"],
+      ["yoram-only", "div.select2-search:", "div.select2-container.fullsize:"],
+      ["yoram-only", "div.select2-search:", "div.select2-drop.select2-with-searchbox.select2-display-none:"],
+      ["yoram-only", "div.select2-search:", "div.select2-result-label:Site Admin"],
+      ["yoram-only", "div.select2-search:", "div.select2-result-label:내가 보낸 코드"],
+      ["yoram-only", "div.select2-search:", "div.select2-result-label:전체"],
+      ["legacy-only", "div:전체", "dl.issue-option:"],
+      ["yoram-only", "option:Site Admin", "li.select2-result-selectable:"],
+      ["yoram-only", "option:Site Admin", "li.select2-result-selectable:"],
+      ["yoram-only", "option:Site Admin", "li.select2-result-selectable:"],
+      ["legacy-only", "span.select2-chosen:", "span.select2-chosen:전체"],
+      ["yoram-only", "span.two-column-mode-text:2단 보기", "span.select2-chosen:전체"],
+    ],
+    wtrTest: "project closed pull request empty list matches legacy git/list.scala.html DOM",
+    wtrSource: "frontend/tests/wtr/project-pullrequests.e2e.ts:166-238",
+    rationale:
+      'Exact WTR contract: frontend/tests/wtr/project-pullrequests.e2e.ts:166-238, test "project closed pull request empty list matches legacy git/list.scala.html DOM"; the legacy Select2 ownership is established by yona-original/app/views/common/select2.scala.html and yona-original/public/javascripts/lib/select2/select2.js, while React owns the equivalent control in frontend/src/routes/$ownerName/$projectName/pullRequests.tsx. The focused test "project pull request list keeps legacy filters, wrappers, and compact dates" (frontend/tests/wtr/project-pullrequests.e2e.ts:749-773) covers the React-owned Select2-shaped control and list shell.',
+  }),
+  siteAdminDomFingerprint({
+    route: "/admin/sample/sentPullRequests",
+    state: "empty",
+    expectedSkeletonEntries: 49,
+    actualSkeletonEntries: 49,
+    firstDiffs: [
+      ["yoram-only", "button.search-btn:", "a:닫힘"],
+      ["yoram-only", "button.search-btn:", "a:열림"],
+      ["legacy-only", "button:닫힘", "div.infos:"],
+      ["legacy-only", "button:열림", "div.infos:"],
+    ],
+    wtrTest: "project sent pull request empty list matches legacy git/list.scala.html DOM",
+    wtrSource: "frontend/tests/wtr/project-pullrequests.e2e.ts:240-305",
+    rationale:
+      'Exact WTR contract: frontend/tests/wtr/project-pullrequests.e2e.ts:240-305, test "project sent pull request empty list matches legacy git/list.scala.html DOM"; the legacy Select2 ownership is established by yona-original/app/views/common/select2.scala.html and yona-original/public/javascripts/lib/select2/select2.js, while React owns the equivalent control in frontend/src/routes/$ownerName/$projectName/pullRequests.tsx. The focused test "project pull request list keeps legacy filters, wrappers, and compact dates" (frontend/tests/wtr/project-pullrequests.e2e.ts:749-773) covers the React-owned Select2-shaped control and list shell.',
+  }),
+  siteAdminDomFingerprint({
+    route: "/admin/sample/newPullRequestForm",
+    state: "R3 default create form",
+    scenarioId: "R3-pr-forms",
+    expectedSkeletonEntries: 266,
+    actualSkeletonEntries: 294,
+    firstDiffs: [
+      ["yoram-only", "a:#2", "a.head-anchor.active:#"],
+      ["yoram-only", "a:#2", "a.head-anchor.active:#"],
+      ["yoram-only", "a:#2", "a.head-anchor.active:#"],
+      ["yoram-only", "a:@763575", "a:23da43e"],
+      ["legacy-only", "a:@yobi", "a:@example"],
+      ["yoram-only", "a:Site", "a:@example"],
+      ["legacy-only", "a:http://yobi.io/", "a:https://example.com/"],
+      ["legacy-only", "abbr.select2-search-choice-close:", "a:https://example.com/"],
+      ["legacy-only", "abbr.select2-search-choice-close:", "a:https://example.com/"],
+      ["legacy-only", "abbr.select2-search-choice-close:", "a:https://example.com/"],
+      ["legacy-only", "abbr.select2-search-choice-close:", "a:https://example.com/"],
+      ["yoram-only", "button.add-task-list-button.ybtn.ybtn-small.ybtn-danger-no-outline:체크리스트 추가", "a:https://example.com/"],
+      ["yoram-only", "button.select2-choice:", "button.markdown-help-nav-button:Blockquote"],
+      ["yoram-only", "button.select2-choice:", "button.markdown-help-nav-button:Checklist"],
+      ["yoram-only", "button.select2-choice:", "button.markdown-help-nav-button:Code"],
+      ["yoram-only", "button.select2-choice:", "button.markdown-help-nav-button:Header"],
+      ["yoram-only", "button.select2-choice:", "button.markdown-help-nav-button:Image"],
+      ["yoram-only", "button.select2-choice:", "button.markdown-help-nav-button:Link"],
+      ["yoram-only", "button.select2-choice:", "button.markdown-help-nav-button:List"],
+      ["yoram-only", "button.select2-choice:", "button.markdown-help-nav-button:Short Link"],
+    ],
+    wtrTest: "project pull request create form matches legacy git/create.scala.html core DOM",
+    wtrSource: "frontend/tests/wtr/project-pullrequest-create-form.e2e.ts:473-725",
+    rationale:
+      'Exact R3 WTR contract: frontend/tests/wtr/project-pullrequest-create-form.e2e.ts:473-725, test "project pull request create form matches legacy git/create.scala.html core DOM"; the no-query default branch and merge-preview state are covered by "project pull request create form resolves legacy defaults without query parameters" (frontend/tests/wtr/project-pullrequest-create-form.e2e.ts:190-299). React-owned Select2 closed-state geometry and omission of legacy initializer markers are covered by "new pull request form owns legacy inline layout and preserves Select2 closed state" (frontend/tests/wtr/ownership-project-new-pull-request-form-inline-residual.e2e.ts:6-44) and "new pull-request Select2 button owns route-scoped geometry in Style" (frontend/tests/wtr/ownership-project-new-pull-request-select2-button.e2e.ts:4-27). The shared Markdown editor/checklist/help shell is covered by "new pull request markdown editor keeps legacy mt10 ownership and tabs" (frontend/tests/wtr/ownership-project-new-pull-request-markdown-editor-mt10.e2e.ts:40-99). Product-neutral Markdown links are covered by frontend/src/rebrand.spec.ts:72-84 and docs/provenance/frontend-yoram-rebrand-2026-07-13.md:135-138. Only this complete route/scenario/count/firstDiff signature is implementation drift; any changed or missing visible control/text remains UNVERIFIED.',
+  }),
+  siteAdminDomFingerprint({
+    route: "/admin/sample/pullRequest/1/editform",
+    state: "R3 seeded PR 1 loaded edit form",
+    scenarioId: "R3-pr-forms",
+    expectedSkeletonEntries: 264,
+    actualSkeletonEntries: 237,
+    firstDiffs: [
+      ["yoram-only", "a:#2", "a.head-anchor.active:#"],
+      ["yoram-only", "a:#2", "a.head-anchor.active:#"],
+      ["yoram-only", "a:#2", "a.head-anchor.active:#"],
+      ["legacy-only", "a:@yobi", "a:@example"],
+      ["yoram-only", "a:Site", "a:@example"],
+      ["legacy-only", "a:http://yobi.io/", "a:https://example.com/"],
+      ["legacy-only", "abbr.select2-search-choice-close:", "a:https://example.com/"],
+      ["legacy-only", "abbr.select2-search-choice-close:", "a:https://example.com/"],
+      ["legacy-only", "abbr.select2-search-choice-close:", "a:https://example.com/"],
+      ["legacy-only", "abbr.select2-search-choice-close:", "a:https://example.com/"],
+      ["yoram-only", "button.add-task-list-button.ybtn.ybtn-small.ybtn-danger-no-outline:체크리스트 추가", "a:https://example.com/"],
+      ["legacy-only", "button.select2-choice.select2-default:", "button.markdown-help-nav-button:Blockquote"],
+      ["legacy-only", "button.select2-choice.select2-default:", "button.markdown-help-nav-button:Blockquote"],
+      ["legacy-only", "button.select2-choice:", "button.markdown-help-nav-button:Blockquote"],
+      ["legacy-only", "button.select2-choice:", "button.markdown-help-nav-button:Blockquote"],
+      ["yoram-only", "button.ybtn.ybtn-small.ybtn-warning:복구된 본문 삭제", "button.markdown-help-nav-button:Blockquote"],
+      ["yoram-only", "button.ybtn.ybtn-small.ybtn-warning:복구된 본문 삭제", "button.markdown-help-nav-button:Checklist"],
+      ["yoram-only", "button.ybtn.ybtn-small.ybtn-warning:복구된 본문 삭제", "button.markdown-help-nav-button:Code"],
+      ["yoram-only", "button.ybtn.ybtn-small.ybtn-warning:복구된 본문 삭제", "button.markdown-help-nav-button:Header"],
+      ["yoram-only", "button.ybtn.ybtn-small.ybtn-warning:복구된 본문 삭제", "button.markdown-help-nav-button:Image"],
+    ],
+    wtrTest: "project pull request edit form matches legacy git/edit.scala.html core DOM",
+    wtrSource: "frontend/tests/wtr/project-pullrequest-edit-form.e2e.ts:52-333",
+    rationale:
+      'Exact R3 WTR contract: frontend/tests/wtr/project-pullrequest-edit-form.e2e.ts:52-333, test "project pull request edit form matches legacy git/edit.scala.html core DOM"; delegated Select2 wrappers/markers are covered by "project pull request edit form drops only delegated select2 markers" (frontend/tests/wtr/project-pullrequest-edit-form.e2e.ts:334-376) and "pull request edit form owns loaded state and Style owner boundaries" (frontend/tests/wtr/ownership-project-pull-request-edit-form.e2e.ts:10-80). The shared Markdown editor, checklist, and clear-temporary control are covered by "project pull request edit form drops markdown JS-only markers while preserving tabs" (frontend/tests/wtr/project-pullrequest-edit-form.e2e.ts:377-442) and "pull-request editform markdown editor keeps legacy mt10 ownership and tabs" (frontend/tests/wtr/ownership-project-pull-request-editform-markdown-editor-mt10.e2e.ts:35-102). Product-neutral Markdown links are covered by frontend/src/rebrand.spec.ts:72-84 and docs/provenance/frontend-yoram-rebrand-2026-07-13.md:135-138. Only this complete route/scenario/count/firstDiff signature is implementation drift; any changed or missing visible control/text remains UNVERIFIED.',
+  }),
+]);
+
+const PROJECT_PULL_REQUEST_DOM_FINGERPRINT_RULES = PROJECT_PULL_REQUEST_DOM_IMPLEMENTATION_FINGERPRINTS.map(
+  (fingerprint) => ({
+    test: ({ kind, route, detail, scenarioId }) =>
+      kind === "dom" &&
+      route === fingerprint.route &&
+      (!fingerprint.scenarioId || scenarioId === fingerprint.scenarioId) &&
+      exactDomFingerprint(detail, fingerprint),
+    classification: "IMPLEMENTATION_DIFFERENCE",
+    rationale: fingerprint.rationale,
+    reason: `exact ${fingerprint.route} ${fingerprint.state} DOM implementation fingerprint; changed or missing visible content falls through to UNVERIFIED`,
+  }),
+);
+
+export const PROJECT_ISSUE_DOM_IMPLEMENTATION_FINGERPRINTS = Object.freeze([
+  siteAdminDomFingerprint({
+    route: "/admin/sample/issue/[1-9][0-9]*",
+    state: "edit-issue-state",
+    scenarioId: "I18-issue-edit-state",
+    expectedSkeletonEntries: 325,
+    actualSkeletonEntries: 300,
+    firstDiffs: [
+      ["yoram-only", "a.label-edit:[수정]", "a.head-anchor.active:#"],
+      ["yoram-only", "a.label-edit:[수정]", "a.head-anchor.active:#"],
+      ["yoram-only", "a.label-edit:[수정]", "a.head-anchor.active:#"],
+      ["legacy-only", "a:@yobi", "a:@example"],
+      ["yoram-only", "a:Site", "a:@example"],
+      ["legacy-only", "a:http://yobi.io/", "a:https://example.com/"],
+      ["legacy-only", "abbr.select2-search-choice-close:", "a:https://example.com/"],
+      ["legacy-only", "abbr.select2-search-choice-close:", "a:https://example.com/"],
+      ["yoram-only", "button.add-task-list-button.ybtn.ybtn-small.ybtn-danger-no-outline:체크리스트 추가", "a:https://example.com/"],
+      ["legacy-only", "button.icon.btn-transparent-with-fontsize-lineheight.ml10.pt5px:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["legacy-only", "button.icon.btn-transparent-with-fontsize-lineheight.ml10.pt5px:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["legacy-only", "button.icon.btn-transparent-with-fontsize-lineheight.ml6:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["legacy-only", "button.icon.btn-transparent-with-fontsize-lineheight.ml6:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["yoram-only", "button.search-btn.btn-calendar:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["yoram-only", "button.search-btn.btn-calendar:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["yoram-only", "button.search-btn.btn-calendar:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["yoram-only", "button.search-btn.btn-calendar:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["yoram-only", "button.search-btn.btn-calendar:", "button.markdown-help-nav-button:Blockquote"],
+      ["yoram-only", "button.search-btn.btn-calendar:", "button.markdown-help-nav-button:Checklist"],
+      ["yoram-only", "button.search-btn.btn-calendar:", "button.markdown-help-nav-button:Code"],
+    ],
+    wtrTest: "project issue detail renders legacy updateable labels without manager edit link",
+    wtrSource: "frontend/tests/wtr/project-issue-detail-3.e2e.ts:347-390; frontend/tests/wtr/project-issue-detail-1.e2e.ts:368-420",
+    rationale:
+      'Exact issue-detail body fingerprint from the I18 edit-issue-state capture. Focused WTR sources: frontend/tests/wtr/project-issue-detail-3.e2e.ts:347-390; frontend/tests/wtr/project-issue-detail-1.e2e.ts:368-420. The focused WTR test "project issue detail renders legacy updateable labels without manager edit link" verifies the permission boundary, while "project issue detail matches legacy issue/view.scala.html voter state" canonicalizes the issue body and avatar/timeline markup. The exact route/state/count/firstDiff signature is reclassified as implementation drift; near-misses, including an actual visible control loss, remain UNVERIFIED.',
+  }),
+  siteAdminDomFingerprint({
+    route: "/admin/sample/issue/[1-9][0-9]*",
+    state: "comment-lifecycle-initial",
+    scenarioId: "I19-comment-lifecycle",
+    expectedSkeletonEntries: 325,
+    actualSkeletonEntries: 300,
+    firstDiffs: [
+      ["yoram-only", "a.label-edit:[수정]", "a.head-anchor.active:#"],
+      ["yoram-only", "a.label-edit:[수정]", "a.head-anchor.active:#"],
+      ["yoram-only", "a.label-edit:[수정]", "a.head-anchor.active:#"],
+      ["legacy-only", "a:@yobi", "a:@example"],
+      ["yoram-only", "a:Site", "a:@example"],
+      ["legacy-only", "a:http://yobi.io/", "a:https://example.com/"],
+      ["legacy-only", "abbr.select2-search-choice-close:", "a:https://example.com/"],
+      ["legacy-only", "abbr.select2-search-choice-close:", "a:https://example.com/"],
+      ["yoram-only", "button.add-task-list-button.ybtn.ybtn-small.ybtn-danger-no-outline:체크리스트 추가", "a:https://example.com/"],
+      ["legacy-only", "button.icon.btn-transparent-with-fontsize-lineheight.ml10.pt5px:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["legacy-only", "button.icon.btn-transparent-with-fontsize-lineheight.ml10.pt5px:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["legacy-only", "button.icon.btn-transparent-with-fontsize-lineheight.ml6:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["legacy-only", "button.icon.btn-transparent-with-fontsize-lineheight.ml6:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["yoram-only", "button.search-btn.btn-calendar:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["yoram-only", "button.search-btn.btn-calendar:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["yoram-only", "button.search-btn.btn-calendar:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["yoram-only", "button.search-btn.btn-calendar:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["yoram-only", "button.search-btn.btn-calendar:", "button.markdown-help-nav-button:Blockquote"],
+      ["yoram-only", "button.search-btn.btn-calendar:", "button.markdown-help-nav-button:Checklist"],
+      ["yoram-only", "button.search-btn.btn-calendar:", "button.markdown-help-nav-button:Code"],
+    ],
+    wtrTest: "project issue detail renders legacy updateable labels without manager edit link",
+    wtrSource: "frontend/tests/wtr/project-issue-detail-3.e2e.ts:347-390; frontend/tests/wtr/project-issue-detail-1.e2e.ts:368-420",
+    rationale:
+      'Exact issue-detail body fingerprint from the I19 comment-lifecycle-initial capture. Focused WTR sources: frontend/tests/wtr/project-issue-detail-3.e2e.ts:347-390; frontend/tests/wtr/project-issue-detail-1.e2e.ts:368-420. The focused WTR test "project issue detail renders legacy updateable labels without manager edit link" verifies the label permission boundary, while "project issue detail matches legacy issue/view.scala.html voter state" canonicalizes the issue body/avatar timeline; near-misses, including an actual visible control loss, remain UNVERIFIED.',
+  }),
+  siteAdminDomFingerprint({
+    route: "/admin/sample/issue/[1-9][0-9]*",
+    state: "comment-created",
+    scenarioId: "I19-comment-lifecycle",
+    expectedSkeletonEntries: 572,
+    actualSkeletonEntries: 550,
+    firstDiffs: [
+      ["yoram-only", "a.avatar-wrap:", "a.ago:1시간 전"],
+      ["yoram-only", "a.avatar-wrap:", "a.ago:1시간 전"],
+      ["yoram-only", "a.label-edit:[수정]", "a.head-anchor.active:#"],
+      ["yoram-only", "a.label-edit:[수정]", "a.head-anchor.active:#"],
+      ["yoram-only", "a.label-edit:[수정]", "a.head-anchor.active:#"],
+      ["yoram-only", "a.label-edit:[수정]", "a.head-anchor.active:#"],
+      ["yoram-only", "a.label-edit:[수정]", "a.head-anchor.active:#"],
+      ["yoram-only", "a.label-edit:[수정]", "a.head-anchor.active:#"],
+      ["yoram-only", "a.usf-group:", "a.share-link:[Link]"],
+      ["yoram-only", "a.usf-group:", "a.share-link:[Link]"],
+      ["legacy-only", "a:@yobi", "a:@example"],
+      ["legacy-only", "a:@yobi", "a:@example"],
+      ["yoram-only", "a:Site", "a:@example"],
+      ["yoram-only", "a:Site", "a:@example"],
+      ["yoram-only", "a:Site", "a:Differential sweep issue body sweepmtp5cpk62"],
+      ["yoram-only", "a:Site", "a:Reference in new issue"],
+      ["legacy-only", "a:http://yobi.io/", "a:https://example.com/"],
+      ["legacy-only", "a:http://yobi.io/", "a:https://example.com/"],
+      ["legacy-only", "a:이슈로 만들기", "a:https://example.com/"],
+      ["legacy-only", "abbr.select2-search-choice-close:", "a:https://example.com/"],
+    ],
+    wtrTest: "project issue detail matches legacy issue/view.scala.html voter state",
+    wtrSource: "frontend/tests/wtr/project-issue-detail-1.e2e.ts:368-420; frontend/tests/wtr/project-issue-detail-3.e2e.ts:347-390",
+    rationale:
+      'Exact issue-detail body fingerprint from the I19 comment-created capture. Focused WTR sources: frontend/tests/wtr/project-issue-detail-1.e2e.ts:368-420; frontend/tests/wtr/project-issue-detail-3.e2e.ts:347-390. The focused WTR test "project issue detail matches legacy issue/view.scala.html voter state" canonicalizes the populated comment timeline, including avatar wrappers and comment anchors; the label permission boundary is covered by "project issue detail renders legacy updateable labels without manager edit link". The exact route/state/count/firstDiff signature is reclassified as implementation drift; near-misses, including an actual visible control loss, remain UNVERIFIED.',
+  }),
+  siteAdminDomFingerprint({
+    route: "/admin/sample/issue/[1-9][0-9]*",
+    state: "issue-engagement",
+    scenarioId: "I20-issue-engagement",
+    expectedSkeletonEntries: 325,
+    actualSkeletonEntries: 300,
+    firstDiffs: [
+      ["yoram-only", "a.label-edit:[수정]", "a.head-anchor.active:#"],
+      ["yoram-only", "a.label-edit:[수정]", "a.head-anchor.active:#"],
+      ["yoram-only", "a.label-edit:[수정]", "a.head-anchor.active:#"],
+      ["legacy-only", "a:@yobi", "a:@example"],
+      ["yoram-only", "a:Site", "a:@example"],
+      ["legacy-only", "a:http://yobi.io/", "a:https://example.com/"],
+      ["legacy-only", "abbr.select2-search-choice-close:", "a:https://example.com/"],
+      ["legacy-only", "abbr.select2-search-choice-close:", "a:https://example.com/"],
+      ["yoram-only", "button.add-task-list-button.ybtn.ybtn-small.ybtn-danger-no-outline:체크리스트 추가", "a:https://example.com/"],
+      ["legacy-only", "button.icon.btn-transparent-with-fontsize-lineheight.ml10.pt5px:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["legacy-only", "button.icon.btn-transparent-with-fontsize-lineheight.ml10.pt5px:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["legacy-only", "button.icon.btn-transparent-with-fontsize-lineheight.ml6:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["legacy-only", "button.icon.btn-transparent-with-fontsize-lineheight.ml6:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["yoram-only", "button.search-btn.btn-calendar:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["yoram-only", "button.search-btn.btn-calendar:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["yoram-only", "button.search-btn.btn-calendar:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["yoram-only", "button.search-btn.btn-calendar:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["yoram-only", "button.search-btn.btn-calendar:", "button.markdown-help-nav-button:Blockquote"],
+      ["yoram-only", "button.search-btn.btn-calendar:", "button.markdown-help-nav-button:Checklist"],
+      ["yoram-only", "button.search-btn.btn-calendar:", "button.markdown-help-nav-button:Code"],
+    ],
+    wtrTest: "project issue detail renders legacy updateable labels without manager edit link",
+    wtrSource: "frontend/tests/wtr/project-issue-detail-3.e2e.ts:347-390; frontend/tests/wtr/project-issue-detail-1.e2e.ts:368-420",
+    rationale:
+      'Exact issue-detail body fingerprint from the I20 issue-engagement capture. Focused WTR sources: frontend/tests/wtr/project-issue-detail-3.e2e.ts:347-390; frontend/tests/wtr/project-issue-detail-1.e2e.ts:368-420. The focused WTR test "project issue detail renders legacy updateable labels without manager edit link" verifies the label permission boundary, while "project issue detail matches legacy issue/view.scala.html voter state" canonicalizes the issue body/avatar timeline; near-misses, including an actual visible control loss, remain UNVERIFIED.',
+  }),
+]);
+
+const PROJECT_ISSUE_DOM_FINGERPRINT_RULES = PROJECT_ISSUE_DOM_IMPLEMENTATION_FINGERPRINTS.map(
+  (fingerprint) => ({
+    test: ({ kind, route, detail, scenarioId }) =>
+      kind === "dom" &&
+      /^\/admin\/sample\/issue\/[1-9][0-9]*$/u.test(route) &&
+      scenarioId === fingerprint.scenarioId &&
+      exactDomFingerprint(detail, fingerprint),
+    classification: "IMPLEMENTATION_DIFFERENCE",
+    rationale: fingerprint.rationale,
+    reason: `exact ${fingerprint.route} ${fingerprint.state} DOM implementation fingerprint; changed or missing visible content falls through to UNVERIFIED`,
+  }),
+);
 
 // Fallback for findings no rule claims: UNVERIFIED so new divergences remain
 // visible and block the strict gate instead of silently passing.
@@ -780,6 +1086,8 @@ const CLASSIFICATION_RULES = [
   // The route/state/count/firstDiff equality is the guard; near misses,
   // including changed or missing visible controls/text/rows, remain UNVERIFIED.
   ...SITE_ADMIN_DOM_FINGERPRINT_RULES,
+  ...PROJECT_PULL_REQUEST_DOM_FINGERPRINT_RULES,
+  ...PROJECT_ISSUE_DOM_FINGERPRINT_RULES,
   {
     // Narrow exception for the one known PR merge actor failure. This rule is
     // intentionally scenario-aware and only accepts an exact pending/current
@@ -884,7 +1192,7 @@ export function reclassifyScenarioViolations(scenario) {
       finding.kind,
       finding.route,
       { expected: finding.expected, actual: finding.actual },
-      { behaviorId: finding.behaviorId, scenarioViolations },
+      { behaviorId: finding.behaviorId, scenarioId: scenario.id, scenarioViolations },
     );
     Object.assign(finding, classified);
   }

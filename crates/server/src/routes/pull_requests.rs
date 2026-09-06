@@ -111,6 +111,8 @@ fn spawn_pull_request_merge_check(
     owner_name: String,
     project_name: String,
     pull_request_number: i64,
+    pull_request_id: i64,
+    actor_login_id: String,
     from_owner_name: String,
     from_project_name: String,
     from_branch: String,
@@ -147,7 +149,7 @@ fn spawn_pull_request_merge_check(
                     return;
                 }
             };
-        let conflict = match tokio::task::spawn_blocking(move || {
+        let preview = match tokio::task::spawn_blocking(move || {
             yoram_vcs::preview_pull_request_merge(
                 &source_repo_path,
                 &target_repo_path,
@@ -157,8 +159,25 @@ fn spawn_pull_request_merge_check(
         })
         .await
         {
-            Ok(Ok(preview)) => preview.conflict,
-            _ => false,
+            Ok(Ok(preview)) => Some(preview),
+            _ => None,
+        };
+        let conflict = if let Some(preview) = preview {
+            let commits = preview
+                .commits
+                .iter()
+                .map(|commit| persistence::PullRequestPushedCommitInput {
+                    author_email: commit.author_email.clone(),
+                    commit_id: commit.commit_id.clone(),
+                    commit_message: commit.commit_message.clone(),
+                })
+                .collect::<Vec<_>>();
+            let _ = repository
+                .record_initial_pull_request_commits(pull_request_id, &actor_login_id, &commits)
+                .await;
+            preview.conflict
+        } else {
+            false
         };
         let _ = repository
             .complete_pull_request_merge_check(
@@ -2411,6 +2430,8 @@ pub(crate) async fn rest_create_pull_request(
                 record.owner_name.clone(),
                 record.project_name.clone(),
                 record.pull_request_number,
+                record.id,
+                actor.login_id.clone(),
                 record.from_owner_name.clone(),
                 record.from_project_name.clone(),
                 record.from_branch.clone(),

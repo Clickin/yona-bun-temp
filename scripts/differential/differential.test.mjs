@@ -28,6 +28,8 @@ import {
   HarnessError,
   classifyViolation,
   reclassifyScenarioViolations,
+  PROJECT_ISSUE_DOM_IMPLEMENTATION_FINGERPRINTS,
+  PROJECT_PULL_REQUEST_DOM_IMPLEMENTATION_FINGERPRINTS,
   SITE_ADMIN_DOM_IMPLEMENTATION_FINGERPRINTS,
   violation,
 } from "./report.mjs";
@@ -436,13 +438,28 @@ function firstVisibleFingerprintDiffIndex(firstDiffs) {
   );
 }
 
+function fingerprintRoute(fingerprint, index = 0) {
+  return fingerprint.scenarioId?.startsWith("I")
+    ? `/admin/sample/issue/${701 + index}`
+    : fingerprint.route;
+}
+
+function fingerprintContext(fingerprint) {
+  return fingerprint.scenarioId ? { scenarioId: fingerprint.scenarioId } : {};
+}
+
 test("site-admin DOM fingerprints cite the exact WTR contract and classify only exact captures", () => {
   assert.equal(SITE_ADMIN_DOM_IMPLEMENTATION_FINGERPRINTS.length, 8);
-  for (const fingerprint of SITE_ADMIN_DOM_IMPLEMENTATION_FINGERPRINTS) {
+  for (const [index, fingerprint] of [
+    ...SITE_ADMIN_DOM_IMPLEMENTATION_FINGERPRINTS,
+    ...PROJECT_PULL_REQUEST_DOM_IMPLEMENTATION_FINGERPRINTS,
+    ...PROJECT_ISSUE_DOM_IMPLEMENTATION_FINGERPRINTS,
+  ].entries()) {
     const result = classifyViolation(
       "dom",
-      fingerprint.route,
+      fingerprintRoute(fingerprint, index),
       siteAdminFingerprintDetail(fingerprint),
+      fingerprintContext(fingerprint),
     );
     assert.equal(result.classification, "IMPLEMENTATION_DIFFERENCE", fingerprint.route);
     assert.match(result.rationale, new RegExp(fingerprint.wtrTest.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u"));
@@ -451,7 +468,11 @@ test("site-admin DOM fingerprints cite the exact WTR contract and classify only 
 });
 
 test("site-admin DOM fingerprint near misses keep visible changes blocking", () => {
-  for (const fingerprint of SITE_ADMIN_DOM_IMPLEMENTATION_FINGERPRINTS) {
+  for (const [index, fingerprint] of [
+    ...SITE_ADMIN_DOM_IMPLEMENTATION_FINGERPRINTS,
+    ...PROJECT_PULL_REQUEST_DOM_IMPLEMENTATION_FINGERPRINTS,
+    ...PROJECT_ISSUE_DOM_IMPLEMENTATION_FINGERPRINTS,
+  ].entries()) {
     const visibleIndex = firstVisibleFingerprintDiffIndex(fingerprint.firstDiffs);
     assert.notEqual(visibleIndex, -1, `${fingerprint.route}: fingerprint must contain a visible entry`);
     const changedDiffs = fingerprint.firstDiffs.map((diff, index) =>
@@ -460,8 +481,9 @@ test("site-admin DOM fingerprint near misses keep visible changes blocking", () 
     assert.equal(
       classifyViolation(
         "dom",
-        fingerprint.route,
+        fingerprintRoute(fingerprint, index),
         siteAdminFingerprintDetail(fingerprint, { firstDiffs: changedDiffs }),
+        fingerprintContext(fingerprint),
       ).classification,
       "UNVERIFIED",
       `${fingerprint.route}: changed visible/class identity must remain blocking`,
@@ -471,11 +493,12 @@ test("site-admin DOM fingerprint near misses keep visible changes blocking", () 
     assert.equal(
       classifyViolation(
         "dom",
-        fingerprint.route,
+        fingerprintRoute(fingerprint, index),
         siteAdminFingerprintDetail(fingerprint, {
           firstDiffs: removedVisibleDiffs,
           skeletonEntries: fingerprint.actualSkeletonEntries - 1,
         }),
+        fingerprintContext(fingerprint),
       ).classification,
       "UNVERIFIED",
       `${fingerprint.route}: missing row/control must remain blocking`,
@@ -484,11 +507,186 @@ test("site-admin DOM fingerprint near misses keep visible changes blocking", () 
     assert.equal(
       classifyViolation(
         "dom",
-        `${fingerprint.route}?state=near-miss`,
+        `${fingerprintRoute(fingerprint, index)}?state=near-miss`,
         siteAdminFingerprintDetail(fingerprint),
+        fingerprintContext(fingerprint),
       ).classification,
       "UNVERIFIED",
       `${fingerprint.route}: state mismatch must remain blocking`,
+    );
+  }
+});
+
+test("R3 pull-request form fingerprints accept only exact captures", () => {
+  const fingerprints = PROJECT_PULL_REQUEST_DOM_IMPLEMENTATION_FINGERPRINTS.filter(
+    (fingerprint) => fingerprint.scenarioId === "R3-pr-forms",
+  );
+  assert.deepEqual(
+    fingerprints.map((fingerprint) => fingerprint.route),
+    ["/admin/sample/newPullRequestForm", "/admin/sample/pullRequest/1/editform"],
+  );
+  assert.equal(
+    fingerprints.some((fingerprint) => fingerprint.route === "/admin/sample/pullRequest/2"),
+    false,
+    "R16 pull-request detail must not acquire a form fingerprint",
+  );
+
+  for (const fingerprint of fingerprints) {
+    const context = { scenarioId: fingerprint.scenarioId };
+    const exact = classifyViolation(
+      "dom",
+      fingerprint.route,
+      siteAdminFingerprintDetail(fingerprint),
+      context,
+    );
+    assert.equal(exact.classification, "IMPLEMENTATION_DIFFERENCE", fingerprint.route);
+    assert.match(exact.rationale, new RegExp(fingerprint.wtrTest.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u"));
+    assert.match(exact.rationale, new RegExp(fingerprint.wtrSource.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u"));
+
+    const visibleControlIndex = fingerprint.firstDiffs.findIndex((diff) =>
+      [diff.expected, diff.actual].some((entry) =>
+        /(?:button\.add-task-list|button\.select2-choice|markdown-help-nav-button)/u.test(
+          String(entry),
+        ),
+      ),
+    );
+    assert.notEqual(visibleControlIndex, -1, `${fingerprint.route}: form control signature missing`);
+
+    const missingControl = fingerprint.firstDiffs.filter(
+      (_diff, index) => index !== visibleControlIndex,
+    );
+    assert.equal(
+      classifyViolation(
+        "dom",
+        fingerprint.route,
+        siteAdminFingerprintDetail(fingerprint, {
+          skeletonEntries: fingerprint.actualSkeletonEntries - 1,
+          firstDiffs: missingControl,
+        }),
+        context,
+      ).classification,
+      "UNVERIFIED",
+      `${fingerprint.route}: missing visible control must block`,
+    );
+
+    const textIndex = fingerprint.firstDiffs.findIndex((diff) =>
+      [diff.expected, diff.actual].some((entry) => /@(?:yobi|example)/u.test(String(entry))),
+    );
+    assert.notEqual(textIndex, -1, `${fingerprint.route}: rebrand text signature missing`);
+    const changedText = fingerprint.firstDiffs.map((diff, index) =>
+      index === textIndex ? { ...diff, expected: `${diff.expected} changed` } : diff,
+    );
+    assert.equal(
+      classifyViolation(
+        "dom",
+        fingerprint.route,
+        siteAdminFingerprintDetail(fingerprint, { firstDiffs: changedText }),
+        context,
+      ).classification,
+      "UNVERIFIED",
+      `${fingerprint.route}: changed visible text must block`,
+    );
+
+    assert.equal(
+      classifyViolation(
+        "dom",
+        fingerprint.route,
+        siteAdminFingerprintDetail(fingerprint, {
+          skeletonEntries: fingerprint.actualSkeletonEntries + 1,
+        }),
+        context,
+      ).classification,
+      "UNVERIFIED",
+      `${fingerprint.route}: changed skeleton count must block`,
+    );
+  }
+});
+
+test("project issue-detail DOM fingerprints keep label/avatar control loss blocking", () => {
+  for (const [index, fingerprint] of PROJECT_ISSUE_DOM_IMPLEMENTATION_FINGERPRINTS.entries()) {
+    const controlIndex = fingerprint.firstDiffs.findIndex((diff) =>
+      [diff.expected, diff.actual].some((entry) =>
+        /(?:label-edit|avatar-wrap|usf-group)/u.test(String(entry)),
+      ),
+    );
+    assert.notEqual(controlIndex, -1, `${fingerprint.route}: fingerprint must contain a reviewed control`);
+    const missingControl = fingerprint.firstDiffs.filter((_diff, index) => index !== controlIndex);
+    assert.equal(
+      classifyViolation(
+        "dom",
+        fingerprintRoute(fingerprint, index),
+        siteAdminFingerprintDetail(fingerprint, {
+          firstDiffs: missingControl,
+          skeletonEntries: fingerprint.actualSkeletonEntries - 1,
+        }),
+        fingerprintContext(fingerprint),
+      ).classification,
+      "UNVERIFIED",
+      `${fingerprint.route}: missing label/avatar control must remain blocking`,
+    );
+    if (fingerprint.expectedSkeletonEntries !== 325) {
+      assert.equal(
+        classifyViolation(
+          "dom",
+          fingerprintRoute(fingerprint, index),
+          siteAdminFingerprintDetail(fingerprint),
+          { scenarioId: "I18-issue-edit-state" },
+        ).classification,
+        "UNVERIFIED",
+        `${fingerprint.route}: wrong scenario state must remain blocking`,
+      );
+    }
+  }
+});
+
+test("project pull-request DOM fingerprints keep missing button, text, and count blocking", () => {
+  for (const fingerprint of PROJECT_PULL_REQUEST_DOM_IMPLEMENTATION_FINGERPRINTS) {
+    const buttonIndex = fingerprint.firstDiffs.findIndex((diff) =>
+      [diff.expected, diff.actual].some((entry) => /^button(?:\.|:)/u.test(String(entry))),
+    );
+    assert.notEqual(buttonIndex, -1, `${fingerprint.route}: fingerprint must contain a button entry`);
+    const missingButton = fingerprint.firstDiffs.filter((_diff, index) => index !== buttonIndex);
+    assert.equal(
+      classifyViolation(
+        "dom",
+        fingerprint.route,
+        siteAdminFingerprintDetail(fingerprint, {
+          firstDiffs: missingButton,
+          skeletonEntries: fingerprint.actualSkeletonEntries - 1,
+        }),
+      ).classification,
+      "UNVERIFIED",
+      `${fingerprint.route}: missing button must remain blocking`,
+    );
+
+    const textIndex = fingerprint.firstDiffs.findIndex((diff) =>
+      [diff.expected, diff.actual].some((entry) => String(entry).includes(":") && String(entry).split(":").slice(1).join(":")),
+    );
+    assert.notEqual(textIndex, -1, `${fingerprint.route}: fingerprint must contain text`);
+    const missingText = fingerprint.firstDiffs.filter((_diff, index) => index !== textIndex);
+    assert.equal(
+      classifyViolation(
+        "dom",
+        fingerprint.route,
+        siteAdminFingerprintDetail(fingerprint, {
+          firstDiffs: missingText,
+          skeletonEntries: fingerprint.actualSkeletonEntries - 1,
+        }),
+      ).classification,
+      "UNVERIFIED",
+      `${fingerprint.route}: missing text must remain blocking`,
+    );
+
+    assert.equal(
+      classifyViolation(
+        "dom",
+        fingerprint.route,
+        siteAdminFingerprintDetail(fingerprint, {
+          skeletonEntries: fingerprint.actualSkeletonEntries + 1,
+        }),
+      ).classification,
+      "UNVERIFIED",
+      `${fingerprint.route}: changed skeleton count must remain blocking`,
     );
   }
 });

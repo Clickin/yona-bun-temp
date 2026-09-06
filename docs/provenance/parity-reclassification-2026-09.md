@@ -213,3 +213,107 @@ update current version from `CARGO_PKG_VERSION`, and
 `crates/server/src/routes/site_admin/update.rs:105-151` returns that configured
 identity. Only the exact `1.16.0` versus `0.1.0` no-update body signature is
 classified; any other version or status-copy mismatch remains `UNVERIFIED`.
+
+## 8. Project pull-request list body fingerprints (2026-09-06)
+
+The focused blocker artifact
+`.agent/differential/focused-blockers-8c83/report.json`
+(`runId=sweep-mtp4njvh`) retains three route-body DOM findings for the
+open/closed/sent project pull-request list states. The classifier now accepts
+only the exact route, state, legacy skeleton count, Yoram skeleton count, and
+complete `firstDiffs` signature from that artifact. These are
+`IMPLEMENTATION_DIFFERENCE`, not missing product behavior: the legacy side's
+`div.select2-container`, `select2-drop`, `select2-search`, and
+`select2-chosen` nodes are owned by the legacy Select2 view/plugin
+(`yona-original/app/views/common/select2.scala.html`,
+`yona-original/public/javascripts/lib/select2/select2.js`), while the React
+route owns the equivalent control and list behavior in
+`frontend/src/routes/$ownerName/$projectName/pullRequests.tsx`. The focused
+WTR suite proves the rendered contract and interaction; any missing button,
+text, row, or changed skeleton count remains `UNVERIFIED`.
+
+| route/state | exact skeleton counts | exact WTR contract |
+|---|---:|---|
+| `/admin/sample/pullRequests` / populated | legacy `68`, Yoram `73` | `frontend/tests/wtr/project-pullrequests.e2e.ts:307-347`, `project pull request populated list matches legacy git/partial_list.scala.html DOM` |
+| `/admin/sample/closedPullRequests` / empty | legacy `45`, Yoram `50` | `frontend/tests/wtr/project-pullrequests.e2e.ts:166-238`, `project closed pull request empty list matches legacy git/list.scala.html DOM` |
+| `/admin/sample/sentPullRequests` / empty | legacy `49`, Yoram `49` | `frontend/tests/wtr/project-pullrequests.e2e.ts:240-305`, `project sent pull request empty list matches legacy git/list.scala.html DOM` |
+
+The shared focused contract
+`project pull request list keeps legacy filters, wrappers, and compact dates`
+(`frontend/tests/wtr/project-pullrequests.e2e.ts:749-773`) additionally proves
+the React-owned Select2-shaped contributor control, legacy wrappers, and
+current-year date rendering. The differential unit tests exercise missing
+button, missing text, and count near-misses for each fingerprint; each remains
+`UNVERIFIED` so a future visible regression cannot be hidden by this narrow
+reclassification.
+
+## 9. Project issue-detail body fingerprints (2026-09-06)
+
+The I18/I19 issue-body findings in
+`.agent/differential/report.json` (`runId=sweep-mtp5cpk6`) are accepted only
+for the exact route, state, legacy skeleton count, Yoram skeleton count, and
+complete `firstDiffs` signatures recorded in
+`scripts/differential/report.mjs`. The label-edit and comment-avatar rows are
+already represented by the issue-detail route contract: the focused WTR
+`project issue detail matches legacy issue/view.scala.html voter state`
+(`frontend/tests/wtr/project-issue-detail-1.e2e.ts:368-420`) canonicalizes the
+populated comment/avatar timeline, and
+`project issue detail renders legacy updateable labels without manager edit link`
+(`frontend/tests/wtr/project-issue-detail-3.e2e.ts:347-390`) verifies the
+permission boundary. These exact SSR-vs-SPA body fingerprints are therefore
+`IMPLEMENTATION_DIFFERENCE`; changed counts, missing controls, missing rows,
+or any other near-miss remain `UNVERIFIED`.
+
+| route/state | exact skeleton counts | exact WTR contract |
+|---|---:|---|
+| `/admin/sample/issue/[1-9][0-9]*` / I18 `edit-issue-state` | legacy `325`, Yoram `300` | `frontend/tests/wtr/project-issue-detail-1.e2e.ts:368-420`, `project issue detail matches legacy issue/view.scala.html voter state`; permission boundary: `frontend/tests/wtr/project-issue-detail-3.e2e.ts:347-390` |
+| `/admin/sample/issue/[1-9][0-9]*` / I19 `comment-lifecycle-initial` | legacy `325`, Yoram `300` | `frontend/tests/wtr/project-issue-detail-1.e2e.ts:368-420`, `project issue detail matches legacy issue/view.scala.html voter state`; permission boundary: `frontend/tests/wtr/project-issue-detail-3.e2e.ts:347-390` |
+| `/admin/sample/issue/[1-9][0-9]*` / I19 `comment-created` | legacy `572`, Yoram `550` | `frontend/tests/wtr/project-issue-detail-1.e2e.ts:368-420`, `project issue detail matches legacy issue/view.scala.html voter state`; permission boundary: `frontend/tests/wtr/project-issue-detail-3.e2e.ts:347-390` |
+| `/admin/sample/issue/[1-9][0-9]*` / I20 `issue-engagement` | legacy `325`, Yoram `300` | `frontend/tests/wtr/project-issue-detail-1.e2e.ts:368-420`, `project issue detail matches legacy issue/view.scala.html voter state`; permission boundary: `frontend/tests/wtr/project-issue-detail-3.e2e.ts:347-390` |
+
+## 10. R3 pull-request form body fingerprints (2026-09-06)
+
+The focused c63 artifact
+`.agent/differential/focused-consolidated-c63a/report.json`
+(`runId=sweep-mtp3jpbh`) contains the default create form and seeded edit-form
+body findings from scenario `R3-pr-forms`. The classifier accepts only the
+exact route, scenario state, legacy/Yoram skeleton counts, and complete
+`firstDiffs` signatures recorded in `scripts/differential/report.mjs`.
+They are `IMPLEMENTATION_DIFFERENCE` because the focused WTR contracts prove
+the visible form controls while the residual entries are known renderer/plugin
+structure: React owns the Select2-shaped closed controls and shared Markdown
+editor buttons, and product-neutral Markdown examples intentionally use
+`@example`/`example.com` in place of the legacy `@yobi`/`yobi.io` identity.
+Any changed or missing visible control, text, or count remains `UNVERIFIED`.
+
+| route/state | exact skeleton counts | exact WTR contract |
+|---|---:|---|
+| `/admin/sample/newPullRequestForm` / `R3-pr-forms` default create form | legacy `266`, Yoram `294` | `frontend/tests/wtr/project-pullrequest-create-form.e2e.ts:473-725`, `project pull request create form matches legacy git/create.scala.html core DOM` |
+| `/admin/sample/pullRequest/1/editform` / `R3-pr-forms` seeded PR 1 loaded edit form | legacy `264`, Yoram `237` | `frontend/tests/wtr/project-pullrequest-edit-form.e2e.ts:52-333`, `project pull request edit form matches legacy git/edit.scala.html core DOM` |
+
+The create-form default state is also covered by
+`project pull request create form resolves legacy defaults without query
+parameters` (`frontend/tests/wtr/project-pullrequest-create-form.e2e.ts:190-299`).
+Its selector replacement is covered by
+`new pull request form owns legacy inline layout and preserves Select2 closed
+state` (`frontend/tests/wtr/ownership-project-new-pull-request-form-inline-residual.e2e.ts:6-44`)
+and `new pull-request Select2 button owns route-scoped geometry in Style`
+(`frontend/tests/wtr/ownership-project-new-pull-request-select2-button.e2e.ts:4-27`).
+The editor/checklist/help shell is covered by
+`new pull request markdown editor keeps legacy mt10 ownership and tabs`
+(`frontend/tests/wtr/ownership-project-new-pull-request-markdown-editor-mt10.e2e.ts:40-99`).
+The edit-form selector and editor substitutions are covered by
+`project pull request edit form drops only delegated select2 markers`
+(`frontend/tests/wtr/project-pullrequest-edit-form.e2e.ts:334-376`),
+`project pull request edit form drops markdown JS-only markers while preserving tabs`
+(`frontend/tests/wtr/project-pullrequest-edit-form.e2e.ts:377-442`), and
+`pull-request editform markdown editor keeps legacy mt10 ownership and tabs`
+(`frontend/tests/wtr/ownership-project-pull-request-editform-markdown-editor-mt10.e2e.ts:35-102`).
+The product-neutral link decision is recorded in
+`frontend/src/rebrand.spec.ts:72-84` and
+`docs/provenance/frontend-yoram-rebrand-2026-07-13.md:135-138`.
+`scripts/differential/differential.test.mjs` exercises exact matches plus
+missing visible control, changed visible text, changed count, and scenario
+near-misses; every near-miss remains `UNVERIFIED`. The R16 pull-request detail
+fingerprint is intentionally absent: its missing commit/event rows remain a
+backend-owned blocker.
