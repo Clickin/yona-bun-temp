@@ -1954,6 +1954,8 @@ export class Locator {
 
 class PageFacade {
   private iframeElement: HTMLIFrameElement | null = null;
+  private iframeLoadListener: (() => void) | null = null;
+  private appliedViewport: { width: number; height: number; bridge: unknown } | null = null;
 
   // Public read access for the C1 real-mouse bridge (hover/down/up need the
   // iframe's page offset to translate iframe-relative coords).
@@ -1982,6 +1984,10 @@ class PageFacade {
       // actual state reset.
     } finally {
       if (iframe) metricIncrement("iframeRemoves");
+      if (this.iframeLoadListener) {
+        iframe.removeEventListener("load", this.iframeLoadListener);
+        this.iframeLoadListener = null;
+      }
       iframe?.remove();
       if (this.iframeElement === iframe) this.iframeElement = null;
     }
@@ -2228,17 +2234,11 @@ class PageFacade {
     // Keep the parent browser viewport in sync with the iframe size even when
     // the test never calls setViewportSize (default 1280x720 iframe in an
     // 800x600 WTR page would clip real-mouse moves below y=600).
-    const bridge = (window as unknown as Record<string, unknown>).__wtrRealMouse;
-    if (typeof bridge === "function") {
-      const width = this.requestedViewport?.width ?? 1280;
-      const height = this.requestedViewport?.height ?? 720;
-      await callRealMouseBridge(
-        "setViewport",
-        width,
-        height,
-        `goto: viewport bridge did not settle within ${DEFAULT_HARNESS_WAIT_TIMEOUT_MS}ms`,
-      );
-    }
+    await this.syncRealMouseViewport(
+      this.requestedViewport?.width ?? 1280,
+      this.requestedViewport?.height ?? 720,
+      `goto: viewport bridge did not settle within ${DEFAULT_HARNESS_WAIT_TIMEOUT_MS}ms`,
+    );
     const absolute = url.startsWith("http") ? url : new URL(url, location.origin).href;
     installFetchMock(this.iframeElement, window.fetch);
     this.applyMediaEmulation();
@@ -2270,6 +2270,15 @@ class PageFacade {
       );
     }, DEFAULT_HARNESS_WAIT_TIMEOUT_MS);
     iframe.addEventListener("load", onLoad);
+    // Keep one navigation listener per iframe. Registering this inside every
+    // goto() causes all prior listeners to replay on later loads.
+    if (!this.iframeLoadListener) {
+      this.iframeLoadListener = () => {
+        const url = this.iframeElement?.contentWindow?.location.href ?? "";
+        emitWtrEvent("framenavigated", { url });
+      };
+      iframe.addEventListener("load", this.iframeLoadListener);
+    }
     if (sameDocument) {
       this.iframeElement.contentWindow?.location.reload();
     } else {
@@ -2280,10 +2289,6 @@ class PageFacade {
     // before waiters register, so it is harmless. The document-request event
     // is emitted once per navigation in goto() below (Playwright parity: one
     // document request per full document load).
-    this.iframeElement.addEventListener("load", () => {
-      const url = this.iframeElement?.contentWindow?.location.href ?? "";
-      emitWtrEvent("framenavigated", { url });
-    });
     await promise;
     // Emit exactly one document request per navigation (Playwright fires one
     // per full document load; SPA pushState redirects do NOT fire one).
@@ -2660,15 +2665,31 @@ class PageFacade {
     }
     // Real mouse needs the parent browser viewport to match: the iframe is
     // fixed at (0,0) sized to the requested viewport, so coords map 1:1.
+    await this.syncRealMouseViewport(
+      size.width,
+      size.height,
+      `setViewportSize: viewport bridge did not settle within ${DEFAULT_HARNESS_WAIT_TIMEOUT_MS}ms`,
+    );
+  }
+
+  private async syncRealMouseViewport(
+    width: number,
+    height: number,
+    message: string,
+  ): Promise<void> {
     const bridge = (window as unknown as Record<string, unknown>).__wtrRealMouse;
-    if (typeof bridge === "function") {
-      await callRealMouseBridge(
-        "setViewport",
-        size.width,
-        size.height,
-        `setViewportSize: viewport bridge did not settle within ${DEFAULT_HARNESS_WAIT_TIMEOUT_MS}ms`,
-      );
+    if (typeof bridge !== "function") return;
+    // setViewport is a browser-wide side effect; repeating the same dimensions
+    // on every goto adds bridge round-trips without changing the surface.
+    if (
+      this.appliedViewport?.bridge === bridge &&
+      this.appliedViewport.width === width &&
+      this.appliedViewport.height === height
+    ) {
+      return;
     }
+    await callRealMouseBridge("setViewport", width, height, message);
+    this.appliedViewport = { width, height, bridge };
   }
 
   async setContent(html: string): Promise<void> {

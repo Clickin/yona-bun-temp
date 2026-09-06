@@ -10,6 +10,7 @@
     "check": "tsc --noEmit",
     "test": "vitest run",
     "test:dom": "vitest run --project dom-parity",
+    "test:parity": "node ../scripts/css-cascade.mjs && vitest run --project dom-parity",
     "test:e2e": "node ../scripts/run-wtr-e2e.mjs",
     "test:e2e:fast": "WTR_SHARDS=2 node ../scripts/run-wtr-e2e.mjs",
     "test:watch": "vitest",

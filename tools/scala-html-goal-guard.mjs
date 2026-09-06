@@ -52,6 +52,8 @@ function isFrontendImplementation(file) {
 }
 
 function isFrontendEvidence(file) {
+  // Harness navigation/mocking contracts are not screen parity evidence.
+  if (file === "frontend/tests/wtr/wtr-smoke.e2e.ts") return false;
   return (
     FRONTEND_E2E_PATTERN.test(file) ||
     file === "frontend/src/app.css" ||

@@ -2,12 +2,25 @@
 // the injected fetch override + the app booting inside the same-origin iframe).
 import { expect, test } from "../wtr-compat.ts";
 
+test("repeated navigation emits once per load and preserves viewport changes", async ({ page }) => {
+  let navigations = 0;
+  page.on("framenavigated", () => {
+    navigations += 1;
+  });
+  for (const [index, width] of [1366, 1366, 390].entries()) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/yona/users/loginform");
+    await expect(page.locator(".login-form-wrap")).toBeVisible();
+    expect(navigations).toBe(index + 1);
+    expect(await page.evaluate(() => window.innerWidth)).toBe(width);
+  }
+});
+
 test("fetch mock intercepts iframe fetches", async ({ page }) => {
   await page.route("**/api/v1/session", (route) =>
     route.fulfill({ contentType: "application/json", json: { mocked: true } }),
   );
   await page.goto("/yona/");
-  await page.waitForTimeout(800);
   const result = await page.evaluate(async () => {
     const response = await fetch("/yona/api/v1/session");
     return { status: response.status, body: await response.text() };
@@ -92,16 +105,5 @@ test("login form renders under the full standalone-login mock set", async ({ pag
     }),
   );
   await page.goto("/yona/users/loginform?redirectUrl=%2Fme");
-  await page.waitForTimeout(2000);
-  const info = await page.evaluate(() => {
-    const form = document.querySelector(".page.full .login-form-wrap > form");
-    return {
-      wrap: !!document.querySelector(".login-form-wrap"),
-      action: form?.getAttribute("action") ?? "NULL",
-      bodyHead: document.body.innerText.slice(0, 150),
-    };
-  });
-  if (!info.wrap || info.action === "NULL") {
-    throw new Error("PROBE FORM: " + JSON.stringify(info));
-  }
+  await expect(page.locator(".page.full .login-form-wrap > form")).toBeVisible();
 });

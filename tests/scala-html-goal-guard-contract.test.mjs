@@ -6,6 +6,20 @@ import {
   formatScalaHtmlGoalGuardSummary,
 } from "../tools/scala-html-goal-guard.mjs";
 
+test("harness smoke neither requires nor supplies screen implementation evidence", () => {
+  const harnessFiles = ["frontend/tests/wtr-compat.ts", "frontend/tests/wtr/wtr-smoke.e2e.ts"];
+  assert.equal(evaluateScalaHtmlGoalGuard({ changedFiles: harnessFiles, env: {} }).blocked, false);
+  for (const screenFile of [
+    "frontend/tests/wtr/project-issues-empty.e2e.ts",
+    "frontend/src/routes/$ownerName/$projectName/issues.tsx",
+  ]) {
+    assert.equal(
+      evaluateScalaHtmlGoalGuard({ changedFiles: [...harnessFiles, screenFile], env: {} }).blocked,
+      true,
+    );
+  }
+});
+
 test("blocks frontend e2e metric-only work without a TSX route implementation", () => {
   const result = evaluateScalaHtmlGoalGuard({
     changedFiles: [

@@ -122,19 +122,60 @@ chrome lane — never ordinary assertion failures.
 
 ## Gate wiring
 
+The daily gate exposed stale watcher baseline declarations after the direct
+issue form correction (`86829aa39`). The watcher count and watch button now
+record `font-size:12px`, matching the existing implementation and frozen
+`_yobiUI.less:19-22` `.btn-group > .btn` rule applied in
+`project/header.scala.html`. The watch button also records `padding:4px 10px`
+from frozen `_page.less:6933-6935` `.watch-btn > button`. No other baseline
+rules were regenerated, and the comparison remains exact.
+
 - `pnpm --dir frontend test` = `vitest run` (unit + dom-parity projects)
 - `pnpm --dir frontend test:dom` = `vitest run --project dom-parity`
 - `pnpm --dir frontend test:e2e` = `node ../scripts/run-wtr-e2e.mjs`
   (runner `specFiles()` returns the manifest chrome list; explicit file args
   always run)
-- `pnpm --dir frontend test:parity` = `node scripts/css-cascade.mjs && pnpm
-  test:dom && pnpm test:e2e`
+- `pnpm --dir frontend test:parity` = CSS cascade comparison followed by the
+  Vitest DOM lane. This is daily feedback, not final browser-parity approval.
+  Explicit DOM spec paths may be appended to focus a development iteration.
+- `pnpm --dir frontend test:e2e:wtr` remains the full production-build Chrome
+  gate for final visual-lock. Explicit spec paths select focused browser checks
+  when changing layout/fonts/global CSS, hover/focus, hit-testing, or native
+  navigation. DOM-only success never substitutes for these browser capabilities.
+- `WTR_METRICS=1` records completed file durations from focused/full runs and
+  every shard, including failed runs. These are scheduling weights, never
+  cached test verdicts. Changed specs lose only their own timing; missing
+  timings use the observed milliseconds-per-byte estimate.
+- `WTR_SKIP_BUILD=1` reuses only a production build previously made by this
+  runner, with unchanged source/config/environment/assets and identical dist.
+  Missing/stale proof fails before Chrome starts; omit the flag to rebuild.
+  Inputs changing during a build cannot establish a reuse proof.
+- `wtr-smoke.e2e.ts` verifies the browser harness, not a Scala HTML screen.
+  The goal guard excludes it from screen evidence in both directions: harness
+  maintenance needs no fabricated route edit, and this smoke cannot satisfy
+  a route's focused parity verification. Mixed screen changes remain guarded.
+- Run pnpm with `--config.store-dir=/Users/senghyunjo/.pnpm-store` outside
+  the sandbox. Final approval still requires all existing gates and the full
+  differential sweep on the same frozen HEAD; this repository creates no RC.
 - Release visual smoke: `generate-visual-parity-baseline.mjs` +
   `visual-parity-comparison.mjs` over shell/login/issue-list/board/code/admin
   × 1366×900/390×844; daily waves not run.
 
 ## Measured gate time
 
+- Focused `wtr-smoke.e2e.ts`: 3 Chrome tests passed with a fresh production
+  build (wall 19.37 s), then with verified build reuse (wall 2.08 s).
+  Repeated navigation emitted exactly 3 events for 3 loads across desktop
+  and mobile widths. Independent source and dist mutations both refused reuse;
+  the probe restored both files. Runner scheduling/cache regressions: 3 passed.
+- Scheduling replay of the 661-file `mtoo83tx-88358` timing record gives
+  1,694,427 ms / 1,694,458 ms estimated shard loads, versus the recorded
+  273,334 ms / 3,125,676 ms shard wall times. This is a scheduler replay,
+  not a new full-browser run or a measured end-to-end speedup.
+- Daily CSS+DOM command after the watcher baseline correction: semantic
+  cascade equal (9,234 rules / 25 buckets), 205 DOM files / 229 tests passed;
+  wall 31.86 s (Vitest 29.69 s). This is fast-lane evidence only, not browser
+  or full differential approval.
 - Pre-merge full WTR gate: `mt09pt1a-44259`, 2 shards, 861 files, 3051
   tests (2924 pass / 127 fail), wall 3,123,849 ms (~52 min).
 - Post-merge full WTR gate: `mt1ipwg4-26975`, 861 files, wall 3,672,074 ms
