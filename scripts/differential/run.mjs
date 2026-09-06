@@ -91,6 +91,15 @@ export const SKELETON_EXTRACT = (selector) => {
   const skip = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "SVG", "HEAD", "META", "LINK", "BR", "PATH", "TEMPLATE"]);
   const entries = [];
   const visit = (element) => {
+    // Global overlays are owned by dedicated shell WTR lanes. Exclude only
+    // these exact IDs from selector-less route captures; explicit shell
+    // selectors remain available to their dedicated comparisons.
+    if (
+      !selector &&
+      (element.getAttribute("id") === "mySidenav" || element.getAttribute("id") === "loginDialog")
+    ) {
+      return;
+    }
     if (!skip.has(element.tagName)) {
       const className = typeof element.className === "string" ? element.className.trim() : "";
       let text = "";
@@ -834,7 +843,12 @@ export async function alignParityLabelSeeds(session, base, labels) {
 export const PARITY_POST_COMMENT = "Batch 814 nested parity";
 
 const PARITY_PROJECT_PATH = "/api/v1/owners/admin/projects/sample";
-const PARITY_POST_PATH = `${PARITY_PROJECT_PATH}/posts/1`;
+// Project reads/mutations use the owners REST namespace, while board posting
+// reads and mutations use the canonical projects namespace. The owners route
+// only exposes the legacy import-compatible POST endpoint, so a GET there is
+// a real 404 even when the seeded posting exists.
+const PARITY_POSTS_PATH = "/api/v1/projects/admin/sample/posts";
+const PARITY_POST_PATH = `${PARITY_POSTS_PATH}/1`;
 
 function postingCommentText(comment) {
   return String(comment?.contentsMarkdown ?? comment?.contents ?? "");
@@ -849,6 +863,35 @@ function hasParityPostingComment(post, authorLoginId = "admin") {
 }
 
 export async function alignParityBoardFixtures(yoramSession) {
+  const readPosting = () => yoramSession.request({ method: "GET", path: PARITY_POST_PATH });
+  let post = await readPosting();
+  if (post?.status === 404) {
+    // The legacy fixture requires posting #1. A missing row is a fixture
+    // failure, not an excuse to skip comment alignment; create the canonical
+    // seed only in that case, then read it back through the normal detail API.
+    const seed = parityProjectSeed.post;
+    if (!seed?.title || !seed.body) {
+      throw new Error("legacy board posting fixture is missing");
+    }
+    const created = await yoramSession.request({
+      method: "POST",
+      path: PARITY_POSTS_PATH,
+      json: {
+        title: seed.title,
+        bodyMarkdown: seed.body,
+        edit: false,
+        notice: true,
+      },
+    });
+    if (!created || created.status >= 400) {
+      throw new Error(`yoram posting fixture create failed: HTTP ${created?.status ?? "unknown"}`);
+    }
+    post = await readPosting();
+  }
+  if (!post || post.status >= 400 || !post.json) {
+    throw new Error(`yoram posting fixture read failed: HTTP ${post?.status ?? "unknown"}`);
+  }
+
   const projectWatch = await yoramSession.request({
     method: "POST",
     path: `${PARITY_PROJECT_PATH}/watch`,
@@ -857,13 +900,9 @@ export async function alignParityBoardFixtures(yoramSession) {
     throw new Error(`yoram project watch alignment failed: HTTP ${projectWatch?.status ?? "unknown"}`);
   }
 
-  const post = await yoramSession.request({ method: "GET", path: PARITY_POST_PATH });
-  if (!post || post.status >= 400 || !post.json) {
-    throw new Error(`yoram posting fixture read failed: HTTP ${post?.status ?? "unknown"}`);
-  }
   if (!hasParityPostingComment(post.json)) {
     const parentComment = (post.json.comments ?? []).find(
-      (comment) => postingCommentText(comment) === "Board seed confirmed from the fork contributor side.",
+      (comment) => postingCommentText(comment) === parityProjectSeed.post.commentBody,
     );
     const comment = await yoramSession.request({
       method: "POST",
@@ -878,11 +917,17 @@ export async function alignParityBoardFixtures(yoramSession) {
     }
   }
 
-  const projectReadback = await yoramSession.request({ method: "GET", path: PARITY_PROJECT_PATH });
+  // Project detail is metadata-only and intentionally omits watch state.
+  // Read the project container, whose `isWatching` field reflects this
+  // session's observable watch state.
+  const projectReadback = await yoramSession.request({
+    method: "GET",
+    path: `${PARITY_PROJECT_PATH}/container`,
+  });
   if (
     !projectReadback ||
     projectReadback.status >= 400 ||
-    Number(projectReadback.json?.watchCount ?? projectReadback.json?.watch_count ?? 0) < 1
+    projectReadback.json?.isWatching !== true
   ) {
     throw new Error(`yoram project watch readback failed: HTTP ${projectReadback?.status ?? "unknown"}`);
   }
@@ -1039,6 +1084,23 @@ async function alignParityFixtures(options) {
   });
   if (!yoramIssueLabels || yoramIssueLabels.status >= 400) {
     throw new Error(`yoram issue label association alignment failed: HTTP ${yoramIssueLabels?.status ?? "unknown"}`);
+  }
+  const yoramIssueReadback = await yoramSession.request({
+    method: "GET",
+    path: "/api/v1/projects/admin/sample/issues/1",
+  });
+  const attachedYoramLabelIds = new Set(
+    (yoramIssueReadback?.json?.labels ?? []).map((label) => String(label.id)),
+  );
+  const missingYoramLabelIds = yoramSeedLabelIds.filter((id) => !attachedYoramLabelIds.has(id));
+  if (
+    !yoramIssueReadback ||
+    yoramIssueReadback.status >= 400 ||
+    missingYoramLabelIds.length > 0
+  ) {
+    throw new Error(
+      `yoram issue label association readback missing: expected=${yoramSeedLabelIds.join(",")} actual=${[...attachedYoramLabelIds].join(",")}`,
+    );
   }
   await alignParityBoardFixtures(yoramSession);
 

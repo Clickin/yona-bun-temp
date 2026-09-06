@@ -568,20 +568,42 @@ async function resolveProjectIds(ctx) {
   return true;
 }
 
-function firstCommitCommentId(json) {
-  const queue = [json];
+export function commitCommentIdFromPayload(payload, marker) {
+  const expected = String(marker ?? "");
+  if (!expected) return null;
+  const queue = [payload];
+  const seen = new Set();
   while (queue.length > 0) {
     const node = queue.shift();
     if (Array.isArray(node)) {
       queue.push(...node);
     } else if (node && typeof node === "object") {
-      if (Array.isArray(node.comments) && node.comments.length > 0 && Number(node.comments[0]?.id) > 0) {
-        return Number(node.comments[0].id);
+      if (seen.has(node)) continue;
+      seen.add(node);
+      const contents = [node.contentsMarkdown, node.contents, node.bodyMarkdown, node.body]
+        .find((value) => typeof value === "string" && value.trim() === expected);
+      const id = Number(node.id);
+      if (contents !== undefined && id > 0) {
+        return id;
       }
       queue.push(...Object.values(node));
     }
   }
   return null;
+}
+
+export function commitIdFromLegacyPage(body) {
+  const match =
+    /<strong\b[^>]*class=["'][^"']*\bcommitId\b[^"']*["'][^>]*>\s*@?([0-9a-f]{7,40})\s*<\/strong>/iu.exec(
+      String(body ?? ""),
+    );
+  return match?.[1] ?? null;
+}
+
+export function commitIdFromYoramPayload(payload) {
+  const commit = payload && typeof payload === "object" ? payload.commit : null;
+  const commitId = commit?.commitId ?? commit?.commit_id;
+  return typeof commitId === "string" && /^[0-9a-f]{7,40}$/iu.test(commitId) ? commitId : null;
 }
 
 export function commitCommentTargetFromPage(body, marker) {
@@ -955,13 +977,31 @@ const COMMIT_COMMENT_MUTATIONS = {
       };
     },
     async handler(ctx) {
-      const { step, state, entry, suffix, helpers } = ctx;
+      const { step, state, entry, suffix, helpers, legacySession, yoramSession } = ctx;
       const shared = {
         commitId: step.params.commitId,
         body: `Differential sweep commit comment ${suffix}`,
       };
-      const legacyTranslation = translateLegacy(step, shared);
-      const yoramTranslation = translateYoram(step, shared);
+      const legacyCommitPage = await legacySession.request({
+        method: "GET",
+        path: `/${step.params.owner}/${step.params.project}/commit/${shared.commitId}`,
+      });
+      const yoramCommit = await yoramSession.request({
+        method: "GET",
+        path: `/api/v1/projects/${step.params.owner}/${step.params.project}/commit/${shared.commitId}`,
+      });
+      const legacyCommitId = commitIdFromLegacyPage(legacyCommitPage.body);
+      const yoramCommitId = commitIdFromYoramPayload(yoramCommit.json);
+      if (!legacyCommitId || !yoramCommitId) {
+        entry.errors.push(
+          `commit id unresolved [${suffix}]: legacy=${legacyCommitId ?? "none"} yoram=${yoramCommitId ?? "none"}`,
+        );
+        return;
+      }
+      state.commitIdLegacy = legacyCommitId;
+      state.commitIdYoram = yoramCommitId;
+      const legacyTranslation = translateLegacy(step, { ...shared, commitId: legacyCommitId });
+      const yoramTranslation = translateYoram(step, { ...shared, commitId: yoramCommitId });
       const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
       if (!ensureOutcomeParity(ctx, legacyTranslation.path, legacyResult, yoramResult)) return;
       state.commitCommentIdLegacy =
@@ -969,13 +1009,13 @@ const COMMIT_COMMENT_MUTATIONS = {
       if (legacyResult.status < 400) {
         const commitPage = await ctx.legacySession.request({
           method: "GET",
-          path: `/${step.params.owner}/${step.params.project}/commit/${step.params.commitId}`,
+          path: `/${step.params.owner}/${step.params.project}/commit/${legacyCommitId}`,
         });
         const target = commitCommentTargetFromPage(commitPage.body, shared.body);
         state.commitCommentIdLegacy = target?.commentId ?? null;
-        state.commitIdLegacy = target?.commitId ?? shared.commitId;
+        state.commitIdLegacy = target?.commitId ?? legacyCommitId;
       }
-      state.commitCommentIdYoram = firstCommitCommentId(yoramResult.json);
+      state.commitCommentIdYoram = commitCommentIdFromPayload(yoramResult.json, shared.body);
       if (!state.commitCommentIdLegacy || !state.commitCommentIdYoram) {
         entry.errors.push(
           `commit comment id unresolved [${suffix}]: legacy=${state.commitCommentIdLegacy ?? "none"} yoram=${state.commitCommentIdYoram ?? "none"}`,
@@ -988,7 +1028,7 @@ const COMMIT_COMMENT_MUTATIONS = {
     translateLegacy(step, resolved) {
       return {
         method: "DELETE",
-        path: `/${step.params.owner}/${step.params.project}/commit/${resolved.commitId}/comments/${resolved.commentId}/delete`,
+        path: `/comments/review_comment/${resolved.commentId}`,
       };
     },
     translateYoram(step, resolved) {
@@ -1010,6 +1050,7 @@ const COMMIT_COMMENT_MUTATIONS = {
       });
       const yoramTranslation = translateYoram(step, {
         ...step.params,
+        commitId: state.commitIdYoram ?? step.params.commitId,
         commentId: state.commitCommentIdYoram,
       });
       const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
@@ -1017,6 +1058,7 @@ const COMMIT_COMMENT_MUTATIONS = {
       state.commitCommentIdLegacy = null;
       state.commitCommentIdYoram = null;
       state.commitIdLegacy = null;
+      state.commitIdYoram = null;
     },
   },
 };

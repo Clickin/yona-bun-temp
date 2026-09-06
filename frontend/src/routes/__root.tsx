@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Link,
   Navigate,
@@ -8,11 +9,11 @@ import {
   useRouterState,
 } from "@tanstack/react-router";
 import { readAuthUiCapabilitiesRest } from "../api/auth";
+import { currentSessionQueryOptions } from "../api/session";
 import { OAuthProviderLink } from "../components/oauth-provider-link";
 import { RootProgressStatusBarProvider } from "../components/route-fetch-lock";
 import type { ReadAuthUiCapabilitiesResponse } from "../api/types";
 import { submitRootLoginDialogForm } from "../auth-root-shell-login-dialog";
-import legacySpriteUrl from "../assets/legacy/sprite.png";
 import { LegacyI18nProvider, resolveInitialLanguage, useLegacyMessages } from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 
@@ -96,6 +97,7 @@ export const Route = createRootRouteWithContext<AppRouterContext>()({
 function RootResetShell() {
   const { runtimeConfig } = Route.useRouteContext();
   const router = useRouter();
+  const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
   const [rootToast, setRootToast] = React.useState<RootToast | null>(null);
   const [rootShellModal, setRootShellModal] = React.useState<RootShellModalId | null>(null);
   const [authenticatedRevision, setAuthenticatedRevision] = React.useState(0);
@@ -109,10 +111,14 @@ function RootResetShell() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const rendersPlainResponseState = pathname.startsWith("/verify/");
   const rendersStandaloneLoginState = pathname === "/users/loginform";
+  const shouldRenderRootLoginDialog =
+    !rendersStandaloneLoginState && sessionQuery.data?.isAnonymous === true;
+  const activeRootShellModal =
+    rootShellModal === "loginDialog" && !shouldRenderRootLoginDialog ? null : rootShellModal;
   const loginDialogInputRef = React.useRef<HTMLInputElement | null>(null);
 
   const openRootLoginDialog = React.useCallback(() => {
-    if (rendersPlainResponseState || rendersStandaloneLoginState) {
+    if (rendersPlainResponseState || !shouldRenderRootLoginDialog) {
       return false;
     }
 
@@ -125,7 +131,7 @@ function RootResetShell() {
       password: "",
     }));
     return true;
-  }, [rendersPlainResponseState, rendersStandaloneLoginState]);
+  }, [rendersPlainResponseState, shouldRenderRootLoginDialog]);
 
   const closeRootShellModal = React.useCallback(() => {
     setRootShellModal(null);
@@ -133,12 +139,12 @@ function RootResetShell() {
 
   const handleRootShellKeyDown = React.useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>) => {
-      if (event.key === "Escape" && rootShellModal) {
+      if (event.key === "Escape" && activeRootShellModal) {
         event.preventDefault();
         closeRootShellModal();
       }
     },
-    [closeRootShellModal, rootShellModal],
+    [activeRootShellModal, closeRootShellModal],
   );
 
   const handleRootShellClick = React.useCallback(
@@ -182,7 +188,7 @@ function RootResetShell() {
   );
 
   React.useEffect(() => {
-    if (rootShellModal !== "loginDialog") {
+    if (activeRootShellModal !== "loginDialog") {
       return;
     }
 
@@ -190,7 +196,7 @@ function RootResetShell() {
       loginDialogInputRef.current?.focus();
     }, 0);
     return () => window.clearTimeout(timeoutId);
-  }, [rootShellModal]);
+  }, [activeRootShellModal]);
 
   const rootShellContent = (
     <>
@@ -201,7 +207,7 @@ function RootResetShell() {
         <>
           <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
             <RootYoramDialog
-              isOpen={rootShellModal === "yobiDialog"}
+              isOpen={activeRootShellModal === "yobiDialog"}
               onDismiss={closeRootShellModal}
             />
           </LegacyI18nProvider>
@@ -222,7 +228,7 @@ function RootResetShell() {
           </script>
           <LegacySelect2Assets runtimeConfig={runtimeConfig} />
           <LegacySelect2Templates />
-          {rendersStandaloneLoginState ? null : (
+          {shouldRenderRootLoginDialog ? (
             <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
               <RootLoginDialog
                 inputRef={loginDialogInputRef}
@@ -249,19 +255,20 @@ function RootResetShell() {
                 resetNonce={rootLoginDialogResetNonce}
                 runtimeConfig={runtimeConfig}
                 state={rootLoginDialogState}
-                visible={rootShellModal === "loginDialog"}
+                visible={activeRootShellModal === "loginDialog"}
               />
             </LegacyI18nProvider>
-          )}
-          {rootShellModal ? (
+          ) : null}
+          {activeRootShellModal ? (
             // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Bootstrap 2 dismisses through the backdrop; root key capture provides Escape dismissal.
             <div
-              {...(rootShellModal === "loginDialog" ? {} : {})}
               className="modal-backdrop in"
               data-owner={
-                rootShellModal === "loginDialog" ? "root-login-dialog-backdrop" : undefined
+                activeRootShellModal === "loginDialog" ? "root-login-dialog-backdrop" : undefined
               }
-              data-part={rootShellModal === "loginDialog" ? "login-dialog-backdrop" : undefined}
+              data-part={
+                activeRootShellModal === "loginDialog" ? "login-dialog-backdrop" : undefined
+              }
               onClick={closeRootShellModal}
             ></div>
           ) : null}

@@ -28,7 +28,8 @@ import {
   ensureDiffableRepoBranches,
 } from "./run.mjs";
 import { parityProjectSeed } from "../run-dev-backend-once.mjs";
-import { HarnessError, summarizeExecution } from "./report.mjs";
+import { diffSkeletons, domVisibleLoss } from "./diff.mjs";
+import { HarnessError, classifyViolation, summarizeExecution } from "./report.mjs";
 import { ACTION_DEFINITIONS } from "./scenarios/index.mjs";
 
 test("differential runner keeps all scenarios by default", () => {
@@ -119,6 +120,132 @@ test("SKELETON_EXTRACT stays in sync with the sanctioned side-effect anchor mark
   assert.match(source, /data-request-uri/u);
   assert.match(source, /data-toggle/u);
   assert.match(source, /javascript:/u);
+});
+
+function skeletonElement(
+  tagName,
+  { id = "", className = "", text = "", children = [] } = {},
+) {
+  const attributes = new Map(id ? [["id", id]] : []);
+  return {
+    tagName: tagName.toUpperCase(),
+    className,
+    childNodes: text ? [{ nodeType: 3, textContent: text }] : [],
+    children,
+    getAttribute(name) {
+      return attributes.get(name) ?? null;
+    },
+    hasAttribute(name) {
+      return attributes.has(name);
+    },
+  };
+}
+
+function extractTestSkeleton(root, selector) {
+  const previousDocument = globalThis.document;
+  globalThis.document = {
+    body: root,
+    querySelector: () => root,
+  };
+  try {
+    return SKELETON_EXTRACT(selector);
+  } finally {
+    if (previousDocument === undefined) delete globalThis.document;
+    else globalThis.document = previousDocument;
+  }
+}
+
+test("generic skeleton extraction excludes only the exact global shell IDs", () => {
+  const sidebar = skeletonElement("div", {
+    id: "mySidenav",
+    className: "excluded-sidenav",
+    text: "Sidebar must be shell-owned",
+    children: [skeletonElement("button", { className: "excluded-control", text: "Hidden control" })],
+  });
+  const dialog = skeletonElement("div", {
+    id: "loginDialog",
+    className: "excluded-dialog",
+    text: "Dialog must be shell-owned",
+    children: [skeletonElement("input", { className: "excluded-input" })],
+  });
+  const body = skeletonElement("body", {
+    children: [
+      skeletonElement("header", { className: "gnb-outer", text: "Navbar" }),
+      sidebar,
+      dialog,
+      skeletonElement("main", {
+        className: "route-body",
+        text: "Route content",
+        children: [skeletonElement("button", { className: "route-action", text: "Save" })],
+      }),
+      skeletonElement("div", {
+        id: "mySidenav-copy",
+        className: "kept-sidenav-copy",
+        text: "Near-match sidebar stays in route content",
+      }),
+      skeletonElement("div", {
+        id: "loginDialogExtra",
+        className: "kept-dialog-copy",
+        text: "Near-match dialog stays in route content",
+      }),
+      skeletonElement("footer", { className: "page-footer", text: "Footer" }),
+    ],
+  });
+
+  const skeleton = extractTestSkeleton(body);
+  assert.ok(skeleton.includes("header.gnb-outer:Navbar"));
+  assert.ok(skeleton.includes("main.route-body:Route content"));
+  assert.ok(skeleton.includes("button.route-action:Save"));
+  assert.ok(skeleton.includes("footer.page-footer:Footer"));
+  assert.ok(skeleton.includes("div.kept-sidenav-copy:Near-match sidebar stays in route content"));
+  assert.ok(skeleton.includes("div.kept-dialog-copy:Near-match dialog stays in route content"));
+  assert.equal(skeleton.some((entry) => entry.includes("excluded-sidenav")), false);
+  assert.equal(skeleton.some((entry) => entry.includes("excluded-control")), false);
+  assert.equal(skeleton.some((entry) => entry.includes("excluded-dialog")), false);
+  assert.equal(skeleton.some((entry) => entry.includes("excluded-input")), false);
+
+  const explicitSidebarSkeleton = extractTestSkeleton(sidebar, "#mySidenav");
+  const explicitDialogSkeleton = extractTestSkeleton(dialog, "#loginDialog");
+  assert.ok(explicitSidebarSkeleton.includes("div.excluded-sidenav:Sidebar must be shell-owned"));
+  assert.ok(explicitSidebarSkeleton.includes("button.excluded-control:Hidden control"));
+  assert.ok(explicitDialogSkeleton.includes("div.excluded-dialog:Dialog must be shell-owned"));
+  assert.ok(explicitDialogSkeleton.includes("input.excluded-input:"));
+});
+
+test("generic shell exclusions do not turn route-body losses into accepted diffs", () => {
+  const shell = [
+    skeletonElement("header", { className: "gnb-outer", text: "Navbar" }),
+    skeletonElement("div", { id: "mySidenav", className: "excluded-sidenav", text: "Sidebar" }),
+    skeletonElement("div", { id: "loginDialog", className: "excluded-dialog", text: "Dialog" }),
+    skeletonElement("footer", { className: "page-footer", text: "Footer" }),
+  ];
+  const expected = extractTestSkeleton(
+    skeletonElement("body", {
+      children: [
+        ...shell,
+        skeletonElement("main", {
+          className: "route-body",
+          children: [skeletonElement("button", { className: "route-action", text: "Save" })],
+        }),
+      ],
+    }),
+  );
+  const actual = extractTestSkeleton(
+    skeletonElement("body", {
+      children: [
+        ...shell,
+        skeletonElement("main", { className: "route-body" }),
+      ],
+    }),
+  );
+  const firstDiffs = diffSkeletons(expected, actual);
+  const detail = {
+    expected: { skeletonEntries: expected.length },
+    actual: { skeletonEntries: actual.length, firstDiffs },
+  };
+  assert.ok(firstDiffs.some((diff) => diff.side === "legacy-only" && diff.expected.includes("route-action")));
+  assert.equal(domVisibleLoss(detail), true);
+  assert.equal(classifyViolation("dom", "/admin/sample/route", detail).classification, "UNVERIFIED");
 });
 
 test("SPA skeleton rendering waits for explicit route readiness, not equal wireframes", () => {
@@ -331,7 +458,7 @@ test("parity board alignment is idempotent and verifies project watch plus neste
       if (request.method === "POST" && request.path.endsWith("/watch")) {
         return { status: 200, json: { watchCount: 1 } };
       }
-      if (request.method === "GET" && request.path.endsWith("/posts/1")) {
+      if (request.method === "GET" && request.path === "/api/v1/projects/admin/sample/posts/1") {
         return { status: 200, json: { comments: [...comments] } };
       }
       if (request.method === "POST" && request.path.endsWith("/comments")) {
@@ -343,8 +470,8 @@ test("parity board alignment is idempotent and verifies project watch plus neste
         });
         return { status: 201, json: { comments: [...comments] } };
       }
-      if (request.method === "GET" && request.path.endsWith("/projects/sample")) {
-        return { status: 200, json: { watchCount: 1 } };
+      if (request.method === "GET" && request.path === "/api/v1/owners/admin/projects/sample/container") {
+        return { status: 200, json: { isWatching: true } };
       }
       throw new Error(`unexpected request ${request.method} ${request.path}`);
     },
@@ -353,6 +480,14 @@ test("parity board alignment is idempotent and verifies project watch plus neste
   await alignParityBoardFixtures(session);
   await alignParityBoardFixtures(session);
 
+  assert.equal(requests[0].method, "GET");
+  assert.equal(requests[0].path, "/api/v1/projects/admin/sample/posts/1");
+  assert.equal(
+    requests.some(
+      ({ method, path }) => method === "POST" && path === "/api/v1/projects/admin/sample/posts",
+    ),
+    false,
+  );
   assert.equal(comments.filter((comment) => comment.contentsMarkdown === PARITY_POST_COMMENT).length, 1);
   assert.deepEqual(
     requests
@@ -363,6 +498,83 @@ test("parity board alignment is idempotent and verifies project watch plus neste
   assert.equal(
     requests.filter(({ method, path }) => method === "POST" && path.endsWith("/watch")).length,
     2,
+  );
+});
+
+test("parity board alignment creates a missing canonical posting before aligning its comment", async () => {
+  const requests = [];
+  const comments = [
+    {
+      id: "1",
+      authorLoginId: "alice",
+      contentsMarkdown: "Board seed confirmed from the fork contributor side.",
+    },
+  ];
+  let postExists = false;
+  const session = {
+    request: async (request) => {
+      requests.push(request);
+      if (request.method === "GET" && request.path === "/api/v1/projects/admin/sample/posts/1") {
+        return postExists
+          ? { status: 200, json: { comments: [...comments] } }
+          : { status: 404, json: null };
+      }
+      if (request.method === "POST" && request.path === "/api/v1/projects/admin/sample/posts") {
+        postExists = true;
+        return { status: 201, json: { postNumber: "1" } };
+      }
+      if (request.method === "POST" && request.path.endsWith("/watch")) {
+        return { status: 200, json: { watchCount: 1 } };
+      }
+      if (request.method === "POST" && request.path === "/api/v1/projects/admin/sample/posts/1/comments") {
+        comments.push({
+          id: "2",
+          authorLoginId: "admin",
+          contentsMarkdown: request.json.contentsMarkdown,
+          parentCommentId: request.json.parentCommentId,
+        });
+        return { status: 201, json: { comments: [...comments] } };
+      }
+      if (request.method === "GET" && request.path === "/api/v1/owners/admin/projects/sample/container") {
+        return { status: 200, json: { isWatching: true } };
+      }
+      throw new Error(`unexpected request ${request.method} ${request.path}`);
+    },
+  };
+
+  await alignParityBoardFixtures(session);
+
+  assert.deepEqual(
+    requests.slice(0, 3).map(({ method, path }) => ({ method, path })),
+    [
+      { method: "GET", path: "/api/v1/projects/admin/sample/posts/1" },
+      { method: "POST", path: "/api/v1/projects/admin/sample/posts" },
+      { method: "GET", path: "/api/v1/projects/admin/sample/posts/1" },
+    ],
+  );
+  assert.equal(comments.filter((comment) => comment.contentsMarkdown === PARITY_POST_COMMENT).length, 1);
+});
+
+test("parity board alignment rejects a false watch readback despite HTTP 200", async () => {
+  const comments = [{ id: "2", authorLoginId: "admin", contentsMarkdown: PARITY_POST_COMMENT }];
+  const session = {
+    request: async ({ method, path }) => {
+      if (method === "GET" && path === "/api/v1/projects/admin/sample/posts/1") {
+        return { status: 200, json: { comments } };
+      }
+      if (method === "POST" && path === "/api/v1/owners/admin/projects/sample/watch") {
+        return { status: 200, json: {} };
+      }
+      if (method === "GET" && path === "/api/v1/owners/admin/projects/sample/container") {
+        return { status: 200, json: { isWatching: false } };
+      }
+      throw new Error(`unexpected request ${method} ${path}`);
+    },
+  };
+
+  await assert.rejects(
+    () => alignParityBoardFixtures(session),
+    /yoram project watch readback failed: HTTP 200/u,
   );
 });
 

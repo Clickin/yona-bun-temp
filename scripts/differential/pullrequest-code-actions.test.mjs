@@ -13,8 +13,11 @@ import { validateScenarios, matchBehaviors } from "./dsl.mjs";
 import {
   scenarios,
   actionDefinitions,
+  commitCommentIdFromPayload,
   commitCommentTargetFromPage,
   commitCommentIdFromPage,
+  commitIdFromLegacyPage,
+  commitIdFromYoramPayload,
   pullRequestNumberFromPayload,
   resolveYoramPullRequestNumber,
 } from "./scenarios/pullrequest-code.mjs";
@@ -61,7 +64,31 @@ test("commit comment page resolver selects the created comment, not the first st
   assert.equal(commitCommentIdFromPage(body, "missing"), null);
 });
 
-test("commit comment mutation canonicalizes the legacy commit before delete", async () => {
+test("commit comment resolvers select canonical commit and marker comment IDs", () => {
+  const legacyBody = `
+    <strong class="commitId">@a92847dc20bf80c878a8017b4c2cec36b7d9eaac</strong>
+    <li id="comment-3">stale comment</li>
+    <li id="comment-9"><button data-request-uri="/comments/review_comment/9"></button>
+      Differential sweep commit comment run-42
+    </li>`;
+  assert.equal(commitIdFromLegacyPage(legacyBody), "a92847dc20bf80c878a8017b4c2cec36b7d9eaac");
+  assert.deepEqual(
+    commitCommentTargetFromPage(legacyBody, "Differential sweep commit comment run-42"),
+    { commentId: 9, commitId: null },
+  );
+  const payload = {
+    commit: { commitId: "a92847dc20bf80c878a8017b4c2cec36b7d9eaac" },
+    threads: [
+      { comments: [{ id: 3, contentsMarkdown: "stale comment" }] },
+      { comments: [{ id: 11, contentsMarkdown: "Differential sweep commit comment run-42" }] },
+    ],
+  };
+  assert.equal(commitIdFromYoramPayload(payload), "a92847dc20bf80c878a8017b4c2cec36b7d9eaac");
+  assert.equal(commitCommentIdFromPayload(payload, "Differential sweep commit comment run-42"), 11);
+  assert.equal(commitCommentIdFromPayload(payload, "missing"), null);
+});
+
+test("commit comment mutation uses canonical IDs and verifies the created legacy comment", async () => {
   const requests = [];
   const state = {};
   await MERGED_DEFINITIONS["comment-commit"].handler({
@@ -74,24 +101,76 @@ test("commit comment mutation canonicalizes the legacy commit before delete", as
         requests.push({ legacy, yoram });
         return {
           legacyResult: { status: 200, location: "#comment-9" },
-          yoramResult: { status: 200, json: { comments: [{ id: 11 }] } },
+          yoramResult: {
+            status: 200,
+            json: { threads: [{ comments: [{ id: 11, contentsMarkdown: "Differential sweep commit comment run-42" }] }] },
+          },
         };
       },
     },
     legacySession: {
       async request(request) {
         requests.push(request);
+        if (request.path.endsWith("/HEAD")) {
+          return { status: 200, body: `<strong class="commitId">@abc1234567890</strong>` };
+        }
         return {
           status: 200,
-          body: `<li id="comment-9"><button data-request-uri="/admin/sample/commit/abc123/comments/9/delete"></button> Differential sweep commit comment run-42</li>`,
+          body: `<li id="comment-9"><button data-request-uri="/comments/review_comment/9"></button> Differential sweep commit comment run-42</li>`,
+        };
+      },
+    },
+    yoramSession: {
+      async request(request) {
+        requests.push(request);
+        return {
+          status: 200,
+          json: { commit: { commitId: "def4567890123" } },
         };
       },
     },
   });
   assert.equal(state.commitCommentIdLegacy, 9);
-  assert.equal(state.commitIdLegacy, "abc123");
+  assert.equal(state.commitIdLegacy, "abc1234567890");
   assert.equal(state.commitCommentIdYoram, 11);
-  assert.equal(requests[1].path, "/admin/sample/commit/HEAD");
+  assert.equal(state.commitIdYoram, "def4567890123");
+  assert.equal(requests[0].path, "/admin/sample/commit/HEAD");
+  assert.equal(requests[1].path, "/api/v1/projects/admin/sample/commit/HEAD");
+  assert.equal(requests[2].legacy.path, "/admin/sample/commit/abc1234567890/comments");
+  assert.equal(requests[2].yoram.path, "/api/v1/projects/admin/sample/commit/def4567890123/comments");
+  assert.equal(requests[3].path, "/admin/sample/commit/abc1234567890");
+});
+
+test("delete commit comment uses the created legacy resource and canonical commits", async () => {
+  const requests = [];
+  const state = {
+    commitCommentIdLegacy: 9,
+    commitCommentIdYoram: 11,
+    commitIdLegacy: "abc1234567890",
+    commitIdYoram: "def4567890123",
+  };
+  await MERGED_DEFINITIONS["delete-commit-comment"].handler({
+    step: { action: "delete-commit-comment", params: { owner: "admin", project: "sample", commitId: "HEAD" } },
+    state,
+    suffix: "run-42",
+    entry: { errors: [], violations: [] },
+    helpers: {
+      async requestBoth(_ctx, legacy, yoram) {
+        requests.push({ legacy, yoram });
+        return { legacyResult: { status: 200 }, yoramResult: { status: 200 } };
+      },
+    },
+  });
+  assert.deepEqual(requests, [{
+    legacy: { method: "DELETE", path: "/comments/review_comment/9" },
+    yoram: { method: "DELETE", path: "/api/v1/projects/admin/sample/commit/def4567890123/comments/11" },
+  }]);
+  assert.deepEqual(state, {
+    commitCommentIdLegacy: null,
+    commitCommentIdYoram: null,
+    commitIdLegacy: null,
+    commitIdYoram: null,
+  });
 });
 
 test("translators produce expected method/path literals", () => {
@@ -338,9 +417,9 @@ test("mutation translators produce expected method/path/body shapes", () => {
     def("comment-commit").translateYoram(step("comment-commit", base), { commitId: "HEAD" }).path,
     "/api/v1/projects/admin/sample/commit/HEAD/comments",
   );
-  assert.equal(
-    def("delete-commit-comment").translateLegacy(step("delete-commit-comment", base), { commitId: "HEAD", commentId: 9 }).method,
-    "DELETE",
+  assert.deepEqual(
+    def("delete-commit-comment").translateLegacy(step("delete-commit-comment", base), { commitId: "HEAD", commentId: 9 }),
+    { method: "DELETE", path: "/comments/review_comment/9" },
   );
   assert.equal(
     def("delete-commit-comment").translateYoram(step("delete-commit-comment", base), { commitId: "HEAD", commentId: 9 }).path,

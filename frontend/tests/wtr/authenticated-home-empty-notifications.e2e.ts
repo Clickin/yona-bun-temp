@@ -471,6 +471,22 @@ for (const defaultLandingCase of DEFAULT_LANDING_CASES) {
   });
 }
 
+test("root login dialog stays absent while the session loads and for authenticated users", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const session = await mockDeferredAuthenticatedDefaultLanding(page, "/");
+
+  await page.goto(`${basePath}/`);
+  await session.requested;
+  await expect(page.locator("#loginDialog")).toHaveCount(0);
+  await expect(page.locator('[data-owner="root-login-dialog-backdrop"]')).toHaveCount(0);
+
+  session.release();
+  await expect(page.locator(".gnb-usermenu a.user-item-btn.loggged-in")).toHaveText("My Issues");
+  await expect(page.locator("#loginDialog")).toHaveCount(0);
+});
+
 test("shared shell logo keeps navbar Link with Style ownership", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockAuthenticatedEmptyNotifications(page);
@@ -666,6 +682,9 @@ test("anonymous home shell renders React-owned login and React-owned signup Link
   const legacyUserSource = readFileSync("../yona-original/app/models/User.java", "utf8");
   const legacyNullUserSource = readFileSync("../yona-original/app/models/NullUser.java", "utf8");
 
+  await expect(page.locator("#loginDialog")).toHaveCount(1);
+  await expect(page.locator("#loginDialog")).toBeHidden();
+  await expect(page.locator('[data-owner="root-login-dialog-backdrop"]')).toHaveCount(0);
   await expect(loginLink).toHaveText("Log in");
   await expect(loginLink).toHaveAttribute("href", `${basePath}/users/loginform`);
   await expect(loginLink).toHaveClass(/(?:^|\s)user-item-btn(?:\s|$)/u);
@@ -834,7 +853,7 @@ test("root login submit refreshes the authenticated home shell without a documen
   await page.locator("#loginDialog button[type='submit']").click();
 
   await expect(page.locator(".gnb-usermenu a.user-item-btn.loggged-in")).toHaveText("My Issues");
-  await expect(page.locator("#loginDialog")).toBeHidden();
+  await expect(page.locator("#loginDialog")).toHaveCount(0);
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
   await expect(page).toHaveURL(initialUrl);
   await expect
