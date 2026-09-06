@@ -181,3 +181,35 @@ credentials/services are recorded, not converted into accepted parity):
 - Existing SVN repository identity adoption.
 - Linux deployment and Windows MSVC binary verification (no cross target
   executed here).
+
+## 7. U18 site-admin body fingerprints (2026-09-06)
+
+The focused U18 artifact
+`.agent/differential/site-admin-body-proof/report.json` (`runId=sweep-mtp4ggxm`)
+contains eight route-body DOM findings. Seven are implementation-only
+SSR-vs-SPA identity/class differences already covered by exact full-body WTR
+contracts. The differential classifier accepts only the exact route, state,
+legacy skeleton count, Yoram skeleton count, and complete `firstDiffs` signature
+recorded in `scripts/differential/report.mjs`; it does not accept a route
+family, class prefix, or generic visible-loss rule. Any changed or missing
+visible control, text, or row changes that fingerprint and remains
+`UNVERIFIED`.
+
+| route/state | exact WTR contract |
+|---|---|
+| `/sites/userList` / populated | `frontend/tests/wtr/site-admin-user-list.e2e.ts:176-458`, `site admin user list matches legacy site/userList.scala.html populated DOM` |
+| `/sites/projectList` / populated | `frontend/tests/wtr/site-admin-project-list.e2e.ts:158-295`, `site admin project list matches legacy site/projectList.scala.html populated DOM` |
+| `/sites/data` / default | `frontend/tests/wtr/site-admin-data.e2e.ts:124-188`, `site admin data matches legacy site/data.scala.html DOM` |
+| `/sites/issueList` / open-populated | `frontend/tests/wtr/site-admin-issue-list.e2e.ts:142-360`, `site admin issue list matches legacy site/issueList.scala.html open populated DOM` |
+| `/sites/postList` / populated | `frontend/tests/wtr/site-admin-post-list.e2e.ts:140-331`, `site admin post list matches legacy site/postList.scala.html populated DOM` |
+| `/sites/mail` / not-configured | `frontend/tests/wtr/site-admin-mail.e2e.ts:154-242`, `site admin mail matches legacy site/mail.scala.html not-configured DOM` |
+| `/sites/massmail` / default | `frontend/tests/wtr/site-admin-massmail.e2e.ts:131-246`, `site admin mass mail matches legacy site/massMail.scala.html DOM` |
+
+`/sites/update` is a separate exact product-identity fingerprint, not a WTR
+plugin/class exception. Legacy declares `version := "1.16.0"` in
+`yona-original/build.sbt:6`. Yoram's workspace declares `version = "0.1.0"` in
+`Cargo.toml:15-18`; `crates/server/src/app_config.rs:229-250` defaults the site
+update current version from `CARGO_PKG_VERSION`, and
+`crates/server/src/routes/site_admin/update.rs:105-151` returns that configured
+identity. Only the exact `1.16.0` versus `0.1.0` no-update body signature is
+classified; any other version or status-copy mismatch remains `UNVERIFIED`.

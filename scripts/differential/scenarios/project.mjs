@@ -2,6 +2,7 @@
 //
 // Domain module contract (see scenarios/index.mjs).
 import { translateLegacy, translateYoram } from "../adapters.mjs";
+import { normalizeApiValue } from "../diff.mjs";
 import { HarnessError, violation } from "../report.mjs";
 
 export const scenarios = [
@@ -323,6 +324,56 @@ const API_ONLY_ACTIONS = new Set([
   "fetch-git-info-refs",
 ]);
 
+function normalizeIssueLabelPayload(value) {
+  const stripKnownAdditive = (node) => {
+    if (Array.isArray(node)) return node.map(stripKnownAdditive);
+    if (node && typeof node === "object") {
+      return Object.fromEntries(
+        Object.entries(node)
+          .filter(([key, entryValue]) => !(key === "categoryIsExclusive" && entryValue === false))
+          .map(([key, entryValue]) => [key, stripKnownAdditive(entryValue)]),
+      );
+    }
+    return node;
+  };
+  // normalizeApiValue sorts object keys and masks generated id/categoryId
+  // fields, while the local pass removes only the known additive false flag.
+  return normalizeApiValue(stripKnownAdditive(value));
+}
+
+function firstCategoryId(json) {
+  const list = Array.isArray(json) ? json : Array.isArray(json?.categories) ? json.categories : [];
+  const row = list.find((category) => Number(category?.id) > 0);
+  return row ? Number(row.id) : null;
+}
+
+function categoryPath(step, categoryId) {
+  return readPath({ ...step, params: { ...step.params, categoryId } });
+}
+
+function issueLabelJsonAction(pathFor) {
+  const translateLegacy = (step) => ({ method: "GET", path: pathFor(step) });
+  const translateYoram = (step) => ({ method: "GET", path: pathFor(step) });
+  return {
+    translateLegacy,
+    translateYoram,
+    async handler(ctx) {
+      const { step, resolved, helpers } = ctx;
+      await helpers.requestJsonBoth(
+        ctx,
+        translateLegacy(step, resolved),
+        translateYoram(step, resolved),
+        pathFor(step),
+        normalizeIssueLabelPayload,
+      );
+    },
+  };
+}
+
+const issueLabelsJsonAction = issueLabelJsonAction((step) => readPath(step));
+const issueLabelCategoriesJsonAction = issueLabelJsonAction((step) => readPath(step));
+const issueLabelCategoryJsonAction = issueLabelJsonAction((step) => readPath(step));
+
 // Same contract as readPageHandler above, for SPA-shell pages: skip DOM
 // comparison when either side answered >=400 (a one-sided 404 — missing seed
 // row, absent page — is already visible in entry.errors).
@@ -465,6 +516,41 @@ export const actionDefinitions = {
       handler: spaReadHandler,
     },
   ])),
+  // These routes return JSON wrapped in a legacy HTML <pre>; compare the
+  // parsed payload so serialization details cannot become DOM violations.
+  "list-issue-labels": issueLabelsJsonAction,
+  "list-issue-label-categories": {
+    ...issueLabelCategoriesJsonAction,
+    async handler(ctx) {
+      const { step, resolved, helpers, state } = ctx;
+      const pair = await helpers.requestJsonBoth(
+        ctx,
+        issueLabelCategoriesJsonAction.translateLegacy(step, resolved),
+        issueLabelCategoriesJsonAction.translateYoram(step, resolved),
+        readPath(step),
+        normalizeIssueLabelPayload,
+      );
+      state.issueLabelCategoryIdLegacy = firstCategoryId(pair.legacyResult.json);
+      state.issueLabelCategoryIdYoram = firstCategoryId(pair.yoramResult.json);
+    },
+  },
+  "view-issue-label-category": {
+    ...issueLabelCategoryJsonAction,
+    async handler(ctx) {
+      const { step, resolved, helpers, state } = ctx;
+      // Keep an explicit scenario category stable; generated category ids are
+      // paired only for callers that leave the route id unresolved.
+      const legacyCategoryId = step.params.categoryId ?? state.issueLabelCategoryIdLegacy;
+      const yoramCategoryId = step.params.categoryId ?? state.issueLabelCategoryIdYoram;
+      await helpers.requestJsonBoth(
+        ctx,
+        { method: "GET", path: categoryPath(step, legacyCategoryId) },
+        { method: "GET", path: categoryPath(step, yoramCategoryId) },
+        categoryPath(step, legacyCategoryId),
+        normalizeIssueLabelPayload,
+      );
+    },
+  },
   "view-project-leave-info": {
     translateLegacy(step) {
       return { method: "GET", path: readPath(step), redirect: "manual" };

@@ -28,6 +28,7 @@ import {
   HarnessError,
   classifyViolation,
   reclassifyScenarioViolations,
+  SITE_ADMIN_DOM_IMPLEMENTATION_FINGERPRINTS,
   violation,
 } from "./report.mjs";
 
@@ -409,6 +410,87 @@ test("classify keeps unknown DOM and visible loss blocking", () => {
   }
   assert.equal(classifyViolation("harness", "step", {}).classification, "HARNESS_ERROR");
   assert.equal(classifyViolation("infra", "render", {}).classification, "INFRA_ERROR");
+});
+
+function siteAdminFingerprintDetail(fingerprint, overrides = {}) {
+  return {
+    expected: { skeletonEntries: fingerprint.expectedSkeletonEntries },
+    actual: {
+      skeletonEntries: fingerprint.actualSkeletonEntries,
+      firstDiffs: fingerprint.firstDiffs,
+      ...overrides,
+    },
+  };
+}
+
+function firstVisibleFingerprintDiffIndex(firstDiffs) {
+  const visibleTags = new Set(["a", "button", "input", "select", "textarea", "label", "form"]);
+  return firstDiffs.findIndex((diff) =>
+    [diff.expected, diff.actual].some((entry) => {
+      const value = String(entry ?? "");
+      const separator = value.indexOf(":");
+      const tag = (separator === -1 ? value : value.slice(0, separator)).split(".")[0].toLowerCase();
+      const text = separator === -1 ? "" : value.slice(separator + 1).trim();
+      return text.length > 0 || visibleTags.has(tag);
+    }),
+  );
+}
+
+test("site-admin DOM fingerprints cite the exact WTR contract and classify only exact captures", () => {
+  assert.equal(SITE_ADMIN_DOM_IMPLEMENTATION_FINGERPRINTS.length, 8);
+  for (const fingerprint of SITE_ADMIN_DOM_IMPLEMENTATION_FINGERPRINTS) {
+    const result = classifyViolation(
+      "dom",
+      fingerprint.route,
+      siteAdminFingerprintDetail(fingerprint),
+    );
+    assert.equal(result.classification, "IMPLEMENTATION_DIFFERENCE", fingerprint.route);
+    assert.match(result.rationale, new RegExp(fingerprint.wtrTest.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u"));
+    assert.match(result.rationale, new RegExp(fingerprint.wtrSource.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u"));
+  }
+});
+
+test("site-admin DOM fingerprint near misses keep visible changes blocking", () => {
+  for (const fingerprint of SITE_ADMIN_DOM_IMPLEMENTATION_FINGERPRINTS) {
+    const visibleIndex = firstVisibleFingerprintDiffIndex(fingerprint.firstDiffs);
+    assert.notEqual(visibleIndex, -1, `${fingerprint.route}: fingerprint must contain a visible entry`);
+    const changedDiffs = fingerprint.firstDiffs.map((diff, index) =>
+      index === visibleIndex ? { ...diff, expected: `${diff.expected} changed` } : diff,
+    );
+    assert.equal(
+      classifyViolation(
+        "dom",
+        fingerprint.route,
+        siteAdminFingerprintDetail(fingerprint, { firstDiffs: changedDiffs }),
+      ).classification,
+      "UNVERIFIED",
+      `${fingerprint.route}: changed visible/class identity must remain blocking`,
+    );
+
+    const removedVisibleDiffs = fingerprint.firstDiffs.filter((_diff, index) => index !== visibleIndex);
+    assert.equal(
+      classifyViolation(
+        "dom",
+        fingerprint.route,
+        siteAdminFingerprintDetail(fingerprint, {
+          firstDiffs: removedVisibleDiffs,
+          skeletonEntries: fingerprint.actualSkeletonEntries - 1,
+        }),
+      ).classification,
+      "UNVERIFIED",
+      `${fingerprint.route}: missing row/control must remain blocking`,
+    );
+
+    assert.equal(
+      classifyViolation(
+        "dom",
+        `${fingerprint.route}?state=near-miss`,
+        siteAdminFingerprintDetail(fingerprint),
+      ).classification,
+      "UNVERIFIED",
+      `${fingerprint.route}: state mismatch must remain blocking`,
+    );
+  }
 });
 
 test("malformed residual findings require their exact step behavior id", () => {

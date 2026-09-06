@@ -375,7 +375,15 @@ export const scenarios = [
 // Both sides serve these screens through the legacy-direct path (Yoram via its
 // SPA shell), so both translators share the legacy route and DOM comparison
 // re-uses the runner's renderDomTarget.
-function getAction(pathFor, { dom = false, spa = true } = {}) {
+// Compare only the issue route body. The project shell and navigation have
+// dedicated parity coverage; this keeps watcher/label controls, issue content,
+// and comments in the lifecycle probe.
+export const ISSUE_DETAIL_DOM_SELECTORS = Object.freeze({
+  legacySelector: ".page-wrap-outer > .project-page-wrap.board-view > .board-body",
+  yoramSelector: '[data-owner="project-issue-detail-body"]',
+});
+
+function getAction(pathFor, { dom = false, spa = true, domTarget } = {}) {
   return {
     translateLegacy(step) {
       return { method: "GET", path: pathFor(step) };
@@ -392,6 +400,7 @@ function getAction(pathFor, { dom = false, spa = true } = {}) {
         legacy: `${options.legacyUrl}${target}`,
         yoram: `${yoramBaseUrl}${target}`,
         spa,
+        ...domTarget,
       });
     },
   };
@@ -852,6 +861,7 @@ export const actionDefinitions = {
         legacy: `${options.legacyUrl}/${step.params.owner}/${step.params.project}/issue/${state.issueNumberLegacy}`,
         yoram: `${yoramBaseUrl}/${step.params.owner}/${step.params.project}/issue/${state.issueNumberYoram}`,
         spa: true,
+        ...ISSUE_DETAIL_DOM_SELECTORS,
       });
     },
   },
@@ -896,6 +906,7 @@ export const actionDefinitions = {
           legacy: `${options.legacyUrl}/${step.params.owner}/${step.params.project}/issue/${state.issueNumberLegacy}`,
           yoram: `${yoramBaseUrl}/${step.params.owner}/${step.params.project}/issue/${state.issueNumberYoram}`,
           spa: true,
+          ...ISSUE_DETAIL_DOM_SELECTORS,
         });
       }
     },
@@ -953,7 +964,10 @@ export const actionDefinitions = {
 
   // --- read-only actions (I-scenarios) ---
 
-  "issue-detail": getAction((step) => ownerPath(step, `/issue/${step.params.number}`)),
+  "issue-detail": getAction((step) => ownerPath(step, `/issue/${step.params.number}`), {
+    dom: true,
+    domTarget: ISSUE_DETAIL_DOM_SELECTORS,
+  }),
 
   "issue-edit-form": getAction((step) => ownerPath(step, `/issue/${step.params.number}/editform`)),
 
@@ -1195,6 +1209,7 @@ export const actionDefinitions = {
         legacy: `${ctx.options.legacyUrl}/${ctx.step.params.owner}/${ctx.step.params.project}/issue/${ctx.state.issueNumberLegacy}`,
         yoram: `${ctx.yoramBaseUrl}/${ctx.step.params.owner}/${ctx.step.params.project}/issue/${ctx.state.issueNumberYoram}`,
         spa: true,
+        ...ISSUE_DETAIL_DOM_SELECTORS,
       });
     }
   }, whenIds(["issueNumberLegacy", "issueNumberYoram"])),

@@ -10,6 +10,8 @@ import { validateScenarios, matchBehaviors } from "./dsl.mjs";
 import { ACTION_DEFINITIONS, scenarios } from "./scenarios/index.mjs";
 import * as issues from "./scenarios/issues.mjs";
 import { translateLegacy, translateYoram } from "./adapters.mjs";
+import { domVisibleLoss } from "./diff.mjs";
+import { classifyViolation } from "./report.mjs";
 const inventory = JSON.parse(readFileSync(new URL("../../docs/provenance/behavior-inventory.json", import.meta.url), "utf8")).behaviors;
 const knownActions = Object.keys(ACTION_DEFINITIONS);
 const issuesScenarios = scenarios.filter((scenario) => issues.scenarios.some((own) => own.id === scenario.id));
@@ -55,6 +57,56 @@ test("read-page actions translate to legacy-direct GET paths on both sides", () 
   for (const [action, params, expected] of cases) {
     assert.deepEqual(translateLegacy(step(action, params)), { method: "GET", path: expected });
     assert.deepEqual(translateYoram(step(action, params)), { method: "GET", path: expected });
+  }
+});
+
+test("issue detail DOM probes exclude the shared shell and keep the route body", async () => {
+  const calls = [];
+  const ctx = {
+    step: { actor: "admin", action: "issue-detail", params: { owner: "admin", project: "sample", number: 1 } },
+    resolved: {},
+    options: { legacyUrl: "http://legacy.test" },
+    yoramBaseUrl: "http://yoram.test",
+    helpers: {
+      async requestBoth() {
+        return { legacyResult: { status: 200 }, yoramResult: { status: 200 } };
+      },
+      async renderDomTarget(_ctx, target) {
+        calls.push(target);
+      },
+    },
+  };
+  await issues.actionDefinitions["issue-detail"].handler(ctx);
+  assert.deepEqual(calls, [
+    {
+      legacy: "http://legacy.test/admin/sample/issue/1",
+      yoram: "http://yoram.test/admin/sample/issue/1",
+      spa: true,
+      ...issues.ISSUE_DETAIL_DOM_SELECTORS,
+    },
+  ]);
+});
+
+test("issue detail route-body losses for watcher and label controls remain blocking", () => {
+  for (const expected of [
+    "a.btn.watcher-count.no-border:1",
+    "a.label-edit:[수정]",
+    "button.issue-detail-watch-control:watch",
+  ]) {
+    const detail = {
+      actual: {
+        firstDiffs: [
+          { side: "legacy-only", expected },
+          { side: "yoram-only", expected: "div#react-root:" },
+        ],
+      },
+    };
+    assert.equal(domVisibleLoss(detail), true, `missing route-body control must be visible: ${expected}`);
+    assert.equal(
+      classifyViolation("dom", "/admin/sample/issue/1", detail).classification,
+      "UNVERIFIED",
+      `missing route-body control must not be hidden by shell drift: ${expected}`,
+    );
   }
 });
 

@@ -53,9 +53,10 @@ function normalizeClassification(value) {
 // catch-alls (see the label-route and sharableUsers chains). There is NO
 // blanket dom -> IMPLEMENTATION_DIFFERENCE rule: unknown DOM divergence falls
 // through to UNVERIFIED (blocking) unless an explicit, evidence-backed rule
-// below matches. Ordinary DOM allow rules cannot match a visible loss
-// (diff.mjs#domVisibleLoss); the dedicated merge-bug rule below is narrower
-// still, requiring the exact state fingerprint plus same-scenario API evidence.
+// below matches. Generic DOM allow rules cannot match a visible loss
+// (diff.mjs#domVisibleLoss); the exact reviewed route fingerprints and the
+// dedicated merge-bug rule are narrower still, requiring their complete
+// signatures (and, for the merge bug, same-scenario API evidence).
 function pairStatuses(detail) {
   const actual = detail?.actual;
   const legacy =
@@ -220,6 +221,260 @@ function hasSameScenarioMergeFailure(scenarioViolations) {
       finding.reason === LEGACY_MERGE_FAILURE_REASON,
   );
 }
+
+function siteAdminDomFingerprint({
+  route,
+  state,
+  expectedSkeletonEntries,
+  actualSkeletonEntries,
+  firstDiffs,
+  wtrTest,
+  wtrSource,
+  rationale,
+}) {
+  return Object.freeze({
+    route,
+    state,
+    expectedSkeletonEntries,
+    actualSkeletonEntries,
+    firstDiffs: Object.freeze(
+      firstDiffs.map(([side, expected, actual]) => Object.freeze({ side, expected, actual })),
+    ),
+    wtrTest,
+    wtrSource,
+    rationale,
+  });
+}
+
+// These are exact, finite SSR-vs-SPA body fingerprints from the U18 capture.
+// They are deliberately not class-prefix or route-family allowlists: route,
+// state, both skeleton counts, and every reported firstDiff must match. The
+// focused WTR test title/source is carried with each fingerprint so a
+// reclassification remains auditable. Any changed/missing visible row, text,
+// or control represented by the captured count/signature falls through to
+// UNVERIFIED.
+export const SITE_ADMIN_DOM_IMPLEMENTATION_FINGERPRINTS = Object.freeze([
+  siteAdminDomFingerprint({
+    route: "/sites/userList",
+    state: "populated",
+    expectedSkeletonEntries: 91,
+    actualSkeletonEntries: 70,
+    firstDiffs: [
+      ["legacy-only", "a.avatar-wrap.list-avatar:", "a:@alice"],
+      ["legacy-only", "a.avatar-wrap.list-avatar:", "a:@alice"],
+      ["legacy-only", "a.avatar-wrap.list-avatar:", "a:@alice"],
+      ["legacy-only", "a.user-id:@alice", "a:@alice"],
+      ["legacy-only", "a.user-id:@bob", "a:@alice"],
+      ["legacy-only", "a.user-id:@carol", "a:@alice"],
+      ["legacy-only", "a.user-name:Alice Kim", "a:@alice"],
+      ["legacy-only", "a.user-name:Bob Park", "a:@alice"],
+      ["legacy-only", "a.user-name:Carol Lee", "a:@alice"],
+      ["yoram-only", "a:게스트 사용자", "a:@alice"],
+      ["yoram-only", "a:게스트 사용자", "a:@bob"],
+      ["yoram-only", "a:게스트 사용자", "a:@carol"],
+      ["yoram-only", "a:게스트 사용자", "a:Alice Kim"],
+      ["yoram-only", "a:게스트 사용자", "a:Bob Park"],
+      ["yoram-only", "a:게스트 사용자", "a:Carol Lee"],
+      ["legacy-only", "button.close:×", "button.search-btn:"],
+      ["legacy-only", "button.ybtn.ybtn-danger:예", "button:×"],
+      ["legacy-only", "button.ybtn.ybtn-small.label-info:사이트 어드민으로 지정", "button:×"],
+      ["legacy-only", "button.ybtn.ybtn-small.label-info:사이트 어드민으로 지정", "button:×"],
+      ["legacy-only", "button.ybtn.ybtn-small.label-info:사이트 어드민으로 지정", "button:×"],
+    ],
+    wtrTest: "site admin user list matches legacy site/userList.scala.html populated DOM",
+    wtrSource: "frontend/tests/wtr/site-admin-user-list.e2e.ts:176-458",
+    rationale:
+      'WTR exact DOM contract: frontend/tests/wtr/site-admin-user-list.e2e.ts:176-458, test "site admin user list matches legacy site/userList.scala.html populated DOM"; the reviewed populated body retires legacy avatar/user/action/modal plugin identity classes while dedicated WTR assertions retain rows, labels, controls, and modal behavior',
+  }),
+  siteAdminDomFingerprint({
+    route: "/sites/projectList",
+    state: "populated",
+    expectedSkeletonEntries: 109,
+    actualSkeletonEntries: 88,
+    firstDiffs: [
+      ["legacy-only", "a.avatar-wrap.list-avatar:admin/parity-git-wvamt5efl73", "a:admin/parity-git-wvamt5efl73"],
+      ["legacy-only", "a.avatar-wrap.list-avatar:admin/parity-lc-sweep-mt6k1hwu-33", "a:admin/parity-git-wvamt5efl73"],
+      ["legacy-only", "a.avatar-wrap.list-avatar:admin/parity-lc-sweep-mt6k1hwu-39", "a:admin/parity-git-wvamt5efl73"],
+      ["legacy-only", "a.avatar-wrap.list-avatar:admin/parity-lc-sweep-mt6k1hwu-40", "a:admin/parity-git-wvamt5efl73"],
+      ["legacy-only", "a.avatar-wrap.list-avatar:admin/parity-svn-wvbmt5esi2l", "a:admin/parity-git-wvamt5efl73"],
+      ["legacy-only", "a.avatar-wrap.list-avatar:admin/parity-svn-wvbmt5etjsa", "a:admin/parity-git-wvamt5efl73"],
+      ["legacy-only", "a.avatar-wrap.list-avatar:admin/sample", "a:admin/parity-git-wvamt5efl73"],
+      ["legacy-only", "a.avatar-wrap.list-avatar:admin/svnplayground", "a:admin/parity-git-wvamt5efl73"],
+      ["legacy-only", "a.avatar-wrap.list-avatar:alice/sample", "a:admin/parity-git-wvamt5efl73"],
+      ["legacy-only", "a.project-name:admin/parity-git-wvamt5efl73", "a:admin/parity-git-wvamt5efl73"],
+      ["legacy-only", "a.project-name:admin/parity-lc-sweep-mt6k1hwu-33", "a:admin/parity-git-wvamt5efl73"],
+      ["legacy-only", "a.project-name:admin/parity-lc-sweep-mt6k1hwu-39", "a:admin/parity-git-wvamt5efl73"],
+      ["legacy-only", "a.project-name:admin/parity-lc-sweep-mt6k1hwu-40", "a:admin/parity-git-wvamt5efl73"],
+      ["legacy-only", "a.project-name:admin/parity-svn-wvbmt5esi2l", "a:admin/parity-git-wvamt5efl73"],
+      ["legacy-only", "a.project-name:admin/parity-svn-wvbmt5etjsa", "a:admin/parity-git-wvamt5efl73"],
+      ["legacy-only", "a.project-name:admin/sample", "a:admin/parity-git-wvamt5efl73"],
+      ["legacy-only", "a.project-name:admin/svnplayground", "a:admin/parity-git-wvamt5efl73"],
+      ["legacy-only", "a.project-name:alice/sample", "a:admin/parity-git-wvamt5efl73"],
+      ["legacy-only", "button.close:×", "a:admin/parity-git-wvamt5efl73"],
+      ["yoram-only", "button.search-btn:", "a:admin/parity-git-wvamt5efl73"],
+    ],
+    wtrTest: "site admin project list matches legacy site/projectList.scala.html populated DOM",
+    wtrSource: "frontend/tests/wtr/site-admin-project-list.e2e.ts:158-295",
+    rationale:
+      'WTR exact DOM contract: frontend/tests/wtr/site-admin-project-list.e2e.ts:158-295, test "site admin project list matches legacy site/projectList.scala.html populated DOM"; the reviewed populated body retires legacy avatar/project/modal plugin identity classes while dedicated WTR assertions retain project rows, links, delete behavior, and pagination',
+  }),
+  siteAdminDomFingerprint({
+    route: "/sites/data",
+    state: "default",
+    expectedSkeletonEntries: 16,
+    actualSkeletonEntries: 15,
+    firstDiffs: [
+      ["legacy-only", "div.title_area:", "h2:데이터"],
+      ["legacy-only", "h2.pull-left:데이터", "h2:데이터"],
+      ["yoram-only", "h3:Export", "h2:데이터"],
+    ],
+    wtrTest: "site admin data matches legacy site/data.scala.html DOM",
+    wtrSource: "frontend/tests/wtr/site-admin-data.e2e.ts:124-188",
+    rationale:
+      'WTR exact DOM contract: frontend/tests/wtr/site-admin-data.e2e.ts:124-188, test "site admin data matches legacy site/data.scala.html DOM"; the reviewed body retires the legacy title wrapper/class identity while dedicated WTR assertions retain the title, Export, Import, file input, and form controls',
+  }),
+  siteAdminDomFingerprint({
+    route: "/sites/issueList",
+    state: "open-populated",
+    expectedSkeletonEntries: 33,
+    actualSkeletonEntries: 14,
+    firstDiffs: [
+      ["legacy-only", "a.avatar-wrap.list-avatar:", "a:1"],
+      ["legacy-only", "a.avatar-wrap:", "a:1"],
+      ["legacy-only", "a.post-meta-item:Site Admin", "a:1"],
+      ["legacy-only", "a.post-project:admin/sample", "a:1"],
+      ["legacy-only", "a.post-title:Review rail parity check", "a:1"],
+      ["yoram-only", "a:닫힘", "a:Review rail parity check"],
+      ["yoram-only", "a:닫힘", "a:Site Admin"],
+      ["yoram-only", "a:닫힘", "a:admin/sample"],
+      ["legacy-only", "div.page-navigation-wrap:", "h2:이슈"],
+      ["legacy-only", "div.post-info-wrap:", "h2:이슈"],
+      ["legacy-only", "div.post-meta-wrap:", "h2:이슈"],
+      ["legacy-only", "div.span10:", "h2:이슈"],
+      ["legacy-only", "div.title_area:", "h2:이슈"],
+      ["legacy-only", "h2.pull-left:이슈", "h2:이슈"],
+      ["legacy-only", "i.ico.btn-pg-next.off:", "h2:이슈"],
+      ["legacy-only", "i.ico.btn-pg-prev.off:", "h2:이슈"],
+      ["yoram-only", "i.yobicon-comments:", "h2:이슈"],
+      ["legacy-only", "input.input-mini.nospinner:", "li:/"],
+      ["legacy-only", "li.active:", "li:/"],
+      ["legacy-only", "li.page-num.delimiter:/", "li:/"],
+    ],
+    wtrTest: "site admin issue list matches legacy site/issueList.scala.html open populated DOM",
+    wtrSource: "frontend/tests/wtr/site-admin-issue-list.e2e.ts:142-360",
+    rationale:
+      'WTR exact DOM contract: frontend/tests/wtr/site-admin-issue-list.e2e.ts:142-360, test "site admin issue list matches legacy site/issueList.scala.html open populated DOM"; the reviewed open body retires legacy row/avatar/pagination/icon identity classes while dedicated WTR assertions retain issue rows, state tabs, metadata, comments, and pagination',
+  }),
+  siteAdminDomFingerprint({
+    route: "/sites/postList",
+    state: "populated",
+    expectedSkeletonEntries: 29,
+    actualSkeletonEntries: 15,
+    firstDiffs: [
+      ["legacy-only", "a.avatar-wrap:", "a:1"],
+      ["legacy-only", "a.post-meta-item:Site Admin", "a:1"],
+      ["legacy-only", "a.post-project:admin/sample", "a:1"],
+      ["legacy-only", "a.post-title:Seed notes", "a:1"],
+      ["legacy-only", "a:2", "a:1"],
+      ["legacy-only", "div.page-navigation-wrap:", "a:1"],
+      ["legacy-only", "div.post-info-wrap:", "a:1"],
+      ["legacy-only", "div.post-meta-wrap:", "a:1"],
+      ["yoram-only", "div.span10:", "a:1"],
+      ["yoram-only", "div.span10:", "a:Seed notes"],
+      ["yoram-only", "div.span10:", "a:Site Admin"],
+      ["yoram-only", "div.span10:", "a:admin/sample"],
+      ["legacy-only", "div.title_area:", "h2:게시물"],
+      ["legacy-only", "h2.pull-left:게시물", "h2:게시물"],
+      ["legacy-only", "i.ico.btn-pg-next.off:", "h2:게시물"],
+      ["legacy-only", "i.ico.btn-pg-prev.off:", "h2:게시물"],
+      ["legacy-only", "i.yobicon-comments:", "h2:게시물"],
+      ["legacy-only", "input.input-mini.nospinner:", "h2:게시물"],
+      ["legacy-only", "li.page-num.delimiter:/", "h2:게시물"],
+      ["legacy-only", "li.page-num.ikon:", "h2:게시물"],
+    ],
+    wtrTest: "site admin post list matches legacy site/postList.scala.html populated DOM",
+    wtrSource: "frontend/tests/wtr/site-admin-post-list.e2e.ts:140-331",
+    rationale:
+      'WTR exact DOM contract: frontend/tests/wtr/site-admin-post-list.e2e.ts:140-331, test "site admin post list matches legacy site/postList.scala.html populated DOM"; the reviewed populated body retires legacy post/avatar/pagination/icon identity classes while dedicated WTR assertions retain post rows, metadata, comments, and pagination',
+  }),
+  siteAdminDomFingerprint({
+    route: "/sites/mail",
+    state: "not-configured",
+    expectedSkeletonEntries: 23,
+    actualSkeletonEntries: 14,
+    firstDiffs: [
+      ["legacy-only", "div.control-group.mr10:", "div.alert.alert-error:"],
+      ["legacy-only", "div.control-group.mr10:", "div.alert.alert-error:"],
+      ["legacy-only", "div.control-group:", "div.alert.alert-error:"],
+      ["legacy-only", "div.control-group:", "div.alert.alert-error:"],
+      ["legacy-only", "div.controls:", "div.alert.alert-error:"],
+      ["legacy-only", "div.controls:", "div.alert.alert-error:"],
+      ["legacy-only", "div.controls:", "div.alert.alert-error:"],
+      ["legacy-only", "div.controls:", "div.alert.alert-error:"],
+      ["yoram-only", "div.span10:", "div.alert.alert-error:"],
+      ["legacy-only", "form.form-horizontal:", "h2.pull-left:메일 발송"],
+      ["legacy-only", "input.span12:", "label:받는 사람"],
+      ["legacy-only", "input.span4:", "label:받는 사람"],
+      ["legacy-only", "input.span4:", "label:받는 사람"],
+      ["legacy-only", "label.control-label.span3:보내는 메일 주소", "label:받는 사람"],
+      ["legacy-only", "label.control-label:받는 사람", "label:받는 사람"],
+      ["legacy-only", "label.control-label:본문", "label:받는 사람"],
+      ["legacy-only", "label.control-label:제목", "label:받는 사람"],
+      ["yoram-only", "strong:발송", "label:받는 사람"],
+      ["yoram-only", "strong:발송", "label:보내는 메일 주소"],
+      ["yoram-only", "strong:발송", "label:본문"],
+    ],
+    wtrTest: "site admin mail matches legacy site/mail.scala.html not-configured DOM",
+    wtrSource: "frontend/tests/wtr/site-admin-mail.e2e.ts:154-242",
+    rationale:
+      'WTR exact DOM contract: frontend/tests/wtr/site-admin-mail.e2e.ts:154-242, test "site admin mail matches legacy site/mail.scala.html not-configured DOM"; the reviewed not-configured body retires legacy form/control wrapper classes while dedicated WTR assertions retain the alert, labels, fields, and send/error/loading behavior',
+  }),
+  siteAdminDomFingerprint({
+    route: "/sites/massmail",
+    state: "default",
+    expectedSkeletonEntries: 13,
+    actualSkeletonEntries: 12,
+    firstDiffs: [
+      ["legacy-only", "button.ybtn.ybtn-primary:", "button.ybtn:"],
+      ["legacy-only", "div.control-group.hide:", "div.controls:"],
+      ["yoram-only", "div.mess-mail-wrap:", "div.hide:"],
+    ],
+    wtrTest: "site admin mass mail matches legacy site/massMail.scala.html DOM",
+    wtrSource: "frontend/tests/wtr/site-admin-massmail.e2e.ts:131-246",
+    rationale:
+      'WTR exact DOM contract: frontend/tests/wtr/site-admin-massmail.e2e.ts:131-246, test "site admin mass mail matches legacy site/massMail.scala.html DOM"; the reviewed default body retires legacy mass-mail wrapper/button identity classes while dedicated WTR interaction assertions retain recipient selection, project controls, and Write behavior',
+  }),
+  siteAdminDomFingerprint({
+    route: "/sites/update",
+    state: "no-update-product-version",
+    expectedSkeletonEntries: 5,
+    actualSkeletonEntries: 5,
+    firstDiffs: [
+      ["legacy-only", "p:현재 버전은 1.16.0 입니다", "p:현재 버전은 0.1.0 입니다"],
+      ["yoram-only", "p:현재 최신 버전을 사용중입니다", "p:현재 버전은 0.1.0 입니다"],
+    ],
+    wtrTest: "site admin update matches legacy site/update.scala.html no-update screen DOM",
+    wtrSource: "frontend/tests/wtr/site-admin-update.e2e.ts:108-283",
+    rationale:
+      'Product identity/version fingerprint: legacy Yona declares version 1.16.0 (yona-original/build.sbt:6); Yoram declares workspace version 0.1.0 (Cargo.toml:15-18), defaults site-update current_version from CARGO_PKG_VERSION (crates/server/src/app_config.rs:229-250), and returns that value from the update response (crates/server/src/routes/site_admin/update.rs:105-151). The exact visible version divergence is therefore intentional product identity, not plugin markup. Focused WTR source: frontend/tests/wtr/site-admin-update.e2e.ts:108-283, test "site admin update matches legacy site/update.scala.html no-update screen DOM"',
+  }),
+]);
+
+function exactSiteAdminDomFingerprint(detail, fingerprint) {
+  return (
+    detail?.expected?.skeletonEntries === fingerprint.expectedSkeletonEntries &&
+    detail?.actual?.skeletonEntries === fingerprint.actualSkeletonEntries &&
+    JSON.stringify(detail?.actual?.firstDiffs) === JSON.stringify(fingerprint.firstDiffs)
+  );
+}
+
+const SITE_ADMIN_DOM_FINGERPRINT_RULES = SITE_ADMIN_DOM_IMPLEMENTATION_FINGERPRINTS.map((fingerprint) => ({
+  test: ({ kind, route, detail }) =>
+    kind === "dom" && route === fingerprint.route && exactSiteAdminDomFingerprint(detail, fingerprint),
+  classification: "IMPLEMENTATION_DIFFERENCE",
+  rationale: fingerprint.rationale,
+  reason: `exact ${fingerprint.route} ${fingerprint.state} DOM implementation fingerprint; changed or missing visible content falls through to UNVERIFIED`,
+}));
 
 // Fallback for findings no rule claims: UNVERIFIED so new divergences remain
 // visible and block the strict gate instead of silently passing.
@@ -520,9 +775,11 @@ const CLASSIFICATION_RULES = [
       "label attach/update/delete pair diverged: the discovery-resolved id/payload contract for this label route is still imperfect; fix id resolution and payload shape rather than comparing agreed failures",
   },
   // --- explicit DOM allow rules (plan Phase B) --------------------------------
-  // No blanket dom rule exists: only these two reviewed, evidence-backed
-  // fingerprints may classify a DOM divergence as IMPLEMENTATION_DIFFERENCE,
-  // and neither can match a visible loss (domVisibleLoss guard below).
+  // No blanket dom rule exists: only these reviewed, evidence-backed exact
+  // fingerprints may classify a DOM divergence as IMPLEMENTATION_DIFFERENCE.
+  // The route/state/count/firstDiff equality is the guard; near misses,
+  // including changed or missing visible controls/text/rows, remain UNVERIFIED.
+  ...SITE_ADMIN_DOM_FINGERPRINT_RULES,
   {
     // Narrow exception for the one known PR merge actor failure. This rule is
     // intentionally scenario-aware and only accepts an exact pending/current

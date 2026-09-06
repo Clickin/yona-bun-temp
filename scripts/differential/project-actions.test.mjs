@@ -83,6 +83,118 @@ test("translators produce expected method/path literals", () => {
   }
 });
 
+test("issue label JSON pages compare normalized payloads without DOM rendering", async () => {
+  const step = { action: "list-issue-labels", params: { owner: "admin", project: "sample" } };
+  let request;
+  await MERGED_DEFINITIONS[step.action].handler({
+    step,
+    resolved: {},
+    helpers: {
+      async requestJsonBoth(...args) {
+        request = args;
+      },
+    },
+  });
+  assert.equal(request[1].path, "/admin/sample/issue/labels");
+  assert.equal(request[2].path, request[1].path);
+  assert.deepEqual(
+    request[4]({
+      id: "legacy-generated-id",
+      categoryId: "legacy-category-id",
+      name: "parity",
+      categoryIsExclusive: false,
+    }),
+    request[4]({
+      categoryIsExclusive: false,
+      categoryId: "yoram-category-id",
+      id: "yoram-generated-id",
+      name: "parity",
+    }),
+  );
+  assert.notDeepEqual(
+    request[4]({ name: "parity", categoryIsExclusive: false }),
+    request[4]({ name: "parity", categoryIsExclusive: true }),
+    "true is not an additive compatibility field",
+  );
+});
+
+test("issue label categories pair side-specific generated category ids", async () => {
+  const state = {};
+  const calls = [];
+  const categoryStep = {
+    action: "list-issue-label-categories",
+    params: { owner: "admin", project: "sample" },
+  };
+  const helpers = {
+    async requestJsonBoth(_ctx, legacy, yoram, route, normalize) {
+      calls.push({ legacy, yoram, route, normalize });
+      return {
+        legacyResult: { json: [{ id: 42, name: "type", isExclusive: "false" }] },
+        yoramResult: { json: [{ id: 84, name: "type", isExclusive: "false" }] },
+      };
+    },
+  };
+  await MERGED_DEFINITIONS[categoryStep.action].handler({
+    step: categoryStep,
+    resolved: {},
+    state,
+    helpers,
+  });
+  assert.deepEqual(state, { issueLabelCategoryIdLegacy: 42, issueLabelCategoryIdYoram: 84 });
+
+  const detailStep = {
+    action: "view-issue-label-category",
+    params: { owner: "admin", project: "sample", categoryId: 1 },
+  };
+  await MERGED_DEFINITIONS[detailStep.action].handler({
+    step: detailStep,
+    resolved: {},
+    state,
+    helpers,
+  });
+  assert.equal(calls[1].legacy.path, "/admin/sample/issue/label/category/1");
+  assert.equal(calls[1].yoram.path, "/admin/sample/issue/label/category/1");
+  assert.equal(calls[1].route, "/admin/sample/issue/label/category/1");
+
+  const generatedDetail = {
+    action: "view-issue-label-category",
+    params: { owner: "admin", project: "sample" },
+  };
+  await MERGED_DEFINITIONS[generatedDetail.action].handler({
+    step: generatedDetail,
+    resolved: {},
+    state,
+    helpers,
+  });
+  assert.equal(calls[2].legacy.path, "/admin/sample/issue/label/category/42");
+  assert.equal(calls[2].yoram.path, "/admin/sample/issue/label/category/84");
+});
+
+test("issue labels form stays a strict HTML DOM comparison", async () => {
+  let target;
+  const step = {
+    action: "view-issue-labels-form",
+    params: { owner: "admin", project: "sample" },
+  };
+  await MERGED_DEFINITIONS[step.action].handler({
+    step,
+    resolved: {},
+    options: { legacyUrl: "http://legacy.test" },
+    yoramBaseUrl: "http://yoram.test",
+    helpers: {
+      async requestBoth() {
+        return { legacyResult: { status: 200 }, yoramResult: { status: 200 } };
+      },
+      async renderDomTarget(_ctx, domTarget) {
+        target = domTarget;
+      },
+    },
+  });
+  assert.equal(target.spa, true);
+  assert.equal(target.legacy, "http://legacy.test/admin/sample/issue/labelsform");
+  assert.equal(target.yoram, "http://yoram.test/admin/sample/issue/labelsform");
+});
+
 test("compat reads keep legacy /-_-api/v1 paths and map yoram to RESTful", () => {
   const step = (action, params) => ({ action, params });
   // Compat reads: legacy keeps its /-_-api/v1 spelling; yoram maps to the
