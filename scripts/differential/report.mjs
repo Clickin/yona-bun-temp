@@ -997,15 +997,32 @@ const CLASSIFICATION_RULES = [
       "legacy ProjectApp.settingProject raises an NPE when the headless multipart payload omits the project id; the malformed throwaway-setting probe is not supported behavior (yona-original/app/controllers/ProjectApp.java:427-448)",
   },
   {
-    test: ({ kind, route, detail, behaviorId }) =>
+    test: ({ kind, route, detail, behaviorId, scenarioId, scenarioActions }) =>
       kind === "api" &&
       behaviorId === "B-0002" &&
+      scenarioId === "P26-residual-branch-import-probes" &&
+      scenarioActions?.includes("probe-delete-branch-missing") &&
       /^\/[^/]+\/[^/]+\/code\/__parity_missing_branch__\/$/u.test(route) &&
-      exactStatus(detail, "legacy") === 302 &&
+      exactStatus(detail, "legacy") === 303 &&
       exactStatus(detail, "yoram") === 404,
     classification: "LEGACY_BUG_NOT_REPRODUCED",
     reason:
       "legacy BranchApp.deleteBranch redirects after blindly deleting a nonexistent branch, while Yoram reports the same no-op as 404; the malformed missing-branch probe is not supported behavior (yona-original/app/controllers/BranchApp.java:71-79; yona-original/app/playRepository/GitRepository.java:1230-1236)",
+  },
+  {
+    test: ({ kind, route, detail, behaviorId, scenarioId, scenarioActions }) =>
+      kind === "api" &&
+      (behaviorId === null || behaviorId === "B-0298") &&
+      scenarioId === "U22-user-profile-edit-revert" &&
+      scenarioActions?.filter((action) => action === "save-user-editform-tab").length === 2 &&
+      route === "/user/editform/:tabId" &&
+      detail?.expected === "legacy HTTP 200" &&
+      detail?.actual === "yoram HTTP 404",
+    classification: "IMPLEMENTATION_DIFFERENCE",
+    rationale:
+      "surface-replaced: the exact U22 empty POST notifications/emails probes are not supported UI mutations; the supported settings surface is the React workspace tabs and actions (frontend/src/routes/user/editform.tsx:16-47,374-384; crates/server/src/routes/workspace.rs:1082-1425; docs/provenance/differential-step-disposition-2026-09.md)",
+    reason:
+      "U22 exact empty POST editform-tab probes: legacy compat tab responds 200 while Yoram intentionally has no mutation route; no user-visible settings mutation is represented",
   },
   {
     test: ({ kind, route, detail, behaviorId }) =>
@@ -1371,7 +1388,11 @@ export function reclassifyScenarioViolations(scenario) {
   const scenarioViolations = scenario?.violations;
   if (!Array.isArray(scenarioViolations)) return scenario;
   for (const finding of scenarioViolations) {
-    if (finding?.kind !== "dom") continue;
+    const scenarioScopedApi =
+      finding?.kind === "api" &&
+      (scenario.id === "P26-residual-branch-import-probes" ||
+        scenario.id === "U22-user-profile-edit-revert");
+    if (finding?.kind !== "dom" && !scenarioScopedApi) continue;
     const classified = classifyViolation(
       finding.kind,
       finding.route,

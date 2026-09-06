@@ -505,6 +505,11 @@ function prSuffixTitle(ctx, mark = "") {
   return `Differential sweep PR ${ctx.suffix}${mark}`;
 }
 
+export const PULL_REQUEST_DETAIL_DOM_SELECTORS = Object.freeze({
+  legacySelector: ".page-wrap-outer > .project-page-wrap > .board-body",
+  yoramSelector: '[data-owner="pull-request-detail-body"]',
+});
+
 // One-sided failure is the divergence signal for a mutation pair; both-side
 // failures are environment/seed issues and stay in entry.errors only.
 function ensureOutcomeParity(ctx, route, legacyResult, yoramResult) {
@@ -741,7 +746,7 @@ const MUTATION_DEFINITIONS = {
           legacy: `${ctx.options.legacyUrl}/${step.params.owner}/${step.params.project}/pullRequest/${state.prNumberLegacy}`,
           yoram: `${ctx.yoramBaseUrl}/${step.params.owner}/${step.params.project}/pullRequest/${state.prNumberYoram}`,
           spa: true,
-          selector: ".project-page-wrap",
+          ...PULL_REQUEST_DETAIL_DOM_SELECTORS,
           currentToken: shared.title,
         });
       }

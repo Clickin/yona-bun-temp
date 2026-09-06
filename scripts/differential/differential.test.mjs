@@ -1021,7 +1021,6 @@ test("malformed residual findings require their exact step behavior id", () => {
   const cases = [
     ["B-0185", "/user/sidebar", { expected: { status: 500 }, actual: { status: 200 } }, "LEGACY_BUG_NOT_REPRODUCED"],
     ["B-0267", "/admin/parity-setting/setting", { expected: { status: 500 }, actual: { status: 200 } }, "LEGACY_BUG_NOT_REPRODUCED"],
-    ["B-0002", "/admin/sample/code/__parity_missing_branch__/", { expected: "legacy HTTP 302", actual: "yoram HTTP 404" }, "LEGACY_BUG_NOT_REPRODUCED"],
     ["B-0221", "/user/editform/defultLoginPage", { expected: "2xx", actual: "4xx" }, "LEGACY_BUG_NOT_REPRODUCED"],
     ["B-0286", "/sites/import", { expected: "legacy HTTP 303", actual: "yoram HTTP 400" }, "IMPLEMENTATION_DIFFERENCE"],
     ["B-0014", "/comments/issue/9", { expected: { status: "<400" }, actual: { legacyStatus: 500, yoramStatus: 400 } }, "LEGACY_BUG_NOT_REPRODUCED"],
@@ -1033,6 +1032,120 @@ test("malformed residual findings require their exact step behavior id", () => {
   for (const [behaviorId, route, detail, classification] of cases) {
     assert.equal(classifyViolation("api", route, detail, { behaviorId }).classification, classification, behaviorId);
     assert.equal(classifyViolation("api", route, detail).classification, "UNVERIFIED", `${behaviorId} must be attributed`);
+  }
+  const exactTuples = [
+    {
+      behaviorId: "B-0002",
+      route: "/admin/sample/code/__parity_missing_branch__/",
+      detail: { expected: "legacy HTTP 303", actual: "yoram HTTP 404" },
+      context: {
+        scenarioId: "P26-residual-branch-import-probes",
+        scenarioActions: ["login", "probe-delete-branch-missing", "probe-import-project-invalid"],
+      },
+      classification: "LEGACY_BUG_NOT_REPRODUCED",
+    },
+    {
+      behaviorId: null,
+      route: "/user/editform/:tabId",
+      detail: { expected: "legacy HTTP 200", actual: "yoram HTTP 404" },
+      context: {
+        scenarioId: "U22-user-profile-edit-revert",
+        scenarioActions: ["login", "edit-user-profile", "save-user-editform-tab", "save-user-editform-tab"],
+      },
+      classification: "IMPLEMENTATION_DIFFERENCE",
+    },
+  ];
+  for (const { behaviorId, route, detail, context, classification } of exactTuples) {
+    assert.equal(
+      classifyViolation("api", route, detail, { behaviorId, ...context }).classification,
+      classification,
+      `${context.scenarioId}: exact route/status/action tuple`,
+    );
+    assert.equal(
+      classifyViolation("api", route, detail, { behaviorId }).classification,
+      "UNVERIFIED",
+      `${context.scenarioId}: missing scenario/action context must block`,
+    );
+  }
+  const scenarioReclassification = {
+    id: "U22-user-profile-edit-revert",
+    stepResults: [
+      { action: "login" },
+      { action: "edit-user-profile" },
+      { action: "save-user-editform-tab" },
+      { action: "save-user-editform-tab" },
+    ],
+    violations: [
+      {
+        kind: "api",
+        behaviorId: null,
+        route: "/user/editform/:tabId",
+        expected: "legacy HTTP 200",
+        actual: "yoram HTTP 404",
+      },
+    ],
+  };
+  reclassifyScenarioViolations(scenarioReclassification);
+  assert.equal(scenarioReclassification.violations[0].classification, "IMPLEMENTATION_DIFFERENCE");
+  const branchScenario = {
+    id: "P26-residual-branch-import-probes",
+    stepResults: [
+      { action: "login" },
+      { action: "probe-delete-branch-missing" },
+      { action: "probe-import-project-invalid" },
+    ],
+    violations: [
+      {
+        kind: "api",
+        behaviorId: "B-0002",
+        route: "/admin/sample/code/__parity_missing_branch__/",
+        expected: "legacy HTTP 303",
+        actual: "yoram HTTP 404",
+      },
+    ],
+  };
+  reclassifyScenarioViolations(branchScenario);
+  assert.equal(branchScenario.violations[0].classification, "LEGACY_BUG_NOT_REPRODUCED");
+  const wrongScenario = {
+    ...scenarioReclassification,
+    id: "U22-user-profile-edit-revert",
+    stepResults: [
+      { action: "login" },
+      { action: "edit-user-profile" },
+      { action: "other-action" },
+      { action: "other-action" },
+    ],
+    violations: scenarioReclassification.violations.map(({ classification, reason, rationale, ...finding }) => finding),
+  };
+  reclassifyScenarioViolations(wrongScenario);
+  assert.equal(wrongScenario.violations[0].classification, "UNVERIFIED");
+  for (const nearMiss of [
+    {
+      behaviorId: "B-0298",
+      route: "/user/editform/:tabId",
+      detail: { expected: "legacy HTTP 201", actual: "yoram HTTP 404" },
+    },
+    {
+      behaviorId: "B-0298",
+      route: "/user/editform/notifications",
+      detail: { expected: "legacy HTTP 200", actual: "yoram HTTP 404" },
+    },
+    {
+      behaviorId: "B-0299",
+      route: "/user/editform/:tabId",
+      detail: { expected: "legacy HTTP 200", actual: "yoram HTTP 404" },
+    },
+    {
+      behaviorId: "B-0298",
+      route: "/user/editform/:tabId",
+      detail: { expected: "legacy HTTP 200", actual: "yoram HTTP 403" },
+    },
+  ]) {
+    assert.equal(
+      classifyViolation("api", nearMiss.route, nearMiss.detail, { behaviorId: nearMiss.behaviorId }).classification,
+      "UNVERIFIED",
+      `near miss must remain blocking: ${nearMiss.behaviorId} ${nearMiss.route}`,
+    );
   }
   assert.equal(
     classifyViolation(

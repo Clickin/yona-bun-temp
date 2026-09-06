@@ -25,6 +25,7 @@ test("direct notification DOM target preserves the required legacy query", async
       legacy: "http://legacy.test/notification?from=0&limit=10",
       yoram: "http://yoram.test/notification?from=0&limit=10",
       spa: true,
+      selector: ".page-wrap",
     },
   ]);
 });

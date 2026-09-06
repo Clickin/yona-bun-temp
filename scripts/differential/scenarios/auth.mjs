@@ -666,7 +666,7 @@ function pushStatusDivergence(ctx, route, legacyResult, yoramResult) {
 // Anonymous DOM skeleton diff at the same path on both sides. Render with the
 // fresh sessions used by the paired HTTP requests, not the shared scenario
 // sessions that may still be authenticated.
-async function renderDomTargetPath(ctx, target, { spa = true, sessions } = {}) {
+async function renderDomTargetPath(ctx, target, { spa = true, sessions, selector } = {}) {
   await ctx.helpers.renderDomTarget(ctx, {
     legacy: `${ctx.options.legacyUrl}${target}`,
     yoram: `${ctx.yoramBaseUrl}${target}`,
@@ -674,6 +674,7 @@ async function renderDomTargetPath(ctx, target, { spa = true, sessions } = {}) {
     anonymous: Boolean(sessions),
     legacySession: sessions?.legacy,
     yoramSession: sessions?.yoram,
+    ...(selector ? { selector } : {}),
   });
 }
 
@@ -693,6 +694,12 @@ async function requestCompatApi(ctx, legacyPath, yoramPath) {
 }
 
 // Anonymous page read: request without cookies, compare statuses, DOM-diff.
+const AUTH_PAGE_ROOT_SELECTORS = Object.freeze({
+  "/users/loginform": ".page.full",
+  "/users/signupform": ".page.full",
+  "/lostPassword": ".page.full",
+});
+
 function anonymousPageAction(legacyPath) {
   return async (ctx) => {
     const { legacyResult, yoramResult, sessions } = await requestAnonymousBoth(
@@ -701,7 +708,10 @@ function anonymousPageAction(legacyPath) {
       { method: "GET", path: legacyPath },
     );
     pushStatusDivergence(ctx, legacyPath, legacyResult, yoramResult);
-    await renderDomTargetPath(ctx, legacyPath, { sessions });
+    await renderDomTargetPath(ctx, legacyPath, {
+      sessions,
+      selector: AUTH_PAGE_ROOT_SELECTORS[legacyPath],
+    });
   };
 }
 // Authenticated page read via the shared sessions.
@@ -709,7 +719,9 @@ function sessionPageAction(legacyPath) {
   return async (ctx) => {
     const { legacyResult, yoramResult } = await ctx.helpers.requestBoth(ctx, { method: "GET", path: legacyPath }, { method: "GET", path: legacyPath });
     pushStatusDivergence(ctx, legacyPath, legacyResult, yoramResult);
-    await renderDomTargetPath(ctx, legacyPath);
+    await renderDomTargetPath(ctx, legacyPath, {
+      selector: legacyPath === "/projectform" ? ".project-page-wrap" : undefined,
+    });
   };
 }
 

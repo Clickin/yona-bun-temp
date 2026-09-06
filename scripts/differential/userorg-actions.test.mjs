@@ -440,6 +440,50 @@ test("site-admin route-body control loss remains blocking even with shell-only d
   );
 });
 
+test("shared user and organization page roots are explicit while unmatched routes keep full-body capture", async () => {
+  const calls = [];
+  const ctx = {
+    resolved: {},
+    options: { legacyUrl: "http://legacy.test" },
+    yoramBaseUrl: "http://yoram.test",
+    helpers: {
+      async requestBoth() {
+        return { legacyResult: { status: 200 }, yoramResult: { status: 200 } };
+      },
+      async renderDomTarget(_ctx, target) {
+        calls.push(target);
+      },
+    },
+  };
+  const cases = [
+    [{ action: "view-user-issues", params: { tab: "assigned" } }, ".page-wrap"],
+    [{ action: "view-notifications", params: {} }, ".page-wrap"],
+    [{ action: "view-global-search", params: { query: "sample" } }, ".project-page-wrap"],
+    [{ action: "view-org-home", params: { organization: "weblabs" } }, ".project-page-wrap"],
+    [{ action: "view-org-subpage", params: { organization: "weblabs", page: "issues" } }, ".page-wrap"],
+    [{ action: "view-org-subpage", params: { organization: "weblabs", page: "members" } }, ".project-page-wrap"],
+    [{ action: "view-user-profile", params: { user: "admin" } }, ".page-wrap"],
+    [{ action: "view-user-files", params: {} }, ".page-wrap"],
+    [{ action: "view-new-direct-issue-form", params: {} }, ".project-page-wrap"],
+    [{ action: "view-new-org-form", params: {} }, ".project-page-wrap"],
+    [{ action: "view-orgs-list", params: {} }, undefined],
+    [{ action: "view-user-editform", params: {} }, undefined],
+  ];
+  for (const [step, selector] of cases) {
+    calls.length = 0;
+    ctx.step = step;
+    await ACTION_DEFINITIONS[step.action].handler(ctx);
+    assert.equal(calls.length, 1, `${step.action} should render one DOM target`);
+    assert.equal(calls[0].selector, selector, `${step.action} selector`);
+  }
+});
+
+test("user and organization route-body control loss remains blocking", () => {
+  const detail = { actual: { firstDiffs: [{ side: "legacy-only", expected: "button.ybtn.ybtn-primary:Create" }] } };
+  assert.equal(domVisibleLoss(detail), true);
+  assert.equal(classifyViolation("dom", "/organizations/weblabs/members", detail).classification, "UNVERIFIED");
+});
+
 test("site export status probe opts out of streaming body reads", () => {
   assert.deepEqual(actionDefinitions["probe-site-export"].translateLegacy({ params: {} }), {
     method: "GET",

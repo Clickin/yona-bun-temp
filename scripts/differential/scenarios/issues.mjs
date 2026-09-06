@@ -361,6 +361,7 @@ export const scenarios = [
       { actor: "admin", action: "render-markdown", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "migration-export-issues", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "migration-export-labels", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "restore-migration-issue-labels", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "migration-export-issuelabel-pairs", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "global-labels", params: {} },
     ],
@@ -791,6 +792,55 @@ function exportReadAction(name, pathFor) {
       },
     },
   };
+}
+
+const MIGRATION_LABEL_SEEDS = [
+  { name: "bug", category: "type", color: "#f44336" },
+  { name: "parity", category: "area", color: "#2196f3" },
+];
+
+function findSemanticLabel(node, seed) {
+  if (Array.isArray(node)) {
+    for (const child of node) {
+      const match = findSemanticLabel(child, seed);
+      if (match) return match;
+    }
+    return null;
+  }
+  if (!node || typeof node !== "object") return null;
+  const name = node.name ?? node.labelName;
+  const category = node.category?.name ?? node.categoryName ?? node.category;
+  const color = node.color ?? node.labelColor;
+  const normalizeColor = (value) => String(value ?? "").replace(/^#/u, "").toLowerCase();
+  if (
+    name === seed.name &&
+    (category == null || String(category).toLowerCase() === seed.category) &&
+    (color == null || normalizeColor(color) === normalizeColor(seed.color))
+  ) {
+    return node;
+  }
+  for (const value of Object.values(node)) {
+    const match = findSemanticLabel(value, seed);
+    if (match) return match;
+  }
+  return null;
+}
+
+function labelNamesFromIssue(node) {
+  if (typeof node === "string") {
+    return MIGRATION_LABEL_SEEDS
+      .filter((seed) => new RegExp(`(?:>|["'])${seed.name}(?:<|["'])`, "u").test(node))
+      .map((seed) => seed.name);
+  }
+  if (Array.isArray(node)) return node.flatMap(labelNamesFromIssue);
+  if (!node || typeof node !== "object") return [];
+  if (Array.isArray(node.labels)) {
+    return node.labels.flatMap((label) => {
+      const name = label?.name ?? label?.labelName;
+      return typeof name === "string" ? [name] : [];
+    });
+  }
+  return Object.values(node).flatMap(labelNamesFromIssue);
 }
 
 export const actionDefinitions = {
@@ -1587,6 +1637,66 @@ export const actionDefinitions = {
   ...exportReadAction("migration-export-issues", (step) => `/${step.params.owner}/projects/${step.params.project}/issues`),
   ...exportReadAction("migration-export-labels", (step) => `/${step.params.owner}/projects/${step.params.project}/labels`),
   ...exportReadAction("migration-export-issuelabel-pairs", (step) => `/${step.params.owner}/projects/${step.params.project}/issuelabel`),
+  "restore-migration-issue-labels": {
+    translateLegacy(step) {
+      return { method: "GET", path: ownerPath(step, "/issue/labels") };
+    },
+    translateYoram(step) {
+      return { method: "GET", path: `${yoramApiBase(step)}/labels` };
+    },
+    async handler(ctx) {
+      const { step, entry, helpers } = ctx;
+      const legacyLabels = await helpers.sendRaw(ctx, "legacy", {
+        method: "GET",
+        path: ownerPath(step, "/issue/labels"),
+      });
+      const yoramLabels = await helpers.sendRaw(ctx, "yoram", {
+        method: "GET",
+        path: `${spaRestBase(step)}/issues/1`,
+      });
+      if (legacyLabels.status >= 400 || yoramLabels.status >= 400) {
+        throw new HarnessError(
+          `restore-migration-issue-labels: issue read failed legacy=${legacyLabels.status} yoram=${yoramLabels.status}`,
+        );
+      }
+      const legacyRows = MIGRATION_LABEL_SEEDS.map((seed) => findSemanticLabel(legacyLabels.json, seed));
+      const yoramRows = MIGRATION_LABEL_SEEDS.map((seed) => findSemanticLabel(yoramLabels.json, seed));
+      if (legacyRows.some((row) => !row) || yoramRows.some((row) => !row)) {
+        throw new HarnessError("restore-migration-issue-labels: aligned label rows are missing");
+      }
+      const setResult = await helpers.requestBoth(
+        ctx,
+        {
+          method: "POST",
+          path: `${apiCompatBase(step)}/issuelabel/1`,
+          json: legacyRows.map((row) => String(row.id)),
+        },
+        {
+          method: "POST",
+          path: `${yoramApiBase(step)}/issues/1/labels`,
+          json: yoramRows.map((row) => String(row.id)),
+        },
+      );
+      if (setResult.legacyResult.status >= 400 || setResult.yoramResult.status >= 400) return;
+      const readback = await helpers.requestBoth(
+        ctx,
+        { method: "GET", path: ownerPath(step, "/issue/1") },
+        { method: "GET", path: `${spaRestBase(step)}/issues/1` },
+      );
+      const expectedNames = new Set(MIGRATION_LABEL_SEEDS.map((seed) => seed.name));
+      const readbackNames = [
+        new Set(labelNamesFromIssue(readback.legacyResult.json)),
+        new Set(labelNamesFromIssue(readback.yoramResult.json)),
+      ];
+      if (
+        readback.legacyResult.status >= 400 ||
+        readback.yoramResult.status >= 400 ||
+        readbackNames.some((names) => [...expectedNames].some((name) => !names.has(name)))
+      ) {
+        entry.errors.push("restore-migration-issue-labels: issue label association readback mismatch");
+      }
+    },
+  },
 
   "global-labels": {
     translateLegacy() {

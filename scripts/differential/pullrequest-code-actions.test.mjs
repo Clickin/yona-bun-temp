@@ -20,7 +20,10 @@ import {
   commitIdFromYoramPayload,
   pullRequestNumberFromPayload,
   resolveYoramPullRequestNumber,
+  PULL_REQUEST_DETAIL_DOM_SELECTORS,
 } from "./scenarios/pullrequest-code.mjs";
+import { domVisibleLoss } from "./diff.mjs";
+import { classifyViolation } from "./report.mjs";
 
 const MERGED_DEFINITIONS = { ...ACTION_DEFINITIONS, ...actionDefinitions };
 const knownActions = Object.keys(MERGED_DEFINITIONS);
@@ -355,6 +358,85 @@ test("R13 does not re-close a pull request after both sides accepted it", async 
     },
   });
   assert.equal(requests, 0);
+});
+
+test("create pull request captures only the existing detail body", async () => {
+  let target;
+  const suffix = "focused";
+  const ctx = {
+    step: {
+      action: "create-pullrequest",
+      params: {
+        owner: "admin",
+        project: "sample",
+        fromBranch: "feature/ui",
+        toBranch: "main",
+      },
+    },
+    suffix,
+    state: {},
+    entry: { errors: [], violations: [], behaviorIds: ["B-pr-create"] },
+    options: { legacyUrl: "http://legacy.test" },
+    yoramBaseUrl: "http://yoram.test",
+    legacySession: {
+      async request(request) {
+        assert.equal(request.path, "/admin/sample/newPullRequestForm");
+        return {
+          status: 200,
+          body: '<option value="1">admin / sample</option>',
+        };
+      },
+    },
+    yoramSession: {
+      async request(request) {
+        assert.equal(request.path, "/api/v1/owners/admin/projects/sample/pull-requests/form-options");
+        return { status: 200, json: { toProjects: [{ id: 2, projectName: "sample" }] } };
+      },
+    },
+    helpers: {
+      async requestBoth() {
+        return {
+          legacyResult: { status: 201, location: "/admin/sample/pullRequest/7" },
+          yoramResult: {
+            status: 201,
+            json: { title: `Differential sweep PR ${suffix}`, pullRequestNumber: 8 },
+          },
+        };
+      },
+      async resolveLegacyPullRequest() {
+        return { id: 17, number: 7, lastCommitId: "abc1234567890" };
+      },
+      async renderDomTarget(_ctx, domTarget) {
+        target = domTarget;
+      },
+    },
+  };
+  await actionDefinitions["create-pullrequest"].handler(ctx);
+  assert.deepEqual(
+    {
+      legacySelector: target.legacySelector,
+      yoramSelector: target.yoramSelector,
+      spa: target.spa,
+    },
+    { ...PULL_REQUEST_DETAIL_DOM_SELECTORS, spa: true },
+  );
+  assert.equal(target.currentToken, `Differential sweep PR ${suffix}`);
+});
+
+test("pull request route-body loss remains UNVERIFIED", () => {
+  const detail = {
+    actual: {
+      firstDiffs: [
+        { side: "legacy-only", expected: "button.pull-request-detail-watch:watch" },
+        { side: "yoram-only", expected: "div#react-root:" },
+      ],
+    },
+  };
+  assert.equal(domVisibleLoss(detail), true);
+  assert.equal(
+    classifyViolation("dom", "/admin/sample/pullRequest/7", detail).classification,
+    "UNVERIFIED",
+  );
 });
 
 test("mutation translators produce expected method/path/body shapes", () => {

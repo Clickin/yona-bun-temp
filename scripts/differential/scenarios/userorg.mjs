@@ -400,10 +400,12 @@ async function readPageHandler(ctx) {
   await helpers.requestBoth(ctx, translateLegacy(step, resolved), translateYoram(step, resolved));
   const target = step.action === "view-user-profile" ? `/${step.params.user}` : pageTargets[step.action](step.params);
   if (!target) return;
+  const selector = sharedRouteRootSelector(step);
   await helpers.renderDomTarget(ctx, {
     legacy: `${options.legacyUrl}${target}`,
     yoram: `${yoramBaseUrl}${target}`,
     spa: true,
+    ...(selector ? { selector } : {}),
   });
 }
 
@@ -489,6 +491,28 @@ const pageTargets = {
   "view-site-screen": (params) => `/sites/${params.screen}`,
   "view-files-list": () => "/files",
 };
+
+// Only use a route-root selector where the legacy template and React screen
+// expose the same stable class. Routes without one intentionally compare the
+// full body rather than guessing at a wrapper and hiding route controls.
+function sharedRouteRootSelector(step) {
+  switch (step.action) {
+    case "view-user-issues":
+    case "view-notifications":
+    case "view-user-profile":
+    case "view-user-files":
+      return ".page-wrap";
+    case "view-global-search":
+    case "view-org-home":
+    case "view-new-direct-issue-form":
+    case "view-new-org-form":
+      return ".project-page-wrap";
+    case "view-org-subpage":
+      return step.params.page === "issues" ? ".page-wrap" : ".project-page-wrap";
+    default:
+      return null;
+  }
+}
 
 // The app shell and site-admin navigation are covered by the dedicated WTR
 // lanes. Compare only the route-owned content column here: the legacy layout

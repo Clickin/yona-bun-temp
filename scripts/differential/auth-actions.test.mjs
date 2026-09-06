@@ -139,3 +139,42 @@ test("restricted guard compares matching redirect status/location without render
     globalThis.fetch = originalFetch;
   }
 });
+
+test("auth page handlers use shared form roots and leave unmatched pages full-body", async () => {
+  const calls = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response("<html></html>", { status: 200 });
+  const ctx = {
+    resolved: {},
+    entry: { behaviorIds: [], violations: [], errors: [] },
+    options: { legacyUrl: "http://legacy.test" },
+    yoramBaseUrl: "http://yoram.test",
+    helpers: {
+      async requestBoth() {
+        return { legacyResult: { status: 200 }, yoramResult: { status: 200 } };
+      },
+      async renderDomTarget(_ctx, target) {
+        calls.push(target);
+      },
+    },
+  };
+  try {
+    for (const [action, selector] of [
+      ["view-login-form", ".page.full"],
+      ["view-signup-form", ".page.full"],
+      ["view-lost-password", ".page.full"],
+      ["view-login-page", undefined],
+      ["view-help-page", undefined],
+      ["view-projectform", ".project-page-wrap"],
+      ["view-projects-list", undefined],
+    ]) {
+      calls.length = 0;
+      ctx.step = { actor: "anonymous", action, params: {} };
+      await ACTION_DEFINITIONS[action].handler(ctx);
+      assert.equal(calls.length, 1, `${action} should render one DOM target`);
+      assert.equal(calls[0].selector, selector, `${action} selector`);
+    }
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

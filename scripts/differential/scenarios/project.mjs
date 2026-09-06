@@ -246,6 +246,7 @@ async function readPageHandler(ctx) {
     yoram: `${yoramBaseUrl}/${step.params.owner}/${step.params.project}${leaf}`,
     // The project home route is React-rendered; capture after hydration.
     spa: true,
+    ...PROJECT_PAGE_DOM_SELECTORS,
   });
 }
 
@@ -368,6 +369,12 @@ export const PROJECT_LABELS_FORM_DOM_SELECTORS = Object.freeze({
   yoramSelector: '[data-owner="project-labels-form-page"]',
 });
 
+// All generic project screens retain the legacy project wrapper on both
+// servers. Keep the selector explicit so captures exclude the global shell.
+export const PROJECT_PAGE_DOM_SELECTORS = Object.freeze({
+  selector: ".project-page-wrap",
+});
+
 function issueLabelJsonAction(pathFor) {
   const translateLegacy = (step) => ({ method: "GET", path: pathFor(step) });
   const translateYoram = (step) => ({ method: "GET", path: pathFor(step) });
@@ -404,12 +411,15 @@ async function spaReadHandler(ctx) {
   if (legacyResult.status >= 400 || yoramResult.status >= 400) return;
   if (API_ONLY_ACTIONS.has(step.action)) return;
   const path = readPath(step);
+  const selectors =
+    step.action === "view-issue-labels-form"
+      ? PROJECT_LABELS_FORM_DOM_SELECTORS
+      : PROJECT_PAGE_DOM_SELECTORS;
   await helpers.renderDomTarget(ctx, {
     legacy: `${options.legacyUrl}${path}`,
     yoram: `${yoramBaseUrl}${path}`,
     spa: true,
-    ...(step.action === "list-review-threads" ? { selector: ".project-page-wrap" } : {}),
-    ...(step.action === "view-issue-labels-form" ? PROJECT_LABELS_FORM_DOM_SELECTORS : {}),
+    ...selectors,
   });
 }
 

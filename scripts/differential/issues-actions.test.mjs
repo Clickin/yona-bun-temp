@@ -303,6 +303,43 @@ test("issue label CRUD keeps create response IDs when the Yoram list cache is st
   );
 });
 
+test("I23 restores both seed issue-label associations immediately before export", async () => {
+  const i23 = issues.scenarios.find((scenario) => scenario.id === "I23-markdown-and-export-reads");
+  const restoreIndex = i23.actions.findIndex((step) => step.action === "restore-migration-issue-labels");
+  const exportIndex = i23.actions.findIndex((step) => step.action === "migration-export-issuelabel-pairs");
+  assert.equal(restoreIndex + 1, exportIndex);
+  const calls = [];
+  const rows = [
+    { id: 11, name: "bug", category: { name: "type" }, color: "#f44336" },
+    { id: 12, name: "parity", category: { name: "area" }, color: "#2196f3" },
+  ];
+  const definition = ACTION_DEFINITIONS["restore-migration-issue-labels"];
+  const ctx = {
+    step: { action: "restore-migration-issue-labels", params: { owner: "admin", project: "sample" } },
+    entry: { errors: [], violations: [] },
+    helpers: {
+      async sendRaw(_ctx, side, request) {
+        calls.push({ side, request });
+        return { status: 200, json: { labels: rows } };
+      },
+      async requestBoth(_ctx, legacy, yoram) {
+        calls.push({ legacy, yoram });
+        return {
+          legacyResult: { status: 200, json: { labels: rows } },
+          yoramResult: { status: 200, json: { labels: rows } },
+        };
+      },
+    },
+  };
+  await definition.handler(ctx);
+  const writes = calls.filter((call) => call.legacy?.method === "POST");
+  assert.equal(writes.length, 1);
+  assert.deepEqual(writes[0].legacy.json, ["11", "12"]);
+  assert.deepEqual(writes[0].yoram.json, ["11", "12"]);
+  assert.ok(calls.some((call) => call.legacy?.method === "GET" && call.yoram?.method === "GET"));
+  assert.deepEqual(ctx.entry.errors, []);
+});
+
 test("matchBehaviors returns a non-empty B-id list for every issues scenario", () => {
   for (const scenario of issuesScenarios) {
     const ids = matchBehaviors(scenario, inventory);

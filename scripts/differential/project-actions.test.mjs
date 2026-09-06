@@ -16,6 +16,7 @@ import {
   scenarios,
   actionDefinitions,
   discoverClosedRestorePr,
+  PROJECT_PAGE_DOM_SELECTORS,
 } from "./scenarios/project.mjs";
 
 const MERGED_DEFINITIONS = { ...ACTION_DEFINITIONS, ...actionDefinitions };
@@ -395,6 +396,47 @@ test("project reviews DOM comparison scopes to the shared content root", async (
   });
   assert.equal(target.selector, ".project-page-wrap");
   assert.equal(target.spa, true);
+});
+
+test("generic project DOM reads capture the shared project wrapper", async () => {
+  for (const step of [
+    { action: "view-project", params: { owner: "admin", project: "sample" } },
+    { action: "list-labels", params: { owner: "admin", project: "sample" } },
+    { action: "list-milestones", params: { owner: "admin", project: "sample" } },
+  ]) {
+    let target;
+    await MERGED_DEFINITIONS[step.action].handler({
+      step,
+      resolved: {},
+      options: { legacyUrl: "http://legacy.test" },
+      yoramBaseUrl: "http://yoram.test",
+      helpers: {
+        async requestBoth() {
+          return { legacyResult: { status: 200 }, yoramResult: { status: 200 } };
+        },
+        async renderDomTarget(_ctx, domTarget) {
+          target = domTarget;
+        },
+      },
+    });
+    assert.deepEqual({ selector: target.selector, spa: target.spa }, { ...PROJECT_PAGE_DOM_SELECTORS, spa: true });
+  }
+});
+
+test("project route-body loss remains blocking after shell capture is removed", () => {
+  const detail = {
+    actual: {
+      firstDiffs: [
+        { side: "legacy-only", expected: "a.project-milestones-new:New" },
+        { side: "yoram-only", expected: "div#react-root:" },
+      ],
+    },
+  };
+  assert.equal(domVisibleLoss(detail), true);
+  assert.equal(
+    classifyViolation("dom", "/admin/sample/milestones", detail).classification,
+    "UNVERIFIED",
+  );
 });
 
 test("cleanup accepts delete errors when the postcondition proves both projects absent", async () => {
