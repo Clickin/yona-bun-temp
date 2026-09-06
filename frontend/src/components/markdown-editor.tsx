@@ -119,7 +119,7 @@ export type MarkdownEditorProps = {
   textareaKey?: string | number;
   /** Remaining textarea attributes/handlers (aria, paste/drop, keydown...). */
   textareaExtraProps?: TextareaHTMLAttributes<HTMLTextAreaElement>;
-  /** Nodes rendered inside the textarea-box after the textarea (mention UI...). */
+  /** Nodes rendered inside the textarea-box before the textarea (drop/mention UI...). */
   textareaExtras?: ReactNode;
   /** Initial value for the shell-managed controlled textarea (post detail). */
   value?: string;
@@ -445,6 +445,7 @@ export function MarkdownEditor({
             data-owner={textareaBoxOwner}
             onBlurCapture={onTextareaBoxBlurCapture}
           >
+            {textareaExtras}
             <textarea
               {...(textareaStyleFirst ? textareaStyleProps : undefined)}
               ref={textareaRef}
@@ -473,7 +474,6 @@ export function MarkdownEditor({
               {...(textareaStyleFirst ? undefined : textareaStyleProps)}
               {...{ markdown: "true" }}
             ></textarea>
-            {textareaExtras}
           </div>
         </div>
         <div

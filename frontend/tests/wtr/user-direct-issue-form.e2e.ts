@@ -198,6 +198,75 @@ test("user direct mine issue form keeps /user/issues/new/mine while selecting th
   );
 });
 
+test("user direct mine issue form preserves legacy utility and editor geometry", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const directOptionRequests: Array<{ pathname: string; search: string }> = [];
+  await mockDirectIssueForm(page, {
+    directOptionRequests,
+    directOptions: {
+      bodyMarkdown: "",
+      referCommentId: "",
+      selectedProject: { ownerName: "admin", projectName: "inbox" },
+    },
+  });
+
+  await page.goto(`${basePath}/user/issues/new/mine`);
+
+  await expect.poll(() => directOptionRequests.length).toBe(1);
+  await expect(
+    page.locator(".project-menu-gruop a[href$='/admin/inbox/pullRequests']"),
+  ).toHaveCount(1);
+  const metrics = await page.evaluate(() => {
+    const required = <T extends Element>(selector: string) => {
+      const element = document.querySelector<T>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element;
+    };
+    const watcher = required<HTMLElement>(".project-util-wrap .watcher-count");
+    const watchAction = required<HTMLElement>(".project-util-wrap .down-arrow");
+    const textareaBox = required<HTMLElement>(".textarea-box");
+    const textarea = required<HTMLTextAreaElement>(".textarea-box textarea");
+    const uploadDrop = required<HTMLElement>(".textarea-box > .upload-drop-here");
+    const uploadWrap = required<HTMLElement>(".upload-wrap.content-footer");
+    const rect = (element: Element) => {
+      const box = element.getBoundingClientRect();
+      return { bottom: box.bottom, height: box.height, top: box.top };
+    };
+    const watcherStyle = getComputedStyle(watcher);
+    const watchActionStyle = getComputedStyle(watchAction);
+    const textareaStyle = getComputedStyle(textarea);
+    return {
+      editorChildren: [...textareaBox.children].map((child) => child.className),
+      editorBox: rect(textareaBox),
+      textarea: rect(textarea),
+      textareaBoxSizing: textareaStyle.boxSizing,
+      textareaHeight: textareaStyle.height,
+      uploadDropText: uploadDrop.textContent?.trim(),
+      uploadWrap: rect(uploadWrap),
+      watcherFontSize: watcherStyle.fontSize,
+      watcherPadding: watcherStyle.padding,
+      watchActionFontSize: watchActionStyle.fontSize,
+      watchActionPadding: watchActionStyle.padding,
+    };
+  });
+
+  expect(metrics.editorChildren.slice(0, 2)).toEqual([
+    "upload-drop-here",
+    "editorSeries content comment nm",
+  ]);
+  expect(metrics.uploadDropText).toBe("Drag & Drop files here to upload.");
+  expect(metrics.textareaBoxSizing).toBe("content-box");
+  expect(metrics.textareaHeight).toBe("300px");
+  expect(metrics.editorBox.height).toBe(metrics.textarea.height);
+  expect(metrics.uploadWrap.top).toBeCloseTo(metrics.editorBox.bottom, 0);
+  expect(metrics.watcherFontSize).toBe("12px");
+  expect(metrics.watcherPadding).toBe("4px 12px");
+  expect(metrics.watchActionFontSize).toBe("12px");
+  expect(metrics.watchActionPadding).toBe("4px 10px");
+});
+
 test("user direct issue routes are declared as route files and keep the shared wrapper route-local", () => {
   const newRouteSource = readFileSync(
     new URL("../src/routes/user/issues_/new.tsx", import.meta.url),

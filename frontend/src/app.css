@@ -31266,7 +31266,7 @@ img.mfp-img {
 [data-owner="project-header-watcher-count"] {
   border: 0px;
   display: inline-block;
-  font-size: 14px;
+  font-size: 12px;
   line-height: 20px;
   opacity: 0.9;
   padding: 4px 12px;
@@ -31288,9 +31288,9 @@ img.mfp-img {
 [data-owner="project-header-watch-button"] {
   border: 0px;
   display: inline-block;
-  font-size: 14px;
+  font-size: 12px;
   line-height: 20px;
-  padding: 4px 12px;
+  padding: 4px 10px;
   vertical-align: middle;
 }
 

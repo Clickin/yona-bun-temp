@@ -1737,7 +1737,9 @@ function IssueBodyMarkdownEditor({
   const [mentionPopupPosition, setMentionPopupPosition] = useState({ left: 4, top: 34 });
   const [textareaScrollTop, setTextareaScrollTop] = useState(0);
   const [textareaContentHeight, setTextareaContentHeight] = useState(300);
-  const editorTextareaStyleProps = { style: { height: `${textareaContentHeight}px` } };
+  const editorTextareaStyleProps = {
+    style: { boxSizing: "content-box", height: `${textareaContentHeight}px` },
+  };
   const textareaBoxRef = useRef<HTMLDivElement>(null);
   const mentionMarkerRef = useRef<HTMLSpanElement>(null);
   const mentionPopupRef = useRef<HTMLDivElement>(null);
@@ -2117,6 +2119,11 @@ function IssueBodyMarkdownEditor({
       }}
       textareaExtras={
         <>
+          <div className="upload-drop-here">
+            <div className="msg-wrap">
+              <div className="msg">{t("common.attach.dropFilesHere")}</div>
+            </div>
+          </div>
           {mention ? (
             <div
               aria-hidden="true"
