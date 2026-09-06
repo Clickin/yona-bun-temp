@@ -511,29 +511,30 @@ is in `scripts/differential/differential.test.mjs`.
 ## 14. Evidence-gap triage after focused-WTR expansion (2026-09-06)
 
 The route-specific WTR inventory was rechecked before adding fingerprints.
-Forty-five additional exact route/scenario literals are now backed by focused
-WTR contracts, changing the fresh artifact replay to 67 accepted
-`IMPLEMENTATION_DIFFERENCE` DOM rows and 9 `UNVERIFIED` rows. The accepted
+Fifty additional exact route/scenario literals are now backed by focused
+WTR contracts, changing the fresh artifact replay to 72 accepted
+`IMPLEMENTATION_DIFFERENCE` DOM rows and 4 `UNVERIFIED` rows. The accepted
 families include milestones, board posts, project sub-pages, project search,
 compare/fork/branch/code/commit routes, pull-request forms and changes,
 anonymous/auth forms, project and organization screens, global search, the
-public profile, and user files. The new literals cite their individual WTR
-source and legacy Scala template in `report.mjs`; they are covered by the
+public profile, user files, the four user-settings tabs, and notifications.
+The new literals cite their individual WTR source, live evidence artifact,
+and legacy Scala template in `report.mjs`; they are covered by the
 parameterized route/count/action/first-diff near-miss tests.
 
-The remaining nine rows are classified by evidence gap rather than collapsed
+The remaining four rows are classified by evidence gap rather than collapsed
 under a shared shell rule:
 
 | evidence category | scenario/route | reason |
 |---|---|---|
-| named WTR, missing a required dimension | U15 `/user/editform`, `/user/editform/emails`, `/user/editform/notifications`, `/user/editform/token` | `user-profile-settings.e2e.ts` and the ownership field-row tests cover the profile shell, field ownership, and tab navigation, but not a complete body role/copy/order/geometry/interaction contract for each tab route |
-| named WTR, missing a required dimension | U3 `/notifications` | `notification-page-target.test.mjs` establishes route/body targeting only; it does not provide a complete notification-page body contract |
+| clear product/route mismatch | P5 `/admin/sample/go` | this is the project “go” convention/menu endpoint, not a standalone screen; the project-home WTR proves the destination page and menu, not an independent `/go` body |
 | no exact WTR contract | S9 `/_init`, `/_UIKit` | no focused WTR source asserts the complete route body against its legacy static template |
 | no exact WTR contract | U9 `/user/issues/new/mine` | the issue-form WTR covers the project issue form, not this personal-inbox route and its complete body |
-| clear product/route mismatch | P5 `/admin/sample/go` | this is the project “go” convention/menu endpoint, not a standalone screen; the project-home WTR proves the destination page and menu, not an independent `/go` body |
 
-The selector-scoped notification route and the direct personal issue-form
-route remain intentionally unclassified until their route-body contracts are
-available. No remaining row has a complete role/copy/order/geometry/interaction
-contract, so no further exact fingerprint is justified by the current WTR
-evidence.
+The U15 and U3 live evidence is complete: `.agent/u19-live-audit/u15-settings-live.json`,
+`u15-settings-mobile-live.json`, the email/notification/token interaction JSONs,
+`u3-notifications-live.json`, and `u3-notifications-pagination.json`, together
+with focused WTR artifact `artifact://4361` (32/32), now back the exact
+fingerprints. No product gap is claimed for those routes. The S9/U9/P5 rows
+remain intentionally out of the fingerprint table while their route work or
+product decision is pending.

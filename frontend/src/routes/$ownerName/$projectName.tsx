@@ -159,6 +159,7 @@ function ProjectHomeRoute() {
   const watchersPath = `${homePath}/watchers`;
   const searchPath = `${homePath}/search`;
   const statisticsPath = `${homePath}/statistics`;
+  const goPath = `${homePath}/go`;
   const standardActive =
     pathname === homePath || pathname === `${homePath}/`
       ? "home"
@@ -214,7 +215,9 @@ function ProjectHomeRoute() {
                                                       ? "changeVcs"
                                                       : pathname === labelsPath
                                                         ? "labels"
-                                                        : null;
+                                                        : pathname === goPath
+                                                          ? "issue"
+                                                          : null;
   const routeActive = compareRevisionRange !== null ? "compare" : standardActive;
   const active =
     pullRequestChangesNumber !== null

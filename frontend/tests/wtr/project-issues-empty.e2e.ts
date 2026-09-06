@@ -1244,6 +1244,45 @@ test("project issue list label select hides legacy edit link for non-managers", 
   await expect(page.locator('#labelIds option[value="8"]')).toHaveText("bug");
 });
 
+test("legacy project /go renders the issue list in place", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "populated");
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  const goUrl = `${basePath}/admin/sample/go`;
+  await page.goto(goUrl);
+  await expect(page).toHaveTitle("sample - Issue - admin/sample");
+  await expect(page.locator(".issue-list-wrap")).toBeVisible();
+  const finalGoUrl = new URL(page.url());
+  expect(`${finalGoUrl.pathname}${finalGoUrl.search}`).toBe(goUrl);
+  await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("Issue");
+
+  const geometry = await page.evaluate(() => {
+    const pageWrap = document.querySelector(".page-wrap-outer")?.getBoundingClientRect();
+    const projectWrap = document.querySelector(".project-page-wrap")?.getBoundingClientRect();
+    const newIssue = document
+      .querySelector('[data-owner="project-issues-new-issue-action"] a')
+      ?.getBoundingClientRect();
+    if (!pageWrap || !projectWrap || !newIssue) return null;
+    return {
+      pageWrap: { x: pageWrap.x, width: pageWrap.width },
+      projectWrap: { x: projectWrap.x, width: projectWrap.width },
+      newIssue: { width: newIssue.width, height: newIssue.height },
+    };
+  });
+  expect(geometry).not.toBeNull();
+  expect(geometry!.pageWrap.x).toBe(0);
+  expect(geometry!.projectWrap.x).toBe(10);
+  expect(geometry!.projectWrap.width).toBe(geometry!.pageWrap.width - 20);
+  expect(geometry!.newIssue.width).toBeGreaterThan(0);
+  expect(geometry!.newIssue.height).toBe(30);
+
+  await page.locator(".issue-list-wrap .nav-tabs.nm li:nth-child(2) a").click();
+  await expect(page).toHaveURL(
+    `${basePath}/admin/sample/issues?orderBy=updatedDate&orderDir=desc&pageNum=1&state=closed`,
+  );
+});
+
 test("project issue list search form renders selected milestone status like legacy partial_status.scala.html", async ({
   page,
 }) => {

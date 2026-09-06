@@ -101,31 +101,49 @@ const legacyRouteLocalActiveProps = {
 };
 export const Route = createFileRoute("/$ownerName/$projectName/issues")({
   component: ProjectIssuesRoute,
-  validateSearch(search: Record<string, unknown>): ProjectIssuesSearch {
-    return {
-      assigneeId: stringSearch(search.assigneeId),
-      authorId: stringSearch(search.authorId),
-      commenterId: stringSearch(search.commenterId),
-      dueDate: stringSearch(search.dueDate),
-      filter: stringSearch(search.filter),
-      labelIds: arraySearch(search.labelIds),
-      milestoneId: stringSearch(search.milestoneId),
-      orderBy: stringSearch(search.orderBy, "updatedDate"),
-      orderDir: stringSearch(search.orderDir, "desc"),
-      pageNum: Number(search.pageNum) || 1,
-      state: issueListStateSearch(search.state),
-    };
-  },
+  validateSearch: validateProjectIssuesSearch,
 });
 
 function ProjectIssuesRoute() {
   const { runtimeConfig } = Route.useRouteContext();
-  return <ProjectIssuesScreen runtimeConfig={runtimeConfig} />;
+  const { ownerName, projectName } = Route.useParams();
+  return (
+    <ProjectIssuesScreen
+      ownerName={ownerName}
+      projectName={projectName}
+      runtimeConfig={runtimeConfig}
+      search={Route.useSearch()}
+    />
+  );
 }
 
-function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  const { ownerName, projectName } = Route.useParams();
-  const search = Route.useSearch();
+export function validateProjectIssuesSearch(search: Record<string, unknown>): ProjectIssuesSearch {
+  return {
+    assigneeId: stringSearch(search.assigneeId),
+    authorId: stringSearch(search.authorId),
+    commenterId: stringSearch(search.commenterId),
+    dueDate: stringSearch(search.dueDate),
+    filter: stringSearch(search.filter),
+    labelIds: arraySearch(search.labelIds),
+    milestoneId: stringSearch(search.milestoneId),
+    orderBy: stringSearch(search.orderBy, "updatedDate"),
+    orderDir: stringSearch(search.orderDir, "desc"),
+    pageNum: Number(search.pageNum) || 1,
+    state: issueListStateSearch(search.state),
+  };
+}
+
+export function ProjectIssuesScreen({
+  ownerName,
+  projectName,
+  runtimeConfig,
+  search,
+}: {
+  ownerName: string;
+  projectName: string;
+  runtimeConfig: RuntimeConfig;
+  search: ProjectIssuesSearch;
+}) {
   const location = useLocation();
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
@@ -230,7 +248,14 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
   });
 
   if (!projectQuery.data || !sessionQuery.data) {
-    return <ProjectIssuesWireframe ownerName={ownerName} projectName={projectName} />;
+    return (
+      <ProjectIssuesWireframe
+        ownerName={ownerName}
+        projectName={projectName}
+        runtimeConfig={runtimeConfig}
+        search={search}
+      />
+    );
   }
 
   const issues = issuesQuery.data ?? emptyProjectIssueList(ownerName, projectName);
@@ -291,13 +316,15 @@ function emptyProjectIssueList(
 function ProjectIssuesWireframe({
   ownerName,
   projectName,
+  runtimeConfig,
+  search,
 }: {
   ownerName: string;
   projectName: string;
+  runtimeConfig: RuntimeConfig;
+  search: ProjectIssuesSearch;
 }) {
-  const { runtimeConfig } = Route.useRouteContext();
   const { t } = useLegacyMessages();
-  const search = Route.useSearch();
   const issues = emptyProjectIssueList(ownerName, projectName);
 
   return (
@@ -354,12 +381,16 @@ function ProjectIssuesWireframe({
                 active={search.state === "open"}
                 count={0}
                 label="열림"
+                ownerName={ownerName}
+                projectName={projectName}
                 search={toIssueNavigationSearch({ ...search, pageNum: 1, state: "open" })}
               />
               <StateTab
                 active={search.state === "closed"}
                 count={0}
                 label="닫힘"
+                ownerName={ownerName}
+                projectName={projectName}
                 search={toIssueNavigationSearch({ ...search, pageNum: 1, state: "closed" })}
               />
               <li>
@@ -708,12 +739,16 @@ function ProjectIssuesBody({
                 active={search.state === "open"}
                 count={countField(issues, "openIssueCount")}
                 label={t("issue.state.open")}
+                ownerName={ownerName}
+                projectName={projectName}
                 search={toIssueNavigationSearch({ ...search, pageNum: 1, state: "open" })}
               />
               <StateTab
                 active={search.state === "closed"}
                 count={countField(issues, "closedIssueCount")}
                 label={t("issue.state.closed")}
+                ownerName={ownerName}
+                projectName={projectName}
                 search={toIssueNavigationSearch({ ...search, pageNum: 1, state: "closed" })}
               />
               <li>
@@ -3259,16 +3294,19 @@ function StateTab({
   active,
   count,
   label,
+  ownerName,
+  projectName,
   search: tabSearch,
 }: {
   active: boolean;
   count: number;
   label: string;
+  ownerName: string;
+  projectName: string;
   search: ProjectIssuesSearch;
 }) {
   const lockedLinkClick = useLockedLinkClick();
   const { armTransitionLock } = useRootProgressStatusBar();
-  const { ownerName, projectName } = Route.useParams();
   return (
     <TabButton
       as={Link}
