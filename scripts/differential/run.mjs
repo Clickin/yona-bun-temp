@@ -652,6 +652,52 @@ function reconcileYoramFixturesPreboot(databasePath) {
   }
 }
 
+function reactivateYoramParityUsers(databasePath) {
+  if (!existsSync(databasePath)) return;
+  const database = new DatabaseSync(databasePath);
+  try {
+    database.exec("pragma busy_timeout = 5000");
+    const hasUsersTable = database
+      .prepare("select 1 from sqlite_master where type = 'table' and name = 'n4user' limit 1")
+      .get();
+    if (!hasUsersTable) return;
+    database
+      .prepare("update n4user set state = 'active' where login_id in (?, ?, ?, ?)")
+      .run(...PARITY_USERS.map((user) => user.loginId));
+  } finally {
+    database.close();
+  }
+}
+
+function hasYoramParityFoundation(databasePath) {
+  if (!existsSync(databasePath)) return false;
+  const database = new DatabaseSync(databasePath);
+  try {
+    database.exec("pragma busy_timeout = 5000");
+    const tables = new Set(
+      database
+        .prepare("select name from sqlite_master where type = 'table' and name in ('n4user', 'project')")
+        .all()
+        .map((row) => row.name),
+    );
+    if (!tables.has("n4user") || !tables.has("project")) return false;
+    const users = database
+      .prepare(
+        `select count(*) as count
+           from n4user
+          where state = 'active'
+            and login_id in (?, ?, ?, ?)`,
+      )
+      .get(...PARITY_USERS.map((user) => user.loginId));
+    const sample = database
+      .prepare("select id from project where owner = 'admin' and name = 'sample' limit 1")
+      .get();
+    return Number(users?.count ?? 0) === PARITY_USERS.length && Boolean(sample?.id);
+  } finally {
+    database.close();
+  }
+}
+
 async function bootYoram(port) {
   mkdirSync(yoramRuntimeDir, { recursive: true });
   mkdirSync(path.join(yoramRuntimeDir, "data"), { recursive: true });
@@ -661,7 +707,13 @@ async function bootYoram(port) {
   const children = [];
 
   const isFreshDb = !existsSync(databasePath) || statSync(databasePath).size === 0;
-  if (isFreshDb) {
+  // Existing sweep databases can retain schema while losing the parity
+  // foundation (for example after an interrupted canonical alignment). Restore
+  // existing accounts before the pilot login, then use the same REST path as a
+  // fresh database to create anything missing.
+  reactivateYoramParityUsers(databasePath);
+  const needsParityFoundation = isFreshDb || !hasYoramParityFoundation(databasePath);
+  if (needsParityFoundation) {
     // Phase 1: schema/pilot bootstrap, then REST-provision the parity accounts
     // and the admin/sample project that reconcileDefaultDevParitySeed expects.
     await writeYoramConfig(databaseUrl, dataRoot, true, port, false);

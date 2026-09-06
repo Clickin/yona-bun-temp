@@ -1,6 +1,6 @@
 import { strict as assert } from "node:assert";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import test from "node:test";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -64,6 +64,20 @@ test("parity PR fixture preserves run-dev seed contract and stable review seed",
     contents: "Review the feature branch parity fixture.",
     path: "src/ui.rs",
   });
+});
+
+test("Yoram bootstrap provisions the parity foundation before PR reconciliation", () => {
+  const source = readFileSync(new URL("./run.mjs", import.meta.url), "utf8");
+  const bootSource = source.slice(source.indexOf("async function bootYoram"));
+  const pilotProvision = bootSource.indexOf("await provisionYoramParityAccounts");
+  const canonicalAlign = bootSource.indexOf("reconcileYoramFixturesPreboot(databasePath)");
+  const defaultSeed = bootSource.indexOf("seedModule.reconcileDefaultDevParitySeed");
+  const prReconciliation = bootSource.indexOf("reconcileYoramPullRequestFixtures(databasePath)");
+
+  assert.ok(pilotProvision >= 0);
+  assert.ok(canonicalAlign > pilotProvision);
+  assert.ok(defaultSeed > canonicalAlign);
+  assert.ok(prReconciliation > defaultSeed);
 });
 
 test("parity repository alignment mirrors canonical trees and commit messages", () => {
