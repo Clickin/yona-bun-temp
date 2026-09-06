@@ -3,9 +3,10 @@
 // Explicit file args always run on one WTR instance. Full-suite sharding is
 // opt-in with WTR_SHARDS=2..4; WTR_METRICS=1 writes ignored JSON diagnostics.
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
-import { basename, dirname, join, resolve } from "node:path";
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { chromeSpecFiles, chromeWtrArgs } from "./run-wtr-e2e-args.mjs";
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(scriptDirectory, "..");
@@ -72,10 +73,7 @@ function specFiles() {
   const manifest = JSON.parse(
     readFileSync(resolve(repoRoot, "frontend/tests/e2e-lane-manifest.json"), "utf8"),
   );
-  return manifest.chrome
-    .map((name) => basename(name))
-    .filter((name) => !name.startsWith("_diag-"))
-    .sort();
+  return chromeSpecFiles(manifest);
 }
 
 function fileRevision(name) {
@@ -237,7 +235,7 @@ if (requestedShards && shardCount === 1 && requestedShards !== "1") {
 
 if (shardCount === 1) {
   console.log(`[wtr] running web-test-runner (${files.length} files, single instance)`);
-  const result = await runWtr(forwardedArgs, "1");
+  const result = await runWtr(chromeWtrArgs(files), "1");
   if (metricsEnabled && result.code === 0 && writeTimingProfile(files, result.outputPath)) {
     console.log(`[wtr] refreshed timing profile (${files.length} files)`);
   }
