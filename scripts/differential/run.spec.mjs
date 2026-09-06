@@ -1,5 +1,6 @@
 import { strict as assert } from "node:assert";
 import { spawnSync } from "node:child_process";
+import { createServer } from "node:net";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import test from "node:test";
 import { tmpdir } from "node:os";
@@ -7,6 +8,8 @@ import path from "node:path";
 import {
   alignParityLabelSeeds,
   alignParityBoardFixtures,
+  allocateLoopbackPort,
+  assertLoopbackPortAvailable,
   PARITY_POST_COMMENT,
   PARITY_LABEL_SEEDS,
   executeStep,
@@ -20,6 +23,7 @@ import {
   PARITY_REVIEW,
   registrationStatusIsUsable,
   runtimeVerifiedBehaviorIds,
+  waitForYoramProcess,
   renderSkeleton,
   ROUTE_CONTENT_READY,
   PULL_REQUEST_DETAIL_SETTLED,
@@ -49,6 +53,39 @@ test("differential runner rejects unknown scenario IDs", () => {
   assert.throws(() => selectScenarios(["does-not-exist"]), /unknown scenario id/u);
 });
 
+function listenOnLoopback() {
+  return new Promise((resolvePromise, rejectPromise) => {
+    const server = createServer();
+    server.once("error", rejectPromise);
+    server.listen(0, "127.0.0.1", () => resolvePromise(server));
+  });
+}
+
+test("default Yoram port allocation avoids an unrelated loopback server", async () => {
+  const unrelatedServer = await listenOnLoopback();
+  try {
+    const occupiedPort = unrelatedServer.address().port;
+    const allocatedPort = await allocateLoopbackPort();
+    assert.notEqual(allocatedPort, occupiedPort);
+    await assert.doesNotReject(assertLoopbackPortAvailable(allocatedPort));
+  } finally {
+    await new Promise((resolvePromise) => unrelatedServer.close(resolvePromise));
+  }
+});
+
+test("explicit occupied Yoram port fails before a child can start", async () => {
+  const unrelatedServer = await listenOnLoopback();
+  try {
+    const occupiedPort = unrelatedServer.address().port;
+    await assert.rejects(
+      assertLoopbackPortAvailable(occupiedPort),
+      /Yoram loopback port \d+ is already in use; stop the existing server or omit --yoram-port/u,
+    );
+  } finally {
+    await new Promise((resolvePromise) => unrelatedServer.close(resolvePromise));
+  }
+});
+
 test("parity PR fixture preserves run-dev seed contract and stable review seed", () => {
   assert.deepEqual(PARITY_PULL_REQUEST, {
     body: "",
@@ -69,19 +106,35 @@ test("parity PR fixture preserves run-dev seed contract and stable review seed",
 test("Yoram bootstrap provisions the parity foundation before PR reconciliation", () => {
   const source = readFileSync(new URL("./run.mjs", import.meta.url), "utf8");
   const bootSource = source.slice(source.indexOf("async function bootYoram"));
+  const portPreflight = bootSource.indexOf("await assertLoopbackPortAvailable(port)");
   const foundationCheck = bootSource.indexOf("const needsParityFoundation");
   const pilotProvision = bootSource.indexOf("await provisionYoramParityAccounts");
   const canonicalAlign = bootSource.indexOf("reconcileYoramFixturesPreboot(databasePath)");
   const defaultSeed = bootSource.indexOf("seedModule.reconcileDefaultDevParitySeed");
   const repositoryAlign = bootSource.indexOf("ensureDiffableRepoBranches(repo)");
   const prReconciliation = bootSource.indexOf("reconcileYoramPullRequestFixtures(databasePath)");
+  const childReadiness = bootSource.indexOf("await waitForYoramProcess");
+  const childStart = bootSource.indexOf("startYoramProcess(port)");
+  const httpReadiness = bootSource.indexOf("await waitForHttp");
 
+  assert.ok(portPreflight >= 0);
+  assert.ok(portPreflight < childStart);
   assert.ok(foundationCheck >= 0);
   assert.ok(pilotProvision > foundationCheck);
   assert.ok(canonicalAlign > pilotProvision);
   assert.ok(defaultSeed > canonicalAlign);
   assert.ok(repositoryAlign > defaultSeed);
   assert.ok(prReconciliation > repositoryAlign);
+  assert.ok(childReadiness > childStart);
+  assert.ok(httpReadiness > childReadiness);
+});
+
+test("Yoram readiness rejects a dead child even when an HTTP server is available", async () => {
+  const child = { exitCode: 1, signalCode: null };
+  await assert.rejects(
+    waitForYoramProcess(child, 31_001, 0, 1),
+    /Yoram process exited before listening on 127\.0\.0\.1:31001/u,
+  );
 });
 
 test("parity repository alignment mirrors canonical trees and commit messages", () => {

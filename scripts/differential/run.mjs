@@ -9,6 +9,7 @@
 
 import { spawn, spawnSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, openSync, readdirSync, readFileSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -247,6 +248,77 @@ async function waitForHttp(url, timeoutMs = 120_000) {
   throw new Error(`timed out waiting for ${url}: ${lastError}`);
 }
 
+export function allocateLoopbackPort() {
+  return new Promise((resolvePromise, rejectPromise) => {
+    const server = createServer();
+    server.unref();
+    server.once("error", rejectPromise);
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address();
+      const port = typeof address === "object" && address ? address.port : null;
+      server.close((error) => {
+        if (error) {
+          rejectPromise(error);
+          return;
+        }
+        if (!Number.isInteger(port) || port < 1) {
+          rejectPromise(new Error("loopback port allocator returned an invalid port"));
+          return;
+        }
+        resolvePromise(port);
+      });
+    });
+  });
+}
+
+export function assertLoopbackPortAvailable(port) {
+  if (!Number.isInteger(port) || port < 1 || port > 65_535) {
+    return Promise.reject(new Error(`invalid Yoram loopback port: ${port}`));
+  }
+  return new Promise((resolvePromise, rejectPromise) => {
+    const server = createServer();
+    server.once("error", (error) => {
+      if (error?.code === "EADDRINUSE") {
+        rejectPromise(
+          new Error(
+            `Yoram loopback port ${port} is already in use; stop the existing server or omit --yoram-port`,
+            { cause: error },
+          ),
+        );
+        return;
+      }
+      rejectPromise(error);
+    });
+    server.listen(port, "127.0.0.1", () => {
+      server.close((error) => (error ? rejectPromise(error) : resolvePromise()));
+    });
+  });
+}
+
+export async function waitForYoramProcess(child, port, logOffset, timeoutMs = 120_000) {
+  const marker = `yoram listening: http://127.0.0.1:${port}/`;
+  const serverLog = path.join(yoramRuntimeDir, "server.log");
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (child.exitCode !== null) {
+      throw new Error(
+        `Yoram process exited before listening on 127.0.0.1:${port} (code ${child.exitCode ?? "null"}, signal ${child.signalCode ?? "none"})`,
+      );
+    }
+    if (existsSync(serverLog)) {
+      const output = readFileSync(serverLog);
+      if (output.length > logOffset && output.subarray(logOffset).toString().includes(marker)) {
+        if (child.exitCode !== null) {
+          throw new Error(`Yoram process exited after announcing readiness on 127.0.0.1:${port}`);
+        }
+        return;
+      }
+    }
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, 100));
+  }
+  throw new Error(`timed out waiting for Yoram process to listen on 127.0.0.1:${port}`);
+}
+
 async function stopChild(child) {
   if (child.exitCode !== null) return;
   child.kill("SIGTERM");
@@ -312,15 +384,15 @@ async function writeYoramConfig(databaseUrl, dataRoot, seedPilot, port, emailVer
   writeFileSync(path.join(yoramRuntimeDir, "dev.toml"), `${config}\n`);
 }
 
-const yoramServerLog = path.join(yoramRuntimeDir, "server.log");
-
 function startYoramProcess(port) {
   const binaryName = process.platform === "win32" ? "yoram.exe" : "yoram";
   const binaryPath = existsSync(path.join(repoRoot, "target/debug", binaryName))
     ? path.join(repoRoot, "target/debug", binaryName)
     : path.join(repoRoot, "target/release", binaryName);
   if (!existsSync(binaryPath)) throw new Error(`yoram binary not found (${binaryPath}); run cargo build -p yoram-server`);
-  return spawn(binaryPath, {
+  const serverLog = path.join(yoramRuntimeDir, "server.log");
+  const logOffset = existsSync(serverLog) ? statSync(serverLog).size : 0;
+  const child = spawn(binaryPath, {
     cwd: repoRoot,
     env: {
       ...process.env,
@@ -342,8 +414,10 @@ function startYoramProcess(port) {
       YONA_OAUTH_GITHUB_AUTHORIZATION_URL: "http://127.0.0.1:2526/mock/oauth/authorize",
       YONA_OAUTH_GITHUB_ACCESS_TOKEN_URL: "http://127.0.0.1:2526/mock/oauth/token",
     },
-    stdio: ["ignore", openSync(yoramServerLog, "a"), openSync(yoramServerLog, "a")],
+    stdio: ["ignore", openSync(serverLog, "a"), openSync(serverLog, "a")],
   });
+  child.yoramLogOffset = logOffset;
+  return child;
 }
 
 // Provision the same account/project names and passwords as the legacy
@@ -699,6 +773,7 @@ function hasYoramParityFoundation(databasePath) {
 }
 
 async function bootYoram(port) {
+  await assertLoopbackPortAvailable(port);
   mkdirSync(yoramRuntimeDir, { recursive: true });
   mkdirSync(path.join(yoramRuntimeDir, "data"), { recursive: true });
   const databasePath = path.join(yoramRuntimeDir, "yoram.db");
@@ -720,7 +795,11 @@ async function bootYoram(port) {
     const child = startYoramProcess(port);
     children.push(child);
     try {
+      await waitForYoramProcess(child, port, child.yoramLogOffset);
       await waitForHttp(`http://127.0.0.1:${port}/api/auth/session`);
+      if (child.exitCode !== null) {
+        throw new Error(`Yoram process exited after HTTP readiness on 127.0.0.1:${port}`);
+      }
       await provisionYoramParityAccounts(`http://127.0.0.1:${port}`);
     } finally {
       await stopChild(child);
@@ -744,7 +823,16 @@ async function bootYoram(port) {
   await writeYoramConfig(databaseUrl, dataRoot, false, port, true);
   const child = startYoramProcess(port);
   children.push(child);
-  await waitForHttp(`http://127.0.0.1:${port}/api/auth/session`);
+  try {
+    await waitForYoramProcess(child, port, child.yoramLogOffset);
+    await waitForHttp(`http://127.0.0.1:${port}/api/auth/session`);
+    if (child.exitCode !== null) {
+      throw new Error(`Yoram process exited after HTTP readiness on 127.0.0.1:${port}`);
+    }
+  } catch (error) {
+    await stopChild(child);
+    throw error;
+  }
   return {
     baseUrl: `http://127.0.0.1:${port}`,
     databasePath,
@@ -2345,7 +2433,8 @@ export async function runSweep(options = {}) {
       infraErrors.push(`legacy boot: ${error.message}`);
     }
     try {
-      yoramHandle = await bootYoram(options.yoramPort ?? 3101);
+      const yoramPort = options.yoramPort ?? (await allocateLoopbackPort());
+      yoramHandle = await bootYoram(yoramPort);
     } catch (error) {
       infraErrors.push(`yoram boot: ${error.message}`);
     }
