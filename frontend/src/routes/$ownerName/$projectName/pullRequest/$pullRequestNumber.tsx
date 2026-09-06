@@ -63,6 +63,9 @@ export function ProjectPullRequestOverviewIndexScreen({
       projectName,
       pullRequestNumber: prNumber,
     }),
+    // Legacy git.View polls the merge-check state endpoint while it reports
+    // an in-flight merge check. Stop once the detail becomes settled.
+    refetchInterval: (query) => (query.state.data?.isMerging ? 10_000 : false),
     retry(failureCount, error) {
       const status = restApiErrorStatus(error);
       return status !== 401 && status !== 403 && status !== 404 && failureCount < 3;
@@ -545,7 +548,7 @@ function PullRequestEventDate({ event }: { event: PullRequestEvent }) {
   return (
     <span className="date">
       <Link to="." hash={`event-${event.id}`} {...LEGACY_LINK_PROPS} title={event.createdLabel}>
-        {event.createdLabel}
+        {legacyPullRequestDateLabel(event.createdLabel)}
       </Link>
     </span>
   );
@@ -608,7 +611,7 @@ function PullRequestEventCommit({
         />
       )}
       <div className="date hide-in-mobile" title={commit.authorDateLabel}>
-        {commit.authorDateLabel}
+        {legacyPullRequestDateLabel(commit.authorDateLabel)}
       </div>
       <CommitMessage commit={commit} params={commitChangeParams} />
     </li>

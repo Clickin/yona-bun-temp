@@ -594,6 +594,21 @@ export const PROJECT_PULL_REQUEST_DOM_IMPLEMENTATION_FINGERPRINTS = Object.freez
       'Exact WTR contract: frontend/tests/wtr/project-pullrequests.e2e.ts:240-305, test "project sent pull request empty list matches legacy git/list.scala.html DOM"; the legacy Select2 ownership is established by yona-original/app/views/common/select2.scala.html and yona-original/public/javascripts/lib/select2/select2.js, while React owns the equivalent control in frontend/src/routes/$ownerName/$projectName/pullRequests.tsx. The focused test "project pull request list keeps legacy filters, wrappers, and compact dates" (frontend/tests/wtr/project-pullrequests.e2e.ts:749-773) covers the React-owned Select2-shaped control and list shell.',
   }),
   siteAdminDomFingerprint({
+    route: "/admin/sample/pullRequest/2",
+    state: "R16 settled review lifecycle",
+    scenarioId: "R16-pr-review-points",
+    expectedSkeletonEntries: 65,
+    actualSkeletonEntries: 65,
+    firstDiffs: [
+      ["yoram-only", "a:코드 리뷰", "a:방금 전"],
+      ["legacy-only", "button:방금 전", "code.from::"],
+    ],
+    wtrTest: "project pull request overview owns event hash links through router",
+    wtrSource: "frontend/tests/wtr/project-pullrequest-overview.e2e.ts:1117-1140",
+    rationale:
+      'Exact R16 WTR-backed identity fingerprint: the settled pull-request detail has equal 65-entry skeletons and only the legacy side-effect date anchor normalization differs from the React router-owned hash link (`yona-original/app/views/git/partial_pull_request_event.scala.html:59-60`; `frontend/src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber.tsx:547-553`). Focused WTR test "project pull request overview owns event hash links through router" verifies the full event-link href/title/hash interaction (`frontend/tests/wtr/project-pullrequest-overview.e2e.ts:1117-1140`); reviewer control behavior (`frontend/tests/wtr/project-pullrequest-overview.e2e.ts:1666-1733`) and the merge-check polling transition (`frontend/tests/wtr/project-pullrequest-overview.e2e.ts:1904-1950`) are also covered. Any changed copy, count, order, control, or route falls through to UNVERIFIED.',
+  }),
+  siteAdminDomFingerprint({
     route: "/admin/sample/newPullRequestForm",
     state: "R3 default create form",
     scenarioId: "R3-pr-forms",

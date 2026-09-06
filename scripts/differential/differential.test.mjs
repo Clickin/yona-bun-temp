@@ -608,6 +608,54 @@ test("R3 pull-request form fingerprints accept only exact captures", () => {
   }
 });
 
+test("R16 pull-request detail fingerprint accepts only the exact settled capture", () => {
+  const fingerprint = PROJECT_PULL_REQUEST_DOM_IMPLEMENTATION_FINGERPRINTS.find(
+    (candidate) => candidate.scenarioId === "R16-pr-review-points",
+  );
+  assert.ok(fingerprint);
+  const context = fingerprintContext(fingerprint);
+
+  assert.equal(
+    classifyViolation(
+      "dom",
+      fingerprint.route,
+      siteAdminFingerprintDetail(fingerprint),
+      context,
+    ).classification,
+    "IMPLEMENTATION_DIFFERENCE",
+  );
+
+  const changedDiff = fingerprint.firstDiffs.map((diff, index) =>
+    index === 0 ? { ...diff, actual: "a:changed" } : diff,
+  );
+  for (const [index, detail] of [
+    { firstDiffs: changedDiff },
+    { firstDiffs: fingerprint.firstDiffs, skeletonEntries: fingerprint.actualSkeletonEntries + 1 },
+  ].entries()) {
+    assert.equal(
+      classifyViolation(
+        "dom",
+        fingerprint.route,
+        siteAdminFingerprintDetail(fingerprint, detail),
+        context,
+      ).classification,
+      "UNVERIFIED",
+      `R16 near-miss ${index} must remain blocking`,
+    );
+  }
+
+  assert.equal(
+    classifyViolation(
+      "dom",
+      fingerprint.route,
+      siteAdminFingerprintDetail(fingerprint),
+      { scenarioId: "R2-pr-detail" },
+    ).classification,
+    "UNVERIFIED",
+    "R16 fingerprint must not apply to another scenario",
+  );
+});
+
 test("project issue-detail DOM fingerprints keep label/avatar control loss blocking", () => {
   for (const [index, fingerprint] of PROJECT_ISSUE_DOM_IMPLEMENTATION_FINGERPRINTS.entries()) {
     const controlIndex = fingerprint.firstDiffs.findIndex((diff) =>

@@ -1901,6 +1901,54 @@ test("project pull request overview renders legacy merging state DOM", async ({ 
   );
 });
 
+test("project pull request overview polls merging state until settled commit content", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const { detailRequests } = await mockPullRequestOverview(page, {
+    detailSequence: [
+      { events: [], isMerging: true },
+      {
+        events: [
+          {
+            commits: [
+              {
+                authorDateLabel: "Jul 3, 2026",
+                authorEmail: "dev@example.com",
+                commitId: "1234567890abcdef",
+                commitMessage: "Fix login",
+                commitShortId: "1234567",
+                state: "CURRENT",
+              },
+            ],
+            createdLabel: "Jul 3, 2026",
+            eventType: "PULL_REQUEST_COMMIT_CHANGED",
+            id: 94,
+            newValue: "123",
+            oldValue: "basehash,headhash",
+            senderAvatarUrl: "/assets/images/default-avatar-32.png",
+            senderLabel: "Dev Member",
+            senderLoginId: "dev",
+          },
+        ],
+        isMerging: false,
+      },
+    ],
+  });
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9`);
+  await expect(page.locator("#state .alert-warnning")).toContainText(
+    "We are checking if the code is safe.",
+  );
+  await page.waitForTimeout(10_500);
+  expect(detailRequests.length).toBeGreaterThan(1);
+  await expect(page.locator("#state .alert-success")).toContainText(
+    "This pull request can be merged safely.",
+  );
+  await expect(page.locator("#state .alert-warnning")).toHaveCount(0);
+  await expect(page.locator("#comments li.commit-info")).toContainText("Fix login");
+});
+
 test("project pull request overview renders legacy merged source-branch delete state", async ({
   page,
 }) => {
@@ -2005,6 +2053,7 @@ async function mockPullRequestOverview(
   options: {
     container?: Record<string, unknown>;
     detail?: Record<string, unknown>;
+    detailSequence?: Record<string, unknown>[];
     events?: unknown[];
     mergedCommitIdTo?: string;
     session?: Record<string, unknown>;
@@ -2023,6 +2072,7 @@ async function mockPullRequestOverview(
   }[] = [];
   const watchRequests: { hasCsrfToken: boolean; method: string }[] = [];
   const stateRequests: { hasCsrfToken: boolean; method: string; path: "close" | "open" }[] = [];
+  const detailRequests: number[] = [];
   const detail = {
     attachments: [],
     bodyHtml: "<p>Initial body</p>",
@@ -2143,9 +2193,11 @@ async function mockPullRequestOverview(
     });
   });
   await page.route("**/api/v1/owners/admin/projects/sample/pull-requests/9", async (route) => {
+    const detailOverride = options.detailSequence?.[detailRequests.length] ?? options.detail ?? {};
+    detailRequests.push(detailRequests.length);
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify(detail),
+      body: JSON.stringify({ ...detail, ...detailOverride }),
     });
   });
   await page.route(
@@ -2289,7 +2341,14 @@ async function mockPullRequestOverview(
     },
   );
 
-  return { acceptRequests, reviewRequests, sourceBranchRequests, stateRequests, watchRequests };
+  return {
+    acceptRequests,
+    detailRequests,
+    reviewRequests,
+    sourceBranchRequests,
+    stateRequests,
+    watchRequests,
+  };
 }
 
 async function expectLegacyAnchor(
