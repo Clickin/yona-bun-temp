@@ -10,14 +10,41 @@ import { ACTION_DEFINITIONS } from "./scenarios/index.mjs";
 // keeps existing imports backward compatible.
 export { scenarios as smokeScenarios } from "./scenarios/index.mjs";
 
-// A step disposition pre-classifies an agent-unresolvable, non-product step
-// failure/skip (closure contract: only these two classes are non-blocking).
-// Anything else must stay an unqualified FAILED/SKIPPED so the strict gate
-// blocks it.
+// A step may declare an evidence-backed expected disposition.  The runner
+// copies it to the result only after the live request/response observation
+// matches its complete signature.  Anything else stays an unqualified
+// FAILED/SKIPPED so the strict gate blocks it.
 export const STEP_DISPOSITION_CLASSIFICATIONS = new Set([
   "IMPLEMENTATION_DIFFERENCE",
   "LEGACY_BUG_NOT_REPRODUCED",
 ]);
+
+export function hasDispositionSignatureShape(signature) {
+  if (!signature || typeof signature !== "object" || Array.isArray(signature)) return false;
+  if (!["scenarioId", "action", "behaviorId", "events", "state"].every((key) => Object.hasOwn(signature, key))) {
+    return false;
+  }
+  if (
+    !Array.isArray(signature.events) ||
+    signature.events.length === 0 ||
+    signature.events.length % 2 !== 0
+  ) return false;
+  if (signature.events.some((event, index) => index % 2 === 1 && event?.side === signature.events[index - 1]?.side)) {
+    return false;
+  }
+  return signature.events.every((event) =>
+    event &&
+    typeof event === "object" &&
+    (event.side === "legacy" || event.side === "yoram") &&
+    event.request &&
+    typeof event.request === "object" &&
+    typeof event.request.method === "string" &&
+    typeof event.request.route === "string" &&
+    Object.hasOwn(event.request, "payload") &&
+    event.response &&
+    typeof event.response === "object" &&
+    Number.isInteger(event.response.status));
+}
 
 // Validate shape; returns list of problems ([] when valid).
 // knownActions defaults to the merged registry keys.
@@ -37,17 +64,23 @@ export function validateScenarios(scenarios, knownActions = Object.keys(ACTION_D
       if (!step.actor || !knownActions.includes(step.action)) {
         problems.push(`${scenario.id}: invalid action ${JSON.stringify(step.action)} (allowed: ${knownActions.join(", ")})`);
       }
-      const disposition = step.disposition;
+      if (step.disposition !== undefined) {
+        problems.push(
+          `${scenario.id}: step ${JSON.stringify(step.action)} uses static disposition; use expectedDisposition with a runtime signature`,
+        );
+      }
+      const disposition = step.expectedDisposition;
       if (disposition !== undefined) {
         if (
           !disposition ||
           typeof disposition !== "object" ||
           !STEP_DISPOSITION_CLASSIFICATIONS.has(disposition.classification) ||
           typeof disposition.evidence !== "string" ||
-          disposition.evidence.trim().length === 0
+          disposition.evidence.trim().length === 0 ||
+          (typeof disposition.signature !== "function" && !hasDispositionSignatureShape(disposition.signature))
         ) {
           problems.push(
-            `${scenario.id}: step ${JSON.stringify(step.action)} disposition requires a non-blocking classification (${[...STEP_DISPOSITION_CLASSIFICATIONS].join(" | ")}) and an evidence string`,
+            `${scenario.id}: step ${JSON.stringify(step.action)} expectedDisposition requires a non-blocking classification (${[...STEP_DISPOSITION_CLASSIFICATIONS].join(" | ")}), an evidence string, and a signature`,
           );
         }
       }
@@ -90,8 +123,9 @@ export function buildCoverage(scenarios, inventoryBehaviors, runId) {
 
 // Runtime verification accounting per inventory behavior: a behavior counts as
 // covered only when every required step of its scenarios actually executed, or
-// carries an explicit non-product disposition. Derived from the sweep's
-// runtime step outcomes (entry.stepResults), never from registered ids alone.
+// carries an explicit *runtime-verified* non-product disposition. Derived from
+// the sweep's runtime step outcomes (entry.stepResults), never from static DSL
+// declarations.
 export function buildBehaviorVerification(scenarioEntries) {
   const verification = {};
   const touch = (behaviorId) => {
@@ -117,7 +151,12 @@ export function buildBehaviorVerification(scenarioEntries) {
       for (const step of steps) {
         if (step.status === "EXECUTED") {
           record.executedSteps += 1;
-        } else if (step.disposition && STEP_DISPOSITION_CLASSIFICATIONS.has(step.disposition.classification)) {
+        } else if (
+          step.dispositionVerified === true &&
+          step.observation?.events?.length > 0 &&
+          step.disposition &&
+          STEP_DISPOSITION_CLASSIFICATIONS.has(step.disposition.classification)
+        ) {
           record.dispositionedSteps += 1;
         } else if (step.status === "FAILED") {
           record.failedSteps += 1;

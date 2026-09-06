@@ -2033,16 +2033,7 @@ scenarios.push(
       { actor: "admin", action: "copy-labels", params: { owner: "admin", sourceProject: "sample" } },
       { actor: "admin", action: "add-created-member", params: { owner: "admin" } },
       { actor: "admin", action: "edit-created-member", params: { owner: "admin" } },
-      {
-        actor: "admin",
-        action: "update-created-setting",
-        params: { owner: "admin" },
-        behaviorId: "B-0267",
-        disposition: {
-          classification: "LEGACY_BUG_NOT_REPRODUCED",
-          evidence: "yona-original/app/controllers/ProjectApp.java:427-448",
-        },
-      },
+      { actor: "admin", action: "update-created-setting", params: { owner: "admin" }, behaviorId: "B-0267" },
       { actor: "admin", action: "request-project-transfer", params: { owner: "admin" } },
       { actor: "admin", action: "delete-project", params: { owner: "admin" } },
     ],
@@ -2317,15 +2308,7 @@ scenarios.push(
       { actor: "admin", action: "fork-created-project", params: { owner: "admin" }, behaviorId: "B-0226" },
       { actor: "admin", action: "clone-created-project", params: { owner: "admin" }, behaviorId: "B-0225" },
       { actor: "admin", action: "change-created-project-vcs", params: { owner: "admin" }, behaviorId: "B-0236" },
-      {
-        actor: "admin",
-        action: "cleanup-created-projects",
-        params: { owner: "admin" },
-        disposition: {
-          classification: "IMPLEMENTATION_DIFFERENCE",
-          evidence: "teardown-only residue assertion; generated projects do not claim an inventory behavior",
-        },
-      },
+      { actor: "admin", action: "cleanup-created-projects", params: { owner: "admin" } },
     ],
     behaviorMatcher: {
       action: /^(PullRequestApp\.(fork|doClone)|ProjectApp\.changeVCS)$/,
@@ -2416,10 +2399,8 @@ scenarios.push({
       action: "probe-delete-branch-missing",
       params: { user: "admin", project: "sample", branch: "__parity_missing_branch__" },
       behaviorId: "B-0002",
-      disposition: {
-        classification: "LEGACY_BUG_NOT_REPRODUCED",
-        evidence: "yona-original/app/controllers/BranchApp.java:71-79; yona-original/app/playRepository/GitRepository.java:1230-1236",
-      },
+      // The legacy handler redirects after a missing-branch delete, but this
+      // probe has no resulting-state readback; keep the status drift blocking.
     },
     { actor: "admin", action: "probe-import-form", params: {} },
     { actor: "admin", action: "probe-import-project-invalid", params: {} },

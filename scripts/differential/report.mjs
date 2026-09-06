@@ -3,7 +3,8 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import {
-  domVisibleLoss,
+  DOM_DIFF_PREVIEW_LIMIT,
+  domDiffSignature,
   normalizeSkeletonEntry,
   PULL_REQUEST_MERGE_PENDING_SIGNATURE,
   PULL_REQUEST_MERGE_SUCCESS_SIGNATURE,
@@ -184,26 +185,26 @@ function hasCurrentSuccessEntry(firstDiffs, entry) {
 }
 
 function hasExactMergeStateDiff(detail) {
-  const firstDiffs = detail?.actual?.firstDiffs;
-  if (!Array.isArray(firstDiffs)) return false;
+  const fullDiffs = detail?.actual?.fullDiffs;
+  if (!Array.isArray(fullDiffs)) return false;
   if (
-    firstDiffs.some(
+    fullDiffs.some(
       (diff) => !["legacy-only", "yoram-only", "order"].includes(diff?.side),
     )
   ) {
     return false;
   }
-  if (!PULL_REQUEST_MERGE_PENDING_SIGNATURE.every((entry) => hasLegacyPendingEntry(firstDiffs, entry))) {
+  if (!PULL_REQUEST_MERGE_PENDING_SIGNATURE.every((entry) => hasLegacyPendingEntry(fullDiffs, entry))) {
     return false;
   }
-  if (!PULL_REQUEST_MERGE_SUCCESS_SIGNATURE.every((entry) => hasCurrentSuccessEntry(firstDiffs, entry))) {
+  if (!PULL_REQUEST_MERGE_SUCCESS_SIGNATURE.every((entry) => hasCurrentSuccessEntry(fullDiffs, entry))) {
     return false;
   }
   const signatureEntries = new Set([
     ...PULL_REQUEST_MERGE_PENDING_SIGNATURE,
     ...PULL_REQUEST_MERGE_SUCCESS_SIGNATURE,
   ]);
-  return primaryDomDiffEntries(firstDiffs).every(
+  return primaryDomDiffEntries(fullDiffs).every(
     (entry) => signatureEntries.has(entry) || PULL_REQUEST_MERGE_COMPANION_ENTRIES.has(entry),
   );
 }
@@ -232,24 +233,53 @@ function siteAdminDomFingerprint({
   expectedSkeletonEntries,
   actualSkeletonEntries,
   firstDiffs,
+  fullDiffs: declaredFullDiffs = firstDiffs,
   wtrTest,
   wtrSource,
   rationale,
 }) {
-  const normalizedFirstDiffs = normalizeIssueDiffs
-    ? firstDiffs.map(([side, expected, actual]) => [
-        side,
-        normalizeSkeletonEntry(normalizeIssueDiffEntry(expected)),
-        normalizeSkeletonEntry(normalizeIssueDiffEntry(actual)),
-      ])
-    : firstDiffs.map(([side, expected, actual]) => [
-        side,
-        normalizeSkeletonEntry(expected),
-        normalizeSkeletonEntry(actual),
-      ]);
-  const residualFirstDiffs = normalizedFirstDiffs.filter(
-    ([_side, expected, actual]) => expected !== actual,
-  );
+  if (
+    typeof route !== "string" ||
+    typeof state !== "string" ||
+    !scenarioId ||
+    !action ||
+    !Number.isInteger(expectedSkeletonEntries) ||
+    !Number.isInteger(actualSkeletonEntries) ||
+    !Array.isArray(firstDiffs) ||
+    !Array.isArray(declaredFullDiffs) ||
+    typeof wtrTest !== "string" ||
+    wtrTest.trim().length === 0 ||
+    typeof wtrSource !== "string" ||
+    wtrSource.trim().length === 0 ||
+    !wtrSource.includes("frontend/tests/wtr/") ||
+    typeof rationale !== "string" ||
+    rationale.trim().length === 0
+  ) {
+    throw new Error(
+      "DOM implementation fingerprint requires route, state, scenario/action, normalized counts, and WTR/source evidence",
+    );
+  }
+  const normalizeDiffTuples = (entries) =>
+    (normalizeIssueDiffs
+      ? entries.map(([side, expected, actual]) => [
+          side,
+          normalizeSkeletonEntry(normalizeIssueDiffEntry(expected)),
+          normalizeSkeletonEntry(normalizeIssueDiffEntry(actual)),
+        ])
+      : entries.map(([side, expected, actual]) => [
+          side,
+          normalizeSkeletonEntry(expected),
+          normalizeSkeletonEntry(actual),
+        ])
+    ).filter(([_side, expected, actual]) => expected !== actual);
+  const residualFirstDiffs = normalizeDiffTuples(firstDiffs);
+  const residualFullDiffs = normalizeDiffTuples(declaredFullDiffs);
+  const fullDiffs = residualFullDiffs.map(([side, expected, actual]) => ({
+    side,
+    expected,
+    actual,
+  }));
+  const previewDiffs = residualFirstDiffs.slice(0, DOM_DIFF_PREVIEW_LIMIT);
   return Object.freeze({
     route,
     state,
@@ -258,11 +288,15 @@ function siteAdminDomFingerprint({
     normalizeIssueDiffs,
     expectedSkeletonEntries,
     actualSkeletonEntries,
+    normalizedLegacySkeletonCount: expectedSkeletonEntries,
+    normalizedYoramSkeletonCount: actualSkeletonEntries,
     firstDiffs: Object.freeze(
-      residualFirstDiffs.map(([side, expected, actual]) =>
+      previewDiffs.map(([side, expected, actual]) =>
         Object.freeze({ side, expected, actual }),
       ),
     ),
+    fullDiffs: Object.freeze(fullDiffs.map((diff) => Object.freeze(diff))),
+    fullDiffSignature: domDiffSignature(fullDiffs),
     wtrTest,
     wtrSource,
     rationale,
@@ -279,28 +313,34 @@ function normalizeIssueDiffEntry(entry) {
 }
 
 function normalizedFingerprintDetail(detail, fingerprint) {
-  if (!Array.isArray(detail?.actual?.firstDiffs)) {
+  if (!Array.isArray(detail?.actual?.fullDiffs)) {
     return detail;
   }
+  const normalizeDiff = (diff) => ({
+    ...diff,
+    expected: normalizeSkeletonEntry(
+      fingerprint.normalizeIssueDiffs
+        ? normalizeIssueDiffEntry(diff.expected)
+        : diff.expected,
+    ),
+    actual: normalizeSkeletonEntry(
+      fingerprint.normalizeIssueDiffs
+        ? normalizeIssueDiffEntry(diff.actual)
+        : diff.actual,
+    ),
+  });
   return {
     ...detail,
     actual: {
       ...detail.actual,
-      firstDiffs: detail.actual.firstDiffs
-        .map((diff) => ({
-          ...diff,
-          expected: normalizeSkeletonEntry(
-            fingerprint.normalizeIssueDiffs
-              ? normalizeIssueDiffEntry(diff.expected)
-              : diff.expected,
-          ),
-          actual: normalizeSkeletonEntry(
-            fingerprint.normalizeIssueDiffs
-              ? normalizeIssueDiffEntry(diff.actual)
-              : diff.actual,
-          ),
-        }))
+      fullDiffs: detail.actual.fullDiffs
+        .map(normalizeDiff)
         .filter((diff) => diff.expected !== diff.actual),
+      firstDiffs: Array.isArray(detail.actual.firstDiffs)
+        ? detail.actual.firstDiffs
+            .map(normalizeDiff)
+            .filter((diff) => diff.expected !== diff.actual)
+        : undefined,
     },
   };
 }
@@ -534,6 +574,16 @@ function canonicalFingerprintRoute(route) {
 
 function exactDomFingerprint(detail, fingerprint) {
   const comparableDetail = normalizedFingerprintDetail(detail, fingerprint);
+  const comparableFullDiffs = comparableDetail?.actual?.fullDiffs?.map(({ side, expected, actual }) => [
+    side,
+    expected,
+    actual,
+  ]);
+  const fingerprintFullDiffs = fingerprint.fullDiffs.map(({ side, expected, actual }) => [
+    side,
+    expected,
+    actual,
+  ]);
   const comparableFirstDiffs = comparableDetail?.actual?.firstDiffs?.map(({ side, expected, actual }) => [
     side,
     expected,
@@ -545,19 +595,36 @@ function exactDomFingerprint(detail, fingerprint) {
     actual,
   ]);
   return (
-    comparableDetail?.expected?.skeletonEntries === fingerprint.expectedSkeletonEntries &&
-    comparableDetail?.actual?.skeletonEntries === fingerprint.actualSkeletonEntries &&
+    comparableDetail?.expected?.normalizedSkeletonEntries === fingerprint.normalizedLegacySkeletonCount &&
+    comparableDetail?.actual?.normalizedSkeletonEntries === fingerprint.normalizedYoramSkeletonCount &&
+    Array.isArray(comparableDetail?.actual?.fullDiffs) &&
+    Array.isArray(comparableDetail?.actual?.firstDiffs) &&
+    JSON.stringify(comparableFirstDiffs) ===
+      JSON.stringify(comparableFullDiffs.slice(0, DOM_DIFF_PREVIEW_LIMIT)) &&
+    domDiffSignature(comparableDetail.actual.fullDiffs) === fingerprint.fullDiffSignature &&
+    JSON.stringify(comparableFullDiffs) === JSON.stringify(fingerprintFullDiffs) &&
     JSON.stringify(comparableFirstDiffs) === JSON.stringify(fingerprintFirstDiffs)
   );
 }
 
-const SITE_ADMIN_DOM_FINGERPRINT_RULES = SITE_ADMIN_DOM_IMPLEMENTATION_FINGERPRINTS.map((fingerprint) => ({
-  test: ({ kind, route, detail, scenarioId, scenarioActions }) =>
+function matchesDomFingerprint({ kind, route, detail, scenarioId, action, scenarioActions, state }, fingerprint) {
+  const observedState = state ?? detail?.actual?.state;
+  const observedAction = action ?? detail?.actual?.action;
+  return (
     kind === "dom" &&
+    typeof route === "string" &&
     canonicalFingerprintRoute(route) === fingerprint.route &&
-    (!fingerprint.scenarioId || scenarioId === fingerprint.scenarioId) &&
-    (!fingerprint.action || scenarioActions?.includes(fingerprint.action)) &&
-    exactDomFingerprint(detail, fingerprint),
+    scenarioId === fingerprint.scenarioId &&
+    observedAction === fingerprint.action &&
+    Array.isArray(scenarioActions) &&
+    scenarioActions.includes(fingerprint.action) &&
+    observedState === fingerprint.state &&
+    exactDomFingerprint(detail, fingerprint)
+  );
+}
+
+const SITE_ADMIN_DOM_FINGERPRINT_RULES = SITE_ADMIN_DOM_IMPLEMENTATION_FINGERPRINTS.map((fingerprint) => ({
+  test: (context) => matchesDomFingerprint(context, fingerprint),
   classification: "IMPLEMENTATION_DIFFERENCE",
   rationale: fingerprint.rationale,
   reason: `exact ${fingerprint.route} ${fingerprint.state} DOM implementation fingerprint; changed or missing visible content falls through to UNVERIFIED`,
@@ -645,12 +712,7 @@ export const PROJECT_PULL_REQUEST_DOM_IMPLEMENTATION_FINGERPRINTS = Object.freez
 
 const PROJECT_PULL_REQUEST_DOM_FINGERPRINT_RULES = PROJECT_PULL_REQUEST_DOM_IMPLEMENTATION_FINGERPRINTS.map(
   (fingerprint) => ({
-    test: ({ kind, route, detail, scenarioId, scenarioActions }) =>
-      kind === "dom" &&
-      canonicalFingerprintRoute(route) === fingerprint.route &&
-      (!fingerprint.scenarioId || scenarioId === fingerprint.scenarioId) &&
-      (!fingerprint.action || scenarioActions?.includes(fingerprint.action)) &&
-      exactDomFingerprint(detail, fingerprint),
+    test: (context) => matchesDomFingerprint(context, fingerprint),
     classification: "IMPLEMENTATION_DIFFERENCE",
     rationale: fingerprint.rationale,
     reason: `exact ${fingerprint.route} ${fingerprint.state} DOM implementation fingerprint; changed or missing visible content falls through to UNVERIFIED`,
@@ -962,12 +1024,7 @@ export const PROJECT_ISSUE_DOM_IMPLEMENTATION_FINGERPRINTS = Object.freeze([
 
 const PROJECT_ISSUE_DOM_FINGERPRINT_RULES = PROJECT_ISSUE_DOM_IMPLEMENTATION_FINGERPRINTS.map(
   (fingerprint) => ({
-    test: ({ kind, route, detail, scenarioId, scenarioActions }) =>
-      kind === "dom" &&
-      canonicalFingerprintRoute(route) === fingerprint.route &&
-      scenarioId === fingerprint.scenarioId &&
-      (!fingerprint.action || scenarioActions?.includes(fingerprint.action)) &&
-      exactDomFingerprint(detail, fingerprint),
+    test: (context) => matchesDomFingerprint(context, fingerprint),
     classification: "IMPLEMENTATION_DIFFERENCE",
     rationale: fingerprint.rationale,
     reason: `exact ${fingerprint.route} ${fingerprint.state} DOM implementation fingerprint; changed or missing visible content falls through to UNVERIFIED`,
@@ -1031,12 +1088,7 @@ export const PROJECT_ISSUE_LABELS_DOM_IMPLEMENTATION_FINGERPRINTS = Object.freez
 
 const PROJECT_ISSUE_LABELS_DOM_FINGERPRINT_RULES = PROJECT_ISSUE_LABELS_DOM_IMPLEMENTATION_FINGERPRINTS.map(
   (fingerprint) => ({
-    test: ({ kind, route, detail, scenarioId, scenarioActions }) =>
-      kind === "dom" &&
-      route === fingerprint.route &&
-      scenarioId === fingerprint.scenarioId &&
-      (!fingerprint.action || scenarioActions?.includes(fingerprint.action)) &&
-      exactDomFingerprint(detail, fingerprint),
+    test: (context) => matchesDomFingerprint(context, fingerprint),
     classification: "IMPLEMENTATION_DIFFERENCE",
     rationale: fingerprint.rationale,
     reason: `exact ${fingerprint.route} ${fingerprint.state} DOM implementation fingerprint; changed or missing visible content falls through to UNVERIFIED`,
@@ -2514,12 +2566,7 @@ export const PROJECT_ROUTE_DOM_IMPLEMENTATION_FINGERPRINTS = Object.freeze([
   }),]);
 
 const PROJECT_ROUTE_DOM_FINGERPRINT_RULES = PROJECT_ROUTE_DOM_IMPLEMENTATION_FINGERPRINTS.map((fingerprint) => ({
-  test: ({ kind, route, detail, scenarioId, scenarioActions }) =>
-    kind === "dom" &&
-    canonicalFingerprintRoute(route) === fingerprint.route &&
-    scenarioId === fingerprint.scenarioId &&
-    (!fingerprint.action || scenarioActions?.includes(fingerprint.action)) &&
-    exactDomFingerprint(detail, fingerprint),
+  test: (context) => matchesDomFingerprint(context, fingerprint),
   classification: "IMPLEMENTATION_DIFFERENCE",
   rationale: fingerprint.rationale,
   reason: `exact ${fingerprint.route} ${fingerprint.state} DOM implementation fingerprint; changed or missing visible content falls through to UNVERIFIED`,
@@ -2863,39 +2910,7 @@ const CLASSIFICATION_RULES = [
     classification: "LEGACY_BUG_NOT_REPRODUCED",
     reason: LEGACY_MERGE_FAILURE_REASON,
   },
-  {
-    // Reviewed selector/content tuple: the legacy SSR document carries the SPA
-    // shell bootstrap markers (yona-root / __YONA_RUNTIME_CONFIG__ /
-    // react-root); drift mentioning them is React-owned shell markup, whose
-    // rendered parity is owned by the WTR e2e lanes and the frozen visual
-    // baseline (docs/provenance/frontend-visual-parity-baseline-2026-07-11.md,
-    // arbitration in docs/provenance/parity-reclassification-2026-09.md §3).
-    test: ({ kind, route, detail }) => {
-      void route;
-      if (kind !== "dom" && kind !== "api") return false;
-      if (kind === "dom" && domVisibleLoss(detail)) return false;
-      return /yona-root|__YONA_RUNTIME_CONFIG__|react-root/iu.test(JSON.stringify(detail));
-    },
-    classification: "IMPLEMENTATION_DIFFERENCE",
-    rationale:
-      "presentation-only: the diff payload carries the React SPA shell bootstrap markers (yona-root/__YONA_RUNTIME_CONFIG__/react-root) — legacy SSR skeleton vs yoram React shell markup; rendered user-visible parity is enforced by the WTR e2e lanes and the frozen visual baseline, not the sweep",
-    reason: "SPA-shell bootstrap drift between legacy SSR and the React shell",
-  },
-  {
-    // Reviewed alignment artifact: every diffing entry exists on BOTH sides at
-    // a different position (multiset-equal, order-only). Content is identical;
-    // geometry/order parity is owned by the WTR lanes + frozen visual baseline
-    // (docs/provenance/parity-reclassification-2026-09.md §3 arbitration).
-    test: ({ kind, detail }) => {
-      if (kind !== "dom" || domVisibleLoss(detail)) return false;
-      const diffs = detail?.actual?.firstDiffs;
-      return Array.isArray(diffs) && diffs.length > 0 && diffs.every((diff) => diff.side === "order");
-    },
-    classification: "IMPLEMENTATION_DIFFERENCE",
-    rationale:
-      "alignment artifact: the skeleton multisets are equal and only entry order differs (all firstDiffs sides are 'order'), the reviewed SSR-vs-SPA alignment drift from the 2026-09 reclassification arbitration; visual order/geometry parity is owned by the WTR e2e lanes",
-    reason: "skeleton order drift with identical content on both sides",
-  },
+
   {
     test: ({ kind }) => kind === "harness",
     classification: "HARNESS_ERROR",
@@ -2961,6 +2976,8 @@ export function reclassifyScenarioViolations(scenario) {
       {
         behaviorId: finding.behaviorId,
         scenarioId: scenario.id,
+        action: finding.action ?? finding.actual?.action,
+        state: finding.state ?? finding.actual?.state,
         scenarioActions: (scenario.stepResults ?? []).map((step) => step.action),
         scenarioViolations,
       },
@@ -2970,8 +2987,19 @@ export function reclassifyScenarioViolations(scenario) {
   return scenario;
 }
 
-export function violation({ route, behaviorId = null, kind, expected, actual, classification, reason, rationale }) {
-  const derived = classifyViolation(kind, route, { expected, actual }, { behaviorId });
+export function violation({
+  route,
+  behaviorId = null,
+  kind,
+  expected,
+  actual,
+  action,
+  state,
+  classification,
+  reason,
+  rationale,
+}) {
+  const derived = classifyViolation(kind, route, { expected, actual }, { behaviorId, action, state });
   if (classification === "IMPLEMENTATION_DIFFERENCE" && !reason && !rationale && !derived.rationale) {
     throw new Error("IMPLEMENTATION_DIFFERENCE violation requires a rationale");
   }
@@ -2981,6 +3009,8 @@ export function violation({ route, behaviorId = null, kind, expected, actual, cl
     kind,
     expected,
     actual,
+    ...(action ? { action } : {}),
+    ...(state ? { state } : {}),
     ...derived,
     ...(classification ? { classification: normalizeClassification(classification) } : {}),
     ...(reason ? { reason } : {}),

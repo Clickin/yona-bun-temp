@@ -8,6 +8,8 @@ import { LegacySession, YoramSession, translateLegacy, translateYoram } from "./
 import { buildCoverage, matchBehaviors, smokeScenarios, validateScenarios } from "./dsl.mjs";
 import {
   ISSUE_STATE_ENCODINGS,
+  compareSkeletons,
+  domDiffSignature,
   diffProjections,
   domVisibleLoss,
   filterRowsByTag,
@@ -164,6 +166,24 @@ test("diffSkeletons reports only real differences", () => {
   assert.ok(diffs.some((entry) => entry.side === "yoram-only" && entry.actual === "div.only-yoram:z"));
 });
 
+test("DOM comparison keeps the full normalized diff separate from its preview", () => {
+  const legacy = [
+    ...Array.from({ length: 20 }, (_, index) => `div.legacy-${index}:`),
+    "textarea.comment:Missing comment input",
+  ];
+  const yoram = [];
+  const comparison = compareSkeletons(legacy, yoram);
+  assert.equal(comparison.legacyCount, 21);
+  assert.equal(comparison.yoramCount, 0);
+  assert.equal(comparison.fullDiffs.length, 21);
+  assert.equal(comparison.firstDiffs.length, 20);
+  assert.deepEqual(comparison.firstDiffs, comparison.fullDiffs.slice(0, 20));
+  assert.equal(comparison.fullDiffs.at(-1).expected, "textarea.comment:Missing comment input");
+  assert.equal(domVisibleLoss({ actual: { fullDiffs: comparison.firstDiffs } }), false);
+  assert.equal(domVisibleLoss({ actual: comparison }), true);
+  assert.equal(comparison.fullDiffSignature, domDiffSignature(comparison.fullDiffs));
+});
+
 test("normalizeSkeletonEntries collapses whitespace and drops empties", () => {
   assert.deepEqual(normalizeSkeletonEntries(["div.a:  hello    world  ", "   "]), ["div.a: hello world"]);
 });
@@ -316,12 +336,12 @@ test("sanctioned anchor-to-button translation holds only with equal class list a
 test("visible-loss strictness is unchanged by anchor normalization", () => {
   // a translated (button) control gone missing is a visible loss
   assert.equal(
-    domVisibleLoss({ actual: { firstDiffs: [{ side: "legacy-only", expected: "button.ybtn:닫기" }] } }),
+    domVisibleLoss({ actual: { fullDiffs: [{ side: "legacy-only", expected: "button.ybtn:닫기" }] } }),
     true,
   );
   // so is a missing navigational anchor with text
   assert.equal(
-    domVisibleLoss({ actual: { firstDiffs: [{ side: "legacy-only", expected: "a.nav:메뉴" }] } }),
+    domVisibleLoss({ actual: { fullDiffs: [{ side: "legacy-only", expected: "a.nav:메뉴" }] } }),
     true,
   );
   // a marked anchor whose tuple survives on the yoram side is a re-wrap, not
@@ -329,12 +349,19 @@ test("visible-loss strictness is unchanged by anchor normalization", () => {
   assert.equal(
     domVisibleLoss({
       actual: {
-        firstDiffs: [
+        fullDiffs: [
           { side: "legacy-only", expected: "a#.ybtn:닫기" },
           { side: "yoram-only", actual: "button.ybtn:닫기" },
         ],
       },
     }),
+    false,
+  );
+});
+
+test("visible-loss detection fails closed for preview-only DOM details", () => {
+  assert.equal(
+    domVisibleLoss({ actual: { firstDiffs: [{ side: "legacy-only", expected: "button.ybtn:닫기" }] } }),
     false,
   );
 });
@@ -501,10 +528,19 @@ test("classify keeps unknown DOM and visible loss blocking", () => {
 });
 
 function siteAdminFingerprintDetail(fingerprint, overrides = {}) {
+  const actualCount = overrides.normalizedSkeletonEntries ?? overrides.skeletonEntries ?? fingerprint.actualSkeletonEntries;
+  const fullDiffs = overrides.fullDiffs ?? overrides.firstDiffs ?? fingerprint.fullDiffs;
   return {
-    expected: { skeletonEntries: fingerprint.expectedSkeletonEntries },
+    expected: {
+      skeletonEntries: fingerprint.expectedSkeletonEntries,
+      normalizedSkeletonEntries: fingerprint.normalizedLegacySkeletonCount,
+    },
     actual: {
-      skeletonEntries: fingerprint.actualSkeletonEntries,
+      skeletonEntries: overrides.skeletonEntries ?? fingerprint.actualSkeletonEntries,
+      normalizedSkeletonEntries: actualCount,
+      state: fingerprint.state,
+      action: fingerprint.action,
+      fullDiffs,
       firstDiffs: fingerprint.firstDiffs,
       ...overrides,
     },
@@ -534,7 +570,9 @@ function fingerprintContext(fingerprint) {
   return fingerprint.scenarioId
     ? {
         scenarioId: fingerprint.scenarioId,
+        action: fingerprint.action,
         scenarioActions: fingerprint.action ? [fingerprint.action] : [],
+        state: fingerprint.state,
       }
     : {};
 }
@@ -646,6 +684,61 @@ test("DOM fingerprints reject every canonical tuple near miss", () => {
       );
     }
   }
+});
+
+test("DOM fingerprints reject a visible or structural 21st difference", () => {
+  const fingerprint = SITE_ADMIN_DOM_IMPLEMENTATION_FINGERPRINTS[0];
+  const exact = siteAdminFingerprintDetail(fingerprint);
+  assert.equal(
+    classifyViolation(
+      "dom",
+      fingerprint.route,
+      exact,
+      fingerprintContext(fingerprint),
+    ).classification,
+    "IMPLEMENTATION_DIFFERENCE",
+  );
+
+  const missingVisibleControl = {
+    side: "legacy-only",
+    expected: "button.parity-regression:Missing control",
+    actual: "<absent>",
+  };
+  const visibleLoss = [
+    ...fingerprint.fullDiffs,
+    missingVisibleControl,
+  ];
+  assert.equal(
+    classifyViolation(
+      "dom",
+      fingerprint.route,
+      siteAdminFingerprintDetail(fingerprint, {
+        fullDiffs: visibleLoss,
+        firstDiffs: fingerprint.fullDiffs.slice(0, 20),
+      }),
+      fingerprintContext(fingerprint),
+    ).classification,
+    "UNVERIFIED",
+    "a missing visible control after the preview must block",
+  );
+
+  const structuralDrift = [
+    ...fingerprint.fullDiffs,
+    { side: "order", expected: "div.before:", actual: "div.after:" },
+  ];
+  assert.equal(
+    classifyViolation(
+      "dom",
+      fingerprint.route,
+      siteAdminFingerprintDetail(fingerprint, {
+        fullDiffs: structuralDrift,
+        firstDiffs: fingerprint.fullDiffs.slice(0, 20),
+      }),
+      fingerprintContext(fingerprint),
+    ).classification,
+    "UNVERIFIED",
+    "a structural 21st difference must change the complete fingerprint",
+  );
 });
 
 test("project issue-detail DOM fingerprints keep label/avatar control loss blocking", () => {
@@ -1106,30 +1199,13 @@ test("malformed residual findings require their exact step behavior id", () => {
   );
 });
 
-test("strict residual step metadata is explicit and cleanup remains unclaimed", () => {
-  const find = (scenarioId, action) =>
-    scenarios.find((scenario) => scenario.id === scenarioId)?.actions.find((step) => step.action === action);
-  assert.equal(find("I18-issue-edit-state", "probe-issue-imports")?.behaviorId, "B-0214");
-  assert.equal(find("I19-comment-lifecycle", "delete-comment-compat")?.behaviorId, "B-0014");
-  assert.equal(find("I20-issue-engagement", "update-sharer")?.behaviorId, "B-0212");
-  assert.equal(find("U19-files-and-user-api", "get-user-sidebar")?.behaviorId, "B-0185");
-  assert.equal(find("U25-residual-site-user-probes", "probe-site-import-invalid")?.behaviorId, "B-0286");
-  assert.equal(find("U25-residual-site-user-probes", "probe-site-mail-invalid")?.behaviorId, "B-0287");
-  const cleanup = find("P23-wave-d-project-destructive", "cleanup-created-projects");
-  assert.equal(cleanup?.behaviorId, undefined);
-  assert.deepEqual(cleanup?.disposition, {
-    classification: "IMPLEMENTATION_DIFFERENCE",
-    evidence: "teardown-only residue assertion; generated projects do not claim an inventory behavior",
-  });
-  assert.equal(find("P15-project-data-surfaces", "fetch-unknown-path"), undefined);
-});
-
 test("DOM allow rules require reviewed fingerprints and preserve first-match strictness", () => {
   assert.equal(
     classifyViolation("dom", "/admin/sample", {
       actual: { firstDiffs: [{ side: "order", tag: "div", text: "react-root" }] },
     }).classification,
-    "IMPLEMENTATION_DIFFERENCE",
+    "UNVERIFIED",
+    "preview-only generic shell drift must remain blocking",
   );
   assert.equal(
     classifyViolation("dom", "/admin/sample", {
@@ -1182,7 +1258,7 @@ test("PR merge-bug DOM rule requires exact state and same-scenario B-0227 eviden
         kind: "dom",
         route: "/admin/sample/pullRequest/2",
         expected: { skeletonEntries: 51 },
-        actual: { skeletonEntries: 48, firstDiffs },
+        actual: { skeletonEntries: 48, fullDiffs: firstDiffs, firstDiffs: firstDiffs.slice(0, 20) },
       },
     ],
   };
@@ -1212,6 +1288,10 @@ test("PR merge-bug DOM rule leaves unrelated comments/list and near-miss text bl
         route: "/admin/sample/pullRequest/2",
         expected: {},
         actual: {
+          fullDiffs: [
+            ...exact,
+            { side: "legacy-only", expected: "ul.comments:", actual: "ul.nav.nav-tabs.nm:" },
+          ],
           firstDiffs: [
             ...exact,
             { side: "legacy-only", expected: "ul.comments:", actual: "ul.nav.nav-tabs.nm:" },
@@ -1231,6 +1311,9 @@ test("PR merge-bug DOM rule leaves unrelated comments/list and near-miss text bl
         route: "/admin/sample/pullRequest/2",
         expected: {},
         actual: {
+          fullDiffs: exact.map((diff, index) =>
+            index === 2 ? { ...diff, expected: "span:코드가 안전한지 확인하고 있습니다." } : diff,
+          ),
           firstDiffs: exact.map((diff, index) =>
             index === 2 ? { ...diff, expected: "span:코드가 안전한지 확인하고 있습니다." } : diff,
           ),

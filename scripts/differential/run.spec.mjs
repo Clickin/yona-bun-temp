@@ -35,6 +35,7 @@ import { parityProjectSeed } from "../run-dev-backend-once.mjs";
 import { diffSkeletons, domVisibleLoss } from "./diff.mjs";
 import { HarnessError, classifyViolation, summarizeExecution } from "./report.mjs";
 import { ACTION_DEFINITIONS } from "./scenarios/index.mjs";
+import { buildBehaviorVerification, validateScenarios } from "./dsl.mjs";
 
 test("differential runner keeps all scenarios by default", () => {
   const options = parseArgs([]);
@@ -312,7 +313,7 @@ test("generic shell exclusions do not turn route-body losses into accepted diffs
   const firstDiffs = diffSkeletons(expected, actual);
   const detail = {
     expected: { skeletonEntries: expected.length },
-    actual: { skeletonEntries: actual.length, firstDiffs },
+    actual: { skeletonEntries: actual.length, fullDiffs: firstDiffs, firstDiffs },
   };
   assert.ok(firstDiffs.some((diff) => diff.side === "legacy-only" && diff.expected.includes("route-action")));
   assert.equal(domVisibleLoss(detail), true);
@@ -764,6 +765,260 @@ test("executeStep records handler-added step errors as FAILED", async () => {
   } finally {
     delete ACTION_DEFINITIONS[action];
   }
+});
+
+function dispositionSignature(overrides = {}) {
+  return {
+    scenarioId: "S13-compat-default-login-page",
+    action: "issue-api-probe",
+    behaviorId: "B-0037",
+    events: [
+      {
+        side: "legacy",
+        request: {
+          method: "GET",
+          route: "/-_-api/v1/owners/admin/projects/sample/issues/1",
+          payload: null,
+        },
+        response: { status: 401 },
+      },
+      {
+        side: "yoram",
+        request: {
+          method: "GET",
+          route: "/api/v1/owners/admin/projects/sample/issues/1",
+          payload: null,
+        },
+        response: { status: 200 },
+      },
+    ],
+    state: null,
+    ...overrides,
+  };
+}
+
+function fakeSession(result) {
+  return {
+    async request(translation) {
+      return typeof result === "function" ? result(translation) : result;
+    },
+  };
+}
+
+function dispositionContext(step, legacyResult, yoramResult, entry = { behaviorIds: ["B-0037"], violations: [], errors: [] }) {
+  return {
+    step,
+    entry,
+    scenarioId: "S13-compat-default-login-page",
+    resolved: {},
+    state: {},
+    legacySession: fakeSession(legacyResult),
+    yoramSession: fakeSession(yoramResult),
+  };
+}
+
+test("built-in issue API probe accepts only its exact expected runtime disposition", async () => {
+  const step = {
+    action: "issue-api-probe",
+    behaviorId: "B-0037",
+    params: { api: "/-_-api/v1/owners/admin/projects/sample/issues/1" },
+    expectedDisposition: {
+      classification: "IMPLEMENTATION_DIFFERENCE",
+      evidence: "test evidence",
+      signature: dispositionSignature(),
+    },
+  };
+  const entry = { behaviorIds: ["B-0037"], violations: [], errors: [] };
+  await executeStep(dispositionContext(step, { status: 401 }, { status: 200 }, entry));
+  assert.equal(entry.stepResults[0].status, "FAILED");
+  assert.deepEqual(entry.stepResults[0].disposition, {
+    classification: "IMPLEMENTATION_DIFFERENCE",
+    evidence: "test evidence",
+  });
+  assert.equal(entry.stepResults[0].dispositionVerified, true);
+  assert.equal(buildBehaviorVerification([{ behaviorIds: ["B-0037"], stepResults: entry.stepResults }])["B-0037"].dispositionedSteps, 1);
+});
+
+test("built-in issue API probe preserves an exact legacy-bug disposition", async () => {
+  const step = {
+    action: "issue-api-probe",
+    behaviorId: "B-0037",
+    params: { api: "/-_-api/v1/owners/admin/projects/sample/issues/1" },
+    expectedDisposition: {
+      classification: "LEGACY_BUG_NOT_REPRODUCED",
+      evidence: "test legacy evidence",
+      signature: dispositionSignature(),
+    },
+  };
+  const entry = { behaviorIds: ["B-0037"], violations: [], errors: [] };
+  await executeStep(dispositionContext(step, { status: 401 }, { status: 200 }, entry));
+  assert.equal(entry.stepResults[0].disposition?.classification, "LEGACY_BUG_NOT_REPRODUCED");
+  assert.equal(entry.stepResults[0].dispositionVerified, true);
+});
+
+test("expected disposition rejects status, payload, identity, route, and exception drift", async () => {
+  const expected = {
+    classification: "IMPLEMENTATION_DIFFERENCE",
+    evidence: "test evidence",
+    signature: dispositionSignature(),
+  };
+  const variants = [
+    {
+      name: "yoram status",
+      yoram: { status: 500 },
+    },
+    {
+      name: "legacy status",
+      legacy: { status: 200 },
+    },
+    {
+      name: "request payload",
+      step: {
+        params: { api: "/-_-api/v1/owners/admin/projects/sample/issues/1?drift=1" },
+      },
+    },
+    {
+      name: "behavior identity",
+      step: { behaviorId: "B-wrong" },
+    },
+    {
+      name: "action identity",
+      signature: { action: "another-action" },
+    },
+    {
+      name: "scenario identity",
+      signature: { scenarioId: "another-scenario" },
+    },
+    {
+      name: "route",
+      step: { params: { api: "/-_-api/v1/owners/admin/projects/sample/issues/other" } },
+    },
+  ];
+  for (const variant of variants) {
+    const step = {
+      action: "issue-api-probe",
+      behaviorId: "B-0037",
+      params: { api: "/-_-api/v1/owners/admin/projects/sample/issues/1" },
+      expectedDisposition: variant.signature
+        ? { ...expected, signature: dispositionSignature(variant.signature) }
+        : expected,
+      ...variant.step,
+    };
+    const entry = { behaviorIds: ["B-0037"], violations: [], errors: [] };
+    await executeStep(dispositionContext(step, variant.legacy ?? { status: 401 }, variant.yoram ?? { status: 200 }, entry));
+    assert.equal(entry.stepResults[0].disposition, undefined, variant.name);
+    assert.equal(entry.stepResults[0].status, "FAILED", variant.name);
+  }
+
+  const throwingStep = {
+    action: "issue-api-probe",
+    behaviorId: "B-0037",
+    params: { api: "/-_-api/v1/owners/admin/projects/sample/issues/1" },
+    expectedDisposition: expected,
+  };
+  const throwingEntry = { behaviorIds: ["B-0037"], violations: [], errors: [] };
+  await executeStep({
+    ...dispositionContext(throwingStep, { status: 401 }, { status: 200 }, throwingEntry),
+    legacySession: { async request() { throw new Error("handler exception"); } },
+  });
+  assert.equal(throwingEntry.stepResults[0].disposition, undefined);
+  assert.equal(throwingEntry.stepResults[0].status, "FAILED");
+});
+
+test("expected disposition rejects an additional request payload key", async () => {
+  const action = "__payload_contract__";
+  ACTION_DEFINITIONS[action] = {
+    async handler(ctx) {
+      await ctx.helpers.requestBoth(
+        ctx,
+        { method: "POST", path: "/probe", json: { allowed: true, extra: true } },
+        { method: "POST", path: "/probe", json: { allowed: true, extra: true } },
+      );
+    },
+  };
+  try {
+    const entry = { behaviorIds: ["B-payload"], violations: [], errors: [] };
+    await executeStep({
+      ...dispositionContext(
+        {
+          action,
+          behaviorId: "B-payload",
+          expectedDisposition: {
+            classification: "IMPLEMENTATION_DIFFERENCE",
+            evidence: "test evidence",
+            signature: {
+              scenarioId: "payload-contract",
+              action,
+              behaviorId: "B-payload",
+              events: [
+                {
+                  side: "legacy",
+                  request: { method: "POST", route: "/probe", payload: { json: { allowed: true } } },
+                  response: { status: 200 },
+                },
+                {
+                  side: "yoram",
+                  request: { method: "POST", route: "/probe", payload: { json: { allowed: true } } },
+                  response: { status: 200 },
+                },
+              ],
+              state: null,
+            },
+          },
+        },
+        { status: 200 },
+        { status: 200 },
+        entry,
+      ),
+      scenarioId: "payload-contract",
+    });
+    assert.equal(entry.stepResults[0].disposition, undefined);
+    assert.equal(entry.stepResults[0].status, "FAILED");
+  } finally {
+    delete ACTION_DEFINITIONS[action];
+  }
+});
+
+test("malformed runtime signature factories remain blocking", async () => {
+  const action = "__malformed_signature__";
+  ACTION_DEFINITIONS[action] = { handler: async () => {} };
+  try {
+    const entry = { behaviorIds: ["B-malformed"], violations: [], errors: [] };
+    await executeStep({
+      ...stepContext(
+        {
+          action,
+          behaviorId: "B-malformed",
+          expectedDisposition: {
+            classification: "IMPLEMENTATION_DIFFERENCE",
+            evidence: "test evidence",
+            signature: () => ({}),
+          },
+        },
+        entry,
+      ),
+      scenarioId: "malformed-signature",
+    });
+    assert.equal(entry.stepResults[0].disposition, undefined);
+    assert.equal(entry.stepResults[0].status, "FAILED");
+  } finally {
+    delete ACTION_DEFINITIONS[action];
+  }
+});
+
+test("scenario validation rejects legacy static dispositions and incomplete expected signatures", () => {
+  const base = { id: "test", actions: [{ actor: "admin", action: "probe" }], behaviorMatcher: { action: /probe/u } };
+  assert.match(validateScenarios([{ ...base, actions: [{ ...base.actions[0], disposition: { classification: "IMPLEMENTATION_DIFFERENCE", evidence: "e" } }] }], ["probe"]).join("\n"), /static disposition/u);
+  assert.match(validateScenarios([{ ...base, actions: [{ ...base.actions[0], expectedDisposition: { classification: "IMPLEMENTATION_DIFFERENCE", evidence: "e", signature: {} } }] }], ["probe"]).join("\n"), /signature/u);
+  const verification = buildBehaviorVerification([{
+    behaviorIds: ["B-static"],
+    stepResults: [{
+      status: "FAILED",
+      disposition: { classification: "IMPLEMENTATION_DIFFERENCE", evidence: "e" },
+    }],
+  }])["B-static"];
+  assert.equal(verification.dispositionedSteps, 0);
+  assert.equal(verification.failedSteps, 1);
 });
 
 test("summarizeExecution separates global infrastructure errors from step errors", () => {

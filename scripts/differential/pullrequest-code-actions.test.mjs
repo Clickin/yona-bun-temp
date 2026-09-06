@@ -426,7 +426,7 @@ test("create pull request captures only the existing detail body", async () => {
 test("pull request route-body loss remains UNVERIFIED", () => {
   const detail = {
     actual: {
-      firstDiffs: [
+      fullDiffs: [
         { side: "legacy-only", expected: "button.pull-request-detail-watch:watch" },
         { side: "yoram-only", expected: "div#react-root:" },
       ],

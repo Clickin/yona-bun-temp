@@ -95,7 +95,7 @@ test("issue detail route-body losses for watcher and label controls remain block
   ]) {
     const detail = {
       actual: {
-        firstDiffs: [
+        fullDiffs: [
           { side: "legacy-only", expected },
           { side: "yoram-only", expected: "div#react-root:" },
         ],

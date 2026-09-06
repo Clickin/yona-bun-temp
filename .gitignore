@@ -15,6 +15,7 @@ node_modules
 /.xwin-cache/
 /apps/app/dist
 /frontend/dist/
+/frontend/coverage/
 
 # Yona runtime data
 .yona-data/

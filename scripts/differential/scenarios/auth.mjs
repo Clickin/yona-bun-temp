@@ -130,10 +130,6 @@ export const scenarios = [
         action: "post-compat-default-login-page",
         params: {},
         behaviorId: "B-0221",
-        disposition: {
-          classification: "LEGACY_BUG_NOT_REPRODUCED",
-          evidence: "yona-original/app/controllers/UserApp.java:1372-1380",
-        },
       },
     ],
     behaviorMatcher: { action: /^UserApp\.setDefaultLoginPage$/, route: /defultLoginPage/ },

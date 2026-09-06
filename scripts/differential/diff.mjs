@@ -139,20 +139,54 @@ export function sideEffectAnchorTag(
   return tagName;
 }
 
-// Compare two normalized skeletons; returns [] when equal, else first diffs.
-export function diffSkeletons(legacyEntries, yoramEntries, limit = 20) {
+// Compare two normalized skeletons. The comparison is complete by default;
+// callers that need a human-readable preview must slice the result rather
+// than asking the classifier to compare a truncated prefix.
+export const DOM_DIFF_PREVIEW_LIMIT = 20;
+
+export function diffSkeletons(legacyEntries, yoramEntries, limit = Infinity) {
+  return diffNormalizedSkeletons(
+    normalizeSkeletonEntries(legacyEntries),
+    normalizeSkeletonEntries(yoramEntries),
+    limit,
+  );
+}
+
+// Produce the one DOM comparison payload shared by the runner and report
+// classifier. Counts and diff entries are normalized from the same arrays, so
+// a report cannot accidentally pair raw counts with a normalized diff.
+export function compareSkeletons(
+  legacyEntries,
+  yoramEntries,
+  previewLimit = DOM_DIFF_PREVIEW_LIMIT,
+) {
   const legacy = normalizeSkeletonEntries(legacyEntries);
   const yoram = normalizeSkeletonEntries(yoramEntries);
+  const fullDiffs = diffNormalizedSkeletons(legacy, yoram);
+  const limit = Math.max(0, Number(previewLimit));
+  return {
+    legacyEntries: legacy,
+    yoramEntries: yoram,
+    legacyCount: legacy.length,
+    yoramCount: yoram.length,
+    fullDiffs,
+    firstDiffs: fullDiffs.slice(0, limit),
+    fullDiffSignature: domDiffSignature(fullDiffs),
+  };
+}
+
+function diffNormalizedSkeletons(legacyEntries, yoramEntries, limit = Infinity) {
+  const legacy = [...legacyEntries];
+  const yoram = [...yoramEntries];
   const diffs = [];
   let i = 0;
-  while ((i < legacy.length || i < yoram.length) && diffs.length < limit) {
+  while ((i < legacy.length || i < yoram.length) && diffs.length < Math.max(0, Number(limit))) {
     const a = legacy[i];
     const b = yoram[i];
     if (a === b) {
       i += 1;
       continue;
     }
-    // multiset-aware: report whichever side has an extra entry
     if (a !== undefined && !yoram.includes(a)) {
       diffs.push({ side: "legacy-only", expected: a, actual: b ?? "<absent>" });
       legacy.splice(i, 1);
@@ -160,12 +194,21 @@ export function diffSkeletons(legacyEntries, yoramEntries, limit = 20) {
       diffs.push({ side: "yoram-only", expected: a ?? "<absent>", actual: b });
       yoram.splice(i, 1);
     } else {
-      // same entry exists on both sides but at different positions — order drift
       diffs.push({ side: "order", expected: a, actual: b });
       i += 1;
     }
   }
   return diffs;
+}
+
+// Stable complete signature for a normalized DOM diff. Arrays are used rather
+// than object serialization so an undefined field remains part of the tuple.
+// A fingerprint may store this signature instead of repeating every diff.
+export function domDiffSignature(diffs) {
+  if (!Array.isArray(diffs)) return null;
+  return JSON.stringify(
+    diffs.map((diff) => [diff?.side, diff?.expected, diff?.actual]),
+  );
 }
 
 // Elements whose absence from the Yoram render is a user-visible loss, not a
@@ -184,7 +227,9 @@ function skeletonEntryOf(value) {
 // structural drift, not a loss. Used by the DOM classification rules so no
 // allow rule can ever accept a visible loss (plan Phase B3).
 export function domVisibleLoss(detail) {
-  const diffs = detail?.actual?.firstDiffs;
+  // firstDiffs is a report preview and is deliberately insufficient evidence
+  // for classification. A missing full comparison must fail closed.
+  const diffs = detail?.actual?.fullDiffs;
   if (!Array.isArray(diffs)) return false;
   const yoramEntries = new Set(
     diffs.filter((diff) => diff.side === "yoram-only").map((diff) => skeletonEntryOf(diff.actual)).filter(Boolean),

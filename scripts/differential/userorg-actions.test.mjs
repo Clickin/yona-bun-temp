@@ -426,7 +426,7 @@ test("site-admin DOM probes exclude the shared shell and target each route body 
 test("site-admin route-body control loss remains blocking even with shell-only drift", () => {
   const detail = {
     actual: {
-      firstDiffs: [
+      fullDiffs: [
         { side: "legacy-only", expected: "button.ybtn.ybtn-danger:삭제" },
         { side: "yoram-only", expected: "<absent>", actual: "div#react-root:" },
       ],
@@ -488,7 +488,7 @@ test("notification and direct issue routes fall back to rendered body fixtures",
 });
 
 test("user and organization route-body control loss remains blocking", () => {
-  const detail = { actual: { firstDiffs: [{ side: "legacy-only", expected: "button.ybtn.ybtn-primary:Create" }] } };
+  const detail = { actual: { fullDiffs: [{ side: "legacy-only", expected: "button.ybtn.ybtn-primary:Create" }] } };
   assert.equal(domVisibleLoss(detail), true);
   assert.equal(classifyViolation("dom", "/organizations/weblabs/members", detail).classification, "UNVERIFIED");
 });

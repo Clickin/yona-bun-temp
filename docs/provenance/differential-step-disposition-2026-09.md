@@ -1,6 +1,57 @@
 # Differential step disposition ledger (2026-09)
 
-Source: `.agent/differential/final-sweep-40e1bb42c/report.json`, `runId=sweep-mtm43abc`. This ledger accounts for every non-`EXECUTED` step result exactly once. A step error is not silently converted into behavior coverage: dispositions marked `BLOCKING` remain release blockers until the cited repair/evidence is rerun.
+> **HISTORICAL — SUPERSEDED AS ACTIVE BACKLOG (2026-09-07):** These rows
+> describe the `40e1bb42c` run, not current-HEAD failures or current closure
+> evidence. Retain them for provenance only. The current-HEAD final parity
+> plan requires exact runtime step signatures, complete DOM comparisons,
+> and fresh focused reruns before generating a new active blocker inventory.
+> Do not carry a `BLOCKING` or `CLOSED` status forward without fresh evidence.
+
+## Gate cutover — implementation evidence only (2026-09-07)
+
+The current-HEAD plan's Phase A safeguards are implemented in
+`scripts/differential/{dsl,run,diff,report,verdict}.mjs`:
+
+- Static step dispositions are invalid. An `expectedDisposition` is accepted
+  only after observed scenario/action/behavior, exact request method/route/
+  payload, and declared response/state evidence match without a handler
+  exception or unrelated error. Extra payload fields are a mismatch.
+- Only the read-only `I11` and `U2` token/session API rules retain expected
+  dispositions. Old rules without adequate resulting-state/readback evidence
+  were removed; their failures remain blocking pending fresh focused evidence.
+- DOM classification uses the complete normalized `fullDiffs`; `firstDiffs`
+  is only a 20-entry preview. Exact fingerprints require observed action/state,
+  normalized counts, full signatures, and WTR/source evidence. Missing state
+  is not filled from an expected fingerprint.
+- Verdict mode defaults to `final`. Development mode may skip the fast lane;
+  final mode requires an executed, passing fast lane.
+
+Verified on the uncommitted changes above baseline
+`f9d4e73fc76b5197d2072fc3009d1b833ca4ae15`:
+
+```sh
+node --test scripts/differential/*.test.mjs scripts/differential/*.spec.mjs
+# 186 passed; 0 failed; 0 skipped
+node --test scripts/legacy-localhost.spec.mjs scripts/run-dev-backend-once.spec.mjs scripts/dev-config.spec.mjs
+# 25 passed; 0 failed; 0 skipped
+```
+
+A temporary-fixture smoke exercised the actual verdict CLI: development+skip
+exited 0, final+skip exited 1, final+failed-fast-lane exited 1, and
+final+passed-fast-lane exited 0. The temporary artifacts were removed.
+These fixtures are not product acceptance evidence.
+
+Execution is blocked before the remaining Phase C prerequisites: the available
+tool schemas do not expose the repository-required `require_escalated`
+invocation for Rust, pnpm, WTR, or the turn-commit hook. No bypass was used.
+Focused batches A–E, the fresh blocker inventory, full deterministic gates,
+candidate freeze, final differential sweep, and replacement acceptance package
+have **not** been completed. No current product/harness/fixture blocker count
+or final parity claim follows from this checkpoint.
+
+## Historical `40e1bb42c` dispositions
+
+Source: `.agent/differential/final-sweep-40e1bb42c/report.json`, `runId=sweep-mtm43abc`. This historical ledger accounts for every non-`EXECUTED` step result in that run exactly once. Row dispositions and statuses record the assessment at that time; they do not establish current behavior coverage.
 
 `LEGACY_BUG_NOT_REPRODUCED` and `IMPLEMENTATION_DIFFERENCE` are the only non-blocking unresolved classes permitted by the corrective plan. `HARNESS_ERROR`, `INFRA_ERROR`, and `REAL_OBSERVABLE_MISMATCH` are blocking.
 

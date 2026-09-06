@@ -151,9 +151,27 @@ export const scenarios = [
         // authenticates the React client by session (and honors API tokens);
         // the sweep adapter carries sessions, so this legacy-side 401 is the
         // documented transport difference, not a token-surface gap.
-        disposition: {
+        expectedDisposition: {
           classification: "IMPLEMENTATION_DIFFERENCE",
           evidence: "yona-original/app/controllers/api/UserApi.java:295-305 token gate vs AGENTS.md canonical /api/v1 REST contract",
+          signature: {
+            scenarioId: "I11-issue-api-detail",
+            action: "issue-api-probe",
+            behaviorId: "B-0037",
+            events: [
+              {
+                side: "legacy",
+                request: { method: "GET", route: "/-_-api/v1/owners/admin/projects/sample/issues/1", payload: null },
+                response: { status: 401 },
+              },
+              {
+                side: "yoram",
+                request: { method: "GET", route: "/api/v1/owners/admin/projects/sample/issues/1", payload: null },
+                response: { status: 200 },
+              },
+            ],
+            state: null,
+          },
         },
       },
     ],
@@ -239,14 +257,9 @@ export const scenarios = [
         action: "probe-issue-imports",
         params: { owner: "admin", project: "sample" },
         behaviorId: "B-0214",
-        // The /-_-api/v1 imports namespace is intentionally migrator-owned
-        // (SPEC.md Legacy API 접두사; docs/provenance/legacy-external-api.md),
-        // so the legacy-400/yoram-404 pair is the planned exclusion, not a
-        // route gap.
-        disposition: {
-          classification: "IMPLEMENTATION_DIFFERENCE",
-          evidence: "SPEC.md Legacy API 접두사 결정; docs/provenance/legacy-external-api.md exports/imports rows",
-        },
+        // The /-_-api/v1 imports namespace is intentionally migrator-owned;
+        // this malformed probe remains blocking until a state readback is
+        // available for an evidence-backed disposition.
       },
       { actor: "admin", action: "delete-issue", params: { owner: "admin", project: "sample" } },
     ],
@@ -273,13 +286,8 @@ export const scenarios = [
         action: "delete-comment-compat",
         params: { owner: "admin", project: "sample" },
         behaviorId: "B-0014",
-        // Legacy compat comment-delete crashes with 500 on the same request
-        // yoram cleanly rejects; degenerate legacy crash (2026-09
-        // reclassification, legacy-side defect family).
-        disposition: {
-          classification: "LEGACY_BUG_NOT_REPRODUCED",
-          evidence: "docs/provenance/parity-reclassification-2026-09.md legacy comment-delete 500 family",
-        },
+        // The legacy compat path is a known 500 family, but this probe has no
+        // resulting-state readback; keep the failure blocking.
       },
       { actor: "admin", action: "delete-issue", params: { owner: "admin", project: "sample" } },
     ],
@@ -306,12 +314,8 @@ export const scenarios = [
         action: "update-sharer",
         params: { owner: "admin", project: "sample" },
         behaviorId: "B-0212",
-        // Legacy -_-api issue-share handler crashes with 500 on the sweep
-        // payload where yoram's sharer toggle succeeds/fails cleanly.
-        disposition: {
-          classification: "LEGACY_BUG_NOT_REPRODUCED",
-          evidence: "docs/provenance/parity-reclassification-2026-09.md legacy issue-share 500 family",
-        },
+        // The paired status drift is known, but the handler does not verify
+        // the resulting sharer state; keep this failure blocking.
       },
       { actor: "admin", action: "comment-noti-receivers", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "detect-issue-change", params: { owner: "admin", project: "sample" } },

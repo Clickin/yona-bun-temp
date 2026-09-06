@@ -60,7 +60,7 @@ test('aggregateViolations: counts every class independently', () => {
 });
 
 test('buildVerdict gate: only REAL_OBSERVABLE_MISMATCH/HARNESS_ERROR/INFRA_ERROR/UNVERIFIED block', () => {
-  const base = { inventory, coverage, report, skipFastLane: true };
+  const base = { inventory, coverage, report, skipFastLane: true, mode: 'development' };
   const v = buildVerdict(base);
   // IMPLEMENTATION_DIFFERENCE + LEGACY_BUG_NOT_REPRODUCED are non-blocking; UNVERIFIED blocks.
   assert.equal(v.checks.sweep.blocked, 1);
@@ -108,21 +108,111 @@ test('buildVerdict: ok requires coverage=100, no blockers, fast lane', () => {
 
   const good = buildVerdict({
     inventory, coverage: full, report: clean,
-    fastLanePass: true, skipFastLane: false,
+    fastLanePass: true, skipFastLane: false, mode: 'final',
   });
   assert.equal(good.ok, true);
+  assert.equal(good.mode, 'final');
   assert.deepEqual(good.checks.fastLane, { skipped: false, pass: true });
 
   assert.equal(buildVerdict({
     inventory, coverage: full, report: clean,
-    fastLanePass: false, skipFastLane: false,
+    fastLanePass: false, skipFastLane: false, mode: 'final',
   }).ok, false);
 
   assert.equal(buildVerdict({
     inventory, coverage, report: clean, skipFastLane: true,
+    mode: 'final',
   }).ok, false); // coverage < 1
 
   assert.equal(typeof good.generatedAt, 'string');
+});
+
+test('buildVerdict: development mode permits skipped fast lane', () => {
+  const full = {
+    behaviorVerification: {
+      'B-0001': { verified: true },
+      'B-0002': { verified: true },
+      'B-0003': { verified: true },
+    },
+  };
+  const verdict = buildVerdict({
+    inventory,
+    coverage: full,
+    report: { scenarios: [{ violations: [] }] },
+    skipFastLane: true,
+    mode: 'development',
+  });
+  assert.equal(verdict.ok, true);
+  assert.equal(verdict.mode, 'development');
+  assert.deepEqual(verdict.checks.fastLane, { skipped: true, pass: null });
+});
+
+test('buildVerdict: final mode rejects skipped required fast lane', () => {
+  const full = {
+    behaviorVerification: {
+      'B-0001': { verified: true },
+      'B-0002': { verified: true },
+      'B-0003': { verified: true },
+    },
+  };
+  const verdict = buildVerdict({
+    inventory,
+    coverage: full,
+    report: { scenarios: [{ violations: [] }] },
+    skipFastLane: true,
+    mode: 'final',
+  });
+  assert.equal(verdict.ok, false);
+  assert.equal(verdict.mode, 'final');
+  assert.deepEqual(verdict.checks.fastLane, { skipped: true, pass: null });
+});
+
+test('buildVerdict: final mode rejects failed fast lane', () => {
+  const full = {
+    behaviorVerification: {
+      'B-0001': { verified: true },
+      'B-0002': { verified: true },
+      'B-0003': { verified: true },
+    },
+  };
+  const verdict = buildVerdict({
+    inventory,
+    coverage: full,
+    report: { scenarios: [{ violations: [] }] },
+    fastLanePass: false,
+    skipFastLane: false,
+    mode: 'final',
+  });
+  assert.equal(verdict.ok, false);
+  assert.deepEqual(verdict.checks.fastLane, { skipped: false, pass: false });
+});
+
+test('buildVerdict: final mode accepts a passed fast lane', () => {
+  const full = {
+    behaviorVerification: {
+      'B-0001': { verified: true },
+      'B-0002': { verified: true },
+      'B-0003': { verified: true },
+    },
+  };
+  const verdict = buildVerdict({
+    inventory,
+    coverage: full,
+    report: { scenarios: [{ violations: [] }] },
+    fastLanePass: true,
+    skipFastLane: false,
+    mode: 'final',
+  });
+  assert.equal(verdict.ok, true);
+});
+
+test('buildVerdict and CLI reject invalid modes', async () => {
+  assert.throws(
+    () => buildVerdict({ inventory, coverage, report, mode: 'release', skipFastLane: true }),
+    /invalid mode: release/,
+  );
+  assert.equal(await main(['node', 'verdict.mjs', '--mode', 'release']), 2);
+  assert.equal(await main(['node', 'verdict.mjs', '--mode']), 2);
 });
 
 test('buildVerdict blocks required FAILED and SKIPPED steps', () => {
@@ -157,7 +247,7 @@ function writeFixtures() {
 
 test('CLI: missing artifact gives clear error and nonzero exit', async () => {
   await assert.rejects(
-    () => main(['node', 'verdict.mjs', '--inventory', '/nope/missing.json', '--skip-fast-lane']),
+    () => main(['node', 'verdict.mjs', '--mode', 'development', '--inventory', '/nope/missing.json', '--skip-fast-lane']),
     /cannot read behavior inventory/,
   );
   // usage error: no fast-lane input
@@ -174,11 +264,13 @@ test('CLI: end-to-end writes verdict.json with exit code 1 (blockers present)', 
     '--coverage', join(dir, 'coverage.json'),
     '--report', join(dir, 'report.json'),
     '--out', out,
+    '--mode', 'final',
     '--skip-fast-lane',
   ]);
   assert.equal(code, 1);
   const v = JSON.parse(readFileSync(out, 'utf8'));
   assert.equal(v.ok, false);
+  assert.equal(v.mode, 'final');
   assert.equal(v.checks.sweep.total, 3);
   assert.equal(v.checks.sweep.blocked, 1);
   assert.deepEqual(v.checks.coverage.uncovered, ['B-0003']);
@@ -198,11 +290,13 @@ test('CLI: end-to-end writes verdict.json with exit code 1 (blockers present)', 
   }));
   const code3 = await main([
     'node', 'verdict.mjs', '--fast-lane-pass', 'true',
+    '--mode', 'final',
     '--inventory', join(dir, 'inventory.json'),
     '--coverage', covFull, '--report', repAccepted,
     '--out', join(dir, 'v3.json'),
   ]);
   assert.equal(code3, 0);
+  assert.equal(JSON.parse(readFileSync(join(dir, 'v3.json'), 'utf8')).mode, 'final');
 
   // ponytail: direct invocation against real repo artifacts — expected to fail while blockers exist
   try {

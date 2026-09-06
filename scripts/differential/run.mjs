@@ -14,12 +14,13 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { isDeepStrictEqual } from "node:util";
 
 
 import { LegacySession, YoramSession } from "./adapters.mjs";
 import {
+  compareSkeletons,
   diffProjections,
-  diffSkeletons,
   filterRowsByTag,
   normalizeApiValue,
   projectCommentRows,
@@ -42,7 +43,12 @@ import { parityProjectSeed } from "../run-dev-backend-once.mjs";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const defaultOutputDir = path.join(repoRoot, ".agent/differential");
 let outputDir = path.resolve(process.env.YONA_DIFFERENTIAL_OUTPUT_DIR ?? defaultOutputDir);
-import { buildBehaviorVerification, matchBehaviors, validateScenarios } from "./dsl.mjs";
+import {
+  buildBehaviorVerification,
+  hasDispositionSignatureShape,
+  matchBehaviors,
+  validateScenarios,
+} from "./dsl.mjs";
 import { ACTION_DEFINITIONS, scenarios } from "./scenarios/index.mjs";
 let yoramRuntimeDir = path.join(outputDir, "yoram");
 
@@ -2278,7 +2284,7 @@ export const stepHelpers = {
           if (!hasToken) throw new Error(`${side} DOM missing current differential token "${domTarget.currentToken}"`);
         }
       }
-      return { diffs: diffSkeletons(legacySkeleton, yoramSkeleton), legacyCount: legacySkeleton.length, yoramCount: yoramSkeleton.length };
+      return compareSkeletons(legacySkeleton, yoramSkeleton);
     };
     const recordInfraError = (error) => {
       entry.errors.push(`dom render (${step.action}) [${suffix}]: ${error.message}`);
@@ -2309,13 +2315,24 @@ export const stepHelpers = {
         }
         observation = await observe();
       }
-      if (observation.diffs.length > 0) {
+      if (observation.fullDiffs.length > 0) {
         entry.violations.push(
           violation({
             route: domTarget.legacy.replace(options.legacyUrl, ""),
+            behaviorId: step.behaviorId ?? null,
             kind: "dom",
-            expected: { skeletonEntries: observation.legacyCount },
-            actual: { skeletonEntries: observation.yoramCount, firstDiffs: observation.diffs },
+            action: step.action,
+            state: domTarget.state ?? null,
+            expected: {
+              skeletonEntries: observation.legacyCount,
+              normalizedSkeletonEntries: observation.legacyCount,
+            },
+            actual: {
+              skeletonEntries: observation.yoramCount,
+              normalizedSkeletonEntries: observation.yoramCount,
+              fullDiffs: observation.fullDiffs,
+              firstDiffs: observation.firstDiffs,
+            },
           }),
         );
       }
@@ -2331,10 +2348,134 @@ export const stepHelpers = {
   popoverExtract: POPOVER_EXTRACT,
 };
 
+function cloneObservationValue(value) {
+  return structuredClone(value ?? null);
+}
+
+function requestObservation(translation) {
+  const request = {
+    method: translation?.method ?? null,
+    route: translation?.path ?? null,
+    payload: null,
+  };
+  if (translation && Object.hasOwn(translation, "json")) {
+    request.payload = { json: cloneObservationValue(translation.json) };
+  } else if (translation && Object.hasOwn(translation, "form")) {
+    request.payload = { form: cloneObservationValue(translation.form) };
+  } else if (translation && Object.hasOwn(translation, "multipart")) {
+    request.payload = {
+      multipart: {
+        contentType: translation.multipart?.contentType ?? null,
+        body: cloneObservationValue(translation.multipart?.body),
+      },
+    };
+  }
+  return request;
+}
+
+function responseObservation(response) {
+  return {
+    status: response?.status ?? null,
+    result: cloneObservationValue(response?.json ?? response?.body ?? null),
+    location: response?.location ?? "",
+  };
+}
+
+function recordRequestObservation(observation, side, translation, response, error = null, request = requestObservation(translation)) {
+  observation.events.push({
+    side,
+    request,
+    response: responseObservation(response),
+    ...(error ? { error: error.message } : {}),
+  });
+}
+
+function projectStateEvidence(state, expectedState) {
+  if (expectedState === null) return null;
+  if (!expectedState || typeof expectedState !== "object") return expectedState;
+  const projected = {};
+  for (const key of Object.keys(expectedState)) projected[key] = cloneObservationValue(state?.[key]);
+  return projected;
+}
+
+function runtimeDispositionSignature(context, observation, expectedRule) {
+  const expectedSignature = expectedRule?.signature;
+  const expected = typeof expectedSignature === "function" ? expectedSignature(context) : expectedSignature;
+  const actual = {
+    scenarioId: context.scenarioId ?? null,
+    action: context.step.action,
+    behaviorId: context.step.behaviorId ?? null,
+    events: observation.events,
+  };
+  if (expected && Object.hasOwn(expected, "state")) {
+    actual.state = projectStateEvidence(context.state, expected.state);
+  }
+  return { expected, actual };
+}
+
+function signatureSubsetMatches(expected, actual, key = "") {
+  if (expected === actual) return true;
+  if (expected === null || actual === null || expected === undefined || actual === undefined) return false;
+  if (typeof expected !== "object" || typeof actual !== "object") return false;
+  // Requests are the evidence boundary: allowing an object subset here would
+  // let a new payload field hide behind an approved empty/form payload.
+  if (key === "request" || key === "result" || key === "state") return isDeepStrictEqual(expected, actual);
+  if (Array.isArray(expected)) {
+    return Array.isArray(actual) &&
+      expected.length === actual.length &&
+      expected.every((value, index) => signatureSubsetMatches(value, actual[index], key));
+  }
+  if (Array.isArray(actual)) return false;
+  return Object.entries(expected).every(([key, value]) =>
+    Object.hasOwn(actual, key) && signatureSubsetMatches(value, actual[key], key));
+}
+
+function expectedErrorsOnly(errorMessages, action, events) {
+  if (errorMessages.length === 0) return true;
+  return errorMessages.every((message) => {
+    const match = /^(legacy|yoram) (.+) failed: HTTP (\d+) @ (.+)$/u.exec(message);
+    if (!match) return false;
+    const [, side, failedAction, status, route] = match;
+    return events.some(
+      (event) =>
+        failedAction === action &&
+        event.side === side &&
+        event.response.status === Number(status) &&
+        event.request.route === route,
+    );
+  });
+}
+
+function installRequestObservers(context, observation) {
+  const restores = [];
+  for (const [side, session] of [["legacy", context.legacySession], ["yoram", context.yoramSession]]) {
+    if (!session || typeof session.request !== "function") continue;
+    const request = session.request;
+    session.request = async function observedRequest(translation) {
+      const requestEvidence = requestObservation(translation);
+      try {
+        const response = await request.call(this, translation);
+        recordRequestObservation(observation, side, translation, response, null, requestEvidence);
+        return response;
+      } catch (error) {
+        recordRequestObservation(observation, side, translation, null, error, requestEvidence);
+        throw error;
+      }
+    };
+    restores.push(() => {
+      session.request = request;
+    });
+  }
+  return () => {
+    for (const restore of restores.reverse()) restore();
+  };
+}
+
 export async function executeStep(context) {
   const { step, entry } = context;
   const result = { action: step.action, status: "EXECUTED", error: null };
-  if (step.disposition) result.disposition = step.disposition;
+  const errorCountBefore = entry.errors.length;
+  let handlerThrew = false;
   entry.stepResults ??= [];
   entry.stepResults.push(result);
   const definition = ACTION_DEFINITIONS[step.action];
@@ -2344,14 +2485,42 @@ export async function executeStep(context) {
     entry.errors.push(result.error);
     return;
   }
+  const observation = step.expectedDisposition ? { events: [] } : null;
+  const restoreObservers = observation ? installRequestObservers(context, observation) : () => {};
+  const helpers = observation
+    ? {
+      ...stepHelpers,
+      async sendRaw(ctx, side, translation) {
+        const requestEvidence = requestObservation(translation);
+        try {
+          const response = await stepHelpers.sendRaw(ctx, side, translation);
+          recordRequestObservation(observation, side, translation, response, null, requestEvidence);
+          return response;
+        } catch (error) {
+          recordRequestObservation(observation, side, translation, null, error, requestEvidence);
+          throw error;
+        }
+      },
+      async pairLenient(ctx, legacyTranslation, yoramTranslation, route) {
+        const legacyRequest = requestObservation(legacyTranslation);
+        const yoramRequest = requestObservation(yoramTranslation);
+        const pair = await stepHelpers.pairLenient(ctx, legacyTranslation, yoramTranslation, route);
+        // pairLenient calls the original sendRaw method through its receiver,
+        // so the per-step wrapper above cannot see those two requests.
+        recordRequestObservation(observation, "legacy", legacyTranslation, pair.legacyResult, null, legacyRequest);
+        recordRequestObservation(observation, "yoram", yoramTranslation, pair.yoramResult, null, yoramRequest);
+        return pair;
+      },
+    }
+    : stepHelpers;
   try {
-    const errorCountBefore = entry.errors.length;
-    await definition.handler({ ...context, helpers: stepHelpers });
+    await definition.handler({ ...context, helpers });
     if (entry.errors.length > errorCountBefore) {
       result.status = "FAILED";
       result.error = entry.errors.slice(errorCountBefore).join("; ");
     }
   } catch (error) {
+    handlerThrew = true;
     if (error instanceof HarnessError) {
       // Scenario marked HARNESS_ERROR once; dependent actions skip quietly.
       if (!entry.harnessNoted) {
@@ -2371,6 +2540,37 @@ export async function executeStep(context) {
       result.error = error.message;
       console.error(`[${step.action}]`, error.stack ?? error.message);
       entry.errors.push(`${step.action}: ${error.message}`);
+    }
+  } finally {
+    restoreObservers();
+  }
+  if (observation?.events.length > 0) result.observation = observation;
+
+  if (step.expectedDisposition && result.status !== "SKIPPED" && !result.error?.startsWith("unknown action:")) {
+    let signature;
+    try {
+      signature = runtimeDispositionSignature(context, observation, step.expectedDisposition);
+    } catch (error) {
+      signature = { expected: null, actual: observation };
+      entry.errors.push(`${step.action}: expected disposition signature failed: ${error.message}`);
+    }
+    result.observation = signature.actual;
+    const matched =
+      !handlerThrew &&
+      hasDispositionSignatureShape(signature.expected) &&
+      signature.expected &&
+      signatureSubsetMatches(signature.expected, signature.actual) &&
+      expectedErrorsOnly(entry.errors.slice(errorCountBefore), step.action, observation.events);
+    if (matched) {
+      result.disposition = {
+        classification: step.expectedDisposition.classification,
+        evidence: step.expectedDisposition.evidence,
+      };
+      result.dispositionVerified = true;
+    } else if (!result.error) {
+      result.status = "FAILED";
+      result.error = `${step.action}: expected disposition signature did not match runtime observation`;
+      entry.errors.push(result.error);
     }
   }
 }

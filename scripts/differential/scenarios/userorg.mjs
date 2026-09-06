@@ -34,9 +34,27 @@ export const scenarios = [
         // (UserApi.java:295-305); yoram's canonical /api/v1 REST surface
         // serves the React client by session — documented transport
         // difference, the sweep adapter carries sessions not tokens.
-        disposition: {
+        expectedDisposition: {
           classification: "IMPLEMENTATION_DIFFERENCE",
           evidence: "yona-original/app/controllers/api/UserApi.java:295-305 vs AGENTS.md canonical /api/v1 REST contract",
+          signature: {
+            scenarioId: "U2-user-issues-compat-api",
+            action: "get-user-issues-compat",
+            behaviorId: "B-0043",
+            events: [
+              {
+                side: "legacy",
+                request: { method: "GET", route: "/-_-api/v1/user/issues", payload: null },
+                response: { status: 401 },
+              },
+              {
+                side: "yoram",
+                request: { method: "GET", route: "/api/v1/user/issues/search", payload: null },
+                response: { status: 200 },
+              },
+            ],
+            state: null,
+          },
         },
       },
     ],
@@ -273,14 +291,8 @@ export const scenarios = [
         actor: "bob",
         action: "leave-organization",
         params: {},
-        // Legacy org-leave authorization defect: Operation.LEAVE covers only
-        // PROJECT (AccessControl.java:176-183) so an ORGANIZATION leave 403s a
-        // plain member of a single-admin org while yoram implements the
-        // intended protection (2026-09 reclassification B-0016).
-        disposition: {
-          classification: "LEGACY_BUG_NOT_REPRODUCED",
-          evidence: "yona-original/app/utils/AccessControl.java:176-183; yona-original/app/controllers/OrganizationApp.java:297-311",
-        },
+        // Legacy org-leave authorization defect is known, but the handler has
+        // no resulting-membership readback; keep this status drift blocking.
       },
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
       { actor: "admin", action: "add-org-member", params: { user: "carol" } },
@@ -322,22 +334,13 @@ export const scenarios = [
         actor: "admin",
         action: "save-user-editform-tab",
         params: { tab: "notifications" },
-        // Surface-replaced: yoram owns settings as workspace overview/actions
-        // (crates/server/src/routes/workspace.rs:1858-2103); the legacy
-        // /user/editform/:tabId compat tab answers where yoram 404s by design.
-        disposition: {
-          classification: "IMPLEMENTATION_DIFFERENCE",
-          evidence: "crates/server/src/routes/workspace.rs:1858-2103; 2026-09 reclassification B-0298",
-        },
+        // Surface-replaced: yoram owns settings as workspace overview/actions;
+        // no resulting settings-state readback is available here.
       },
       {
         actor: "admin",
         action: "save-user-editform-tab",
         params: { tab: "emails" },
-        disposition: {
-          classification: "IMPLEMENTATION_DIFFERENCE",
-          evidence: "crates/server/src/routes/workspace.rs:1858-2103; 2026-09 reclassification B-0298",
-        },
       },
     ],
     behaviorMatcher: {
@@ -2328,10 +2331,8 @@ scenarios.push({
       action: "probe-site-import-invalid",
       params: {},
       behaviorId: "B-0286",
-      disposition: {
-        classification: "IMPLEMENTATION_DIFFERENCE",
-        evidence: "yona-original/app/controllers/SiteApp.java:368-387; malformed multipart boundary persists no import state",
-      },
+      // Malformed import has no persisted-state readback; the response drift
+      // remains blocking.
     },
     {
       actor: "admin",
@@ -2341,10 +2342,8 @@ scenarios.push({
       // Legacy SiteApp.sendMail lets the EmailException escape on an invalid
       // from address (500) where yoram answers a clean 400; degenerate legacy
       // crash on a degenerate payload.
-      disposition: {
-        classification: "LEGACY_BUG_NOT_REPRODUCED",
-        evidence: "yona-original/app/controllers/SiteApp.java:87-95",
-      },
+      // Invalid mail has no sent-message/readback assertion; keep the legacy
+      // exception drift blocking.
     },
     { actor: "admin", action: "probe-site-mail-list-invalid", params: {} },
     { actor: "admin", action: "probe-user-reset-password-invalid", params: {} },

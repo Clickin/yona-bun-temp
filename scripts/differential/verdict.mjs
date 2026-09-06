@@ -11,6 +11,14 @@ const DEFAULTS = {
   report: '.agent/differential/report.json',
   out: '.agent/differential/verdict.json',
 };
+export const VERDICT_MODES = ['development', 'final'];
+
+function validateMode(mode) {
+  if (!VERDICT_MODES.includes(mode)) {
+    throw new Error(`invalid mode: ${mode ?? '(missing)'} (expected development|final)`);
+  }
+  return mode;
+}
 
 export function computeCoverage(inventory, coverage) {
   const all = new Set(inventory.behaviors.map((b) => b.id));
@@ -63,7 +71,9 @@ export function buildVerdict({
   report,
   fastLanePass,
   skipFastLane,
+  mode = 'final',
 }) {
+  mode = validateMode(mode);
   const cov = computeCoverage(inventory, coverage);
   const sweep = aggregateViolations(report);
   const steps = aggregateRequiredSteps(coverage);
@@ -78,10 +88,11 @@ export function buildVerdict({
     blocked === 0 &&
     steps.failedRequiredSteps === 0 &&
     steps.skippedRequiredSteps === 0 &&
-    (fastLane.skipped || fastLane.pass === true);
+    ((mode === 'development' && fastLane.skipped) || (fastLane.skipped === false && fastLane.pass === true));
 
   return {
     ok,
+    mode,
     checks: {
       coverage: { ratio: cov.ratio, totalBehaviors: cov.totalBehaviors, uncovered: cov.uncovered },
       sweep: { total: sweep.total, byClassification: sweep.byClassification, blocked },
@@ -101,11 +112,12 @@ function loadJson(path, label) {
 }
 
 function parseArgs(argv) {
-  const args = { ...DEFAULTS };
+  const args = { ...DEFAULTS, mode: 'final' };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--skip-fast-lane') args.skipFastLane = true;
     else if (a === '--fast-lane-pass') args.fastLanePass = argv[++i] === 'true';
+    else if (a === '--mode') args.mode = validateMode(argv[++i]);
     else if (a.startsWith('--')) {
       const key = a.slice(2);
       if (!(key in DEFAULTS)) throw new Error(`unknown option: ${a}`);
@@ -121,7 +133,7 @@ export async function main(argv = process.argv) {
     opts = parseArgs(argv);
   } catch (err) {
     console.error(`verdict: ${err.message}`);
-    console.error('usage: node scripts/differential/verdict.mjs (--fast-lane-pass true|false | --skip-fast-lane) [--inventory P] [--coverage P] [--report P] [--out P]');
+    console.error('usage: node scripts/differential/verdict.mjs [--mode development|final] (--fast-lane-pass true|false | --skip-fast-lane) [--inventory P] [--coverage P] [--report P] [--out P]');
     return 2;
   }
   if (!opts.skipFastLane && typeof opts.fastLanePass !== 'boolean') {
@@ -139,6 +151,7 @@ export async function main(argv = process.argv) {
     report,
     fastLanePass: opts.fastLanePass,
     skipFastLane: opts.skipFastLane,
+    mode: opts.mode,
   });
   mkdirSync(dirname(resolve(opts.out)), { recursive: true });
   writeFileSync(resolve(opts.out), JSON.stringify(verdict, null, 2) + '\n');

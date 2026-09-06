@@ -330,7 +330,7 @@ test("labels form route-body losses for visible labels and buttons remain blocki
   ]) {
     const detail = {
       actual: {
-        firstDiffs: [{ side: "legacy-only", expected }],
+        fullDiffs: [{ side: "legacy-only", expected }],
       },
     };
     assert.equal(domVisibleLoss(detail), true, `missing labels-form control must remain visible: ${expected}`);
@@ -447,7 +447,7 @@ test("labels page falls back to the rendered body fixture", () => {
 test("project route-body loss remains blocking after shell capture is removed", () => {
   const detail = {
     actual: {
-      firstDiffs: [
+      fullDiffs: [
         { side: "legacy-only", expected: "a.project-milestones-new:New" },
         { side: "yoram-only", expected: "div#react-root:" },
       ],

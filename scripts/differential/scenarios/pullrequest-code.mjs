@@ -74,15 +74,24 @@ async function renderPullRequestStateFragment(ctx) {
     );
     return;
   }
-  const diffs = diffSkeletons(skeletons.legacy, skeletons.yoram);
-  if (diffs.length > 0) {
+  const comparison = compareSkeletons(skeletons.legacy, skeletons.yoram);
+  if (comparison.fullDiffs.length > 0) {
     entry.violations.push(
       violation({
         route: legacyPath(step),
         behaviorId: entry.behaviorIds[0] ?? null,
         kind: "dom",
-        expected: { skeletonEntries: skeletons.legacy.length },
-        actual: { skeletonEntries: skeletons.yoram.length, firstDiffs: diffs },
+        action: step.action,
+        expected: {
+          skeletonEntries: comparison.legacyCount,
+          normalizedSkeletonEntries: comparison.legacyCount,
+        },
+        actual: {
+          skeletonEntries: comparison.yoramCount,
+          normalizedSkeletonEntries: comparison.yoramCount,
+          fullDiffs: comparison.fullDiffs,
+          firstDiffs: comparison.firstDiffs,
+        },
       }),
     );
   }
@@ -218,12 +227,9 @@ export const scenarios = [
         action: "list-project-files",
         params: { owner: "admin", project: "sample" },
         // Legacy has no bare /:user/:project/files route — the code browser
-        // binds files/:rev/*path — so legacy answers 404 while yoram serves a
-        // deep-linkable file list page; no legacy behavior depends on the 404.
-        disposition: {
-          classification: "IMPLEMENTATION_DIFFERENCE",
-          evidence: "yona-original/conf/routes:342 GET /:user/:project/files/:rev/*path (no bare route)",
-        },
+        // binds files/:rev/*path — so legacy answers 404 while Yoram serves a
+        // deep-linkable file list page. There is no DOM/navigation readback
+        // here, so this remains blocking rather than being dispositioned.
       },
     ],
     behaviorMatcher: { action: /^(PullRequestApp\.newFork|ReviewThreadApp\.reviewThreads|AttachmentApp\.getFileList)$/, route: /(newFork|reviews|files)$/ },
@@ -499,7 +505,7 @@ const RAW_ACTIONS = [
 // --- mutation definitions (R13–R16) -----------------------------------------
 
 import { HarnessError, violation } from "../report.mjs";
-import { diffSkeletons, normalizeApiValue } from "../diff.mjs";
+import { compareSkeletons, normalizeApiValue } from "../diff.mjs";
 
 function prSuffixTitle(ctx, mark = "") {
   return `Differential sweep PR ${ctx.suffix}${mark}`;
