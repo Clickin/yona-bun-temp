@@ -429,6 +429,21 @@ test("malformed residual findings require their exact step behavior id", () => {
       },
     },
   };
+  const shareRemoveProbe = {
+    ...shareProbe,
+    actual: {
+      ...shareProbe.actual,
+      yoramStatus: 200,
+      legacyRequest: {
+        ...shareProbe.actual.legacyRequest,
+        json: { sharer: ["admin"], action: "remove" },
+      },
+      yoramRequest: {
+        ...shareProbe.actual.yoramRequest,
+        json: { sharer: ["admin"], action: "remove" },
+      },
+    },
+  };
   const issueImportProbe = {
     expected: { status: "<400" },
     actual: {
@@ -454,6 +469,7 @@ test("malformed residual findings require their exact step behavior id", () => {
     ["B-0286", "/sites/import", { expected: "legacy HTTP 303", actual: "yoram HTTP 400" }, "IMPLEMENTATION_DIFFERENCE"],
     ["B-0014", "/comments/issue/9", { expected: { status: "<400" }, actual: { legacyStatus: 500, yoramStatus: 400 } }, "LEGACY_BUG_NOT_REPRODUCED"],
     ["B-0212", "/-_-api/v1/owners/admin/projects/sample/issues/7/share", shareProbe, "LEGACY_BUG_NOT_REPRODUCED"],
+    ["B-0212", "/-_-api/v1/owners/admin/projects/sample/issues/7/share", shareRemoveProbe, "LEGACY_BUG_NOT_REPRODUCED"],
     ["B-0214", "/-_-api/v1/owners/admin/projects/sample/issues/imports", issueImportProbe, "IMPLEMENTATION_DIFFERENCE"],
     ["B-0287", "/sites/mail", { expected: "legacy HTTP 500", actual: "yoram HTTP 400" }, "LEGACY_BUG_NOT_REPRODUCED"],
   ];
@@ -519,7 +535,12 @@ test("strict residual step metadata is explicit and cleanup remains unclaimed", 
   assert.equal(find("U19-files-and-user-api", "get-user-sidebar")?.behaviorId, "B-0185");
   assert.equal(find("U25-residual-site-user-probes", "probe-site-import-invalid")?.behaviorId, "B-0286");
   assert.equal(find("U25-residual-site-user-probes", "probe-site-mail-invalid")?.behaviorId, "B-0287");
-  assert.equal(find("P23-wave-d-project-destructive", "cleanup-created-projects")?.behaviorId, undefined);
+  const cleanup = find("P23-wave-d-project-destructive", "cleanup-created-projects");
+  assert.equal(cleanup?.behaviorId, undefined);
+  assert.deepEqual(cleanup?.disposition, {
+    classification: "IMPLEMENTATION_DIFFERENCE",
+    evidence: "teardown-only residue assertion; generated projects do not claim an inventory behavior",
+  });
   assert.equal(find("P15-project-data-surfaces", "fetch-unknown-path"), undefined);
 });
 

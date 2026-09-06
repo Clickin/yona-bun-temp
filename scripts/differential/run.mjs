@@ -748,6 +748,24 @@ function missingParityLabelSeeds(labels) {
   return PARITY_LABEL_SEEDS.filter((seed) => !labels.some((row) => parityLabelMatches(row, seed)));
 }
 
+function readYoramParityLabelRows(databasePath) {
+  const database = new DatabaseSync(databasePath);
+  try {
+    return database
+      .prepare(
+        `SELECT l.id, l.name, l.category_id AS categoryId, cat.name AS category, l.color, l.project_id AS projectId
+         FROM issue_label l
+         JOIN issue_label_category cat ON cat.id = l.category_id
+         JOIN project p ON p.id = l.project_id
+         WHERE p.name = 'sample'
+         ORDER BY l.id`,
+      )
+      .all();
+  } finally {
+    database.close();
+  }
+}
+
 export async function alignParityLabelSeeds(session, base, labels) {
   for (const seed of PARITY_LABEL_SEEDS) {
     const row = labels.find((label) => label.name === seed.labelName);
@@ -915,11 +933,11 @@ async function alignParityFixtures(options) {
   const labels = JSON.parse(
     (await legacySession.request({ method: "GET", path: "/admin/sample/issue/labels" })).body || "[]",
   );
-  await alignParityLabelSeeds(legacySession, "", labels);
+  const legacyAlignedLabels = await alignParityLabelSeeds(legacySession, "", labels);
   const yoramLabels = JSON.parse(
     (await yoramSession.request({ method: "GET", path: "/admin/sample/issue/labels" })).body || "[]",
   );
-  await alignParityLabelSeeds(yoramSession, "", yoramLabels);
+  const yoramAlignedLabels = await alignParityLabelSeeds(yoramSession, "", yoramLabels);
 
   // Provision the legacy parity comparison users (alice/bob/carol) on yoram
   // via REST signup so both sides' active-user sets match for the sweep
@@ -988,6 +1006,7 @@ async function alignParityFixtures(options) {
   } catch (error) {
     console.error(`[alignParityFixtures] SQL label reconciliation skipped: ${error.message}`);
   }
+  return { legacyLabels: legacyAlignedLabels, yoramLabels: yoramAlignedLabels };
 }
 
 // --- pre-boot H2 fixture reconciliation --------------------------------------
@@ -2069,6 +2088,7 @@ export async function runSweep(options = {}) {
     scenarios: [],
     behaviorsCovered: [],
     dbProjection: null,
+    labelLifecycle: null,
     infraErrors,
   };
 
@@ -2111,7 +2131,17 @@ export async function runSweep(options = {}) {
     // Align fixtures before scenarios: empty seeded repos starve PR flows and
     // asymmetric label seeds poison the unfiltered label projection.
     try {
-      await alignParityFixtures({ legacyUrl: options.legacyUrl ?? process.env.YONA_LEGACY_URL ?? "http://127.0.0.1:9000" });
+      const aligned = await alignParityFixtures({
+        legacyUrl: options.legacyUrl ?? process.env.YONA_LEGACY_URL ?? "http://127.0.0.1:9000",
+        yoramUrl: yoramHandle.baseUrl,
+      });
+      const yoramDbPath = yoramHandle.databasePath;
+      report.labelLifecycle = {
+        databasePath: yoramDbPath,
+        expectedSeeds: PARITY_LABEL_SEEDS,
+        apiReadback: aligned.yoramLabels,
+        sqliteAfterAlignment: readYoramParityLabelRows(yoramDbPath),
+      };
     } catch (error) {
       infraErrors.push(`fixture alignment: ${error.message}`);
     }
@@ -2139,6 +2169,9 @@ export async function runSweep(options = {}) {
       };
       const state = { issueNumberLegacy: null, issueNumberYoram: null };
       const suffix = `${runId}-${index + 1}`;
+      if (report.labelLifecycle && scenario.id === "I21-issue-label-crud") {
+        report.labelLifecycle.beforeI21 = readYoramParityLabelRows(report.labelLifecycle.databasePath);
+      }
       for (const step of scenario.actions) {
         const resolved = {
           title: `Differential sweep issue ${suffix}`,
@@ -2171,6 +2204,19 @@ export async function runSweep(options = {}) {
         }
       }
       reclassifyScenarioViolations(entry);
+      if (report.labelLifecycle && scenario.id === "I21-issue-label-crud") {
+        report.labelLifecycle.i21 = {
+          suffix,
+          generatedName: `parity-label-${suffix}`,
+          generatedCategory: `parity-cat-${suffix}`,
+          yoramLabelId: state.labelIdYoram ?? null,
+          yoramCategoryId: state.categoryIdYoram ?? null,
+        };
+        report.labelLifecycle.afterI21 = readYoramParityLabelRows(report.labelLifecycle.databasePath);
+      }
+      if (report.labelLifecycle && scenario.id === "P1-issue-labels") {
+        report.labelLifecycle.afterP1 = readYoramParityLabelRows(report.labelLifecycle.databasePath);
+      }
       report.scenarios.push(entry);
       const partialPath = options.partialReportPath ?? process.env.YONA_DIFFERENTIAL_PARTIAL_REPORT;
       if (partialPath) {
@@ -2195,6 +2241,9 @@ export async function runSweep(options = {}) {
     yoramHandle = null;
     await stopLegacy();
 
+    if (report.labelLifecycle) {
+      report.labelLifecycle.sqliteAfterScenarios = readYoramParityLabelRows(report.labelLifecycle.databasePath);
+    }
     report.dbProjection = await projectDatabases(options, runId);
     return report;
   } catch (error) {

@@ -424,7 +424,7 @@ function normalizeNoAvatarUsers(value) {
 }
 
 async function readSiteScreenHandler(ctx) {
-  const { step, resolved, helpers } = ctx;
+  const { step, resolved, options, yoramBaseUrl, helpers } = ctx;
   if (step.params.screen === "noAvatarUsers") {
     await helpers.requestJsonBoth(
       ctx,
@@ -435,7 +435,17 @@ async function readSiteScreenHandler(ctx) {
     );
     return;
   }
-  await readPageHandler(ctx);
+  await helpers.requestBoth(ctx, translateLegacy(step, resolved), translateYoram(step, resolved));
+  const target = pageTargets[step.action](step.params);
+  const yoramSelector = SITE_ADMIN_BODY_SELECTORS[step.params.screen];
+  if (!yoramSelector) return;
+  await helpers.renderDomTarget(ctx, {
+    legacy: `${options.legacyUrl}${target}`,
+    yoram: `${yoramBaseUrl}${target}`,
+    legacySelector: SITE_ADMIN_LEGACY_BODY_SELECTOR,
+    yoramSelector,
+    spa: true,
+  });
 }
 
 // Page path each DOM-compared action renders; identical on both sides because
@@ -476,6 +486,23 @@ const pageTargets = {
   "view-site-screen": (params) => `/sites/${params.screen}`,
   "view-files-list": () => "/files",
 };
+
+// The app shell and site-admin navigation are covered by the dedicated WTR
+// lanes. Compare only the route-owned content column here: the legacy layout
+// has no route-specific marker, so its stable site-management content column
+// is paired with each React screen's explicit owner marker.
+export const SITE_ADMIN_LEGACY_BODY_SELECTOR = ".site-setting-wrap > .row-fluid > .span10";
+export const SITE_ADMIN_BODY_SELECTORS = Object.freeze({
+  data: '[data-owner="site-data-setting-content-column"]',
+  diagnostic: '[data-owner="site-diagnostic-setting-content-column"]',
+  issueList: '[data-owner="site-issue-list-setting-content-column"]',
+  mail: '[data-owner="site-mail-setting-content-column"]',
+  massmail: '[data-owner="site-massmail-setting-content-column"]',
+  postList: '[data-owner="site-post-list-setting-content-column"]',
+  projectList: '[data-owner="site-project-list-setting-content-column"]',
+  update: '[data-owner="site-update-setting-content-column"]',
+  userList: '[data-owner="site-user-list-setting-content-column"]',
+});
 
 
 // --- mutation helpers --------------------------------------------------------

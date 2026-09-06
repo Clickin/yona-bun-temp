@@ -672,7 +672,7 @@ function whenIds(keys) {
 
 // Factory for mutation actions: independent per-side translations plus an
 // optional follow-up (DOM verify / second toggle half) and an id guard.
-function pairMutation(legacyBuild, yoramBuild, followUp = null, guard = null, varsFn = null) {
+function pairMutation(legacyBuild, yoramBuild, followUp = null, guard = null, varsFn = null, onSuccess = null) {
   return {
     translateLegacy(step, resolved) {
       return legacyBuild(step, resolved);
@@ -682,7 +682,10 @@ function pairMutation(legacyBuild, yoramBuild, followUp = null, guard = null, va
     },
     async handler(ctx) {
       const run = async (context) => {
-        await mutationPair(context, legacyBuild, yoramBuild, varsFn);
+        const pair = await mutationPair(context, legacyBuild, yoramBuild, varsFn);
+        if (onSuccess && pair.legacyResult.status < 400 && pair.yoramResult.status < 400) {
+          onSuccess(context, pair);
+        }
         if (followUp) await followUp(context);
       };
       if (guard) await guard(ctx, run);
@@ -1412,6 +1415,12 @@ export const actionDefinitions = {
     null,
     null,
     (resolved, suffix) => ({ ...resolved, labelName: `parity-label-${suffix}`, categoryName: `parity-cat-${suffix}` }),
+    (ctx, pair) => {
+      ctx.state.labelIdLegacy = Number(pair.legacyResult.json?.id) || null;
+      ctx.state.labelIdYoram = Number(pair.yoramResult.json?.id) || null;
+      ctx.state.categoryIdLegacy = Number(pair.legacyResult.json?.categoryId) || null;
+      ctx.state.categoryIdYoram = Number(pair.yoramResult.json?.categoryId) || null;
+    },
   ),
 
   "issue-label-ids": {
@@ -1437,10 +1446,10 @@ export const actionDefinitions = {
         { method: "GET", path: ownerPath(ctx.step, "/issue/label/categories") },
       );
       const legacyCats = cats.legacyResult.json;
-      state.categoryIdLegacy = findIdByName(legacyCats, `parity-cat-${suffix}`);
-      state.categoryIdYoram = findIdByName(cats.yoramResult.json, `parity-cat-${suffix}`);
-      state.labelIdLegacy = findIdByName(legacyJson, `parity-label-${suffix}`);
-      state.labelIdYoram = findIdByName(yoramResult.json, `parity-label-${suffix}`);
+      state.categoryIdLegacy ??= findIdByName(legacyCats, `parity-cat-${suffix}`);
+      state.categoryIdYoram ??= findIdByName(cats.yoramResult.json, `parity-cat-${suffix}`);
+      state.labelIdLegacy ??= findIdByName(legacyJson, `parity-label-${suffix}`);
+      state.labelIdYoram ??= findIdByName(yoramResult.json, `parity-label-${suffix}`);
       // The category of THIS scenario's label is authoritative from the label
       // row itself: create-issue-label may attach to an existing category, and
       // a name-searched category id can drift from the label's real category.

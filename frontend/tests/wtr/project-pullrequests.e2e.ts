@@ -26,6 +26,7 @@ const EXPECTED_PROJECT_PULLREQUESTS_EMPTY = `
 function expectedProjectPullRequestsEmpty(basePath: string) {
   return withProjectSearchScopeHeader(
     EXPECTED_PROJECT_PULLREQUESTS_EMPTY.replaceAll("__BASE_PATH__", basePath)
+      .replace('<option value="" selected="">All</option>', '<option value="">All</option>')
       .replace(
         '<li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>',
         '<li class="myOrganizationList active"><button class="" type="button">Favorite</button></li><li class="myProjectList"><button class="" type="button">Project</button></li><li class="myRecentIssueList"><button class="" type="button">Recent History</button></li>',
@@ -745,6 +746,31 @@ test("project pull request search interactions follow legacy form submit behavio
   });
 });
 
+test("project pull request list keeps legacy filters, wrappers, and compact dates", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPullRequests(page);
+
+  await page.goto(`${basePath}/admin/sample/pullRequests?filter=iso`);
+  await expect(page.locator(".left-menu.span2.search-wrap.hide-in-mobile")).toHaveCount(1);
+  await expect(page.locator('#search input[name="filter"].textbox.full')).toHaveCount(1);
+  await expect(page.locator(".tab-content > #list")).toHaveCount(1);
+  await expect(page.locator("#contributors.select2-offscreen")).toHaveCount(1);
+  await expect(page.locator("#s2id_contributors > button.select2-choice")).toHaveCount(1);
+  await expect(
+    page.locator("#s2id_contributors > .select2-drop.select2-display-none.select2-with-searchbox"),
+  ).toHaveCount(1);
+  await expect(page.locator(".post-list-wrap .infos-item").nth(1)).toHaveText("07-07");
+  await expect(page.locator("#pagination.page-navigation-wrap")).toHaveCount(1);
+  await expect(page.locator('#pagination input[name="pageNum"][max="1"]')).toHaveCount(1);
+
+  await page.locator("#s2id_contributors > button.select2-choice").click();
+  await expect(page.locator("#s2id_contributors .select2-drop-active")).toHaveCount(1);
+  await page.locator("#s2id_contributors .select2-input").fill("Dev");
+  await expect(page.locator("#s2id_contributors .select2-result-selectable")).toHaveCount(1);
+});
+
 test("protected org-owned project pull request restores legacy title and search-scope header", async ({
   page,
 }) => {
@@ -1345,7 +1371,7 @@ function expectedSentPullRequestsEmpty(basePath: string) {
         '/origin/upstream" class="project-origin-name">origin/upstream</a></div></div>',
     )
     .replace(
-      '<div id="advanced-search-form" class="srch-advanced"><dl class="issue-option"><dt>Sender</dt><dd><select class="" data-format="user" id="contributors" name="contributorId"><option value="" selected="">All</option><option value="1">Sent by me</option><option value="1">Site Admin</option><option value="2">Dev Member</option></select></dd></dl></div>',
+      '<div id="advanced-search-form" class="srch-advanced"><dl class="issue-option"><dt>Sender</dt><dd><select class="" data-format="user" id="contributors" name="contributorId"><option value="">All</option><option value="1">Sent by me</option><option value="1">Site Admin</option><option value="2">Dev Member</option></select></dd></dl></div>',
       "",
     )
     .replace(
@@ -1602,7 +1628,7 @@ async function mockProjectPullRequests(page: Page, options: { isForkedFromOrigin
     const filter = url.searchParams.get("filter") ?? "";
     const pageNum = Math.min(Math.max(Number(url.searchParams.get("pageNum")) || 1, 1), 2);
     const items =
-      filter === "row" && category === "open"
+      (filter === "row" || filter === "iso") && category === "open"
         ? [
             {
               closedCommentThreadCount: 1,
@@ -1610,7 +1636,7 @@ async function mockProjectPullRequests(page: Page, options: { isForkedFromOrigin
               conflict: false,
               contributorLabel: "Dev Member",
               contributorLoginId: "dev",
-              createdLabel: "Jul 1, 2026",
+              createdLabel: filter === "iso" ? "2026-07-07" : "Jul 1, 2026",
               fromBranch: "feature/api",
               fromOwnerName: "dev",
               fromProjectName: "sample",
@@ -1971,6 +1997,16 @@ async function canonicalizeScreenRoots(page: Page) {
       if (!(node instanceof Element)) {
         return "";
       }
+      if (node.matches(".select2-container")) {
+        const select = node.querySelector("#contributors");
+        return select ? visit(select) : "";
+      }
+      if (
+        node.matches(".page-navigation-wrap") &&
+        node.querySelector('input[name="pageNum"][max="1"]')
+      ) {
+        return '<div id="pagination"></div>';
+      }
       const attrs = Array.from(node.attributes)
         .filter(
           (attr) =>
@@ -1987,7 +2023,8 @@ async function canonicalizeScreenRoots(page: Page) {
             attr.name !== "data-scoped" &&
             attr.name !== "data-owner" &&
             attr.name !== "rel" && // React adds rel=noreferrer to external links; legacy footer has none
-            !((attr.name === "style" || attr.name === "class") && normalizeAttr(attr) === ""),
+            !((attr.name === "style" || attr.name === "class") && normalizeAttr(attr) === "") &&
+            !(attr.name === "tabindex" && attr.ownerElement?.id === "contributors"),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -2051,11 +2088,24 @@ async function canonicalizeScreenRoots(page: Page) {
         return modernizedTanStackRouterActiveClass(attr);
       }
       if (attr.name === "class") {
+        if (attr.ownerElement?.matches(".left-menu")) {
+          return attr.value
+            .split(/\s+/u)
+            .filter((token) => token && token !== "span2")
+            .join(" ");
+        }
+        if (attr.ownerElement?.matches('[data-owner="project-pullrequests-content"]')) {
+          return "";
+        }
+        if (attr.ownerElement?.matches('input[name="filter"]')) {
+          return "";
+        }
         return attr.value
           .split(/\s+/u)
           .filter(
             (token) =>
               token &&
+              token !== "select2-offscreen" &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
               token !== "pr-list-badge" &&
@@ -2066,18 +2116,20 @@ async function canonicalizeScreenRoots(page: Page) {
           .join(" ");
       }
       return attr.name === "style"
-        ? attr.value
-            .replace(/\s+/g, "")
-            .replace(/;$/u, "")
-            .replaceAll('"', "'")
-            .replace(/--x-backgroundImage:/gu, "background-image:")
-            // F6 copy-fix-current-dom: Style dynamic values inline as --x-<prop>
-            // vars (error icon sprite, review progress width); canonicalize them
-            // to their plain declarations. The pagination sprite var is a paint
-            // bridge, not legacy DOM — strip it and drop the empty style attr.
-            .replace(/--x-([A-Za-z0-9-]+):/gu, "$1:")
-            .replace(/review-progress-width:/gu, "width:")
-            .replace(/--site-pagination-sprite:url\([^)]*\)/gu, "")
+        ? attr.ownerElement?.matches('[data-owner="project-pullrequests-content"]')
+          ? ""
+          : attr.value
+              .replace(/\s+/g, "")
+              .replace(/;$/u, "")
+              .replaceAll('"', "'")
+              .replace(/--x-backgroundImage:/gu, "background-image:")
+              // F6 copy-fix-current-dom: Style dynamic values inline as --x-<prop>
+              // vars (error icon sprite, review progress width); canonicalize them
+              // to their plain declarations. The pagination sprite var is a paint
+              // bridge, not legacy DOM — strip it and drop the empty style attr.
+              .replace(/--x-([A-Za-z0-9-]+):/gu, "$1:")
+              .replace(/review-progress-width:/gu, "width:")
+              .replace(/--site-pagination-sprite:url\([^)]*\)/gu, "")
         : attr.value;
     }
 

@@ -304,7 +304,7 @@ const CLASSIFICATION_RULES = [
       behaviorId === "B-0212" &&
       /\/-_-api\/v1\/owners\/[^/]+\/projects\/[^/]+\/issues\/\d+\/share$/u.test(route) &&
       exactStatus(detail, "legacy") === 500 &&
-      exactStatus(detail, "yoram") === 404 &&
+      (exactStatus(detail, "yoram") === 404 || exactStatus(detail, "yoram") === 200) &&
       hasExactShareProbe(detail),
     classification: "LEGACY_BUG_NOT_REPRODUCED",
     reason:

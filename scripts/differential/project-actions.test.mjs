@@ -139,6 +139,36 @@ test("project reviews DOM comparison scopes to the shared content root", async (
   assert.equal(target.spa, true);
 });
 
+test("cleanup accepts delete errors when the postcondition proves both projects absent", async () => {
+  const calls = [];
+  const entry = { errors: [] };
+  const state = { projectName: "created-project", forkProjectName: null, cloneProjectName: null };
+  await MERGED_DEFINITIONS["cleanup-created-projects"].handler({
+    step: { action: "cleanup-created-projects", params: { owner: "admin" } },
+    state,
+    entry,
+    suffix: "focused",
+    helpers: {
+      async sendRaw(_ctx, side, request) {
+        calls.push({ side, ...request });
+        if (request.method === "GET") return { status: 404 };
+        return { status: side === "legacy" ? 403 : 200 };
+      },
+    },
+  });
+  assert.deepEqual(entry.errors, []);
+  assert.deepEqual(
+    calls.map(({ side, method, path }) => ({ side, method, path })),
+    [
+      { side: "legacy", method: "DELETE", path: "/admin/created-project/delete" },
+      { side: "yoram", method: "DELETE", path: "/api/v1/owners/admin/projects/created-project" },
+      { side: "legacy", method: "GET", path: "/admin/created-project" },
+      { side: "yoram", method: "GET", path: "/api/v1/owners/admin/projects/created-project" },
+    ],
+  );
+  assert.equal(state.projectName, null);
+});
+
 test("matchBehaviors returns non-empty B-id lists for every scenario", () => {
   for (const scenario of scenarios) {
     const ids = matchBehaviors(scenario, inventory);

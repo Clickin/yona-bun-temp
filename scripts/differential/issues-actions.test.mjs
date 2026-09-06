@@ -198,6 +198,59 @@ test("issue label JSON normalizer ignores only the optional false category flag"
   assert.equal(different.entry.violations.length, 1);
 });
 
+test("issue label CRUD keeps create response IDs when the Yoram list cache is stale", async () => {
+  const state = {};
+  const entry = { violations: [], errors: [] };
+  await ACTION_DEFINITIONS["create-issue-label"].handler({
+    step: { actor: "admin", action: "create-issue-label", params: { owner: "admin", project: "sample" } },
+    resolved: { labelName: "ignored", categoryName: "ignored" },
+    suffix: "stale-cache",
+    state,
+    entry,
+    helpers: {
+      async requestBoth() {
+        return {
+          legacyResult: {
+            status: 201,
+            json: { id: 17, categoryId: 18, name: "parity-label-stale-cache" },
+          },
+          yoramResult: {
+            status: 201,
+            json: { id: 27, categoryId: 28, name: "parity-label-stale-cache" },
+          },
+        };
+      },
+    },
+  });
+
+  let listCall = 0;
+  await ACTION_DEFINITIONS["issue-label-ids"].handler({
+    step: { actor: "admin", action: "issue-label-ids", params: { owner: "admin", project: "sample" } },
+    suffix: "stale-cache",
+    state,
+    entry,
+    helpers: {
+      async requestBoth() {
+        listCall += 1;
+        return listCall === 1
+          ? {
+              legacyResult: { status: 200, json: [{ id: 17, name: "parity-label-stale-cache" }] },
+              yoramResult: { status: 200, json: [{ id: 2, name: "parity" }] },
+            }
+          : {
+              legacyResult: { status: 200, json: [{ id: 18, name: "parity-cat-stale-cache" }] },
+              yoramResult: { status: 200, json: [{ id: 3, name: "parity-cat-stale-cache" }] },
+            };
+      },
+    },
+  });
+
+  assert.deepEqual(
+    { labelIdLegacy: state.labelIdLegacy, labelIdYoram: state.labelIdYoram, categoryIdLegacy: state.categoryIdLegacy, categoryIdYoram: state.categoryIdYoram },
+    { labelIdLegacy: 17, labelIdYoram: 27, categoryIdLegacy: 18, categoryIdYoram: 28 },
+  );
+});
+
 test("matchBehaviors returns a non-empty B-id list for every issues scenario", () => {
   for (const scenario of issuesScenarios) {
     const ids = matchBehaviors(scenario, inventory);

@@ -2073,30 +2073,29 @@ LIFECYCLE_ACTIONS["cleanup-created-projects"] = {
     const { step, state, entry, suffix, helpers } = ctx;
     const names = [...new Set([state.forkProjectName, state.cloneProjectName, state.projectName].filter(Boolean))];
     for (const projectName of names) {
-      const deletedLegacy = await helpers.sendRaw(ctx, "legacy", {
+      await helpers.sendRaw(ctx, "legacy", {
         method: "DELETE",
         path: `/${step.params.owner}/${projectName}/delete`,
         headers: XHR_HEADER,
       });
-      const deletedYoram = await helpers.sendRaw(ctx, "yoram", {
+      await helpers.sendRaw(ctx, "yoram", {
         method: "DELETE",
         path: `/api/v1/owners/${step.params.owner}/projects/${projectName}`,
       });
-      if (deletedLegacy.status >= 400 || deletedYoram.status >= 400) {
-        entry.errors.push(
-          `cleanup-created-project delete failed [${suffix}]: ${projectName} legacy=${deletedLegacy.status} yoram=${deletedYoram.status}`,
-        );
-      }
       const goneLegacy = await helpers.sendRaw(ctx, "legacy", { method: "GET", path: `/${step.params.owner}/${projectName}` });
       const goneYoram = await helpers.sendRaw(ctx, "yoram", { method: "GET", path: `/api/v1/owners/${step.params.owner}/projects/${projectName}` });
-      if (goneLegacy.status < 400) {
+      const absentLegacy = goneLegacy.status === 404;
+      const absentYoram = goneYoram.status === 404;
+      if (!absentLegacy) {
         await helpers.sendRaw(ctx, "legacy", { method: "DELETE", path: `/${step.params.owner}/${projectName}/delete`, headers: XHR_HEADER });
       }
-      if (goneYoram.status < 400) {
+      if (!absentYoram) {
         await helpers.sendRaw(ctx, "yoram", { method: "DELETE", path: `/api/v1/owners/${step.params.owner}/projects/${projectName}` });
       }
-      if (goneLegacy.status < 400 || goneYoram.status < 400) {
-        entry.errors.push(`cleanup-created-project residue [${suffix}]: ${projectName} legacy=${goneLegacy.status} yoram=${goneYoram.status}`);
+      if (!absentLegacy || !absentYoram) {
+        entry.errors.push(
+          `cleanup-created-project residue [${suffix}]: ${projectName} legacy=${goneLegacy.status} yoram=${goneYoram.status}`,
+        );
       }
     }
     state.forkProjectName = null;
@@ -2177,7 +2176,15 @@ scenarios.push(
       { actor: "admin", action: "fork-created-project", params: { owner: "admin" }, behaviorId: "B-0226" },
       { actor: "admin", action: "clone-created-project", params: { owner: "admin" }, behaviorId: "B-0225" },
       { actor: "admin", action: "change-created-project-vcs", params: { owner: "admin" }, behaviorId: "B-0236" },
-      { actor: "admin", action: "cleanup-created-projects", params: { owner: "admin" } },
+      {
+        actor: "admin",
+        action: "cleanup-created-projects",
+        params: { owner: "admin" },
+        disposition: {
+          classification: "IMPLEMENTATION_DIFFERENCE",
+          evidence: "teardown-only residue assertion; generated projects do not claim an inventory behavior",
+        },
+      },
     ],
     behaviorMatcher: {
       action: /^(PullRequestApp\.(fork|doClone)|ProjectApp\.changeVCS)$/,

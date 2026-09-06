@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
-import type { CSSProperties } from "react";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import {
@@ -14,7 +13,6 @@ import {
 } from "../../../api/pull-requests";
 import { apiQueryKeys } from "../../../api/query-keys";
 import type { ProjectContainer } from "../../../api/types";
-import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
@@ -295,7 +293,7 @@ function ProjectPullRequestsBody({
       <div className="project-page-wrap" data-owner="project-pullrequests-shell">
         <div className="row-fluid cb">
           <div
-            className={`left-menu search-wrap hide-in-mobile${leftMenuHiddenByTwoColumnMode ? " is-menu-hidden" : ""}`.trim()}
+            className={`left-menu span2 search-wrap hide-in-mobile${leftMenuHiddenByTwoColumnMode ? " is-menu-hidden" : ""}`.trim()}
             data-owner="project-pullrequests-search-column"
           >
             <form
@@ -315,6 +313,7 @@ function ProjectPullRequestsBody({
                     name="filter"
                     data-owner="project-pullrequests-search-input"
                     type="text"
+                    className="textbox full"
                     defaultValue={search.filter}
                     onChange={(event) => setFilterValue(event.currentTarget.value)}
                   />
@@ -332,15 +331,11 @@ function ProjectPullRequestsBody({
                   <dl className="issue-option">
                     <dt>{t("pullRequest.sender")}</dt>
                     <dd>
-                      <select
-                        key={`contributor:${search.contributorId || ""}`}
-                        id="contributors"
-                        name="contributorId"
-                        data-format="user"
-                        data-owner="project-pullrequests-contributors-select"
-                        defaultValue={search.contributorId ? String(search.contributorId) : ""}
-                        onChange={(event) => {
-                          const nextContributorId = event.currentTarget.value;
+                      <ProjectPullRequestContributorSelect
+                        contributors={pullRequests.contributors}
+                        currentUserId={pullRequests.currentUserId}
+                        value={contributorIdValue}
+                        onChange={(nextContributorId) => {
                           setContributorIdValue(nextContributorId);
                           navigatePullRequestSearch({
                             action: searchAction,
@@ -348,21 +343,7 @@ function ProjectPullRequestsBody({
                             filter: filterValue,
                           });
                         }}
-                      >
-                        <option value="">{t("common.order.all")}</option>
-                        {pullRequests.contributors.some(
-                          (contributor) => contributor.userId === pullRequests.currentUserId,
-                        ) ? (
-                          <option value={pullRequests.currentUserId}>
-                            {t("pullRequest.sentByMe")}
-                          </option>
-                        ) : null}
-                        {pullRequests.contributors.map((contributor) => (
-                          <option value={contributor.userId} key={contributor.userId}>
-                            {contributor.userLabel}
-                          </option>
-                        ))}
-                      </select>
+                      />
                     </dd>
                   </dl>
                 </div>
@@ -406,7 +387,7 @@ function ProjectPullRequestsBody({
                   {...LEGACY_LIST_LINK_PROPS}
                 >
                   {t("pullRequest.state.open")}
-                  <span className="num-badge pr-list-badge">{pullRequests.openCount}</span>
+                  <span className="num-badge">{pullRequests.openCount}</span>
                 </Link>
               </li>
               <li className={requestType === "closed" ? "active" : ""}>
@@ -417,7 +398,7 @@ function ProjectPullRequestsBody({
                   {...LEGACY_LIST_LINK_PROPS}
                 >
                   {t("pullRequest.state.closed")}
-                  <span className="num-badge pr-list-badge">{pullRequests.closedCount}</span>
+                  <span className="num-badge">{pullRequests.closedCount}</span>
                 </Link>
               </li>
               {isForked ? (
@@ -429,7 +410,7 @@ function ProjectPullRequestsBody({
                     {...LEGACY_LIST_LINK_PROPS}
                   >
                     {t("pullRequest.sent")}
-                    <span className="num-badge pr-list-badge">
+                    <span className="num-badge">
                       {`${pullRequests.acceptedCount} / ${pullRequests.sentCount}`}
                     </span>
                   </Link>
@@ -449,7 +430,11 @@ function ProjectPullRequestsBody({
                 />
               </li>
             </ul>
-            <div data-owner="project-pullrequests-content">
+            <div
+              className="tab-content"
+              style={{ clear: "both", paddingTop: "15px" }}
+              data-owner="project-pullrequests-content"
+            >
               <div
                 id="list"
                 className="row-fluid tab-pane active"
@@ -501,6 +486,130 @@ function ProjectPullRequestsLoadingShell() {
           <div className="span10 span-hard-wrap"></div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function ProjectPullRequestContributorSelect({
+  contributors,
+  currentUserId,
+  value,
+  onChange,
+}: {
+  contributors: PullRequestListResponse["contributors"];
+  currentUserId?: number;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const { t } = useLegacyMessages();
+  const [open, setOpen] = useState(false);
+  const [term, setTerm] = useState("");
+  const options = [
+    { label: t("common.order.all"), value: "" },
+    ...(contributors.some((contributor) => contributor.userId === currentUserId)
+      ? [{ label: t("pullRequest.sentByMe"), value: String(currentUserId) }]
+      : []),
+    ...contributors.map((contributor) => ({
+      label: contributor.userLabel,
+      value: String(contributor.userId),
+    })),
+  ];
+  const selectedLabel =
+    options.find((option) => option.value === value)?.label ?? options[0]?.label ?? "";
+  const visibleOptions = options.filter(
+    (option) => !term.trim() || option.label.toLowerCase().includes(term.trim().toLowerCase()),
+  );
+  const selectOption = (nextValue: string) => {
+    onChange(nextValue);
+    setOpen(false);
+    setTerm("");
+  };
+
+  return (
+    <div
+      id="s2id_contributors"
+      className={`select2-container fullsize${open ? " select2-container-active select2-dropdown-open" : ""}`}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          setOpen(false);
+          setTerm("");
+        }
+      }}
+    >
+      <button
+        type="button"
+        className="select2-choice"
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        onClick={() => setOpen((current) => !current)}
+      >
+        <span className="select2-chosen">{selectedLabel}</span>
+        <abbr
+          className="select2-search-choice-close"
+          aria-hidden="true"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onChange("");
+            setOpen(false);
+            setTerm("");
+          }}
+        ></abbr>
+        <span className="select2-arrow" aria-hidden="true">
+          <b></b>
+        </span>
+      </button>
+      <input className="select2-focusser select2-offscreen" type="text" />
+      <div
+        className={`select2-drop select2-with-searchbox${open ? " select2-drop-active" : " select2-display-none"}`}
+      >
+        <div className="select2-search">
+          <input
+            className="select2-input"
+            type="text"
+            autoComplete="off"
+            value={term}
+            aria-label={t("pullRequest.sender")}
+            onChange={(event) => setTerm(event.currentTarget.value)}
+          />
+        </div>
+        <ul className="select2-results" role="listbox">
+          {visibleOptions.map((option) => (
+            <li
+              key={`${option.value}:${option.label}`}
+              className="select2-result-selectable"
+              role="option"
+              aria-selected={option.value === value}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  selectOption(option.value);
+                }
+              }}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => selectOption(option.value)}
+            >
+              <div className="select2-result-label">{option.label}</div>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <select
+        id="contributors"
+        name="contributorId"
+        data-format="user"
+        data-owner="project-pullrequests-contributors-select"
+        className="select2-offscreen"
+        tabIndex={-1}
+        value={value}
+        onChange={(event) => onChange(event.currentTarget.value)}
+      >
+        {options.map((option) => (
+          <option value={option.value} key={`${option.value}:${option.label}`}>
+            {option.label}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }
@@ -677,7 +786,7 @@ function ProjectPullRequestPagination({
   search: ProjectPullRequestsSearch;
 }) {
   const pages = totalPages(pullRequests);
-  if (pages <= 1) {
+  if (pages <= 0) {
     return <div id="pagination"></div>;
   }
   return (
@@ -811,7 +920,7 @@ function ProjectPullRequestRow({
             <span className="infos-item">{t("issue.noAuthor")}</span>
           )}
           <span className="infos-item" title={pullRequest.createdLabel}>
-            {pullRequest.createdLabel}
+            {legacyPullRequestDateLabel(pullRequest.createdLabel)}
           </span>
           {pullRequest.commentThreadCount > 0 ? (
             <div className="infos-item" data-owner="project-pullrequests-review-progress">
@@ -1058,6 +1167,15 @@ function percentOf(count: number, total: number) {
 
 function totalPages(pullRequests: PullRequestListResponse) {
   return Math.ceil(pullRequests.totalCount / Math.max(pullRequests.pageSize, 1));
+}
+
+function legacyPullRequestDateLabel(value: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})(?:$|[T\s])/u.exec(value.trim());
+  if (!match) {
+    return value;
+  }
+  const [, year, month, day] = match;
+  return year === String(new Date().getFullYear()) ? `${month}-${day}` : value;
 }
 
 function splitHeaderWordsInBrackets(title: string) {

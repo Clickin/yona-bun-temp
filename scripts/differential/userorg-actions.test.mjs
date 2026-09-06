@@ -8,8 +8,15 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import { ACTION_DEFINITIONS as REGISTRY } from "./scenarios/index.mjs";
-import { scenarios, actionDefinitions } from "./scenarios/userorg.mjs";
+import {
+  SITE_ADMIN_BODY_SELECTORS,
+  SITE_ADMIN_LEGACY_BODY_SELECTOR,
+  actionDefinitions,
+  scenarios,
+} from "./scenarios/userorg.mjs";
 import { validateScenarios, matchBehaviors, buildCoverage } from "./dsl.mjs";
+import { domVisibleLoss } from "./diff.mjs";
+import { classifyViolation } from "./report.mjs";
 
 // Standalone merge: registry keys + this module's definitions.
 const ACTION_DEFINITIONS = { ...REGISTRY, ...actionDefinitions };
@@ -306,6 +313,55 @@ test("no-avatar site screen uses parsed API comparison without DOM rendering", a
   assert.equal(calls[0].yoram.path, "/sites/noAvatarUsers");
   assert.equal(calls[0].route, "/sites/noAvatarUsers");
   assert.equal(typeof calls[0].normalize, "function");
+});
+
+test("site-admin DOM probes exclude the shared shell and target each route body owner", async () => {
+  const calls = [];
+  const ctx = {
+    step: { actor: "admin", action: "view-site-screen", params: { screen: "userList" } },
+    resolved: {},
+    options: { legacyUrl: "http://legacy.test" },
+    yoramBaseUrl: "http://yoram.test",
+    helpers: {
+      async requestBoth() {
+        return { legacyResult: { status: 200 }, yoramResult: { status: 200 } };
+      },
+      async renderDomTarget(_ctx, target) {
+        calls.push(target);
+      },
+    },
+  };
+  for (const screen of Object.keys(SITE_ADMIN_BODY_SELECTORS)) {
+    ctx.step.params.screen = screen;
+    await ACTION_DEFINITIONS["view-site-screen"].handler(ctx);
+  }
+  assert.equal(calls.length, Object.keys(SITE_ADMIN_BODY_SELECTORS).length);
+  for (const [index, [screen, yoramSelector]] of Object.entries(SITE_ADMIN_BODY_SELECTORS).entries()) {
+    assert.deepEqual(calls[index], {
+      legacy: `http://legacy.test/sites/${screen}`,
+      yoram: `http://yoram.test/sites/${screen}`,
+      legacySelector: SITE_ADMIN_LEGACY_BODY_SELECTOR,
+      yoramSelector,
+      spa: true,
+    });
+  }
+});
+
+test("site-admin route-body control loss remains blocking even with shell-only drift", () => {
+  const detail = {
+    actual: {
+      firstDiffs: [
+        { side: "legacy-only", expected: "button.ybtn.ybtn-danger:삭제" },
+        { side: "yoram-only", expected: "<absent>", actual: "div#react-root:" },
+      ],
+    },
+  };
+  assert.equal(domVisibleLoss(detail), true);
+  assert.equal(
+    classifyViolation("dom", "/sites/userList", detail).classification,
+    "UNVERIFIED",
+    "a missing route-body control must not be hidden by the SPA-shell allow rule",
+  );
 });
 
 test("site export status probe opts out of streaming body reads", () => {
