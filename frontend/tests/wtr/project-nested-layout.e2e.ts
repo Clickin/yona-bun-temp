@@ -467,6 +467,7 @@ test("project issue detail to edit form keeps the legacy project shell DOM nodes
     dispatchEvent(new PopStateEvent("popstate"));
   });
   await expect(page).toHaveURL(/\/admin\/sample\/issue\/11\/editform(?:\?|$)/);
+  await expect(page.locator("#issue-form")).toHaveCount(1);
   await expect(page.locator("#issue-form")).toBeVisible();
   await expect(page.locator("#editor-body-body")).toBeVisible();
   await expect(page.locator("[data-owner=global-gnb-outer]")).toHaveCount(1);
@@ -552,6 +553,7 @@ test("project milestone detail to edit form keeps the legacy project shell DOM n
 
   await page.locator('.actrow a[href$="/milestone/5/editform"]').click();
   await expect(page).toHaveURL(/\/admin\/sample\/milestone\/5\/editform(?:\?|$)/);
+  await expect(page.locator("#milestone-form")).toHaveCount(1);
   await expect(page.locator("#milestone-form")).toBeVisible();
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Milestone");
   await expect(page.locator("[data-owner=global-gnb-outer]")).toHaveCount(1);
@@ -881,6 +883,7 @@ test("project pull requests to fork owner keeps the legacy project shell DOM nod
     dispatchEvent(new PopStateEvent("popstate"));
   });
   await expect(page).toHaveURL(/\/admin\/sample\/newFork(?:\?|$)/);
+  await expect(page.locator("#project-owner")).toHaveCount(1);
   await expect(page.locator("#project-owner")).toHaveValue("admin");
   await expect(page.locator(".project-menu-gruop > li.active a")).toHaveAttribute(
     "href",
@@ -936,6 +939,7 @@ test("project pull requests to pull request overview and missing detail keep the
     history.pushState({}, "", location.pathname.replace(/\/pullRequest\/9$/, "/pullRequest/404"));
     dispatchEvent(new PopStateEvent("popstate"));
   });
+  await expect(page.locator(".project-page-wrap > .error-wrap p")).toHaveCount(1);
   await expect(page.locator(".project-page-wrap > .error-wrap p")).toHaveText("Page not found");
   await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("Pull request");
   await expectProjectShellNodesToPersist(page);
@@ -958,6 +962,7 @@ test("project pull request overview to edit form keeps the legacy project shell 
     dispatchEvent(new PopStateEvent("popstate"));
   });
   await expect(page).toHaveURL(/\/admin\/sample\/pullRequest\/9\/editform(?:\?|$)/);
+  await expect(page.locator("form.nm")).toHaveCount(1);
   await expect(page.locator("form.nm")).toBeVisible();
   await expect(page.locator("#title")).toHaveValue("Initial title");
   await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("Pull request");
@@ -1021,6 +1026,7 @@ test("project pull request default changes to a specific commit keeps the legacy
   await expect(page).toHaveURL(
     /\/admin\/sample\/pullRequest\/9\/changes\/abcdef1234567890(?:\?|$)/,
   );
+  await expect(page.locator(".codediff-wrap")).toHaveCount(1);
   await expect(page.locator(".codediff-wrap")).toBeVisible();
   await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("Pull request");
   await expect(page.locator("[data-owner=global-gnb-outer]")).toHaveCount(1);

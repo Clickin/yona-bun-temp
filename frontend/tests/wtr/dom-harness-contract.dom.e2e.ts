@@ -1,7 +1,7 @@
 // dom lane harness contracts (plan Verification 9/11/12/14): happyDOM origin,
 // fetch teardown, structural visibility, goto isolation. This spec itself is
-// dom-lane-only — it exercises the harness, not app routes.
-import { isStructurallyVisible } from "../compat-core";
+// DOM-lane-only — it exercises the harness, not app routes.
+import { isStructurallyVisible } from "../compat-core.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const TEST_ORIGIN = "http://yoram.local";

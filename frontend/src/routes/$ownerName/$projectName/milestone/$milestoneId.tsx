@@ -4,7 +4,6 @@ import type { CSSProperties, HTMLAttributes } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LegacyMarkdown } from "../../../../components/legacy-markdown";
 import defaultAvatarUrl from "../../../../assets/legacy/default-avatar-64.png";
-import { LastOutletTransition } from "../../../-last-outlet-transition";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { currentSessionQueryOptions } from "../../../../api/session";
 import type {
@@ -60,7 +59,7 @@ function restApiErrorStatus(error: unknown) {
 }
 
 function ProjectMilestoneDetailRoute() {
-  return <LastOutletTransition routeId={Route.id} />;
+  return <Outlet />;
 }
 
 export function ProjectMilestoneDetailIndexScreen({

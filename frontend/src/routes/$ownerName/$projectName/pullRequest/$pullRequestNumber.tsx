@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import { Fragment, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
 import { LegacyMarkdown } from "../../../../components/legacy-markdown";
 import legacySpriteUrl from "../../../../assets/legacy/sprite.png";
@@ -25,7 +25,6 @@ import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { readSessionBootstrap } from "../../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
-import { LastOutletTransition } from "../../../-last-outlet-transition";
 
 export const Route = createFileRoute("/$ownerName/$projectName/pullRequest/$pullRequestNumber")({
   component: ProjectPullRequestOverviewRoute,
@@ -44,7 +43,7 @@ function insulateModalButtonClick(event: MouseEvent<HTMLButtonElement>) {
 }
 
 function ProjectPullRequestOverviewRoute() {
-  return <LastOutletTransition routeId={Route.id} />;
+  return <Outlet />;
 }
 
 export function ProjectPullRequestOverviewIndexScreen({
@@ -66,6 +65,7 @@ export function ProjectPullRequestOverviewIndexScreen({
     // Legacy git.View polls the merge-check state endpoint while it reports
     // an in-flight merge check. Stop once the detail becomes settled.
     refetchInterval: (query) => (query.state.data?.isMerging ? 10_000 : false),
+    refetchIntervalInBackground: true,
     retry(failureCount, error) {
       const status = restApiErrorStatus(error);
       return status !== 401 && status !== 403 && status !== 404 && failureCount < 3;

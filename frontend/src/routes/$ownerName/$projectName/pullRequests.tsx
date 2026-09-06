@@ -430,11 +430,7 @@ function ProjectPullRequestsBody({
                 />
               </li>
             </ul>
-            <div
-              className="tab-content"
-              style={{ clear: "both", paddingTop: "15px" }}
-              data-owner="project-pullrequests-content"
-            >
+            <div className="tab-content" data-owner="project-pullrequests-content">
               <div
                 id="list"
                 className="row-fluid tab-pane active"

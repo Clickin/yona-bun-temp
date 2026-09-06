@@ -1,6 +1,6 @@
 /* oxlint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions, jsx-a11y/no-aria-hidden-on-focusable, jsx-a11y/prefer-tag-over-role -- legacy issue detail Bootstrap modal, Select2 generated DOM, and index-comment DOM parity keep their visible element composition while React owns behavior. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouter } from "@tanstack/react-router";
 import {
   Fragment,
   isValidElement,
@@ -63,7 +63,6 @@ import {
   watchIssue,
   type RestIssueDetailResponse,
 } from "../../../../auth-workspace-client";
-import { LastOutletTransition } from "../../../-last-outlet-transition";
 import { SiteLayoutShell } from "../../../-home-route-screen";
 import { ProjectNestedShellContext } from "../../$projectName";
 import { useRootToast } from "../../../__root";
@@ -300,7 +299,7 @@ export const Route = createFileRoute("/$ownerName/$projectName/issue/$issueNumbe
 });
 
 function ProjectIssueDetailRoute() {
-  return <LastOutletTransition routeId={Route.id} />;
+  return <Outlet />;
 }
 
 export function ProjectIssueDetailIndexScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {

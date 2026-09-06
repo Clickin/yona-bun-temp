@@ -2,12 +2,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DiffLineView, type ParsedDiffLine } from "../../../../../components/diff-line-view";
 import { UploadForm } from "../../../../../components/file-uploader";
 import { FileDiffErrorRow } from "../../../../../components/file-diff-error-row";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import type { MouseEvent } from "react";
 import { useState } from "react";
 import { LegacyMarkdown } from "../../../../../components/legacy-markdown";
 import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
-import { LastOutletTransition } from "../../../../-last-outlet-transition";
 import {
   closePullRequestThreadRest,
   openPullRequestThreadRest,
@@ -100,7 +99,7 @@ export const Route = createFileRoute(
 });
 
 function ProjectPullRequestChangesRoute() {
-  return <LastOutletTransition routeId={Route.id} />;
+  return <Outlet />;
 }
 
 export function ProjectPullRequestChangesPage({

@@ -1,7 +1,5 @@
 {
   "chrome": [
-    "tests/wtr/_diag-highlight.e2e.ts",
-    "tests/wtr/_diag-sharer.e2e.ts",
     "tests/wtr/auth-aliases.e2e.ts",
     "tests/wtr/authenticated-home-empty-notifications.e2e.ts",
     "tests/wtr/direct-issue-form.e2e.ts",
@@ -665,7 +663,7 @@
     "tests/wtr/wtr-smoke.e2e.ts"
   ],
   "dom": [
-    "tests/wtr/dom-harness-contract.e2e.ts",
+    "tests/wtr/dom-harness-contract.dom.e2e.ts",
     "tests/wtr/forgot-password-alias.e2e.ts",
     "tests/wtr/login-alias.e2e.ts",
     "tests/wtr/ownership-alert-danger-bridge.e2e.ts",

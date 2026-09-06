@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
+import { Link, Outlet, createFileRoute, useRouter } from "@tanstack/react-router";
 import { use, useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import {
   forkProjectRest,
@@ -12,7 +12,6 @@ import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
-import { LastOutletTransition } from "../../-last-outlet-transition";
 import { DefaultSearchErrorBody } from "../../-search-screen";
 import { ProjectNestedShellContext } from "../$projectName";
 
@@ -41,7 +40,7 @@ export const Route = createFileRoute("/$ownerName/$projectName/newFork")({
 });
 
 function ProjectForkRoute() {
-  return <LastOutletTransition routeId={Route.id} />;
+  return <Outlet />;
 }
 
 export function ProjectForkRouteContent({

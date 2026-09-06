@@ -203,14 +203,6 @@ test("project closed pull request empty list matches legacy git/list.scala.html 
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(0);
   await expect(page.locator(".post-list-wrap #pagination")).toHaveCount(0);
 
-  {
-    const nav = await canonicalizeScreenRoots(page);
-    const i = nav.indexOf("gnb-usermenu");
-    const j = nav.indexOf("</header>", i);
-    for (let k = 0; i + k < j; k += 1000) {
-      console.log("PROBE-GU-" + k, JSON.stringify(nav.slice(i + k, Math.min(i + k + 1000, j))));
-    }
-  }
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, expectedClosedPullRequestsEmpty(basePath)),
   );
@@ -755,7 +747,10 @@ test("project pull request list keeps legacy filters, wrappers, and compact date
   await page.goto(`${basePath}/admin/sample/pullRequests?filter=iso`);
   await expect(page.locator(".left-menu.span2.search-wrap.hide-in-mobile")).toHaveCount(1);
   await expect(page.locator('#search input[name="filter"].textbox.full')).toHaveCount(1);
-  await expect(page.locator(".tab-content > #list")).toHaveCount(1);
+  const content = page.locator('[data-owner="project-pullrequests-content"]');
+  await expect(content.locator(":scope > #list")).toHaveCount(1);
+  await expect(content).toHaveCSS("clear", "both");
+  await expect(content).toHaveCSS("padding-top", "15px");
   await expect(page.locator("#contributors.select2-offscreen")).toHaveCount(1);
   await expect(page.locator("#s2id_contributors > button.select2-choice")).toHaveCount(1);
   await expect(

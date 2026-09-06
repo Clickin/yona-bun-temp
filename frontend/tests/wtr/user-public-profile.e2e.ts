@@ -304,14 +304,22 @@ test("public user profile show-subtasks popover is React-owned", async ({ page }
   const popover = showSubtasks.locator(".popover.top");
 
   await expect(popover).toHaveCount(0);
-  await showSubtasks.hover();
-  await page.waitForTimeout(50);
-  await expect(popover).toHaveCount(0);
+  expect(
+    await showSubtasks.evaluate(async (element) => {
+      element.dispatchEvent(new MouseEvent("mouseover", { bubbles: true }));
+      await new Promise((resolve) => window.setTimeout(resolve, 50));
+      return element.querySelector(".popover.top") === null;
+    }),
+  ).toBe(true);
   await expect(popover).toBeVisible();
   await expect(popover.locator(".popover-title")).toHaveText("Show subtask");
   await expect(popover.locator(".popover-content")).toHaveText("Show subtask always");
 
-  await page.mouse.move(0, 0);
+  await showSubtasks.evaluate((element) => {
+    element.dispatchEvent(
+      new MouseEvent("mouseout", { bubbles: true, relatedTarget: document.body }),
+    );
+  });
   await expect(popover).toHaveCount(0);
 
   await checkbox.focus();
@@ -345,9 +353,13 @@ test("public user profile two-column popover and storage are React-owned", async
   await expect(checkbox).toBeChecked();
   await expect.poll(() => readTwoColumnStorage(page)).toBe("true");
 
-  await twoColumnMode.hover();
-  await page.waitForTimeout(50);
-  await expect(popover).toHaveCount(0);
+  expect(
+    await twoColumnMode.evaluate(async (element) => {
+      element.dispatchEvent(new MouseEvent("mouseover", { bubbles: true }));
+      await new Promise((resolve) => window.setTimeout(resolve, 50));
+      return element.querySelector(".popover.top") === null;
+    }),
+  ).toBe(true);
   await expect(popover).toBeVisible();
   await expect(popover.locator(".popover-title")).toHaveText("Two Column Mode");
   await expect(popover.locator(".popover-content")).toHaveText(
@@ -358,7 +370,11 @@ test("public user profile two-column popover and storage are React-owned", async
     popoverTopPlacement: true,
   });
 
-  await page.mouse.move(0, 0);
+  await twoColumnMode.evaluate((element) => {
+    element.dispatchEvent(
+      new MouseEvent("mouseout", { bubbles: true, relatedTarget: document.body }),
+    );
+  });
   await expect(popover).toHaveCount(0);
 
   await checkbox.focus();
