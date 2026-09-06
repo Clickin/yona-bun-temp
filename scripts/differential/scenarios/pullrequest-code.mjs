@@ -234,7 +234,7 @@ export const scenarios = [
   // an api violation and later steps degrade gracefully into entry.errors.
   {
     id: "R13-pr-lifecycle-mutation",
-    title: "create/edit/comment/close/open/accept a pull request, then close it",
+    title: "create/edit/comment/close/open/accept a pull request, then close if still open",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
       { actor: "admin", action: "create-pullrequest", params: { owner: "admin", project: "sample", fromBranch: "feature/ui", toBranch: "main" } },
@@ -243,6 +243,8 @@ export const scenarios = [
       { actor: "admin", action: "close-pullrequest", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "open-pullrequest", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "accept-pullrequest", params: { owner: "admin", project: "sample" } },
+      // Accepting merges the pull request on both sides; closing a merged
+      // request is not a valid Yoram transition, so the handler no-ops.
       { actor: "admin", action: "close-pullrequest", params: { owner: "admin", project: "sample" } },
     ],
     behaviorMatcher: { action: /^PullRequestApp\.(newPullRequest|editPullRequest|newComment|close|open|accept)$/, route: /pullRequest/ },
@@ -290,7 +292,9 @@ export const scenarios = [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
       // The parity seed already owns an open main -> feature/ui PR. Use the
       // opposite seeded branch direction so Yoram does not reject this
-      // independent review-point probe as a duplicate.
+      // independent review-point probe as a duplicate. R13 may merge the
+      // feature commit into main first; an empty settled commit list is still
+      // a valid detail state for this review-point probe.
       { actor: "admin", action: "create-pullrequest", params: { owner: "admin", project: "sample", fromBranch: "feature/ui", toBranch: "main" } },
       { actor: "admin", action: "review-pullrequest", params: { owner: "admin", project: "sample", prId: 1 } },
       { actor: "admin", action: "unreview-pullrequest", params: { owner: "admin", project: "sample", prId: 1 } },
@@ -580,6 +584,26 @@ function firstCommitCommentId(json) {
   return null;
 }
 
+export function commitCommentTargetFromPage(body, marker) {
+  const text = String(body ?? "");
+  const expected = String(marker ?? "");
+  if (!expected) return null;
+  const commentBlocks = /<li\b[^>]*\bid=["']comment-(\d+)["'][^>]*>[\s\S]*?<\/li>/gu;
+  for (const match of text.matchAll(commentBlocks)) {
+    if (!match[0].includes(expected)) continue;
+    const deletePath = /data-request-uri=["']([^"']+\/comments\/(\d+)\/delete)["']/u.exec(match[0]);
+    return {
+      commentId: Number(match[1]),
+      commitId: deletePath?.[1]?.match(/\/commit\/([^/]+)\/comments/u)?.[1] ?? null,
+    };
+  }
+  return null;
+}
+
+export function commitCommentIdFromPage(body, marker) {
+  return commitCommentTargetFromPage(body, marker)?.commentId ?? null;
+}
+
 export function pullRequestNumberFromPayload(payload, expectedTitle = null) {
   if (!payload || typeof payload !== "object") return null;
   if (expectedTitle !== null && typeof payload.title === "string" && payload.title !== expectedTitle) return null;
@@ -802,10 +826,16 @@ function pullRequestStateMutation(name, yoramTail, legacyKnownFailure = null) {
     async handler(ctx) {
       const { step, state, helpers } = ctx;
       if (!requireCreatedPullRequest(ctx)) return;
+      if (name === "close" && state.pullRequestMerged) {
+        return;
+      }
       const legacyTranslation = translateLegacy(step, { ...step.params, prId: state.prNumberLegacy });
       const yoramTranslation = translateYoram(step, { ...step.params, prId: state.prNumberYoram });
       const legacyResult = await ctx.legacySession.request(legacyTranslation);
       const yoramResult = await ctx.yoramSession.request(yoramTranslation);
+      if (name === "accept" && legacyResult.status < 400 && yoramResult.status < 400) {
+        state.pullRequestMerged = true;
+      }
       if (
         legacyKnownFailure &&
         legacyResult.status === legacyKnownFailure.legacyStatus &&
@@ -936,13 +966,14 @@ const COMMIT_COMMENT_MUTATIONS = {
       if (!ensureOutcomeParity(ctx, legacyTranslation.path, legacyResult, yoramResult)) return;
       state.commitCommentIdLegacy =
         Number((/#comment-(\d+)/u.exec(legacyResult.location ?? "") ?? [])[1]) || null;
-      if (!state.commitCommentIdLegacy && legacyResult.status < 400) {
+      if (legacyResult.status < 400) {
         const commitPage = await ctx.legacySession.request({
           method: "GET",
           path: `/${step.params.owner}/${step.params.project}/commit/${step.params.commitId}`,
         });
-        state.commitCommentIdLegacy =
-          Number((/comments\/(\d+)\/delete/u.exec(commitPage.body ?? "") ?? [])[1]) || null;
+        const target = commitCommentTargetFromPage(commitPage.body, shared.body);
+        state.commitCommentIdLegacy = target?.commentId ?? null;
+        state.commitIdLegacy = target?.commitId ?? shared.commitId;
       }
       state.commitCommentIdYoram = firstCommitCommentId(yoramResult.json);
       if (!state.commitCommentIdLegacy || !state.commitCommentIdYoram) {
@@ -974,6 +1005,7 @@ const COMMIT_COMMENT_MUTATIONS = {
       }
       const legacyTranslation = translateLegacy(step, {
         ...step.params,
+        commitId: state.commitIdLegacy ?? step.params.commitId,
         commentId: state.commitCommentIdLegacy,
       });
       const yoramTranslation = translateYoram(step, {
@@ -984,6 +1016,7 @@ const COMMIT_COMMENT_MUTATIONS = {
       ensureOutcomeParity(ctx, legacyTranslation.path, legacyResult, yoramResult);
       state.commitCommentIdLegacy = null;
       state.commitCommentIdYoram = null;
+      state.commitIdLegacy = null;
     },
   },
 };

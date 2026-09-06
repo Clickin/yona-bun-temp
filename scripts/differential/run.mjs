@@ -36,6 +36,7 @@ import {
   writeReport,
 } from "./report.mjs";
 import { launchWtrBrowser } from "../wtr-browser.mjs";
+import { parityProjectSeed } from "../run-dev-backend-once.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const defaultOutputDir = path.join(repoRoot, ".agent/differential");
@@ -64,7 +65,7 @@ export const PARITY_PULL_REQUEST = Object.freeze({
 });
 export const PARITY_REVIEW = Object.freeze({
   contents: "Review the feature branch parity fixture.",
-  path: "parity-feature.txt",
+  path: "src/ui.rs",
 });
 
 export function registrationStatusIsUsable(status) {
@@ -669,6 +670,14 @@ async function bootYoram(port) {
   const seedModule = await import(pathToFileURL(path.join(repoRoot, "scripts/run-dev-backend-once.mjs")).href);
   seedModule.reconcileDefaultDevSiteAdmin(databasePath);
   seedModule.reconcileDefaultDevParitySeed(databasePath, yoramRuntimeDir);
+  for (const repo of [
+    path.join(yoramRuntimeDir, "data/repo/git/admin/sample.git"),
+    path.join(yoramRuntimeDir, "data/repo/git/alice/sample.git"),
+    path.join(yoramRuntimeDir, "repo/1.git"),
+    path.join(yoramRuntimeDir, "repo/3.git"),
+  ]) {
+    if (existsSync(repo)) ensureDiffableRepoBranches(repo);
+  }
   reconcileYoramPullRequestFixtures(databasePath);
 
   await writeYoramConfig(databaseUrl, dataRoot, false, port, true);
@@ -715,13 +724,14 @@ export const ROUTE_CONTENT_READY = (selector) => {
 // R16 creates a PR and immediately renders its detail page while the merge
 // check is still running. The warning is valid intermediate UI, but it is not
 // the settled state that the legacy request renders. Wait on React-owned
-// markers instead of adding a timing delay.
+// markers instead of adding a timing delay. A preceding lifecycle scenario can
+// merge the only feature commit before R16, so a settled pull request can
+// legitimately have an empty event list.
 export const PULL_REQUEST_DETAIL_SETTLED = () => {
   const root = document.querySelector('[data-owner="pull-request-detail-page"]');
   if (!root || root.querySelector('[aria-busy="true"], [data-wireframe]')) return false;
   if (root.querySelector("#state .alert-warnning")) return false;
-  const comments = root.querySelector("#comments");
-  return Boolean(comments?.querySelector("li.event") && comments.querySelector("li.commit-info"));
+  return Boolean(root.querySelector("#comments"));
 };
 
 export async function renderSkeleton(page, url, { spa = false, selector, ready } = {}) {
@@ -739,6 +749,11 @@ async function setCookiesFromHeader(page, baseUrl, header) {
     const eq = pair.indexOf("=");
     await page.setCookie({ name: pair.slice(0, eq), value: pair.slice(eq + 1), url: baseUrl });
   }
+}
+
+async function clearPageCookies(page) {
+  const cookies = await page.cookies();
+  if (cookies.length > 0) await page.deleteCookie(...cookies);
 }
 
 // --- sweep fixture alignment -------------------------------------------------
@@ -816,79 +831,140 @@ export async function alignParityLabelSeeds(session, base, labels) {
   return rows;
 }
 
-function gitRepoHasBranches(repoPath) {
-  const result = spawnSync("git", ["--git-dir", repoPath, "for-each-ref", "refs/heads"], { encoding: "utf8" });
-  return (result.stdout ?? "").trim().length > 0;
+export const PARITY_POST_COMMENT = "Batch 814 nested parity";
+
+const PARITY_PROJECT_PATH = "/api/v1/owners/admin/projects/sample";
+const PARITY_POST_PATH = `${PARITY_PROJECT_PATH}/posts/1`;
+
+function postingCommentText(comment) {
+  return String(comment?.contentsMarkdown ?? comment?.contents ?? "");
 }
 
-// Seed an orphan main + feature/ui pair so pull-request flows have a diffable
-// repository on each side; idempotent — only fires while refs/heads is empty.
-function seedRepoBranches(repoPath) {
-  const env = {
-    ...process.env,
-    GIT_AUTHOR_NAME: "parity",
-    GIT_AUTHOR_EMAIL: "parity@example.com",
-    GIT_COMMITTER_NAME: "parity",
-    GIT_COMMITTER_EMAIL: "parity@example.com",
-    GIT_AUTHOR_DATE: "2026-01-01T00:00:00Z",
-    GIT_COMMITTER_DATE: "2026-01-01T00:00:00Z",
-  };
-  const git = (args, input) => {
-    const result = spawnSync("git", ["--git-dir", repoPath, ...args], { encoding: "utf8", env, input });
-    if (result.status !== 0) throw new Error(`git ${args[0]} failed: ${result.stderr}`);
-    return (result.stdout ?? "").trim();
-  };
-  const blob = git(["hash-object", "-w", "--stdin"], "parity seed\n");
-  const tree = git(["mktree"], `100644 blob ${blob}\tREADME.md\n`);
-  const commit = git(["commit-tree", tree, "-m", "parity seed commit"]);
-  git(["update-ref", "refs/heads/main", commit]);
-  git(["update-ref", "refs/heads/feature/ui", commit]);
-  git(["symbolic-ref", "HEAD", "refs/heads/main"]);
+function hasParityPostingComment(post, authorLoginId = "admin") {
+  return (post?.comments ?? []).some(
+    (comment) =>
+      postingCommentText(comment) === PARITY_POST_COMMENT &&
+      (authorLoginId === undefined || comment?.authorLoginId === authorLoginId),
+  );
 }
 
-// Existing parity repositories may have been created by the old fallback
-// seed, where main and feature/ui point at one commit. Keep the fixture's
-// branch names but add one deterministic file to feature/ui so PR changes and
-// merge flows exercise a real diff instead of legacy's null merge path.
-function ensureDiffableRepoBranches(repoPath) {
-  if (!gitRepoHasBranches(repoPath)) {
-    seedRepoBranches(repoPath);
-    return;
+export async function alignParityBoardFixtures(yoramSession) {
+  const projectWatch = await yoramSession.request({
+    method: "POST",
+    path: `${PARITY_PROJECT_PATH}/watch`,
+  });
+  if (!projectWatch || projectWatch.status >= 400) {
+    throw new Error(`yoram project watch alignment failed: HTTP ${projectWatch?.status ?? "unknown"}`);
   }
-  const git = (args, input) => {
-    const result = spawnSync("git", ["--git-dir", repoPath, ...args], { encoding: "utf8", input });
-    if (result.status !== 0) throw new Error(`git ${args[0]} failed: ${result.stderr}`);
-    return (result.stdout ?? "").trim();
-  };
-  // Rebuild the feature commit with fixed identity/time even when an older
-  // sweep left a same-content commit with a different author. This gives both
-  // sides the same commit id, not merely the same branch name.
+
+  const post = await yoramSession.request({ method: "GET", path: PARITY_POST_PATH });
+  if (!post || post.status >= 400 || !post.json) {
+    throw new Error(`yoram posting fixture read failed: HTTP ${post?.status ?? "unknown"}`);
+  }
+  if (!hasParityPostingComment(post.json)) {
+    const parentComment = (post.json.comments ?? []).find(
+      (comment) => postingCommentText(comment) === "Board seed confirmed from the fork contributor side.",
+    );
+    const comment = await yoramSession.request({
+      method: "POST",
+      path: `${PARITY_POST_PATH}/comments`,
+      json: {
+        contentsMarkdown: PARITY_POST_COMMENT,
+        ...(Number(parentComment?.id) > 0 ? { parentCommentId: Number(parentComment.id) } : {}),
+      },
+    });
+    if (!comment || comment.status >= 400) {
+      throw new Error(`yoram posting comment alignment failed: HTTP ${comment?.status ?? "unknown"}`);
+    }
+  }
+
+  const projectReadback = await yoramSession.request({ method: "GET", path: PARITY_PROJECT_PATH });
+  if (
+    !projectReadback ||
+    projectReadback.status >= 400 ||
+    Number(projectReadback.json?.watchCount ?? projectReadback.json?.watch_count ?? 0) < 1
+  ) {
+    throw new Error(`yoram project watch readback failed: HTTP ${projectReadback?.status ?? "unknown"}`);
+  }
+  const postReadback = await yoramSession.request({ method: "GET", path: PARITY_POST_PATH });
+  if (
+    !postReadback ||
+    postReadback.status >= 400 ||
+    !postReadback.json ||
+    !hasParityPostingComment(postReadback.json)
+  ) {
+    throw new Error(`yoram posting comment readback failed: HTTP ${postReadback?.status ?? "unknown"}`);
+  }
+}
+
+const PARITY_REPOSITORY_SEED = parityProjectSeed.repositories.find(
+  (repository) => repository.owner === "admin" && repository.projectName === "sample",
+);
+
+export function ensureDiffableRepoBranches(repoPath) {
+  if (!PARITY_REPOSITORY_SEED?.branches?.length) {
+    throw new Error("admin/sample parity repository seed is missing");
+  }
   const env = {
     ...process.env,
-    GIT_AUTHOR_NAME: "parity",
+    GIT_AUTHOR_NAME: "Parity Seed",
     GIT_AUTHOR_EMAIL: "parity@example.com",
-    GIT_COMMITTER_NAME: "parity",
+    GIT_COMMITTER_NAME: "Parity Seed",
     GIT_COMMITTER_EMAIL: "parity@example.com",
     GIT_AUTHOR_DATE: "2026-01-01T00:00:00Z",
     GIT_COMMITTER_DATE: "2026-01-01T00:00:00Z",
   };
-  const stableGit = (args, input) => {
+  const git = (args, input) => {
     const result = spawnSync("git", ["--git-dir", repoPath, ...args], { encoding: "utf8", env, input });
     if (result.status !== 0) throw new Error(`git ${args[0]} failed: ${result.stderr}`);
     return (result.stdout ?? "").trim();
   };
-  const main = stableGit(["rev-parse", "refs/heads/main"]);
-  const entries = stableGit(["ls-tree", "refs/heads/main"]);
-  const blob = stableGit(["hash-object", "-w", "--stdin"], "parity feature branch\n");
-  const tree = stableGit(["mktree"], `${entries}\n100644 blob ${blob}\tparity-feature.txt\n`);
-  const commit = stableGit(["commit-tree", tree, "-p", main, "-m", "parity feature branch"]);
-  stableGit(["update-ref", "refs/heads/feature/ui", commit]);
+  const writeTree = (files) => {
+    const filesByName = new Map();
+    const directories = new Map();
+    for (const [filePath, contents] of Object.entries(files)) {
+      const [name, ...rest] = filePath.split("/");
+      if (rest.length === 0) {
+        filesByName.set(name, git(["hash-object", "-w", "--stdin"], contents));
+      } else {
+        const childFiles = directories.get(name) ?? {};
+        childFiles[rest.join("/")] = contents;
+        directories.set(name, childFiles);
+      }
+    }
+    const entries = [
+      ...[...filesByName.entries()].map(([name, blob]) => `100644 blob ${blob}\t${name}`),
+      ...[...directories.entries()].map(([name, childFiles]) => `040000 tree ${writeTree(childFiles)}\t${name}`),
+    ];
+    return git(["mktree"], `${entries.sort().join("\n")}\n`);
+  };
+  const mainSeed = PARITY_REPOSITORY_SEED.branches.find((branch) => branch.name === "main");
+  if (!mainSeed) throw new Error("admin/sample parity repository main seed is missing");
+  const branchCommits = new Map();
+  for (const branchSeed of PARITY_REPOSITORY_SEED.branches) {
+    const files = branchSeed.name === "main"
+      ? { ...mainSeed.files }
+      : { ...mainSeed.files, ...branchSeed.files };
+    const args = ["commit-tree", writeTree(files)];
+    const parent = branchCommits.get("main");
+    if (parent) args.push("-p", parent);
+    args.push("-m", branchSeed.message);
+    const commit = git(args);
+    branchCommits.set(branchSeed.name, commit);
+    git(["update-ref", `refs/heads/${branchSeed.name}`, commit]);
+  }
+  git(["symbolic-ref", "HEAD", "refs/heads/main"]);
+  for (const ref of git(["for-each-ref", "--format=%(refname)", "refs/heads", "refs/yobi"]).split("\n").filter(Boolean)) {
+    if (!branchCommits.has(ref.slice("refs/heads/".length))) git(["update-ref", "-d", ref]);
+  }
 }
 
 async function alignParityFixtures(options) {
   const repos = [
     path.join(repoRoot, ".agent/legacy-localhost/instances/parity/data/repo/git/admin/sample.git"),
     path.join(outputDir, "yoram/data/repo/git/admin/sample.git"),
+    path.join(outputDir, "yoram/data/repo/git/alice/sample.git"),
+    path.join(outputDir, "yoram/repo/1.git"),
     path.join(outputDir, "yoram/repo/3.git"),
   ];
   for (const repo of repos) {
@@ -950,6 +1026,21 @@ async function alignParityFixtures(options) {
     (await yoramSession.request({ method: "GET", path: "/admin/sample/issue/labels" })).body || "[]",
   );
   const yoramAlignedLabels = await alignParityLabelSeeds(yoramSession, "", yoramLabels);
+  // Keep the seeded issue's label associations aligned with the legacy
+  // fixture. MigrationApp.exportIssueLabelPairs reads issue_issue_label via
+  // issue detail; project-label alignment alone does not populate that join.
+  const yoramSeedLabelIds = yoramAlignedLabels
+    .filter((label) => PARITY_LABEL_SEEDS.some((seed) => parityLabelMatches(label, seed)))
+    .map((label) => String(label.id));
+  const yoramIssueLabels = await yoramSession.request({
+    method: "POST",
+    path: "/api/v1/owners/admin/projects/sample/issues/1/labels",
+    json: yoramSeedLabelIds,
+  });
+  if (!yoramIssueLabels || yoramIssueLabels.status >= 400) {
+    throw new Error(`yoram issue label association alignment failed: HTTP ${yoramIssueLabels?.status ?? "unknown"}`);
+  }
+  await alignParityBoardFixtures(yoramSession);
 
   // Provision the legacy parity comparison users (alice/bob/carol) on yoram
   // via REST signup so both sides' active-user sets match for the sweep
@@ -1951,8 +2042,17 @@ export const stepHelpers = {
   async renderDomTarget(ctx, domTarget) {
     const { step, suffix, entry, legacySession, yoramSession, options } = ctx;
     const observe = async () => {
-      await setCookiesFromHeader(ctx.legacyPage, options.legacyUrl, legacySession.cookies);
-      await setCookiesFromHeader(ctx.yoramPage, ctx.yoramBaseUrl, yoramSession.cookies);
+      const renderLegacySession = domTarget.legacySession ?? legacySession;
+      const renderYoramSession = domTarget.yoramSession ?? yoramSession;
+      if (domTarget.anonymous) {
+        // Anonymous page actions intentionally use fresh sessions. Clear the
+        // shared tabs first, otherwise cookies from an earlier authenticated
+        // scenario leak into the render even though the paired HTTP request
+        // was unauthenticated.
+        await Promise.all([clearPageCookies(ctx.legacyPage), clearPageCookies(ctx.yoramPage)]);
+      }
+      await setCookiesFromHeader(ctx.legacyPage, options.legacyUrl, renderLegacySession.cookies);
+      await setCookiesFromHeader(ctx.yoramPage, ctx.yoramBaseUrl, renderYoramSession.cookies);
       const legacySkeleton = await renderSkeleton(ctx.legacyPage, domTarget.legacy, {
         selector: domTarget.legacySelector ?? domTarget.selector,
       });

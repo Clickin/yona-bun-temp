@@ -325,13 +325,15 @@ backend-owned blocker.
 
 The focused P1 artifact records one remaining body-only difference for
 `/admin/sample/issue/labelsform`: both sides contain 75 skeleton entries and
-the complete `firstDiffs` pair is limited to the legacy `naver/yobi` copy versus
-the current `Yoram/Yoram` copy. The category-id probe is a separate scenario
-step and is not part of this body fingerprint.
+the saved payload's complete `firstDiffs` pair is limited to the legacy
+`naver/yobi` copy versus the current `Yoram/Yoram` copy. After comparator
+canonicalization, that identity-only pair is removed and the residual
+non-brand copy row remains the exact fingerprint. The category-id probe is a
+separate scenario step and is not part of this body fingerprint.
 
 The classifier accepts only the exact
 `P1-issue-labels` `view-issue-labels-form` state, route, skeleton counts, and
-full `firstDiffs` pair in
+full residual `firstDiffs` in
 `scripts/differential/report.mjs`. Its rationale cites the existing Yoram
 rebrand evidence in
 `docs/provenance/frontend-yoram-rebrand-2026-07-13.md:135-138` and
@@ -343,3 +345,126 @@ category API. The focused WTR contract is
 `scripts/differential/differential.test.mjs` proves the exact fingerprint is
 accepted while changed form, button, label, copy, count, and state near-misses
 remain `UNVERIFIED`.
+
+## 12. Final-corrected DOM blocker inventory (2026-09-06)
+
+The final-corrected artifact
+`.agent/differential/final-corrected-20260904/report.json`
+(`runId=sweep-mtozery8`) contains 79 `UNVERIFIED` DOM rows. This inventory
+was analyzed from the saved payload; no sweep was rerun as part of this
+reclassification.
+
+One row is an exact additional implementation fingerprint: P1's labels-form
+body has 62 entries on each side; the saved payload has two diff rows, while
+canonicalization removes the identity-only row and leaves the reviewed
+non-brand copy residual. The 75-entry capture in §11 remains a separate exact
+fingerprint. The classifier now accepts both complete captures, so the
+artifact reclassifies to 18
+`IMPLEMENTATION_DIFFERENCE` rows and 78 remaining `UNVERIFIED` DOM rows when
+replayed through `reclassifyScenarioViolations`.
+
+Before the skeleton diff, `scripts/differential/diff.mjs` now canonicalizes
+only the approved identity-copy tokens from
+`frontend-yoram-rebrand-2026-07-13.md`: product names (`Yona`, `Yoram`,
+`Yobi`), the exact NAVER provider labels, the approved `@yobi`/`@example`
+mentions, and the approved `yobi.io`, `repo.yona.io`, `demo.yobi.io`, and
+`example.com` hosts. The canonicalization
+is applied to the text portion after the tag/class prefix; it preserves tags,
+classes, entry counts, URL paths outside those exact hosts, and all surrounding
+copy. Thus a missing control or a changed non-brand suffix remains a DOM
+blocker. Fingerprint declarations and incoming payloads use the same
+normalization, so the exact P1 rule remains required for its second non-brand
+copy row.
+
+The other 78 rows were deliberately not collapsed into a global shell rule.
+The report emits the same 20-entry shell-prefix signature for the following
+route clusters, but that is not a complete identity: counts differ between
+routes in most clusters, and the entries include route-visible rows, links,
+controls, dates, or copy. A skeleton/copy-only rule would hide a real route
+loss.
+
+| repeated emitted signature | rows | routes |
+|---|---:|---|
+| user-issues shell prefix | 6 | U1 `/user/issues?tab=assigned`, `authored`, `commented`, `mentioned`, `shared`, and `/user/issues` |
+| project settings/search shell prefix | 5 | P5 `/admin/sample/settingform`, `deleteform`, `transfer`, `webhooks`, P7 `/admin/sample/search?keyword=welcome&searchType=issue` |
+| organization content shell prefix | 5 | U11 `/organizations/weblabs/boards`, `pullrequests`, `closedPullrequests`, `issues`, and `search?keyword=sample&searchType=issue` |
+| profile edit shell prefix | 4 | U15 `/user/editform`, `/user/editform/emails`, `/user/editform/notifications`, `/user/editform/token` |
+| milestone/post form shell prefix | 3 | P3 `/admin/sample/milestone/1/editform`, `/admin/sample/newMilestoneForm`; P4 `/admin/sample/postform` |
+| anonymous form shell prefix | 3 | S2 `/users/loginform`; S3 `/users/signupform`; S9 `/_init` |
+| organization form shell prefix | 3 | U11 `/organizations/weblabs/members`, `/deleteForm`, `/settingform` |
+| project settings shell prefix | 2 | P5 `/admin/sample/statistics`, `/admin/sample/changeVCS` |
+| commit list shell prefix | 2 | R4 `/admin/sample/commits`, `/admin/sample/commits/main/` |
+| code browser shell prefix | 2 | R6 `/admin/sample/code`, `/admin/sample/code/main` |
+| anonymous/notification shell prefix | 2 | S2 `/users/login`; U3 `/notifications` |
+| issue shell prefix | 2 | S3 `/admin/sample/issue/380`; S4 `/admin/sample/issue/381` (the create/detail capture) |
+
+The singleton payloads below are route-specific visible-loss candidates, not
+copies of a global shell identity. P1 is included for traceability but is the
+one accepted copy-only exception described above:
+
+| scenario | route |
+|---|---|
+| I1 | `/admin/sample/issue/1` |
+| P1 | `/admin/sample/issue/labelsform` (the 62-entry row above; now accepted) |
+| P11 | `/admin/sample/watchers` |
+| P3 | `/admin/sample/milestones`; `/admin/sample/milestone/1` |
+| P4 | `/admin/sample/posts`; `/admin/sample/post/1`; `/admin/sample/post/1/editform` |
+| P5 | `/admin/sample/members`; `/admin/sample/watchers`; `/admin/sample/go` |
+| R10 | `/admin/sample/compare/main..feature%2Fui` |
+| R12 | `/admin/sample/newFork` |
+| R13 | `/admin/sample/pullRequest/2` |
+| R15, R9 | `/admin/sample/branches` |
+| R2 | `/admin/sample/pullRequest/1/changes` |
+| R3 | `/admin/sample/newPullRequestForm`; `/admin/sample/pullRequest/1/editform` |
+| R4 | `/admin/sample/commits/main/README.md` |
+| R5 | `/admin/sample/commit/HEAD` |
+| R7 | `/admin/sample/code/main/README.md` |
+| S2 | `/admin/sample` |
+| S4 | `/admin/sample/issue/381` (comment-created capture); `/lostPassword` |
+| S5 | `/admin/sample/labels` |
+| S6 | `/projectform` |
+| S7 | `/projects` |
+| S9 | `/_help`; `/_UIKit` |
+| U11 | `/organizations/new` |
+| U18 | `/sites/issueList` |
+| U3 | `/notification` |
+| U4 | `/search?keyword=sample&searchType=issue` |
+| U5 | `/orgs` |
+| U6 | `/organizations/weblabs` |
+| U7 | `/admin` |
+| U8 | `/user/files` |
+| U9 | `/user/issues/new`; `/user/issues/new/mine` |
+
+The P1 row is listed in the singleton inventory for traceability but is not a
+remaining blocker after replay. The current blocker set is therefore the 39
+repeated-prefix rows plus the 39 other singleton rows. These findings should
+be delegated as focused route parity work, not hidden in the differential
+classifier:
+
+* Project issue/board/milestone/settings deficits: the corresponding route
+  files under `frontend/src/routes/$ownerName/$projectName/`, especially
+  `milestones.tsx`, `milestone/$milestoneId.tsx`,
+  `milestone/$milestoneId/editform.tsx`, `posts.tsx`, `post/$postNumber.tsx`,
+  `post/$postNumber/editform.tsx`, `members.tsx`, `watchers.tsx`,
+  `settingform.tsx`, `deleteform.tsx`, `transfer.tsx`, `webhooks.tsx`,
+  `statistics.tsx`, `changeVCS.tsx`, and `search.tsx`.
+* Code/commit/branch/compare deficits: `code.tsx`,
+  `code/$branch/$filePath.tsx`, `commits.tsx`, `commits/$branch/$filePath.tsx`,
+  `commit/$commitId.tsx`, `compare/$revisionRange.tsx`, and `branches.tsx`.
+* Pull-request and issue body deficits:
+  `pullRequest/$pullRequestNumber/index.tsx`,
+  `pullRequest/$pullRequestNumber/changes.tsx`,
+  `pullRequest/$pullRequestNumber/editform.tsx`,
+  `newPullRequestForm.tsx`, `issue/$issueNumber.tsx`, and
+  `issue/$issueNumber/editform.tsx`.
+* User/organization/auth/static screens: `frontend/src/routes/user/`,
+  `frontend/src/routes/organizations/`, `frontend/src/routes/users/`,
+  `frontend/src/routes/notifications.tsx`, `notification.tsx`,
+  `search.tsx`, `orgs.tsx`, `projects.tsx`, `projectform.tsx`,
+  `lostPassword.tsx`, `[_]help.tsx`, and `[_]UIKit.tsx`.
+* Site-admin issue-list body: `frontend/src/routes/sites/issueList.tsx`.
+
+No product route was changed by this ledger. Any future reclassification must
+add the complete route/scenario/count/`firstDiffs` fingerprint plus a focused
+WTR source and a near-miss test; shared shell copy, skeleton counts, or a
+common first-20 diff prefix alone is insufficient.

@@ -167,6 +167,90 @@ test("normalizeSkeletonEntries collapses whitespace and drops empties", () => {
   assert.deepEqual(normalizeSkeletonEntries(["div.a:  hello    world  ", "   "]), ["div.a: hello world"]);
 });
 
+test("DOM normalization canonicalizes only approved rebrand identity tokens", () => {
+  assert.deepEqual(
+    normalizeSkeletonEntries([
+      "a.yona-author:Yona authors",
+      "a.yona-author:Yoram authors",
+      "a:@yobi",
+      "a:@example",
+      "a:admin@example.com",
+      "a:http://yobi.io/",
+      "a:https://example.com/",
+      "a:https://repo.yona.io/",
+      "a:https://demo.yobi.io/",
+      "a:https://yobi.io-example.com/",
+      "div:naver/yobi",
+      "div:Yoram/Yoram",
+      "a.naver-cloud-platform:NAVER CLOUD PLATFORM",
+      "a.naver-labs:NAVER LABS",
+      "a.provider:NAVER Corp.",
+    ]),
+    [
+      "a.naver-cloud-platform:<provider>",
+      "a.naver-labs:<provider>",
+      "a.provider:<provider>",
+      "a.yona-author:<product> authors",
+      "a.yona-author:<product> authors",
+      "a:<example-host>/",
+      "a:<example-host>/",
+      "a:<example-host>/",
+      "a:<example-host>/",
+      "a:@<example>",
+      "a:@<example>",
+      "a:admin@example.com",
+      "a:https://yobi.io-example.com/",
+      "div:<product>/<product>",
+      "div:<product>/<product>",
+    ],
+  );
+  assert.deepEqual(
+    diffSkeletons(
+      [
+        "a.yona-author:Yona authors",
+        "a:@yobi",
+        "a:http://yobi.io/",
+        "a:https://repo.yona.io/",
+        "a:https://demo.yobi.io/",
+        "div:naver/yobi",
+      ],
+      [
+        "a.yona-author:Yoram authors",
+        "a:@example",
+        "a:https://example.com/",
+        "a:https://example.com/",
+        "a:https://example.com/",
+        "div:Yoram/Yoram",
+      ],
+    ),
+    [],
+    "approved identity-only copy changes are canonicalized without changing tags/classes",
+  );
+});
+
+test("DOM rebrand normalization preserves structure and non-brand visible changes", () => {
+  assert.notDeepEqual(
+    diffSkeletons(["a.yona-author:Yona authors"], ["div.yona-author:Yoram authors"]),
+    [],
+    "tag changes remain structural differences",
+  );
+  assert.notDeepEqual(
+    diffSkeletons(["a.yona-author:Yona authors"], ["a.yona-author:Yoram maintainers"]),
+    [],
+    "non-brand copy changes remain visible differences",
+  );
+  assert.notDeepEqual(
+    diffSkeletons(["a.yona-author:Yona authors"], ["a.yona-author:Other authors"]),
+    [],
+    "replacing the approved brand with unrelated copy remains blocking",
+  );
+  assert.notDeepEqual(
+    diffSkeletons(["a.yona-author:Yona authors"], ["a.yona-author:Yoram authors", "a:extra"]),
+    [],
+    "entry-count changes are never normalized away",
+  );
+});
+
 // --- sanctioned side-effect anchor <=> button translation -------------------
 // The ONLY DOM comparator equivalence: legacy href="#"/javascript:/empty
 // anchors (and anchors whose behavior is carried by legacy request/toggle
@@ -576,7 +660,7 @@ test("R3 pull-request form fingerprints accept only exact captures", () => {
     );
 
     const textIndex = fingerprint.firstDiffs.findIndex((diff) =>
-      [diff.expected, diff.actual].some((entry) => /@(?:yobi|example)/u.test(String(entry))),
+      [diff.expected, diff.actual].some((entry) => /@(?:yobi|example|<example>)/u.test(String(entry))),
     );
     assert.notEqual(textIndex, -1, `${fingerprint.route}: rebrand text signature missing`);
     const changedText = fingerprint.firstDiffs.map((diff, index) =>
@@ -694,76 +778,84 @@ test("project issue-detail DOM fingerprints keep label/avatar control loss block
 });
 
 test("project labelsform rebrand fingerprint keeps form/button/label near-misses blocking", () => {
-  const fingerprint = PROJECT_ISSUE_LABELS_DOM_IMPLEMENTATION_FINGERPRINTS.find(
+  const fingerprints = PROJECT_ISSUE_LABELS_DOM_IMPLEMENTATION_FINGERPRINTS.filter(
     (candidate) => candidate.route === "/admin/sample/issue/labelsform",
   );
-  assert.ok(fingerprint);
-  const context = fingerprintContext(fingerprint);
-
-  assert.equal(
-    classifyViolation(
-      "dom",
-      fingerprint.route,
-      siteAdminFingerprintDetail(fingerprint),
-      context,
-    ).classification,
-    "IMPLEMENTATION_DIFFERENCE",
+  assert.deepEqual(
+    fingerprints.map(({ expectedSkeletonEntries, actualSkeletonEntries }) => [
+      expectedSkeletonEntries,
+      actualSkeletonEntries,
+    ]),
+    [[75, 75], [62, 62]],
   );
 
-  const nearMisses = [
-    fingerprint.firstDiffs.map((diff, index) =>
-      index === 0
-        ? { ...diff, actual: String(diff.actual).replace("Yoram/Yoram", "Changed/Changed") }
-        : diff,
-    ),
-    [
-      ...fingerprint.firstDiffs,
-      { side: "legacy-only", expected: "form.new-label-wrap:", actual: "form:" },
-    ],
-    [
-      ...fingerprint.firstDiffs,
-      { side: "legacy-only", expected: "button.ybtn.ybtn-primary.btn-submit:라벨 추가", actual: "button:라벨 수정" },
-    ],
-    [
-      ...fingerprint.firstDiffs,
-      { side: "legacy-only", expected: "span.issue-label.active:bug", actual: "span.category-name:bug" },
-    ],
-  ];
-  for (const [index, firstDiffs] of nearMisses.entries()) {
+  for (const fingerprint of fingerprints) {
+    const context = fingerprintContext(fingerprint);
     assert.equal(
       classifyViolation(
         "dom",
         fingerprint.route,
-        siteAdminFingerprintDetail(fingerprint, { firstDiffs }),
+        siteAdminFingerprintDetail(fingerprint),
+        context,
+      ).classification,
+      "IMPLEMENTATION_DIFFERENCE",
+    );
+
+    const nearMisses = [
+      fingerprint.firstDiffs.map((diff, index) =>
+        index === 0
+          ? { ...diff, actual: String(diff.actual).replace("<product>/<product>", "Changed/Changed") }
+          : diff,
+      ),
+      [
+        ...fingerprint.firstDiffs,
+        { side: "legacy-only", expected: "form.new-label-wrap:", actual: "form:" },
+      ],
+      [
+        ...fingerprint.firstDiffs,
+        { side: "legacy-only", expected: "button.ybtn.ybtn-primary.btn-submit:라벨 추가", actual: "button:라벨 수정" },
+      ],
+      [
+        ...fingerprint.firstDiffs,
+        { side: "legacy-only", expected: "span.issue-label.active:bug", actual: "span.category-name:bug" },
+      ],
+    ];
+    for (const [index, firstDiffs] of nearMisses.entries()) {
+      assert.equal(
+        classifyViolation(
+          "dom",
+          fingerprint.route,
+          siteAdminFingerprintDetail(fingerprint, { firstDiffs }),
+          context,
+        ).classification,
+        "UNVERIFIED",
+        `near-miss ${index} must remain blocking for ${fingerprint.expectedSkeletonEntries}-entry capture`,
+      );
+    }
+
+    assert.equal(
+      classifyViolation(
+        "dom",
+        fingerprint.route,
+        siteAdminFingerprintDetail(fingerprint, {
+          skeletonEntries: fingerprint.actualSkeletonEntries + 1,
+        }),
         context,
       ).classification,
       "UNVERIFIED",
-      `near-miss ${index} must remain blocking`,
+      "changed skeleton count must remain blocking",
+    );
+    assert.equal(
+      classifyViolation(
+        "dom",
+        fingerprint.route,
+        siteAdminFingerprintDetail(fingerprint),
+        { scenarioId: fingerprint.scenarioId, scenarioActions: ["view-issue-label-category"] },
+      ).classification,
+      "UNVERIFIED",
+      "wrong labels state must remain blocking",
     );
   }
-
-  assert.equal(
-    classifyViolation(
-      "dom",
-      fingerprint.route,
-      siteAdminFingerprintDetail(fingerprint, {
-        skeletonEntries: fingerprint.actualSkeletonEntries + 1,
-      }),
-      context,
-    ).classification,
-    "UNVERIFIED",
-    "changed skeleton count must remain blocking",
-  );
-  assert.equal(
-    classifyViolation(
-      "dom",
-      fingerprint.route,
-      siteAdminFingerprintDetail(fingerprint),
-      { scenarioId: fingerprint.scenarioId, scenarioActions: ["view-issue-label-category"] },
-    ).classification,
-    "UNVERIFIED",
-    "wrong labels state must remain blocking",
-  );
 });
 
 test("project issue-detail fingerprints normalize mutable comment time and sweep identity", () => {

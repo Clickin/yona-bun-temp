@@ -1,7 +1,13 @@
 import { strict as assert } from "node:assert";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
 import test from "node:test";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import {
   alignParityLabelSeeds,
+  alignParityBoardFixtures,
+  PARITY_POST_COMMENT,
   PARITY_LABEL_SEEDS,
   executeStep,
   buildLegacySequenceReconciliationSql,
@@ -19,7 +25,9 @@ import {
   PULL_REQUEST_DETAIL_SETTLED,
   stepHelpers,
   SKELETON_EXTRACT,
+  ensureDiffableRepoBranches,
 } from "./run.mjs";
+import { parityProjectSeed } from "../run-dev-backend-once.mjs";
 import { HarnessError, summarizeExecution } from "./report.mjs";
 import { ACTION_DEFINITIONS } from "./scenarios/index.mjs";
 
@@ -53,8 +61,52 @@ test("parity PR fixture preserves run-dev seed contract and stable review seed",
   });
   assert.deepEqual(PARITY_REVIEW, {
     contents: "Review the feature branch parity fixture.",
-    path: "parity-feature.txt",
+    path: "src/ui.rs",
   });
+});
+
+test("parity repository alignment mirrors canonical trees and commit messages", () => {
+  const root = mkdtempSync(path.join(tmpdir(), "yona-parity-repo-"));
+  const repoPath = path.join(root, "sample.git");
+  const runGit = (args) => {
+    const result = spawnSync("git", ["--git-dir", repoPath, ...args], { encoding: "utf8" });
+    assert.equal(result.status, 0, result.stderr);
+    return result.stdout.trim();
+  };
+  const runGitRaw = (args) => {
+    const result = spawnSync("git", ["--git-dir", repoPath, ...args], { encoding: "utf8" });
+    assert.equal(result.status, 0, result.stderr);
+    return result.stdout;
+  };
+  try {
+    const init = spawnSync("git", ["init", "--bare", repoPath], { encoding: "utf8" });
+    assert.equal(init.status, 0, init.stderr);
+    ensureDiffableRepoBranches(repoPath);
+    const seed = parityProjectSeed.repositories.find(
+      (repository) => repository.owner === "admin" && repository.projectName === "sample",
+    );
+    assert.ok(seed);
+    const main = seed.branches.find((branch) => branch.name === "main");
+    const feature = seed.branches.find((branch) => branch.name === "feature/ui");
+    assert.ok(main);
+    assert.ok(feature);
+    const featureFiles = { ...main.files, ...feature.files };
+    assert.deepEqual(runGit(["ls-tree", "-r", "--name-only", "main"]).split("\n"), Object.keys(main.files).sort());
+    assert.deepEqual(
+      runGit(["ls-tree", "-r", "--name-only", "feature/ui"]).split("\n"),
+      Object.keys(featureFiles).sort(),
+    );
+    for (const [branch, files] of [["main", main.files], ["feature/ui", featureFiles]]) {
+      for (const [filePath, contents] of Object.entries(files)) {
+        assert.equal(runGitRaw(["show", `${branch}:${filePath}`]), contents);
+      }
+    }
+    assert.equal(runGit(["show", "-s", "--format=%s", "main"]), main.message);
+    assert.equal(runGit(["show", "-s", "--format=%s", "feature/ui"]), feature.message);
+    assert.notEqual(runGit(["rev-parse", "main"]), runGit(["rev-parse", "feature/ui"]));
+  } finally {
+    rmSync(root, { force: true, recursive: true });
+  }
 });
 
 test("SKELETON_EXTRACT stays in sync with the sanctioned side-effect anchor marker", () => {
@@ -82,26 +134,81 @@ test("SPA skeleton rendering waits for explicit route readiness, not equal wiref
   assert.doesNotMatch(readinessSource, /data-content-ready/u);
 });
 
-test("R16 PR detail waits for settled event DOM only on its exact route", () => {
+test("anonymous DOM renders clear shared cookies before applying fresh sessions", async () => {
+  const pages = [];
+  const makePage = (side) => {
+    const calls = [];
+    const page = {
+      async cookies() {
+        calls.push("cookies");
+        return [{ name: `old-${side}`, value: "authenticated" }];
+      },
+      async deleteCookie(...cookies) {
+        calls.push(["deleteCookie", cookies]);
+      },
+      async setCookie(cookie) {
+        calls.push(["setCookie", cookie]);
+      },
+      async goto() {},
+      async evaluate() {
+        return [];
+      },
+    };
+    pages.push({ calls, page });
+    return page;
+  };
+  const entry = { behaviorIds: [], violations: [], errors: [] };
+  await stepHelpers.renderDomTarget(
+    {
+      step: { action: "anonymous-page" },
+      suffix: "anonymous-page",
+      scenarioId: "S2-login-forms",
+      entry,
+      options: { legacyUrl: "http://legacy.test" },
+      yoramBaseUrl: "http://yoram.test",
+      legacyPage: makePage("legacy"),
+      yoramPage: makePage("yoram"),
+      legacySession: { cookies: "OLD=legacy" },
+      yoramSession: { cookies: "OLD=yoram" },
+    },
+    {
+      legacy: "http://legacy.test/users/loginform",
+      yoram: "http://yoram.test/users/loginform",
+      spa: false,
+      anonymous: true,
+      legacySession: { cookies: "ANON=legacy" },
+      yoramSession: { cookies: "ANON=yoram" },
+    },
+  );
+  assert.deepEqual(pages.map(({ calls }) => calls), [
+    [
+      "cookies",
+      ["deleteCookie", [{ name: "old-legacy", value: "authenticated" }]],
+      ["setCookie", { name: "ANON", value: "legacy", url: "http://legacy.test" }],
+    ],
+    [
+      "cookies",
+      ["deleteCookie", [{ name: "old-yoram", value: "authenticated" }]],
+      ["setCookie", { name: "ANON", value: "yoram", url: "http://yoram.test" }],
+    ],
+  ]);
+  assert.deepEqual(entry.violations, []);
+  assert.deepEqual(entry.errors, []);
+});
+
+test("R16 PR detail waits for settled state even when no commit event exists", () => {
   const renderSource = stepHelpers.renderDomTarget.toString();
   assert.match(renderSource, /ctx\.scenarioId === "R16-pr-review-points"/u);
   assert.match(renderSource, /new URL\(domTarget\.yoram\)\.pathname/u);
   assert.match(renderSource, /PULL_REQUEST_DETAIL_SETTLED/u);
 
   const previousDocument = globalThis.document;
-  const state = { merging: true, hasEvent: true, hasCommit: true };
-  const comments = {
-    querySelector(selector) {
-      if (selector === "li.event") return state.hasEvent ? {} : null;
-      if (selector === "li.commit-info") return state.hasCommit ? {} : null;
-      return null;
-    },
-  };
+  const state = { merging: true, hasComments: true };
   const root = {
     querySelector(selector) {
       if (selector === '[aria-busy="true"], [data-wireframe]') return null;
       if (selector === "#state .alert-warnning") return state.merging ? {} : null;
-      if (selector === "#comments") return comments;
+      if (selector === "#comments") return state.hasComments ? {} : null;
       return null;
     },
   };
@@ -113,13 +220,9 @@ test("R16 PR detail waits for settled event DOM only on its exact route", () => 
   try {
     assert.equal(PULL_REQUEST_DETAIL_SETTLED(), false, "merge-check warning is not settled");
     state.merging = false;
-    state.hasEvent = false;
-    assert.equal(PULL_REQUEST_DETAIL_SETTLED(), false, "event list is required");
-    state.hasEvent = true;
-    state.hasCommit = false;
-    assert.equal(PULL_REQUEST_DETAIL_SETTLED(), false, "commit event row is required");
-    state.hasCommit = true;
     assert.equal(PULL_REQUEST_DETAIL_SETTLED(), true);
+    state.hasComments = false;
+    assert.equal(PULL_REQUEST_DETAIL_SETTLED(), false, "comments container is required");
   } finally {
     if (previousDocument === undefined) delete globalThis.document;
     else globalThis.document = previousDocument;
@@ -210,6 +313,56 @@ test("parity label alignment rejects an unauthorized compat write", async () => 
         [],
       ),
     /parity label create failed: HTTP 401/,
+  );
+});
+
+test("parity board alignment is idempotent and verifies project watch plus nested comment", async () => {
+  const requests = [];
+  const comments = [
+    {
+      id: "1",
+      authorLoginId: "alice",
+      contentsMarkdown: "Board seed confirmed from the fork contributor side.",
+    },
+  ];
+  const session = {
+    request: async (request) => {
+      requests.push(request);
+      if (request.method === "POST" && request.path.endsWith("/watch")) {
+        return { status: 200, json: { watchCount: 1 } };
+      }
+      if (request.method === "GET" && request.path.endsWith("/posts/1")) {
+        return { status: 200, json: { comments: [...comments] } };
+      }
+      if (request.method === "POST" && request.path.endsWith("/comments")) {
+        comments.push({
+          id: "2",
+          authorLoginId: "admin",
+          contentsMarkdown: request.json.contentsMarkdown,
+          parentCommentId: request.json.parentCommentId,
+        });
+        return { status: 201, json: { comments: [...comments] } };
+      }
+      if (request.method === "GET" && request.path.endsWith("/projects/sample")) {
+        return { status: 200, json: { watchCount: 1 } };
+      }
+      throw new Error(`unexpected request ${request.method} ${request.path}`);
+    },
+  };
+
+  await alignParityBoardFixtures(session);
+  await alignParityBoardFixtures(session);
+
+  assert.equal(comments.filter((comment) => comment.contentsMarkdown === PARITY_POST_COMMENT).length, 1);
+  assert.deepEqual(
+    requests
+      .filter(({ method, path }) => method === "POST" && path.endsWith("/comments"))
+      .map(({ json }) => json),
+    [{ contentsMarkdown: PARITY_POST_COMMENT, parentCommentId: 1 }],
+  );
+  assert.equal(
+    requests.filter(({ method, path }) => method === "POST" && path.endsWith("/watch")).length,
+    2,
   );
 });
 

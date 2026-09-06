@@ -12,6 +12,8 @@ import {
   SITE_ADMIN_BODY_SELECTORS,
   SITE_ADMIN_LEGACY_BODY_SELECTOR,
   actionDefinitions,
+  favoriteListContains,
+  favoriteMutationState,
   scenarios,
 } from "./scenarios/userorg.mjs";
 import { validateScenarios, matchBehaviors, buildCoverage } from "./dsl.mjs";
@@ -62,6 +64,80 @@ const LIFECYCLE_WAVE_REQUIRED_IDS = [
 test("every userorg scenario passes validateScenarios against merged registry", () => {
   const problems = validateScenarios(scenarios, Object.keys(ACTION_DEFINITIONS));
   assert.deepEqual(problems, []);
+});
+
+test("favorite mutation normalizes issue and project response field names", () => {
+  assert.equal(favoriteMutationState({ favored: true }, "project", true), true);
+  assert.equal(favoriteMutationState({ favorited: false }, "project"), false);
+  assert.equal(favoriteMutationState({ isFavorited: true }, "issue"), true);
+  assert.equal(favoriteMutationState({ is_favorited: false }, "issue"), false);
+  assert.equal(favoriteMutationState({}, "issue"), null);
+});
+
+test("favorite list matching accepts legacy ids and canonical resource entries", () => {
+  assert.equal(
+    favoriteListContains({ projectIds: [1] }, "project", 1, "admin", "sample", "weblabs"),
+    true,
+  );
+  assert.equal(
+    favoriteListContains(
+      { projects: [{ owner: "admin", projectName: "sample" }] },
+      "project",
+      99,
+      "admin",
+      "sample",
+      "weblabs",
+    ),
+    true,
+  );
+  assert.equal(
+    favoriteListContains({ organizations: [{ organizationName: "weblabs" }] }, "organization", 99, "admin", "sample", "weblabs"),
+    true,
+  );
+});
+
+test("favorite toggle clears a persisted legacy baseline before paired transitions", async () => {
+  const calls = { legacy: [], yoram: [], pair: 0 };
+  const entry = { errors: [], violations: [] };
+  const state = { legacyProjectId: 7 };
+  await actionDefinitions["toggle-favorite"].handler({
+    step: {
+      action: "toggle-favorite",
+      params: { target: "project", owner: "admin", project: "sample" },
+    },
+    state,
+    entry,
+    legacySession: {
+      async request(request) {
+        calls.legacy.push(request);
+        if (request.method === "GET") return { status: 200, json: { projectIds: [7] } };
+        return { status: 200, json: { favored: false } };
+      },
+    },
+    yoramSession: {
+      async request(request) {
+        calls.yoram.push(request);
+        return { status: 200, json: { projectIds: [] } };
+      },
+    },
+    helpers: {
+      async requestBoth() {
+        const round = calls.pair++;
+        return {
+          legacyResult: { status: 200, json: { favored: round === 0 } },
+          yoramResult: { status: 200, json: { favorited: round === 0 } },
+        };
+      },
+    },
+  });
+  assert.deepEqual(entry.errors, []);
+  assert.deepEqual(entry.violations, []);
+  assert.deepEqual(calls.legacy.map((call) => call.path), [
+    "/-_-api/v1/favoriteProjects",
+    "/-_-api/v1/favoriteProjects/7",
+  ]);
+  assert.deepEqual(calls.yoram.map((call) => call.path), ["/api/v1/user/favorites/projects"]);
+  assert.equal(calls.pair, 2);
 });
 
 test("every referenced action exists in merged ACTION_DEFINITIONS with both translators", () => {

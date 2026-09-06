@@ -12,7 +12,11 @@ import { ACTION_DEFINITIONS } from "./scenarios/index.mjs";
 import { validateScenarios, matchBehaviors } from "./dsl.mjs";
 import { domVisibleLoss } from "./diff.mjs";
 import { classifyViolation } from "./report.mjs";
-import { scenarios, actionDefinitions } from "./scenarios/project.mjs";
+import {
+  scenarios,
+  actionDefinitions,
+  discoverClosedRestorePr,
+} from "./scenarios/project.mjs";
 
 const MERGED_DEFINITIONS = { ...ACTION_DEFINITIONS, ...actionDefinitions };
 const knownActions = Object.keys(MERGED_DEFINITIONS);
@@ -38,6 +42,88 @@ test("every referenced action exists in ACTION_DEFINITIONS after merge", () => {
       assert.equal(typeof MERGED_DEFINITIONS[step.action].translateYoram, "function", `${step.action} needs translateYoram`);
     }
   }
+});
+
+test("restore resolver selects current restorable PRs, not stale branch or number assumptions", async () => {
+  const calls = [];
+  const ctx = {
+    options: { legacyUrl: "http://legacy.test" },
+    yoramBaseUrl: "http://yoram.test",
+    helpers: {
+      async sendRaw(_ctx, side, request) {
+        calls.push({ side, request });
+        if (side === "yoram" && request.path.endsWith("?category=closed")) {
+          return {
+            status: 200,
+            json: {
+              items: [
+                { fromBranch: "feature/ui", toBranch: "main", pullRequestNumber: 7 },
+                { fromBranch: "main", toBranch: "feature/ui", pullRequestNumber: 6 },
+              ],
+            },
+          };
+        }
+        if (side === "yoram" && request.path.endsWith("/7")) {
+          return { status: 200, json: { permissions: { canRestoreSourceBranch: false } } };
+        }
+        if (side === "yoram" && request.path.endsWith("/6")) {
+          return { status: 200, json: { permissions: { canRestoreSourceBranch: true } } };
+        }
+        if (side === "legacy" && request.path.endsWith("/closedPullRequests")) {
+          return {
+            status: 200,
+            body: 'pullRequest/88 pullRequest/87',
+          };
+        }
+        if (side === "legacy" && request.path.endsWith("/88")) {
+          return { status: 200, body: '<a href="/admin/sample/pullRequest/88/restorefrombranch">' };
+        }
+        if (side === "legacy" && request.path.endsWith("/87")) {
+          return { status: 200, body: "<div>closed" };
+        }
+        throw new Error(`unexpected request ${side} ${request.path}`);
+      },
+    },
+  };
+
+  assert.deepEqual(await discoverClosedRestorePr(ctx, "admin", "sample"), {
+    legacyNumber: 88,
+    yoramNumber: 6,
+  });
+  assert.deepEqual(
+    calls.map(({ side, request }) => `${side}:${request.path}`),
+    [
+      "yoram:/api/v1/owners/admin/projects/sample/pull-requests?category=closed",
+      "yoram:/api/v1/owners/admin/projects/sample/pull-requests/7",
+      "yoram:/api/v1/owners/admin/projects/sample/pull-requests/6",
+      "legacy:/admin/sample/closedPullRequests",
+      "legacy:/admin/sample/pullRequest/88",
+    ],
+  );
+});
+
+test("restore action is a clean no-op when no source-deleted PR is restorable", async () => {
+  const entry = { errors: [], violations: [] };
+  const ctx = {
+    step: {
+      action: "restore-closed-pullrequest",
+      params: { owner: "admin", project: "sample" },
+    },
+    state: {},
+    entry,
+    options: { legacyUrl: "http://legacy.test" },
+    yoramBaseUrl: "http://yoram.test",
+    helpers: {
+      async sendRaw(_ctx, side, request) {
+        if (side === "yoram") return { status: 200, json: { items: [] } };
+        return { status: 200, body: "" };
+      },
+    },
+  };
+
+  await MERGED_DEFINITIONS["restore-closed-pullrequest"].handler(ctx);
+  assert.deepEqual(entry, { errors: [], violations: [] });
+  assert.deepEqual(ctx.state, {});
 });
 
 test("translators produce expected method/path literals", () => {
@@ -418,6 +504,24 @@ test("throwaway-only mutations are confined to their lifecycle scenarios without
   assert.ok(p18, "P18 lifecycle scenario missing");
   assert.ok(p18.actions.some((a) => a.action === "create-project"), "P18 must create its throwaway project");
   assert.ok(p18.actions[p18.actions.length - 1].action === "delete-project", "P18 must end by deleting the throwaway project");
+});
+
+test("throwaway setting mutation reports the exact legacy route", async () => {
+  let request;
+  await MERGED_DEFINITIONS["update-created-setting"].handler({
+    step: { action: "update-created-setting", params: { owner: "admin" } },
+    state: { projectName: "throwaway" },
+    suffix: "run-1",
+    entry: { violations: [] },
+    helpers: {
+      async sendRaw(_ctx, side, translation) {
+        request ??= { translations: {} };
+        request.translations[side] = translation;
+        return { status: 200 };
+      },
+    },
+  });
+  assert.equal(request.translations.legacy.path, "/admin/throwaway/setting");
 });
 
 

@@ -12,7 +12,7 @@ const defaultAdminLoginId = process.env.YONA_DEV_DEFAULT_ADMIN_LOGIN_ID ?? "admi
 const parityCreatedAt = "2026-07-07 11:24:00.000";
 const parityDueDate = "2026-07-24 23:59:59.999";
 const parityMilestoneDueDate = "2026-07-31 23:59:59.999";
-const parityProjectSeed = Object.freeze({
+export const parityProjectSeed = Object.freeze({
   issue: {
     body: "Use this issue to verify labels, assignee, milestone, and timeline rendering in the converted frontend.",
     commentBody: "I can reproduce the legacy issue view from this seed.",

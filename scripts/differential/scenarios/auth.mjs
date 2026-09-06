@@ -651,7 +651,7 @@ async function requestAnonymousBoth(ctx, legacyTranslation, yoramTranslation) {
   if (yoramFailed && !agreedFailure) {
     entry.errors.push(`yoram ${step.action} failed: HTTP ${yoramResult.status} @ ${yoramTranslation.path}`);
   }
-  return { legacyResult, yoramResult };
+  return { legacyResult, yoramResult, sessions };
 }
 
 // Divergence rule: status-class mismatch between sides => violation, then continue.
@@ -663,11 +663,18 @@ function pushStatusDivergence(ctx, route, legacyResult, yoramResult) {
   }
 }
 
-// Anonymous DOM skeleton diff at the same path on both sides. Note: the shared
-// browser pages may still carry cookies set by earlier authenticated scenarios;
-// both sides receive them symmetrically so the diff stays apples-to-apples.
-async function renderDomTargetPath(ctx, target, { spa = true } = {}) {
-  await ctx.helpers.renderDomTarget(ctx, { legacy: `${ctx.options.legacyUrl}${target}`, yoram: `${ctx.yoramBaseUrl}${target}`, spa });
+// Anonymous DOM skeleton diff at the same path on both sides. Render with the
+// fresh sessions used by the paired HTTP requests, not the shared scenario
+// sessions that may still be authenticated.
+async function renderDomTargetPath(ctx, target, { spa = true, sessions } = {}) {
+  await ctx.helpers.renderDomTarget(ctx, {
+    legacy: `${ctx.options.legacyUrl}${target}`,
+    yoram: `${ctx.yoramBaseUrl}${target}`,
+    spa,
+    anonymous: Boolean(sessions),
+    legacySession: sessions?.legacy,
+    yoramSession: sessions?.yoram,
+  });
 }
 
 // Yoram serves the migrated compat endpoints at their RESTful /api/v1 paths
@@ -688,9 +695,13 @@ async function requestCompatApi(ctx, legacyPath, yoramPath) {
 // Anonymous page read: request without cookies, compare statuses, DOM-diff.
 function anonymousPageAction(legacyPath) {
   return async (ctx) => {
-    const { legacyResult, yoramResult } = await requestAnonymousBoth(ctx, { method: "GET", path: legacyPath }, { method: "GET", path: legacyPath });
+    const { legacyResult, yoramResult, sessions } = await requestAnonymousBoth(
+      ctx,
+      { method: "GET", path: legacyPath },
+      { method: "GET", path: legacyPath },
+    );
     pushStatusDivergence(ctx, legacyPath, legacyResult, yoramResult);
-    await renderDomTargetPath(ctx, legacyPath);
+    await renderDomTargetPath(ctx, legacyPath, { sessions });
   };
 }
 // Authenticated page read via the shared sessions.

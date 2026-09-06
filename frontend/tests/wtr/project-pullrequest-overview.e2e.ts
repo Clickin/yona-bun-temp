@@ -1963,6 +1963,45 @@ test("project pull request overview polls merging state until settled commit con
   }
 });
 
+test("project pull request overview settles after polling when no commits remain", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const { detailRequests } = await mockPullRequestOverview(page, {
+    detailSequence: [
+      { events: [], isMerging: true },
+      { events: [], isMerging: false },
+    ],
+  });
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9`);
+  await expect(page.locator("#state .alert-warnning")).toContainText(
+    "We are checking if the code is safe.",
+  );
+  await page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", {
+      configurable: true,
+      value: "hidden",
+    });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  try {
+    await page.waitForTimeout(10_500);
+    expect(detailRequests.length).toBeGreaterThan(1);
+    await expect(page.locator("#state .alert-success")).toContainText(
+      "This pull request can be merged safely.",
+    );
+    await expect(page.locator("#state .alert-warnning")).toHaveCount(0);
+    await expect(page.locator("#comments li.event")).toHaveCount(0);
+    await expect(page.locator("#comments li.commit-info")).toHaveCount(0);
+  } finally {
+    await page.evaluate(() => {
+      delete (document as Document & { visibilityState?: string }).visibilityState;
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+  }
+});
+
 test("project pull request overview renders legacy merged source-branch delete state", async ({
   page,
 }) => {

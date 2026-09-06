@@ -452,7 +452,10 @@ async function readSiteScreenHandler(ctx) {
 // Yoram serves these screens via the SPA shell at the legacy direct routes.
 const pageTargets = {
   "view-user-issues": (params) => withQuery("/user/issues", params.tab && `tab=${params.tab}`),
-  "view-notifications": (params) => params.path ?? "/notifications",
+  "view-notifications": (params) =>
+    params.path === "/notification"
+      ? withQuery("/notification", "from=0&limit=10")
+      : params.path ?? "/notifications",
   // Legacy search pages bind keyword + searchType; a bare ?query= render is a
   // legacy 400 error page, not the search screen.
   "view-global-search": (params) =>
@@ -523,6 +526,33 @@ async function mutateBoth(ctx, legacyTranslation, yoramTranslation, route) {
     pushApiViolation(ctx, route, `legacy HTTP ${legacyResult.status}`, `yoram HTTP ${yoramResult.status}`);
   }
   return { legacyResult, yoramResult };
+}
+
+export function favoriteMutationState(json, target, legacy = false) {
+  const value = legacy
+    ? json?.favored
+    : target === "issue"
+      ? (json?.isFavorited ?? json?.is_favorited ?? json?.favorited)
+      : (json?.favorited ?? json?.favored);
+  return typeof value === "boolean" ? value : null;
+}
+
+export function favoriteListContains(json, target, id, owner, project, organization) {
+  const ids = json?.projectIds ?? json?.organizationIds ?? json?.ids;
+  const entries = target === "organization" ? json?.organizations : json?.projects;
+  if (!Array.isArray(ids) && !Array.isArray(entries)) return null;
+  if (Array.isArray(ids) && ids.some((value) => Number(value) === Number(id))) return true;
+  if (!Array.isArray(entries)) return false;
+  return entries.some((entry) => {
+    if (target === "issue") return Number(entry?.issueId ?? entry?.id) === Number(id);
+    if (target === "project") {
+      return (
+        Number(entry?.projectId ?? entry?.id) === Number(id) ||
+        (entry?.owner === owner && entry?.projectName === project)
+      );
+    }
+    return Number(entry?.organizationId ?? entry?.id) === Number(id) || entry?.organizationName === organization;
+  });
 }
 
 
@@ -1092,6 +1122,55 @@ export const actionDefinitions = {
         legacyPath = `/-_-api/v1/favoriteOrganizations/${state.legacyOrganizationId}`;
         yoramPath = `/api/v1/organizations/${organization}/favorite`;
       }
+      // Normalize each side to an unfavored baseline first. The rebuilt Yoram
+      // fixture is clean while the long-lived legacy fixture may retain a
+      // favorite from an earlier sweep.
+      const kind = { issue: "Issues", project: "Projects", organization: "Organizations" }[target];
+      const legacyListPath = `/-_-api/v1/favorite${kind}`;
+      const yoramListPath = `/api/v1/user/favorites/${kind.toLowerCase()}`;
+      const [legacyList, yoramList] = await Promise.all([
+        ctx.legacySession.request({ method: "GET", path: legacyListPath }),
+        ctx.yoramSession.request({ method: "GET", path: yoramListPath }),
+      ]);
+      if (legacyList.status >= 400 || yoramList.status >= 400) {
+        entry.errors.push(
+          `toggle-favorite: baseline list failed (legacy=${legacyList.status}, yoram=${yoramList.status})`,
+        );
+        return;
+      }
+      const favoriteId =
+        target === "issue"
+          ? state.legacyIssueId
+          : target === "project"
+            ? state.legacyProjectId
+            : state.legacyOrganizationId;
+      const legacyInitiallyFavored = favoriteListContains(
+        legacyList.json,
+        target,
+        favoriteId,
+        owner,
+        project,
+        organization,
+      );
+      const yoramInitiallyFavored = favoriteListContains(
+        yoramList.json,
+        target,
+        favoriteId,
+        owner,
+        project,
+        organization,
+      );
+      for (const [side, initiallyFavored, session, path] of [
+        ["legacy", legacyInitiallyFavored, ctx.legacySession, legacyPath],
+        ["yoram", yoramInitiallyFavored, ctx.yoramSession, yoramPath],
+      ]) {
+        if (!initiallyFavored) continue;
+        const result = await session.request({ method: "POST", path });
+        if (result.status >= 400) {
+          entry.errors.push(`toggle-favorite: ${side} baseline clear failed (HTTP ${result.status})`);
+          return;
+        }
+      }
       // Toggle on then off — the scenario leaves no favorite behind.
       const favored = { legacy: [], yoram: [] };
       for (let round = 0; round < 2; round += 1) {
@@ -1101,8 +1180,8 @@ export const actionDefinitions = {
           { method: "POST", path: yoramPath },
           legacyPath,
         );
-        favored.legacy.push(typeof legacyResult.json?.favored === "boolean" ? legacyResult.json.favored : null);
-        favored.yoram.push(typeof yoramResult.json?.favored === "boolean" ? yoramResult.json.favored : null);
+        favored.legacy.push(favoriteMutationState(legacyResult.json, target, true));
+        favored.yoram.push(favoriteMutationState(yoramResult.json, target));
       }
       if (JSON.stringify(favored.legacy) !== JSON.stringify(favored.yoram)) {
         pushApiViolation(ctx, legacyPath, favored.legacy, favored.yoram);

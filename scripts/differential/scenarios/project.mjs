@@ -1471,21 +1471,32 @@ function attachmentPlan(suffix) {
   return { filename: `parity-${suffix}.txt`, content: `parity attachment payload ${suffix}\n` };
 }
 
-// Locate a closed main->feature/ui pull request per side (the residue R13
-// leaves behind). Legacy discovery parses the closed-list page HTML; yoram
-// uses its REST list. Returns per-side numbers or null.
-async function discoverClosedRestorePr(ctx, owner, project) {
+// Locate a restorable closed pull request per side. Legacy discovery parses
+// the closed-list page HTML and requires the restore control; Yoram uses its
+// REST list and detail permissions. This follows the current lifecycle state
+// instead of assuming R13's old display number or branch direction.
+export async function discoverClosedRestorePr(ctx, owner, project) {
   const { options, yoramBaseUrl } = ctx;
   const yoramList = await ctx.helpers.sendRaw(ctx, "yoram", {
     method: "GET",
     path: `/api/v1/owners/${owner}/projects/${project}/pull-requests?category=closed`,
   });
   const items = Array.isArray(yoramList.json?.items) ? yoramList.json.items : [];
-  const yoramNumber = items
-    .filter((item) => (item.fromBranch ?? item.from_branch) === "main" && (item.toBranch ?? item.to_branch) === "feature/ui")
+  const yoramNumbers = items
     .map((item) => Number(item.pullRequestNumber ?? item.pull_request_number ?? item.number))
     .filter(Boolean)
-    .sort((a, b) => b - a)[0] ?? null;
+    .sort((a, b) => b - a);
+  let yoramNumber = null;
+  for (const number of yoramNumbers) {
+    const detail = await ctx.helpers.sendRaw(ctx, "yoram", {
+      method: "GET",
+      path: `/api/v1/owners/${owner}/projects/${project}/pull-requests/${number}`,
+    });
+    if (detail.status < 400 && detail.json?.permissions?.canRestoreSourceBranch === true) {
+      yoramNumber = number;
+      break;
+    }
+  }
 
   const page = await ctx.helpers.sendRaw(ctx, "legacy", {
     method: "GET",
@@ -1499,7 +1510,7 @@ async function discoverClosedRestorePr(ctx, owner, project) {
       method: "GET",
       path: `/${owner}/${project}/pullRequest/${id}`,
     });
-    if (detail.status < 400 && detail.body.includes("feature/ui")) {
+    if (detail.status < 400 && /restorefrombranch/u.test(detail.body)) {
       legacyNumber = id;
       break;
     }
@@ -1651,7 +1662,7 @@ const LIFECYCLE_ACTIONS = {
       const { step, state, suffix } = ctx;
       if (!state.projectName) return;
       const plan = { projectName: state.projectName, overview: `parity throwaway setting ${suffix}` };
-      return pairRequest(ctx, this.translateLegacy(step, plan), this.translateYoram(step, plan), `${step.params.owner}/${state.projectName}/setting`);
+      return pairRequest(ctx, this.translateLegacy(step, plan), this.translateYoram(step, plan), `/${step.params.owner}/${state.projectName}/setting`);
     },
   },
 
@@ -1823,9 +1834,9 @@ const LIFECYCLE_ACTIONS = {
     },
   },
 
-  // PullRequestApp.restoreFromBranch on R13's closed main->feature/ui PR;
-  // identical direct route on both sides. Skips cleanly when the PR does not
-  // exist (first sweep ordering, pruned repo, ...).
+  // PullRequestApp.restoreFromBranch on the current source-deleted closed PR;
+  // identical direct route on both sides. Skips cleanly when no restorable
+  // candidate exists (for example, after an earlier accept merged it).
   "restore-closed-pullrequest": {
     translateLegacy(step, resolved) {
       return { method: "POST", path: `/${step.params.owner}/${step.params.project}/pullRequest/${resolved.prId}/restorefrombranch` };
@@ -1837,7 +1848,8 @@ const LIFECYCLE_ACTIONS = {
       const { step, state, entry } = ctx;
       const found = await discoverClosedRestorePr(ctx, step.params.owner, step.params.project);
       if (!found.legacyNumber || !found.yoramNumber) {
-        entry.errors.push(`pr-restore skip: closed main->feature/ui PR not found on both sides (legacy=${found.legacyNumber} yoram=${found.yoramNumber})`);
+        // The predecessor lifecycle can leave no source-deleted PR to
+        // restore. That is a valid no-op, not a failed mutation.
         return;
       }
       state.restoredPrL = found.legacyNumber;
@@ -2062,7 +2074,7 @@ scenarios.push(
   },
   {
     id: "T1-pr-restore-cycle",
-    title: "restore R13's closed main->feature/ui pull request, then close again",
+    title: "restore a current restorable closed pull request, then close again",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
       { actor: "admin", action: "restore-closed-pullrequest", params: { owner: "admin", project: "sample" } },

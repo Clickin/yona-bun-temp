@@ -234,7 +234,11 @@ function PullRequestOverviewBody({
 
   return (
     <>
-      <div className="page-wrap-outer" data-owner="pull-request-detail-page">
+      <div
+        className="page-wrap-outer"
+        data-owner="pull-request-detail-page"
+        aria-busy={pullRequest.isMerging}
+      >
         <div className="project-page-wrap">
           <PullRequestHeader
             project={project}

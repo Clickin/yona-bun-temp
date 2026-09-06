@@ -30,6 +30,57 @@ function collapseWhitespace(text) {
   return text.replace(/\s+/gu, " ").trim();
 }
 
+// Product-facing identity is intentionally different between the legacy Yona
+// render and Yoram. Canonicalize only the exact approved identity tokens
+// recorded in docs/provenance/frontend-yoram-rebrand-2026-07-13.md; classes,
+// tags, counts, URLs outside the approved examples, and surrounding copy stay
+// untouched. This removes copy-only identity noise before the structural diff
+// without turning arbitrary user/project text into an allowlist.
+const DOM_REBRAND_URL_REPLACEMENTS = Object.freeze([
+  [/(?:https?:\/\/)(?:yobi\.io|repo\.yona\.io|demo\.yobi\.io|example\.com)(?![A-Za-z0-9.-])/gu, "<example-host>"],
+]);
+const DOM_REBRAND_COPY_REPLACEMENTS = Object.freeze([
+  [/@(?:yobi|example)(?![A-Za-z0-9_.-])/gu, "@<example>"],
+  [/\bNAVER(?: CLOUD PLATFORM| LABS| Corp\.)(?=$|\s)/gu, "<provider>"],
+  [/\b(?:Yona|Yoram|Yobi)\b/giu, "<product>"],
+  [/\bnaver\b/giu, "<product>"],
+]);
+
+function normalizeDomRebrandIdentity(entry) {
+  const separator = entry.indexOf(":");
+  if (separator < 0) return entry;
+  const prefix = entry.slice(0, separator + 1);
+  const source = entry.slice(separator + 1);
+  let text = "";
+  let cursor = 0;
+  for (const match of source.matchAll(/https?:\/\/[^\s]+/gu)) {
+    text += DOM_REBRAND_COPY_REPLACEMENTS.reduce(
+      (value, [pattern, replacement]) => value.replace(pattern, replacement),
+      source.slice(cursor, match.index),
+    );
+    text += DOM_REBRAND_URL_REPLACEMENTS.reduce(
+      (value, [pattern, replacement]) => value.replace(pattern, replacement),
+      match[0],
+    );
+    cursor = match.index + match[0].length;
+  }
+  text += DOM_REBRAND_COPY_REPLACEMENTS.reduce(
+    (value, [pattern, replacement]) => value.replace(pattern, replacement),
+    source.slice(cursor),
+  );
+  return `${prefix}${text}`;
+}
+
+// The sanctioned DOM role translation: a legacy side-effect anchor marked
+// `a#` by the skeleton extract (see sideEffectAnchorTag) is compared as a
+// button. Class list and text still have to match exactly, and plain `a`
+// (navigational) entries are never rewritten, so role changes on real links
+// remain diffs.
+export function normalizeSkeletonEntry(entry) {
+  const normalized = normalizeDomRebrandIdentity(collapseWhitespace(String(entry)));
+  return normalized.startsWith("a#") ? `button${normalized.slice(2)}` : normalized;
+}
+
 // Semantic projection of an issue-creation result from either side.
 export function projectIssueMutation({ legacy, yoram }) {
   return {
@@ -46,13 +97,7 @@ export function projectIssueMutation({ legacy, yoram }) {
 
 export function normalizeSkeletonEntries(entries) {
   return entries
-    .map((entry) => collapseWhitespace(String(entry)))
-    // The ONE sanctioned DOM translation: a legacy side-effect anchor marked
-    // `a#` by the skeleton extract (see sideEffectAnchorTag) is compared as a
-    // button. Class list and text still have to match exactly, and plain `a`
-    // (navigational) entries are never rewritten, so role changes on real
-    // links remain diffs.
-    .map((entry) => (entry.startsWith("a#") ? `button${entry.slice(2)}` : entry))
+    .map(normalizeSkeletonEntry)
     .filter(Boolean)
     .sort();
 }

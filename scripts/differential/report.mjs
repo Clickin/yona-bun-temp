@@ -4,6 +4,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import {
   domVisibleLoss,
+  normalizeSkeletonEntry,
   PULL_REQUEST_MERGE_PENDING_SIGNATURE,
   PULL_REQUEST_MERGE_SUCCESS_SIGNATURE,
 } from "./diff.mjs";
@@ -238,10 +239,17 @@ function siteAdminDomFingerprint({
   const normalizedFirstDiffs = normalizeIssueDiffs
     ? firstDiffs.map(([side, expected, actual]) => [
         side,
-        normalizeIssueDiffEntry(expected),
-        normalizeIssueDiffEntry(actual),
+        normalizeSkeletonEntry(normalizeIssueDiffEntry(expected)),
+        normalizeSkeletonEntry(normalizeIssueDiffEntry(actual)),
       ])
-    : firstDiffs;
+    : firstDiffs.map(([side, expected, actual]) => [
+        side,
+        normalizeSkeletonEntry(expected),
+        normalizeSkeletonEntry(actual),
+      ]);
+  const residualFirstDiffs = normalizedFirstDiffs.filter(
+    ([_side, expected, actual]) => expected !== actual,
+  );
   return Object.freeze({
     route,
     state,
@@ -251,7 +259,7 @@ function siteAdminDomFingerprint({
     expectedSkeletonEntries,
     actualSkeletonEntries,
     firstDiffs: Object.freeze(
-      normalizedFirstDiffs.map(([side, expected, actual]) =>
+      residualFirstDiffs.map(([side, expected, actual]) =>
         Object.freeze({ side, expected, actual }),
       ),
     ),
@@ -271,29 +279,40 @@ function normalizeIssueDiffEntry(entry) {
 }
 
 function normalizedFingerprintDetail(detail, fingerprint) {
-  if (!fingerprint.normalizeIssueDiffs || !Array.isArray(detail?.actual?.firstDiffs)) {
+  if (!Array.isArray(detail?.actual?.firstDiffs)) {
     return detail;
   }
   return {
     ...detail,
     actual: {
       ...detail.actual,
-      firstDiffs: detail.actual.firstDiffs.map((diff) => ({
-        ...diff,
-        expected: normalizeIssueDiffEntry(diff.expected),
-        actual: normalizeIssueDiffEntry(diff.actual),
-      })),
+      firstDiffs: detail.actual.firstDiffs
+        .map((diff) => ({
+          ...diff,
+          expected: normalizeSkeletonEntry(
+            fingerprint.normalizeIssueDiffs
+              ? normalizeIssueDiffEntry(diff.expected)
+              : diff.expected,
+          ),
+          actual: normalizeSkeletonEntry(
+            fingerprint.normalizeIssueDiffs
+              ? normalizeIssueDiffEntry(diff.actual)
+              : diff.actual,
+          ),
+        }))
+        .filter((diff) => diff.expected !== diff.actual),
     },
   };
 }
 
 // These are exact, finite SSR-vs-SPA body fingerprints from the U18 capture.
 // They are deliberately not class-prefix or route-family allowlists: route,
-// state, both skeleton counts, and every reported firstDiff must match. The
-// focused WTR test title/source is carried with each fingerprint so a
-// reclassification remains auditable. Any changed/missing visible row, text,
-// or control represented by the captured count/signature falls through to
-// UNVERIFIED.
+// state, both skeleton counts, and every residual firstDiff must match after
+// the same comparator canonicalization (identity-only pairs are absent from
+// the residual). The focused WTR test title/source is carried with each
+// fingerprint so a reclassification remains auditable. Any changed/missing
+// visible row, text, or control represented by the captured count/signature
+// falls through to UNVERIFIED.
 export const SITE_ADMIN_DOM_IMPLEMENTATION_FINGERPRINTS = Object.freeze([
   siteAdminDomFingerprint({
     route: "/sites/userList",
@@ -901,6 +920,34 @@ export const PROJECT_ISSUE_LABELS_DOM_IMPLEMENTATION_FINGERPRINTS = Object.freez
     wtrSource: "frontend/tests/wtr/project-labels-form.e2e.ts:1187-1215",
     rationale:
       "Product-identity-only copy: the exact legacy naver/yobi description versus the current Yoram/Yoram description is the approved Yoram rebrand documented by docs/provenance/frontend-yoram-rebrand-2026-07-13.md:135-138 and frontend/src/rebrand.spec.ts:72-84. The focused WTR test \"project labels renders REST categoryName payloads with legacy control classes\" (frontend/tests/wtr/project-labels-form.e2e.ts:1187-1215) separately proves the live label payload, visible category/label order, and primary control classes; any changed or missing form, button, label, copy, or count remains UNVERIFIED.",
+  }),
+  // The final-corrected sweep captured the same approved copy-only rebrand
+  // with the route body narrowed to 62 entries. Keep that capture explicit:
+  // skeleton counts remain part of the fingerprint, so this does not widen
+  // the 75-entry rule or accept a missing form/control.
+  siteAdminDomFingerprint({
+    route: "/admin/sample/issue/labelsform",
+    state: "labels-form-final-corrected",
+    scenarioId: "P1-issue-labels",
+    action: "view-issue-labels-form",
+    expectedSkeletonEntries: 62,
+    actualSkeletonEntries: 62,
+    firstDiffs: [
+      [
+        "legacy-only",
+        "div:만약 라벨을 복사해 오려는 대상 프로젝트가 'naver/yobi' 라면 소유자는 naver, 프로젝트 이름은 yobi 입니다. 대소문자는 구분하지 않습니다.",
+        "div:만약 라벨을 복사해 오려는 대상 프로젝트가 'Yoram/Yoram' 라면 소유자는 Yoram, 프로젝트 이름은 Yoram 입니다. 대소문자는 구분하지 않습니다.",
+      ],
+      [
+        "yoram-only",
+        "div:현재 프로젝트에 이미 동일한 이름과 동일한 카테고리, 색을 가진 라벨이 존재하면, 해당 라벨은 추가되지 않습니다.",
+        "div:만약 라벨을 복사해 오려는 대상 프로젝트가 'Yoram/Yoram' 라면 소유자는 Yoram, 프로젝트 이름은 Yoram 입니다. 대소문자는 구분하지 않습니다.",
+      ],
+    ],
+    wtrTest: "project labels renders REST categoryName payloads with legacy control classes",
+    wtrSource: "frontend/tests/wtr/project-labels-form.e2e.ts:1187-1215",
+    rationale:
+      "Product-identity-only copy: the final-corrected capture contains only the approved legacy naver/yobi versus current Yoram/Yoram copy pair, with no form/control/label loss. The rebrand is documented by docs/provenance/frontend-yoram-rebrand-2026-07-13.md:135-138 and frontend/src/rebrand.spec.ts:72-84; the focused WTR test proves the live label payload, visible category/label order, and primary control classes. Any changed count, form, button, label, or copy remains UNVERIFIED.",
   }),
 ]);
 

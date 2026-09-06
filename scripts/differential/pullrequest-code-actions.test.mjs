@@ -13,6 +13,8 @@ import { validateScenarios, matchBehaviors } from "./dsl.mjs";
 import {
   scenarios,
   actionDefinitions,
+  commitCommentTargetFromPage,
+  commitCommentIdFromPage,
   pullRequestNumberFromPayload,
   resolveYoramPullRequestNumber,
 } from "./scenarios/pullrequest-code.mjs";
@@ -41,6 +43,55 @@ test("every referenced action exists in ACTION_DEFINITIONS after merge", () => {
       assert.equal(typeof MERGED_DEFINITIONS[step.action].translateYoram, "function", `${step.action} needs translateYoram`);
     }
   }
+});
+
+test("commit comment page resolver selects the created comment, not the first stale delete link", () => {
+  const body = `
+    <ul>
+      <li id="comment-3"><button data-request-uri="/admin/sample/commit/HEAD/comments/3/delete"></button>old</li>
+      <li id="comment-9"><button data-request-uri="/admin/sample/commit/abc123/comments/9/delete"></button>
+        Differential sweep commit comment run-42
+      </li>
+    </ul>`;
+  assert.deepEqual(
+    commitCommentTargetFromPage(body, "Differential sweep commit comment run-42"),
+    { commentId: 9, commitId: "abc123" },
+  );
+  assert.equal(commitCommentIdFromPage(body, "Differential sweep commit comment run-42"), 9);
+  assert.equal(commitCommentIdFromPage(body, "missing"), null);
+});
+
+test("commit comment mutation canonicalizes the legacy commit before delete", async () => {
+  const requests = [];
+  const state = {};
+  await MERGED_DEFINITIONS["comment-commit"].handler({
+    step: { action: "comment-commit", params: { owner: "admin", project: "sample", commitId: "HEAD" } },
+    state,
+    suffix: "run-42",
+    entry: { errors: [], violations: [] },
+    helpers: {
+      async requestBoth(_ctx, legacy, yoram) {
+        requests.push({ legacy, yoram });
+        return {
+          legacyResult: { status: 200, location: "#comment-9" },
+          yoramResult: { status: 200, json: { comments: [{ id: 11 }] } },
+        };
+      },
+    },
+    legacySession: {
+      async request(request) {
+        requests.push(request);
+        return {
+          status: 200,
+          body: `<li id="comment-9"><button data-request-uri="/admin/sample/commit/abc123/comments/9/delete"></button> Differential sweep commit comment run-42</li>`,
+        };
+      },
+    },
+  });
+  assert.equal(state.commitCommentIdLegacy, 9);
+  assert.equal(state.commitIdLegacy, "abc123");
+  assert.equal(state.commitCommentIdYoram, 11);
+  assert.equal(requests[1].path, "/admin/sample/commit/HEAD");
 });
 
 test("translators produce expected method/path literals", () => {
@@ -197,6 +248,34 @@ test("R16 creates the review probe on the non-seeded branch direction", () => {
     { fromBranch: create.params.fromBranch, toBranch: create.params.toBranch },
     { fromBranch: "feature/ui", toBranch: "main" },
   );
+});
+
+test("R13 does not re-close a pull request after both sides accepted it", async () => {
+  let requests = 0;
+  await MERGED_DEFINITIONS["close-pullrequest"].handler({
+    step: {
+      action: "close-pullrequest",
+      params: { owner: "admin", project: "sample" },
+    },
+    state: {
+      prIdLegacy: 3,
+      prNumberLegacy: 2,
+      prNumberYoram: 2,
+      pullRequestMerged: true,
+    },
+    entry: { errors: [], violations: [] },
+    legacySession: {
+      async request() {
+        requests += 1;
+      },
+    },
+    yoramSession: {
+      async request() {
+        requests += 1;
+      },
+    },
+  });
+  assert.equal(requests, 0);
 });
 
 test("mutation translators produce expected method/path/body shapes", () => {
