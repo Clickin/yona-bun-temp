@@ -69,15 +69,19 @@ test("parity PR fixture preserves run-dev seed contract and stable review seed",
 test("Yoram bootstrap provisions the parity foundation before PR reconciliation", () => {
   const source = readFileSync(new URL("./run.mjs", import.meta.url), "utf8");
   const bootSource = source.slice(source.indexOf("async function bootYoram"));
+  const foundationCheck = bootSource.indexOf("const needsParityFoundation");
   const pilotProvision = bootSource.indexOf("await provisionYoramParityAccounts");
   const canonicalAlign = bootSource.indexOf("reconcileYoramFixturesPreboot(databasePath)");
   const defaultSeed = bootSource.indexOf("seedModule.reconcileDefaultDevParitySeed");
+  const repositoryAlign = bootSource.indexOf("ensureDiffableRepoBranches(repo)");
   const prReconciliation = bootSource.indexOf("reconcileYoramPullRequestFixtures(databasePath)");
 
-  assert.ok(pilotProvision >= 0);
+  assert.ok(foundationCheck >= 0);
+  assert.ok(pilotProvision > foundationCheck);
   assert.ok(canonicalAlign > pilotProvision);
   assert.ok(defaultSeed > canonicalAlign);
-  assert.ok(prReconciliation > defaultSeed);
+  assert.ok(repositoryAlign > defaultSeed);
+  assert.ok(prReconciliation > repositoryAlign);
 });
 
 test("parity repository alignment mirrors canonical trees and commit messages", () => {
