@@ -412,15 +412,49 @@ test("classify keeps unknown DOM and visible loss blocking", () => {
 });
 
 test("malformed residual findings require their exact step behavior id", () => {
+  const shareProbe = {
+    expected: { status: "<400" },
+    actual: {
+      legacyStatus: 500,
+      yoramStatus: 404,
+      legacyRequest: {
+        method: "POST",
+        path: "/-_-api/v1/owners/admin/projects/sample/issues/7/share",
+        json: { sharer: ["admin"], action: "add" },
+      },
+      yoramRequest: {
+        method: "POST",
+        path: "/api/v1/owners/admin/projects/sample/issues/7/sharers/toggle",
+        json: { sharer: ["admin"], action: "add" },
+      },
+    },
+  };
+  const issueImportProbe = {
+    expected: { status: "<400" },
+    actual: {
+      legacyStatus: 400,
+      yoramStatus: 404,
+      legacyRequest: {
+        method: "POST",
+        path: "/-_-api/v1/owners/admin/projects/sample/issues/imports",
+        json: { owner: "parity-sweep", repoName: "nonexistent-sweep", token: "" },
+      },
+      yoramRequest: {
+        method: "POST",
+        path: "/-_-api/v1/owners/admin/projects/sample/issues/imports",
+        json: { owner: "parity-sweep", repoName: "nonexistent-sweep", token: "" },
+      },
+    },
+  };
   const cases = [
     ["B-0185", "/user/sidebar", { expected: { status: 500 }, actual: { status: 200 } }, "LEGACY_BUG_NOT_REPRODUCED"],
     ["B-0267", "/admin/parity-setting/setting", { expected: { status: 500 }, actual: { status: 200 } }, "LEGACY_BUG_NOT_REPRODUCED"],
     ["B-0002", "/admin/sample/code/__parity_missing_branch__/", { expected: "legacy HTTP 302", actual: "yoram HTTP 404" }, "LEGACY_BUG_NOT_REPRODUCED"],
     ["B-0221", "/user/editform/defultLoginPage", { expected: "2xx", actual: "4xx" }, "LEGACY_BUG_NOT_REPRODUCED"],
-    ["B-0286", "/sites/import", { expected: "legacy HTTP 302", actual: "yoram HTTP 400" }, "IMPLEMENTATION_DIFFERENCE"],
+    ["B-0286", "/sites/import", { expected: "legacy HTTP 303", actual: "yoram HTTP 400" }, "IMPLEMENTATION_DIFFERENCE"],
     ["B-0014", "/comments/issue/9", { expected: { status: "<400" }, actual: { legacyStatus: 500, yoramStatus: 400 } }, "LEGACY_BUG_NOT_REPRODUCED"],
-    ["B-0212", "/-_-api/v1/owners/admin/projects/sample/issues/7/share", { expected: { status: "<400" }, actual: { legacyStatus: 500, yoramStatus: 404 } }, "LEGACY_BUG_NOT_REPRODUCED"],
-    ["B-0214", "/-_-api/v1/owners/admin/projects/sample/issues/imports", { expected: { status: "<400" }, actual: { legacyStatus: 400, yoramStatus: 404 } }, "IMPLEMENTATION_DIFFERENCE"],
+    ["B-0212", "/-_-api/v1/owners/admin/projects/sample/issues/7/share", shareProbe, "LEGACY_BUG_NOT_REPRODUCED"],
+    ["B-0214", "/-_-api/v1/owners/admin/projects/sample/issues/imports", issueImportProbe, "IMPLEMENTATION_DIFFERENCE"],
     ["B-0287", "/sites/mail", { expected: "legacy HTTP 500", actual: "yoram HTTP 400" }, "LEGACY_BUG_NOT_REPRODUCED"],
   ];
   for (const [behaviorId, route, detail, classification] of cases) {
@@ -435,6 +469,44 @@ test("malformed residual findings require their exact step behavior id", () => {
       { behaviorId: "B-0003" },
     ).classification,
     "UNVERIFIED",
+  );
+  assert.equal(
+    classifyViolation(
+      "api",
+      "/-_-api/v1/owners/admin/projects/sample/issues/7/share",
+      {
+        ...shareProbe,
+        actual: {
+          ...shareProbe.actual,
+          legacyRequest: {
+            ...shareProbe.actual.legacyRequest,
+            json: { sharer: ["admin"], action: "unknown" },
+          },
+        },
+      },
+      { behaviorId: "B-0212" },
+    ).classification,
+    "UNVERIFIED",
+    "share classifier must reject an unrecorded payload",
+  );
+  assert.equal(
+    classifyViolation(
+      "api",
+      "/-_-api/v1/owners/admin/projects/sample/issues/imports",
+      {
+        ...issueImportProbe,
+        actual: {
+          ...issueImportProbe.actual,
+          yoramRequest: {
+            ...issueImportProbe.actual.yoramRequest,
+            json: { owner: "parity-sweep", repoName: "other", token: "" },
+          },
+        },
+      },
+      { behaviorId: "B-0214" },
+    ).classification,
+    "UNVERIFIED",
+    "import classifier must reject an unrecorded payload",
   );
 });
 

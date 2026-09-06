@@ -397,7 +397,7 @@ function getAction(pathFor, { dom = false, spa = true } = {}) {
   };
 }
 
-function getJsonAction(pathFor) {
+function getJsonAction(pathFor, normalize = normalizeApiValue) {
   return {
     translateLegacy(step) {
       return { method: "GET", path: pathFor(step) };
@@ -407,7 +407,13 @@ function getJsonAction(pathFor) {
     },
     async handler(ctx) {
       const { step, resolved, helpers } = ctx;
-      await helpers.requestJsonBoth(ctx, translateLegacy(step, resolved), translateYoram(step, resolved));
+      await helpers.requestJsonBoth(
+        ctx,
+        translateLegacy(step, resolved),
+        translateYoram(step, resolved),
+        pathFor(step),
+        normalize,
+      );
     },
   };
 }
@@ -493,6 +499,57 @@ function normalizeAvatars(value) {
   return walk(value);
 }
 
+function normalizeIssueLabelPayload(value) {
+  const stripOptionalShape = (node) => {
+    if (Array.isArray(node)) return node.map(stripOptionalShape);
+    if (node && typeof node === "object") {
+      return Object.fromEntries(
+        Object.entries(node)
+          .filter(([key, entryValue]) => !(key === "categoryIsExclusive" && entryValue === false))
+          .map(([key, entryValue]) => [key, stripOptionalShape(entryValue)]),
+      );
+    }
+    return node;
+  };
+  return normalizeApiValue(stripOptionalShape(value));
+}
+
+// Mutation API payloads can legitimately refer to the same created issue with
+// different per-side display numbers. Normalize only the exact issue reference
+// for this pair; unrelated URLs and arbitrary strings remain comparable.
+function normalizeIssuePairValue(value, side, step, vars, key = "") {
+  if (Array.isArray(value)) return value.map((entry) => normalizeIssuePairValue(entry, side, step, vars, key));
+  if (value && typeof value === "object") {
+    const out = {};
+    for (const [entryKey, entryValue] of Object.entries(value)) {
+      out[entryKey] = normalizeIssuePairValue(entryValue, side, step, vars, entryKey);
+    }
+    return out;
+  }
+  if (key === "state" && typeof value === "string" && /^(open|closed|draft)$/iu.test(value)) {
+    return value.toLowerCase();
+  }
+  if ((key === "refUrl" || key === "issue") && typeof value === "string") {
+    const issueNumber = Number(vars[`issueNumber${side}`]);
+    if (!(issueNumber > 0)) return value;
+    const targetPath = `/${step.params.owner}/${step.params.project}/issue/${issueNumber}`;
+    try {
+      const parsed = new URL(value, "http://differential.invalid");
+      if (parsed.pathname === targetPath && parsed.search === "" && parsed.hash === "") return "<issue-ref>";
+    } catch {
+      // Keep malformed/non-URL values unchanged so the comparison stays strict.
+    }
+  }
+  return value;
+}
+
+function requestEvidence(translation) {
+  const evidence = { method: translation.method, path: translation.path };
+  if (translation.json !== undefined) evidence.json = translation.json;
+  if (translation.form !== undefined) evidence.form = translation.form;
+  return evidence;
+}
+
 // Per-side issue DB pk keyed watch/favorite resource param.
 // Legacy models issues as issue_post resources for watch (ResourceType has no
 // plain "issue" value; WatchApp.resource binding 400s on anything else).
@@ -561,14 +618,36 @@ async function mutationPair(ctx, legacyBuild, yoramBuild, extraVars = {}) {
         behaviorId,
         kind: "api",
         expected: { status: "<400" },
-        actual: { legacyStatus: legacyResult.status, yoramStatus: yoramResult.status },
+        actual: {
+          legacyStatus: legacyResult.status,
+          yoramStatus: yoramResult.status,
+          legacyRequest: requestEvidence(legacyTranslation),
+          yoramRequest: requestEvidence(yoramTranslation),
+        },
       }),
     );
     return { legacyResult, yoramResult };
   }
   if (legacyResult.json != null && yoramResult.json != null) {
-    const expected = normalizeApiValue(legacyResult.json);
-    const actual = normalizeApiValue(yoramResult.json);
+    const normalizeMutationPayload = (value, side, vars) =>
+      normalizeIssuePairValue(
+        /label/u.test(ctx.step.action)
+          ? normalizeIssueLabelPayload(value)
+          : normalizeApiValue(value),
+        side,
+        ctx.step,
+        vars,
+      );
+    const expected = normalizeMutationPayload(
+      legacyResult.json,
+      "Legacy",
+      sideVars("Legacy"),
+    );
+    const actual = normalizeMutationPayload(
+      yoramResult.json,
+      "Yoram",
+      sideVars("Yoram"),
+    );
     if (JSON.stringify(expected) !== JSON.stringify(actual)) {
       entry.violations.push(
         violation({ route: legacyTranslation.path, behaviorId, kind: "api", expected, actual }),
@@ -708,7 +787,7 @@ export const actionDefinitions = {
       return {
         method: "POST",
         path: `/${step.params.owner}/${step.params.project}/issues/latest`,
-        form: { title: resolved.title, body: resolved.body },
+        form: { title: resolved.title, body: resolved.body, assigneeLoginId: "" },
       };
     },
     translateYoram(step, resolved) {
@@ -883,7 +962,7 @@ export const actionDefinitions = {
 
   "list-issues": getAction(listIssuesPath),
 
-  "issue-labels": getJsonAction((step) => ownerPath(step, "/issue/labels")),
+  "issue-labels": getJsonAction((step) => ownerPath(step, "/issue/labels"), normalizeIssueLabelPayload),
 
   "issue-label-styles": getAction((step) => ownerPath(step, "/issue/labels.css"), { dom: false }),
 
@@ -1133,7 +1212,7 @@ export const actionDefinitions = {
   ),
 
   "update-issue-assignees": pairMutation(
-    (step, v) => ({ method: "POST", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/assignees`, json: { assignees: [{ loginId: "admin" }] } }),
+    (step, v) => ({ method: "POST", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/assignees`, json: { assignees: ["admin"] } }),
     (step, v) => ({ method: "POST", path: `${yoramApiBase(step)}/issues/${v.issueNumber}/assignees`, json: { assignees: ["admin"] } }),
     null,
     whenIds(["issueNumberLegacy", "issueNumberYoram"]),

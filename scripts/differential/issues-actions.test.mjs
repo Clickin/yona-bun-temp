@@ -123,11 +123,79 @@ test("issue-api-probe keeps the legacy-compat path on legacy and maps to RESTful
 });
 
 test("pre-existing mutation actions keep their translation contracts", () => {
+  assert.deepEqual(
+    translateLegacy({ actor: "a", action: "create-issue", params: { owner: "admin", project: "sample" } }, { title: "t", body: "b" }).form,
+    { title: "t", body: "b", assigneeLoginId: "" },
+  );
   assert.equal(
     translateLegacy({ actor: "a", action: "create-issue", params: { owner: "admin", project: "sample" } }, { title: "t", body: "b" }).path,
     "/admin/sample/issues/latest",
   );
   assert.equal(ACTION_DEFINITIONS["create-issue-comment"].translateLegacy({ params: { owner: "admin", project: "sample" } }, { issueNumber: 7 }).path, "/admin/sample/issue/7/comments");
+});
+
+test("issue mutations use the legacy assignee payload shape and normalize paired issue identity", async () => {
+  const step = { actor: "admin", action: "update-issue-assignees", params: { owner: "admin", project: "sample" } };
+  const vars = { issueNumber: 7 };
+  assert.deepEqual(translateLegacy(step, vars).json, { assignees: ["admin"] });
+  assert.deepEqual(translateYoram(step, vars).json, { assignees: ["admin"] });
+
+  const ctx = {
+    step: { actor: "admin", action: "patch-issue-content", params: { owner: "admin", project: "sample" } },
+    resolved: { body: "before" },
+    state: { issueNumberLegacy: 338, issueNumberYoram: 2 },
+    entry: { violations: [] },
+    helpers: {
+      async requestBoth() {
+        return {
+          legacyResult: {
+            status: 200,
+            json: {
+              refUrl: "http://127.0.0.1:9000/admin/sample/issue/338",
+              state: "OPEN",
+              title: "same",
+            },
+          },
+          yoramResult: {
+            status: 200,
+            json: {
+              refUrl: "/admin/sample/issue/2",
+              state: "open",
+              title: "same",
+            },
+          },
+        };
+      },
+    },
+  };
+  await ACTION_DEFINITIONS["patch-issue-content"].handler(ctx);
+  assert.deepEqual(ctx.entry.violations, []);
+});
+
+test("issue label JSON normalizer ignores only the optional false category flag", async () => {
+  const makeContext = (yoramJson) => ({
+    step: { actor: "admin", action: "create-issue-label", params: { owner: "admin", project: "sample" } },
+    resolved: { labelName: "L", categoryName: "C" },
+    suffix: "test",
+    state: {},
+    entry: { behaviorIds: ["B-label"], violations: [], errors: [] },
+    helpers: {
+      async requestBoth() {
+        return {
+          legacyResult: { status: 200, json: { id: 1, name: "L", categoryIsExclusive: false } },
+          yoramResult: { status: 200, json: yoramJson },
+        };
+      },
+    },
+  });
+
+  const equivalent = makeContext({ categoryIsExclusive: false, name: "L", id: 2 });
+  await ACTION_DEFINITIONS["create-issue-label"].handler(equivalent);
+  assert.deepEqual(equivalent.entry.violations, []);
+
+  const different = makeContext({ categoryIsExclusive: true, name: "L", id: 2 });
+  await ACTION_DEFINITIONS["create-issue-label"].handler(different);
+  assert.equal(different.entry.violations.length, 1);
 });
 
 test("matchBehaviors returns a non-empty B-id list for every issues scenario", () => {

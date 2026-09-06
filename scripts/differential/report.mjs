@@ -81,6 +81,74 @@ function exactStatus(detail, side) {
   return null;
 }
 
+function exactJsonObject(value, expected) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const actualKeys = Object.keys(value).sort();
+  const expectedKeys = Object.keys(expected).sort();
+  if (JSON.stringify(actualKeys) !== JSON.stringify(expectedKeys)) return false;
+  return expectedKeys.every((key) => {
+    const actual = value[key];
+    const wanted = expected[key];
+    if (Array.isArray(wanted)) return JSON.stringify(actual) === JSON.stringify(wanted);
+    return actual === wanted;
+  });
+}
+
+function requestEvidence(detail, side) {
+  const request = detail?.actual?.[`${side}Request`];
+  return request && typeof request === "object" ? request : null;
+}
+
+function hasExactShareProbe(detail) {
+  const legacy = requestEvidence(detail, "legacy");
+  const yoram = requestEvidence(detail, "yoram");
+  if (
+    !legacy ||
+    !yoram ||
+    legacy.method !== "POST" ||
+    yoram.method !== "POST" ||
+    !/^\/-_-api\/v1\/owners\/[^/]+\/projects\/[^/]+\/issues\/\d+\/share$/u.test(legacy.path) ||
+    !/^\/api\/v1\/owners\/[^/]+\/projects\/[^/]+\/issues\/\d+\/sharers\/toggle$/u.test(yoram.path)
+  ) {
+    return false;
+  }
+  const legacyPayload = legacy.json;
+  const yoramPayload = yoram.json;
+  if (
+    !legacyPayload ||
+    !yoramPayload ||
+    !exactJsonObject(legacyPayload, { sharer: ["admin"], action: legacyPayload.action }) ||
+    !exactJsonObject(yoramPayload, { sharer: ["admin"], action: yoramPayload.action })
+  ) {
+    return false;
+  }
+  return (legacyPayload.action === "add" || legacyPayload.action === "remove") && legacyPayload.action === yoramPayload.action;
+}
+
+function hasExactIssueImportProbe(detail) {
+  const legacy = requestEvidence(detail, "legacy");
+  const yoram = requestEvidence(detail, "yoram");
+  const valid = (request) => {
+    if (
+      !request ||
+      request.method !== "POST" ||
+      !/^\/-_-api\/v1\/owners\/[^/]+\/projects\/[^/]+\/issues\/imports$/u.test(request.path)
+    ) {
+      return false;
+    }
+    const payload = request.json;
+    return (
+      payload &&
+      Object.keys(payload).sort().join(",") === "owner,repoName,token" &&
+      payload.owner === "parity-sweep" &&
+      typeof payload.repoName === "string" &&
+      /^nonexistent-/u.test(payload.repoName) &&
+      payload.token === ""
+    );
+  };
+  return valid(legacy) && valid(yoram);
+}
+
 const PULL_REQUEST_MERGE_COMPANION_ENTRIES = new Set([
   // Empty attachment wrapper and icon-only/status wrappers are the finite
   // structural residue reviewed with the merge-state fixture. User-visible
@@ -211,7 +279,7 @@ const CLASSIFICATION_RULES = [
       kind === "api" &&
       behaviorId === "B-0286" &&
       route === "/sites/import" &&
-      exactStatus(detail, "legacy") === 302 &&
+      exactStatus(detail, "legacy") === 303 &&
       exactStatus(detail, "yoram") === 400,
     classification: "IMPLEMENTATION_DIFFERENCE",
     rationale:
@@ -236,7 +304,8 @@ const CLASSIFICATION_RULES = [
       behaviorId === "B-0212" &&
       /\/-_-api\/v1\/owners\/[^/]+\/projects\/[^/]+\/issues\/\d+\/share$/u.test(route) &&
       exactStatus(detail, "legacy") === 500 &&
-      exactStatus(detail, "yoram") === 404,
+      exactStatus(detail, "yoram") === 404 &&
+      hasExactShareProbe(detail),
     classification: "LEGACY_BUG_NOT_REPRODUCED",
     reason:
       "legacy IssueApi share handler dereferences the malformed sharer payload and crashes, while Yoram rejects the missing target with 404; the add/remove probe is not supported behavior",
@@ -247,7 +316,8 @@ const CLASSIFICATION_RULES = [
       behaviorId === "B-0214" &&
       /\/-_-api\/v1\/owners\/[^/]+\/projects\/[^/]+\/issues\/imports$/u.test(route) &&
       exactStatus(detail, "legacy") === 400 &&
-      exactStatus(detail, "yoram") === 404,
+      exactStatus(detail, "yoram") === 404 &&
+      hasExactIssueImportProbe(detail),
     classification: "IMPLEMENTATION_DIFFERENCE",
     rationale:
       "intentional removal: IssueApi.imports remains in the legacy external migrator namespace, outside Yoram's app-server compatibility contract (SPEC.md Legacy API 접두사; docs/provenance/legacy-external-api.md)",

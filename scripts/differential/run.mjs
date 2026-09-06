@@ -690,24 +690,25 @@ async function launchBrowserHandle() {
 }
 
 // React route shells expose these markers while their registered query group
-// is still fetching. Waiting on the marker (after network idle) is stronger
-// than accepting two equal samples: a wireframe is allowed to stay unchanged
-// for an arbitrary number of renders and must never be a settled observation.
+// is still fetching. Some routes do not render one, so readiness also checks
+// the shared loading semantics rather than requiring a route-specific marker.
 export const ROUTE_CONTENT_READY = (selector) => {
-  const root = selector ? document.querySelector(selector) : document.body;
+  const routeRoot = selector ? document.querySelector(selector) : document.querySelector(".page-wrap-outer");
+  const root = routeRoot ?? document.body;
   if (!root) return false;
-  const boundary = selector
-    ? root.closest("[data-content-ready], [aria-busy], [data-wireframe]") ?? root
-    : root;
+  const loadingText = /loading|불러오는\s*중|読み込み中|загрузка|yukla(?:nmoqda|moqda)/iu;
   const pending = [
-    boundary,
-    ...boundary.querySelectorAll("[data-content-ready], [aria-busy], [data-wireframe]"),
+    root,
+    ...root.querySelectorAll('[aria-busy], [data-wireframe], [aria-label], [role="status"], [aria-live]'),
+    ...(routeRoot ? [...root.querySelectorAll("*")].filter((element) => element.children.length === 0) : []),
   ];
   return !pending.some(
-    (element) =>
-      element.getAttribute("data-content-ready") === "false" ||
-      element.getAttribute("aria-busy") === "true" ||
-      element.hasAttribute("data-wireframe"),
+    (element) => {
+      if (element.getAttribute("aria-busy") === "true" || element.hasAttribute("data-wireframe")) return true;
+      const label = element.getAttribute("aria-label") ?? "";
+      const text = element.children.length === 0 ? element.textContent?.trim() ?? "" : "";
+      return loadingText.test(label) || loadingText.test(text);
+    },
   );
 };
 
@@ -715,7 +716,7 @@ export async function renderSkeleton(page, url, { spa = false, selector } = {}) 
   await page.goto(url, { waitUntil: "load", timeout: 30_000 });
   if (spa) {
     await page.waitForNetworkIdle({ idleTime: 500, timeout: 15_000 }).catch(() => {});
-    await page.waitForFunction(ROUTE_CONTENT_READY, selector, { timeout: 15_000 });
+    await page.waitForFunction(ROUTE_CONTENT_READY, { timeout: 15_000 }, selector);
   }
   return page.evaluate(SKELETON_EXTRACT, selector);
 }
@@ -735,27 +736,54 @@ export const PARITY_LABEL_SEEDS = Object.freeze([
   { labelName: "parity", categoryName: "area", color: "#2196f3" },
 ]);
 
+function parityLabelMatches(row, seed) {
+  return (
+    row?.name === seed.labelName &&
+    (row.category ?? "").toLowerCase() === seed.categoryName.toLowerCase() &&
+    (row.color ?? "").toLowerCase() === seed.color.toLowerCase()
+  );
+}
+
+function missingParityLabelSeeds(labels) {
+  return PARITY_LABEL_SEEDS.filter((seed) => !labels.some((row) => parityLabelMatches(row, seed)));
+}
+
 export async function alignParityLabelSeeds(session, base, labels) {
   for (const seed of PARITY_LABEL_SEEDS) {
     const row = labels.find((label) => label.name === seed.labelName);
-    const matches =
-      row &&
-      (row.category ?? "").toLowerCase() === seed.categoryName.toLowerCase() &&
-      (row.color ?? "").toLowerCase() === seed.color.toLowerCase();
-    if (matches) continue;
+    if (parityLabelMatches(row, seed)) continue;
     if (row) {
-      await session.request({
+      const response = await session.request({
         method: "POST",
         path: `${base}/admin/sample/issue/label/${row.id}/delete`,
         form: { _method: "delete" },
       });
+      if (!response || response.status >= 400) {
+        throw new Error(`parity label delete failed: HTTP ${response?.status ?? "unknown"}`);
+      }
     }
-    await session.request({
+    const response = await session.request({
       method: "POST",
       path: `${base}/admin/sample/issue/labels`,
       form: { labelName: seed.labelName, categoryName: seed.categoryName, labelColor: seed.color },
     });
+    if (!response || response.status >= 400) {
+      throw new Error(`parity label create failed: HTTP ${response?.status ?? "unknown"}`);
+    }
   }
+  const readback = await session.request({
+    method: "GET",
+    path: `${base}/admin/sample/issue/labels`,
+  });
+  if (!readback || readback.status >= 400) {
+    throw new Error(`parity label readback failed: HTTP ${readback?.status ?? "unknown"}`);
+  }
+  const rows = JSON.parse(readback.body || "[]");
+  const missing = missingParityLabelSeeds(rows);
+  if (missing.length > 0) {
+    throw new Error(`parity label readback missing: ${missing.map((seed) => seed.labelName).join(", ")}`);
+  }
+  return rows;
 }
 
 function gitRepoHasBranches(repoPath) {
@@ -842,10 +870,9 @@ async function alignParityFixtures(options) {
   const legacySession = new LegacySession(options.legacyUrl ?? process.env.YONA_LEGACY_URL ?? "http://127.0.0.1:9000");
   await legacySession.login({ loginId: "admin", password: "admin" });
   const yoramSession = new YoramSession(options.yoramUrl ?? "http://127.0.0.1:3101");
-  try {
-    await yoramSession.login({ loginId: "admin", password: "admin" });
-  } catch {
-    // already-authenticated instance is fine; keep going with cookies we have
+  const yoramLogin = await yoramSession.login({ loginId: "admin", password: "admin" });
+  if (yoramLogin.status !== 200) {
+    throw new Error(`yoram parity fixture admin sign-in failed: HTTP ${yoramLogin.status}`);
   }
   for (const [side, session, base] of [
     ["legacy", legacySession, ""],
@@ -854,8 +881,13 @@ async function alignParityFixtures(options) {
     let labels = [];
     let categories = [];
     try {
-      labels = JSON.parse((await session.request({ method: "GET", path: `${base}/admin/sample/issue/labels` })).body || "[]");
-      categories = JSON.parse((await session.request({ method: "GET", path: `${base}/admin/sample/issue/label/categories` })).body || "[]");
+      const labelsResponse = await session.request({ method: "GET", path: `${base}/admin/sample/issue/labels` });
+      const categoriesResponse = await session.request({ method: "GET", path: `${base}/admin/sample/issue/label/categories` });
+      if (labelsResponse.status >= 400 || categoriesResponse.status >= 400) {
+        throw new Error(`parity fixture reads failed: HTTP ${labelsResponse.status}/${categoriesResponse.status}`);
+      }
+      labels = JSON.parse(labelsResponse.body || "[]");
+      categories = JSON.parse(categoriesResponse.body || "[]");
     } catch {
       continue;
     }

@@ -74,9 +74,11 @@ test("SPA skeleton rendering waits for explicit route readiness, not equal wiref
   assert.match(renderSource, /waitForNetworkIdle/u);
   assert.match(renderSource, /waitForFunction/u);
   assert.doesNotMatch(renderSource, /setTimeout|previous|current ===/u);
-  assert.match(readinessSource, /data-content-ready/u);
   assert.match(readinessSource, /aria-busy/u);
   assert.match(readinessSource, /data-wireframe/u);
+  assert.match(readinessSource, /page-wrap-outer/u);
+  assert.match(readinessSource, /loading/u);
+  assert.doesNotMatch(readinessSource, /data-content-ready/u);
 });
 
 test("JSON route helper compares parsed normalized payloads without a DOM render", async () => {
@@ -115,18 +117,54 @@ test("legacy preboot cleanup removes memberships whose project row was deleted",
 
 test("parity label alignment seeds canonical legacy tuples into an empty Yoram fixture", async () => {
   const requests = [];
-  await alignParityLabelSeeds(
-    { request: async (request) => requests.push(request) },
+  const responseRows = PARITY_LABEL_SEEDS.map((seed, index) => ({
+    category: seed.categoryName,
+    categoryId: String(index + 1),
+    categoryIsExclusive: false,
+    color: seed.color,
+    id: String(index + 1),
+    name: seed.labelName,
+  }));
+  const responseBody = (request) =>
+    request.method === "GET"
+      ? JSON.stringify(responseRows)
+      : JSON.stringify(responseRows.find(({ name }) => name === request.form.labelName));
+  const aligned = await alignParityLabelSeeds(
+    {
+      request: async (request) => {
+        requests.push(request);
+        return { status: request.method === "GET" ? 200 : 201, body: responseBody(request) };
+      },
+    },
     "",
     [{ name: "parity-label-sweep-live", category: "runtime", color: "#000000", id: 99 }],
   );
+  assert.deepEqual(aligned, responseRows);
   assert.deepEqual(
-    requests.map(({ method, path, form }) => ({ method, path, form })),
+    requests
+      .filter(({ method }) => method !== "GET")
+      .map(({ method, path, form }) => ({ method, path, form })),
     PARITY_LABEL_SEEDS.map((seed) => ({
       method: "POST",
       path: "/admin/sample/issue/labels",
       form: { labelName: seed.labelName, categoryName: seed.categoryName, labelColor: seed.color },
     })),
+  );
+  assert.deepEqual(requests.at(-1), { method: "GET", path: "/admin/sample/issue/labels" });
+});
+
+test("parity label alignment rejects an unauthorized compat write", async () => {
+  await assert.rejects(
+    () =>
+      alignParityLabelSeeds(
+        {
+          request: async ({ method }) =>
+            method === "GET" ? { status: 200, body: "[]" } : { status: 401, body: "" },
+        },
+        "",
+        [],
+      ),
+    /parity label create failed: HTTP 401/,
   );
 });
 
