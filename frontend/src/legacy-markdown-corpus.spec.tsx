@@ -160,6 +160,19 @@ test("renders fenced code with the legacy language class", async () => {
   expect(container.querySelector("pre > code")?.getAttribute("class")).toBe("language-javascript");
 });
 
+test("highlights TOML in code blocks without interpreting code as HTML", async () => {
+  const source = 'title = "<img src=x onerror=alert(1)>"';
+  await renderMarkdown(
+    <MarkdownCodeBlock language="toml" className="language-toml">
+      {source}
+    </MarkdownCodeBlock>,
+  );
+  const code = container.querySelector("pre > code");
+  expect(code?.querySelector(".th-property")?.textContent).toBe("title");
+  expect(code?.textContent).toBe(source);
+  expect(code?.querySelector("img")).toBeNull();
+});
+
 test("renders fenced code without a language as plain pre/code", async () => {
   await renderMarkdown(
     <LegacyMarkdown

@@ -1258,6 +1258,12 @@ GET   /sites/export            → 데이터 익스포트
 
 **Legacy 참조**: `yona-original/app/controllers/MarkdownApp.java`, 각 view의 마크다운 렌더링
 
+**현재 renderer**: `@tanstack/markdown` + `@tanstack/highlight`.
+Highlight는 수동 언어 subset이 아니라 upstream `defaultHighlighter`의 모든
+grammar와 alias를 사용한다. 설치된 `0.0.10` 기준 plaintext 포함 26개 언어다.
+패키지에 grammar가 없는 Rust/Java/Go 등의 코드는 escaped plaintext로 남으며,
+이는 아래 historical token별 구현 기록과 구분해야 하는 현재 지원 한계다.
+
 **Legacy 라우트**:
 
 ```

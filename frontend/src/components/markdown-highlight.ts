@@ -1,55 +1,13 @@
-/* Canonical code highlighting (plan Phase E): TanStack Highlight replaces
- * react-syntax-highlighter. One isomorphic highlighter instance; registered
- * languages are the intersection of Yoram's language needs and
- * @tanstack/highlight's shipped grammars. Languages without a grammar
- * (java, kotlin, rust, go, c, cpp, csharp, …) deterministically fall back to
- * escaped plaintext — the package's own fallback (ponytail: no per-language
- * fallback stack; if a grammar ships upstream, add it to this array).
- */
+// Use every shipped grammar and alias; unknown languages remain escaped plaintext.
+import { defaultHighlighter as markdownHighlighter } from "@tanstack/highlight";
 import {
-  createHighlighter,
   renderNodesToHtml,
   renderTokens,
   type HighlightRenderNode,
 } from "@tanstack/highlight/core";
 import { createElement, type ReactNode } from "react";
-import { css } from "@tanstack/highlight/languages/css";
-import { diff } from "@tanstack/highlight/languages/diff";
-import { dockerfile } from "@tanstack/highlight/languages/dockerfile";
-import { html } from "@tanstack/highlight/languages/html";
-import { js as javascript } from "@tanstack/highlight/languages/js";
-import { json } from "@tanstack/highlight/languages/json";
-import { jsx } from "@tanstack/highlight/languages/jsx";
-import { markdown } from "@tanstack/highlight/languages/markdown";
-import { plaintext } from "@tanstack/highlight/languages/plaintext";
-import { python } from "@tanstack/highlight/languages/python";
-import { shell } from "@tanstack/highlight/languages/shell";
-import { sql } from "@tanstack/highlight/languages/sql";
-import { tsx } from "@tanstack/highlight/languages/tsx";
-import { ts as typescript } from "@tanstack/highlight/languages/ts";
-import { yaml } from "@tanstack/highlight/languages/yaml";
 import { createThemeCss } from "@tanstack/highlight/theme";
 import { githubLightTheme } from "@tanstack/highlight/themes/github-light";
-
-const markdownHighlighter = createHighlighter({
-  languages: [
-    css,
-    diff,
-    dockerfile,
-    html,
-    javascript,
-    json,
-    jsx,
-    markdown,
-    plaintext,
-    python,
-    shell,
-    sql,
-    tsx,
-    typescript,
-    yaml,
-  ],
-});
 
 /** Token-class inner HTML (no <pre>/<code> wrapper) for a code fence body.
  * All text is escaped by the highlighter, so the result is injection-safe. */
