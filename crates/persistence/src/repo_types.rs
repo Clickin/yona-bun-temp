@@ -1715,6 +1715,7 @@ pub struct PullRequestCommitChangedBranchInput {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PullRequestPushedCommitInput {
     pub author_email: String,
+    pub author_timestamp: Option<i64>,
     pub commit_id: String,
     pub commit_message: String,
 }

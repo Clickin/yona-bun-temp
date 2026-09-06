@@ -168,6 +168,7 @@ fn spawn_pull_request_merge_check(
                 .iter()
                 .map(|commit| persistence::PullRequestPushedCommitInput {
                     author_email: commit.author_email.clone(),
+                    author_timestamp: commit.author_timestamp,
                     commit_id: commit.commit_id.clone(),
                     commit_message: commit.commit_message.clone(),
                 })

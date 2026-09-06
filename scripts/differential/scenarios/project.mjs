@@ -347,9 +347,26 @@ function firstCategoryId(json) {
   return row ? Number(row.id) : null;
 }
 
+function categoryRows(json) {
+  return Array.isArray(json) ? json : Array.isArray(json?.categories) ? json.categories : [];
+}
+
+function categoryById(json, id) {
+  return categoryRows(json).find((category) => Number(category?.id) === Number(id)) ?? null;
+}
+
+function categoryName(category) {
+  return typeof category?.name === "string" ? category.name : null;
+}
+
 function categoryPath(step, categoryId) {
   return readPath({ ...step, params: { ...step.params, categoryId } });
 }
+
+export const PROJECT_LABELS_FORM_DOM_SELECTORS = Object.freeze({
+  legacySelector: ".page-wrap-outer > .project-page-wrap.label-editor-wrap",
+  yoramSelector: '[data-owner="project-labels-form-page"]',
+});
 
 function issueLabelJsonAction(pathFor) {
   const translateLegacy = (step) => ({ method: "GET", path: pathFor(step) });
@@ -392,6 +409,7 @@ async function spaReadHandler(ctx) {
     yoram: `${yoramBaseUrl}${path}`,
     spa: true,
     ...(step.action === "list-review-threads" ? { selector: ".project-page-wrap" } : {}),
+    ...(step.action === "view-issue-labels-form" ? PROJECT_LABELS_FORM_DOM_SELECTORS : {}),
   });
 }
 
@@ -532,16 +550,31 @@ export const actionDefinitions = {
       );
       state.issueLabelCategoryIdLegacy = firstCategoryId(pair.legacyResult.json);
       state.issueLabelCategoryIdYoram = firstCategoryId(pair.yoramResult.json);
+      state.issueLabelCategoriesLegacy = pair.legacyResult.json;
+      state.issueLabelCategoriesYoram = pair.yoramResult.json;
     },
   },
   "view-issue-label-category": {
     ...issueLabelCategoryJsonAction,
     async handler(ctx) {
       const { step, resolved, helpers, state } = ctx;
-      // Keep an explicit scenario category stable; generated category ids are
-      // paired only for callers that leave the route id unresolved.
       const legacyCategoryId = step.params.categoryId ?? state.issueLabelCategoryIdLegacy;
-      const yoramCategoryId = step.params.categoryId ?? state.issueLabelCategoryIdYoram;
+      const legacyCategory = categoryById(state.issueLabelCategoriesLegacy, legacyCategoryId);
+      const legacyName = categoryName(legacyCategory);
+      if (!legacyCategory || !legacyName) {
+        throw new HarnessError(
+          `view-issue-label-category: legacy category ${legacyCategoryId ?? "<unresolved>"} has no semantic name`,
+        );
+      }
+      const yoramCategory = categoryRows(state.issueLabelCategoriesYoram).find(
+        (category) => categoryName(category) === legacyName,
+      );
+      const yoramCategoryId = Number(yoramCategory?.id) || null;
+      if (!yoramCategoryId) {
+        throw new HarnessError(
+          `view-issue-label-category: no Yoram category matches legacy "${legacyName}"`,
+        );
+      }
       await helpers.requestJsonBoth(
         ctx,
         { method: "GET", path: categoryPath(step, legacyCategoryId) },

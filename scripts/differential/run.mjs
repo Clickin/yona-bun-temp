@@ -712,11 +712,23 @@ export const ROUTE_CONTENT_READY = (selector) => {
   );
 };
 
-export async function renderSkeleton(page, url, { spa = false, selector } = {}) {
+// R16 creates a PR and immediately renders its detail page while the merge
+// check is still running. The warning is valid intermediate UI, but it is not
+// the settled state that the legacy request renders. Wait on React-owned
+// markers instead of adding a timing delay.
+export const PULL_REQUEST_DETAIL_SETTLED = () => {
+  const root = document.querySelector('[data-owner="pull-request-detail-page"]');
+  if (!root || root.querySelector('[aria-busy="true"], [data-wireframe]')) return false;
+  if (root.querySelector("#state .alert-warnning")) return false;
+  const comments = root.querySelector("#comments");
+  return Boolean(comments?.querySelector("li.event") && comments.querySelector("li.commit-info"));
+};
+
+export async function renderSkeleton(page, url, { spa = false, selector, ready } = {}) {
   await page.goto(url, { waitUntil: "load", timeout: 30_000 });
   if (spa) {
     await page.waitForNetworkIdle({ idleTime: 500, timeout: 15_000 }).catch(() => {});
-    await page.waitForFunction(ROUTE_CONTENT_READY, { timeout: 15_000 }, selector);
+    await page.waitForFunction(ready ?? ROUTE_CONTENT_READY, { timeout: 30_000 }, selector);
   }
   return page.evaluate(SKELETON_EXTRACT, selector);
 }
@@ -1947,6 +1959,13 @@ export const stepHelpers = {
       const yoramSkeleton = await renderSkeleton(ctx.yoramPage, domTarget.yoram, {
         spa: domTarget.spa,
         selector: domTarget.yoramSelector ?? domTarget.selector,
+        ready:
+          ctx.scenarioId === "R16-pr-review-points" &&
+          /^\/[^/]+\/[^/]+\/pullRequest\/\d+$/u.test(
+            new URL(domTarget.yoram).pathname,
+          )
+            ? PULL_REQUEST_DETAIL_SETTLED
+            : undefined,
       });
       if (domTarget.currentToken) {
         for (const [page, side] of [[ctx.legacyPage, "legacy"], [ctx.yoramPage, "yoram"]]) {
@@ -2191,6 +2210,7 @@ export async function runSweep(options = {}) {
             legacySession,
             yoramSession,
             browser: browserHandle.browser,
+            scenarioId: scenario.id,
             options,
             yoramBaseUrl: yoramHandle.baseUrl,
           });

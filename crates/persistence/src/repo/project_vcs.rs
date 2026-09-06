@@ -282,7 +282,15 @@ impl AppRepositoryImpl<'_> {
                 id: NotSet,
                 pull_request_id: Set(Some(pull_request_id)),
                 commit_id: Set(Some(commit_id.to_string())),
-                author_date: Set(Some(now)),
+                author_date: Set(
+                    commit
+                        .author_timestamp
+                        .and_then(|timestamp| {
+                            DateTimeUtc::from_timestamp(timestamp, 0)
+                                .map(|value| value.naive_utc())
+                        })
+                        .or(Some(now)),
+                ),
                 created: Set(Some(now)),
                 commit_short_id: Set(Some(commit_id.chars().take(7).collect())),
                 author_email: Set(empty_to_none(Some(commit.author_email.clone()))),

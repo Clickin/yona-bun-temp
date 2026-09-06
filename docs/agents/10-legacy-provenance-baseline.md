@@ -47,7 +47,8 @@
   was red before the persistence wiring:
   `.agent/cargo-test-logs/cargo-test-2026-09-06T020358-508Z.log` (failed at
   `initial commit changed event`), and green after it:
-  `.agent/cargo-test-logs/cargo-test-2026-09-06T020859-682Z.log` (passed).
+  `.agent/cargo-test-logs/cargo-test-2026-09-06T023056-953Z.log` (passed,
+  including the persisted VCS author timestamp assertion).
   The relevant workspace check is recorded at
-  `.agent/cargo-logs/cargo-2026-09-06T020813-420Z.log`
+  `.agent/cargo-logs/cargo-2026-09-06T023139-378Z.log`
   (`cargo check -p yoram-server`, passed).

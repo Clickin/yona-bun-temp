@@ -16,6 +16,7 @@ import {
   runtimeVerifiedBehaviorIds,
   renderSkeleton,
   ROUTE_CONTENT_READY,
+  PULL_REQUEST_DETAIL_SETTLED,
   stepHelpers,
   SKELETON_EXTRACT,
 } from "./run.mjs";
@@ -79,6 +80,50 @@ test("SPA skeleton rendering waits for explicit route readiness, not equal wiref
   assert.match(readinessSource, /page-wrap-outer/u);
   assert.match(readinessSource, /loading/u);
   assert.doesNotMatch(readinessSource, /data-content-ready/u);
+});
+
+test("R16 PR detail waits for settled event DOM only on its exact route", () => {
+  const renderSource = stepHelpers.renderDomTarget.toString();
+  assert.match(renderSource, /ctx\.scenarioId === "R16-pr-review-points"/u);
+  assert.match(renderSource, /new URL\(domTarget\.yoram\)\.pathname/u);
+  assert.match(renderSource, /PULL_REQUEST_DETAIL_SETTLED/u);
+
+  const previousDocument = globalThis.document;
+  const state = { merging: true, hasEvent: true, hasCommit: true };
+  const comments = {
+    querySelector(selector) {
+      if (selector === "li.event") return state.hasEvent ? {} : null;
+      if (selector === "li.commit-info") return state.hasCommit ? {} : null;
+      return null;
+    },
+  };
+  const root = {
+    querySelector(selector) {
+      if (selector === '[aria-busy="true"], [data-wireframe]') return null;
+      if (selector === "#state .alert-warnning") return state.merging ? {} : null;
+      if (selector === "#comments") return comments;
+      return null;
+    },
+  };
+  globalThis.document = {
+    querySelector(selector) {
+      return selector === '[data-owner="pull-request-detail-page"]' ? root : null;
+    },
+  };
+  try {
+    assert.equal(PULL_REQUEST_DETAIL_SETTLED(), false, "merge-check warning is not settled");
+    state.merging = false;
+    state.hasEvent = false;
+    assert.equal(PULL_REQUEST_DETAIL_SETTLED(), false, "event list is required");
+    state.hasEvent = true;
+    state.hasCommit = false;
+    assert.equal(PULL_REQUEST_DETAIL_SETTLED(), false, "commit event row is required");
+    state.hasCommit = true;
+    assert.equal(PULL_REQUEST_DETAIL_SETTLED(), true);
+  } finally {
+    if (previousDocument === undefined) delete globalThis.document;
+    else globalThis.document = previousDocument;
+  }
 });
 
 test("JSON route helper compares parsed normalized payloads without a DOM render", async () => {

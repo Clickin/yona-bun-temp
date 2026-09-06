@@ -29,6 +29,7 @@ import {
   classifyViolation,
   reclassifyScenarioViolations,
   PROJECT_ISSUE_DOM_IMPLEMENTATION_FINGERPRINTS,
+  PROJECT_ISSUE_LABELS_DOM_IMPLEMENTATION_FINGERPRINTS,
   PROJECT_PULL_REQUEST_DOM_IMPLEMENTATION_FINGERPRINTS,
   SITE_ADMIN_DOM_IMPLEMENTATION_FINGERPRINTS,
   violation,
@@ -445,7 +446,12 @@ function fingerprintRoute(fingerprint, index = 0) {
 }
 
 function fingerprintContext(fingerprint) {
-  return fingerprint.scenarioId ? { scenarioId: fingerprint.scenarioId } : {};
+  return fingerprint.scenarioId
+    ? {
+        scenarioId: fingerprint.scenarioId,
+        scenarioActions: fingerprint.action ? [fingerprint.action] : [],
+      }
+    : {};
 }
 
 test("site-admin DOM fingerprints cite the exact WTR contract and classify only exact captures", () => {
@@ -637,6 +643,137 @@ test("project issue-detail DOM fingerprints keep label/avatar control loss block
       );
     }
   }
+});
+
+test("project labelsform rebrand fingerprint keeps form/button/label near-misses blocking", () => {
+  const fingerprint = PROJECT_ISSUE_LABELS_DOM_IMPLEMENTATION_FINGERPRINTS.find(
+    (candidate) => candidate.route === "/admin/sample/issue/labelsform",
+  );
+  assert.ok(fingerprint);
+  const context = fingerprintContext(fingerprint);
+
+  assert.equal(
+    classifyViolation(
+      "dom",
+      fingerprint.route,
+      siteAdminFingerprintDetail(fingerprint),
+      context,
+    ).classification,
+    "IMPLEMENTATION_DIFFERENCE",
+  );
+
+  const nearMisses = [
+    fingerprint.firstDiffs.map((diff, index) =>
+      index === 0
+        ? { ...diff, actual: String(diff.actual).replace("Yoram/Yoram", "Changed/Changed") }
+        : diff,
+    ),
+    [
+      ...fingerprint.firstDiffs,
+      { side: "legacy-only", expected: "form.new-label-wrap:", actual: "form:" },
+    ],
+    [
+      ...fingerprint.firstDiffs,
+      { side: "legacy-only", expected: "button.ybtn.ybtn-primary.btn-submit:라벨 추가", actual: "button:라벨 수정" },
+    ],
+    [
+      ...fingerprint.firstDiffs,
+      { side: "legacy-only", expected: "span.issue-label.active:bug", actual: "span.category-name:bug" },
+    ],
+  ];
+  for (const [index, firstDiffs] of nearMisses.entries()) {
+    assert.equal(
+      classifyViolation(
+        "dom",
+        fingerprint.route,
+        siteAdminFingerprintDetail(fingerprint, { firstDiffs }),
+        context,
+      ).classification,
+      "UNVERIFIED",
+      `near-miss ${index} must remain blocking`,
+    );
+  }
+
+  assert.equal(
+    classifyViolation(
+      "dom",
+      fingerprint.route,
+      siteAdminFingerprintDetail(fingerprint, {
+        skeletonEntries: fingerprint.actualSkeletonEntries + 1,
+      }),
+      context,
+    ).classification,
+    "UNVERIFIED",
+    "changed skeleton count must remain blocking",
+  );
+  assert.equal(
+    classifyViolation(
+      "dom",
+      fingerprint.route,
+      siteAdminFingerprintDetail(fingerprint),
+      { scenarioId: fingerprint.scenarioId, scenarioActions: ["view-issue-label-category"] },
+    ).classification,
+    "UNVERIFIED",
+    "wrong labels state must remain blocking",
+  );
+});
+
+test("project issue-detail fingerprints normalize mutable comment time and sweep identity", () => {
+  const fingerprint = PROJECT_ISSUE_DOM_IMPLEMENTATION_FINGERPRINTS.find(
+    (candidate) => candidate.state === "comment-created",
+  );
+  assert.ok(fingerprint);
+  const variedTimes = ["a.ago:2시간 전", "a.ago:3일 전"];
+  for (const [index, time] of variedTimes.entries()) {
+    const firstDiffs = fingerprint.firstDiffs.map((diff) => ({
+      ...diff,
+      actual: String(diff.actual)
+        .replace("a.ago:<relative-time>", time)
+        .replace(
+          "a:Differential sweep issue body <sweep-id>",
+          `a:Differential sweep issue body sweep-varied-${index}`,
+        ),
+    }));
+    assert.equal(
+      classifyViolation(
+        "dom",
+        `/admin/sample/issue/${901 + index}`,
+        siteAdminFingerprintDetail(fingerprint, { firstDiffs }),
+        fingerprintContext(fingerprint),
+      ).classification,
+      "IMPLEMENTATION_DIFFERENCE",
+    );
+  }
+
+  const changedControl = fingerprint.firstDiffs.map((diff) =>
+    String(diff.expected).includes("label-edit")
+      ? { ...diff, expected: "a.label-edit:[Changed]" }
+      : diff,
+  );
+  assert.equal(
+    classifyViolation(
+      "dom",
+      "/admin/sample/issue/999",
+      siteAdminFingerprintDetail(fingerprint, { firstDiffs: changedControl }),
+      fingerprintContext(fingerprint),
+    ).classification,
+    "UNVERIFIED",
+  );
+
+  const changedText = fingerprint.firstDiffs.map((diff) =>
+    String(diff.actual).includes("Differential sweep issue body")
+      ? { ...diff, actual: "a:Differential sweep issue body changed" }
+      : diff,
+  );
+  assert.equal(
+    classifyViolation(
+      "dom",
+      "/admin/sample/issue/1000",
+      siteAdminFingerprintDetail(fingerprint, { firstDiffs: changedText }),
+      fingerprintContext(fingerprint),
+    ).classification,
+    "UNVERIFIED",
+  );
 });
 
 test("project pull-request DOM fingerprints keep missing button, text, and count blocking", () => {

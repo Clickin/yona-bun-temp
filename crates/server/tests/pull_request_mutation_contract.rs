@@ -2,7 +2,8 @@ use axum::body::Body;
 use http::{Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
 use sea_orm::{
-    ConnectionTrait, Database, DatabaseConnection, EntityTrait, PaginatorTrait, Statement,
+    ColumnTrait, ConnectionTrait, Database, DatabaseConnection, EntityTrait, PaginatorTrait,
+    QueryFilter, Statement,
 };
 use serde_json::{json, Value};
 use std::fs;
@@ -15,7 +16,7 @@ use yoram_integrations::{
     clear_test_webhook_outbox, queue_test_webhook_response, snapshot_test_webhook_outbox,
 };
 use yoram_migration::Migrator;
-use yoram_persistence::{webhook_thread, AppRepository};
+use yoram_persistence::{pull_request_commit, webhook_thread, AppRepository};
 use yoram_server::{create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig};
 
 mod rest_test_support;
@@ -298,6 +299,18 @@ fn run_git(repo_path: &Path, args: &[&str]) {
     assert!(status.success(), "git {:?} failed", args);
 }
 
+fn run_git_with_commit_date(repo_path: &Path, args: &[&str], date: &str) {
+    let status = Command::new("git")
+        .arg("-C")
+        .arg(repo_path)
+        .args(args)
+        .env("GIT_AUTHOR_DATE", date)
+        .env("GIT_COMMITTER_DATE", date)
+        .status()
+        .expect("run git");
+    assert!(status.success(), "git {:?} failed", args);
+}
+
 fn git_dir_output(repo_path: &Path, args: &[&str]) -> String {
     let output = Command::new("git")
         .arg("--git-dir")
@@ -400,7 +413,11 @@ fn seed_bare_repo_with_branches(data_root: &Path, owner: &str, project: &str) {
     run_git(&work_path, &["checkout", "-b", "topic/pr"]);
     write_repo_file(&work_path, "README.md", "topic\n");
     run_git(&work_path, &["add", "README.md"]);
-    run_git(&work_path, &["commit", "-m", "topic"]);
+    run_git_with_commit_date(
+        &work_path,
+        &["commit", "-m", "topic"],
+        "2020-01-01T12:34:56+00:00",
+    );
     run_git(&work_path, &["checkout", "main"]);
     run_git(&work_path, &["checkout", "-b", "topic/conflict"]);
     write_repo_file(&work_path, "README.md", "conflict\n");
@@ -1150,6 +1167,17 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         .unwrap()
         .iter()
         .any(|commit| commit["commitMessage"] == "topic"));
+    let preview_commit_date = merge_result["commits"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|commit| commit["commitMessage"] == "topic")
+        .and_then(|commit| commit["authorDateLabel"].as_str())
+        .expect("preview commit author date");
+    let preview_commit_day = preview_commit_date
+        .split('T')
+        .next()
+        .expect("preview commit date day");
 
     let invalid_create = rest_json(
         app.clone(),
@@ -1229,6 +1257,30 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     assert_eq!(
         commit_changed_event["commits"][0]["commitMessage"],
         "topic"
+    );
+    assert_eq!(
+        commit_changed_event["commits"][0]["authorDateLabel"],
+        preview_commit_day
+    );
+    assert_eq!(
+        settled_detail["commits"][0]["authorDateLabel"],
+        preview_commit_day
+    );
+    let persisted_commit = pull_request_commit::Entity::find()
+        .filter(pull_request_commit::Column::PullRequestId.eq(Some(
+            created["id"].as_i64().expect("created pull request id"),
+        )))
+        .one(&db)
+        .await
+        .expect("read initial pull request commit")
+        .expect("initial pull request commit row");
+    assert_eq!(
+        persisted_commit
+            .author_date
+            .expect("initial commit author date")
+            .format("%Y-%m-%dT%H:%M:%S")
+            .to_string(),
+        &preview_commit_date[..19]
     );
     assert_eq!(created["contributor"]["userId"], owner_id);
     assert_eq!(created["receiver"]["userId"], owner_id);

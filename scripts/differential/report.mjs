@@ -226,6 +226,8 @@ function siteAdminDomFingerprint({
   route,
   state,
   scenarioId,
+  action,
+  normalizeIssueDiffs = false,
   expectedSkeletonEntries,
   actualSkeletonEntries,
   firstDiffs,
@@ -233,19 +235,56 @@ function siteAdminDomFingerprint({
   wtrSource,
   rationale,
 }) {
+  const normalizedFirstDiffs = normalizeIssueDiffs
+    ? firstDiffs.map(([side, expected, actual]) => [
+        side,
+        normalizeIssueDiffEntry(expected),
+        normalizeIssueDiffEntry(actual),
+      ])
+    : firstDiffs;
   return Object.freeze({
     route,
     state,
     scenarioId,
+    action,
+    normalizeIssueDiffs,
     expectedSkeletonEntries,
     actualSkeletonEntries,
     firstDiffs: Object.freeze(
-      firstDiffs.map(([side, expected, actual]) => Object.freeze({ side, expected, actual })),
+      normalizedFirstDiffs.map(([side, expected, actual]) =>
+        Object.freeze({ side, expected, actual }),
+      ),
     ),
     wtrTest,
     wtrSource,
     rationale,
   });
+}
+
+function normalizeIssueDiffEntry(entry) {
+  if (typeof entry !== "string") return entry;
+  if (entry.startsWith("a.ago:")) return "a.ago:<relative-time>";
+  return entry.replace(
+    /^a:Differential sweep issue body sweep[\w-]+$/u,
+    "a:Differential sweep issue body <sweep-id>",
+  );
+}
+
+function normalizedFingerprintDetail(detail, fingerprint) {
+  if (!fingerprint.normalizeIssueDiffs || !Array.isArray(detail?.actual?.firstDiffs)) {
+    return detail;
+  }
+  return {
+    ...detail,
+    actual: {
+      ...detail.actual,
+      firstDiffs: detail.actual.firstDiffs.map((diff) => ({
+        ...diff,
+        expected: normalizeIssueDiffEntry(diff.expected),
+        actual: normalizeIssueDiffEntry(diff.actual),
+      })),
+    },
+  };
 }
 
 // These are exact, finite SSR-vs-SPA body fingerprints from the U18 capture.
@@ -463,10 +502,11 @@ export const SITE_ADMIN_DOM_IMPLEMENTATION_FINGERPRINTS = Object.freeze([
 ]);
 
 function exactDomFingerprint(detail, fingerprint) {
+  const comparableDetail = normalizedFingerprintDetail(detail, fingerprint);
   return (
-    detail?.expected?.skeletonEntries === fingerprint.expectedSkeletonEntries &&
-    detail?.actual?.skeletonEntries === fingerprint.actualSkeletonEntries &&
-    JSON.stringify(detail?.actual?.firstDiffs) === JSON.stringify(fingerprint.firstDiffs)
+    comparableDetail?.expected?.skeletonEntries === fingerprint.expectedSkeletonEntries &&
+    comparableDetail?.actual?.skeletonEntries === fingerprint.actualSkeletonEntries &&
+    JSON.stringify(comparableDetail?.actual?.firstDiffs) === JSON.stringify(fingerprint.firstDiffs)
   );
 }
 
@@ -639,6 +679,7 @@ export const PROJECT_ISSUE_DOM_IMPLEMENTATION_FINGERPRINTS = Object.freeze([
     route: "/admin/sample/issue/[1-9][0-9]*",
     state: "edit-issue-state",
     scenarioId: "I18-issue-edit-state",
+    action: "create-issue",
     expectedSkeletonEntries: 325,
     actualSkeletonEntries: 300,
     firstDiffs: [
@@ -672,6 +713,7 @@ export const PROJECT_ISSUE_DOM_IMPLEMENTATION_FINGERPRINTS = Object.freeze([
     route: "/admin/sample/issue/[1-9][0-9]*",
     state: "comment-lifecycle-initial",
     scenarioId: "I19-comment-lifecycle",
+    action: "create-issue",
     expectedSkeletonEntries: 325,
     actualSkeletonEntries: 300,
     firstDiffs: [
@@ -705,6 +747,8 @@ export const PROJECT_ISSUE_DOM_IMPLEMENTATION_FINGERPRINTS = Object.freeze([
     route: "/admin/sample/issue/[1-9][0-9]*",
     state: "comment-created",
     scenarioId: "I19-comment-lifecycle",
+    action: "create-issue-comment",
+    normalizeIssueDiffs: true,
     expectedSkeletonEntries: 572,
     actualSkeletonEntries: 550,
     firstDiffs: [
@@ -738,6 +782,7 @@ export const PROJECT_ISSUE_DOM_IMPLEMENTATION_FINGERPRINTS = Object.freeze([
     route: "/admin/sample/issue/[1-9][0-9]*",
     state: "issue-engagement",
     scenarioId: "I20-issue-engagement",
+    action: "create-issue",
     expectedSkeletonEntries: 325,
     actualSkeletonEntries: 300,
     firstDiffs: [
@@ -767,14 +812,90 @@ export const PROJECT_ISSUE_DOM_IMPLEMENTATION_FINGERPRINTS = Object.freeze([
     rationale:
       'Exact issue-detail body fingerprint from the I20 issue-engagement capture. Focused WTR sources: frontend/tests/wtr/project-issue-detail-3.e2e.ts:347-390; frontend/tests/wtr/project-issue-detail-1.e2e.ts:368-420. The focused WTR test "project issue detail renders legacy updateable labels without manager edit link" verifies the label permission boundary, while "project issue detail matches legacy issue/view.scala.html voter state" canonicalizes the issue body/avatar timeline; near-misses, including an actual visible control loss, remain UNVERIFIED.',
   }),
+  siteAdminDomFingerprint({
+    route: "/admin/sample/issue/[1-9][0-9]*",
+    state: "issue-label-crud",
+    scenarioId: "I21-issue-label-crud",
+    action: "create-issue",
+    expectedSkeletonEntries: 325,
+    actualSkeletonEntries: 300,
+    firstDiffs: [
+      ["yoram-only", "a.label-edit:[수정]", "a.head-anchor.active:#"],
+      ["yoram-only", "a.label-edit:[수정]", "a.head-anchor.active:#"],
+      ["yoram-only", "a.label-edit:[수정]", "a.head-anchor.active:#"],
+      ["legacy-only", "a:@yobi", "a:@example"],
+      ["yoram-only", "a:Site", "a:@example"],
+      ["legacy-only", "a:http://yobi.io/", "a:https://example.com/"],
+      ["legacy-only", "abbr.select2-search-choice-close:", "a:https://example.com/"],
+      ["legacy-only", "abbr.select2-search-choice-close:", "a:https://example.com/"],
+      ["yoram-only", "button.add-task-list-button.ybtn.ybtn-small.ybtn-danger-no-outline:체크리스트 추가", "a:https://example.com/"],
+      ["legacy-only", "button.icon.btn-transparent-with-fontsize-lineheight.ml10.pt5px:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["legacy-only", "button.icon.btn-transparent-with-fontsize-lineheight.ml10.pt5px:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["legacy-only", "button.icon.btn-transparent-with-fontsize-lineheight.ml6:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["legacy-only", "button.icon.btn-transparent-with-fontsize-lineheight.ml6:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["yoram-only", "button.search-btn.btn-calendar:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["yoram-only", "button.search-btn.btn-calendar:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["yoram-only", "button.search-btn.btn-calendar:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["yoram-only", "button.search-btn.btn-calendar:", "button.icon.btn-transparent-with-fontsize-lineheight:"],
+      ["yoram-only", "button.search-btn.btn-calendar:", "button.markdown-help-nav-button:Blockquote"],
+      ["yoram-only", "button.search-btn.btn-calendar:", "button.markdown-help-nav-button:Checklist"],
+      ["yoram-only", "button.search-btn.btn-calendar:", "button.markdown-help-nav-button:Code"],
+    ],
+    wtrTest: "project issue detail renders legacy updateable labels without manager edit link",
+    wtrSource: "frontend/tests/wtr/project-issue-detail-3.e2e.ts:347-390; frontend/tests/wtr/project-issue-detail-1.e2e.ts:368-420",
+    rationale:
+      'Exact issue-detail body fingerprint from the I21 issue-label-crud capture. Focused WTR sources: frontend/tests/wtr/project-issue-detail-3.e2e.ts:347-390; frontend/tests/wtr/project-issue-detail-1.e2e.ts:368-420. The focused WTR test "project issue detail renders legacy updateable labels without manager edit link" verifies the label permission boundary, while "project issue detail matches legacy issue/view.scala.html voter state" canonicalizes the issue body/avatar timeline; near-misses, including an actual visible control loss, remain UNVERIFIED.',
+  }),
 ]);
 
 const PROJECT_ISSUE_DOM_FINGERPRINT_RULES = PROJECT_ISSUE_DOM_IMPLEMENTATION_FINGERPRINTS.map(
   (fingerprint) => ({
-    test: ({ kind, route, detail, scenarioId }) =>
+    test: ({ kind, route, detail, scenarioId, scenarioActions }) =>
       kind === "dom" &&
       /^\/admin\/sample\/issue\/[1-9][0-9]*$/u.test(route) &&
       scenarioId === fingerprint.scenarioId &&
+      (!fingerprint.action || scenarioActions?.includes(fingerprint.action)) &&
+      exactDomFingerprint(detail, fingerprint),
+    classification: "IMPLEMENTATION_DIFFERENCE",
+    rationale: fingerprint.rationale,
+    reason: `exact ${fingerprint.route} ${fingerprint.state} DOM implementation fingerprint; changed or missing visible content falls through to UNVERIFIED`,
+  }),
+);
+
+export const PROJECT_ISSUE_LABELS_DOM_IMPLEMENTATION_FINGERPRINTS = Object.freeze([
+  siteAdminDomFingerprint({
+    route: "/admin/sample/issue/labelsform",
+    state: "labels-form",
+    scenarioId: "P1-issue-labels",
+    action: "view-issue-labels-form",
+    expectedSkeletonEntries: 75,
+    actualSkeletonEntries: 75,
+    firstDiffs: [
+      [
+        "legacy-only",
+        "div:만약 라벨을 복사해 오려는 대상 프로젝트가 'naver/yobi' 라면 소유자는 naver, 프로젝트 이름은 yobi 입니다. 대소문자는 구분하지 않습니다.",
+        "div:만약 라벨을 복사해 오려는 대상 프로젝트가 'Yoram/Yoram' 라면 소유자는 Yoram, 프로젝트 이름은 Yoram 입니다. 대소문자는 구분하지 않습니다.",
+      ],
+      [
+        "yoram-only",
+        "div:현재 프로젝트에 이미 동일한 이름과 동일한 카테고리, 색을 가진 라벨이 존재하면, 해당 라벨은 추가되지 않습니다.",
+        "div:만약 라벨을 복사해 오려는 대상 프로젝트가 'Yoram/Yoram' 라면 소유자는 Yoram, 프로젝트 이름은 Yoram 입니다. 대소문자는 구분하지 않습니다.",
+      ],
+    ],
+    wtrTest: "project labels renders REST categoryName payloads with legacy control classes",
+    wtrSource: "frontend/tests/wtr/project-labels-form.e2e.ts:1187-1215",
+    rationale:
+      "Product-identity-only copy: the exact legacy naver/yobi description versus the current Yoram/Yoram description is the approved Yoram rebrand documented by docs/provenance/frontend-yoram-rebrand-2026-07-13.md:135-138 and frontend/src/rebrand.spec.ts:72-84. The focused WTR test \"project labels renders REST categoryName payloads with legacy control classes\" (frontend/tests/wtr/project-labels-form.e2e.ts:1187-1215) separately proves the live label payload, visible category/label order, and primary control classes; any changed or missing form, button, label, copy, or count remains UNVERIFIED.",
+  }),
+]);
+
+const PROJECT_ISSUE_LABELS_DOM_FINGERPRINT_RULES = PROJECT_ISSUE_LABELS_DOM_IMPLEMENTATION_FINGERPRINTS.map(
+  (fingerprint) => ({
+    test: ({ kind, route, detail, scenarioId, scenarioActions }) =>
+      kind === "dom" &&
+      route === fingerprint.route &&
+      scenarioId === fingerprint.scenarioId &&
+      (!fingerprint.action || scenarioActions?.includes(fingerprint.action)) &&
       exactDomFingerprint(detail, fingerprint),
     classification: "IMPLEMENTATION_DIFFERENCE",
     rationale: fingerprint.rationale,
@@ -1088,6 +1209,7 @@ const CLASSIFICATION_RULES = [
   ...SITE_ADMIN_DOM_FINGERPRINT_RULES,
   ...PROJECT_PULL_REQUEST_DOM_FINGERPRINT_RULES,
   ...PROJECT_ISSUE_DOM_FINGERPRINT_RULES,
+  ...PROJECT_ISSUE_LABELS_DOM_FINGERPRINT_RULES,
   {
     // Narrow exception for the one known PR merge actor failure. This rule is
     // intentionally scenario-aware and only accepts an exact pending/current
@@ -1192,7 +1314,12 @@ export function reclassifyScenarioViolations(scenario) {
       finding.kind,
       finding.route,
       { expected: finding.expected, actual: finding.actual },
-      { behaviorId: finding.behaviorId, scenarioId: scenario.id, scenarioViolations },
+      {
+        behaviorId: finding.behaviorId,
+        scenarioId: scenario.id,
+        scenarioActions: (scenario.stepResults ?? []).map((step) => step.action),
+        scenarioViolations,
+      },
     );
     Object.assign(finding, classified);
   }

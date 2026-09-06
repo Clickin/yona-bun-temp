@@ -318,6 +318,7 @@ pub struct PullRequestDiffSnapshot {
 pub struct PullRequestDiffCommitRecord {
     pub author_date_label: String,
     pub author_email: String,
+    pub author_timestamp: Option<i64>,
     pub commit_id: String,
     pub commit_message: String,
     pub commit_short_id: String,
@@ -3929,7 +3930,7 @@ fn list_pull_request_commits(
         repo_path,
         &[
             "log",
-            "--format=%H%x1f%h%x1f%s%x1f%ae%x1f%ad",
+            "--format=%H%x1f%h%x1f%s%x1f%ae%x1f%ad%x1f%at",
             "--date=iso-strict",
             &range,
         ],
@@ -3949,7 +3950,7 @@ fn list_pull_request_commits_in_worktree(
         work_tree_path,
         &[
             "log",
-            "--format=%H%x1f%h%x1f%s%x1f%ae%x1f%ad",
+            "--format=%H%x1f%h%x1f%s%x1f%ae%x1f%ad%x1f%at",
             "--date=iso-strict",
             &range,
         ],
@@ -3969,9 +3970,13 @@ fn parse_pull_request_commit_records(output: &str) -> Vec<PullRequestDiffCommitR
             let commit_message = parts.next().unwrap_or_default().to_string();
             let author_email = parts.next().unwrap_or_default().to_string();
             let author_date_label = parts.next().unwrap_or_default().to_string();
+            let author_timestamp = parts
+                .next()
+                .and_then(|value| value.parse::<i64>().ok());
             Some(PullRequestDiffCommitRecord {
                 author_date_label,
                 author_email,
+                author_timestamp,
                 commit_id,
                 commit_message,
                 commit_short_id,

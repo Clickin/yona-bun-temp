@@ -625,6 +625,7 @@ async fn record_pull_request_commit_changed_side_effects(
                 .iter()
                 .map(|commit| persistence::PullRequestPushedCommitInput {
                     author_email: commit.author_email.clone(),
+                    author_timestamp: None,
                     commit_id: commit.commit_id.clone(),
                     commit_message: commit.message.clone(),
                 })

@@ -1184,6 +1184,36 @@ test("project labels edit modals submit through route mutations", async ({ page 
   );
 });
 
+test("project labels renders REST categoryName payloads with legacy control classes", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectLabels(page, [
+    {
+      categoryId: "2",
+      categoryIsExclusive: false,
+      categoryName: "area",
+      color: "#2196f3",
+      id: "2",
+      name: "parity",
+    },
+  ]);
+
+  await page.goto(`${basePath}/admin/sample/issue/labelsform`);
+
+  const category = page.locator('#labelsList .category-wrap[data-category-name="area"]');
+  await expect(category).toHaveCount(1);
+  await expect(category.locator(".category-name")).toHaveText("area");
+  await expect(category.locator(".issue-label")).toHaveText("parity");
+  await expect(category.locator('[data-owner="project-labels-category-heading"]')).toHaveClass(
+    "right-txt mr20",
+  );
+  await expect(category.locator("td.actions button")).toHaveText(["Delete", "Edit"]);
+  await expect(page.locator('[data-owner="project-labels-new-submit"]')).toHaveClass(
+    "ybtn ybtn-primary btn-submit",
+  );
+});
+
 test("project labels delete confirm modal preserves legacy dismiss and accept flow", async ({
   page,
 }) => {

@@ -602,7 +602,7 @@ function ProjectLabelsBody({
                 </div>
                 <button
                   type="submit"
-                  className="project-labels-new-submit"
+                  className="ybtn ybtn-primary btn-submit"
                   data-owner="project-labels-new-submit"
                 >
                   {t("label.add")}
@@ -769,7 +769,7 @@ function ProjectLabelsList({
           key={category.id || category.name}
         >
           <div className="span3">
-            <h5 className="mr20" data-owner="project-labels-category-heading">
+            <h5 className="right-txt mr20" data-owner="project-labels-category-heading">
               <span className="category-name">{category.name}</span>
               <p className="mt5">
                 <i
@@ -866,7 +866,7 @@ function groupedLabels(labels: YoramRecord[]) {
 
   for (const label of labels) {
     const id = stringField(label.categoryId, "");
-    const name = stringField(label.category, "");
+    const name = labelCategoryName(label);
     const key = id || name;
     const existing = categories.get(key);
     if (existing) {
@@ -1297,7 +1297,7 @@ function EditLabelModal({
   for (const label of labels) {
     const id = stringField(label.categoryId, "");
     if (id) {
-      categoriesById.set(id, { id, name: stringField(label.category, "") });
+      categoriesById.set(id, { id, name: labelCategoryName(label) });
     }
   }
   const categories = Array.from(categoriesById.values());
@@ -1650,8 +1650,12 @@ function booleanField(value: unknown) {
 function isLabelExists(labels: YoramRecord[], categoryName: string, labelName: string) {
   return labels.some(
     (label) =>
-      stringField(label.category, "") === categoryName && stringField(label.name, "") === labelName,
+      labelCategoryName(label) === categoryName && stringField(label.name, "") === labelName,
   );
+}
+
+function labelCategoryName(label: YoramRecord) {
+  return stringField(label.categoryName, stringField(label.category, ""));
 }
 
 function refineHexColor(color: string) {

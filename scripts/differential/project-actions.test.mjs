@@ -10,6 +10,8 @@ import path from "node:path";
 
 import { ACTION_DEFINITIONS } from "./scenarios/index.mjs";
 import { validateScenarios, matchBehaviors } from "./dsl.mjs";
+import { domVisibleLoss } from "./diff.mjs";
+import { classifyViolation } from "./report.mjs";
 import { scenarios, actionDefinitions } from "./scenarios/project.mjs";
 
 const MERGED_DEFINITIONS = { ...ACTION_DEFINITIONS, ...actionDefinitions };
@@ -129,8 +131,18 @@ test("issue label categories pair side-specific generated category ids", async (
     async requestJsonBoth(_ctx, legacy, yoram, route, normalize) {
       calls.push({ legacy, yoram, route, normalize });
       return {
-        legacyResult: { json: [{ id: 42, name: "type", isExclusive: "false" }] },
-        yoramResult: { json: [{ id: 84, name: "type", isExclusive: "false" }] },
+        legacyResult: {
+          json: [
+            { id: 42, name: "area", isExclusive: "false" },
+            { id: 1, name: "type", isExclusive: "false" },
+          ],
+        },
+        yoramResult: {
+          json: [
+            { id: 84, name: "area", isExclusive: "false" },
+            { id: 7, name: "type", isExclusive: "false" },
+          ],
+        },
       };
     },
   };
@@ -140,7 +152,8 @@ test("issue label categories pair side-specific generated category ids", async (
     state,
     helpers,
   });
-  assert.deepEqual(state, { issueLabelCategoryIdLegacy: 42, issueLabelCategoryIdYoram: 84 });
+  assert.equal(state.issueLabelCategoryIdLegacy, 42);
+  assert.equal(state.issueLabelCategoryIdYoram, 84);
 
   const detailStep = {
     action: "view-issue-label-category",
@@ -153,7 +166,7 @@ test("issue label categories pair side-specific generated category ids", async (
     helpers,
   });
   assert.equal(calls[1].legacy.path, "/admin/sample/issue/label/category/1");
-  assert.equal(calls[1].yoram.path, "/admin/sample/issue/label/category/1");
+  assert.equal(calls[1].yoram.path, "/admin/sample/issue/label/category/7");
   assert.equal(calls[1].route, "/admin/sample/issue/label/category/1");
 
   const generatedDetail = {
@@ -170,7 +183,31 @@ test("issue label categories pair side-specific generated category ids", async (
   assert.equal(calls[2].yoram.path, "/admin/sample/issue/label/category/84");
 });
 
-test("issue labels form stays a strict HTML DOM comparison", async () => {
+test("missing semantic category match blocks detail comparison", async () => {
+  let calls = 0;
+  await assert.rejects(
+    MERGED_DEFINITIONS["view-issue-label-category"].handler({
+      step: {
+        action: "view-issue-label-category",
+        params: { owner: "admin", project: "sample", categoryId: 1 },
+      },
+      resolved: {},
+      state: {
+        issueLabelCategoriesLegacy: [{ id: 1, name: "type" }],
+        issueLabelCategoriesYoram: [{ id: 7, name: "area" }],
+      },
+      helpers: {
+        async requestJsonBoth() {
+          calls += 1;
+        },
+      },
+    }),
+    /no Yoram category matches legacy "type"/u,
+  );
+  assert.equal(calls, 0, "do not probe an unrelated Yoram category after semantic resolution fails");
+});
+
+test("issue labels form compares equivalent route bodies with visible controls blocking", async () => {
   let target;
   const step = {
     action: "view-issue-labels-form",
@@ -191,8 +228,31 @@ test("issue labels form stays a strict HTML DOM comparison", async () => {
     },
   });
   assert.equal(target.spa, true);
+  assert.equal(target.legacySelector, ".page-wrap-outer > .project-page-wrap.label-editor-wrap");
+  assert.equal(target.yoramSelector, '[data-owner="project-labels-form-page"]');
+  assert.equal(target.selector, undefined, "side-specific roots must not fall back to the whole page");
   assert.equal(target.legacy, "http://legacy.test/admin/sample/issue/labelsform");
   assert.equal(target.yoram, "http://yoram.test/admin/sample/issue/labelsform");
+});
+
+test("labels form route-body losses for visible labels and buttons remain blocking", () => {
+  for (const expected of [
+    "form.new-label-wrap",
+    "button.ybtn.ybtn-primary.btn-submit:Add",
+    "button.issue-label.btn-preset-color",
+  ]) {
+    const detail = {
+      actual: {
+        firstDiffs: [{ side: "legacy-only", expected }],
+      },
+    };
+    assert.equal(domVisibleLoss(detail), true, `missing labels-form control must remain visible: ${expected}`);
+    assert.equal(
+      classifyViolation("dom", "/admin/sample/issue/labelsform", detail).classification,
+      "UNVERIFIED",
+      `missing labels-form control must remain blocking: ${expected}`,
+    );
+  }
 });
 
 test("compat reads keep legacy /-_-api/v1 paths and map yoram to RESTful", () => {

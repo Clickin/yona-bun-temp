@@ -249,12 +249,14 @@ reclassification.
 
 ## 9. Project issue-detail body fingerprints (2026-09-06)
 
-The I18/I19 issue-body findings in
-`.agent/differential/report.json` (`runId=sweep-mtp5cpk6`) are accepted only
-for the exact route, state, legacy skeleton count, Yoram skeleton count, and
-complete `firstDiffs` signatures recorded in
-`scripts/differential/report.mjs`. The label-edit and comment-avatar rows are
-already represented by the issue-detail route contract: the focused WTR
+The I18-I21 issue-body findings in
+`.agent/differential/focused-near-final-c680/report.json` (`runId=sweep-mtp6dtvw`)
+are accepted only for the anchored issue route, scenario id/action/state,
+legacy skeleton count, Yoram skeleton count, and complete normalized stable
+`firstDiffs` tuple set recorded in `scripts/differential/report.mjs`. The
+comment fingerprint normalizes only generated sweep identity and mutable
+relative-time text; it does not wildcard controls, copy, or tuple membership.
+The label-edit and comment-avatar rows are already represented by the issue-detail route contract: the focused WTR
 `project issue detail matches legacy issue/view.scala.html voter state`
 (`frontend/tests/wtr/project-issue-detail-1.e2e.ts:368-420`) canonicalizes the
 populated comment/avatar timeline, and
@@ -270,6 +272,7 @@ or any other near-miss remain `UNVERIFIED`.
 | `/admin/sample/issue/[1-9][0-9]*` / I19 `comment-lifecycle-initial` | legacy `325`, Yoram `300` | `frontend/tests/wtr/project-issue-detail-1.e2e.ts:368-420`, `project issue detail matches legacy issue/view.scala.html voter state`; permission boundary: `frontend/tests/wtr/project-issue-detail-3.e2e.ts:347-390` |
 | `/admin/sample/issue/[1-9][0-9]*` / I19 `comment-created` | legacy `572`, Yoram `550` | `frontend/tests/wtr/project-issue-detail-1.e2e.ts:368-420`, `project issue detail matches legacy issue/view.scala.html voter state`; permission boundary: `frontend/tests/wtr/project-issue-detail-3.e2e.ts:347-390` |
 | `/admin/sample/issue/[1-9][0-9]*` / I20 `issue-engagement` | legacy `325`, Yoram `300` | `frontend/tests/wtr/project-issue-detail-1.e2e.ts:368-420`, `project issue detail matches legacy issue/view.scala.html voter state`; permission boundary: `frontend/tests/wtr/project-issue-detail-3.e2e.ts:347-390` |
+| `/admin/sample/issue/[1-9][0-9]*` / I21 `issue-label-crud` | legacy `325`, Yoram `300` | `frontend/tests/wtr/project-issue-detail-1.e2e.ts:368-420`, `project issue detail matches legacy issue/view.scala.html voter state`; permission boundary: `frontend/tests/wtr/project-issue-detail-3.e2e.ts:347-390` |
 
 ## 10. R3 pull-request form body fingerprints (2026-09-06)
 
@@ -317,3 +320,26 @@ missing visible control, changed visible text, changed count, and scenario
 near-misses; every near-miss remains `UNVERIFIED`. The R16 pull-request detail
 fingerprint is intentionally absent: its missing commit/event rows remain a
 backend-owned blocker.
+
+## 11. Project issue-label form identity-copy fingerprint (2026-09-06)
+
+The focused P1 artifact records one remaining body-only difference for
+`/admin/sample/issue/labelsform`: both sides contain 75 skeleton entries and
+the complete `firstDiffs` pair is limited to the legacy `naver/yobi` copy versus
+the current `Yoram/Yoram` copy. The category-id probe is a separate scenario
+step and is not part of this body fingerprint.
+
+The classifier accepts only the exact
+`P1-issue-labels` `view-issue-labels-form` state, route, skeleton counts, and
+full `firstDiffs` pair in
+`scripts/differential/report.mjs`. Its rationale cites the existing Yoram
+rebrand evidence in
+`docs/provenance/frontend-yoram-rebrand-2026-07-13.md:135-138` and
+`frontend/src/rebrand.spec.ts:72-84`; it does not alter the label messages or
+category API. The focused WTR contract is
+`project labels renders REST categoryName payloads with legacy control classes`
+(`frontend/tests/wtr/project-labels-form.e2e.ts:1187-1215`).
+
+`scripts/differential/differential.test.mjs` proves the exact fingerprint is
+accepted while changed form, button, label, copy, count, and state near-misses
+remain `UNVERIFIED`.
