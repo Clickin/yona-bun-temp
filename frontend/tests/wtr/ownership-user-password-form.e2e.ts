@@ -197,13 +197,13 @@ for (const viewport of [
       height: 240,
       width: pageWidth,
       x: pageX,
-      y: desktop ? 206 : 229,
+      y: 206,
     });
     expect(actual.list.box).toEqual(actual.form.box);
     expect(actual.form.style.margin).toBe("0px 0px 2px");
     expect(actual.list.style.margin).toBe("0px");
     expect(actual.terms.map(({ box }) => box)).toEqual(
-      (desktop ? [206, 276, 346] : [229, 299, 369]).map((y) => ({
+      [206, 276, 346].map((y) => ({
         height: 20,
         width: pageWidth,
         x: pageX,
@@ -216,17 +216,17 @@ for (const viewport of [
       expect(style.margin).toBe("0px");
     }
     expect(actual.descriptions).toEqual([
-      { height: 40, width: pageWidth, x: pageX, y: desktop ? 236 : 259 },
-      { height: 40, width: pageWidth, x: pageX, y: desktop ? 306 : 329 },
-      { height: 40, width: pageWidth, x: pageX, y: desktop ? 376 : 399 },
-      { height: 30, width: pageWidth, x: pageX, y: desktop ? 416 : 439 },
+      { height: 40, width: pageWidth, x: pageX, y: 236 },
+      { height: 40, width: pageWidth, x: pageX, y: 306 },
+      { height: 40, width: pageWidth, x: pageX, y: 376 },
+      { height: 30, width: pageWidth, x: pageX, y: 416 },
     ]);
     for (const [index, input] of actual.inputs.entries()) {
       expect(input.box).toEqual({
         height: 30,
         width: 220,
         x: pageX,
-        y: (desktop ? [236, 306, 376] : [259, 329, 399])[index],
+        y: [236, 306, 376][index],
       });
       expect(input.style).toEqual({
         backgroundColor: "rgb(255, 255, 255)",

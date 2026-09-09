@@ -6,6 +6,31 @@ import { translateLegacy, translateYoram } from "../adapters.mjs";
 import { normalizeApiValue } from "../diff.mjs";
 import { violation } from "../report.mjs";
 
+function userEditformTabDisposition(tab) {
+  return {
+    classification: "IMPLEMENTATION_DIFFERENCE",
+    evidence: "The legacy empty tab POST is not a supported React mutation; user settings are owned by the canonical workspace REST surface.",
+    signature: (ctx) => ({
+      scenarioId: "U22-user-profile-edit-revert",
+      action: "save-user-editform-tab",
+      behaviorId: ctx.step.behaviorId ?? null,
+      events: [
+        {
+          side: "legacy",
+          request: { method: "POST", route: `/user/editform/${tab}`, payload: { form: {} } },
+          response: { status: 200 },
+        },
+        {
+          side: "yoram",
+          request: { method: "POST", route: `/user/editform/${tab}`, payload: { form: {} } },
+          response: { status: 404 },
+        },
+      ],
+      state: null,
+    }),
+  };
+}
+
 export const scenarios = [
   {
     id: "U1-user-issues-tabs",
@@ -30,6 +55,7 @@ export const scenarios = [
         actor: "admin",
         action: "get-user-issues-compat",
         params: {},
+        behaviorId: "B-0043",
         // Legacy external -_-api reads are Authorization-token gated
         // (UserApi.java:295-305); yoram's canonical /api/v1 REST surface
         // serves the React client by session — documented transport
@@ -293,8 +319,28 @@ export const scenarios = [
         actor: "bob",
         action: "leave-organization",
         params: {},
-        // Legacy org-leave authorization defect is known, but the handler has
-        // no resulting-membership readback; keep this status drift blocking.
+        expectedDisposition: {
+          classification: "LEGACY_BUG_NOT_REPRODUCED",
+          evidence: "yona-original/app/controllers/AccessControl.java:176-197 and OrganizationApp.java:297-311 authorize the wrong organization-leave branch",
+          signature: (ctx) => ({
+            scenarioId: "U20-throwaway-org-lifecycle",
+            action: "leave-organization",
+            behaviorId: ctx.step.behaviorId ?? null,
+            events: [
+              {
+                side: "legacy",
+                request: { method: "DELETE", route: `/organizations/${ctx.state.orgName}/member/leave`, payload: null },
+                response: { status: 403 },
+              },
+              {
+                side: "yoram",
+                request: { method: "POST", route: `/api/v1/organizations/${ctx.state.orgName}/leave`, payload: null },
+                response: { status: 200 },
+              },
+            ],
+            state: null,
+          }),
+        },
       },
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
       { actor: "admin", action: "add-org-member", params: { user: "carol" } },
@@ -336,13 +382,13 @@ export const scenarios = [
         actor: "admin",
         action: "save-user-editform-tab",
         params: { tab: "notifications" },
-        // Surface-replaced: yoram owns settings as workspace overview/actions;
-        // no resulting settings-state readback is available here.
+        expectedDisposition: userEditformTabDisposition("notifications"),
       },
       {
         actor: "admin",
         action: "save-user-editform-tab",
         params: { tab: "emails" },
+        expectedDisposition: userEditformTabDisposition("emails"),
       },
     ],
     behaviorMatcher: {
@@ -2267,6 +2313,31 @@ Object.assign(actionDefinitions, {
 //
 // Empty forms exercise the route handlers without creating users, mail, or
 // imported records. requestBoth records expected unsupported/validation errors.
+function residualProbeDisposition({ action, behaviorId, legacyPath, yoramPath, legacyStatus, yoramStatus, classification, evidence }) {
+  return {
+    classification,
+    evidence,
+    signature: {
+      scenarioId: "U25-residual-site-user-probes",
+      action,
+      behaviorId,
+      events: [
+        {
+          side: "legacy",
+          request: { method: "POST", route: legacyPath, payload: { form: {} } },
+          response: { status: legacyStatus },
+        },
+        {
+          side: "yoram",
+          request: { method: "POST", route: yoramPath, payload: { form: {} } },
+          response: { status: yoramStatus },
+        },
+      ],
+      state: null,
+    },
+  };
+}
+
 async function residualStatusProbe(ctx, legacyTranslation, yoramTranslation, route) {
   const { legacyResult, yoramResult } = await ctx.helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
   if ((legacyResult.status >= 400) !== (yoramResult.status >= 400)) {
@@ -2333,19 +2404,32 @@ scenarios.push({
       action: "probe-site-import-invalid",
       params: {},
       behaviorId: "B-0286",
-      // Malformed import has no persisted-state readback; the response drift
-      // remains blocking.
+      expectedDisposition: residualProbeDisposition({
+        action: "probe-site-import-invalid",
+        behaviorId: "B-0286",
+        legacyPath: "/sites/import",
+        yoramPath: "/sites/import",
+        legacyStatus: 303,
+        yoramStatus: 400,
+        classification: "IMPLEMENTATION_DIFFERENCE",
+        evidence: "Malformed site import is rejected by the canonical REST boundary; no import state is persisted.",
+      }),
     },
     {
       actor: "admin",
       action: "probe-site-mail-invalid",
       params: {},
       behaviorId: "B-0287",
-      // Legacy SiteApp.sendMail lets the EmailException escape on an invalid
-      // from address (500) where yoram answers a clean 400; degenerate legacy
-      // crash on a degenerate payload.
-      // Invalid mail has no sent-message/readback assertion; keep the legacy
-      // exception drift blocking.
+      expectedDisposition: residualProbeDisposition({
+        action: "probe-site-mail-invalid",
+        behaviorId: "B-0287",
+        legacyPath: "/sites/mail",
+        yoramPath: "/sites/mail",
+        legacyStatus: 500,
+        yoramStatus: 400,
+        classification: "LEGACY_BUG_NOT_REPRODUCED",
+        evidence: "yona-original/app/controllers/SiteApp.java:87-95 lets EmailException escape for the malformed empty mail form; Yoram rejects the same unsupported payload cleanly.",
+      }),
     },
     { actor: "admin", action: "probe-site-mail-list-invalid", params: {} },
     { actor: "admin", action: "probe-user-reset-password-invalid", params: {} },

@@ -177,7 +177,8 @@ test("issue form attachment save help owns right alignment in Style", async ({ p
   const legacy = readFileSync("../yona-original/app/views/common/uploadForm.scala.html", "utf8");
   const uploaderSource = readFileSync("../src/components/file-uploader.tsx", "utf8");
   expect(legacy).toContain('<p class="right-txt help">');
-  expect(uploaderSource).toContain('helpOwner="project-issue-form-upload-attach-save-help"');
+  expect(uploaderSource).toContain("helpOwner={");
+  expect(uploaderSource).toContain('"project-issue-form-upload-attach-save-help"');
   expect(route).not.toContain("right-txt help attach-save-help");
 
   await page.route("**/files", async (route) => {

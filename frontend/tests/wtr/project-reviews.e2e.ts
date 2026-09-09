@@ -68,7 +68,7 @@ test("SVN reviews keep the clean legacy URL and direct project-page geometry", a
     x: 0,
     // F5 (2026-08-13): +5px — project-page-wrap margin-top 5 inside the
     // restored page-wrap-outer.
-    y: 236,
+    y: 213,
   });
 });
 

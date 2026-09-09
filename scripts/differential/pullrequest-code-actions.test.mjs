@@ -282,6 +282,9 @@ test("fragment reads do not require a full-page DOM wrapper", async () => {
 test("PR identity uses display numbers and never database ids", async () => {
   assert.equal(pullRequestNumberFromPayload({ pullRequestNumber: 12, id: 901 }), 12);
   assert.equal(pullRequestNumberFromPayload({ number: 13, id: 902 }), 13);
+  assert.equal(pullRequestNumberFromPayload({ result: { pullRequestNumber: 14, id: 903 } }), 14);
+  assert.equal(pullRequestNumberFromPayload({ result: { pullRequest: { number: 15, id: 904 } } }), 15);
+  assert.equal(pullRequestNumberFromPayload({ result: { result: { number: 16, id: 905 } } }), 16);
   assert.equal(pullRequestNumberFromPayload({ number: 14, title: "seeded", id: 903 }, "new"), null);
   assert.equal(pullRequestNumberFromPayload({ id: 903 }), null);
   const calls = [];

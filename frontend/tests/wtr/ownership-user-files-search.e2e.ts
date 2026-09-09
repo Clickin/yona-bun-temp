@@ -62,12 +62,12 @@ test("pins the empty-state search output and React navigation", async ({ page })
       width: 1366,
     },
     {
-      action: { height: 20, width: 12, x: 372, y: 180 },
+      action: { height: 20, width: 12, x: 372, y: 157 },
       height: 844,
-      input: { fontSize: "16px", height: 20, width: 183, x: 1, y: 180.578125 },
+      input: { fontSize: "16px", height: 20, width: 183, x: 1, y: 157.578125 },
       margin: "5px 0px",
       name: "mobile",
-      root: { height: 30, width: 390, x: 0, y: 174 },
+      root: { height: 30, width: 390, x: 0, y: 151 },
       width: 390,
     },
   ] as const) {
@@ -156,7 +156,7 @@ test("pins the empty-state search output and React navigation", async ({ page })
     expect(geometry).toEqual({
       action: expectedAction,
       affix: {
-        height: viewport.name === "desktop" ? 43 : 66,
+        height: 43,
         width: viewport.width,
         x: 0,
         y: 0,
@@ -165,7 +165,7 @@ test("pins the empty-state search output and React navigation", async ({ page })
         height: 40,
         width: viewport.width,
         x: 0,
-        y: viewport.name === "desktop" ? 43 : 66,
+        y: 43,
       },
       input: expectedInput,
       root: expectedRoot,

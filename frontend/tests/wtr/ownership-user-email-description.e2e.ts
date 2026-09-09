@@ -60,11 +60,11 @@ test("pins desktop and mobile description in one primary-only browser page state
       width: 1366,
     },
     {
-      description: { height: 72, left: 0, top: 301, width: 390 },
+      description: { height: 72, left: 0, top: 278, width: 390 },
       height: 844,
       name: "mobile",
-      separator: { height: 2, left: 0, top: 279, width: 390 },
-      tableTop: 393,
+      separator: { height: 2, left: 0, top: 256, width: 390 },
+      tableTop: 370,
       width: 390,
     },
   ] as const) {

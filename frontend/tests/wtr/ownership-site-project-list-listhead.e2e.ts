@@ -226,14 +226,14 @@ test("listhead preserves exact desktop and mobile live fluid-grid output in one 
           }
         : {
             columns: [
-              [66.375, 244, 130.8125, 30, 0],
-              [204.0625, 244, 103.265625, 30, 6.875],
-              [314.203125, 244, 48.1875, 90, 6.875],
-              [73.25, 334, 40, 30, 6.875],
+              [66.375, 221, 130.8125, 30, 0],
+              [204.0625, 221, 103.265625, 30, 6.875],
+              [314.203125, 221, 48.1875, 90, 6.875],
+              [73.25, 311, 40, 30, 6.875],
             ],
             documentWidth: 420,
             parent: [66.375, 323.609375],
-            row: [66.375, 239, 323.609375, 131],
+            row: [66.375, 216, 323.609375, 131],
           };
     expect(evidence.documentWidth).toBe(expected.documentWidth);
     expect([evidence.parent.left, evidence.parent.width]).toEqual(expected.parent);
@@ -380,7 +380,7 @@ test("listhead preserves exact desktop and mobile live fluid-grid output in one 
                 minHeight: 30,
                 paddingLeft: 20,
                 paddingRight: 20,
-                top: 244,
+                top: 221,
                 width: 130.8125,
               },
               {
@@ -393,7 +393,7 @@ test("listhead preserves exact desktop and mobile live fluid-grid output in one 
                 minHeight: 30,
                 paddingLeft: 20,
                 paddingRight: 20,
-                top: 244,
+                top: 221,
                 width: 103.265625,
               },
               {
@@ -406,7 +406,7 @@ test("listhead preserves exact desktop and mobile live fluid-grid output in one 
                 minHeight: 30,
                 paddingLeft: 20,
                 paddingRight: 20,
-                top: 244,
+                top: 221,
                 width: 48.1875,
               },
               {
@@ -419,7 +419,7 @@ test("listhead preserves exact desktop and mobile live fluid-grid output in one 
                 minHeight: 30,
                 paddingLeft: 20,
                 paddingRight: 20,
-                top: 334,
+                top: 311,
                 width: 40,
               },
             ],
@@ -434,7 +434,7 @@ test("listhead preserves exact desktop and mobile live fluid-grid output in one 
               minHeight: 30,
               paddingLeft: 0,
               paddingRight: 0,
-              top: 161,
+              top: 138,
               width: 323.609375,
             },
             pseudos: {
@@ -452,7 +452,7 @@ test("listhead preserves exact desktop and mobile live fluid-grid output in one 
               marginBottom: "5px",
               paddingBottom: "5px",
               paddingTop: "5px",
-              top: 239,
+              top: 216,
               width: 323.609375,
             },
           },

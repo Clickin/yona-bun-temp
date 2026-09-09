@@ -11,7 +11,7 @@
 
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { afterEach, beforeEach, expect, test } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import {
   basePathUrlTransform,
   createMarkdownReferenceIndex,
@@ -29,7 +29,7 @@ import {
   type MarkdownReferenceReplacement,
 } from "./components/legacy-markdown";
 import { MarkdownCodeBlock } from "./components/markdown-code-block";
-import { updateTasklistMarkdown } from "./components/tasklist";
+import { getTasklistProgress, updateTasklistMarkdown } from "./components/tasklist";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -73,6 +73,107 @@ test("task toggles preserve fenced text and another list item's descendants", ()
   expect(updateTasklistMarkdown(source, 0, true)).toBe(
     source.replace("- [ ] parent", "- [x] parent").replace("- [ ] child", "- [x] child"),
   );
+});
+
+test("task source mapping follows AST task order and descendants", async () => {
+  const source = [
+    "````markdown",
+    "```",
+    "- [ ] fenced",
+    "```",
+    "````",
+    "",
+    "- [ ] parent",
+    "  - [ ] child",
+    "- [ ] sibling",
+    "",
+    "paragraph",
+    "",
+    "1. [ ] ordered",
+    "> - [ ] quoted",
+  ].join("\n");
+  const indexes: number[] = [];
+  await renderMarkdown(
+    <LegacyMarkdownHtml
+      sanitize={LEGACY_SANITIZE_BASE_SCHEMA}
+      tasklistInput={({ checked, tasklistIndex }) => {
+        indexes.push(tasklistIndex);
+        return <input type="checkbox" checked={checked} readOnly data-task-index={tasklistIndex} />;
+      }}
+    >
+      {source}
+    </LegacyMarkdownHtml>,
+  );
+  expect(indexes).toEqual([0, 1, 2, 3, 4]);
+  expect(updateTasklistMarkdown(source, 0, true)).toBe(
+    source.replace("- [ ] parent", "- [x] parent").replace("  - [ ] child", "  - [x] child"),
+  );
+  expect(updateTasklistMarkdown(source, 1, true)).toBe(
+    source.replace("  - [ ] child", "  - [x] child"),
+  );
+  expect(updateTasklistMarkdown(source, 3, true)).toBe(
+    source.replace("1. [ ] ordered", "1. [x] ordered"),
+  );
+});
+
+test("indented code and raw HTML checkboxes are not active tasks", async () => {
+  const indexes: number[] = [];
+  await renderMarkdown(
+    <LegacyMarkdownHtml
+      sanitize={LEGACY_SANITIZE_BASE_SCHEMA}
+      tasklistInput={({ tasklistIndex }) => {
+        indexes.push(tasklistIndex);
+        return <input type="checkbox" data-task-index={tasklistIndex} />;
+      }}
+    >
+      {'    - [ ] code\n\n<input type="checkbox" checked>\n\n- [ ] live'}
+    </LegacyMarkdownHtml>,
+  );
+  expect(indexes).toEqual([0]);
+  expect(updateTasklistMarkdown("    - [ ] code\n\n- [ ] live", 0, true)).toBe(
+    "    - [ ] code\n\n- [x] live",
+  );
+});
+
+test("task mapping preserves CRLF and tilde fences across sibling lists", () => {
+  const source = [
+    "~~~markdown",
+    "- [ ] fenced",
+    "~~~",
+    "- [x] first",
+    "  - [ ] child",
+    "",
+    "paragraph",
+    "",
+    "- [ ] second",
+  ].join("\r\n");
+  expect(getTasklistProgress(source)).toEqual({ completed: 1, total: 3 });
+  expect(updateTasklistMarkdown(source, 0, false)).toBe(
+    source.replace("- [x] first", "- [ ] first").replace("  - [ ] child", "  - [ ] child"),
+  );
+  expect(updateTasklistMarkdown(source, 1, true)).toBe(
+    source.replace("  - [ ] child", "  - [x] child"),
+  );
+  expect(updateTasklistMarkdown(source, 2, true)).toBe(
+    source.replace("- [ ] second", "- [x] second"),
+  );
+});
+
+test("HTML Markdown renders when randomUUID is unavailable", async () => {
+  const originalCrypto = globalThis.crypto;
+  vi.stubGlobal("crypto", {
+    getRandomValues(bytes: Uint8Array) {
+      bytes.fill(7);
+      return bytes;
+    },
+  });
+  try {
+    await renderMarkdown(withHtml("plain\n\n- [ ] task"));
+    expect(container.querySelector("p")?.textContent).toBe("plain");
+    expect(container.querySelectorAll("input[type=checkbox]")).toHaveLength(1);
+  } finally {
+    vi.stubGlobal("crypto", originalCrypto);
+  }
 });
 
 function plain(children: string, components?: Parameters<typeof LegacyMarkdown>[0]["components"]) {

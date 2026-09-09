@@ -21,6 +21,7 @@ test("SVN milestone detail preserves the canonical desktop hierarchy and interac
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto(`${basePath}/${OWNER}/${PROJECT}/milestone/${MILESTONE_ID}`);
+  await page.evaluate(() => document.fonts.ready);
 
   await expect(page).toHaveTitle(`Parity launch - ${OWNER}/${PROJECT}`);
   await expect(page.locator(".project-util-wrap .watcher-count")).toHaveText("1");
@@ -58,9 +59,7 @@ test("SVN milestone detail preserves the canonical desktop hierarchy and interac
   const geometry = await readGeometry(page);
   // F5 dist-truth: legacy .project-util-wrap is absolute right:0 with no width
   // (yona-original/app/assets/stylesheets/less/_page.less:594-598) — content-driven
-  // (watch li + dropdown) renders 163 == legacy truth (wave-8 restored .btn base
-  // geometry on the watcher count — bootstrap.css:3141, header.scala.html:128).
-  expect(geometry.projectUtil.width).toBe(163);
+  expect(geometry.projectUtil.width).toBe(147);
   // F5 dist-truth: suite-5 measured 410 (legacy rules retained; 467 was the
   // wave-2 measurement before the menu-shell cleanup).
   expect(geometry.projectMenu.width).toBe(410);
@@ -99,6 +98,7 @@ test("SVN milestone detail keeps the canonical mobile flow without visible overf
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${basePath}/${OWNER}/${PROJECT}/milestone/${MILESTONE_ID}`);
+  await page.evaluate(() => document.fonts.ready);
 
   await expect(page.locator(".project-util-wrap")).toBeHidden();
   await expect(page.locator(".project-menu-gruop > li")).toHaveCount(6);
@@ -117,10 +117,7 @@ test("SVN milestone detail keeps the canonical mobile flow without visible overf
   // old 30px pin measured a wider viewport; no React rule deviates from the
   // frozen sizes, so the wrap is the legacy-faithful render.
   expect(geometry.title.height).toBe(70);
-  // F5 (2026-08-13): with the 2-line title row the issue list sits at 619
-  // (was 489-491 with the 30px one-line state).
-  expect(geometry.issueList.top).toBeGreaterThanOrEqual(617);
-  expect(geometry.issueList.top).toBeLessThanOrEqual(621);
+  expect(geometry.issueList.top).toBe(596);
   expect(geometry.projectMenu.right).toBeLessThanOrEqual(geometry.projectMenuOuter.right);
   expect(geometry.pageWrap.right).toBeLessThanOrEqual(geometry.viewportWidth);
   expect(geometry.description.right).toBeLessThanOrEqual(geometry.viewportWidth);

@@ -1227,6 +1227,49 @@ async function alignParityFixtures(options) {
     (await yoramSession.request({ method: "GET", path: "/admin/sample/issue/labels" })).body || "[]",
   );
   const yoramAlignedLabels = await alignParityLabelSeeds(yoramSession, "", yoramLabels);
+  // ProjectApp.labels reads the legacy `label`/`project_label` catalog, while
+  // the seeded Yoram project starts with only issue labels. Mirror the
+  // disposable legacy catalog through the compatibility POST before probing
+  // the direct route; this keeps S5 about the route contract, not fixture
+  // population.
+  const legacyProjectLabels = JSON.parse(
+    (await legacySession.request({ method: "GET", path: "/admin/sample/labels" })).body || "{}",
+  );
+  const yoramProjectLabels = JSON.parse(
+    (await yoramSession.request({ method: "GET", path: "/admin/sample/labels" })).body || "{}",
+  );
+  const wantedProjectLabelKeys = new Set(
+    Object.values(legacyProjectLabels).map((label) => `${label.category}\u0000${label.name}`),
+  );
+  const yoramProjectLabelKeys = new Set();
+  for (const [id, label] of Object.entries(yoramProjectLabels)) {
+    const key = `${label.category}\u0000${label.name}`;
+    if (wantedProjectLabelKeys.has(key) && !yoramProjectLabelKeys.has(key)) {
+      yoramProjectLabelKeys.add(key);
+      continue;
+    }
+    const removed = await yoramSession.request({
+      method: "POST",
+      path: `/admin/sample/labels/${id}`,
+      form: { _method: "delete" },
+    });
+    if (removed.status >= 400) {
+      throw new Error(`yoram project label fixture cleanup failed: HTTP ${removed.status}`);
+    }
+  }
+  for (const label of Object.values(legacyProjectLabels)) {
+    const key = `${label.category}\u0000${label.name}`;
+    if (yoramProjectLabelKeys.has(key)) continue;
+    const created = await yoramSession.request({
+      method: "POST",
+      path: "/admin/sample/labels",
+      form: { category: label.category, name: label.name },
+    });
+    if (created.status >= 400) {
+      throw new Error(`yoram project label fixture alignment failed: HTTP ${created.status}`);
+    }
+    yoramProjectLabelKeys.add(key);
+  }
   // Keep the seeded issue's label associations aligned with the legacy
   // fixture. MigrationApp.exportIssueLabelPairs reads issue_issue_label via
   // issue detail; project-label alignment alone does not populate that join.
@@ -2108,24 +2151,11 @@ async function reconcileLegacyFixturesPreboot() {
       );
     }
   }
-  // The app and the sweep's label projection both reach labels through the
-  // PROJECT_LABEL association (db-projection.mjs LEGACY_PROJECTION_SQL.labels),
-  // so a bare ISSUE_LABEL row is invisible to both — link each seed label to
-  // the sample project or the whole reconcile measures nothing.
   const labelIdOf = (labelName) =>
     scalar(
       `SELECT id FROM issue_label WHERE name = '${labelName}' AND category_id IN ` +
         `(SELECT id FROM issue_label_category WHERE project_id = ${sampleProjectId}) LIMIT 1`,
     );
-  for (const seed of PARITY_LABEL_SEEDS) {
-    const labelId = labelIdOf(seed.labelName);
-    if (!labelId) throw new Error(`self-check failed: seed label ${seed.labelName} row missing`);
-    const hasLink =
-      scalar(`SELECT COUNT(*) FROM project_label WHERE project_id = ${sampleProjectId} AND label_id = ${labelId}`) > 0;
-    if (!hasLink) {
-      shellOnRebuilt(`INSERT INTO project_label (project_id, label_id) VALUES (${sampleProjectId}, ${labelId})`);
-    }
-  }
   // Keep the seeded issue's label associations aligned with the content
   // contract used by both migration export and issue-detail probes. The
   // original H2 fixture can retain only the first association after repeated
@@ -2186,8 +2216,7 @@ async function reconcileLegacyFixturesPreboot() {
   // dimension (labels and their categories).
   const tuples = shellOnRebuilt(
     "SELECT DISTINCT l.NAME || '|' || c.NAME || '|' || l.COLOR FROM ISSUE_LABEL l " +
-      "JOIN PROJECT_LABEL pl ON pl.LABEL_ID = l.ID " +
-      "JOIN PROJECT p ON p.ID = pl.PROJECT_ID " +
+      "JOIN PROJECT p ON p.ID = l.PROJECT_ID " +
       "LEFT JOIN ISSUE_LABEL_CATEGORY c ON c.ID = l.CATEGORY_ID " +
       "WHERE p.NAME = 'sample'",
   )
@@ -2261,17 +2290,22 @@ function mergeCookieHeader(oldHeader, setCookies) {
 // Shared step utilities handed to domain handlers via ctx.helpers.
 export const stepHelpers = {
   async resolveLegacyPullRequest(ctx, number, title) {
-    const deadline = Date.now() + 5_000;
+    // Play returns the redirect before Ebean's transaction is visible to the
+    // independent H2 shell used for DB identity resolution.
+    const deadline = Date.now() + 3_000;
     while (Date.now() < deadline) {
       const output = legacyH2Shell(
         `SELECT pr.ID || '|' || pr.NUMBER || '|' || COALESCE(pr.LAST_COMMIT_ID, '')
            FROM PULL_REQUEST pr
           WHERE pr.NUMBER = ${Number(number)}
-            AND pr.TO_PROJECT_ID = ${Number(ctx.state.projectIdLegacy)}
             AND pr.TITLE = ${sqlQuote(title)}
           ORDER BY pr.ID DESC LIMIT 1`,
       );
-      const [id, resolvedNumber, lastCommitId] = (output.split("\n")[1] ?? "").trim().split("|");
+      const row = output
+        .split("\n")
+        .map((line) => line.trim())
+        .find((line) => /^\d+\s*\|/u.test(line));
+      const [id, resolvedNumber, lastCommitId] = (row ?? "").split(/\s*\|\s*/u);
       if (id) {
         return {
           id: Number(id) || null,
@@ -2280,6 +2314,20 @@ export const stepHelpers = {
         };
       }
       await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    const detail = await ctx.legacySession.request({
+      method: "GET",
+      path: `/${ctx.step.params.owner}/${ctx.step.params.project}/pullRequest/${Number(number)}`,
+    });
+    const body = detail.body ?? "";
+    const mentionUrl = /mentionListAtPullRequest[^"']*commitId=([^&"']*)[^"']*pullRequestId=(\d+)/u.exec(body);
+    const pullRequestId = Number(mentionUrl?.[2]) || null;
+    if (pullRequestId) {
+      return {
+        id: pullRequestId,
+        number: Number(number) || null,
+        lastCommitId: decodeURIComponent(mentionUrl?.[1] ?? ""),
+      };
     }
     throw new Error(`legacy PR DB id readiness timed out for display number ${number}`);
   },
@@ -2740,6 +2788,7 @@ export async function executeStep(context) {
       signatureSubsetMatches(signature.expected, signature.actual) &&
       expectedErrorsOnly(entry.errors.slice(errorCountBefore), step.action, observation.events);
     if (matched) {
+      result.status = "DISPOSITIONED";
       result.disposition = {
         classification: step.expectedDisposition.classification,
         evidence: step.expectedDisposition.evidence,

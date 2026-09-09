@@ -216,10 +216,10 @@ for (const viewport of [
     expect(actual.list).toEqual(
       viewport.name === "desktop"
         ? { height: 364, width: 1346, x: 10, y: 201 }
-        : { height: 544, width: 390, x: 0, y: 254 },
+        : { height: 544, width: 390, x: 0, y: 231 },
     );
     const heights = viewport.name === "desktop" ? [91, 91, 91, 91] : [91, 151, 151, 151];
-    let y = viewport.name === "desktop" ? 201 : 254;
+    let y = viewport.name === "desktop" ? 201 : 231;
     expect(actual.rows).toEqual(
       heights.map((height) => {
         const box = {
@@ -238,7 +238,7 @@ for (const viewport of [
       overflow: "hidden",
       padding: "15px 0px 10px",
     });
-    expect(actual.paginationY).toBe(viewport.name === "desktop" ? 585 : 818);
+    expect(actual.paginationY).toBe(viewport.name === "desktop" ? 585 : 795);
     expect(actual.scrollWidth).toBe(viewport.width);
     for (let index = 1; index < actual.rows.length; index++)
       expect(actual.rows[index]!.y).toBe(

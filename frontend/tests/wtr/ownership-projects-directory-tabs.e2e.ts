@@ -210,15 +210,15 @@ for (const viewport of [
     } else {
       expect(geometry.boxes).toEqual({
         items: [
-          { height: 38, width: 132.359375, x: 10, y: 116 },
-          { height: 38, width: 73.1875, x: 142.359375, y: 146 },
+          { height: 38, width: 132.359375, x: 10, y: 93 },
+          { height: 38, width: 73.1875, x: 142.359375, y: 123 },
         ],
         links: [
-          { height: 38, width: 130.359375, x: 10, y: 116 },
-          { height: 38, width: 71.1875, x: 142.359375, y: 146 },
+          { height: 38, width: 130.359375, x: 10, y: 93 },
+          { height: 38, width: 71.1875, x: 142.359375, y: 123 },
         ],
-        list: { height: 68, width: 370, x: 10, y: 116 },
-        title: { height: 68, width: 370, x: 10, y: 116 },
+        list: { height: 68, width: 370, x: 10, y: 93 },
+        title: { height: 68, width: 370, x: 10, y: 93 },
       });
     }
     expect(geometry.list).toEqual({
@@ -234,7 +234,7 @@ for (const viewport of [
       display: "table",
       lineHeight: "0px",
     });
-    expect(geometry.pageY).toBe(viewport.name === "desktop" ? 151 : 204);
+    expect(geometry.pageY).toBe(viewport.name === "desktop" ? 151 : 181);
     expect(geometry.scrollWidth).toBe(viewport.width);
 
     const active = links.nth(0);

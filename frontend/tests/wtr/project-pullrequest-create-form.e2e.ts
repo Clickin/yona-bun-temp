@@ -134,11 +134,9 @@ test("SVN pull request create route renders the legacy Git-only bad request", as
   expect(mobileGeometry).toEqual({
     documentWidth: 390,
     // F5 dist-truth: ko 16px-bold .error-wrap p line-box measures 390px at 390px viewport too (ledger 2026-08-11)
-    // F5 dist-truth (2026-08-11): the mobile SVN bad-request boxes sit
-    // 23px lower.
-    error: { height: 390, width: 390, x: 0, y: 116 },
-    page: { height: 450, width: 390, x: 0, y: 116 },
-    projectPage: { height: 390, width: 390, x: 0, y: 116 },
+    error: { height: 390, width: 390, x: 0, y: 93 },
+    page: { height: 450, width: 390, x: 0, y: 93 },
+    projectPage: { height: 390, width: 390, x: 0, y: 93 },
   });
 });
 

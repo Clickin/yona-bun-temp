@@ -306,19 +306,19 @@ for (const viewport of [
       height: 30,
       width: desktop ? 1346 : 390,
       x: desktop ? 10 : 0,
-      y: desktop ? 585 : 818,
+      y: desktop ? 585 : 795,
     });
     expect(actual.input).toEqual({
       height: 30,
       width: 44,
       x: desktop ? 581.375 : 93.375,
-      y: desktop ? 585 : 818,
+      y: desktop ? 585 : 795,
     });
     expect(actual.previous).toEqual({
       height: 9,
       width: 6,
       x: desktop ? 509.640625 : 21.640625,
-      y: desktop ? 595.5 : 828.5,
+      y: desktop ? 595.5 : 805.5,
     });
     expect(actual.next).toEqual({
       height: 9,
@@ -326,7 +326,7 @@ for (const viewport of [
       // F5 dist-truth (2026-08-11): the next icon sits 20px left of the
       // stale desktop pin.
       x: desktop ? 730.34375 : 242.34375,
-      y: desktop ? 595.5 : 828.5,
+      y: desktop ? 595.5 : 805.5,
     });
     expect(actual.inputStyle).toEqual({
       backgroundColor: "rgb(255, 255, 255)",

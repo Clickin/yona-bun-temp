@@ -63,8 +63,7 @@ const LEGACY_PROJECTION_SQL = Object.freeze({
              WHERE p.NAME = '{project}'`,
   labels: `SELECT l.NAME AS name, cat.NAME AS category, LOWER(l.COLOR) AS color
            FROM ISSUE_LABEL l
-           JOIN PROJECT_LABEL pl ON pl.LABEL_ID = l.ID
-           JOIN PROJECT p ON p.ID = pl.PROJECT_ID
+           JOIN PROJECT p ON p.ID = l.PROJECT_ID
            LEFT JOIN ISSUE_LABEL_CATEGORY cat ON cat.ID = l.CATEGORY_ID
            WHERE p.NAME = '{project}'`,
 });

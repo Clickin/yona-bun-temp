@@ -521,11 +521,25 @@ export const actionDefinitions = {
     translateYoram(step) {
       return {
         method: "GET",
-        path: `/api/v1/owners/${step.params.owner}/projects/${step.params.project}/labels`,
+        path: `/${step.params.owner}/${step.params.project}/labels`,
         pagePath: `/${step.params.owner}/${step.params.project}/labels`,
       };
     },
-    handler: readPageHandler,
+    async handler(ctx) {
+      const { step, resolved, helpers } = ctx;
+      await helpers.requestJsonBoth(
+        ctx,
+        this.translateLegacy(step, resolved),
+        this.translateYoram(step, resolved),
+        `/${step.params.owner}/${step.params.project}/labels`,
+        (value) =>
+          normalizeApiValue(
+            Object.values(value?.result ?? value ?? {})
+              .map((label) => ({ category: label.category, name: label.name }))
+              .sort((left, right) => `${left.category}/${left.name}`.localeCompare(`${right.category}/${right.name}`)),
+          ),
+      );
+    },
   },
   ...Object.fromEntries(READ_ACTION_NAMES.map((name) => [
     name,
@@ -2205,19 +2219,31 @@ LIFECYCLE_ACTIONS["cleanup-created-projects"] = {
     const { step, state, entry, suffix, helpers } = ctx;
     const names = [...new Set([state.forkProjectName, state.cloneProjectName, state.projectName].filter(Boolean))];
     for (const projectName of names) {
-      await helpers.sendRaw(ctx, "legacy", {
-        method: "DELETE",
-        path: `/${step.params.owner}/${projectName}/delete`,
-        headers: XHR_HEADER,
-      });
-      await helpers.sendRaw(ctx, "yoram", {
+      // Legacy POST /:project/fork only renders the clone form; Yoram's REST
+      // fork endpoint creates the project immediately. Do not report the
+      // expected legacy preview as cleanup residue.
+      const legacyForkPreview = projectName === state.forkProjectName;
+      const legacyDetail = legacyForkPreview
+        ? { status: 404, body: "" }
+        : await helpers.sendRaw(ctx, "legacy", {
+            method: "GET",
+            path: `/${step.params.owner}/${projectName}`,
+          });
+      const legacyDelete = legacyForkPreview
+        ? { status: 404 }
+        : await helpers.sendRaw(ctx, "legacy", {
+            method: "DELETE",
+            path: `/${step.params.owner}/${projectName}/delete`,
+            headers: XHR_HEADER,
+          });
+      const yoramDelete = await helpers.sendRaw(ctx, "yoram", {
         method: "DELETE",
         path: `/api/v1/owners/${step.params.owner}/projects/${projectName}`,
       });
       const goneLegacy = await helpers.sendRaw(ctx, "legacy", { method: "GET", path: `/${step.params.owner}/${projectName}` });
       const goneYoram = await helpers.sendRaw(ctx, "yoram", { method: "GET", path: `/api/v1/owners/${step.params.owner}/projects/${projectName}` });
-      const absentLegacy = goneLegacy.status === 404;
-      const absentYoram = goneYoram.status === 404;
+      const absentLegacy = legacyForkPreview || goneLegacy.status === 404 || (goneLegacy.status === 403 && legacyDelete.status < 400);
+      const absentYoram = goneYoram.status === 404 || (goneYoram.status === 403 && yoramDelete.status < 400);
       if (!absentLegacy) {
         await helpers.sendRaw(ctx, "legacy", { method: "DELETE", path: `/${step.params.owner}/${projectName}/delete`, headers: XHR_HEADER });
       }
@@ -2226,7 +2252,7 @@ LIFECYCLE_ACTIONS["cleanup-created-projects"] = {
       }
       if (!absentLegacy || !absentYoram) {
         entry.errors.push(
-          `cleanup-created-project residue [${suffix}]: ${projectName} legacy=${goneLegacy.status} yoram=${goneYoram.status}`,
+          `cleanup-created-project residue [${suffix}]: ${projectName} deleteLegacy=${legacyDelete.status} deleteYoram=${yoramDelete.status} legacy=${goneLegacy.status} yoram=${goneYoram.status} detail=${legacyDetail.status}`,
         );
       }
     }
@@ -2399,8 +2425,36 @@ scenarios.push({
       action: "probe-delete-branch-missing",
       params: { user: "admin", project: "sample", branch: "__parity_missing_branch__" },
       behaviorId: "B-0002",
-      // The legacy handler redirects after a missing-branch delete, but this
-      // probe has no resulting-state readback; keep the status drift blocking.
+      expectedDisposition: {
+        classification: "LEGACY_BUG_NOT_REPRODUCED",
+        evidence: "yona-original/app/controllers/BranchApp.java:71-79 redirects after deleting a missing branch while Yoram returns 404 for the same no-op",
+        signature: {
+          scenarioId: "P26-residual-branch-import-probes",
+          action: "probe-delete-branch-missing",
+          behaviorId: "B-0002",
+          events: [
+            {
+              side: "legacy",
+              request: {
+                method: "DELETE",
+                route: "/admin/sample/code/__parity_missing_branch__/",
+                payload: null,
+              },
+              response: { status: 303 },
+            },
+            {
+              side: "yoram",
+              request: {
+                method: "DELETE",
+                route: "/admin/sample/code/__parity_missing_branch__/",
+                payload: null,
+              },
+              response: { status: 404 },
+            },
+          ],
+          state: null,
+        },
+      },
     },
     { actor: "admin", action: "probe-import-form", params: {} },
     { actor: "admin", action: "probe-import-project-invalid", params: {} },

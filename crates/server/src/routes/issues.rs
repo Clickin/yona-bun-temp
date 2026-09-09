@@ -3549,7 +3549,21 @@ async fn rest_update_issue(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
-    if send_notification && !issue.is_draft && existing.body_markdown != issue.body_markdown {
+    let published = existing.is_draft && !issue.is_draft;
+    if published {
+        dispatch_issue_webhooks(
+            repository,
+            &issue,
+            &actor,
+            "NEW_ISSUE",
+            &issue.body_markdown,
+            None,
+            &service.public_origin,
+            &service.base_path,
+            &service,
+        )
+        .await;
+    } else if send_notification && !issue.is_draft && existing.body_markdown != issue.body_markdown {
         dispatch_issue_webhooks(
             repository,
             &issue,
@@ -3563,7 +3577,8 @@ async fn rest_update_issue(
         )
         .await;
     }
-    if send_notification
+    if !published
+        && send_notification
         && !issue.is_draft
         && existing.assignee_login_id != issue.assignee_login_id
     {
@@ -3580,7 +3595,11 @@ async fn rest_update_issue(
         )
         .await;
     }
-    if send_notification && !issue.is_draft && existing.milestone_id != issue.milestone_id {
+    if !published
+        && send_notification
+        && !issue.is_draft
+        && existing.milestone_id != issue.milestone_id
+    {
         dispatch_issue_webhooks(
             repository,
             &issue,

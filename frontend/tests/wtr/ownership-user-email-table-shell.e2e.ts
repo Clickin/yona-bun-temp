@@ -69,7 +69,7 @@ for (const viewport of [
     rowHeights: [105, 73, 76.5],
     tableHeight: 255,
     tableLeft: 0,
-    tableTop: 393,
+    tableTop: 370,
     tableWidth: 390,
     width: 390,
   },

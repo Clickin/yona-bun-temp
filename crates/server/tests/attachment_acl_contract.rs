@@ -287,9 +287,28 @@ async fn shared_hash_lifetime_keeps_bytes_until_last_http_reference() {
         get_attachment(app.clone(), Some(&cookie), first.id).await.0,
         StatusCode::OK
     );
+    let first_delete = request(
+        app.clone(),
+        Method::DELETE,
+        &format!("/yona/files/{}", first.id),
+        Some(&cookie),
+        Some(&csrf),
+        None,
+    )
+    .await;
+    assert_eq!(first_delete.status(), StatusCode::OK);
     assert_eq!(
-        delete_attachment(app.clone(), &cookie, &csrf, first.id).await,
-        StatusCode::OK
+        String::from_utf8(
+            first_delete
+                .into_body()
+                .collect()
+                .await
+                .expect("retained delete response")
+                .to_bytes()
+                .to_vec(),
+        )
+        .expect("retained delete response UTF-8"),
+        "The attachment is removed successfully, but its origin file still exists."
     );
     assert_eq!(
         std::fs::read(data_dir.path().join("uploads").join(hash)).expect("shared file"),

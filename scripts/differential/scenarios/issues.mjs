@@ -151,6 +151,7 @@ export const scenarios = [
         actor: "admin",
         action: "issue-api-probe",
         params: { api: "/-_-api/v1/owners/admin/projects/sample/issues/1" },
+        behaviorId: "B-0037",
         // Legacy external -_-api reads are Authorization-token gated
         // (UserApi.java:295-305) while yoram's canonical /api/v1 REST surface
         // authenticates the React client by session (and honors API tokens);
@@ -753,14 +754,29 @@ async function runIssueImportAction(ctx) {
       issueImportFailure(ctx, `source export → Rust project import failed: ${output.slice(-1200)}`);
     }
 
-    const targetIssues = await helpers.sendRaw(ctx, "yoram", {
-      method: "GET",
-      path: `/api/v1/projects/${plan.owner}/${plan.project}/issues`,
-    });
-    if (targetIssues.status >= 400) issueImportFailure(ctx, `target issue list readback failed: HTTP ${targetIssues.status}`);
-    const imported = findIssueImportRow(targetIssues.json, plan.title);
+    const targetIssueLists = await Promise.all(
+      ["open", "closed"].map((state) =>
+        helpers.sendRaw(ctx, "yoram", {
+          method: "GET",
+          path: `/api/v1/projects/${plan.owner}/${plan.project}/issues?state=${state}`,
+        }),
+      ),
+    );
+    const failedTargetIssueList = targetIssueLists.find((result) => result.status >= 400);
+    if (failedTargetIssueList) {
+      issueImportFailure(ctx, `target issue list readback failed: HTTP ${failedTargetIssueList.status}`);
+    }
+    const imported = targetIssueLists
+      .map((result) => findIssueImportRow(result.json, plan.title))
+      .find(Boolean);
     const importedNumber = extractIssueImportNumber({ json: imported });
-    if (!(importedNumber > 0)) issueImportFailure(ctx, "target issue readback did not find converted issue");
+    if (!(importedNumber > 0)) {
+      const snapshots = targetIssueLists.map((result) => result.json).filter(Boolean);
+      issueImportFailure(
+        ctx,
+        `target issue readback did not find converted issue: ${JSON.stringify(snapshots).slice(-2000)}`,
+      );
+    }
     state.issueImportIssueNumberYoram = importedNumber;
     const targetIssue = await helpers.sendRaw(ctx, "yoram", {
       method: "GET",
@@ -1257,11 +1273,15 @@ function findNamedCategory(node, name) {
 function labelNamesFromIssue(node) {
   if (typeof node === "string") {
     return MIGRATION_LABEL_SEEDS
-      .filter((seed) => new RegExp(`(?:>|["'])${seed.name}(?:<|["'])`, "u").test(node))
+      .filter((seed) => new RegExp(`(?<![\\p{L}\\p{N}_-])${seed.name}(?![\\p{L}\\p{N}_-])`, "u").test(node))
       .map((seed) => seed.name);
   }
   if (Array.isArray(node)) return node.flatMap(labelNamesFromIssue);
   if (!node || typeof node !== "object") return [];
+  const directName = node.name ?? node.labelName;
+  if (typeof directName === "string" && MIGRATION_LABEL_SEEDS.some((seed) => seed.name === directName)) {
+    return [directName];
+  }
   if (Array.isArray(node.labels)) {
     return node.labels.flatMap((label) => {
       const name = label?.name ?? label?.labelName;
@@ -1426,6 +1446,7 @@ export const actionDefinitions = {
         legacy: `${options.legacyUrl}/${step.params.owner}/${step.params.project}/issue/${state.issueNumberLegacy}`,
         yoram: `${yoramBaseUrl}/${step.params.owner}/${step.params.project}/issue/${state.issueNumberYoram}`,
         spa: true,
+        ...(ctx.scenarioId === "I18-issue-edit-state" ? { state: "edit-issue-state" } : {}),
         ...ISSUE_DETAIL_DOM_SELECTORS,
       });
     },
@@ -1774,6 +1795,7 @@ export const actionDefinitions = {
         legacy: `${ctx.options.legacyUrl}/${ctx.step.params.owner}/${ctx.step.params.project}/issue/${ctx.state.issueNumberLegacy}`,
         yoram: `${ctx.yoramBaseUrl}/${ctx.step.params.owner}/${ctx.step.params.project}/issue/${ctx.state.issueNumberYoram}`,
         spa: true,
+        state: "edit-issue-state",
         ...ISSUE_DETAIL_DOM_SELECTORS,
       });
     }
@@ -2201,7 +2223,9 @@ export const actionDefinitions = {
         readback.yoramResult.status >= 400 ||
         readbackNames.some((names) => [...expectedNames].some((name) => !names.has(name)))
       ) {
-        entry.errors.push("restore-migration-issue-labels: issue label association readback mismatch");
+        entry.errors.push(
+          `restore-migration-issue-labels: issue label association readback mismatch (setLegacy=${JSON.stringify(setResult.legacyResult.json)}, setYoram=${JSON.stringify(setResult.yoramResult.json)}, legacy=${readback.legacyResult.status}, yoram=${readback.yoramResult.status}, legacyNames=${JSON.stringify([...readbackNames[0]])}, yoramNames=${JSON.stringify([...readbackNames[1]])})`,
+        );
       }
     },
   },

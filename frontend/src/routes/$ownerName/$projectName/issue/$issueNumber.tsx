@@ -75,6 +75,7 @@ import { IssueLabel } from "../../../../components/issue-label";
 import { IssueDueDateInput } from "../../../../components/issue-due-date-input";
 import { MarkdownEditor, type MarkdownEditorProps } from "../../../../components/markdown-editor";
 import {
+  getTasklistProgress,
   TasklistInput,
   updateTasklistMarkdown,
   type TasklistUpdate,
@@ -750,7 +751,9 @@ function IssueDetailBody({
       });
     },
     onError(error) {
-      setTasklistError(error instanceof Error && error.message ? error.message : t("error.internalServerError"));
+      setTasklistError(
+        error instanceof Error && error.message ? error.message : t("error.internalServerError"),
+      );
     },
   });
   const toggleTasklist = (index: number, checked: boolean) => {
@@ -1087,7 +1090,11 @@ function IssueDetailBody({
                 <div id={`issue-body-${issueNumber}`}>
                   <TasklistBar markdown={bodyMarkdown} />
                   {tasklistError ? (
-                    <div className="alert alert-error" role="alert" data-owner="issue-tasklist-error">
+                    <div
+                      className="alert alert-error"
+                      role="alert"
+                      data-owner="issue-tasklist-error"
+                    >
                       {tasklistError}
                       <br />
                       <br />
@@ -3857,7 +3864,11 @@ function IssueCommentRow({
         >
           <TasklistBar markdown={contentsMarkdown} />
           {tasklistError ? (
-            <div className="alert alert-error" role="alert" data-owner="issue-comment-tasklist-error">
+            <div
+              className="alert alert-error"
+              role="alert"
+              data-owner="issue-comment-tasklist-error"
+            >
               {tasklistError}
               <br />
               <br />
@@ -4259,19 +4270,14 @@ function CommentUpdateForm({
       const uploaded = await Promise.all(
         files.map((file) => uploadTemporaryAttachment(runtimeConfig, csrfToken, file)),
       );
-      setAttachments((current) => [
-        ...current,
-        ...(uploaded as Array<Record<string, unknown>>),
-      ]);
+      setAttachments((current) => [...current, ...(uploaded as Array<Record<string, unknown>>)]);
     } finally {
       setAttachmentPending(false);
     }
   }
   function removeAttachment(attachment: Record<string, unknown>) {
     const id = stringField(attachment.id);
-    setAttachments((current) =>
-      current.filter((candidate) => stringField(candidate.id) !== id),
-    );
+    setAttachments((current) => current.filter((candidate) => stringField(candidate.id) !== id));
   }
   const updateMutation = useMutation({
     mutationFn: async () => {
@@ -4351,10 +4357,7 @@ function CommentUpdateForm({
                 />
               </span>
               {showNotification ? (
-                <LegacyHoverPopover
-                  content={t("notification.send.mail.warning")}
-                  focusable
-                >
+                <LegacyHoverPopover content={t("notification.send.mail.warning")} focusable>
                   {(popoverProps) => (
                     <span className="send-notification-check" {...popoverProps}>
                       <label className="checkbox inline">
@@ -4464,30 +4467,10 @@ function issueDetailMarkdownEditorProps(
   };
 }
 
-function taskItemsFromMarkdown(markdown: string) {
-  let inCodeFence = false;
-  const items: boolean[] = [];
-  for (const line of stripMarkdownComments(markdown).split(/\r?\n/u)) {
-    if (line.trim().startsWith("```")) {
-      inCodeFence = !inCodeFence;
-      continue;
-    }
-    if (inCodeFence) {
-      continue;
-    }
-    const match = line.match(/^(?:\s*[-+*]|(?:\d+\.))?\s*\[([ xX])\](?=\s)/u);
-    if (match) {
-      items.push(match[1].toLowerCase() === "x");
-    }
-  }
-  return items;
-}
-
 function TasklistBar({ markdown }: { markdown: string }) {
-  const tasks = taskItemsFromMarkdown(markdown);
-  const completed = tasks.filter(Boolean).length;
-  const hasTasks = tasks.length > 0;
-  const percentage = hasTasks ? (completed / tasks.length) * 100 : 0;
+  const { completed, total } = getTasklistProgress(markdown);
+  const hasTasks = total > 0;
+  const percentage = hasTasks ? (completed / total) * 100 : 0;
   const width = `${percentage}%`;
   const complete = hasTasks && percentage === 100;
   const titleStyle = {
@@ -4511,7 +4494,7 @@ function TasklistBar({ markdown }: { markdown: string }) {
           className="issue-detail-task-done-counter done-counter"
           data-owner="project-issue-detail-task-done-counter"
         >
-          {hasTasks ? `(${completed}/${tasks.length})` : null}
+          {hasTasks ? `(${completed}/${total})` : null}
         </span>
       </div>
       <div className="task-progress" data-owner="project-issue-detail-task-progress">

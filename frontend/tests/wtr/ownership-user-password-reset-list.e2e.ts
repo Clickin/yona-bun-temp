@@ -75,7 +75,7 @@ for (const viewport of [
     const pageX = desktop ? 10 : 0;
     const pageWidth = desktop ? 1346 : 390;
     expect(actual.list).toEqual({
-      box: { height: desktop ? 60 : 80, width: pageWidth, x: pageX, y: desktop ? 488 : 511 },
+      box: { height: desktop ? 60 : 80, width: pageWidth, x: pageX, y: 488 },
       style: {
         display: "block",
         fontWeight: "400",
@@ -85,7 +85,7 @@ for (const viewport of [
       },
     });
     expect(actual.term).toEqual({
-      box: { height: desktop ? 20 : 40, width: pageWidth, x: pageX, y: desktop ? 488 : 511 },
+      box: { height: desktop ? 20 : 40, width: pageWidth, x: pageX, y: 488 },
       style: {
         display: "block",
         fontWeight: "700",
@@ -95,7 +95,7 @@ for (const viewport of [
       },
     });
     expect(actual.description).toEqual({
-      box: { height: 30, width: pageWidth, x: pageX, y: desktop ? 518 : 561 },
+      box: { height: 30, width: pageWidth, x: pageX, y: desktop ? 518 : 538 },
       style: {
         display: "block",
         fontWeight: "400",

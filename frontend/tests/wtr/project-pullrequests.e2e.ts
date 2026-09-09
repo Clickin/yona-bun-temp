@@ -1114,13 +1114,14 @@ test("svn closed pull request route reuses the ko-KR legacy badrequest site shel
   });
 
   await page.setViewportSize({ width: 390, height: 844 });
+  // live ko-KR shell keeps the admin banner at 43px
   expect(await svnPullRequestErrorMetrics(page)).toEqual({
     buttonHeight: 30,
     buttonWidth: 38,
     errorWidth: 390,
     gnbHeight: 40,
     gnbWidth: 390,
-    gnbY: 66,
+    gnbY: 43,
     // copy-fix-current-dom: ico-404 sprite renders at 80x50
     illustrationHeight: 80,
     illustrationWidth: 50,
@@ -1130,7 +1131,7 @@ test("svn closed pull request route reuses the ko-KR legacy badrequest site shel
     messageWidth: 390,
     pageHeight: 450,
     pageWidth: 390,
-    pageY: 116,
+    pageY: 93,
     scrollWidth: 390,
   });
 });
@@ -1194,7 +1195,7 @@ test("svn sent pull request route reuses the ko-KR legacy badrequest site shell"
     errorWidth: 390,
     gnbHeight: 40,
     gnbWidth: 390,
-    gnbY: 66,
+    gnbY: 43,
     // copy-fix-current-dom: ico-404 sprite renders at 80x50
     illustrationHeight: 80,
     illustrationWidth: 50,
@@ -1204,7 +1205,7 @@ test("svn sent pull request route reuses the ko-KR legacy badrequest site shell"
     messageWidth: 390,
     pageHeight: 450,
     pageWidth: 390,
-    pageY: 116,
+    pageY: 93,
     scrollWidth: 390,
   });
 });

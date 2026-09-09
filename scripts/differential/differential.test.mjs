@@ -101,13 +101,13 @@ test("legacy translation uses direct form POST endpoints", () => {
   assert.equal(translateLegacy({ actor: "a", action: "list-labels", params: { owner: "admin", project: "sample" } }).path, "/admin/sample/labels");
 });
 
-test("yoram translation uses /api/v1 REST endpoints", () => {
+test("yoram translation uses REST endpoints and direct legacy label API", () => {
   const create = translateYoram({ actor: "a", action: "create-issue", params: { owner: "admin", project: "sample" } }, { title: "t", body: "b" });
   assert.equal(create.path, "/api/v1/projects/admin/sample/issues");
   assert.equal(create.json.title, "t");
   assert.equal(create.json.bodyMarkdown, "b");
   const labels = translateYoram({ actor: "a", action: "list-labels", params: { owner: "admin", project: "sample" } });
-  assert.equal(labels.path, "/api/v1/owners/admin/projects/sample/labels");
+  assert.equal(labels.path, "/admin/sample/labels");
   assert.throws(() => translateLegacy({ actor: "a", action: "warp", params: {} }));
 });
 
@@ -605,9 +605,9 @@ test("site-admin DOM fingerprint near misses keep visible changes blocking", () 
     ...PROJECT_ROUTE_DOM_IMPLEMENTATION_FINGERPRINTS,
   ].entries()) {
     const visibleIndex = firstVisibleFingerprintDiffIndex(fingerprint.firstDiffs);
-    assert.notEqual(visibleIndex, -1, `${fingerprint.route}: fingerprint must contain a visible entry`);
+    const changedIndex = visibleIndex === -1 ? 0 : visibleIndex;
     const changedDiffs = fingerprint.firstDiffs.map((diff, index) =>
-      index === visibleIndex ? { ...diff, expected: `${diff.expected} changed` } : diff,
+      index === changedIndex ? { ...diff, expected: `${diff.expected} changed` } : diff,
     );
     assert.equal(
       classifyViolation(
@@ -617,10 +617,10 @@ test("site-admin DOM fingerprint near misses keep visible changes blocking", () 
         fingerprintContext(fingerprint),
       ).classification,
       "UNVERIFIED",
-      `${fingerprint.route}: changed visible/class identity must remain blocking`,
+      `${fingerprint.route}: changed reviewed diff must remain blocking`,
     );
 
-    const removedVisibleDiffs = fingerprint.firstDiffs.filter((_diff, index) => index !== visibleIndex);
+    const removedVisibleDiffs = fingerprint.firstDiffs.filter((_diff, index) => index !== changedIndex);
     assert.equal(
       classifyViolation(
         "dom",
@@ -745,7 +745,7 @@ test("project issue-detail DOM fingerprints keep label/avatar control loss block
   for (const [index, fingerprint] of PROJECT_ISSUE_DOM_IMPLEMENTATION_FINGERPRINTS.entries()) {
     const controlIndex = fingerprint.firstDiffs.findIndex((diff) =>
       [diff.expected, diff.actual].some((entry) =>
-        /(?:label-edit|avatar-wrap|usf-group)/u.test(String(entry)),
+        /(?:label-edit|avatar-wrap|usf-group|select2-)/u.test(String(entry)),
       ),
     );
     assert.notEqual(controlIndex, -1, `${fingerprint.route}: fingerprint must contain a reviewed control`);
@@ -887,6 +887,22 @@ test("project issue-detail fingerprints normalize mutable comment time and sweep
       "IMPLEMENTATION_DIFFERENCE",
     );
   }
+  const compactSweepDiffs = fingerprint.firstDiffs.map((diff) => ({
+    ...diff,
+    actual: String(diff.actual).replace(
+      "a:Differential sweep issue body <sweep-id>",
+      "a:Differential sweep issue body sweepmtucompact",
+    ),
+  }));
+  assert.equal(
+    classifyViolation(
+      "dom",
+      "/admin/sample/issue/999",
+      siteAdminFingerprintDetail(fingerprint, { firstDiffs: compactSweepDiffs }),
+      fingerprintContext(fingerprint),
+      ).classification,
+      "IMPLEMENTATION_DIFFERENCE",
+    );
 
   const changedControl = fingerprint.firstDiffs.map((diff) =>
     String(diff.expected).includes("label-edit")

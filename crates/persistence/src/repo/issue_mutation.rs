@@ -309,14 +309,24 @@ impl AppRepositoryImpl<'_> {
             self.sync_mentions_for_resource("issue_post", updated.id, mentioned_user_ids)
                 .await?;
         } else if input.values.is_publish && was_draft {
-            self.sync_mentions_and_notify(
+            let mentioned_user_ids = self
+                .mentioned_active_user_ids(&input.values.body_markdown)
+                .await?;
+            let mention_sync = self
+                .sync_mentions_for_resource("issue_post", updated.id, mentioned_user_ids)
+                .await?;
+            let mut receiver_ids = self
+                .issue_notification_receiver_ids(&project_record, &updated, "NEW_ISSUE")
+                .await?;
+            receiver_ids.extend(mention_sync.mentioned_user_ids);
+            self.create_notification_event_for_receivers(
                 actor_id,
-                "issue_post",
-                updated.id,
-                &input.values.body_markdown,
+                "issue",
+                &updated.id.to_string(),
                 "NEW_ISSUE",
                 "",
                 &input.values.body_markdown,
+                &receiver_ids,
             )
             .await?;
             let mut project_active = project::ActiveModel {
@@ -450,36 +460,38 @@ impl AppRepositoryImpl<'_> {
         else {
             return Ok(false);
         };
+        let (_write_guard, transaction, txn_started_at) = self.begin_serialized_write().await?;
+        let comments = issue_comment::Entity::find()
+            .filter(issue_comment::Column::IssueId.eq(Some(model.id)))
+            .all(&transaction)
+            .await?;
+        let comment_ids = comments.iter().map(|comment| comment.id).collect::<Vec<_>>();
         issue_issue_label::Entity::delete_many()
             .filter(issue_issue_label::Column::IssueId.eq(model.id))
-            .exec(&self.db)
+            .exec(&transaction)
             .await?;
         issue_event::Entity::delete_many()
             .filter(issue_event::Column::IssueId.eq(Some(model.id)))
-            .exec(&self.db)
+            .exec(&transaction)
             .await?;
         issue_voter::Entity::delete_many()
             .filter(issue_voter::Column::IssueId.eq(model.id))
-            .exec(&self.db)
+            .exec(&transaction)
             .await?;
-        for comment in issue_comment::Entity::find()
-            .filter(issue_comment::Column::IssueId.eq(Some(model.id)))
-            .all(&self.db)
-            .await?
-        {
+        for comment in &comments {
             issue_comment_voter::Entity::delete_many()
                 .filter(issue_comment_voter::Column::IssueCommentId.eq(comment.id))
-                .exec(&self.db)
+                .exec(&transaction)
                 .await?;
         }
         issue_comment::Entity::delete_many()
             .filter(issue_comment::Column::IssueId.eq(Some(model.id)))
-            .exec(&self.db)
+            .exec(&transaction)
             .await?;
         watch::Entity::delete_many()
             .filter(watch::Column::ResourceType.eq(Some("ISSUE".to_string())))
             .filter(watch::Column::ResourceId.eq(Some(model.id.to_string())))
-            .exec(&self.db)
+            .exec(&transaction)
             .await?;
         attachment::Entity::delete_many()
             .filter(
@@ -490,9 +502,23 @@ impl AppRepositoryImpl<'_> {
                 ),
             )
             .filter(attachment::Column::ContainerId.eq(model.id))
-            .exec(&self.db)
+            .exec(&transaction)
             .await?;
-        issue::Entity::delete_by_id(model.id).exec(&self.db).await?;
+        if !comment_ids.is_empty() {
+            attachment::Entity::delete_many()
+                .filter(
+                    attachment::Column::ContainerType
+                        .eq(Some(ISSUE_COMMENT_ATTACHMENT_CONTAINER.to_string())),
+                )
+                .filter(attachment::Column::ContainerId.is_in(comment_ids))
+                .exec(&transaction)
+                .await?;
+        }
+        issue::Entity::delete_by_id(model.id)
+            .exec(&transaction)
+            .await?;
+        self.commit_serialized_write(transaction, _write_guard, txn_started_at)
+            .await?;
         Ok(true)
     }
 

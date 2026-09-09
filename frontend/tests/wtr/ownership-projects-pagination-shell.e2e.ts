@@ -296,13 +296,13 @@ for (const viewport of [
       height: 30,
       width: desktop ? 1346 : 390,
       x: desktop ? 10 : 0,
-      y: desktop ? 585 : 818,
+      y: desktop ? 585 : 795,
     });
     expect(actual.list).toEqual({
       height: 30,
       width: 236.703125,
       x: desktop ? 504.640625 : 16.640625,
-      y: desktop ? 585 : 818,
+      y: desktop ? 585 : 795,
     });
     const xOffset = desktop ? 488 : 0;
     // F5 dist-truth (2026-08-11): the desktop input grew to 64px and the
@@ -312,21 +312,21 @@ for (const viewport of [
         height: 20,
         width: desktop ? 66.734375 : 66.734375,
         x: 16.640625 + xOffset,
-        y: desktop ? 589.15625 : 822.15625,
+        y: desktop ? 589.15625 : 799.15625,
       },
-      { height: 30, width: desktop ? 64 : 64, x: 83.375 + xOffset, y: desktop ? 585 : 818 },
-      { height: 20, width: 13.65625, x: 147.375 + xOffset, y: desktop ? 589.15625 : 822.15625 },
-      { height: 20, width: 25.578125, x: 161.03125 + xOffset, y: desktop ? 589.15625 : 822.15625 },
+      { height: 30, width: desktop ? 64 : 64, x: 83.375 + xOffset, y: desktop ? 585 : 795 },
+      { height: 20, width: 13.65625, x: 147.375 + xOffset, y: desktop ? 589.15625 : 799.15625 },
+      { height: 20, width: 25.578125, x: 161.03125 + xOffset, y: desktop ? 589.15625 : 799.15625 },
       {
         height: 20,
         width: desktop ? 66.734375 : 66.734375,
         x: 186.609375 + xOffset,
-        y: desktop ? 589.15625 : 822.15625,
+        y: desktop ? 589.15625 : 799.15625,
       },
     ]);
     expect(actual.labelBoxes).toEqual([
-      { height: 13, width: 50.734375, x: 27.640625 + xOffset, y: desktop ? 592.15625 : 825.15625 },
-      { height: 13, width: 50.734375, x: 191.609375 + xOffset, y: desktop ? 592.15625 : 825.15625 },
+      { height: 13, width: 50.734375, x: 27.640625 + xOffset, y: desktop ? 592.15625 : 802.15625 },
+      { height: 13, width: 50.734375, x: 191.609375 + xOffset, y: desktop ? 592.15625 : 802.15625 },
     ]);
     expect(actual.rootStyle).toEqual({
       clear: "both",

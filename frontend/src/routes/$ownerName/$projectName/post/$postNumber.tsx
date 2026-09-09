@@ -410,7 +410,9 @@ function ProjectPostDetailBody({
       queryClient.invalidateQueries({ queryKey: postQueryOptions.queryKey });
     },
     onError(error) {
-      setTasklistError(error instanceof Error && error.message ? error.message : t("error.internalServerError"));
+      setTasklistError(
+        error instanceof Error && error.message ? error.message : t("error.internalServerError"),
+      );
     },
   });
   const toggleTasklist = (index: number, checked: boolean) => {
@@ -461,8 +463,9 @@ function ProjectPostDetailBody({
     }) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
       return updatePostCommentRest(runtimeConfig, csrfToken, {
-        attachmentIds: (post.comments.find((comment) => String(comment.id) === commentId)?.attachments ?? [])
-          .map((attachment) => attachment.id),
+        attachmentIds: (
+          post.comments.find((comment) => String(comment.id) === commentId)?.attachments ?? []
+        ).map((attachment) => attachment.id),
         commentId,
         contentsMarkdown,
         original,
@@ -582,7 +585,11 @@ function ProjectPostDetailBody({
                 <div id={`post-body-${postNumber}`}>
                   <TasklistBar markdown={post.bodyMarkdown} />
                   {tasklistError ? (
-                    <div className="alert alert-error" role="alert" data-owner="post-tasklist-error">
+                    <div
+                      className="alert alert-error"
+                      role="alert"
+                      data-owner="post-tasklist-error"
+                    >
                       {tasklistError}
                       <br />
                       <br />
@@ -1191,7 +1198,11 @@ function PostComments({
   canUpdate: boolean;
   onCreateComment: (contentsMarkdown: string) => Promise<unknown>;
   onCommentDeleteRequest: (commentId: string) => void;
-  onUpdateComment: (commentId: string, contentsMarkdown: string, original?: string) => Promise<unknown>;
+  onUpdateComment: (
+    commentId: string,
+    contentsMarkdown: string,
+    original?: string,
+  ) => Promise<unknown>;
   ownerName: string;
   post: BoardPostDetail;
   postNumber: string;
@@ -1410,7 +1421,11 @@ function PostCommentRow({
   editingCommentId: string | null;
   onCommentEditRequest: (commentId: string | null) => void;
   onCommentDeleteRequest: (commentId: string) => void;
-  onUpdateComment: (commentId: string, contentsMarkdown: string, original?: string) => Promise<unknown>;
+  onUpdateComment: (
+    commentId: string,
+    contentsMarkdown: string,
+    original?: string,
+  ) => Promise<unknown>;
   ownerName: string;
   postNumber: string;
   projectName: string;
@@ -1586,7 +1601,11 @@ function PostCommentRow({
         >
           <TasklistBar markdown={comment.contentsMarkdown} />
           {tasklistError ? (
-            <div className="alert alert-error" role="alert" data-owner="post-comment-tasklist-error">
+            <div
+              className="alert alert-error"
+              role="alert"
+              data-owner="post-comment-tasklist-error"
+            >
               {tasklistError}
               <br />
               <br />
@@ -2055,6 +2074,7 @@ function PostChildComments({
   const { t } = useLegacyMessages();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // oxlint-disable-next-line react-doctor/no-effect-event-handler -- focus after the reply form mounts for keyboard parity.
   useEffect(() => {
     if (formOpen) {
       textareaRef.current?.focus();
@@ -2553,10 +2573,7 @@ function AttachedFiles({ attachments }: { attachments: BoardAttachment[] }) {
       {attachments.map((file) => {
         const id = stringField(file.id);
         const name = stringField(file.name);
-        const href = prefixBasePath(
-          router.basepath,
-          `/files/${encodeURIComponent(id)}`,
-        );
+        const href = prefixBasePath(router.basepath, `/files/${encodeURIComponent(id)}`);
         const downloadHref = `${href}?action=download`;
         const sizeReadable = humanFileSize(file.size);
 
@@ -2635,10 +2652,14 @@ function CommentEditAttachmentFiles({ attachments }: { attachments: BoardAttachm
 
 function TasklistBar({ markdown }: { markdown: string }) {
   const { completed, total } = getTasklistProgress(markdown);
-  const width = total ? `${completed / total * 100}%` : 0;
+  const width = total ? `${(completed / total) * 100}%` : 0;
   return (
     <div className={`tasklist${total ? " task-show" : ""}`} data-owner="post-detail-tasklist">
-      <div className="task-title" data-owner="post-detail-task-title" style={total ? { width } : undefined}>
+      <div
+        className="task-title"
+        data-owner="post-detail-task-title"
+        style={total ? { width } : undefined}
+      >
         Tasks
         <span className="done-counter" data-owner="post-detail-task-done-counter">
           {total ? `(${completed}/${total})` : null}

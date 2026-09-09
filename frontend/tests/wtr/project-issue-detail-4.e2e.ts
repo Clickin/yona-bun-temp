@@ -65,7 +65,9 @@ import {
   dueDateInlineUpdateMetrics,
 } from "./project-issue-detail-shared.ts";
 
-test("project issue detail tasklist checkbox updates nested markdown through REST", async ({ page }) => {
+test("project issue detail tasklist checkbox updates nested markdown through REST", async ({
+  page,
+}) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const original = "- [ ] parent\n  - [ ] child\n- [ ] sibling\n\n```markdown\n- [ ] fenced\n```";
   const { contentUpdateRequests } = await mockProjectIssueDetail(page, {
@@ -247,9 +249,9 @@ test("project issue detail filters label results by the typed query", async ({ p
   await page.getByRole("option", { name: "backend" }).click();
   await expect(input).toHaveValue("");
   await expect(
-    page.locator(
-      '[data-owner="project-issue-detail-label-control"] .select2-search-choice',
-    ).filter({ hasText: "backend" }),
+    page
+      .locator('[data-owner="project-issue-detail-label-control"] .select2-search-choice')
+      .filter({ hasText: "backend" }),
   ).toContainText("backend");
   await input.fill("does-not-exist");
   await expect(
@@ -259,7 +261,8 @@ test("project issue detail filters label results by the typed query", async ({ p
   await expect(page.getByRole("option", { name: "backend" })).toHaveCount(1);
   await page.reload();
   await expect(
-    page.locator('[data-owner="project-issue-detail-label-control"] .select2-search-choice')
+    page
+      .locator('[data-owner="project-issue-detail-label-control"] .select2-search-choice')
       .filter({ hasText: "backend" }),
   ).toContainText("backend");
 });
@@ -337,9 +340,7 @@ test("project issue detail comment edit uploads and removes temporary attachment
   await cancelledForm.getByRole("button", { name: "Cancel" }).click();
   await expect(reloadedComment.locator(".attaches .filename")).toHaveText("new.txt");
   await reloadedComment.locator('button[title="Edit comment"][data-comment-id="77"]').click();
-  await expect(
-    cancelledForm.locator('.attached-file-marker[data-name="new.txt"]'),
-  ).toHaveCount(1);
+  await expect(cancelledForm.locator('.attached-file-marker[data-name="new.txt"]')).toHaveCount(1);
   expect(commentUpdateRequests).toHaveLength(1);
 });
 
@@ -892,11 +893,8 @@ test("project issue detail matches live legacy Korean milestone event and mobile
   expect(mobileMetrics!.uploadWidth).toBeCloseTo(386, 0);
   expect(mobileMetrics!.uploadX).toBeCloseTo(2, 0);
   // Mobile header: the anonymous/authenticated usermenu (218px) + the gnb-nav
-  // (logo 30 + 전체 목록 72 + divider + feedback 133 = 238px) exceed the 390px
-  // viewport, so the float wraps below the 40px nav — top 66 + 40 = 106. The
-  // legacy 83 value is unreproducible from the legacy's own frozen CSS (the
-  // same widths wrap the same way; a same-line float would sit at 66).
-  expect(mobileMetrics!.userMenuTop).toBe(106);
+  // The live ko-KR shell keeps the user menu on the first 40px nav row.
+  expect(mobileMetrics!.userMenuTop).toBe(83);
 
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin/sample/issue/11`);

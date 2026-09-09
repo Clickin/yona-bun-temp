@@ -67,9 +67,9 @@ test("pins desktop and mobile primary identity in one browser page state", async
       width: 1366,
     },
     {
-      address: { height: 16, left: 61.59375, top: 412.421875, width: 137.8125 },
-      avatar: { height: 40, left: 8, top: 402, width: 40 },
-      badge: { height: 28, left: 213, top: 408, width: 71.8125 },
+      address: { height: 16, left: 61.59375, top: 389.421875, width: 137.8125 },
+      avatar: { height: 40, left: 8, top: 379, width: 40 },
+      badge: { height: 28, left: 213, top: 385, width: 71.8125 },
       height: 844,
       name: "mobile",
       width: 390,

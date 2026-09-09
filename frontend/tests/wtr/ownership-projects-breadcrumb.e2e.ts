@@ -168,16 +168,11 @@ for (const viewport of [
       height,
       width: viewport.width,
       x: 0,
-      y: viewport.name === "desktop" ? 93 : 116,
+      y: 93,
     });
-    expect(metrics.boxes.inner).toEqual({
-      height,
-      width: innerWidth,
-      x: 10,
-      y: viewport.name === "desktop" ? 93 : 116,
-    });
+    expect(metrics.boxes.inner).toEqual({ height, width: innerWidth, x: 10, y: 93 });
     expect(metrics.boxes.title).toEqual(metrics.boxes.inner);
-    expect(metrics.boxes.page.y).toBe(viewport.name === "desktop" ? 151 : 204);
+    expect(metrics.boxes.page.y).toBe(viewport.name === "desktop" ? 151 : 181);
     expect(metrics.outer).toEqual({
       borderBottom: "0px none rgb(51, 51, 51)",
       borderLeft: "0px none rgb(51, 51, 51)",

@@ -414,11 +414,18 @@ test("generic project DOM reads scope project pages while labels uses full-body 
         async requestBoth() {
           return { legacyResult: { status: 200 }, yoramResult: { status: 200 } };
         },
+        async requestJsonBoth() {
+          return { legacyResult: { status: 200 }, yoramResult: { status: 200 } };
+        },
         async renderDomTarget(_ctx, domTarget) {
           target = domTarget;
         },
       },
     });
+    if (step.action === "list-labels") {
+      assert.equal(target, undefined);
+      continue;
+    }
     const expected = step.action === "list-labels" ? {} : PROJECT_PAGE_DOM_SELECTORS;
     assert.deepEqual(
       {
@@ -481,6 +488,7 @@ test("cleanup accepts delete errors when the postcondition proves both projects 
   assert.deepEqual(
     calls.map(({ side, method, path }) => ({ side, method, path })),
     [
+      { side: "legacy", method: "GET", path: "/admin/created-project" },
       { side: "legacy", method: "DELETE", path: "/admin/created-project/delete" },
       { side: "yoram", method: "DELETE", path: "/api/v1/owners/admin/projects/created-project" },
       { side: "legacy", method: "GET", path: "/admin/created-project" },

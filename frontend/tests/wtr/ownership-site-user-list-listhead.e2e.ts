@@ -52,6 +52,8 @@ test("populated ACTIVE listhead preserves desktop and mobile frozen output", asy
   ]) {
     await page.setViewportSize(viewport);
     await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/sites/userList`);
+    await expect(page.locator('[data-owner="site-admin-affix"]')).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
     const root = page.locator(`[data-owner="${owners.root}"]`);
     const columns = root.locator(`:scope > [data-owner="${owners.column}"]`);
     await expect(columns).toHaveCount(4);

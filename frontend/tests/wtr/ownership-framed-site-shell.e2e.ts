@@ -190,7 +190,7 @@ for (const viewport of [
     await expect(shell).toHaveAttribute("data-sidebar-open", "false");
     await expect(main).toBeVisible();
     expect(await readShell(page)).toEqual({
-      bodyOverflow: "auto scroll",
+      bodyOverflow: viewport.label === "mobile" ? "auto" : "auto scroll",
       horizontalOverflow: false,
       main: {
         backgroundColor: "rgb(255, 255, 255)",

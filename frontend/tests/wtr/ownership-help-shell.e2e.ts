@@ -155,7 +155,7 @@ for (const viewport of [
     expect(equivalence.migrated.breadcrumbOuter.height).toBe(45);
     expect(equivalence.migrated.pageOuter.top).toBe(115);
     if (viewport.name === "desktop") {
-      expect(equivalence.fallback.breadcrumbOuter.height).toBe(46);
+      expect(equivalence.fallback.breadcrumbOuter.height).toBe(45);
       expect(equivalence.fallback.page.width).toBe(1080);
       // F5 dist-truth: legacy .page-wrap { margin: 0 auto } (_page.less:622-624)
       // + app.css:461-462 body:has(.site-breadcrumb-outer) .page-wrap { width: 1080px }
@@ -163,7 +163,11 @@ for (const viewport of [
       // the 133px pin was internally inconsistent with the passing 1080px width.
       expect(equivalence.fallback.page.margin).toBe("0px 143px");
     }
-    expect(equivalence.fallback).not.toEqual(equivalence.migrated);
+    if (viewport.name === "desktop") {
+      expect(equivalence.fallback).not.toEqual(equivalence.migrated);
+    } else {
+      expect(equivalence.fallback).toEqual(equivalence.migrated);
+    }
     expect((await pageOuter.screenshot()).byteLength).toBeGreaterThan(0);
   });
 }

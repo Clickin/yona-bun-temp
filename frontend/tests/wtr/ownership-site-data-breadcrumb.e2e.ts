@@ -42,6 +42,7 @@ async function openData(page: Page) {
     route.fulfill({ contentType: "application/json", json: { versionToUpdate: null } }),
   );
   await page.goto(`${basePath}/sites/data`);
+  await expect(page.locator('[data-owner="site-admin-affix"]')).toBeVisible();
   await expect(page.locator(`[data-owner="${owners.outer}"]`)).toBeVisible();
 }
 
@@ -128,15 +129,15 @@ for (const viewport of [
         height: 45,
         width: viewport.name === "desktop" ? 1346 : 370,
         x: 10,
-        y: viewport.name === "desktop" ? 83 : 106,
+        y: 83,
       },
       inner: {
         height: 45,
         width: viewport.name === "desktop" ? 1346 : 370,
         x: 10,
-        y: viewport.name === "desktop" ? 83 : 106,
+        y: 83,
       },
-      outer: { height: 45, width: viewport.width, x: 0, y: viewport.name === "desktop" ? 83 : 106 },
+      outer: { height: 45, width: viewport.width, x: 0, y: 83 },
     });
     expect(evidence.heading).toEqual({
       color: "rgb(51, 51, 51)",

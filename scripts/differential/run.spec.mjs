@@ -861,7 +861,7 @@ test("built-in issue API probe accepts only its exact expected runtime dispositi
   };
   const entry = { behaviorIds: ["B-0037"], violations: [], errors: [] };
   await executeStep(dispositionContext(step, { status: 401 }, { status: 200 }, entry));
-  assert.equal(entry.stepResults[0].status, "FAILED");
+  assert.equal(entry.stepResults[0].status, "DISPOSITIONED");
   assert.deepEqual(entry.stepResults[0].disposition, {
     classification: "IMPLEMENTATION_DIFFERENCE",
     evidence: "test evidence",
@@ -1057,7 +1057,7 @@ test("summarizeExecution separates global infrastructure errors from step errors
     infraErrors: ["yoram boot failed"],
     scenarios: [
       { stepResults: [{ status: "EXECUTED" }] },
-      { stepResults: [{ status: "SKIPPED" }, { status: "FAILED" }] },
+      { stepResults: [{ status: "SKIPPED" }, { status: "FAILED" }, { status: "DISPOSITIONED" }] },
     ],
   }, 3);
   assert.deepEqual(summary, {
@@ -1067,5 +1067,6 @@ test("summarizeExecution separates global infrastructure errors from step errors
     scenariosWithStepErrors: 1,
     scenariosWithoutStepErrors: 1,
     totalStepErrors: 2,
+    acceptedDispositions: 1,
   });
 });

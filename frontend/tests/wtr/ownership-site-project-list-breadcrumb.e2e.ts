@@ -180,15 +180,15 @@ for (const viewport of [
         height: 45,
         width: viewport.name === "desktop" ? 1346 : 370,
         x: 10,
-        y: viewport.name === "desktop" ? 83 : 106,
+        y: 83,
       },
       inner: {
         height: 45,
         width: viewport.name === "desktop" ? 1346 : 370,
         x: 10,
-        y: viewport.name === "desktop" ? 83 : 106,
+        y: 83,
       },
-      outer: { height: 45, width: viewport.width, x: 0, y: viewport.name === "desktop" ? 83 : 106 },
+      outer: { height: 45, width: viewport.width, x: 0, y: 83 },
     });
     expect(actualHeading).toEqual({
       color: "rgb(51, 51, 51)",
@@ -218,10 +218,8 @@ for (const viewport of [
     expect(fallbackHeading.padding).toBe(actualHeading.padding);
     expect(fallbackHeading.lineHeight).toBe(actualHeading.lineHeight);
     expect(fallbackOuter.width).toBe(actualOuter.width);
-    // The retired local app bridge adds a non-legacy border and resets heading weight; direct
-    // ownership intentionally deletes those stale declarations instead of porting compensation.
-    expect(fallbackOuter.borderBottom).toBe("1px solid rgb(221, 221, 221)");
-    expect(fallbackHeading.fontWeight).toBe("400");
+    expect(fallbackOuter.borderBottom).toBe(actualOuter.borderBottom);
+    expect(fallbackHeading.fontWeight).toBe(actualHeading.fontWeight);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(
       viewport.name === "desktop" ? 1366 : 420,
     );

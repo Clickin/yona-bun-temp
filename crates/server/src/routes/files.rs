@@ -6,11 +6,13 @@ use axum::{
     Json, Router,
 };
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::path::PathBuf;
+use unicode_normalization::UnicodeNormalization;
 
 use crate::{
     base_path_href, persistence, posting_can_update, project_code_menu_visible,
-    project_read_allowed, project_update_allowed, random_storage_token, read_issue_access,
+    project_read_allowed, project_update_allowed, read_issue_access,
     read_posting_access, PilotBackend, PilotServiceImpl,
 };
 
@@ -690,7 +692,9 @@ pub(crate) async fn upload_file(
             .file_name()
             .map(ToString::to_string)
             .filter(|value| !value.trim().is_empty())
-            .unwrap_or_else(|| "upload.bin".to_string());
+            .unwrap_or_else(|| "upload.bin".to_string())
+            .nfc()
+            .collect::<String>();
         let declared_mime_type = field.content_type().map(ToString::to_string);
         let Ok(bytes) = field.bytes().await else {
             return StatusCode::BAD_REQUEST.into_response();
@@ -700,18 +704,27 @@ pub(crate) async fn upload_file(
         }
         let mime_type =
             detect_upload_mime_type(&file_name, declared_mime_type.as_deref(), bytes.as_ref());
-        let hash = random_storage_token();
+        let hash = {
+            let digest = Sha256::digest(&bytes);
+            let mut hash = String::with_capacity(digest.len() * 2);
+            for byte in digest {
+                use std::fmt::Write as _;
+                let _ = write!(hash, "{byte:02x}");
+            }
+            hash
+        };
         let path = uploaded_file_path_with_root(&data_root, &hash);
         if let Some(parent) = path.parent() {
             if std::fs::create_dir_all(parent).is_err() {
                 return StatusCode::INTERNAL_SERVER_ERROR.into_response();
             }
         }
-        if std::fs::write(&path, &bytes).is_err() {
+        let wrote_file = !path.is_file();
+        if wrote_file && std::fs::write(&path, &bytes).is_err() {
             return StatusCode::INTERNAL_SERVER_ERROR.into_response();
         }
-        let Ok(attachment) = repository
-            .create_user_attachment_upload(
+        let Ok((attachment, created)) = repository
+            .create_user_attachment_upload_with_status(
                 user.id,
                 &user.login_id,
                 &file_name,
@@ -721,17 +734,24 @@ pub(crate) async fn upload_file(
             )
             .await
         else {
+            if wrote_file {
+                let _ = std::fs::remove_file(&path);
+            }
             return StatusCode::INTERNAL_SERVER_ERROR.into_response();
         };
 
         let response = UploadFileResponse {
             id: attachment.id,
-            mime_type,
-            name: file_name,
-            size: bytes.len() as i64,
+            mime_type: attachment.mime_type,
+            name: attachment.name,
+            size: attachment.size,
             url: base_path_href(&service.base_path, &format!("/files/{}", attachment.id)),
         };
-        return (StatusCode::CREATED, Json(response)).into_response();
+        return (
+            if created { StatusCode::CREATED } else { StatusCode::OK },
+            Json(response),
+        )
+            .into_response();
     }
 
     StatusCode::BAD_REQUEST.into_response()
@@ -897,17 +917,19 @@ pub(crate) async fn delete_uploaded_file(
             attachment,
             remove_blob,
         }) => {
+            let origin_path = uploaded_file_path_with_root(&data_root, &attachment.hash);
             if remove_blob && !attachment.hash.is_empty() {
                 let _ = std::fs::remove_file(uploaded_file_path_with_root(
                     &data_root,
                     &attachment.hash,
                 ));
             }
-            (
-                StatusCode::OK,
-                "Both the attachment and its origin file are removed successfully.",
-            )
-                .into_response()
+            let message = if origin_path.is_file() {
+                "The attachment is removed successfully, but its origin file still exists."
+            } else {
+                "Both the attachment and its origin file are removed successfully."
+            };
+            (StatusCode::OK, message).into_response()
         }
         Ok(persistence::DeleteAttachmentResult::Forbidden) => StatusCode::FORBIDDEN.into_response(),
         Ok(persistence::DeleteAttachmentResult::NotFound) => StatusCode::NOT_FOUND.into_response(),

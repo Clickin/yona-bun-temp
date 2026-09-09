@@ -228,19 +228,19 @@ for (const viewport of [
         scrollWidth: document.documentElement.scrollWidth,
       };
     }, owners);
-    expect(metrics.affix?.lineHeight).toBe("23px");
+    expect(metrics.affix?.lineHeight).toBe("20px");
     expect(metrics.affix?.height).toBeGreaterThan(0);
     const mobile = viewport.name === "mobile";
     expect(metrics.boxes).toEqual(
       mobile
         ? {
-            wrap: { height: 20, width: 390, x: 0, y: 204 },
-            container: { height: 40, width: 205, x: 0, y: 214 },
-            form: { height: 30, width: 205, x: 0, y: 219 },
-            bar: { height: 30, width: 205, x: 0, y: 219 },
-            input: { height: 20, width: 183, x: 1, y: 225.578125 },
-            button: { height: 20, width: 12, x: 187, y: 225 },
-            icon: { height: 12, width: 12, x: 187, y: 228 },
+            wrap: { height: 20, width: 390, x: 0, y: 181 },
+            container: { height: 40, width: 205, x: 0, y: 191 },
+            form: { height: 30, width: 205, x: 0, y: 196 },
+            bar: { height: 30, width: 205, x: 0, y: 196 },
+            input: { height: 20, width: 183, x: 1, y: 202.578125 },
+            button: { height: 20, width: 12, x: 187, y: 202 },
+            icon: { height: 12, width: 12, x: 187, y: 205 },
           }
         : {
             wrap: { height: 50, width: 1346, x: 10, y: 151 },
@@ -297,7 +297,7 @@ for (const viewport of [
       right: "5px",
       top: "5px",
     });
-    expect(metrics.listY).toBe(mobile ? 254 : 201);
+    expect(metrics.listY).toBe(mobile ? 231 : 201);
     expect(metrics.scrollWidth).toBe(viewport.width);
     await input.focus();
     await expect(input).toHaveCSS("box-shadow", "none");

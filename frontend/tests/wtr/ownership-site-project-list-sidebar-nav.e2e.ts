@@ -170,7 +170,7 @@ for (const viewport of [
     // Slice 179 retires the stale breadcrumb border, so local and live ko-KR now both start at y=138.
     expect(evidence.actualPosition).toEqual({
       x: viewport.name === "desktop" ? 10 : 0,
-      y: viewport.name === "desktop" ? 138 : 161,
+      y: 138,
     });
     expect(evidence.actual.items.map(({ box }) => box.height)).toEqual(
       viewport.name === "desktop"

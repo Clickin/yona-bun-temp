@@ -130,6 +130,28 @@ export const scenarios = [
         action: "post-compat-default-login-page",
         params: {},
         behaviorId: "B-0221",
+        expectedDisposition: {
+          classification: "LEGACY_BUG_NOT_REPRODUCED",
+          evidence: "yona-original/app/controllers/UserApp.java:1372-1380 accepts the empty boundary path while the canonical REST endpoint rejects it",
+          signature: {
+            scenarioId: "S13-compat-default-login-page",
+            action: "post-compat-default-login-page",
+            behaviorId: "B-0221",
+            events: [
+              {
+                side: "legacy",
+                request: { method: "POST", route: "/-_-api/v1/user/defultLoginPage", payload: { form: { defaultLoginPage: "" } } },
+                response: { status: 200 },
+              },
+              {
+                side: "yoram",
+                request: { method: "POST", route: "/api/v1/user/default-login-page", payload: { form: { defaultLoginPage: "" } } },
+                response: { status: 400 },
+              },
+            ],
+            state: null,
+          },
+        },
       },
     ],
     behaviorMatcher: { action: /^UserApp\.setDefaultLoginPage$/, route: /defultLoginPage/ },

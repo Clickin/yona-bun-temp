@@ -6139,10 +6139,7 @@ test("project board detail renders legacy post and comment attachments", async (
   ).toHaveCount(1);
   const postDownload = page.locator("#attachments .attach > a.download");
   const postPreview = page.locator("#attachments .attach > a.vmiddle");
-  await expect(postDownload).toHaveAttribute(
-    "href",
-    `${basePath}/files/31?action=download`,
-  );
+  await expect(postDownload).toHaveAttribute("href", `${basePath}/files/31?action=download`);
   await expect(postDownload).toHaveAttribute("title", "Download a file post-note.txt");
   await expect(postPreview).toHaveAttribute("href", `${basePath}/files/31`);
   await expect(postPreview).toHaveAttribute("target", "_blank");
@@ -6156,10 +6153,7 @@ test("project board detail renders legacy post and comment attachments", async (
   ).toHaveCount(1);
   const commentDownload = page.locator("#comment-body-21 .attachments .attach > a.download");
   const commentPreview = page.locator("#comment-body-21 .attachments .attach > a.vmiddle");
-  await expect(commentDownload).toHaveAttribute(
-    "href",
-    `${basePath}/files/41?action=download`,
-  );
+  await expect(commentDownload).toHaveAttribute("href", `${basePath}/files/41?action=download`);
   await expect(commentDownload).toHaveAttribute("title", "Download a file comment-shot.png");
   await expect(commentPreview).toHaveAttribute("href", `${basePath}/files/41`);
   await expect(commentPreview).toHaveAttribute("target", "_blank");
@@ -6809,6 +6803,7 @@ test("project board detail renders legacy child comments", async ({ page }) => {
   const childTextarea = parent.locator('[data-owner="post-detail-child-comment-textarea"]');
   await expect(childForm).toBeVisible();
   await expect(childTextarea).toBeFocused();
+  await expect(childTextarea).toHaveAttribute("rows", "1");
   await childTextarea.fill("Draft nested reply");
   const openMetrics = await parent.evaluate((comment) => {
     const body = comment.querySelector<HTMLElement>(

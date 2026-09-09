@@ -251,31 +251,31 @@ for (const viewport of [
         height: 50,
         width: 50,
         x: viewport.name === "desktop" ? 10 : 0,
-        y: viewport.name === "desktop" ? 307 : 360,
+        y: viewport.name === "desktop" ? 307 : 337,
       },
       description: {
         height: 20,
         width: contentWidth,
         x: viewport.name === "desktop" ? 80 : 70,
-        y: viewport.name === "desktop" ? 332 : 385,
+        y: viewport.name === "desktop" ? 332 : 362,
       },
       header: {
         height: 20,
         width: contentWidth,
         x: viewport.name === "desktop" ? 80 : 70,
-        y: viewport.name === "desktop" ? 307 : 360,
+        y: viewport.name === "desktop" ? 307 : 337,
       },
       nameTag: {
         height: 20,
         width: contentWidth,
         x: viewport.name === "desktop" ? 80 : 70,
-        y: viewport.name === "desktop" ? 352 : 405,
+        y: viewport.name === "desktop" ? 352 : 382,
       },
       row: {
         height: viewport.name === "desktop" ? 91 : 151,
         width: viewport.name === "desktop" ? 1346 : 390,
         x: viewport.name === "desktop" ? 10 : 0,
-        y: viewport.name === "desktop" ? 292 : 345,
+        y: viewport.name === "desktop" ? 292 : 322,
       },
     });
     expect(actual.avatar).toEqual({

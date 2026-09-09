@@ -10,6 +10,49 @@ impl AppRepositoryImpl<'_> {
         size: i64,
         hash: &str,
     ) -> Result<AttachmentRecord, DbErr> {
+        self.create_user_attachment_upload_with_status(
+            user_id, login_id, file_name, mime_type, size, hash,
+        )
+        .await
+        .map(|(attachment, _created)| attachment)
+    }
+
+    pub async fn create_user_attachment_upload_with_status(
+        &self,
+        user_id: i64,
+        login_id: &str,
+        file_name: &str,
+        mime_type: &str,
+        size: i64,
+        hash: &str,
+    ) -> Result<(AttachmentRecord, bool), DbErr> {
+        let (_write_guard, transaction, txn_started_at) = self.begin_serialized_write().await?;
+        let existing = attachment::Entity::find()
+            .filter(attachment::Column::Name.eq(Some(file_name.to_string())))
+            .filter(attachment::Column::Hash.eq(Some(hash.to_string())))
+            .filter(
+                attachment::Column::ContainerType
+                    .eq(Some(USER_ATTACHMENT_CONTAINER.to_string())),
+            )
+            .filter(attachment::Column::ContainerId.eq(user_id))
+            .one(&transaction)
+            .await?;
+        if let Some(existing) = existing {
+            let attachment = AttachmentRecord {
+                container_id: existing.container_id,
+                container_type: existing.container_type.unwrap_or_default(),
+                created_at: existing.created_date,
+                hash: existing.hash.unwrap_or_default(),
+                id: existing.id,
+                mime_type: existing.mime_type.unwrap_or_default(),
+                name: existing.name.unwrap_or_default(),
+                owner_login_id: existing.owner_login_id.unwrap_or_default(),
+                size: existing.size.unwrap_or_default(),
+            };
+            self.commit_serialized_write(transaction, _write_guard, txn_started_at)
+                .await?;
+            return Ok((attachment, false));
+        }
         let created = attachment::ActiveModel {
             id: NotSet,
             name: Set(Some(file_name.to_string())),
@@ -21,9 +64,9 @@ impl AppRepositoryImpl<'_> {
             created_date: Set(Some(current_datetime())),
             owner_login_id: Set(Some(login_id.to_string())),
         }
-        .insert(&self.db)
+        .insert(&transaction)
         .await?;
-        Ok(AttachmentRecord {
+        let attachment = AttachmentRecord {
             container_id: created.container_id,
             container_type: created.container_type.unwrap_or_default(),
             created_at: created.created_date,
@@ -33,7 +76,10 @@ impl AppRepositoryImpl<'_> {
             name: created.name.unwrap_or_default(),
             owner_login_id: created.owner_login_id.unwrap_or_default(),
             size: created.size.unwrap_or_default(),
-        })
+        };
+        self.commit_serialized_write(transaction, _write_guard, txn_started_at)
+            .await?;
+        Ok((attachment, true))
     }
 
     pub async fn read_attachment_by_id(

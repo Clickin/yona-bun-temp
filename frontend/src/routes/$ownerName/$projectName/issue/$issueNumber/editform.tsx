@@ -5,12 +5,7 @@ import {
   type UploadRow,
 } from "../../../../../components/file-uploader";
 import { LegacyTabIndexInput } from "../../../../../components/legacy-tab-index-input";
-import {
-  Link,
-  createFileRoute,
-  useRouter,
-  useRouterState,
-} from "@tanstack/react-router";
+import { Link, createFileRoute, useRouter, useRouterState } from "@tanstack/react-router";
 import {
   useCallback,
   useEffect,
@@ -331,9 +326,7 @@ function ProjectIssueEditFormBody({
         issueNumber: numericIssueNumber,
         labelIds: formData.getAll("labelIds").map((value) => Number(value)),
         milestoneId: Number(stringFormValue(formData, "milestoneId")) || undefined,
-        notificationMail: showNotification
-          ? formData.get("notificationMail") === "yes"
-          : undefined,
+        notificationMail: showNotification ? formData.get("notificationMail") === "yes" : undefined,
         ownerName,
         parentIssueId: stringFormValue(formData, "parentIssueId"),
         projectName,
@@ -370,9 +363,7 @@ function ProjectIssueEditFormBody({
       const start = textarea?.selectionStart ?? bodyMarkdown.length;
       const insertion = attachmentMarkdown(attachment, runtimeConfig.basePath);
       draftTouchedRef.current = true;
-      setBodyMarkdown(
-        `${bodyMarkdown.slice(0, start)}${insertion}${bodyMarkdown.slice(start)}`,
-      );
+      setBodyMarkdown(`${bodyMarkdown.slice(0, start)}${insertion}${bodyMarkdown.slice(start)}`);
       requestAnimationFrame(() => {
         const nextCursor = start + insertion.length;
         bodyRef.current?.focus();
@@ -491,9 +482,7 @@ function ProjectIssueEditFormBody({
                 );
               }
             } catch (error) {
-              setUploadRows((current) =>
-                current.filter((candidate) => candidate.key !== row.key),
-              );
+              setUploadRows((current) => current.filter((candidate) => candidate.key !== row.key));
               if (row.placeholder) replaceBodyMarker(row.placeholder, "");
               reportUploadError(
                 error instanceof Error ? error.message : "Attachment upload failed.",
@@ -552,8 +541,7 @@ function ProjectIssueEditFormBody({
       label: `${user.displayName || user.loginId} ${user.loginId}`,
       value: user.loginId,
     })),
-    ...(assigneeLoginId &&
-    !assignableUsers.some((user) => user.loginId === assigneeLoginId)
+    ...(assigneeLoginId && !assignableUsers.some((user) => user.loginId === assigneeLoginId)
       ? [
           {
             label: `${stringField(issue.assigneeLabel, assigneeLoginId)} ${assigneeLoginId}`,
@@ -933,19 +921,22 @@ function MilestoneOption({
 }) {
   const { t } = useLegacyMessages();
   const milestoneTitle = stringField(issue.milestoneTitle, "");
-  const options = [
-    { label: t("issue.noMilestone"), value: "0" },
-    ...milestones
-      .map((milestone) => ({
-        label: stringField(milestone.title, ""),
-        value: stringField(milestone.id, ""),
-      }))
-      .filter((option) => option.value !== "" && option.label !== ""),
-    ...(milestoneTitle && !milestones.some((milestone) => stringField(milestone.id, "") === milestoneId)
-      ? [{ label: milestoneTitle, value: milestoneId }]
-      : []),
-  ];
-  const selectedMilestoneTitle = options.find((option) => option.value === milestoneId)?.label ?? "";
+  const options = [{ label: t("issue.noMilestone"), value: "0" }];
+  for (const milestone of milestones) {
+    const option = {
+      label: stringField(milestone.title, ""),
+      value: stringField(milestone.id, ""),
+    };
+    if (option.value !== "" && option.label !== "") options.push(option);
+  }
+  if (
+    milestoneTitle &&
+    !milestones.some((milestone) => stringField(milestone.id, "") === milestoneId)
+  ) {
+    options.push({ label: milestoneTitle, value: milestoneId });
+  }
+  const selectedMilestoneTitle =
+    options.find((option) => option.value === milestoneId)?.label ?? "";
   return (
     <dl id="milestoneOption" className="issue-option">
       <dt>{t("milestone")}</dt>
@@ -1281,14 +1272,14 @@ function LegacyEditLabelSelect({
     );
     setQuery("");
   };
-  const visibleGroups = groupLabels(labels)
-    .map((group) => ({
-      ...group,
-      labels: group.labels.filter((label) =>
-        label.name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()),
-      ),
-    }))
-    .filter((group) => group.labels.length > 0);
+  const visibleGroups: IssueEditLabelGroup[] = [];
+  const queryText = query.trim().toLocaleLowerCase();
+  for (const group of groupLabels(labels)) {
+    const visibleLabels = group.labels.filter((label) =>
+      containsText(label.name.toLocaleLowerCase(), queryText),
+    );
+    if (visibleLabels.length > 0) visibleGroups.push({ ...group, labels: visibleLabels });
+  }
   const selectedLabelElements: ReactNode[] = [];
   for (const label of labels) {
     const labelId = stringField(label.id, "");
@@ -1372,9 +1363,7 @@ function LegacyEditLabelSelect({
                         tabIndex={open ? 0 : -1}
                         aria-selected={selectedLabel}
                         onClick={() => toggle(label.id)}
-                        onKeyDown={(event) =>
-                          activateEditControl(event, () => toggle(label.id))
-                        }
+                        onKeyDown={(event) => activateEditControl(event, () => toggle(label.id))}
                       >
                         {label.name}
                       </div>
@@ -1457,9 +1446,7 @@ function IssueEditMarkdownEditor({
               onClick={() => {
                 const textarea = bodyRef.current;
                 const start = textarea?.selectionStart ?? value.length;
-                onBodyChange(
-                  `${value.slice(0, start)}${CHECKLIST_TEMPLATE}${value.slice(start)}`,
-                );
+                onBodyChange(`${value.slice(0, start)}${CHECKLIST_TEMPLATE}${value.slice(start)}`);
                 requestAnimationFrame(() => {
                   const nextCursor = start + CHECKLIST_TEMPLATE.length;
                   bodyRef.current?.focus();
@@ -1499,10 +1486,7 @@ function IssueEditMarkdownEditor({
       >
         <LegacyMarkdownHelp />
         <div id="edit-body" className={`tab-pane${activeTab === "edit" ? " active" : ""}`}>
-          <div
-            {...dragProps}
-            className={`textarea-box${dragOverlay ? " dragover" : ""}`}
-          >
+          <div {...dragProps} className={`textarea-box${dragOverlay ? " dragover" : ""}`}>
             {dragOverlay ? (
               <div className="upload-drop-here">
                 <div className="msg-wrap">
@@ -1565,16 +1549,23 @@ function IssueEditMarkdownEditor({
   );
 }
 
-function groupLabels(labels: YoramRecord[]) {
-  const groups = new Map<
-    string,
-    {
-      categoryId: string;
-      categoryIsExclusive: boolean;
-      categoryName: string;
-      labels: Array<{ id: string; name: string }>;
-    }
-  >();
+type IssueEditLabelGroup = {
+  categoryId: string;
+  categoryIsExclusive: boolean;
+  categoryName: string;
+  labels: Array<{ id: string; name: string }>;
+};
+
+function containsText(value: string, query: string) {
+  if (query === "") return true;
+  for (let index = 0; index <= value.length - query.length; index += 1) {
+    if (value.slice(index, index + query.length) === query) return true;
+  }
+  return false;
+}
+
+function groupLabels(labels: YoramRecord[]): IssueEditLabelGroup[] {
+  const groups = new Map<string, IssueEditLabelGroup>();
   for (const label of labels) {
     const categoryId = stringField(label.categoryId, "");
     const group = groups.get(categoryId) ?? {

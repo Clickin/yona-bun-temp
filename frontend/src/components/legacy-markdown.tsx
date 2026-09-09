@@ -37,6 +37,7 @@ import {
 import { renderHtml } from "@tanstack/markdown/html";
 import { Markdown as TanStackMarkdown } from "@tanstack/markdown/react";
 import { highlightCodeToReactNodes } from "./markdown-highlight";
+import { createTasklistMapping, type TasklistMapping } from "./tasklist";
 import {
   Fragment,
   createElement,
@@ -1091,21 +1092,25 @@ export function LegacyMarkdownHtml({
   styleFilter?: (style: string) => string | undefined;
   urlTransform?: (url: string) => string;
 }): ReactNode {
-  const tasklistToken = useMemo(() => crypto.randomUUID(), []);
-  const html = useMemo(
-    () => {
-      const renderExtensions = [...(extensions ?? []), tasklistMarkerExtension(tasklistToken)];
-      const document = parseMarkdown(children, {
-        allowHtml: true,
-        extensions: renderExtensions,
-        frontmatter: false,
-        headingIds: false,
-      });
-      return renderHtml(document, { allowHtml: true, extensions: renderExtensions });
-    },
-    [children, extensions, tasklistToken],
-  );
-  return renderSanitizedHtmlToReact(html, {
+  const tasklistToken = useMemo(createTasklistToken, []);
+  const rendered = useMemo(() => {
+    const document = parseMarkdown(children, {
+      allowHtml: true,
+      extensions,
+      frontmatter: false,
+      headingIds: false,
+    });
+    const mapping = createTasklistMapping(children, document);
+    const renderExtensions = [
+      ...(extensions ?? []),
+      tasklistMarkerExtension(tasklistToken, mapping),
+    ];
+    return {
+      document,
+      html: renderHtml(document, { allowHtml: true, extensions: renderExtensions }),
+    };
+  }, [children, extensions, tasklistToken]);
+  return renderSanitizedHtmlToReact(rendered.html, {
     schema: sanitize,
     components: components ?? {},
     tasklistInput,
@@ -1116,8 +1121,19 @@ export function LegacyMarkdownHtml({
   });
 }
 
-function tasklistMarkerExtension(token: string): MarkdownExtension {
-  let index = 0;
+function createTasklistToken() {
+  const bytes = new Uint8Array(16);
+  if (typeof globalThis.crypto?.getRandomValues === "function") {
+    globalThis.crypto.getRandomValues(bytes);
+  } else {
+    for (let index = 0; index < bytes.length; index += 1) {
+      bytes[index] = Math.floor(Math.random() * 256);
+    }
+  }
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function tasklistMarkerExtension(token: string, mapping: TasklistMapping): MarkdownExtension {
   return {
     name: "yona-tasklist-markers",
     renderHtml(node, context) {
@@ -1128,16 +1144,18 @@ function tasklistMarkerExtension(token: string): MarkdownExtension {
       const start = node.ordered && node.start && node.start !== 1 ? ` start="${node.start}"` : "";
       const items = node.items
         .map((item) => {
+          const task = mapping.byItem.get(item);
           const marker =
-            item.checked === undefined
+            task === undefined
               ? ""
-              : `<input type="checkbox" disabled${item.checked ? " checked" : ""} data-yona-task-token="${token}:${index++}"> `;
+              : `<input type="checkbox" disabled${task.checked ? " checked" : ""} data-yona-task-token="${token}:${task.ordinal}"> `;
           const first = item.children[0];
           if (first?.type === "paragraph") {
             const content = marker + first.children.map(context.renderInline).join("");
-            const rest = item.children.length > 1
-              ? `\n${item.children.slice(1).map(context.renderBlock).join("\n")}`
-              : "";
+            const rest =
+              item.children.length > 1
+                ? `\n${item.children.slice(1).map(context.renderBlock).join("\n")}`
+                : "";
             return `<li>${node.loose ? `<p>${content}</p>` : content}${rest}</li>`;
           }
           return `<li>${marker}${item.children.map(context.renderBlock).join("\n")}</li>`;

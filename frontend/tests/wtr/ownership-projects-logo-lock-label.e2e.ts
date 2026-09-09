@@ -260,19 +260,19 @@ for (const viewport of [
         height: 22,
         width: 37.5,
         x: viewport.name === "desktop" ? 223.78125 : 213.78125,
-        y: viewport.name === "desktop" ? 216.65625 : 269.65625,
+        y: viewport.name === "desktop" ? 216.65625 : 246.65625,
       },
       lock: {
         height: 14,
         width: 14,
         x: viewport.name === "desktop" ? 205.34375 : 195.34375,
-        y: viewport.name === "desktop" ? 220 : 273,
+        y: viewport.name === "desktop" ? 220 : 250,
       },
       logo: {
         height: 50,
         width: 50,
         x: viewport.name === "desktop" ? 10 : 0,
-        y: viewport.name === "desktop" ? 216 : 269,
+        y: viewport.name === "desktop" ? 216 : 246,
       },
     });
     expect(actual.logo).toEqual({ height: "50px", verticalAlign: "top", width: "50px" });

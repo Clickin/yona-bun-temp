@@ -287,12 +287,12 @@ for (const viewport of [
 
     const desktop = viewport.name === "desktop";
     expect(actual.avatar).toEqual({
-      bottom: desktop ? 339 : 457,
+      bottom: desktop ? 339 : 434,
       height: 32,
       right: desktop ? 1353 : 387,
       width: 32,
       x: desktop ? 1321 : 355,
-      y: desktop ? 307 : 425,
+      y: desktop ? 307 : 402,
     });
     expect(actual.avatarImage).toEqual(actual.avatar);
     expect(actual.avatarImageStyle).toEqual({
@@ -304,20 +304,20 @@ for (const viewport of [
     expect(actual.imageContained).toBe(true);
     expect(actual.icons.map(({ box }) => box)).toEqual([
       {
-        bottom: desktop ? 364 : 482,
+        bottom: desktop ? 364 : 459,
         height: 16,
         right: desktop ? 1304.65625 : 338.65625,
         width: 16,
         x: desktop ? 1288.65625 : 322.65625,
-        y: desktop ? 348 : 466,
+        y: desktop ? 348 : 443,
       },
       {
-        bottom: desktop ? 364 : 482,
+        bottom: desktop ? 364 : 459,
         height: 16,
         right: desktop ? 1340.828125 : 374.828125,
         width: 16,
         x: desktop ? 1324.828125 : 358.828125,
-        y: desktop ? 348 : 466,
+        y: desktop ? 348 : 443,
       },
     ]);
     expect(
@@ -342,21 +342,20 @@ for (const viewport of [
       });
     }
     expect(actual.stats).toEqual({
-      // F5 dist-truth (2026-08-11): the mobile stats bottom is 425+60=485.
-      bottom: desktop ? 367 : 485,
+      bottom: desktop ? 367 : 462,
       height: 60,
       right: desktop ? 1356 : 390,
       width: 85,
       x: desktop ? 1271 : 305,
-      y: desktop ? 307 : 425,
+      y: desktop ? 307 : 402,
     });
     expect(actual.row).toEqual({
-      bottom: desktop ? 383 : 496,
+      bottom: desktop ? 383 : 473,
       height: desktop ? 91 : 151,
       right: desktop ? 1356 : 390,
       width: desktop ? 1346 : 390,
       x: desktop ? 10 : 0,
-      y: desktop ? 292 : 345,
+      y: desktop ? 292 : 322,
     });
     expect(actual.scrollWidth).toBe(viewport.width);
 

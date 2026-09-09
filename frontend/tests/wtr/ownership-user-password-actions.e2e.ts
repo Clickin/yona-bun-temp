@@ -112,35 +112,25 @@ for (const viewport of [
 
     const pageX = viewport.name === "desktop" ? 10 : 0;
     const pageWidth = viewport.name === "desktop" ? 1346 : 390;
-    expect(metrics.submitAction.box).toEqual({
-      height: 30,
-      width: 102.453125,
-      x: pageX,
-      y: viewport.name === "desktop" ? 416 : 439,
-    });
-    expect(metrics.separator.box).toEqual({
-      height: 2,
-      width: pageWidth,
-      x: pageX,
-      y: viewport.name === "desktop" ? 466 : 489,
-    });
+    expect(metrics.submitAction.box).toEqual({ height: 30, width: 102.453125, x: pageX, y: 416 });
+    expect(metrics.separator.box).toEqual({ height: 2, width: pageWidth, x: pageX, y: 466 });
     expect(metrics.resetSection.box).toEqual({
       height: viewport.name === "desktop" ? 60 : 80,
       width: pageWidth,
       x: pageX,
-      y: viewport.name === "desktop" ? 488 : 511,
+      y: 488,
     });
     expect(metrics.resetDescription.box).toEqual({
       height: 30,
       width: pageWidth,
       x: pageX,
-      y: viewport.name === "desktop" ? 518 : 561,
+      y: viewport.name === "desktop" ? 518 : 538,
     });
     expect(metrics.resetAction.box).toEqual({
       height: 30,
       width: 118.359375,
       x: pageX,
-      y: viewport.name === "desktop" ? 518 : 561,
+      y: viewport.name === "desktop" ? 518 : 538,
     });
     expect(metrics.submitAction.style).toMatchObject({
       backgroundColor: "rgb(255, 115, 50)",

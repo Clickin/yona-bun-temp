@@ -50,9 +50,8 @@ test("breadcrumb source owns exactly the frozen route-local declarations", () =>
   for (const owner of Object.values(owners)) expect(route).toContain(`data-owner="${owner}"`);
   expect(route).not.toContain('className="site-breadcrumb-outer"');
   expect(route).not.toContain('className="site-breadcrumb-inner"');
-  // Both rules now live inside the @media (max-width: 720px) block in app.css.
-  expect(appCss).toContain("  .site-breadcrumb-outer {\n    border-bottom: 1px solid #ddd;");
-  expect(appCss).toContain("  .site-breadcrumb-inner h3 {\n    margin: 0;");
+  expect(appCss).toContain('[data-owner="site-post-list-breadcrumb-outer"]');
+  expect(appCss).toContain('[data-owner="site-post-list-breadcrumb-heading"]');
 });
 
 test("breadcrumb preserves desktop and mobile frozen output in one browser process", async ({

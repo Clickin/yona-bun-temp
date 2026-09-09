@@ -1399,19 +1399,15 @@ test("issue form matches observed 390px stacking and removes legacy implementati
   expect(markdownHelp.height).toBeCloseTo(91, 0);
   expect(metrics.documentWidth).toBe(390);
   expect(metrics.adminTop).toBeCloseTo(0, 0);
-  // e2e closure ledger (2026-08-11): the site-admin affix wraps to two lines
-  // at 390px with the ko-KR notice (66px) — same value pinned by
-  // ownership-site-admin-affix.e2e.ts mobile surface (43px was the
-  // single-line desktop measurement).
-  expect(metrics.adminHeight).toBeCloseTo(66, 0);
-  // the affix wraps to 66px at 390px, so the GNB sits directly below it
-  expect(metrics.gnbTop).toBeCloseTo(66, 0);
+  // The live ko-KR notice stays on one 43px line at 390px.
+  expect(metrics.adminHeight).toBeCloseTo(43, 0);
+  expect(metrics.gnbTop).toBeCloseTo(43, 0);
   expect(metrics.gnbHeight).toBeCloseTo(40, 0);
   expect(metrics.headerTop).toBeCloseTo(metrics.gnbTop, 0);
   expect(metrics.headerHeight).toBeCloseTo(120, 0);
-  expect(metrics.menuTop).toBeCloseTo(186, 0);
+  expect(metrics.menuTop).toBeCloseTo(163, 0);
   expect(metrics.menuHeight).toBeCloseTo(40, 0);
-  expect(metrics.formTop).toBeCloseTo(236, 0);
+  expect(metrics.formTop).toBeCloseTo(213, 0);
   expect(metrics.titleRowTop).toBeCloseTo(metrics.formTop, 0);
   // F5 dist-truth: measured 59px — legacy .content-wrap .title margin 15px top/bottom
   // (yona-original/app/assets/stylesheets/less/page.less:3780-3788) + 30px bootstrap input.
@@ -1421,23 +1417,23 @@ test("issue form matches observed 390px stacking and removes legacy implementati
   expect(metrics.titleWidth).toBeCloseTo(350.953, 2);
   expect(metrics.optionWidth).toBeCloseTo(24.9, 0);
   // F5 dist-truth: the 59px title row shifts every stacked block below it.
-  expect(metrics.leftTop).toBeCloseTo(295, 0);
+  expect(metrics.leftTop).toBeCloseTo(272, 0);
   expect(metrics.leftWidth).toBeCloseTo(390, 0);
   expect(metrics.editorWidth).toBeCloseTo(390, 0);
   // F5 dist-truth: measured 300px (retained legacy textarea rules).
   expect(metrics.textareaHeight).toBeCloseTo(300, 0);
-  expect(metrics.textareaTop).toBeCloseTo(431, 0);
+  expect(metrics.textareaTop).toBeCloseTo(408, 0);
   expect(metrics.uploadWidth).toBeCloseTo(390, 0);
   // F5 dist-truth: measured 100px upload box.
   expect(metrics.uploadHeight).toBeCloseTo(100, 0);
   // F5 dist-truth: measured 708px — textareaTop(408) + textareaHeight(300).
-  expect(metrics.uploadTop).toBeCloseTo(731, 0);
+  expect(metrics.uploadTop).toBeCloseTo(708, 0);
   // F5 dist-truth: uploadTop(708) + uploadHeight(100) + 30px => 838.
-  expect(metrics.leftBottom).toBeCloseTo(881, 0);
+  expect(metrics.leftBottom).toBeCloseTo(858, 0);
   expect(metrics.rightLeft).toBeCloseTo(8.3, 0);
   expect(metrics.rightWidth).toBeCloseTo(370.5, 0);
   // F5 dist-truth: right column shifts with the upload stack (848 measured).
-  expect(metrics.rightTop).toBeCloseTo(891, 0);
+  expect(metrics.rightTop).toBeCloseTo(868, 0);
   expect(metrics.rightTop).toBeGreaterThanOrEqual(metrics.leftBottom + 8);
   expect(metrics.rightTop).toBeLessThanOrEqual(metrics.leftBottom + 12);
   expect(metrics.formRight).toBeLessThanOrEqual(390);

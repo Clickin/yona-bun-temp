@@ -90,9 +90,8 @@ test("live ko-KR empty svn code root keeps the legacy title and responsive shell
     alertWidth: 390,
     pageHeight: 450,
     pageWidth: 390,
-    // F5 (2026-08-13): mobile 236 = desktop 213 + site-admin-affix wrap
-    // (20px font banner wraps to 2 lines at 390px: 66px vs 43px desktop).
-    pageY: 236,
+    // The live ko-KR banner stays on one 43px line at 390px.
+    pageY: 213,
     projectWidth: 390,
     utilWidth: 15,
   });

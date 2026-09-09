@@ -24,6 +24,7 @@ test("organization home matches legacy organization/view.scala.html DOM", async 
     .toBe("weblabs");
   await expect(page.locator("#mylist-filter")).toBeVisible();
   await expect(page.locator(".all-projects .project")).toHaveCount(1);
+  await expect(page.locator("#usermenu-tab-content-list")).not.toHaveText("Loading...");
   await expect(page.locator("#alertLeave")).toHaveClass(/hide/);
   await expect(page.locator('[data-owner="authenticated-site-user-menu"]')).toBeVisible();
 

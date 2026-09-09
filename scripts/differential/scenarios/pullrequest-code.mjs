@@ -522,6 +522,13 @@ function ensureOutcomeParity(ctx, route, legacyResult, yoramResult) {
     );
     return false;
   }
+  if (legacyFailed && yoramFailed) {
+    ctx.entry.errors.push(
+      `pull-request mutation failed on both sides: legacy HTTP ${legacyResult.status}, ` +
+      `yoram HTTP ${yoramResult.status} @ ${route}`,
+    );
+    return false;
+  }
   return !legacyFailed && !yoramFailed;
 }
 
@@ -626,10 +633,30 @@ export function commitCommentIdFromPage(body, marker) {
   return commitCommentTargetFromPage(body, marker)?.commentId ?? null;
 }
 
+function unwrapRestResult(payload) {
+  let root = payload;
+  for (let depth = 0; depth < 3 && root && typeof root === "object" && !Array.isArray(root); depth += 1) {
+    if (!root.result || typeof root.result !== "object") break;
+    root = root.result;
+  }
+  return root;
+}
+
 export function pullRequestNumberFromPayload(payload, expectedTitle = null) {
   if (!payload || typeof payload !== "object") return null;
-  if (expectedTitle !== null && typeof payload.title === "string" && payload.title !== expectedTitle) return null;
-  const value = Number(payload.pullRequestNumber ?? payload.pull_request_number ?? payload.number);
+  const root = unwrapRestResult(payload);
+  const candidate = root.pullRequest && typeof root.pullRequest === "object"
+    ? root.pullRequest
+    : root;
+  if (expectedTitle !== null && typeof candidate.title === "string" && candidate.title !== expectedTitle) return null;
+  const value = Number(
+    candidate.pullRequestNumber ??
+      candidate.pull_request_number ??
+      candidate.number ??
+      root.pullRequestNumber ??
+      root.pull_request_number ??
+      root.number,
+  );
   return value > 0 ? value : null;
 }
 
@@ -639,10 +666,11 @@ export async function resolveYoramPullRequestNumber(ctx, title) {
     method: "GET",
     path: `/api/v1/owners/${step.params.owner}/projects/${step.params.project}/pull-requests`,
   });
-  const items = Array.isArray(result.json?.items)
-    ? result.json.items
-    : Array.isArray(result.json)
-      ? result.json
+  const payload = unwrapRestResult(result.json);
+  const items = Array.isArray(payload?.items)
+    ? payload.items
+    : Array.isArray(payload)
+      ? payload
       : [];
   const match = items.find((item) => item?.title === title);
   return pullRequestNumberFromPayload(match);
@@ -702,13 +730,15 @@ const MUTATION_DEFINITIONS = {
       });
       const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
       state.prNumberLegacy = Number((/\/pullRequest\/(\d+)/u.exec(legacyResult.location ?? "") ?? [])[1]) || null;
-      try {
-        const legacyIdentity = await helpers.resolveLegacyPullRequest(ctx, state.prNumberLegacy, shared.title);
-        state.prIdLegacy = legacyIdentity.id;
-        state.prNumberLegacy = legacyIdentity.number ?? state.prNumberLegacy;
-        state.prCommitLegacy = legacyIdentity.lastCommitId;
-      } catch (error) {
-        entry.errors.push(`legacy create-pullrequest readiness failed: ${error.message}`);
+      if (ctx.scenarioId !== "R16-pr-review-points") {
+        try {
+          const legacyIdentity = await helpers.resolveLegacyPullRequest(ctx, state.prNumberLegacy, shared.title);
+          state.prIdLegacy = legacyIdentity.id;
+          state.prNumberLegacy = legacyIdentity.number ?? state.prNumberLegacy;
+          state.prCommitLegacy = legacyIdentity.lastCommitId;
+        } catch (error) {
+          entry.errors.push(`legacy create-pullrequest readiness failed: ${error.message}`);
+        }
       }
       // Yoram's REST create answers the detail payload (camelCase); its PR
       // number is required for every dependent lifecycle step.
@@ -1319,7 +1349,8 @@ const THROWAWAY_PR_ACTIONS = {
           method: "GET",
           path: `/api/v1/owners/${owner}/projects/${name}/pull-requests`,
         });
-        const items = Array.isArray(list.json?.items) ? list.json.items : Array.isArray(list.json) ? list.json : [];
+        const payload = unwrapRestResult(list.json);
+        const items = Array.isArray(payload?.items) ? payload.items : Array.isArray(payload) ? payload : [];
         const match = items.find((item) => (item.title ?? "") === title);
         return pullRequestNumberFromPayload(match);
       };

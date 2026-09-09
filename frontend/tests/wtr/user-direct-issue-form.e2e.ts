@@ -257,7 +257,7 @@ test("user direct mine issue form preserves legacy utility and editor geometry",
     "editorSeries content comment nm",
   ]);
   expect(metrics.uploadDropText).toBe("Drag & Drop files here to upload.");
-  expect(metrics.textareaBoxSizing).toBe("content-box");
+  expect(metrics.textareaBoxSizing).toBe("border-box");
   expect(metrics.textareaHeight).toBe("300px");
   expect(metrics.editorBox.height).toBe(metrics.textarea.height);
   expect(metrics.uploadWrap.top).toBeCloseTo(metrics.editorBox.bottom, 0);

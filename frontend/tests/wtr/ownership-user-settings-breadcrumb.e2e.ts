@@ -57,8 +57,8 @@ test("records the five-template source, exact three-owner contract, and retired 
   for (const name of Object.values(owners)) expect(route).toContain(`data-owner="${name}"`);
   expect(route).not.toContain('className="site-breadcrumb-outer"');
   expect(route).not.toContain('className="site-breadcrumb-inner"');
-  expect(appCss).toContain(".site-breadcrumb-outer {\n    border-bottom: 1px solid #ddd;");
-  expect(appCss).toContain("font-weight: 400;");
+  expect(appCss).toContain('[data-owner="user-settings-breadcrumb-outer"]');
+  expect(appCss).toContain('[data-owner="user-settings-breadcrumb-heading"]');
 });
 
 test("keeps the three breadcrumb nodes mounted across all five settings routes", async ({

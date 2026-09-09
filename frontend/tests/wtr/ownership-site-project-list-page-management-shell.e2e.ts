@@ -276,20 +276,20 @@ for (const viewport of [
       height: expectedPageHeight,
       width: viewport.width,
       x: 0,
-      y: viewport.name === "desktop" ? 138 : 161,
+      y: 138,
     });
     expect(settingBox).toMatchObject({
       height: expectedPageHeight,
       width: expectedGridWidth,
       x: viewport.name === "desktop" ? 10 : 0,
-      y: viewport.name === "desktop" ? 138 : 161,
+      y: 138,
     });
     expect(gridBox).toEqual(settingBox);
     expect(sidebarBox).toMatchObject({
       height: viewport.name === "desktop" ? 341 : 611,
       width: viewport.name === "desktop" ? 200.453125 : 58.078125,
       x: viewport.name === "desktop" ? 10 : 0,
-      y: viewport.name === "desktop" ? 138 : 161,
+      y: 138,
     });
     // F5 dist-truth (2026-08-13): with the legacy classes restored on the
     // project-list route, the content column measures 611 on mobile (equal to
@@ -299,7 +299,7 @@ for (const viewport of [
       height: viewport.name === "desktop" ? 460 : 611,
       width: viewport.name === "desktop" ? 1116.890625 : 323.609375,
       x: viewport.name === "desktop" ? 239.078125 : 66.375,
-      y: viewport.name === "desktop" ? 138 : 161,
+      y: 138,
     });
     expect(sidebarBox.right).toBeLessThanOrEqual(contentBox.left);
     expect(contentBox.right).toBeLessThanOrEqual(gridBox.right);

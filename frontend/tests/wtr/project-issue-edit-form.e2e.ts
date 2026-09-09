@@ -1,5 +1,5 @@
 import { readFileSync } from "../wtr-compat.ts";
-import { expect, test, type Page } from "../wtr-compat.ts";
+import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const EXPECTED_EDIT_FORM_BODY = `
 <div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/issue/1" id="issue-form" enctype="multipart/form-data"><input type="hidden" name="authorId" value="1"><input type="hidden" id="isDraft" name="isDraft" value="false"><input type="hidden" id="isPublish" name="isPublish" value="false"><div class="row-fluid"><div class="span12"><dl><dt><label for="title"><strong class="secondary-txt">#1</strong></label></dt><dd><div class="span12"><div class="span11"><input type="text" id="title" name="title" value="Editable issue" class="text title " maxlength="250" tabindex="1" placeholder="Title" autocomplete="off"></div><div class="span1 subtask-message">Option</div></div><div class="subtask-wrap show"><div class="span3"><select id="targetProjectId" name="targetProjectId" data-format="projects" data-placeholder="Choose projects" data-container-css-class="fullsize"><option value="7">sample</option></select></div><div class="span6"><select id="parentId" name="parentIssueId" data-format="issues" data-placeholder="Choose projects" data-container-css-class="fullsize"><option value="" selected="">??? Select parent issue ???</option><option value="42">#11.Existing parent</option></select></div></div></dd></dl></div><div class="row-fluid"><div class="span9 span-left-pane"><dl><dd style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2">Editable body</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></dd></dl><div class="upload-wrap content-footer" data-resource-type="ISSUE_POST" data-resource-id="101"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class=" actrow right-txt"><span class="send-notification-check"><label class="checkbox inline"><input type="checkbox" name="notificationMail" id="notificationMail" value="yes" checked=""><strong>Send notification mail</strong></label></span><button type="submit" id="button-save" class="ybtn ybtn-info">Save</button><button type="button" class="ybtn">Cancel</button></div></div><div class="span3 span-hard-wrap right-menu"><dl class="issue-option"><dt>Status</dt><dd><div id="state" class="btn-group auto"><button type="button" class="btn dropdown-toggle auto"><span class="d-label">Status</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="OPEN" data-selected="true" class="active"><button type="button">Open</button></li><li data-value="CLOSED"><button type="button">Closed</button></li></ul></div></dd></dl><dl class="issue-option"><dt>Assignee</dt><dd><input type="hidden" class="bigdrop" id="assignee" name="assigneeLoginId" placeholder="No assignee" value="dev" style="width:100%"></dd></dl><dl id="milestoneOption" class="issue-option"><dt>Milestone</dt><dd><select id="milestoneId" name="milestoneId" data-format="milestone" data-container-css-class="fullsize"><option value="0">No milestone</option><optgroup label="Open"><option value="5" data-state="open" selected="">v1.0</option></optgroup></select></dd></dl><dl class="issue-option"><dt>Due date</dt><dd><div class="search search-bar"><input type="text" id="issueDueDate" name="dueDate" class="textbox full" value="2026-08-02"><button type="button" class="search-btn btn-calendar"><i class="yobicon-calendar2"></i></button><input type="date" class="issue-due-date-native-picker" aria-label="Choose due date" tabindex="-1" value="2026-08-02"></div></dd></dl><dl class="issue-option"><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" data-close-on-select="false" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false" selected="">bug</option></optgroup></select></dd></dl></div></div></div></form></div>
@@ -70,7 +70,7 @@ async function legacyPrePluginEditFormHtml(page: Page) {
     // yobi.Attachway injects display:none on the upload help at init; the
     // pre-plugin template state carries no inline style.
     clone
-      .querySelector('.upload-wrap p.right-txt.help, .upload-wrap p.help')
+      .querySelector(".upload-wrap p.right-txt.help, .upload-wrap p.help")
       ?.removeAttribute("style");
     clone.querySelectorAll<HTMLSelectElement>("select").forEach((select, index) => {
       Array.from(select.options).forEach((option) => {
@@ -941,10 +941,7 @@ test("project issue edit form inserts a non-image upload at the caret", async ({
     name: "report.pdf",
   });
   await expect(page.locator("#upload .attached-file.complete")).toHaveCount(1);
-  await page
-    .locator("#upload .attached-file-main")
-    .filter({ hasText: "report.pdf" })
-    .click();
+  await page.locator("#upload .attached-file-main").filter({ hasText: "report.pdf" }).click();
 
   await expect(body).toHaveValue("Existing body\n[report.pdf](/files/202) ");
   await page.locator(".nav-tabs > li > button").nth(1).click();
@@ -973,7 +970,7 @@ test("project issue edit form preserves existing attachments across save and rem
   page.on("request", (request) => {
     if (
       request.method() === "PUT" &&
-      request.url().includes("/api/v1/projects/admin/sample/issues/1")
+      String(request.url).includes("/api/v1/projects/admin/sample/issues/1")
     ) {
       updateBodies.push(request.postDataJSON() as Record<string, unknown>);
     }
@@ -1012,7 +1009,7 @@ test("project issue edit form restores, autosaves, and clears only its draft", a
   });
   let deleteRequests = 0;
   page.on("request", (request) => {
-    if (request.method() === "DELETE" && request.url().endsWith("/files/404")) {
+    if (request.method() === "DELETE" && String(request.url).endsWith("/files/404")) {
       deleteRequests += 1;
     }
   });
@@ -1216,15 +1213,20 @@ async function mockProjectIssueEditForm(
       }),
     });
   });
-  await page.route("**/api/v1/projects/admin/sample/issues/parent-options**", async (route) => {
+  const fulfillParentOptions = async (route: Route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
         items: [{ id: 42, issueNumber: 11, selected: false, title: "Existing parent" }],
       }),
     });
-  });
-  await page.route(`**/api/v1/projects/admin/sample/issues/${issueNumber}`, async (route) => {
+  };
+  await page.route("**/api/v1/projects/admin/sample/issues/parent-options**", fulfillParentOptions);
+  await page.route(
+    "**/api/v1/owners/admin/projects/sample/issues/parent-options**",
+    fulfillParentOptions,
+  );
+  const fulfillIssue = async (route: Route) => {
     if (options.issueStatus) {
       await route.fulfill({
         contentType: "application/json",
@@ -1266,7 +1268,9 @@ async function mockProjectIssueEditForm(
       contentType: "application/json",
       body: JSON.stringify(issue),
     });
-  });
+  };
+  await page.route(`**/api/v1/projects/admin/sample/issues/${issueNumber}`, fulfillIssue);
+  await page.route(`**/api/v1/owners/admin/projects/sample/issues/${issueNumber}`, fulfillIssue);
 }
 
 async function navbarSearchMetrics(page: Page) {

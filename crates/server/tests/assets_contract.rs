@@ -195,6 +195,35 @@ async fn upload_image_file(
         .expect("uploaded file id")
 }
 
+async fn upload_multipart(
+    app: axum::Router,
+    cookie_header: &str,
+    csrf: &str,
+    file_name: &str,
+    bytes: &[u8],
+) -> (StatusCode, serde_json::Value) {
+    let (boundary, body) = multipart_body(file_name, "text/plain", bytes);
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/files")
+                .header(
+                    http::header::CONTENT_TYPE,
+                    format!("multipart/form-data; boundary={boundary}"),
+                )
+                .header(http::header::COOKIE, cookie_header)
+                .header("x-csrf-token", csrf)
+                .body(Body::from(body))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let status = response.status();
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    (status, serde_json::from_slice(&body).expect("upload response JSON"))
+}
+
 async fn assert_attachment_container_acl(
     app: axum::Router,
     cookie_header: &str,
@@ -3329,6 +3358,83 @@ async fn workspace_files_list_returns_current_users_legacy_attachment_rows() {
         "/yona/door/projectYobi/issue/1"
     );
     assert_eq!(issue_files[0]["locationLabel"], "/door/projectYobi/issue/1");
+}
+
+#[tokio::test]
+async fn file_upload_reuses_legacy_temporary_identity_and_normalizes_names() {
+    let data_root = tempdir().expect("upload data root");
+    let (app, repository, _) = build_auth_router_with_app_config(AppRuntimeConfig {
+        data_root: data_root.path().to_path_buf(),
+        ..AppRuntimeConfig::default()
+    })
+    .await;
+    let (owner_csrf, owner_cookie) = bootstrap(app.clone()).await;
+    let owner_id = register_user(app.clone(), &owner_cookie, &owner_csrf, "owner").await;
+
+    let bytes = b"same temporary bytes";
+    let (first_status, first) = upload_multipart(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "cafe\u{301}.txt",
+        bytes,
+    )
+    .await;
+    assert_eq!(first_status, StatusCode::CREATED);
+    let (duplicate_status, duplicate) = upload_multipart(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "caf\u{e9}.txt",
+        bytes,
+    )
+    .await;
+    assert_eq!(duplicate_status, StatusCode::OK);
+    assert_eq!(duplicate["id"], first["id"]);
+    assert_eq!(duplicate["name"], "café.txt");
+
+    let (different_bytes_status, different_bytes) = upload_multipart(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "café.txt",
+        b"different bytes",
+    )
+    .await;
+    assert_eq!(different_bytes_status, StatusCode::CREATED);
+    assert_ne!(different_bytes["id"], first["id"]);
+
+    let (different_name_status, different_name) = upload_multipart(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "other.txt",
+        bytes,
+    )
+    .await;
+    assert_eq!(different_name_status, StatusCode::CREATED);
+    assert_ne!(different_name["id"], first["id"]);
+
+    let (other_csrf, other_cookie) = bootstrap(app.clone()).await;
+    let other_id = register_user(app.clone(), &other_cookie, &other_csrf, "other").await;
+    let (other_user_status, other_user) = upload_multipart(
+        app,
+        &other_cookie,
+        &other_csrf,
+        "café.txt",
+        bytes,
+    )
+    .await;
+    assert_eq!(other_user_status, StatusCode::CREATED);
+    assert_ne!(other_user["id"], first["id"]);
+
+    let owner_files = repository
+        .list_attachments_by_container("USER", owner_id)
+        .await
+        .expect("owner temporary files");
+    assert_eq!(owner_files.len(), 3);
+    assert_eq!(owner_files[0].name, "café.txt");
+    assert_eq!(owner_files[0].hash, owner_files[2].hash);
 }
 
 #[tokio::test]

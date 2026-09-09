@@ -44,7 +44,7 @@ test("authenticated Home default-login action preserves desktop paint and popove
     height: 30,
     width: expect.closeTo(130.4609375, 1),
     x: expect.closeTo(298.5234375, 1),
-    y: expect.closeTo(115.578, 2),
+    y: expect.closeTo(116.078, 2),
   });
   expect(base.style).toMatchObject({
     backgroundColor: "rgb(241, 241, 241)",
@@ -79,25 +79,25 @@ test("authenticated Home default-login action preserves desktop paint and popove
     height: expect.closeTo(88.203125, 1),
     width: 280,
     x: expect.closeTo(223.75, 1),
-    y: expect.closeTo(155.578, 2),
+    y: expect.closeTo(156.078, 2),
   });
   expect(evidence.title.box).toEqual({
     height: 35,
     width: 276,
     x: expect.closeTo(225.75, 1),
-    y: expect.closeTo(157.578, 2),
+    y: expect.closeTo(158.078, 2),
   });
   expect(evidence.content.box).toEqual({
     height: expect.closeTo(49.203125, 1),
     width: 276,
     x: expect.closeTo(225.75, 1),
-    y: expect.closeTo(192.578, 2),
+    y: expect.closeTo(193.078, 2),
   });
   expect(evidence.arrow.box).toEqual({
     height: 11,
     width: 22,
     x: expect.closeTo(352.75, 1),
-    y: expect.closeTo(145.578, 2),
+    y: expect.closeTo(146.078, 2),
   });
   expect(evidence.popover.style).toEqual({
     backgroundClip: "padding-box",

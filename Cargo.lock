@@ -4968,6 +4968,7 @@ dependencies = [
  "tower-http",
  "tracing",
  "tracing-subscriber",
+ "unicode-normalization",
  "yoram-domain",
  "yoram-integrations",
  "yoram-migration",

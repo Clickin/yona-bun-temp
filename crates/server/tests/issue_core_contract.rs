@@ -1,7 +1,7 @@
 use axum::body::Body;
 use http::{Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
-use sea_orm::{Database, EntityName};
+use sea_orm::{ColumnTrait, Database, EntityName, EntityTrait, PaginatorTrait, QueryFilter};
 use serde_json::json;
 use std::path::Path;
 use std::sync::{Mutex, OnceLock};
@@ -9,7 +9,7 @@ use tempfile::tempdir;
 use tower::ServiceExt;
 use yoram_integrations::{clear_test_webhook_outbox, snapshot_test_webhook_outbox};
 use yoram_migration::Migrator;
-use yoram_persistence::AppRepository;
+use yoram_persistence::{notification_event, AppRepository};
 use yoram_server::{
     create_router_with_app_repository, create_router_with_repository_and_app_config,
     AppRuntimeConfig, RuntimeConfig,
@@ -65,6 +65,29 @@ async fn build_app_with_repository_in_data_root(data_root: &Path) -> (axum::Rout
     );
 
     (app, app_repo)
+}
+
+async fn build_app_with_repository_and_db_in_data_root(
+    data_root: &Path,
+) -> (axum::Router, AppRepository, sea_orm::DatabaseConnection) {
+    let db = Database::connect("sqlite::memory:")
+        .await
+        .expect("sqlite connection");
+    Migrator::fresh(&db).await.expect("fresh migration");
+    let app_repo = AppRepository::new(db.clone());
+    let app = create_router_with_repository_and_app_config(
+        RuntimeConfig {
+            allow_anonymous_access: true,
+            base_path: "/yona".to_string(),
+            public_origin: String::new(),
+        },
+        app_repo.clone(),
+        AppRuntimeConfig {
+            data_root: data_root.to_path_buf(),
+            ..AppRuntimeConfig::default()
+        },
+    );
+    (app, app_repo, db)
 }
 
 async fn bootstrap(app: axum::Router) -> (String, String) {
@@ -651,6 +674,118 @@ async fn issue_core_contract_enqueues_legacy_state_assignee_milestone_webhooks()
     assert!(milestone_text
         .contains("/yona/owner/projectYobi/issue/1|#1: Issue mutation webhook parity"));
 
+    clear_test_webhook_outbox();
+}
+
+#[tokio::test]
+async fn issue_draft_publish_dispatches_one_new_issue_webhook_and_notification() {
+    let _outbox_guard = webhook_outbox_lock().lock().unwrap();
+    clear_test_webhook_outbox();
+    let data_dir = tempdir().expect("draft publish data dir");
+    let (app, repository, db) =
+        build_app_with_repository_and_db_in_data_root(data_dir.path()).await;
+    let (csrf, cookie, _) = register_user(app.clone(), "owner").await;
+    let (_, _, assigned_id) = register_user(app.clone(), "assigned").await;
+    response_json(
+        rpc(
+            app.clone(),
+            "CreateProject",
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "overview": "Draft publish webhook parity",
+                "projectScope": "public"
+            }),
+        )
+        .await,
+    )
+    .await;
+    let project = repository
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    repository
+        .add_project_membership(project.id, assigned_id, "manager")
+        .await
+        .unwrap();
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/webhooks",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "payloadUrl": "https://hooks.example/draft-publish",
+                "secret": "draft-secret",
+                "webhookType": "SIMPLE",
+                "gitPush": false
+            })),
+        )
+        .await,
+    )
+    .await;
+
+    let draft = response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "title": "Saved draft",
+                "bodyMarkdown": "Draft body",
+                "assigneeLoginId": "assigned",
+                "isDraft": true
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(draft["isDraft"], true);
+    let draft_number = draft["issueNumber"]
+        .as_i64()
+        .or_else(|| draft["issueNumber"].as_str().and_then(|value| value.parse().ok()))
+        .expect("draft issue number");
+    assert!(snapshot_test_webhook_outbox().is_empty());
+    clear_test_webhook_outbox();
+
+    let published = response_json(
+        rest(
+            app.clone(),
+            Method::PUT,
+            &format!(
+                "/yona/api/v1/projects/owner/projectYobi/issues/{draft_number}"
+            ),
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "title": "Saved draft",
+                "bodyMarkdown": "Draft body",
+                "assigneeLoginId": "assigned",
+                "isDraft": false,
+                "isPublish": true,
+                "notificationMail": false
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(published["isDraft"], false);
+
+    let deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(deliveries.len(), 1);
+    assert_eq!(deliveries[0].event_type, "NEW_ISSUE");
+    let new_issue_events = notification_event::Entity::find()
+        .filter(notification_event::Column::EventType.eq(Some("NEW_ISSUE".to_string())))
+        .count(&db)
+        .await
+        .unwrap();
+    assert_eq!(new_issue_events, 1);
     clear_test_webhook_outbox();
 }
 
@@ -1285,6 +1420,241 @@ async fn issue_core_contract_enqueues_legacy_deleted_webhook_payload() {
     assert!(text.contains("/yona/owner/projectYobi/issue/1|#1: Issue delete webhook parity"));
 
     clear_test_webhook_outbox();
+}
+
+#[tokio::test]
+async fn issue_delete_removes_comment_attachments_without_losing_shared_blobs() {
+    let data_root = tempdir().expect("issue delete data root");
+    let (app, repository) = build_app_with_repository_in_data_root(data_root.path()).await;
+    let (csrf, cookie, owner_id) = register_user(app.clone(), "owner").await;
+    response_json(
+        rpc(
+            app.clone(),
+            "CreateProject",
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "overview": "Issue attachment delete parity",
+                "projectScope": "public"
+            }),
+        )
+        .await,
+    )
+    .await;
+
+    let parent_hash = "issue-parent-delete-hash";
+    let comment_hash = "issue-comment-delete-hash";
+    let shared_hash = "issue-shared-delete-hash";
+    let parent_attachment = repository
+        .create_user_attachment_upload(
+            owner_id,
+            "owner",
+            "parent.txt",
+            "text/plain",
+            6,
+            parent_hash,
+        )
+        .await
+        .expect("parent attachment");
+    let comment_attachment = repository
+        .create_user_attachment_upload(
+            owner_id,
+            "owner",
+            "comment.txt",
+            "text/plain",
+            7,
+            comment_hash,
+        )
+        .await
+        .expect("comment attachment");
+    let shared_live_attachment = repository
+        .create_user_attachment_upload(
+            owner_id,
+            "owner",
+            "shared-live.txt",
+            "text/plain",
+            6,
+            shared_hash,
+        )
+        .await
+        .expect("shared live attachment");
+    let shared_comment_attachment = repository
+        .create_user_attachment_upload(
+            owner_id,
+            "owner",
+            "shared-comment.txt",
+            "text/plain",
+            6,
+            shared_hash,
+        )
+        .await
+        .expect("shared comment attachment");
+    std::fs::create_dir_all(data_root.path().join("uploads")).expect("uploads directory");
+    for (hash, bytes) in [
+        (parent_hash, b"parent".as_slice()),
+        (comment_hash, b"comment".as_slice()),
+        (shared_hash, b"shared".as_slice()),
+    ] {
+        std::fs::write(data_root.path().join("uploads").join(hash), bytes).expect("upload bytes");
+    }
+
+    let parent_issue = response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "title": "Parent issue",
+                "bodyMarkdown": "Parent body",
+                "attachmentIds": [parent_attachment.id]
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(parent_issue["issueNumber"], 1);
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1/comments",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "contentsMarkdown": "Comment one",
+                "attachmentIds": [comment_attachment.id]
+            })),
+        )
+        .await,
+    )
+    .await;
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1/comments",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "contentsMarkdown": "Comment two",
+                "attachmentIds": [shared_comment_attachment.id]
+            })),
+        )
+        .await,
+    )
+    .await;
+
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "title": "Surviving issue",
+                "bodyMarkdown": "Surviving body"
+            })),
+        )
+        .await,
+    )
+    .await;
+    let surviving_detail = response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues/2/comments",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "contentsMarkdown": "Surviving comment",
+                "attachmentIds": [shared_live_attachment.id]
+            })),
+        )
+        .await,
+    )
+    .await;
+    let surviving_attachment_id = surviving_detail["comments"][0]["attachments"][0]["id"]
+        .as_i64()
+        .or_else(|| {
+            surviving_detail["comments"][0]["attachments"][0]["id"]
+                .as_str()
+                .and_then(|value| value.parse().ok())
+        })
+        .expect("surviving shared attachment id");
+
+    let deleted = response_json(
+        rest(
+            app.clone(),
+            Method::DELETE,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1",
+            Some(&cookie),
+            Some(&csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(deleted["issueNumber"], 1);
+    assert!(repository
+        .read_attachment_by_id(parent_attachment.id)
+        .await
+        .expect("parent attachment lookup")
+        .is_none());
+    assert!(repository
+        .read_attachment_by_id(comment_attachment.id)
+        .await
+        .expect("comment attachment lookup")
+        .is_none());
+    assert!(repository
+        .read_attachment_by_id(shared_live_attachment.id)
+        .await
+        .expect("shared live lookup")
+        .is_some());
+    assert_eq!(
+        std::fs::read(data_root.path().join("uploads").join(shared_hash)).expect("shared bytes"),
+        b"shared"
+    );
+
+    let surviving_file = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!("/yona/files/{surviving_attachment_id}"))
+                .header(http::header::COOKIE, &cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(surviving_file.status(), StatusCode::OK);
+    assert_eq!(
+        surviving_file
+            .into_body()
+            .collect()
+            .await
+            .expect("surviving file body")
+            .to_bytes()
+            .as_ref(),
+        b"shared"
+    );
+
+    let final_delete = rest(
+        app,
+        Method::DELETE,
+        &format!("/yona/files/{surviving_attachment_id}"),
+        Some(&cookie),
+        Some(&csrf),
+        None,
+    )
+    .await;
+    assert_eq!(final_delete.status(), StatusCode::OK);
+    assert!(!data_root.path().join("uploads").join(shared_hash).exists());
 }
 
 #[tokio::test]

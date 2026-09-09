@@ -18,6 +18,7 @@ test("SVN issues keeps the canonical desktop shell and React-owned list interact
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto(`${basePath}/${OWNER}/${PROJECT}/issues`);
+  await page.evaluate(() => document.fonts.ready);
 
   await expect(page).toHaveTitle(`${PROJECT} - 이슈 - ${OWNER}/${PROJECT}`);
   await expect(page.locator(".project-util-wrap .watcher-count")).toHaveText("1");
@@ -32,10 +33,7 @@ test("SVN issues keeps the canonical desktop shell and React-owned list interact
   ).toHaveCount(1);
 
   const geometry = await readGeometry(page);
-  // F5 (2026-08-13): .project-util-wrap content-sized — legacy _page.less:594-613
-  // (absolute, no fixed width); 163px measured (same dist truth as
-  // project-members-svn.e2e.ts utilWidth pin).
-  expect(geometry.projectUtil.width).toBe(163);
+  expect(geometry.projectUtil.width).toBe(147);
   // F5 (2026-08-13): menu group content-sized — 410px measured (members-svn
   // dist-truth pin); the 467px pin predates the current shell render.
   expect(geometry.projectMenu.width).toBe(410);

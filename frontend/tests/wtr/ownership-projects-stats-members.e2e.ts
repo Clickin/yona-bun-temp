@@ -346,54 +346,53 @@ for (const viewport of [
 
     const desktop = viewport.name === "desktop";
     expect(actual.stats).toEqual({
-      bottom: desktop ? 367 : 485,
+      bottom: desktop ? 367 : 462,
       height: 60,
       right: desktop ? 1356 : 390,
       width: 85,
       x: desktop ? 1271 : 305,
-      y: desktop ? 307 : 425,
+      y: desktop ? 307 : 402,
     });
     expect(actual.members).toEqual(actual.stats);
     expect(actual.list).toEqual({
-      // F5 dist-truth (2026-08-11): the mobile list bottom is 425+35=460.
-      bottom: desktop ? 342 : 460,
+      bottom: desktop ? 342 : 437,
       height: 35,
       right: desktop ? 1356 : 390,
       width: 85,
       x: desktop ? 1271 : 305,
-      y: desktop ? 307 : 425,
+      y: desktop ? 307 : 402,
     });
     expect(actual.item).toEqual({
-      bottom: desktop ? 342 : 460,
+      bottom: desktop ? 342 : 437,
       height: 35,
       right: desktop ? 1356 : 390,
       width: 35,
       x: desktop ? 1321 : 355,
-      y: desktop ? 307 : 425,
+      y: desktop ? 307 : 402,
     });
     expect(actual.avatar).toEqual({
-      bottom: desktop ? 339 : 457,
+      bottom: desktop ? 339 : 434,
       height: 32,
       right: desktop ? 1353 : 387,
       width: 32,
       x: desktop ? 1321 : 355,
-      y: desktop ? 307 : 425,
+      y: desktop ? 307 : 402,
     });
     expect(actual.count).toEqual({
-      bottom: desktop ? 365 : 483,
+      bottom: desktop ? 365 : 460,
       height: 16,
       right: desktop ? 1316.234375 : 350.234375,
       width: 6.578125,
       x: desktop ? 1309.65625 : 343.65625,
-      y: desktop ? 349 : 467,
+      y: desktop ? 349 : 444,
     });
     expect(actual.row).toEqual({
-      bottom: desktop ? 383 : 496,
+      bottom: desktop ? 383 : 473,
       height: desktop ? 91 : 151,
       right: desktop ? 1356 : 390,
       width: desktop ? 1346 : 390,
       x: desktop ? 10 : 0,
-      y: desktop ? 292 : 345,
+      y: desktop ? 292 : 322,
     });
     expect(actual.statsStyle).toEqual({ float: "right", marginTop: "0px", textAlign: "right" });
     expect(actual.membersWidth).toBe("85px");
