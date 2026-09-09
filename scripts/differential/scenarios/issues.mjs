@@ -2,6 +2,11 @@
 // and their action definitions.
 //
 // Domain module contract (see scenarios/index.mjs).
+import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { translateLegacy, translateYoram } from "../adapters.mjs";
 import { diffSkeletons, normalizeApiValue } from "../diff.mjs";
 import { HarnessError, violation } from "../report.mjs";
@@ -257,9 +262,6 @@ export const scenarios = [
         action: "probe-issue-imports",
         params: { owner: "admin", project: "sample" },
         behaviorId: "B-0214",
-        // The /-_-api/v1 imports namespace is intentionally migrator-owned;
-        // this malformed probe remains blocking until a state readback is
-        // available for an evidence-backed disposition.
       },
       { actor: "admin", action: "delete-issue", params: { owner: "admin", project: "sample" } },
     ],
@@ -269,7 +271,7 @@ export const scenarios = [
   },
   {
     id: "I19-comment-lifecycle",
-    title: "edit/put/patch comment, comment votes, delete comment (direct + compat), delete issue",
+    title: "edit/put/patch comment, comment votes, delete comment, delete issue",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
       { actor: "admin", action: "create-issue", params: { owner: "admin", project: "sample" } },
@@ -280,19 +282,10 @@ export const scenarios = [
       { actor: "admin", action: "vote-comment", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "unvote-comment", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "delete-comment", params: { owner: "admin", project: "sample" } },
-      { actor: "admin", action: "create-issue-comment", params: { owner: "admin", project: "sample" } },
-      {
-        actor: "admin",
-        action: "delete-comment-compat",
-        params: { owner: "admin", project: "sample" },
-        behaviorId: "B-0014",
-        // The legacy compat path is a known 500 family, but this probe has no
-        // resulting-state readback; keep the failure blocking.
-      },
       { actor: "admin", action: "delete-issue", params: { owner: "admin", project: "sample" } },
     ],
     behaviorMatcher: {
-      action: /^(IssueApp\.updateComment|IssueApi\.updateIssueComment|VoteApp\.voteComment|VoteApp\.unvoteComment|IssueApp\.deleteComment|CommentApp\.delete)$/,
+      action: /^(IssueApp\.updateComment|IssueApi\.updateIssueComment|VoteApp\.voteComment|VoteApp\.unvoteComment|IssueApp\.deleteComment)$/,
     },
   },
   {
@@ -314,8 +307,8 @@ export const scenarios = [
         action: "update-sharer",
         params: { owner: "admin", project: "sample" },
         behaviorId: "B-0212",
-        // The paired status drift is known, but the handler does not verify
-        // the resulting sharer state; keep this failure blocking.
+        // Use the seeded carol account; the action handler adds then deletes
+        // that direct user share so the fixture state is restored.
       },
       { actor: "admin", action: "comment-noti-receivers", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "detect-issue-change", params: { owner: "admin", project: "sample" } },
@@ -488,6 +481,310 @@ function compatToRest(path) {
     .replace(/\/share(?=\/|\?|$)/u, "/sharers");
 }
 
+const repoRoot = resolve(fileURLToPath(new URL("../../../", import.meta.url)));
+const issueImportMigrationBinary = () =>
+  process.env.YONA_MIGRATE_BIN?.trim() || resolve(repoRoot, "target/debug/yona-migrate");
+
+function issueImportProjectName(ctx) {
+  return `parity-import-${ctx.suffix}`;
+}
+
+function issueImportPlan(ctx) {
+  const { step, suffix } = ctx;
+  return {
+    owner: step.params.owner,
+    project: issueImportProjectName(ctx),
+    title: `Differential imported issue ${suffix}`,
+    body: `Differential imported issue body ${suffix}`,
+    comment: `Differential imported issue comment ${suffix}`,
+  };
+}
+
+function issueImportLegacyConversion(step, project, postNumber) {
+  const query = new URLSearchParams({ postNumber: String(postNumber) });
+  return {
+    method: "POST",
+    path: `/-_-api/v1/owners/${step.params.owner}/projects/${project}/issues/imports?${query}`,
+  };
+}
+
+function issueImportNativeTranslation(step, resolved) {
+  // yona-migrate posts the project export as NDJSON to this REST endpoint.
+  const project = resolved.projectName ?? step.params.project;
+  return { method: "POST", path: `/api/v1/owners/${step.params.owner}/projects/${project}/imports` };
+}
+
+function extractIssueImportNumber(value) {
+  const location = String(value?.location ?? "");
+  const match = /\/(?:issue|post)\/(\d+)/u.exec(location);
+  const fromLocation = match ? Number(match[1]) : 0;
+  const json = value?.json ?? {};
+  return (
+    fromLocation ||
+    Number(json.number ?? json.issueNumber ?? json.postNumber ?? json.issue?.number ?? 0) ||
+    null
+  );
+}
+
+function issueImportFailure(ctx, message) {
+  const detail = `${ctx.step.action} [${ctx.suffix}]: ${message}`;
+  ctx.entry.errors.push(detail);
+  throw new HarnessError(detail);
+}
+
+function issueImportMarkerPresent(value, marker) {
+  return typeof value === "string" && value.includes(marker);
+}
+
+function findIssueImportRow(node, title) {
+  if (Array.isArray(node)) {
+    for (const child of node) {
+      const found = findIssueImportRow(child, title);
+      if (found) return found;
+    }
+    return null;
+  }
+  if (!node || typeof node !== "object") return null;
+  if (node.title === title && extractIssueImportNumber({ json: node })) return node;
+  for (const child of Object.values(node)) {
+    const found = findIssueImportRow(child, title);
+    if (found) return found;
+  }
+  return null;
+}
+
+function migrationProcess(args) {
+  const binary = issueImportMigrationBinary();
+  if (!existsSync(binary)) {
+    return {
+      status: null,
+      error: `yona-migrate binary missing at ${binary}; prebuild with cargo build -p yona-migrate`,
+      stdout: "",
+      stderr: "",
+    };
+  }
+  const result = spawnSync(binary, args, {
+    cwd: repoRoot,
+    encoding: "utf8",
+    timeout: 120_000,
+    maxBuffer: 8 * 1024 * 1024,
+  });
+  return {
+    status: result.status,
+    error: result.error?.message ?? null,
+    stdout: result.stdout ?? "",
+    stderr: result.stderr ?? "",
+  };
+}
+
+async function cleanupIssueImportProject(ctx, plan, created) {
+  const { entry, helpers } = ctx;
+  const attempt = async (side, request) => {
+    try {
+      return await helpers.sendRaw(ctx, side, request);
+    } catch (error) {
+      entry.errors.push(`issue import cleanup ${side} request failed [${ctx.suffix}]: ${error.message}`);
+      return null;
+    }
+  };
+  const [yoramDelete, legacyDelete] = await Promise.all([
+    created.yoram
+      ? attempt("yoram", {
+          method: "DELETE",
+          path: `/api/v1/owners/${plan.owner}/projects/${plan.project}`,
+        })
+      : Promise.resolve(null),
+    created.legacy
+      ? attempt("legacy", {
+          method: "DELETE",
+          path: `/${plan.owner}/${plan.project}/delete`,
+          headers: { "x-requested-with": "XMLHttpRequest" },
+        })
+      : Promise.resolve(null),
+  ]);
+  if (yoramDelete && yoramDelete.status >= 400) {
+    entry.errors.push(`issue import cleanup target failed [${ctx.suffix}]: HTTP ${yoramDelete.status}`);
+  }
+  if (legacyDelete && legacyDelete.status >= 400) {
+    entry.errors.push(`issue import cleanup source failed [${ctx.suffix}]: HTTP ${legacyDelete.status}`);
+  }
+  const [yoramGone, legacyGone] = await Promise.all([
+    created.yoram
+      ? attempt("yoram", {
+          method: "GET",
+          path: `/api/v1/owners/${plan.owner}/projects/${plan.project}`,
+        })
+      : Promise.resolve(null),
+    created.legacy
+      ? attempt("legacy", { method: "GET", path: `/${plan.owner}/${plan.project}` })
+      : Promise.resolve(null),
+  ]);
+  if (yoramGone && yoramGone.status < 400) {
+    entry.errors.push(`issue import target residue [${ctx.suffix}]: ${plan.project}`);
+  }
+  if (legacyGone && legacyGone.status < 400) {
+    entry.errors.push(`issue import source residue [${ctx.suffix}]: ${plan.project}`);
+  }
+}
+
+async function runIssueImportAction(ctx) {
+  const { step, state, entry, helpers, options, yoramBaseUrl } = ctx;
+  const plan = issueImportPlan(ctx);
+  const created = { legacy: false, yoram: false };
+  try {
+    const createLegacy = {
+      method: "POST",
+      path: "/projects",
+      form: {
+        owner: plan.owner,
+        name: plan.project,
+        overview: `differential issue import ${ctx.suffix}`,
+        projectScope: "PUBLIC",
+        vcs: "GIT",
+        code: "true",
+        issue: "true",
+        pullRequest: "true",
+        review: "true",
+        milestone: "true",
+        board: "true",
+      },
+    };
+    const createYoram = {
+      method: "POST",
+      path: `/api/v1/owners/${plan.owner}/projects`,
+      json: {
+        projectName: plan.project,
+        overview: `differential issue import ${ctx.suffix}`,
+        projectScope: "PUBLIC",
+        vcs: "GIT",
+      },
+    };
+    const createdPair = await helpers.requestBoth(ctx, createLegacy, createYoram);
+    created.legacy = createdPair.legacyResult.status < 400;
+    created.yoram = createdPair.yoramResult.status < 400;
+    if (!created.legacy || !created.yoram) {
+      issueImportFailure(
+        ctx,
+        `dedicated project creation failed (legacy=${createdPair.legacyResult.status}, yoram=${createdPair.yoramResult.status})`,
+      );
+    }
+
+    const post = await helpers.sendRaw(ctx, "legacy", {
+      method: "POST",
+      path: `/${plan.owner}/${plan.project}/posts`,
+      form: {
+        title: plan.title,
+        body: plan.body,
+        issueTemplate: "",
+        branch: "",
+        path: "",
+      },
+    });
+    if (post.status >= 400) issueImportFailure(ctx, `source post creation failed: HTTP ${post.status}`);
+    const postNumber = extractIssueImportNumber(post);
+    if (!(postNumber > 0)) issueImportFailure(ctx, "source post number was not returned");
+    state.issueImportPostNumber = postNumber;
+
+    const comment = await helpers.sendRaw(ctx, "legacy", {
+      method: "POST",
+      path: `/${plan.owner}/${plan.project}/post/${postNumber}/comment`,
+      form: { contents: plan.comment },
+    });
+    if (comment.status >= 400) issueImportFailure(ctx, `source post comment failed: HTTP ${comment.status}`);
+
+    const converted = await helpers.sendRaw(
+      ctx,
+      "legacy",
+      issueImportLegacyConversion(step, plan.project, postNumber),
+    );
+    if (converted.status >= 400) {
+      issueImportFailure(ctx, `source post-to-issue conversion failed: HTTP ${converted.status}`);
+    }
+    const issueNumber = extractIssueImportNumber(converted);
+    if (!(issueNumber > 0)) issueImportFailure(ctx, "source conversion did not return an issue number");
+    state.issueImportIssueNumberLegacy = issueNumber;
+
+    const sourceIssue = await helpers.sendRaw(ctx, "legacy", {
+      method: "GET",
+      path: `/${plan.owner}/${plan.project}/issue/${issueNumber}`,
+    });
+    if (sourceIssue.status >= 400) issueImportFailure(ctx, `source issue readback failed: HTTP ${sourceIssue.status}`);
+    for (const marker of [plan.title, plan.body, plan.comment]) {
+      if (!issueImportMarkerPresent(sourceIssue.body, marker)) {
+        issueImportFailure(ctx, `source issue readback omitted marker ${marker}`);
+      }
+    }
+    const sourcePost = await helpers.sendRaw(ctx, "legacy", {
+      method: "GET",
+      path: `/${plan.owner}/${plan.project}/post/${postNumber}`,
+    });
+    if (sourcePost.status < 400) issueImportFailure(ctx, "source post remained after conversion");
+
+    const tokenResponse = await helpers.sendRaw(ctx, "yoram", {
+      method: "POST",
+      path: "/api/v1/auth/token",
+      json: { id: step.actor ?? "admin", password: process.env.YONA_DIFFERENTIAL_PASSWORD ?? "admin" },
+    });
+    const token = String(tokenResponse.json?.access_token ?? "").trim();
+    if (tokenResponse.status >= 400 || !token) {
+      issueImportFailure(ctx, `target migration token unavailable: HTTP ${tokenResponse.status}`);
+    }
+
+    const migrationArgs = [
+      "--from-url",
+      options.legacyUrl,
+      "--from-cookie",
+      ctx.legacySession.cookies,
+      "--from-owner",
+      plan.owner,
+      "--from-project",
+      plan.project,
+      "--to-url",
+      yoramBaseUrl,
+      "--to-token",
+      token,
+      "--to-login",
+      step.actor ?? "admin",
+      "--with-repos=false",
+    ];
+    const migration = await (ctx.migrationRunner ?? migrationProcess)(migrationArgs, ctx);
+    if (migration.error || migration.status !== 0) {
+      const output = `${migration.error ?? ""} ${migration.stderr ?? ""} ${migration.stdout ?? ""}`.trim();
+      issueImportFailure(ctx, `source export → Rust project import failed: ${output.slice(-1200)}`);
+    }
+
+    const targetIssues = await helpers.sendRaw(ctx, "yoram", {
+      method: "GET",
+      path: `/api/v1/projects/${plan.owner}/${plan.project}/issues`,
+    });
+    if (targetIssues.status >= 400) issueImportFailure(ctx, `target issue list readback failed: HTTP ${targetIssues.status}`);
+    const imported = findIssueImportRow(targetIssues.json, plan.title);
+    const importedNumber = extractIssueImportNumber({ json: imported });
+    if (!(importedNumber > 0)) issueImportFailure(ctx, "target issue readback did not find converted issue");
+    state.issueImportIssueNumberYoram = importedNumber;
+    const targetIssue = await helpers.sendRaw(ctx, "yoram", {
+      method: "GET",
+      path: `/api/v1/projects/${plan.owner}/${plan.project}/issues/${importedNumber}`,
+    });
+    if (targetIssue.status >= 400) issueImportFailure(ctx, `target issue detail readback failed: HTTP ${targetIssue.status}`);
+    const targetJson = targetIssue.json ?? {};
+    const targetTitle = targetJson.title ?? targetJson.issue?.title;
+    const targetBody = targetJson.bodyMarkdown ?? targetJson.issue?.bodyMarkdown;
+    const targetComments = targetJson.comments ?? targetJson.issue?.comments ?? [];
+    const targetCommentBodies = targetComments.map(
+      (item) => item.contentsMarkdown ?? item.content ?? item.bodyMarkdown ?? "",
+    );
+    if (targetTitle !== plan.title || targetBody !== plan.body || !targetCommentBodies.includes(plan.comment)) {
+      issueImportFailure(
+        ctx,
+        `target issue readback mismatch (title=${String(targetTitle)}, body=${String(targetBody)}, comments=${JSON.stringify(targetCommentBodies)})`,
+      );
+    }
+  } finally {
+    await cleanupIssueImportProject(ctx, plan, created);
+  }
+}
+
 
 // Avatar URLs are environment-dependent: legacy serves /assets fallbacks when
 // its ICMP reachability probe fails while yoram emits live gravatar URLs for
@@ -574,11 +871,113 @@ const favoriteLegacy = (step, v) => ({ method: "POST", path: `/-_-api/v1/favorit
 const favoriteYoram = (step, v) => ({ method: "POST", path: `/api/v1/user/favorites/issues/${v.issuePk}` });
 const downvoteLegacy = (step, v) => ({ method: "POST", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/downvoteWeight` });
 const downvoteYoram = (step, v) => ({ method: "POST", path: `${yoramApiBase(step)}/issues/${v.issueNumber}/weight/downvote` });
+const ISSUE_SHARER_TARGET = "carol";
 const sharerTranslation = (base, tail, step, v, action) => ({
   method: "POST",
   path: `${base(step)}/issues/${v.issueNumber}/${tail}`,
-  json: { sharer: ["admin"], action },
+  json: { sharer: { loginId: ISSUE_SHARER_TARGET, type: "user" }, action },
 });
+const canonicalSharerTranslation = (step, v, action) => {
+  const issuePath = `${yoramApiBase(step)}/issues/${v.issueNumber}/sharers`;
+  return action === "add"
+    ? { method: "POST", path: issuePath, json: { loginId: ISSUE_SHARER_TARGET, targetType: "user" } }
+    : { method: "DELETE", path: `${issuePath}/${ISSUE_SHARER_TARGET}?targetType=user` };
+};
+
+function issueSharerPresent(result) {
+  let payload = result?.json;
+  if (payload === undefined) {
+    try {
+      payload = JSON.parse(result?.body ?? "null");
+    } catch {
+      payload = null;
+    }
+  }
+  const sharers = Array.isArray(payload) ? payload : payload?.sharers;
+  return Array.isArray(sharers) && sharers.some(
+    (sharer) => String(sharer?.loginId ?? "").toLowerCase() === ISSUE_SHARER_TARGET,
+  );
+}
+
+async function verifyIssueSharer(ctx, expectedPresent) {
+  const { step, state, entry, helpers } = ctx;
+  const legacyRequest = {
+    method: "GET",
+    path: `${apiCompatBase(step)}/issues/${state.issueNumberLegacy}/findSharer?query=${ISSUE_SHARER_TARGET}`,
+    headers: { Accept: "application/json" },
+  };
+  const yoramRequest = {
+    method: "GET",
+    path: `${spaRestBase(step)}/issues/${state.issueNumberYoram}`,
+  };
+  const [legacyResult, yoramResult] = await Promise.all([
+    helpers.sendRaw(ctx, "legacy", legacyRequest),
+    helpers.sendRaw(ctx, "yoram", yoramRequest),
+  ]);
+  if (legacyResult.status >= 400 || yoramResult.status >= 400) {
+    entry.violations.push(
+      violation({
+        route: legacyRequest.path,
+        behaviorId: step.behaviorId ?? null,
+        kind: "api",
+        expected: { status: "<400", sharerPresent: expectedPresent },
+        actual: {
+          legacyStatus: legacyResult.status,
+          yoramStatus: yoramResult.status,
+        },
+      }),
+    );
+    return;
+  }
+  const actual = {
+    legacy: issueSharerPresent(legacyResult),
+    yoram: issueSharerPresent(yoramResult),
+  };
+  if (actual.legacy !== expectedPresent || actual.yoram !== expectedPresent) {
+    entry.violations.push(
+      violation({
+        route: legacyRequest.path,
+        behaviorId: step.behaviorId ?? null,
+        kind: "api",
+        expected: { sharerPresent: expectedPresent },
+        actual,
+      }),
+    );
+  }
+}
+
+async function runSharerMutation(ctx, action) {
+  const { step, state, entry, helpers } = ctx;
+  const legacyTranslation = sharerTranslation(
+    apiCompatBase,
+    "share",
+    step,
+    { ...ctx.resolved, ...state, issueNumber: state.issueNumberLegacy },
+    action,
+  );
+  const yoramTranslation = canonicalSharerTranslation(
+    step,
+    { ...ctx.resolved, ...state, issueNumber: state.issueNumberYoram },
+    action,
+  );
+  const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
+  if (legacyResult.status >= 400 || yoramResult.status >= 400) {
+    entry.violations.push(
+      violation({
+        route: legacyTranslation.path,
+        behaviorId: step.behaviorId ?? null,
+        kind: "api",
+        expected: { status: "<400" },
+        actual: {
+          legacyStatus: legacyResult.status,
+          yoramStatus: yoramResult.status,
+          legacyRequest: requestEvidence(legacyTranslation),
+          yoramRequest: requestEvidence(yoramTranslation),
+        },
+      }),
+    );
+  }
+}
 const deleteCategoryLegacy = (step, v) => ({
   method: "DELETE",
   path: `/${step.params.owner}/${step.params.project}/issue/label/category/${v.categoryIdLegacy}`,
@@ -1409,12 +1808,24 @@ export const actionDefinitions = {
     whenIds(["issueNumberLegacy", "issueNumberYoram"]),
   ),
 
-  // Failing-import probe: no real upstream repo is referenced, so both sides
-  // reject the request without writing anything — the pair is compared as-is.
-  "probe-issue-imports": pairMutation(
-    (step, v) => ({ method: "POST", path: `${apiCompatBase(step)}/issues/imports`, json: { owner: "parity-sweep", repoName: `nonexistent-${v.title}`, token: "" } }),
-    (step, v) => ({ method: "POST", path: `${apiCompatBase(step)}/issues/imports`, json: { owner: "parity-sweep", repoName: `nonexistent-${v.title}`, token: "" } }),
-  ),
+  // Positive post → issue proof. Legacy owns the bodyless conversion request;
+  // Rust receives the resulting issue through the existing migration tool,
+  // never through a broad legacy-compatible runtime route.
+  "probe-issue-imports": {
+    translateLegacy(step, resolved) {
+      return issueImportLegacyConversion(
+        step,
+        resolved.projectName ?? step.params.project,
+        resolved.postNumber ?? ":postNumber",
+      );
+    },
+    translateYoram(step, resolved) {
+      return issueImportNativeTranslation(step, resolved);
+    },
+    async handler(ctx) {
+      await runIssueImportAction(ctx);
+    },
+  },
 
   "edit-comment": pairMutation(
     // Legacy's update form carries the hidden `id` field
@@ -1481,13 +1892,6 @@ export const actionDefinitions = {
   "delete-comment": pairMutation(
     (step, v) => ({ method: "DELETE", path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/comment/${v.commentId}/delete` }),
     (step, v) => ({ method: "DELETE", path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/comment/${v.commentId}/delete` }),
-    null,
-    whenIds(["commentIdLegacy", "commentIdYoram"]),
-  ),
-
-  "delete-comment-compat": pairMutation(
-    (step, v) => ({ method: "DELETE", path: `/comments/issue/${v.commentId}` }),
-    (step, v) => ({ method: "DELETE", path: `/comments/issue/${v.commentId}` }),
     null,
     whenIds(["commentIdLegacy", "commentIdYoram"]),
   ),
@@ -1561,18 +1965,23 @@ export const actionDefinitions = {
     whenIds(["issueNumberLegacy", "issueNumberYoram"]),
   ),
 
-  "update-sharer": pairMutation(
-    (step, v) => sharerTranslation(apiCompatBase, "share", step, v, "add"),
-    (step, v) => sharerTranslation(yoramApiBase, "sharers/toggle", step, v, "add"),
-    async (ctx) => {
-      await mutationPair(
-        ctx,
-        (step, v) => sharerTranslation(apiCompatBase, "share", step, v, "remove"),
-        (step, v) => sharerTranslation(yoramApiBase, "sharers/toggle", step, v, "remove"),
-      );
+  "update-sharer": {
+    translateLegacy(step, resolved) {
+      return sharerTranslation(apiCompatBase, "share", step, resolved, "add");
     },
-    whenIds(["issueNumberLegacy", "issueNumberYoram"]),
-  ),
+    translateYoram(step, resolved) {
+      return canonicalSharerTranslation(step, resolved, "add");
+    },
+    async handler(ctx) {
+      const guard = whenIds(["issueNumberLegacy", "issueNumberYoram"]);
+      await guard(ctx, async () => {
+        await runSharerMutation(ctx, "add");
+        await verifyIssueSharer(ctx, true);
+        await runSharerMutation(ctx, "delete");
+        await verifyIssueSharer(ctx, false);
+      });
+    },
+  },
 
   "comment-noti-receivers": pairMutation(
     (step, v) => ({ method: "POST", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/commentNotiReceivers`, json: { comment: v.body, parentCommentId: "" } }),

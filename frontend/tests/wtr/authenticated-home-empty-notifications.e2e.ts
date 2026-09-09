@@ -141,7 +141,7 @@ const EXPECTED_AUTHENTICATED_HOME = `
 const EXPECTED_DIRECT_NOTIFICATIONS = EXPECTED_AUTHENTICATED_HOME.replace(
   `<li></li>
           </ul>`,
-  `<li><button id="setDefaultLoginPage" type="button" title="Set to default page">Set to default page</button></li>
+  `<li><button id="setDefaultLoginPage" type="button" class="ybtn hide-in-mobile" title="Set to default page">Set to default page</button></li>
           </ul>`,
 );
 
@@ -947,8 +947,9 @@ test("authenticated home empty notifications matches legacy index notifications 
   const homeStreamTabs = page.locator(
     '[data-owner="authenticated-home-main-stream"] > [data-owner="authenticated-home-series-tabs"]',
   );
-  await expect(homeStreamTabs).not.toHaveClass(/(?:^|\s)(?:nav|nav-tabs)(?:\s|$)/u);
-  await expect(homeStreamTabs.locator("> li").nth(0)).not.toHaveClass(/active/u);
+  await expect(homeStreamTabs).toHaveClass(/(?:^|\s)nav(?:\s|$)/u);
+  await expect(homeStreamTabs).toHaveClass(/(?:^|\s)nav-tabs(?:\s|$)/u);
+  await expect(homeStreamTabs.locator("> li").nth(0)).toHaveClass(/(?:^|\s)active(?:\s|$)/u);
   await expect(homeStreamTabs.locator("> li > a")).toHaveText([
     "Notification",
     "My Issues",
@@ -2530,11 +2531,6 @@ test("authenticated root sidebar recent issue tab matches legacy index/myRecentI
 test("direct notifications route matches legacy Application.notifications empty state DOM", async ({
   page,
 }) => {
-  // e2e closure ledger (2026-08-11): `#setDefaultLoginPage` toBeHidden after
-  // the click fails only under the WTR facade click (the button's onClick
-  // mutation POST is mocked 200 in this spec; onSuccess hides the button per
-  // -home-route-screen.tsx setIsDefaultLandingButtonHidden). Classified as
-  // WTR facade-click residual.
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const setDefaultLoginPageRequests: string[] = [];
   await mockAuthenticatedEmptyNotifications(page);
@@ -2615,7 +2611,6 @@ test("direct notifications route matches legacy Application.notifications empty 
     "data-owner",
     "authenticated-home-default-login-action",
   );
-  await expect(defaultLandingButton).not.toHaveClass(/(?:^|\s)(?:ybtn|hide-in-mobile)(?:\s|$)/u);
   await expect(defaultLandingButton).toHaveAttribute("type", "button");
   await expect(defaultLandingButton).not.toHaveAttribute("data-url");
   await expect(defaultLandingButton).toHaveAttribute("title", "Set to default page");
@@ -2697,10 +2692,13 @@ test("direct notifications route matches legacy Application.notifications empty 
   const mainStreamTabs = page.locator(
     '[data-owner="authenticated-home-main-stream"] > [data-owner="authenticated-home-series-tabs"]',
   );
-  await expect(mainStreamTabs).not.toHaveClass(/(?:^|\s)(?:nav|nav-tabs)(?:\s|$)/u);
-  await expect(mainStreamTabs.locator("> li").nth(0)).not.toHaveClass(/active/u);
-  await expect(mainStreamTabs.locator("> li").nth(1)).not.toHaveClass(/active/u);
-  await expect(mainStreamTabs.locator("> li").nth(2)).not.toHaveClass(/active/u);
+  await expect(mainStreamTabs).toHaveClass(/(?:^|\s)nav(?:\s|$)/u);
+  await expect(mainStreamTabs).toHaveClass(/(?:^|\s)nav-tabs(?:\s|$)/u);
+  await expect(mainStreamTabs.locator("> li").nth(0)).toHaveClass(
+    /(?:^|\s)active(?:\s|$)/u,
+  );
+  await expect(mainStreamTabs.locator("> li").nth(1)).not.toHaveClass(/(?:^|\s)active(?:\s|$)/u);
+  await expect(mainStreamTabs.locator("> li").nth(2)).not.toHaveClass(/(?:^|\s)active(?:\s|$)/u);
   await expect(mainStreamTabs.locator("> li > a")).toHaveText([
     "Notification",
     "My Issues",
@@ -2885,7 +2883,6 @@ test("direct notifications route matches legacy populated notification row DOM",
   await expect(notificationAvatar).toHaveClass(/\bsmaller\b/u);
   await expect(notificationAuthor).toHaveText("Site Admin");
   await expect(notificationAuthor).toHaveAttribute("href", `${basePath}/admin`);
-  await expect(notificationAuthor).not.toHaveClass(/\bauthor\b/u);
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await readMobileNotificationStreamMetrics(page)).toEqual({
     avatarDisplay: "inline-block",
@@ -2928,21 +2925,9 @@ test("authenticated home renders notification newlines as escaped React nodes", 
   await page.goto(`${basePath}/`);
   const message = page.locator(NOTIFICATION_MESSAGE);
   await expect(message.locator("br")).toHaveCount(3);
-  expect(
-    await message.evaluate((element) =>
-      [...element.childNodes].map((node) =>
-        node.nodeType === Node.TEXT_NODE ? node.textContent : node.nodeName,
-      ),
-    ),
-  ).toEqual([
-    "Board seed confirmed.",
-    "BR",
-    "First",
-    "BR",
-    "Second",
-    "BR",
-    "--- Original posting ---<script>safe</script>",
-  ]);
+  expect(await message.textContent()).toBe(
+    "Board seed confirmed.\nFirst\nSecond\n--- Original posting ---<script>safe</script>",
+  );
   await expect(message.locator("script")).toHaveCount(0);
   const desktop = await readDesktopNotificationStreamMetrics(page);
   expect(desktop.messageLineHeight).toBe("20px");
@@ -5053,46 +5038,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             .join(" ");
           return className ? `${name}=${JSON.stringify(className)}` : "";
         }
-        if (name === "class" && current.closest("li.notification-stream")) {
-          const retiredNotificationTokens = new Set([
-            "notification-stream",
-            "stream-type",
-            "updated",
-            "closed",
-            "changed",
-            "rejected",
-            "warning",
-            "merged",
-            "comment2",
-            "info",
-            "list-alt",
-            "ellipsis-horizontal",
-            "stream-desc",
-            "stream-info",
-            "title",
-            "message-wrap",
-            "nowrap",
-            "message",
-            "more",
-            "meta",
-            "author",
-            "ago",
-            "pull-right",
-          ]);
-          const className = value
-            .split(/\s+/u)
-            .filter(
-              (token) =>
-                token &&
-                !retiredNotificationTokens.has(token) &&
-                token !== "gray-txt" &&
-                token !== "right-txt" &&
-                !/^x[0-9a-z]+$/u.test(token) &&
-                !token.includes("__"),
-            )
-            .join(" ");
-          return className ? `${name}=${JSON.stringify(className)}` : "";
-        }
+
         const isSiteLayoutHeader =
           name === "class" &&
           current.classList.contains("gnb-outer") &&

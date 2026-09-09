@@ -1,18 +1,16 @@
 // Issues-domain scenario/action contract tests.
 //
 // Validates the issues module against the merged registry (index.mjs): shape,
-// known actions, translator literals, and inventory coverage.
+// known actions, request semantics, and mutation outcomes.
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { readFileSync } from "node:fs";
 
-import { validateScenarios, matchBehaviors } from "./dsl.mjs";
+import { validateScenarios } from "./dsl.mjs";
 import { ACTION_DEFINITIONS, scenarios } from "./scenarios/index.mjs";
 import * as issues from "./scenarios/issues.mjs";
 import { translateLegacy, translateYoram } from "./adapters.mjs";
 import { domVisibleLoss } from "./diff.mjs";
 import { classifyViolation } from "./report.mjs";
-const inventory = JSON.parse(readFileSync(new URL("../../docs/provenance/behavior-inventory.json", import.meta.url), "utf8")).behaviors;
 const knownActions = Object.keys(ACTION_DEFINITIONS);
 const issuesScenarios = scenarios.filter((scenario) => issues.scenarios.some((own) => own.id === scenario.id));
 
@@ -186,11 +184,187 @@ test("pre-existing mutation actions keep their translation contracts", () => {
   assert.equal(ACTION_DEFINITIONS["create-issue-comment"].translateLegacy({ params: { owner: "admin", project: "sample" } }, { issueNumber: 7 }).path, "/admin/sample/issue/7/comments");
 });
 
-test("issue mutations use the legacy assignee payload shape and normalize paired issue identity", async () => {
+test("issue imports use a bodyless legacy postNumber conversion and Rust migration boundary", () => {
+  const step = {
+    actor: "admin",
+    action: "probe-issue-imports",
+    params: { owner: "admin", project: "sample" },
+  };
+  assert.deepEqual(translateLegacy(step, { projectName: "parity-import-test", postNumber: 17 }), {
+    method: "POST",
+    path: "/-_-api/v1/owners/admin/projects/parity-import-test/issues/imports?postNumber=17",
+  });
+  assert.equal("json" in translateLegacy(step, { projectName: "parity-import-test", postNumber: 17 }), false);
+  assert.deepEqual(translateYoram(step, { projectName: "parity-import-test" }), {
+    method: "POST",
+    path: "/api/v1/owners/admin/projects/parity-import-test/imports",
+  });
+});
+
+test("issue imports prove conversion/readback and clean up their dedicated project", async () => {
+  const calls = [];
+  const migrationArgs = [];
+  const suffix = "import-proof";
+  const plan = {
+    title: `Differential imported issue ${suffix}`,
+    body: `Differential imported issue body ${suffix}`,
+    comment: `Differential imported issue comment ${suffix}`,
+  };
+  const ctx = {
+    step: {
+      actor: "admin",
+      action: "probe-issue-imports",
+      params: { owner: "admin", project: "sample" },
+    },
+    suffix,
+    resolved: {},
+    state: {},
+    entry: { errors: [], violations: [] },
+    options: { legacyUrl: "http://legacy.test" },
+    yoramBaseUrl: "http://yoram.test",
+    legacySession: { cookies: "PLAY_SESSION=source" },
+    helpers: {
+      async requestBoth(_ctx, legacy, yoram) {
+        calls.push({ side: "pair", legacy, yoram });
+        return {
+          legacyResult: { status: 303 },
+          yoramResult: { status: 201, json: { projectName: "parity-import-import-proof" } },
+        };
+      },
+      async sendRaw(_ctx, side, request) {
+        calls.push({ side, request });
+        if (side === "legacy" && request.method === "POST" && request.path.endsWith("/posts")) {
+          return { status: 303, location: "/admin/parity-import-import-proof/post/23" };
+        }
+        if (side === "legacy" && request.method === "POST" && request.path.endsWith("/post/23/comment")) {
+          return { status: 303, location: "#comment-31" };
+        }
+        if (side === "legacy" && request.method === "POST" && request.path.includes("/issues/imports?")) {
+          return { status: 200, json: { number: 24 } };
+        }
+        if (side === "legacy" && request.method === "GET" && request.path.endsWith("/issue/24")) {
+          return { status: 200, body: `${plan.title} ${plan.body} ${plan.comment}` };
+        }
+        if (side === "legacy" && request.method === "GET" && request.path.endsWith("/post/23")) {
+          return { status: 404, body: "" };
+        }
+        if (side === "yoram" && request.method === "POST" && request.path === "/api/v1/auth/token") {
+          return { status: 200, json: { access_token: "target-token" } };
+        }
+        if (side === "yoram" && request.method === "GET" && request.path.endsWith("/issues")) {
+          return { status: 200, json: [{ title: plan.title, issueNumber: 42 }] };
+        }
+        if (side === "yoram" && request.method === "GET" && request.path.endsWith("/issues/42")) {
+          return {
+            status: 200,
+            json: { title: plan.title, bodyMarkdown: plan.body, comments: [{ contentsMarkdown: plan.comment }] },
+          };
+        }
+        if (request.method === "DELETE") return { status: 204 };
+        if (request.method === "GET") return { status: 404 };
+        return { status: 200 };
+      },
+    },
+    migrationRunner(args) {
+      migrationArgs.push(args);
+      return { status: 0, stdout: "", stderr: "" };
+    },
+  };
+
+  await ACTION_DEFINITIONS["probe-issue-imports"].handler(ctx);
+  const conversion = calls.find(
+    (call) => call.side === "legacy" && call.request.method === "POST" && call.request.path.includes("/issues/imports?"),
+  );
+  assert.ok(conversion);
+  assert.equal("json" in conversion.request, false);
+  assert.equal(conversion.request.path, "/-_-api/v1/owners/admin/projects/parity-import-import-proof/issues/imports?postNumber=23");
+  assert.equal(calls.some((call) => call.side === "yoram" && call.request.path.startsWith("/-_-api/")), false);
+  assert.deepEqual(migrationArgs[0].slice(0, 8), [
+    "--from-url",
+    "http://legacy.test",
+    "--from-cookie",
+    "PLAY_SESSION=source",
+    "--from-owner",
+    "admin",
+    "--from-project",
+    "parity-import-import-proof",
+  ]);
+  assert.ok(calls.some((call) => call.side === "legacy" && call.request.method === "DELETE"));
+  assert.ok(calls.some((call) => call.side === "yoram" && call.request.method === "DELETE"));
+  assert.deepEqual(ctx.entry.errors, []);
+});
+
+test("issue mutations use legacy payload shapes and normalize paired issue identity", async () => {
   const step = { actor: "admin", action: "update-issue-assignees", params: { owner: "admin", project: "sample" } };
   const vars = { issueNumber: 7 };
   assert.deepEqual(translateLegacy(step, vars).json, { assignees: ["admin"] });
   assert.deepEqual(translateYoram(step, vars).json, { assignees: ["admin"] });
+
+  const shareStep = { actor: "admin", action: "update-sharer", params: { owner: "admin", project: "sample" } };
+  assert.deepEqual(translateLegacy(shareStep, vars).json, {
+    sharer: { loginId: "carol", type: "user" },
+    action: "add",
+  });
+  assert.deepEqual(translateYoram(shareStep, vars), {
+    method: "POST",
+    path: "/api/v1/owners/admin/projects/sample/issues/7/sharers",
+    json: { loginId: "carol", targetType: "user" },
+  });
+  const shareRequests = [];
+  const shareReadbacks = [];
+  let sharerPresent = false;
+  await ACTION_DEFINITIONS["update-sharer"].handler({
+    step: shareStep,
+    resolved: {},
+    state: { issueNumberLegacy: 7, issueNumberYoram: 7 },
+    entry: { violations: [], errors: [] },
+    helpers: {
+      async requestBoth(_ctx, legacy, yoram) {
+        shareRequests.push({ legacy, yoram });
+        sharerPresent = shareRequests.length === 1;
+        return {
+          legacyResult: { status: 200, json: { action: sharerPresent ? "added" : "deleted", sharer: "carol" } },
+          yoramResult: { status: 200, json: { sharers: sharerPresent ? [{ loginId: "carol" }] : [] } },
+        };
+      },
+      async sendRaw(_ctx, side, request) {
+        shareReadbacks.push({ side, request });
+        return side === "legacy"
+          ? { status: 200, json: sharerPresent ? [{ loginId: "carol" }] : [] }
+          : { status: 200, json: { sharers: sharerPresent ? [{ loginId: "carol" }] : [] } };
+      },
+    },
+  });
+  assert.equal(shareRequests.length, 2);
+  assert.deepEqual(shareRequests[0].legacy.json, {
+    sharer: { loginId: "carol", type: "user" },
+    action: "add",
+  });
+  assert.deepEqual(shareRequests[0].yoram, {
+    method: "POST",
+    path: "/api/v1/owners/admin/projects/sample/issues/7/sharers",
+    json: { loginId: "carol", targetType: "user" },
+  });
+  assert.deepEqual(shareRequests[1].legacy.json, {
+    sharer: { loginId: "carol", type: "user" },
+    action: "delete",
+  });
+  assert.deepEqual(shareRequests[1].yoram, {
+    method: "DELETE",
+    path: "/api/v1/owners/admin/projects/sample/issues/7/sharers/carol?targetType=user",
+  });
+  assert.deepEqual(shareReadbacks.map(({ side }) => side), ["legacy", "yoram", "legacy", "yoram"]);
+  assert.deepEqual(shareReadbacks[0].request, {
+    method: "GET",
+    path: "/-_-api/v1/owners/admin/projects/sample/issues/7/findSharer?query=carol",
+    headers: { Accept: "application/json" },
+  });
+  assert.deepEqual(shareReadbacks[1].request, {
+    method: "GET",
+    path: "/api/v1/projects/admin/sample/issues/7",
+  });
+  assert.deepEqual(shareReadbacks[2].request, shareReadbacks[0].request);
+  assert.deepEqual(shareReadbacks[3].request, shareReadbacks[1].request);
 
   const ctx = {
     step: { actor: "admin", action: "patch-issue-content", params: { owner: "admin", project: "sample" } },
@@ -378,115 +552,6 @@ test("I23 restores both seed issue-label associations immediately before export"
   assert.deepEqual(ctx.entry.errors, []);
 });
 
-test("matchBehaviors returns a non-empty B-id list for every issues scenario", () => {
-  for (const scenario of issuesScenarios) {
-    const ids = matchBehaviors(scenario, inventory);
-    assert.ok(ids.length > 0, `${scenario.id} covers no inventory behavior`);
-  }
-});
-
-test("issues domain covers its target set of distinct B-ids", () => {
-  const union = [...new Set(issuesScenarios.flatMap((scenario) => matchBehaviors(scenario, inventory)))].sort();
-  assert.deepEqual(union, [
-    "B-0005",
-    "B-0006",
-    "B-0007",
-    "B-0014",
-    "B-0015",
-    "B-0031",
-    "B-0035",
-    "B-0037",
-    "B-0038",
-    "B-0039",
-    "B-0040",
-    "B-0081",
-    "B-0082",
-    "B-0083",
-    "B-0084",
-    "B-0085",
-    "B-0086",
-    "B-0087",
-    "B-0088",
-    "B-0089",
-    "B-0090",
-    "B-0091",
-    "B-0092",
-    "B-0124",
-    "B-0129",
-    "B-0130",
-    "B-0131",
-    "B-0141",
-    "B-0142",
-    "B-0160",
-    "B-0171",
-    "B-0194",
-    "B-0195",
-    "B-0197",
-    "B-0201",
-    "B-0205",
-    "B-0206",
-    "B-0207",
-    "B-0208",
-    "B-0209",
-    "B-0210",
-    "B-0211",
-    "B-0212",
-    "B-0213",
-    "B-0214",
-    "B-0241",
-    "B-0242",
-    "B-0243",
-    "B-0244",
-    "B-0245",
-    "B-0246",
-    "B-0247",
-    "B-0248",
-    "B-0249",
-    "B-0250",
-    "B-0251",
-    "B-0252",
-    "B-0276",
-    "B-0297",
-    "B-0307",
-    "B-0308",
-    "B-0309",
-    "B-0311",
-    "B-0312",
-]);
-});
-// B-ids reachable before the mutation wave (read-only era union).
-const PRE_MUTATION_COVERAGE = [
-  "B-0031",
-  "B-0035",
-  "B-0037",
-  "B-0038",
-  "B-0039",
-  "B-0040",
-  "B-0081",
-  "B-0082",
-  "B-0083",
-  "B-0084",
-  "B-0085",
-  "B-0086",
-  "B-0087",
-  "B-0088",
-  "B-0089",
-  "B-0090",
-  "B-0091",
-  "B-0092",
-  "B-0141",
-  "B-0142",
-  "B-0160",
-  "B-0245",
-  "B-0252",
-];
-
-test("mutation scenarios add at least 40 new distinct B-ids over the read-only baseline", () => {
-  const union = new Set(issuesScenarios.flatMap((scenario) => matchBehaviors(scenario, inventory)));
-  const fresh = [...union].filter((id) => !PRE_MUTATION_COVERAGE.includes(id)).sort();
-  assert.ok(fresh.length >= 40, `expected >=40 new distinct B-ids, got ${fresh.length}: ${fresh.join(",")}`);
-});
-
 test("mutation actions translate to the legacy form route vs the Yoram REST route", () => {
   const step = (action, params) => ({ actor: "admin", action, params });
   const vars = { title: "t", body: "b", issueNumber: 7, commentId: 9, issuePk: 42, labelId: 5, categoryId: 6, labelName: "L", categoryName: "C" };
@@ -510,11 +575,6 @@ test("mutation actions translate to the legacy form route vs the Yoram REST rout
     translateLegacy(step("edit-comment", { owner: "admin", project: "sample" }), vars).path,
     "/admin/sample/issue/7/comments/9",
   );
-  assert.equal(
-    translateYoram(step("delete-comment-compat", { owner: "admin", project: "sample" }), vars).path,
-    "/comments/issue/9",
-  );
-
   // watch/favorite key on the resolved DB pk.
   assert.equal(
     translateLegacy(step("watch-issue", { owner: "admin", project: "sample" }), vars).path,

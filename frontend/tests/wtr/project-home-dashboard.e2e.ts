@@ -8,7 +8,10 @@ async function expectComputedParity(
   compareGeometry = true,
 ) {
   await page.waitForSelector(selector, { state: "attached" });
-  const result = await compareComputedParity(page, selector, legacyHtml, compareGeometry);
+  const legacyPage = legacyHtml.includes('class="prj"')
+    ? legacyHtml
+    : `<div class="prj"><div class="main">${legacyHtml}</div></div>`;
+  const result = await compareComputedParity(page, selector, legacyPage, compareGeometry);
   const summary = result.mismatches
     .map((m) => `${m.identity} ${m.field}: legacy=${m.reference} react=${m.candidate}`)
     .join("\n");
@@ -33,7 +36,10 @@ test("project home Dashboard tab matches legacy dashboard partials DOM", async (
   await expect(page.locator(".project-overview-home")).toBeVisible();
   await expect(page.locator(".span-left-pane > .nav-tabs li.active a")).toHaveText("Dashboard");
 
-  const expectedDashboardHtml = EXPECTED_PROJECT_DASHBOARD.replaceAll("__BASE_PATH__", basePath);
+  const expectedDashboardHtml = `<div class="prj"><div class="main">${EXPECTED_PROJECT_DASHBOARD.replaceAll(
+    "__BASE_PATH__",
+    basePath,
+  )}</div></div>`;
   for (const selector of [".project-header-outer", ".project-menu-outer", ".page-wrap-outer"]) {
     // F5 dist-truth (2026-08-11): the app's page-wrap rect is 20px taller
     // than the legacy fixture (the shell margin-top shift) — compare the

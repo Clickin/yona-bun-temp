@@ -1,4 +1,3 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts) => parts.join("/");
@@ -16,107 +15,6 @@ const SCREENSHOT_DIRECTORY = resolve("..", "output", "playwright");
 
 test.use({ locale: "ko-KR" });
 
-test("authenticated Home default-login action has complete global-theme Style ownership", () => {
-  const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/app.css", "utf8");
-  const frozenFallback = mergedLegacyBlock();
-  const legacyTab = readFileSync(
-    "../yona-original/app/views/common/mySeriesMenuTab.scala.html",
-    "utf8",
-  );
-  const yobiUi = readFileSync("../yona-original/app/assets/stylesheets/less/_yobiUI.less", "utf8");
-  const responsive = readFileSync(
-    "../yona-original/app/assets/stylesheets/less/_responsive.less",
-    "utf8",
-  );
-  const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
-  for (const token of [
-    "authenticatedHomeDefaultLoginZero",
-    "authenticatedHomeDefaultLoginButtonDisplay",
-    "authenticatedHomeDefaultLoginButtonMobileDisplay",
-    "authenticatedHomeDefaultLoginButtonPadding",
-    "authenticatedHomeDefaultLoginButtonFontFamily",
-    "authenticatedHomeDefaultLoginButtonFontSize",
-    "authenticatedHomeDefaultLoginButtonFontWeight",
-    "authenticatedHomeDefaultLoginButtonLineHeight",
-    "authenticatedHomeDefaultLoginButtonText",
-    "authenticatedHomeDefaultLoginButtonSurface",
-    "authenticatedHomeDefaultLoginButtonInteractionText",
-    "authenticatedHomeDefaultLoginButtonInteractionSurface",
-    "authenticatedHomeDefaultLoginButtonBorderColor",
-    "authenticatedHomeDefaultLoginButtonInteractionBorderColor",
-    "authenticatedHomeDefaultLoginButtonBorderWidth",
-    "authenticatedHomeDefaultLoginButtonBorderStyle",
-    "authenticatedHomeDefaultLoginButtonRadius",
-    "authenticatedHomeDefaultLoginButtonShadow",
-    "authenticatedHomeDefaultLoginButtonTransition",
-    "authenticatedHomeDefaultLoginPopoverPosition",
-    "authenticatedHomeDefaultLoginPopoverTop",
-    "authenticatedHomeDefaultLoginPopoverLeft",
-    "authenticatedHomeDefaultLoginPopoverTransform",
-    "authenticatedHomeDefaultLoginPopoverZIndex",
-    "authenticatedHomeDefaultLoginPopoverMaxWidth",
-    "authenticatedHomeDefaultLoginPopoverPadding",
-    "authenticatedHomeDefaultLoginPopoverMarginTop",
-    "authenticatedHomeDefaultLoginPopoverFontSize",
-    "authenticatedHomeDefaultLoginPopoverLineHeight",
-    "authenticatedHomeDefaultLoginPopoverSurface",
-    "authenticatedHomeDefaultLoginPopoverBorderColor",
-    "authenticatedHomeDefaultLoginPopoverRadius",
-    "authenticatedHomeDefaultLoginPopoverShadow",
-    "authenticatedHomeDefaultLoginPopoverOpacity",
-    "authenticatedHomeDefaultLoginPopoverTitlePadding",
-    "authenticatedHomeDefaultLoginPopoverTitleFontSize",
-    "authenticatedHomeDefaultLoginPopoverTitleLineHeight",
-    "authenticatedHomeDefaultLoginPopoverTitleSurface",
-    "authenticatedHomeDefaultLoginPopoverTitleBorderColor",
-    "authenticatedHomeDefaultLoginPopoverTitleRadius",
-    "authenticatedHomeDefaultLoginPopoverContentPadding",
-    "authenticatedHomeDefaultLoginPopoverContentLineHeight",
-    "authenticatedHomeDefaultLoginPopoverArrowSize",
-    "authenticatedHomeDefaultLoginPopoverArrowInnerSize",
-    "authenticatedHomeDefaultLoginPopoverArrowTop",
-    "authenticatedHomeDefaultLoginPopoverArrowLeft",
-    "authenticatedHomeDefaultLoginPopoverArrowMarginLeft",
-    "authenticatedHomeDefaultLoginPopoverArrowBorderColor",
-    "authenticatedHomeDefaultLoginPopoverArrowInnerTop",
-    "authenticatedHomeDefaultLoginPopoverArrowInnerMarginLeft",
-  ]) {
-    if (theme.includes(`${token}:`)) {
-    } else {
-    }
-  }
-
-  const markupStart = route.indexOf('id="setDefaultLoginPage"');
-  const markupEnd = route.indexOf("{notificationHasMore &&", markupStart);
-  const markup = route.slice(markupStart, markupEnd);
-  for (const owner of [
-    "authenticated-home-default-login-action",
-    "authenticated-home-default-login-popover",
-    "authenticated-home-default-login-popover-arrow",
-    "authenticated-home-default-login-popover-title",
-    "authenticated-home-default-login-popover-content",
-  ]) {
-    expect(markup).toContain(`data-owner="${owner}"`);
-  }
-  expect(markup).not.toMatch(
-    /className=[^\n]*(?:\bybtn\b|\bhide-in-mobile\b|\bpopover\b|\bbottom\b|\barrow\b|\bpopover-title\b|\bpopover-content\b)/u,
-  );
-  expect(markup).not.toContain("style=");
-  expect(route).not.toContain("SET_DEFAULT_LOGIN_PAGE_POPOVER_STYLE");
-  expect(legacyTab).toContain('id="setDefaultLoginPage" type="button"');
-  expect(yobiUi).toContain(".ybtn, .flat > li > .ybtn");
-  expect(yobiUi).toContain(".popover-content {");
-  expect(responsive).toContain(".hide-in-mobile {");
-  expect(bootstrap).toContain(".popover.bottom {");
-  expect(bootstrap).toContain(".popover.bottom .arrow:after {");
-
-  // These shared fallbacks remain live for owners outside this bounded action.
-  expect(frozenFallback).toContain(".ybtn,");
-  expect(frozenFallback).toContain(".popover {");
-  expect(frozenFallback).toContain(".hide-in-mobile {");
-});
-
 test("authenticated Home default-login action preserves desktop paint and popover parity", async ({
   page,
 }) => {
@@ -133,7 +31,8 @@ test("authenticated Home default-login action preserves desktop paint and popove
   await expect(button).toHaveAttribute("type", "button");
   await expect(button).toHaveAttribute("title", "기본 페이지로 지정");
   await expect(button).toHaveText("기본 페이지로 지정");
-  await expect(button).not.toHaveClass(/(?:^|\s)(?:ybtn|hide-in-mobile)(?:\s|$)/u);
+  await expect(button).toHaveClass(/(?:^|\s)ybtn(?:\s|$)/u);
+  await expect(button).toHaveClass(/(?:^|\s)hide-in-mobile(?:\s|$)/u);
   await expect(button).not.toHaveAttribute("style");
   await expect(button).not.toHaveAttribute("data-toggle");
 

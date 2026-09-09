@@ -52,9 +52,6 @@ test("authenticated Home notification row has complete global-theme Style owners
   expect(item).toContain('notification.eventType === "ISSUE_BODY_CHANGED"');
   expect(item).toContain('notification.eventType === "COMMENT_UPDATED"');
   expect(item).not.toMatch(
-    /className=(?:"|\{`)[^\n]*(?:notification-stream|stream-type|stream-desc|stream-info|title|message-wrap|nowrap|message|more|meta|author|ago|pull-right)/u,
-  );
-  expect(item).not.toMatch(
     /data-(?:target|toggle)=|document\.|classList|addEventListener|dangerouslySetInnerHTML/u,
   );
 
@@ -63,17 +60,6 @@ test("authenticated Home notification row has complete global-theme Style owners
   expect(appCss).not.toContain(".notification-stream {");
   expect(less).toContain(".notification-stream {");
 
-  const homeList = route.slice(
-    route.lastIndexOf("<div", route.indexOf('data-owner="authenticated-home-content-grid"')),
-    route.indexOf('data-owner="authenticated-home-index-rail"'),
-  );
-  // WTR/PW parity: the grid deliberately retains its legacy row-fluid/
-  // content-container + span8/main-stream + activity-streams class hooks
-  // (fallback CSS selectors asserted above); scope the pin to non-retained
-  // legacy presentation names.
-  expect(homeList).not.toMatch(
-    /className=[^\n]*\b(?:notification-stream|stream-type|stream-desc|stream-info|nowrap|welcome-table|guide-toggle|site-guide-outer)\b/u,
-  );
 });
 
 for (const viewport of [
@@ -104,7 +90,7 @@ for (const viewport of [
 
     const row = page.locator(ROW);
     await expect(row).toHaveCount(1);
-    await expect(row).not.toHaveClass(/\bnotification-stream\b/u);
+    await expect(row).toHaveClass(/\bnotification-stream\b/u);
     await expect(row.locator('[data-owner="authenticated-home-notification-type"]')).toHaveCount(1);
     await expect(row.locator("i.yobicon-comment2")).toHaveCount(1);
     await expect(row.locator("a.avatar-wrap.smaller img")).toHaveCount(1);
@@ -168,8 +154,10 @@ for (const viewport of [
             rowX: 10,
             // F5 dist-truth (2026-08-11): the affix+header+tab stack renders
             // 4.6px taller than the F5 capture (affix 43px + header 40px +
-            // tab strip); re-pinned to the measured value (HARNESS_ENV)
-            rowY: 173.578125,
+            // tab strip). Re-pinned 2026-09-09: restoring the legacy 2px
+            // guide-toggle border top made the harness match the F5 value
+            // exactly and the live matched pair reads 376.078 = 376.078.
+            rowY: 174.078125,
             typeX: 35,
           }
         : {
@@ -180,13 +168,16 @@ for (const viewport of [
             // e2e closure ledger (2026-08-11): mobile F5 dist-truth — the
             // "..." more marker renders at 390px (seeded message overflows
             // the 200px clamp) and the 90%-wide desc follows the type onto
-            // the next line, making the row 305px (was 271 pre-marker); the
-            // admin affix wraps to two lines at 390px, shifting the row to
-            // y=204 (was 181).
+            // the next line, making the row 305px (was 271 pre-marker).
+            // Re-pinned 2026-09-09: the earlier y=204 assumed the removed
+            // harness-era affix pin (66px two-line wrap at 390px). Live
+            // legacy 1.16 at 390px measures the affix as a single 43px line
+            // (line-height 20px, width auto 380px), matching the natural
+            // 181px row position after the pin's removal.
             rowHeight: 305,
             rowWidth: 390,
             rowX: 0,
-            rowY: 204,
+            rowY: 181,
             typeX: 25,
           };
     expect(evidence.row).toMatchObject({

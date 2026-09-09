@@ -233,6 +233,51 @@ async fn assert_attachment_container_acl(
     assert_eq!(read_response.status(), expected_status);
 }
 
+async fn delete_attachment_with_csrf(
+    app: axum::Router,
+    cookie_header: &str,
+    csrf: &str,
+    attachment_id: i64,
+) -> StatusCode {
+    app.oneshot(
+        Request::builder()
+            .method(Method::DELETE)
+            .uri(format!("/yona/files/{attachment_id}"))
+            .header(http::header::COOKIE, cookie_header)
+            .header("x-csrf-token", csrf)
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await
+    .unwrap()
+    .status()
+}
+
+async fn insert_attachment_row(
+    db: &DatabaseConnection,
+    container_type: &str,
+    container_id: i64,
+    owner_login_id: &str,
+    hash: &str,
+    name: &str,
+) -> i64 {
+    attachment::ActiveModel {
+        id: NotSet,
+        name: Set(Some(name.to_string())),
+        hash: Set(Some(hash.to_string())),
+        container_type: Set(Some(container_type.to_string())),
+        mime_type: Set(Some("text/plain".to_string())),
+        size: Set(Some(11)),
+        container_id: Set(container_id),
+        created_date: Set(None),
+        owner_login_id: Set(Some(owner_login_id.to_string())),
+    }
+    .insert(db)
+    .await
+    .unwrap()
+    .id
+}
+
 #[tokio::test]
 // Guards legacy `/admin` public profile deep-link parity; site-admin lives under `/sites/*`.
 async fn single_segment_admin_falls_back_to_application_index() {
@@ -1642,7 +1687,7 @@ async fn file_upload_respects_injected_max_file_size() {
 
 #[tokio::test]
 async fn attachment_binding_uses_legacy_container_type_names() {
-    let (app, repository, _) = build_auth_router().await;
+    let (app, repository, db) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
     let owner_id = register_user(app.clone(), &cookie_header, &csrf, "owner").await;
     let (other_csrf, other_cookie_header) = bootstrap(app.clone()).await;
@@ -1771,6 +1816,7 @@ async fn attachment_binding_uses_legacy_container_type_names() {
             issue_number: issue.issue_number,
             owner_name: "owner".to_string(),
             project_name: "projectYobi".to_string(),
+            send_notification: true,
             values: IssueMutationInput {
                 assignee_login_id: None,
                 attachment_ids: vec![replacement_issue_file_id],
@@ -1898,6 +1944,12 @@ async fn attachment_binding_uses_legacy_container_type_names() {
         .unwrap();
     repository
         .add_project_membership(private_project.id, owner_id, "manager")
+        .await
+        .unwrap();
+    let (editor_csrf, editor_cookie_header) = bootstrap(app.clone()).await;
+    let editor_id = register_user(app.clone(), &editor_cookie_header, &editor_csrf, "editor").await;
+    repository
+        .add_project_membership(private_project.id, editor_id, "member")
         .await
         .unwrap();
     let private_issue_file_id = upload_image_file(
@@ -2179,6 +2231,41 @@ async fn attachment_binding_uses_legacy_container_type_names() {
     )
     .await;
 
+    for (container_type, container_id, name) in [
+        ("ISSUE_POST", private_issue.id, "editor-private-issue.txt"),
+        ("BOARD_POST", private_posting.id, "editor-private-post.txt"),
+        (
+            "MILESTONE",
+            private_milestone.id,
+            "editor-private-milestone.txt",
+        ),
+        (
+            "PULL_REQUEST",
+            private_pull_request.id,
+            "editor-private-pull-request.txt",
+        ),
+        (
+            "REVIEW_COMMENT",
+            private_review_comment.id,
+            "editor-private-review-comment.txt",
+        ),
+    ] {
+        let hash = format!("hash-{name}");
+        let editor_attachment_id =
+            insert_attachment_row(&db, container_type, container_id, "owner", &hash, name).await;
+        assert_eq!(
+            delete_attachment_with_csrf(
+                app.clone(),
+                &editor_cookie_header,
+                &editor_csrf,
+                editor_attachment_id,
+            )
+            .await,
+            StatusCode::OK,
+            "project member can update {container_type} attachments"
+        );
+    }
+
     let issue_comment_file_id = upload_image_file(
         app.clone(),
         &cookie_header,
@@ -2226,6 +2313,7 @@ async fn attachment_binding_uses_legacy_container_type_names() {
             issue_number: issue.issue_number,
             owner_name: "owner".to_string(),
             project_name: "projectYobi".to_string(),
+            send_notification: false,
         })
         .await
         .unwrap()
@@ -2576,6 +2664,228 @@ async fn attachment_binding_uses_legacy_container_type_names() {
 }
 
 #[tokio::test]
+async fn attachment_acl_uses_issue_author_assignee_and_container_update_roles() {
+    let data_root = tempdir().expect("attachment ACL data root");
+    let (app, repository, db) = build_auth_router_with_app_config(AppRuntimeConfig {
+        data_root: data_root.path().to_path_buf(),
+        ..AppRuntimeConfig::default()
+    })
+    .await;
+    let (owner_csrf, owner_cookie) = bootstrap(app.clone()).await;
+    let owner_id = register_user(app.clone(), &owner_cookie, &owner_csrf, "owner").await;
+    let (author_csrf, author_cookie) = bootstrap(app.clone()).await;
+    let author_id = register_user(app.clone(), &author_cookie, &author_csrf, "author").await;
+    let (assignee_csrf, assignee_cookie) = bootstrap(app.clone()).await;
+    let assignee_id =
+        register_user(app.clone(), &assignee_cookie, &assignee_csrf, "assignee").await;
+    let (editor_csrf, editor_cookie) = bootstrap(app.clone()).await;
+    let editor_id = register_user(app.clone(), &editor_cookie, &editor_csrf, "editor").await;
+    let (sharer_csrf, sharer_cookie) = bootstrap(app.clone()).await;
+    let sharer_id = register_user(app.clone(), &sharer_cookie, &sharer_csrf, "sharer").await;
+    let (outsider_csrf, outsider_cookie) = bootstrap(app.clone()).await;
+    let outsider_id =
+        register_user(app.clone(), &outsider_cookie, &outsider_csrf, "outsider").await;
+
+    let project = repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "owner".to_string(),
+            overview: Some("issue attachment ACL".to_string()),
+            project_name: "privateAcl".to_string(),
+            project_scope: "private".to_string(),
+            vcs: "GIT".to_string(),
+            initial_manager_user_id: Some(owner_id),
+        })
+        .await
+        .unwrap();
+    repository
+        .add_project_membership(project.id, assignee_id, "member")
+        .await
+        .unwrap();
+    repository
+        .add_project_membership(project.id, editor_id, "member")
+        .await
+        .unwrap();
+
+    let author_file_id =
+        upload_image_file(app.clone(), &author_cookie, &author_csrf, "author.txt").await;
+    let issue = repository
+        .create_issue(CreateIssueInput {
+            actor_display_name: "author".to_string(),
+            actor_id: author_id,
+            actor_login_id: "author".to_string(),
+            owner_name: "owner".to_string(),
+            project_name: "privateAcl".to_string(),
+            values: IssueMutationInput {
+                assignee_login_id: Some("assignee".to_string()),
+                attachment_ids: vec![author_file_id],
+                body_markdown: "issue body".to_string(),
+                due_date: None,
+                is_draft: false,
+                is_publish: false,
+                label_ids: Vec::new(),
+                milestone_id: None,
+                parent_issue_id: None,
+                title: "ACL issue".to_string(),
+            },
+        })
+        .await
+        .unwrap()
+        .expect("ACL issue");
+    repository
+        .add_issue_sharer(issue.id, sharer_id, "sharer")
+        .await
+        .unwrap();
+
+    let assignee_file_id = insert_attachment_row(
+        &db,
+        "ISSUE_POST",
+        issue.id,
+        "owner",
+        "acl-assignee-hash",
+        "assignee.txt",
+    )
+    .await;
+    let editor_file_id = insert_attachment_row(
+        &db,
+        "ISSUE_POST",
+        issue.id,
+        "owner",
+        "acl-editor-hash",
+        "editor.txt",
+    )
+    .await;
+    let sharer_file_id = insert_attachment_row(
+        &db,
+        "ISSUE_POST",
+        issue.id,
+        "owner",
+        "acl-sharer-hash",
+        "sharer.txt",
+    )
+    .await;
+    let outsider_file_id = insert_attachment_row(
+        &db,
+        "ISSUE_POST",
+        issue.id,
+        "outsider",
+        "acl-outsider-hash",
+        "outsider.txt",
+    )
+    .await;
+    for (hash, bytes) in [
+        ("acl-assignee-hash", &b"assignee bytes"[..]),
+        ("acl-editor-hash", &b"editor bytes"[..]),
+        ("acl-sharer-hash", &b"sharer bytes"[..]),
+        ("acl-outsider-hash", &b"outsider bytes"[..]),
+    ] {
+        fs::write(data_root.path().join("uploads").join(hash), bytes).unwrap();
+    }
+
+    assert_attachment_container_acl(
+        app.clone(),
+        &author_cookie,
+        "ISSUE_POST",
+        issue.id,
+        assignee_file_id,
+        StatusCode::OK,
+    )
+    .await;
+    assert_eq!(
+        delete_attachment_with_csrf(app.clone(), &author_cookie, &author_csrf, author_file_id)
+            .await,
+        StatusCode::OK,
+        "issue author has container UPDATE"
+    );
+
+    assert_attachment_container_acl(
+        app.clone(),
+        &assignee_cookie,
+        "ISSUE_POST",
+        issue.id,
+        assignee_file_id,
+        StatusCode::OK,
+    )
+    .await;
+    assert_eq!(
+        delete_attachment_with_csrf(
+            app.clone(),
+            &assignee_cookie,
+            &assignee_csrf,
+            assignee_file_id,
+        )
+        .await,
+        StatusCode::OK,
+        "issue assignee has container UPDATE"
+    );
+
+    assert_attachment_container_acl(
+        app.clone(),
+        &editor_cookie,
+        "ISSUE_POST",
+        issue.id,
+        editor_file_id,
+        StatusCode::OK,
+    )
+    .await;
+    assert_eq!(
+        delete_attachment_with_csrf(app.clone(), &editor_cookie, &editor_csrf, editor_file_id)
+            .await,
+        StatusCode::OK,
+        "project member has container UPDATE"
+    );
+
+    assert_attachment_container_acl(
+        app.clone(),
+        &sharer_cookie,
+        "ISSUE_POST",
+        issue.id,
+        sharer_file_id,
+        StatusCode::OK,
+    )
+    .await;
+    assert_eq!(
+        delete_attachment_with_csrf(app.clone(), &sharer_cookie, &sharer_csrf, sharer_file_id)
+            .await,
+        StatusCode::FORBIDDEN,
+        "issue sharer has READ but not container UPDATE"
+    );
+
+    assert_attachment_container_acl(
+        app.clone(),
+        &outsider_cookie,
+        "ISSUE_POST",
+        issue.id,
+        outsider_file_id,
+        StatusCode::FORBIDDEN,
+    )
+    .await;
+    assert_eq!(
+        delete_attachment_with_csrf(
+            app.clone(),
+            &outsider_cookie,
+            &outsider_csrf,
+            outsider_file_id,
+        )
+        .await,
+        StatusCode::FORBIDDEN,
+        "uploader without container UPDATE cannot delete"
+    );
+
+    let temp_file_id =
+        upload_image_file(app.clone(), &outsider_cookie, &outsider_csrf, "temp.txt").await;
+    assert_attachment_container_acl(
+        app.clone(),
+        &owner_cookie,
+        "USER",
+        outsider_id,
+        temp_file_id,
+        StatusCode::FORBIDDEN,
+    )
+    .await;
+}
+
+#[tokio::test]
 async fn project_logo_update_binds_legacy_project_attachment_and_returns_logo_url() {
     let (app, repository, _) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
@@ -2666,7 +2976,7 @@ async fn project_logo_update_binds_legacy_project_attachment_and_returns_logo_ur
 
 #[tokio::test]
 async fn organization_logo_update_binds_legacy_organization_attachment_and_returns_logo_url() {
-    let (app, repository, _) = build_auth_router().await;
+    let (app, repository, db) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
     register_user(app.clone(), &cookie_header, &csrf, "owner").await;
     let create_organization = app
@@ -2691,6 +3001,13 @@ async fn organization_logo_update_binds_legacy_organization_attachment_and_retur
         .await
         .unwrap()
         .expect("created organization");
+    let (org_admin_csrf, org_admin_cookie) = bootstrap(app.clone()).await;
+    let org_admin_id =
+        register_user(app.clone(), &org_admin_cookie, &org_admin_csrf, "org-admin").await;
+    repository
+        .add_organization_membership(organization.id, org_admin_id, "org_admin")
+        .await
+        .unwrap();
 
     let logo_id =
         upload_image_file(app.clone(), &cookie_header, &csrf, "organization-logo.png").await;
@@ -2739,6 +3056,31 @@ async fn organization_logo_update_binds_legacy_organization_attachment_and_retur
     let container_body = container.into_body().collect().await.unwrap().to_bytes();
     let container_json: serde_json::Value = serde_json::from_slice(&container_body).unwrap();
     assert_eq!(container_json["logoUrl"], format!("/yona/files/{logo_id}"));
+
+    let unrelated_org_attachment_id = insert_attachment_row(
+        &db,
+        "ORGANIZATION",
+        organization.id,
+        "owner",
+        "organization-admin-hash",
+        "organization-admin.txt",
+    )
+    .await;
+    assert_ne!(
+        org_admin_id, organization.id,
+        "organization admin is identified by membership, not matching IDs"
+    );
+    assert_eq!(
+        delete_attachment_with_csrf(
+            app.clone(),
+            &org_admin_cookie,
+            &org_admin_csrf,
+            unrelated_org_attachment_id,
+        )
+        .await,
+        StatusCode::OK,
+        "unrelated organization admin can update organization attachments"
+    );
 
     let public_logo = app
         .oneshot(

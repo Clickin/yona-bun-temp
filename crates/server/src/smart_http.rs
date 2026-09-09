@@ -196,10 +196,12 @@ pub(crate) async fn direct_smart_http_request(
         .headers
         .get(http::header::CONTENT_TYPE)
         .and_then(|value| value.to_str().ok());
+    let content_type = content_type.map(str::to_owned);
     let git_protocol = parts
         .headers
         .get("git-protocol")
         .and_then(|value| value.to_str().ok());
+    let git_protocol = git_protocol.map(str::to_owned);
     let remote_addr = smart_http_remote_addr(&parts.headers);
     let repo_path = match yoram_vcs::repository_path(
         &service.data_root,
@@ -223,17 +225,26 @@ pub(crate) async fn direct_smart_http_request(
         Vec::new()
     };
 
-    let response = yoram_vcs::run_git_http_backend(GitHttpBackendRequest {
-        body: &body_bytes,
-        content_type,
-        git_protocol,
-        method: &method,
-        path_info: &path_info,
-        query_string: &query_string,
-        remote_addr: &remote_addr,
-        remote_user: remote_user.as_deref(),
-        repo_root: &repo_root,
-    });
+    let response = match tokio::task::spawn_blocking(move || {
+        yoram_vcs::run_git_http_backend(GitHttpBackendRequest {
+            body: &body_bytes,
+            content_type: content_type.as_deref(),
+            git_protocol: git_protocol.as_deref(),
+            method: &method,
+            path_info: &path_info,
+            query_string: &query_string,
+            remote_addr: &remote_addr,
+            remote_user: remote_user.as_deref(),
+            repo_root: &repo_root,
+        })
+    })
+    .await
+    {
+        Ok(response) => response,
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
+        }
+    };
 
     match response {
         Ok(output) => {

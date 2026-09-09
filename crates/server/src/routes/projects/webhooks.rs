@@ -804,8 +804,7 @@ pub(super) async fn rest_read_project_webhooks(
     };
     // Legacy ProjectApp.webhooks() is @IsAllowed(Operation.UPDATE).
     let authorization =
-        rest_require_project_update(repository, &owner_name, &project_name, Some(actor_id))
-            .await?;
+        rest_require_project_update(repository, &owner_name, &project_name, Some(actor_id)).await?;
     let webhooks = repository
         .list_project_webhooks(authorization.project.id)
         .await

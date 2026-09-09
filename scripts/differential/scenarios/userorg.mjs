@@ -186,7 +186,9 @@ export const scenarios = [
     title: "toggle per-project notification watch twice (self-reverting)",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
+      { actor: "admin", action: "watch-project", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "toggle-noti-watch", params: { owner: "admin", project: "sample", notiType: "NEW_ISSUE" } },
+      { actor: "admin", action: "unwatch-project", params: { owner: "admin", project: "sample" } },
     ],
     behaviorMatcher: {
       action: /^WatchProjectApp\.toggle$/,

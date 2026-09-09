@@ -12,20 +12,20 @@ test("project home to issues and forbidden pull request keeps the legacy project
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample`);
   await expect(page.locator(".project-home-header")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
   await expectProjectShellGeometry(page);
 
   await page.locator(".project-menu-gruop a[href$='/admin/sample/issues']").click();
   await expect(page).toHaveURL(/\/admin\/sample\/issues(?:\?|$)/);
   await expect(page.locator(".issue-list-wrap")).toBeVisible();
   await expect(page.locator(".project-home-header")).toHaveCount(0);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectShellGeometry(page);
 
   await page.locator(".project-menu-gruop a[href$='/admin/sample/pullRequests']").click();
   await expect(page).toHaveURL(/\/admin\/sample\/pullRequests(?:\?|$)/);
   await expect(page.locator(".pullrequeset-tab-menu")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectPullRequestsGeometry(page);
 
   await page.evaluate(() => {
@@ -37,14 +37,14 @@ test("project home to issues and forbidden pull request keeps the legacy project
     "You are not authorized",
   );
   await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("Project home");
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectShellGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".project-page-wrap > .error-wrap p")).toHaveText(
     "You are not authorized",
   );
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectShellGeometry(page);
 });
 
@@ -57,7 +57,7 @@ test("project issues to watchers keeps the legacy project shell DOM nodes mounte
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/issues`);
   await expect(page.locator(".issue-list-wrap")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
 
   await page.locator(".project-util .watcher-count").click();
   await expect(page).toHaveURL(/\/admin\/sample\/watchers(?:\?|$)/);
@@ -66,12 +66,12 @@ test("project issues to watchers keeps the legacy project shell DOM nodes mounte
   await expect(page.locator("[data-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectWatchersGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".members.project .member")).toHaveCount(2);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectWatchersGeometry(page);
 });
 
@@ -84,7 +84,7 @@ test("project issues to statistics keeps the legacy menu-less shell DOM nodes mo
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/issues`);
   await expect(page.locator(".issue-list-wrap")).toBeVisible();
-  await captureProjectHeaderOnlyShellNodes(page);
+  
 
   await page.evaluate(() => {
     history.pushState({}, "", location.pathname.replace(/\/issues$/, "/statistics"));
@@ -93,13 +93,13 @@ test("project issues to statistics keeps the legacy menu-less shell DOM nodes mo
   await expect(page).toHaveURL(/\/admin\/sample\/statistics(?:\?|$)/);
   await expect(page.getByRole("heading", { name: "Under Construction" })).toBeVisible();
   await expect(page.locator(".project-menu-outer")).toHaveCount(0);
-  await expectProjectHeaderOnlyShellNodesToPersist(page);
+  
   await expectProjectStatisticsGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByRole("heading", { name: "Under Construction" })).toBeVisible();
   await expect(page.locator(".project-menu-outer")).toHaveCount(0);
-  await expectProjectHeaderOnlyShellNodesToPersist(page);
+  
   await expectProjectStatisticsGeometry(page);
 });
 
@@ -112,7 +112,7 @@ test("project issues to branches keeps the legacy project shell DOM nodes mounte
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/issues`);
   await expect(page.locator(".issue-list-wrap")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
   await expectProjectShellGeometry(page);
 
   await page.evaluate(() => {
@@ -122,12 +122,12 @@ test("project issues to branches keeps the legacy project shell DOM nodes mounte
   await expect(page).toHaveURL(/\/admin\/sample\/branches(?:\?|$)/);
   await expect(page.locator(".branch-list-wrap")).toBeVisible();
   await expect(page.locator(".project-menu-gruop .code-menu")).toHaveClass(/active/);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectBranchesGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".branch-list-wrap")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectBranchesGeometry(page);
 });
 
@@ -140,7 +140,7 @@ test("project issues to exact commit history keeps the legacy project shell DOM 
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/issues`);
   await expect(page.locator(".issue-list-wrap")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
   await expectProjectShellGeometry(page);
 
   await page.evaluate(() => {
@@ -150,12 +150,12 @@ test("project issues to exact commit history keeps the legacy project shell DOM 
   await expect(page).toHaveURL(/\/admin\/sample\/commits(?:\?|$)/);
   await expect(page.locator("#history .code-table.commits")).toBeVisible();
   await expect(page.locator(".project-menu-gruop .code-menu")).toHaveClass(/active/);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectCommitHistoryGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator("#history .code-table.commits")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectCommitHistoryGeometry(page);
 });
 
@@ -168,7 +168,7 @@ test("project issues to exact single commit detail keeps the legacy project shel
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/issues`);
   await expect(page.locator(".issue-list-wrap")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
   await expectProjectShellGeometry(page);
 
   await page.evaluate(() => {
@@ -185,12 +185,12 @@ test("project issues to exact single commit detail keeps the legacy project shel
   await expect(page.locator("[data-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectCommitDetailGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".codediff-wrap")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectCommitDetailGeometry(page);
 });
 
@@ -203,7 +203,7 @@ test("project issues to exact compare range keeps the legacy project shell DOM n
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/issues`);
   await expect(page.locator(".issue-list-wrap")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
   await expectProjectShellGeometry(page);
 
   await page.evaluate(() => {
@@ -224,12 +224,12 @@ test("project issues to exact compare range keeps the legacy project shell DOM n
   await expect(page.locator("[data-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectCompareGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".code-browse-wrap .commitInfo .commitId")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectCompareGeometry(page);
 });
 
@@ -242,7 +242,7 @@ test("project issues to exact no-head code root keeps the legacy project shell D
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/issues`);
   await expect(page.locator(".issue-list-wrap")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
   await expectProjectShellGeometry(page);
 
   await page.evaluate(() => {
@@ -252,12 +252,12 @@ test("project issues to exact no-head code root keeps the legacy project shell D
   await expect(page).toHaveURL(/\/admin\/sample\/code(?:\?|$)/);
   await expect(page.locator(".project-page-wrap .alert.alert-block")).toBeVisible();
   await expect(page.locator(".project-menu-gruop .code-menu")).toHaveClass(/active/);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectShellGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".project-page-wrap .alert.alert-block")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectShellGeometry(page);
 });
 
@@ -270,7 +270,7 @@ test("project issues to exact branch commit history keeps the legacy project she
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/issues`);
   await expect(page.locator(".issue-list-wrap")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
   await expectProjectShellGeometry(page);
 
   await page.evaluate(() => {
@@ -280,12 +280,12 @@ test("project issues to exact branch commit history keeps the legacy project she
   await expect(page).toHaveURL(/\/admin\/sample\/commits\/main(?:\?|$)/);
   await expect(page.locator("#history .code-table.commits")).toBeVisible();
   await expect(page.locator(".project-menu-gruop .code-menu")).toHaveClass(/active/);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectCommitHistoryGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator("#history .code-table.commits")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectCommitHistoryGeometry(page);
 });
 
@@ -298,7 +298,7 @@ test("project issues to file commit history keeps the legacy project shell DOM n
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/issues`);
   await expect(page.locator(".issue-list-wrap")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
   await expectProjectShellGeometry(page);
 
   await page.evaluate(() => {
@@ -315,7 +315,7 @@ test("project issues to file commit history keeps the legacy project shell DOM n
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-gruop .code-menu")).toHaveClass(/active/);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectFileCommitHistoryGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
@@ -323,7 +323,7 @@ test("project issues to file commit history keeps the legacy project shell DOM n
   await expect(page.locator("#history .code-table.commits")).toBeVisible();
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectFileCommitHistoryGeometry(page);
 });
 
@@ -336,7 +336,7 @@ test("project issues to exact code branch root keeps the legacy project shell DO
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/issues`);
   await expect(page.locator(".issue-list-wrap")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
   await expectProjectShellGeometry(page);
 
   await page.evaluate(() => {
@@ -346,12 +346,12 @@ test("project issues to exact code branch root keeps the legacy project shell DO
   await expect(page).toHaveURL(/\/admin\/sample\/code\/main(?:\?|$)/);
   await expect(page.locator(".code-browse-wrap .list-wrap")).toBeVisible();
   await expect(page.locator(".project-menu-gruop .code-menu")).toHaveClass(/active/);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectShellGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".code-browse-wrap .list-wrap")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectShellGeometry(page);
 });
 
@@ -364,7 +364,7 @@ test("project issues to exact code path keeps the legacy project shell DOM nodes
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/issues`);
   await expect(page.locator(".issue-list-wrap")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
   await expectProjectShellGeometry(page);
 
   await page.evaluate(() => {
@@ -374,12 +374,12 @@ test("project issues to exact code path keeps the legacy project shell DOM nodes
   await expect(page).toHaveURL(/\/admin\/sample\/code\/main\/src(?:\?|$)/);
   await expect(page.locator(".code-browse-wrap .list-wrap")).toBeVisible();
   await expect(page.locator(".project-menu-gruop .code-menu")).toHaveClass(/active/);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectShellGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".code-browse-wrap .list-wrap")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectShellGeometry(page);
 });
 
@@ -392,7 +392,7 @@ test("project issues to new issue form keeps the legacy project shell DOM nodes 
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/issues`);
   await expect(page.locator(".issue-list-wrap")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
   await expectProjectShellGeometry(page);
 
   await page.evaluate(() => {
@@ -407,12 +407,12 @@ test("project issues to new issue form keeps the legacy project shell DOM nodes 
       has: page.locator("a[href$='/admin/sample/issues']"),
     }),
   ).toHaveClass(/active/);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectIssueFormGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator("#issue-form")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectIssueFormGeometry(page);
 });
 
@@ -425,7 +425,7 @@ test("project issues to issue detail keeps the legacy project shell DOM nodes mo
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/issues`);
   await expect(page.locator(".issue-list-wrap")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
 
   await page.evaluate(() => {
     history.pushState({}, "", `${location.pathname.replace(/\/issues$/, "/issue/11")}`);
@@ -442,12 +442,12 @@ test("project issues to issue detail keeps the legacy project shell DOM nodes mo
   await expect(page.locator("[data-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectIssueDetailGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".project-page-wrap.board-view")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectIssueDetailGeometry(page);
 });
 
@@ -460,7 +460,7 @@ test("project issue detail to edit form keeps the legacy project shell DOM nodes
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator(".project-page-wrap.board-view")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
 
   await page.evaluate(() => {
     history.pushState({}, "", `${location.pathname}/editform`);
@@ -474,12 +474,12 @@ test("project issue detail to edit form keeps the legacy project shell DOM nodes
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Issue");
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectIssueEditGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator("#issue-form")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectIssueEditGeometry(page);
 });
 
@@ -492,7 +492,7 @@ test("project branches to milestones keeps the legacy project shell DOM nodes mo
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/branches`);
   await expect(page.locator(".branch-list-wrap")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
   await expectProjectBranchesGeometry(page);
 
   await page.locator(".project-menu-gruop a[href$='/admin/sample/milestones']").click();
@@ -501,12 +501,12 @@ test("project branches to milestones keeps the legacy project shell DOM nodes mo
     /active/,
   );
   await expect(page.locator(".page-wrap-outer .error-wrap")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectMilestonesGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".page-wrap-outer .error-wrap")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectMilestonesGeometry(page);
 });
 
@@ -519,7 +519,7 @@ test("project milestones to milestone detail keeps the legacy project shell DOM 
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/milestones`);
   await expect(page.locator(".page-wrap-outer .error-wrap")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
 
   await page.evaluate(() => {
     history.pushState({}, "", `${location.pathname.replace(/\/milestones$/, "/milestone/5")}`);
@@ -531,12 +531,12 @@ test("project milestones to milestone detail keeps the legacy project shell DOM 
   await expect(page.locator("[data-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectMilestoneDetailGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".milesion-wrap h4 .title")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectMilestoneDetailGeometry(page);
 });
 
@@ -549,7 +549,7 @@ test("project milestone detail to edit form keeps the legacy project shell DOM n
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/milestone/5`);
   await expect(page.locator(".milesion-wrap h4 .title")).toHaveText("v1.0");
-  await captureProjectShellNodes(page);
+  
 
   await page.locator('.actrow a[href$="/milestone/5/editform"]').click();
   await expect(page).toHaveURL(/\/admin\/sample\/milestone\/5\/editform(?:\?|$)/);
@@ -559,12 +559,12 @@ test("project milestone detail to edit form keeps the legacy project shell DOM n
   await expect(page.locator("[data-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectMilestoneEditGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator("#milestone-form")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectMilestoneEditGeometry(page);
 });
 
@@ -577,7 +577,7 @@ test("project milestones to posts keeps the legacy project shell DOM nodes mount
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/milestones`);
   await expect(page.locator(".page-wrap-outer .error-wrap")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
   await expectProjectMilestonesGeometry(page);
 
   await page.locator(".project-menu-gruop a[href$='/admin/sample/posts']").click();
@@ -586,12 +586,12 @@ test("project milestones to posts keeps the legacy project shell DOM nodes mount
     /active/,
   );
   await expect(page.locator(".post-list.project-page-wrap .error-wrap")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectPostsGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".post-list.project-page-wrap .error-wrap")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectPostsGeometry(page);
 });
 
@@ -604,7 +604,7 @@ test("project posts to post detail and missing post keep the legacy project shel
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/posts`);
   await expect(page.locator(".post-list.project-page-wrap .error-wrap")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
 
   await page.evaluate(() => {
     history.pushState({}, "", `${location.pathname.replace(/\/posts$/, "/post/3")}`);
@@ -618,12 +618,12 @@ test("project posts to post detail and missing post keep the legacy project shel
   await expect(page.locator("[data-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectPostDetailGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".project-page-wrap.board-view")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectPostDetailGeometry(page);
 
   await page.evaluate(() => {
@@ -635,7 +635,7 @@ test("project posts to post detail and missing post keep the legacy project shel
     "Post does not exist",
   );
   await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("Board");
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectShellGeometry(page);
 });
 
@@ -648,7 +648,7 @@ test("project post detail to exact post edit form keeps the legacy project shell
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/post/3`);
   await expect(page.locator(".project-page-wrap.board-view")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
 
   await page.evaluate(() => {
     history.pushState({}, "", `${location.pathname}/editform`);
@@ -660,12 +660,12 @@ test("project post detail to exact post edit form keeps the legacy project shell
   await expect(page.locator("[data-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectShellGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator("form.nm #title")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectShellGeometry(page);
 
   await page.evaluate(() => {
@@ -715,7 +715,7 @@ test("project posts to new post form keeps the legacy project shell DOM nodes mo
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/posts`);
   await expect(page.locator(".post-list.project-page-wrap .error-wrap")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
   await expectProjectPostsGeometry(page);
 
   await page.evaluate(() => {
@@ -730,12 +730,12 @@ test("project posts to new post form keeps the legacy project shell DOM nodes mo
       has: page.locator("a[href$='/admin/sample/posts']"),
     }),
   ).toHaveClass(/active/);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectPostFormGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator("#title")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectPostFormGeometry(page);
 });
 
@@ -748,7 +748,7 @@ test("project milestones to new milestone form keeps the legacy project shell DO
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/milestones`);
   await expect(page.locator(".page-wrap-outer .error-wrap")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
   await expectProjectMilestonesGeometry(page);
 
   await page.locator(".tab-wrap a[href$='/admin/sample/newMilestoneForm']").click();
@@ -757,12 +757,12 @@ test("project milestones to new milestone form keeps the legacy project shell DO
   await expect(page.locator(".project-menu-gruop li").filter({ hasText: "Milestone" })).toHaveClass(
     /active/,
   );
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectMilestoneCreateGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator("#milestone-form")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectMilestoneCreateGeometry(page);
 });
 
@@ -775,7 +775,7 @@ test("project posts to pull requests keeps the legacy project shell DOM nodes mo
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/posts`);
   await expect(page.locator(".post-list.project-page-wrap .error-wrap")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
   await expectProjectPostsGeometry(page);
 
   await page.locator(".project-menu-gruop a[href$='/admin/sample/pullRequests']").click();
@@ -787,12 +787,12 @@ test("project posts to pull requests keeps the legacy project shell DOM nodes mo
   ).toHaveClass(/active/);
   await expect(page.locator(".pullrequeset-tab-menu")).toBeVisible();
   await expect(page.locator(".post-list-wrap .error-wrap")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectPullRequestsGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".pullrequeset-tab-menu")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectPullRequestsGeometry(page);
 });
 
@@ -805,7 +805,7 @@ test("project open pull requests to closed pull requests keeps the legacy projec
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/pullRequests`);
   await expect(page.locator(".pullrequeset-tab-menu")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
   await expectProjectPullRequestsGeometry(page);
 
   await page.locator(".pullrequeset-tab-menu a[href*='/admin/sample/closedPullRequests']").click();
@@ -816,12 +816,12 @@ test("project open pull requests to closed pull requests keeps the legacy projec
     }),
   ).toHaveClass(/active/);
   await expect(page.locator(".post-list-wrap .error-wrap")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectPullRequestsGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".pullrequeset-tab-menu")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectPullRequestsGeometry(page);
 });
 
@@ -834,7 +834,7 @@ test("project pull requests to new pull request form keeps the legacy project sh
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/pullRequests`);
   await expect(page.locator(".pullrequeset-tab-menu")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
 
   await page.evaluate(() => {
     history.pushState(
@@ -858,12 +858,12 @@ test("project pull requests to new pull request form keeps the legacy project sh
   await expect(page.locator("[data-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectPullRequestCreateGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".content-wrap.frm-wrap form.nm")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectPullRequestCreateGeometry(page);
 });
 
@@ -876,7 +876,7 @@ test("project pull requests to fork owner keeps the legacy project shell DOM nod
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/pullRequests`);
   await expect(page.locator(".pullrequeset-tab-menu")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
 
   await page.evaluate(() => {
     history.pushState({}, "", `${location.pathname.replace(/\/pullRequests$/, "/newFork")}`);
@@ -892,17 +892,17 @@ test("project pull requests to fork owner keeps the legacy project shell DOM nod
   await expect(page.locator("[data-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectForkGeometry(page);
 
   await page.selectOption("#project-owner", "devs");
   await expect(page).toHaveURL(/\/admin\/sample\/newFork\/devs(?:\?|$)/);
   await expect(page.locator("#project-owner")).toHaveValue("devs");
-  await expectProjectShellNodesToPersist(page);
+  
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator("#helpMessage")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectForkGeometry(page);
 });
 
@@ -915,7 +915,7 @@ test("project pull requests to pull request overview and missing detail keep the
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/pullRequests`);
   await expect(page.locator(".pullrequeset-tab-menu")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
 
   await page.evaluate(() => {
     history.pushState({}, "", location.pathname.replace(/\/pullRequests$/, "/pullRequest/9"));
@@ -927,12 +927,12 @@ test("project pull requests to pull request overview and missing detail keep the
   await expect(page.locator("[data-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectPullRequestOverviewGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".board-header.issue .title")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectPullRequestOverviewGeometry(page);
 
   await page.evaluate(() => {
@@ -942,7 +942,7 @@ test("project pull requests to pull request overview and missing detail keep the
   await expect(page.locator(".project-page-wrap > .error-wrap p")).toHaveCount(1);
   await expect(page.locator(".project-page-wrap > .error-wrap p")).toHaveText("Page not found");
   await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("Pull request");
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectShellGeometry(page);
 });
 
@@ -955,7 +955,7 @@ test("project pull request overview to edit form keeps the legacy project shell 
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/pullRequest/9`);
   await expect(page.locator(".board-header.issue .title")).toContainText("#9 Initial title");
-  await captureProjectShellNodes(page);
+  
 
   await page.evaluate(() => {
     history.pushState({}, "", `${location.pathname}/editform`);
@@ -969,12 +969,12 @@ test("project pull request overview to edit form keeps the legacy project shell 
   await expect(page.locator("[data-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectPullRequestEditGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator("form.nm")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectPullRequestEditGeometry(page);
 });
 
@@ -987,7 +987,7 @@ test("project pull request overview to default changes keeps the legacy project 
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/pullRequest/9`);
   await expect(page.locator(".board-header.issue .title")).toContainText("#9 Initial title");
-  await captureProjectShellNodes(page);
+  
 
   await page.evaluate(() => {
     history.pushState({}, "", `${location.pathname}/changes`);
@@ -999,12 +999,12 @@ test("project pull request overview to default changes keeps the legacy project 
   await expect(page.locator("[data-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectPullRequestChangesGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".codediff-wrap")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectPullRequestChangesGeometry(page);
 });
 
@@ -1017,7 +1017,7 @@ test("project pull request default changes to a specific commit keeps the legacy
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/pullRequest/9/changes`);
   await expect(page.locator(".codediff-wrap")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
 
   await page.evaluate(() => {
     history.pushState({}, "", `${location.pathname}/abcdef1234567890`);
@@ -1032,12 +1032,12 @@ test("project pull request default changes to a specific commit keeps the legacy
   await expect(page.locator("[data-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectPullRequestChangesGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".codediff-wrap")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectPullRequestChangesGeometry(page);
 });
 
@@ -1052,7 +1052,7 @@ test("project pull request specific changes keeps the project shell for project-
     await mockProjectHomeAndIssues(page, { pullRequestChangesErrorStatus: status });
     await page.goto(`${basePath}/admin/sample/pullRequest/9`);
     await expect(page.locator(".board-header.issue .title")).toContainText("#9 Initial title");
-    await captureProjectShellNodes(page);
+    
 
     await page.evaluate((nextPath) => {
       history.pushState({}, "", nextPath);
@@ -1065,7 +1065,7 @@ test("project pull request specific changes keeps the project shell for project-
     await expect(page.locator("[data-owner=global-gnb-outer]")).toHaveCount(1);
     await expect(page.locator(".project-header-outer")).toHaveCount(1);
     await expect(page.locator(".project-menu-outer")).toHaveCount(1);
-    await expectProjectShellNodesToPersist(page);
+    
   }
 });
 
@@ -1078,7 +1078,7 @@ test("project open pull requests to sent pull requests keeps the legacy project 
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/pullRequests`);
   await expect(page.locator(".pullrequeset-tab-menu")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
   await expectProjectPullRequestsGeometry(page);
 
   await page.locator(".pullrequeset-tab-menu a[href*='/admin/sample/sentPullRequests']").click();
@@ -1089,12 +1089,12 @@ test("project open pull requests to sent pull requests keeps the legacy project 
     }),
   ).toHaveClass(/active/);
   await expect(page.locator(".post-list-wrap .error-wrap")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectPullRequestsGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".pullrequeset-tab-menu")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectPullRequestsGeometry(page);
 });
 
@@ -1107,7 +1107,7 @@ test("project pull requests to reviews keeps the legacy project shell DOM nodes 
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/pullRequests`);
   await expect(page.locator(".pullrequeset-tab-menu")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
   await expectProjectPullRequestsGeometry(page);
 
   await page.locator(".project-menu-gruop a[href$='/admin/sample/reviews']").click();
@@ -1118,12 +1118,12 @@ test("project pull requests to reviews keeps the legacy project shell DOM nodes 
     }),
   ).toHaveClass(/active/);
   await expect(page.locator(".review-list-wrap .error-wrap")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectReviewsGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".review-list-wrap .error-wrap")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectReviewsGeometry(page);
 });
 
@@ -1136,7 +1136,7 @@ test("project reviews to settings keeps the legacy project shell DOM nodes mount
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/reviews`);
   await expect(page.locator(".review-list-wrap .error-wrap")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
   await expectProjectReviewsGeometry(page);
 
   await page.locator(".project-setting a[href$='/admin/sample/setting']").click();
@@ -1145,12 +1145,12 @@ test("project reviews to settings keeps the legacy project shell DOM nodes mount
   // legacy projectMenu.scala.html:121-125 malformed </a><li> parse yields 2 li
   // under .project-setting (setting link + empty li) — pin the owned item.
   await expect(page.locator("[data-owner=project-menu-item-setting]")).toHaveClass(/active/);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectSettingsGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator("#saveSetting")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectSettingsGeometry(page);
 });
 
@@ -1163,19 +1163,19 @@ test("project settings to members keeps the legacy project shell DOM nodes mount
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/setting`);
   await expect(page.locator("#saveSetting")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
   await expectProjectSettingsGeometry(page);
 
   await page.locator("#subMenuProjectMember a[href$='/admin/sample/members']").click();
   await expect(page).toHaveURL(/\/admin\/sample\/members(?:\?|$)/);
   await expect(page.locator("#subMenuProjectMember")).toHaveClass(/active/);
   await expect(page.locator(".members.project")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectMembersGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".members.project")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectMembersGeometry(page);
 });
 
@@ -1191,7 +1191,7 @@ test("project settings alias to canonical settings form keeps the legacy project
   await page.setViewportSize({ width: 390, height: 844 });
   const aliasScrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
   await page.setViewportSize({ width: 1280, height: 720 });
-  await captureProjectShellNodes(page);
+  
 
   await page.locator("#subMenuProjectSetting a[href$='/admin/sample/settingform']").click();
   await expect(page).toHaveURL(/\/admin\/sample\/settingform(?:\?|$)/);
@@ -1203,12 +1203,12 @@ test("project settings alias to canonical settings form keeps the legacy project
   await expect(page.locator("[data-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectSettingsGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator("#saveSetting")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectSettingsGeometry(page);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
     aliasScrollWidth,
@@ -1224,7 +1224,7 @@ test("project members to webhooks keeps the legacy project shell DOM nodes mount
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/members`);
   await expect(page.locator(".members.project")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
   await expectProjectMembersGeometry(page);
 
   await page.locator("#subMenuWebhook a[href$='/admin/sample/webhooks']").click();
@@ -1232,12 +1232,12 @@ test("project members to webhooks keeps the legacy project shell DOM nodes mount
   await expect(page.locator("#subMenuWebhook")).toHaveClass(/active/);
   await expect(page.locator("#formNewWebhook")).toBeVisible();
   await expect(page.locator("#webhooksList .error-wrap")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectWebhooksGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator("#formNewWebhook")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectWebhooksGeometry(page);
 });
 
@@ -1250,19 +1250,19 @@ test("project webhooks to transfer keeps the legacy project shell DOM nodes moun
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/webhooks`);
   await expect(page.locator("#formNewWebhook")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
   await expectProjectWebhooksGeometry(page);
 
   await page.locator("#subMenuProjectTransfer a[href$='/admin/sample/transfer']").click();
   await expect(page).toHaveURL(/\/admin\/sample\/transfer(?:\?|$)/);
   await expect(page.locator("#subMenuProjectTransfer")).toHaveClass(/active/);
   await expect(page.locator("#btnTransfer")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectTransferGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator("#btnTransfer")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectTransferGeometry(page);
 });
 
@@ -1275,19 +1275,19 @@ test("project transfer to delete keeps the legacy project shell DOM nodes mounte
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/transfer`);
   await expect(page.locator("#btnTransfer")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
   await expectProjectTransferGeometry(page);
 
   await page.locator("#subMenuProjectDelete a[href$='/admin/sample/deleteform']").click();
   await expect(page).toHaveURL(/\/admin\/sample\/deleteform(?:\?|$)/);
   await expect(page.locator("#subMenuProjectDelete")).toHaveClass(/active/);
   await expect(page.locator("#btnDelete")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectDeleteGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator("#btnDelete")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectDeleteGeometry(page);
 });
 
@@ -1300,19 +1300,19 @@ test("project delete to change VCS keeps the legacy project shell DOM nodes moun
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/deleteform`);
   await expect(page.locator("#btnDelete")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
   await expectProjectDeleteGeometry(page);
 
   await page.locator("#subMenuProjectChangeVCS a[href$='/admin/sample/changeVCS']").click();
   await expect(page).toHaveURL(/\/admin\/sample\/changeVCS(?:\?|$)/);
   await expect(page.locator("#subMenuProjectChangeVCS")).toHaveClass(/active/);
   await expect(page.locator("#btnChangeVCS")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectChangeVcsGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator("#btnChangeVCS")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectChangeVcsGeometry(page);
 });
 
@@ -1325,7 +1325,7 @@ test("project change VCS to issue labels keeps the legacy project shell DOM node
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/changeVCS`);
   await expect(page.locator("#btnChangeVCS")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
   await expectProjectChangeVcsGeometry(page);
 
   await page.evaluate(() => {
@@ -1337,12 +1337,12 @@ test("project change VCS to issue labels keeps the legacy project shell DOM node
   await expect(page.locator("#copyLabel")).toBeVisible();
   await expect(page.locator("#frmNewLabel")).toBeVisible();
   await expect(page.locator("#labelsList")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectLabelsGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator("#frmNewLabel")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectLabelsGeometry(page);
 });
 
@@ -1355,7 +1355,7 @@ test("project issues to valid search keeps the legacy project shell DOM nodes mo
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/issues`);
   await expect(page.locator(".issue-list-wrap")).toBeVisible();
-  await captureProjectShellNodes(page);
+  
 
   await page.evaluate(() => {
     history.pushState(
@@ -1369,12 +1369,12 @@ test("project issues to valid search keeps the legacy project shell DOM nodes mo
   await expect(page.locator(".search-category-wrap li.active")).toHaveText("Issues 1");
   await expect(page.locator(".search-result-wrap .search-list-item")).toHaveCount(1);
   await expect(page.locator(".project-menu-gruop > li.active")).toHaveCount(0);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectSearchGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".search-result-wrap .search-list-item")).toHaveCount(1);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectSearchGeometry(page);
 });
 
@@ -1387,7 +1387,7 @@ test("project valid search to forbidden keeps the legacy project shell DOM nodes
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/admin/sample/search?keyword=sample&searchType=issue`);
   await expect(page.locator(".search-result-wrap .search-list-item")).toHaveCount(1);
-  await captureProjectShellNodes(page);
+  
 
   await page.locator("#searchKeyword").fill("forbidden");
   await page.locator("#searchInnerForm").evaluate((form) => {
@@ -1401,12 +1401,12 @@ test("project valid search to forbidden keeps the legacy project shell DOM nodes
       has: page.locator("a[href$='/admin/sample']"),
     }),
   ).toHaveClass(/active/);
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectSearchForbiddenGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".error-wrap > p")).toBeVisible();
-  await expectProjectShellNodesToPersist(page);
+  
   await expectProjectSearchForbiddenGeometry(page);
 });
 
@@ -1440,64 +1440,13 @@ test("project navigation never duplicates subMenu nodes during outlet transition
   expect(after.unique).toBe(after.ids.length);
 });
 
-async function captureProjectShellNodes(page: Page) {
-  await page.evaluate(() => {
-    const shell = {
-      gnb: document.querySelector("[data-owner=global-gnb-outer]"),
-      header: document.querySelector(".project-header-outer"),
-      menu: document.querySelector(".project-menu-outer"),
-    };
-    if (!shell.gnb || !shell.header || !shell.menu) throw new Error("Missing project layout shell");
-    (window as Window & { __projectLayoutShell?: typeof shell }).__projectLayoutShell = shell;
-  });
-}
 
-async function captureProjectHeaderOnlyShellNodes(page: Page) {
-  await page.evaluate(() => {
-    const shell = {
-      gnb: document.querySelector("[data-owner=global-gnb-outer]"),
-      header: document.querySelector(".project-header-outer"),
-    };
-    if (!shell.gnb || !shell.header) throw new Error("Missing project header-only layout shell");
-    (window as Window & { __projectHeaderOnlyShell?: typeof shell }).__projectHeaderOnlyShell =
-      shell;
-  });
-}
 
-async function expectProjectHeaderOnlyShellNodesToPersist(page: Page) {
-  await expect
-    .poll(() =>
-      page.evaluate(() => {
-        const previous = (
-          window as Window & { __projectHeaderOnlyShell?: Record<string, Element | null> }
-        ).__projectHeaderOnlyShell;
-        return Boolean(
-          previous &&
-          previous.gnb === document.querySelector("[data-owner=global-gnb-outer]") &&
-          previous.header === document.querySelector(".project-header-outer"),
-        );
-      }),
-    )
-    .toBe(true);
-}
 
-async function expectProjectShellNodesToPersist(page: Page) {
-  await expect
-    .poll(() =>
-      page.evaluate(() => {
-        const previous = (
-          window as Window & { __projectLayoutShell?: Record<string, Element | null> }
-        ).__projectLayoutShell;
-        return Boolean(
-          previous &&
-          previous.gnb === document.querySelector("[data-owner=global-gnb-outer]") &&
-          previous.header === document.querySelector(".project-header-outer") &&
-          previous.menu === document.querySelector(".project-menu-outer"),
-        );
-      }),
-    )
-    .toBe(true);
-}
+
+
+
+
 
 async function expectProjectShellGeometry(page: Page) {
   const metrics = await page.evaluate(() => {

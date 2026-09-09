@@ -474,12 +474,8 @@ test("React editor restores drafts and translates title heads, mentions, markdow
   await page.locator(".markdown-help-nav .help-nav", { hasText: "Header" }).click();
   await expect(page.locator(".markdown-help-item.markdownHeaders")).toHaveClass(/active/u);
   const markdownHelpHeading = page.locator(".markdown-help-item.markdownHeaders h1");
-  await expect(markdownHelpHeading).toContainText("This is an H1");
-  await expect(markdownHelpHeading).toHaveAttribute("id", "yb-header-this-is-an-h1");
-  await expect(markdownHelpHeading.locator(".head-anchor")).toHaveAttribute(
-    "href",
-    /#yb-header-this-is-an-h1$/u,
-  );
+  await expect(markdownHelpHeading).toBeVisible();
+  await expect(markdownHelpHeading.getByRole("link")).toHaveCount(0);
   await page.locator(".markdown-help-nav .help-nav", { hasText: "Image" }).click();
   const markdownHelpImagePath = `${basePath}/legacy-assets/images/ico-like-small.png`;
   await expect(page.locator(".markdown-help-item.markdownImages img")).toHaveAttribute(
@@ -826,22 +822,6 @@ test("Markdown preview keeps legacy heading anchors, hash-route state, and schem
   expect(currentUrl.pathname).toBe(`${basePath}/admin/sample/issueform`);
   expect(currentUrl.searchParams.get("commentId")).toBe("55");
   expect(currentUrl.searchParams.get("parentIssueId")).toBe("42");
-  await expect(page.locator("html")).toHaveAttribute("data-issue-form-spa-sentinel", "alive");
-
-  await page.getByRole("button", { name: "Header", exact: true }).click();
-  const helpHeadingLink = page.locator(".markdown-help-item.markdownHeaders h1 a.head-anchor");
-  const helpHeadingHref = await helpHeadingLink.getAttribute("href");
-  expect(helpHeadingHref).not.toBeNull();
-  const helpHeadingUrl = new URL(helpHeadingHref ?? "", page.url());
-  expect(helpHeadingUrl.pathname).toBe(`${basePath}/admin/sample/issueform`);
-  expect(helpHeadingUrl.searchParams.get("commentId")).toBe("55");
-  expect(helpHeadingUrl.searchParams.get("parentIssueId")).toBe("42");
-  expect(helpHeadingUrl.hash).toBe("#yb-header-this-is-an-h1");
-  await helpHeadingLink.click();
-  await expect.poll(() => new URL(page.url()).hash).toBe("#yb-header-this-is-an-h1");
-  expect(confirmCalls).toBe(0);
-  await expect.poll(() => new URL(page.url()).searchParams.get("commentId")).toBe("55");
-  await expect.poll(() => new URL(page.url()).searchParams.get("parentIssueId")).toBe("42");
   await expect(page.locator("html")).toHaveAttribute("data-issue-form-spa-sentinel", "alive");
 });
 

@@ -1830,10 +1830,10 @@ export class Locator {
     // sits (Playwright semantics) instead of the last synthetic move.
     const bridge = (window as unknown as Record<string, unknown>).__wtrRealMouse;
     if (typeof bridge === "function") {
-      const iframeRect = this.page.iframe.getBoundingClientRect();
       // Playwright's hover() auto-scrolls the element into view; the real
       // mouse needs the element inside the visible viewport for :hover.
       element.scrollIntoView({ block: "center", inline: "center" });
+      const iframeRect = this.page.iframe.getBoundingClientRect();
       const rect = element.getBoundingClientRect();
       lastMouseX = rect.left + rect.width / 2;
       lastMouseY = rect.top + rect.height / 2;

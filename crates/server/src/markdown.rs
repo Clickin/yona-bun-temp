@@ -1143,7 +1143,6 @@ fn markdown_local_dot_path(target: &str) -> Option<&str> {
     (!local_path.is_empty()).then_some(local_path)
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;

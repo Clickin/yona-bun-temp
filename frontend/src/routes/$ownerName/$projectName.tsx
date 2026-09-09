@@ -3028,6 +3028,7 @@ function ProjectMenuItem({
       <Link
         activeOptions={legacyProjectShellLinkActiveOptions}
         activeProps={legacyProjectShellLinkActiveProps}
+        search={{}}
         to={to}
         data-owner={`project-menu-link-${menuKey}`}
       >

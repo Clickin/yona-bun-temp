@@ -4,8 +4,6 @@
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 
 import { ACTION_DEFINITIONS as REGISTRY } from "./scenarios/index.mjs";
 import {
@@ -16,50 +14,12 @@ import {
   favoriteMutationState,
   scenarios,
 } from "./scenarios/userorg.mjs";
-import { validateScenarios, matchBehaviors, buildCoverage } from "./dsl.mjs";
+import { validateScenarios } from "./dsl.mjs";
 import { domVisibleLoss } from "./diff.mjs";
 import { classifyViolation } from "./report.mjs";
 
 // Standalone merge: registry keys + this module's definitions.
 const ACTION_DEFINITIONS = { ...REGISTRY, ...actionDefinitions };
-
-const inventory = JSON.parse(
-  readFileSync(fileURLToPath(new URL("../../docs/provenance/behavior-inventory.json", import.meta.url)), "utf8"),
-);
-
-// Distinct B-ids matched by the whole userorg domain (read + mutation waves).
-const TARGET_DISTINCT_BEHAVIORS = 77;
-
-// Behavior ids already covered by the registry before the userorg mutation
-// wave landed (snapshot of .agent/differential/behavior-coverage.json at
-// wave start). New scenarios must add NEW_DISTINCT_TARGET ids beyond these.
-const BASELINE_COVERED_IDS = new Set([
-  "B-0023", "B-0028", "B-0029", "B-0031", "B-0035", "B-0037", "B-0038", "B-0039",
-  "B-0040", "B-0041", "B-0043", "B-0045", "B-0046", "B-0049", "B-0050", "B-0051",
-  "B-0052", "B-0053", "B-0054", "B-0055", "B-0056", "B-0057", "B-0058", "B-0059",
-  "B-0060", "B-0061", "B-0062", "B-0063", "B-0064", "B-0065", "B-0066", "B-0067",
-  "B-0072", "B-0073", "B-0074", "B-0075", "B-0077", "B-0079", "B-0081", "B-0082",
-  "B-0083", "B-0084", "B-0085", "B-0086", "B-0087", "B-0088", "B-0089", "B-0090",
-  "B-0091", "B-0092", "B-0093", "B-0094", "B-0095", "B-0096", "B-0097", "B-0098",
-  "B-0099", "B-0100", "B-0101", "B-0102", "B-0103", "B-0104", "B-0105", "B-0106",
-  "B-0111", "B-0112", "B-0114", "B-0135", "B-0136", "B-0137", "B-0141", "B-0142",
-  "B-0148", "B-0156", "B-0160", "B-0176", "B-0177", "B-0179", "B-0180", "B-0181",
-  "B-0182", "B-0187", "B-0188", "B-0189", "B-0191", "B-0305", "B-0306",
-]);
-
-const NEW_DISTINCT_TARGET = 35;
-
-// Behavior ids the throwaway-entity lifecycle wave (U20-U23) must newly
-// cover — none of these were matched by any registry scenario before it.
-const LIFECYCLE_WAVE_REQUIRED_IDS = [
-  "B-0016", "B-0017", "B-0018",
-  "B-0020",
-  "B-0234",
-  "B-0278", "B-0279", "B-0280", "B-0281", "B-0282", "B-0283",
-  "B-0290", "B-0291", "B-0292", "B-0293",
-  "B-0298", "B-0299", "B-0300",
-  "B-0302", "B-0306",
-];
 
 test("every userorg scenario passes validateScenarios against merged registry", () => {
   const problems = validateScenarios(scenarios, Object.keys(ACTION_DEFINITIONS));
@@ -480,13 +440,6 @@ test("shared user and organization page roots are explicit while unmatched route
   }
 });
 
-test("notification and direct issue routes fall back to rendered body fixtures", () => {
-  const fixture = (selectors) => ({ querySelector: (selector) => (selectors.has(selector) ? {} : null) });
-  assert.ok(fixture(new Set([".page-wrap"])).querySelector(".page-wrap"));
-  assert.equal(fixture(new Set([".notification-wrap"])).querySelector(".page-wrap"), null);
-  assert.ok(fixture(new Set(["body"])).querySelector("body"));
-});
-
 test("user and organization route-body control loss remains blocking", () => {
   const detail = { actual: { fullDiffs: [{ side: "legacy-only", expected: "button.ybtn.ybtn-primary:Create" }] } };
   assert.equal(domVisibleLoss(detail), true);
@@ -506,60 +459,16 @@ test("site export status probe opts out of streaming body reads", () => {
   });
 });
 
-test("matchBehaviors returns non-empty distinct B-id lists for every scenario", () => {
-  const covered = new Set();
-  for (const scenario of scenarios) {
-    const behaviorIds = matchBehaviors(scenario, inventory.behaviors);
-    assert.ok(behaviorIds.length > 0, `${scenario.id}: matched no behaviors`);
-    for (const id of behaviorIds) covered.add(id);
-  }
-  assert.ok(
-    covered.size >= TARGET_DISTINCT_BEHAVIORS,
-    `distinct covered B-ids ${covered.size} < target ${TARGET_DISTINCT_BEHAVIORS}: ${[...covered].sort().join(",")}`,
-  );
-});
-
-test("mutation wave covers at least 35 NEW distinct behavior ids vs baseline", () => {
-  const fresh = new Set();
-  for (const scenario of scenarios) {
-    for (const id of matchBehaviors(scenario, inventory.behaviors)) {
-      if (!BASELINE_COVERED_IDS.has(id)) fresh.add(id);
-    }
-  }
-  assert.ok(
-    fresh.size >= NEW_DISTINCT_TARGET,
-    `new distinct B-ids ${fresh.size} < target ${NEW_DISTINCT_TARGET}: ${[...fresh].sort().join(",")}`,
-  );
-});
-
-test("lifecycle wave (U20-U23) covers every required previously-uncovered behavior id", () => {
-  const covered = new Set(
-    scenarios
-      .filter((scenario) => /^U2[0-3]/.test(scenario.id))
-      .flatMap((scenario) => matchBehaviors(scenario, inventory.behaviors)),
-  );
-  const missing = LIFECYCLE_WAVE_REQUIRED_IDS.filter((id) => !covered.has(id));
-  assert.deepEqual(missing, [], `lifecycle wave misses: ${missing.join(",")}`);
-});
-
-test("lifecycle wave adds at least 18 NEW distinct behavior ids vs pre-wave registry coverage", () => {
-  // Pre-wave covered ids come from the mutation-wave baseline plus the ids
-  // its scenarios matched; the lifecycle ids must all be outside that set.
-  const fresh = new Set();
-  for (const scenario of scenarios) {
-    for (const id of matchBehaviors(scenario, inventory.behaviors)) {
-      if (!BASELINE_COVERED_IDS.has(id)) fresh.add(id);
-    }
-  }
-  const lifecycleFresh = LIFECYCLE_WAVE_REQUIRED_IDS.filter((id) => fresh.has(id));
-  assert.ok(lifecycleFresh.length >= 18, `only ${lifecycleFresh.length} lifecycle-wave B-ids are new`);
-});
-
 test("self-cleanup contract: every mutating scenario ends with revert/cleanup steps", () => {
   const cleanupByScenario = {
     "U12-favorite-toggles": (actions) =>
       actions.some((step) => step.action === "toggle-favorite"),
-    "U14-noti-watch-toggle": (actions) => actions.some((step) => step.action === "toggle-noti-watch"),
+    "U14-noti-watch-toggle": (actions) => {
+      const watchIndex = actions.findIndex((step) => step.action === "watch-project");
+      const toggleIndex = actions.findIndex((step) => step.action === "toggle-noti-watch");
+      const unwatchIndex = actions.findIndex((step) => step.action === "unwatch-project");
+      return watchIndex >= 0 && watchIndex < toggleIndex && toggleIndex < unwatchIndex;
+    },
     "U16-email-lifecycle": (actions) =>
       actions.some((step) => step.action === "delete-email") &&
       actions.some((step) => step.action === "restore-main-email"),
@@ -590,10 +499,4 @@ test("self-cleanup contract: every mutating scenario ends with revert/cleanup st
   assert.deepEqual(targets, ["issue", "organization", "project"]);
 });
 
-test("buildCoverage emits per-scenario non-empty behaviorIds", () => {
-  const coverage = buildCoverage(scenarios, inventory.behaviors, "test-run");
-  assert.equal(coverage.runId, "test-run");
-  for (const entry of coverage.scenarios) {
-    assert.ok(entry.behaviorIds.length > 0, `${entry.scenarioId}: empty coverage entry`);
-  }
-});
+

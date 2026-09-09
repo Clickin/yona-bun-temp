@@ -122,9 +122,9 @@ impl AppRepositoryImpl<'_> {
                 path.is_some() || input.start_line.is_some() || input.end_line.is_some();
             comment_thread::ActiveModel {
                 dtype: Set(if is_ranged {
-                    "CodeCommentThread".to_string()
+                    "ranged".to_string()
                 } else {
-                    "NonRangedCodeCommentThread".to_string()
+                    "non_ranged".to_string()
                 }),
                 id: NotSet,
                 author_id: Set(Some(input.actor_id)),
@@ -288,6 +288,14 @@ impl AppRepositoryImpl<'_> {
         if thread.pull_request_id != Some(model.id) {
             return Ok(None);
         }
+        attachment::Entity::delete_many()
+            .filter(
+                attachment::Column::ContainerType
+                    .eq(Some(REVIEW_COMMENT_ATTACHMENT_CONTAINER.to_string())),
+            )
+            .filter(attachment::Column::ContainerId.eq(input.comment_id))
+            .exec(&self.db)
+            .await?;
         review_comment::Entity::delete_by_id(input.comment_id)
             .exec(&self.db)
             .await?;
@@ -296,6 +304,11 @@ impl AppRepositoryImpl<'_> {
             .count(&self.db)
             .await?;
         if remaining == 0 {
+            attachment::Entity::delete_many()
+                .filter(attachment::Column::ContainerType.eq(Some("COMMENT_THREAD".to_string())))
+                .filter(attachment::Column::ContainerId.eq(thread_id))
+                .exec(&self.db)
+                .await?;
             comment_thread::Entity::delete_by_id(thread_id)
                 .exec(&self.db)
                 .await?;

@@ -18,6 +18,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, realpathSync } from "node:fs";
 import { createServer } from "node:net";
 import { join, resolve } from "node:path";
+import { run } from "./release-gate-process.mjs";
 
 const repoRoot = resolve(new URL("..", import.meta.url).pathname);
 const dumpPath = resolve(repoRoot, process.env.YONA_GATE_DUMP ?? "fixtures/legacy-yona-1.16/legacy-yona-mariadb-dump.sql");
@@ -39,19 +40,6 @@ if (!process.env.YONA_GATE_SKIP_BUILD) {
   await run("cargo", ["build", "-p", "yoram-server", "--bin", "yoram", "--features", "db-matrix"]);
 }
 if (!existsSync(serverBin)) fail(`yoram binary missing at ${serverBin}`);
-
-function run(command, args, options = {}) {
-  const child = spawn(command, args, { stdio: options.capture ? ["ignore", "pipe", "pipe"] : "inherit" });
-  if (!options.capture) return Promise.resolve();
-  let stdout = "";
-  let stderr = "";
-  child.stdout.on("data", (chunk) => (stdout += chunk));
-  child.stderr.on("data", (chunk) => (stderr += chunk));
-  return new Promise((resolvePromise, rejectPromise) => {
-    child.on("error", rejectPromise);
-    child.on("close", (code) => (code === 0 ? resolvePromise({ stdout, stderr }) : rejectPromise(new Error(`${command} exited ${code}: ${stderr.slice(0, 4000)}`))));
-  });
-}
 
 function execSql(containerId, sql) {
   return run("docker", ["exec", containerId, "mariadb", "-uroot", "-N", "-e", `USE yona;\n${sql}`], { capture: true }).then((r) => r.stdout.trim());

@@ -12,6 +12,38 @@ This existing migration/deployment gate may be reused for evidence, but it does
 not authorize a release from `yona-bun-temp`; release is only from a new
 canonical repository after the Phase 0 closure contract is satisfied.
 
+## Build completion repair (2026-09-07)
+
+At review baseline `7f03d4facbdf0b81a8306f284c41bd5c079062af`, the
+non-capture process helper resolved before its child exited. A failed build
+could therefore advance the gate with an existing server binary.
+`scripts/release-gate-process.mjs` now waits for child termination in both
+output modes and rejects spawn errors and nonzero exits.
+`YONA_GATE_SKIP_BUILD` remains an explicit opt-out.
+
+`node --test scripts/release-gate.spec.mjs` reproduced four failures before
+the fix and passes all six tests afterward, including a real gate invocation
+with an existing binary and a failing build child. The registered
+`test:dev-scripts` suite passes 301 tests. These checks establish process
+ordering and failure propagation, not a new adoption or final parity result.
+
+## Clean checkout packaging repair (2026-09-07)
+
+A disposable `git archive` checkout of `7f03d4fac` failed `docker build`
+because the Dockerfile copied ignored `yona-original/` files. The runtime
+already consumes tracked frontend dictionaries and merged CSS; those COPY
+steps were obsolete. The remaining active dynatree CSS import now resolves
+through `frontend/src/assets/legacy/dynatree/`, with unchanged upstream CSS
+and GIF bytes and MIT attribution in `NOTICE`.
+
+The disposable checkout plus these packaging changes builds both the
+frontend stage and complete runtime image without a legacy reference tree.
+Its mounted `/yona` index, project page, session CSRF, REST project response,
+and initial JavaScript/CSS assets return HTTP 200. The existing CSS cascade
+comparison passes with 9,234 rules and 25 buckets. This is packaging evidence
+only; the local `yoram:parity-repair-smoke` image is not a release candidate
+and predates the remaining attachment/VCS/interaction repairs.
+
 ## Fixture to consume
 
 `fixtures/legacy-yona-1.16/` (see `META.md` there for provenance):

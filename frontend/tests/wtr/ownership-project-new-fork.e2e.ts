@@ -1,4 +1,3 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -6,29 +5,7 @@ const owner = (page: Page, name: string) => page.locator(`[data-owner="${name}"]
 
 test.use({ locale: "ko-KR" });
 
-test("records fork form owners and responsive containment", async ({ page }) => {
-  const route = readFileSync("src/routes/$ownerName/$projectName/newFork.tsx", "utf8");
-  const theme = readFileSync("src/app.css", "utf8");
-  const template = readFileSync("../yona-original/app/views/git/fork.scala.html", "utf8");
-  expect(template).toContain('name="projectScope"');
-  expect(template).toContain('class="help-messages');
-  expect(route).toContain('data-owner="project-fork-form"');
-  expect(route).toContain('data-owner="project-fork-submit"');
-  for (const owner of [
-    "project-fork-help-row",
-    "project-fork-owner-label",
-    "project-fork-name-label",
-    "project-fork-name-help",
-    "project-fork-scope-label",
-    "project-fork-public-radio",
-    "project-fork-public-label",
-    "project-fork-protected-radio",
-    "project-fork-protected-label",
-    "project-fork-private-radio",
-    "project-fork-private-label",
-  ]) {
-    expect(route).toContain(`data-owner="${owner}"`);
-  }
+test("preserves legacy fork controls and narrow viewport overflow", async ({ page }) => {
   await mockFork(page);
   for (const viewport of [
     { width: 1366, height: 900 },
@@ -41,12 +18,12 @@ test("records fork form owners and responsive containment", async ({ page }) => 
     await expect(owner(page, "project-fork-submit")).toHaveText("코드 저장소 복사");
     await expect(owner(page, "project-fork-public-radio")).toBeChecked();
     await expect(owner(page, "project-fork-public-label")).toBeVisible();
-    const geometry = await owner(page, "project-fork-form").evaluate((element) => ({
-      width: element.getBoundingClientRect().width,
+    const geometry = await page.evaluate(() => ({
+      clientWidth: document.documentElement.clientWidth,
       scrollWidth: document.documentElement.scrollWidth,
     }));
-    expect(geometry.width).toBeGreaterThan(0);
-    expect(geometry.scrollWidth).toBe(viewport.width);
+    // Live legacy: 180px controls margin + 220px fields; responsive CSS is inactive.
+    expect(geometry.scrollWidth).toBe(Math.max(geometry.clientWidth, 400));
   }
 });
 

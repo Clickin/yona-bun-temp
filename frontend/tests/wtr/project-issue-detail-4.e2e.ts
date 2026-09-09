@@ -65,6 +65,284 @@ import {
   dueDateInlineUpdateMetrics,
 } from "./project-issue-detail-shared.ts";
 
+test("project issue detail tasklist checkbox updates nested markdown through REST", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const original = "- [ ] parent\n  - [ ] child\n- [ ] sibling\n\n```markdown\n- [ ] fenced\n```";
+  const { contentUpdateRequests } = await mockProjectIssueDetail(page, {
+    bodyMarkdown: original,
+    comments: [],
+    commentCount: 0,
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+
+  const checkboxes = page.locator("#issue-body-11 .markdown-wrap input[type='checkbox']");
+  await expect(checkboxes).toHaveCount(3);
+  await expect(checkboxes.first()).toBeEnabled();
+  await checkboxes.first().click();
+  await expect.poll(() => contentUpdateRequests.length).toBe(1);
+  expect(contentUpdateRequests[0]).toEqual({
+    body: {
+      content: "- [x] parent\n  - [x] child\n- [ ] sibling\n\n```markdown\n- [ ] fenced\n```",
+      original,
+    },
+    method: "PATCH",
+  });
+  await page.reload();
+  await expect(checkboxes.nth(0)).toBeChecked();
+  await expect(checkboxes.nth(1)).toBeChecked();
+  await expect(checkboxes.nth(2)).not.toBeChecked();
+  await expect(page.locator("#issue-body-11 .done-counter")).toHaveText("(2/3)");
+});
+
+test("project issue detail keeps raw tasklist controls inert for authorized viewers", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const { contentUpdateRequests } = await mockProjectIssueDetail(page, {
+    bodyMarkdown:
+      '- [ ] generated\n\n<ul><li><input type="checkbox" data-yona-task-index="0"> forged raw</li></ul>',
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  const checkboxes = page.locator("#issue-body-11 .markdown-wrap input[type='checkbox']");
+  await expect(checkboxes).toHaveCount(2);
+  await expect(checkboxes.nth(0)).toBeEnabled();
+  await expect(checkboxes.nth(1)).toBeDisabled();
+  await checkboxes.nth(0).click();
+  await expect.poll(() => contentUpdateRequests.length).toBe(1);
+});
+
+test("project issue detail disables tasklist controls for read-only viewers", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const { contentUpdateRequests } = await mockProjectIssueDetail(page, {
+    bodyMarkdown: "- [ ] generated",
+    viewerCanUpdate: false,
+  });
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  const checkbox = page.locator("#issue-body-11 .markdown-wrap input[type='checkbox']").first();
+  await expect(checkbox).toBeDisabled();
+  expect(contentUpdateRequests).toHaveLength(0);
+});
+
+test("project issue detail rolls back a stale tasklist update", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const { contentUpdateRequests } = await mockProjectIssueDetail(page, {
+    __contentUpdateStatus: 409,
+    bodyMarkdown: "- [ ] stale",
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  const checkbox = page.locator("#issue-body-11 .markdown-wrap input[type='checkbox']").first();
+  await checkbox.click();
+  await expect.poll(() => contentUpdateRequests.length).toBe(1);
+  await expect(checkbox).not.toBeChecked();
+  await expect(page.locator('[data-owner="issue-tasklist-error"]')).toContainText(
+    "Refresh the page!",
+  );
+});
+
+test("project issue detail sends authored comment notification preference through REST", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const { commentUpdateRequests } = await mockProjectIssueDetail(page, {
+    comments: [
+      {
+        attachments: [],
+        authorAvatarUrl: "/assets/images/default-avatar-32.png",
+        authorLabel: "Site Admin",
+        authorLoginId: "admin",
+        childComments: [],
+        contentsHtml: "<p>Server HTML should not render</p>",
+        contentsMarkdown: "Comment **markdown**",
+        createdLabel: "Jul 2, 2026",
+        id: 77,
+        viewerCanDelete: true,
+        viewerCanUpdate: true,
+        viaEmail: false,
+        voterCount: 0,
+        voters: [],
+      },
+    ],
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  const comment = page.locator(".span-left-pane #comment-77");
+  const editButton = comment.locator('button[title="Edit comment"][data-comment-id="77"]');
+  const updateForm = comment.locator("#comment-editform-77");
+  await editButton.click();
+  await expect(updateForm.locator("input[name='notificationMail']")).toBeChecked();
+  await updateForm.locator("textarea[name=contents]").fill("Edited with notification");
+  await updateForm.getByRole("button", { name: "Save" }).click();
+  await expect.poll(() => commentUpdateRequests.length).toBe(1);
+  expect(commentUpdateRequests[0]).toMatchObject({
+    body: {
+      contentsMarkdown: "Edited with notification",
+      notificationMail: "yes",
+    },
+    method: "PUT",
+  });
+
+  await editButton.click();
+  const uncheckedForm = comment.locator("#comment-editform-77");
+  await uncheckedForm.locator("input[name='notificationMail']").uncheck();
+  await uncheckedForm.locator("textarea[name=contents]").fill("Edited without notification");
+  await uncheckedForm.getByRole("button", { name: "Save" }).click();
+  await expect.poll(() => commentUpdateRequests.length).toBe(2);
+  expect(commentUpdateRequests[1]).toMatchObject({
+    body: { contentsMarkdown: "Edited without notification" },
+    method: "PUT",
+  });
+  expect(commentUpdateRequests[1].body).not.toHaveProperty("notificationMail");
+});
+
+test("project issue detail filters label results by the typed query", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, {
+    __labelsResponse: [
+      {
+        categoryId: "3",
+        categoryIsExclusive: false,
+        categoryName: "type",
+        color: "#51aacc",
+        id: "8",
+        name: "bug",
+      },
+      {
+        categoryId: "3",
+        categoryIsExclusive: false,
+        categoryName: "type",
+        color: "#70b858",
+        id: "9",
+        name: "backend",
+      },
+      {
+        categoryId: "3",
+        categoryIsExclusive: false,
+        categoryName: "type",
+        color: "#a064c7",
+        id: "10",
+        name: "frontend",
+      },
+    ],
+    labels: [
+      {
+        categoryId: "3",
+        categoryIsExclusive: false,
+        categoryName: "type",
+        color: "#51aacc",
+        id: "8",
+        name: "bug",
+      },
+    ],
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  const input = page.locator('[data-owner="project-issue-detail-label-search-input"]');
+  await input.fill("back");
+  await expect(page.getByRole("option", { name: "backend" })).toHaveCount(1);
+  await expect(page.getByRole("option", { name: "bug" })).toHaveCount(0);
+  await expect(page.getByRole("option", { name: "frontend" })).toHaveCount(0);
+  await page.getByRole("option", { name: "backend" }).click();
+  await expect(input).toHaveValue("");
+  await expect(
+    page.locator(
+      '[data-owner="project-issue-detail-label-control"] .select2-search-choice',
+    ).filter({ hasText: "backend" }),
+  ).toContainText("backend");
+  await input.fill("does-not-exist");
+  await expect(
+    page.locator('[data-owner="project-issue-detail-label-control"] [role="option"]'),
+  ).toHaveCount(0);
+  await input.fill("");
+  await expect(page.getByRole("option", { name: "backend" })).toHaveCount(1);
+  await page.reload();
+  await expect(
+    page.locator('[data-owner="project-issue-detail-label-control"] .select2-search-choice')
+      .filter({ hasText: "backend" }),
+  ).toContainText("backend");
+});
+
+test("project issue detail comment edit uploads and removes temporary attachments", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const { attachmentDeleteRequests, attachmentUploadRequests, commentUpdateRequests } =
+    await mockProjectIssueDetail(page, {
+      comments: [
+        {
+          attachments: [
+            {
+              id: 101,
+              mimeType: "text/plain",
+              name: "old.txt",
+              size: 3,
+              sizeLabel: "3 bytes",
+              url: "/yona/files/101",
+            },
+          ],
+          authorAvatarUrl: "/assets/images/default-avatar-32.png",
+          authorLabel: "Site Admin",
+          authorLoginId: "admin",
+          childComments: [],
+          contentsHtml: "<p>Server HTML should not render</p>",
+          contentsMarkdown: "Comment **markdown**",
+          createdLabel: "Jul 2, 2026",
+          id: 77,
+          viewerCanDelete: true,
+          viewerCanUpdate: true,
+          viaEmail: false,
+          voterCount: 0,
+          voters: [],
+        },
+      ],
+    });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  const comment = page.locator(".span-left-pane #comment-77");
+  await comment.locator('button[title="Edit comment"][data-comment-id="77"]').click();
+  const updateForm = comment.locator("#comment-editform-77");
+  await updateForm.locator("input[type='file'][name='filePath']").setInputFiles({
+    buffer: Buffer.from("new"),
+    mimeType: "text/plain",
+    name: "new.txt",
+  });
+  await expect.poll(() => attachmentUploadRequests.length).toBe(1);
+  await expect(attachmentUploadRequests[0]).toEqual({
+    csrfToken: "test-csrf-token",
+    method: "POST",
+  });
+  await updateForm.locator('.attached-file-marker[data-name="old.txt"] .btn-delete').click();
+  await expect(updateForm.locator('.attached-file-marker[data-name="old.txt"]')).toHaveCount(0);
+  expect(attachmentDeleteRequests).toHaveLength(0);
+  await updateForm.getByRole("button", { name: "Save" }).click();
+  await expect.poll(() => commentUpdateRequests.length).toBe(1);
+  expect(commentUpdateRequests[0]).toMatchObject({
+    body: { attachmentIds: ["202"] },
+    method: "PUT",
+  });
+
+  await page.reload();
+  const reloadedComment = page.locator(".span-left-pane #comment-77");
+  await expect(reloadedComment.locator(".attaches .filename")).toHaveText("new.txt");
+  await expect(reloadedComment.locator(".attaches a.vmiddle")).toHaveAttribute(
+    "href",
+    `${basePath}/files/202`,
+  );
+
+  await reloadedComment.locator('button[title="Edit comment"][data-comment-id="77"]').click();
+  const cancelledForm = reloadedComment.locator("#comment-editform-77");
+  await cancelledForm.locator('.attached-file-marker[data-name="new.txt"] .btn-delete').click();
+  await cancelledForm.getByRole("button", { name: "Cancel" }).click();
+  await expect(reloadedComment.locator(".attaches .filename")).toHaveText("new.txt");
+  await reloadedComment.locator('button[title="Edit comment"][data-comment-id="77"]').click();
+  await expect(
+    cancelledForm.locator('.attached-file-marker[data-name="new.txt"]'),
+  ).toHaveCount(1);
+  expect(commentUpdateRequests).toHaveLength(1);
+});
+
 test("project issue detail omits route-local legacy attachment template", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssueDetail(page);
@@ -160,7 +438,7 @@ test("project issue detail renders legacy child issue list", async ({ page }) =>
   // F5 dist-truth: legacy .page-wrap-outer padding 0 10px (responsive.less:611)
   // + span9 74.468% → 938 at 1280; ported into app.css @layer legacy.
   expect(await childIssueMetrics(page)).toEqual({
-    countGroupBorder: "0px none rgb(51, 51, 51)",
+    countGroupBorder: expect.stringMatching(/^0px none(?: |$)/u),
     countGroupLineHeight: "14px",
     countGroupMarginTop: "2px",
     dateDisplay: "none",

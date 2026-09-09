@@ -27,14 +27,12 @@ pub fn write_site_import(
     if !response.status().is_success() {
         let status = response.status();
         let body = response.text().unwrap_or_default();
-        anyhow::bail!(
-            "Site import request failed: HTTP {} — {}",
-            status,
-            body,
-        );
+        anyhow::bail!("Site import request failed: HTTP {} — {}", status, body,);
     }
 
-    response.json().context("Failed to parse site import response")
+    response
+        .json()
+        .context("Failed to parse site import response")
 }
 
 /// Write data to a JSON file (streaming).
@@ -103,13 +101,16 @@ pub fn project_export_to_ndjson(payload: &serde_json::Value) -> Result<Vec<Strin
 
     if let Some(members) = payload.get("members").and_then(|value| value.as_array()) {
         for member in members {
-            lines.push(line("member", &serde_json::json!({
-                "id": 0,
-                "loginId": member.get("loginId").and_then(|v| v.as_str()).unwrap_or(""),
-                "ownerName": owner,
-                "projectName": project_name,
-                "role": member.get("role").and_then(|v| v.as_str()).unwrap_or("member"),
-            }))?);
+            lines.push(line(
+                "member",
+                &serde_json::json!({
+                    "id": 0,
+                    "loginId": member.get("loginId").and_then(|v| v.as_str()).unwrap_or(""),
+                    "ownerName": owner,
+                    "projectName": project_name,
+                    "role": member.get("role").and_then(|v| v.as_str()).unwrap_or("member"),
+                }),
+            )?);
             member_count += 1;
         }
     }
@@ -259,57 +260,37 @@ pub fn context_project_to_ndjson(
         "projectScope": project_item.get("projectScope").and_then(|v| v.as_str()).unwrap_or("private"),
     }))?);
 
-    for member in ctx
-        .project_members
-        .iter()
-        .filter(|item| {
-            item.get("ownerName").and_then(|v| v.as_str()) == Some(owner)
-                && item.get("projectName").and_then(|v| v.as_str()) == Some(project)
-        })
-    {
+    for member in ctx.project_members.iter().filter(|item| {
+        item.get("ownerName").and_then(|v| v.as_str()) == Some(owner)
+            && item.get("projectName").and_then(|v| v.as_str()) == Some(project)
+    }) {
         lines.push(line("member", member)?);
         member_count += 1;
     }
-    for label in ctx
-        .labels
-        .iter()
-        .filter(|item| {
-            item.get("ownerName").and_then(|v| v.as_str()) == Some(owner)
-                && item.get("projectName").and_then(|v| v.as_str()) == Some(project)
-        })
-    {
+    for label in ctx.labels.iter().filter(|item| {
+        item.get("ownerName").and_then(|v| v.as_str()) == Some(owner)
+            && item.get("projectName").and_then(|v| v.as_str()) == Some(project)
+    }) {
         lines.push(line("label", label)?);
     }
-    for milestone in ctx
-        .milestones
-        .iter()
-        .filter(|item| {
-            item.get("ownerName").and_then(|v| v.as_str()) == Some(owner)
-                && item.get("projectName").and_then(|v| v.as_str()) == Some(project)
-        })
-    {
+    for milestone in ctx.milestones.iter().filter(|item| {
+        item.get("ownerName").and_then(|v| v.as_str()) == Some(owner)
+            && item.get("projectName").and_then(|v| v.as_str()) == Some(project)
+    }) {
         lines.push(line("milestone", milestone)?);
         milestone_count += 1;
     }
-    for issue in ctx
-        .issues
-        .iter()
-        .filter(|item| {
-            item.get("ownerName").and_then(|v| v.as_str()) == Some(owner)
-                && item.get("projectName").and_then(|v| v.as_str()) == Some(project)
-        })
-    {
+    for issue in ctx.issues.iter().filter(|item| {
+        item.get("ownerName").and_then(|v| v.as_str()) == Some(owner)
+            && item.get("projectName").and_then(|v| v.as_str()) == Some(project)
+    }) {
         lines.push(line("issue", issue)?);
         issue_count += 1;
     }
-    for post in ctx
-        .posts
-        .iter()
-        .filter(|item| {
-            item.get("ownerName").and_then(|v| v.as_str()) == Some(owner)
-                && item.get("projectName").and_then(|v| v.as_str()) == Some(project)
-        })
-    {
+    for post in ctx.posts.iter().filter(|item| {
+        item.get("ownerName").and_then(|v| v.as_str()) == Some(owner)
+            && item.get("projectName").and_then(|v| v.as_str()) == Some(project)
+    }) {
         lines.push(line("post", post)?);
         post_count += 1;
     }
@@ -348,7 +329,10 @@ fn project_export_comments(item: &serde_json::Value) -> Vec<serde_json::Value> {
 fn line(kind: &str, record: &serde_json::Value) -> Result<String> {
     let mut line_value = record.clone();
     if let Some(object) = line_value.as_object_mut() {
-        object.insert("kind".to_string(), serde_json::Value::String(kind.to_string()));
+        object.insert(
+            "kind".to_string(),
+            serde_json::Value::String(kind.to_string()),
+        );
     }
     Ok(serde_json::to_string(&line_value)?)
 }
@@ -397,7 +381,9 @@ pub fn write_project_import_ndjson(
         );
     }
 
-    response.json().context("Failed to parse project NDJSON import response")
+    response
+        .json()
+        .context("Failed to parse project NDJSON import response")
 }
 
 // ponytail: attachment upload via multipart deferred — use the import endpoint for now

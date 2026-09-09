@@ -944,11 +944,11 @@ const MUTATION_ACTIONS = {
   },
 
   "set-post-labels-api": {
-    translateLegacy(step) {
-      return { method: "POST", path: `${legacyApiBase(step)}/postlabel/${step.params.postNumber ?? 0}`, json: [] };
+    translateLegacy(step, resolved) {
+      return { method: "POST", path: `${legacyApiBase(step)}/postlabel/${resolved.postNumber}`, json: [] };
     },
-    translateYoram(step) {
-      return { method: "POST", path: `${yoramApiBase(step)}/posts/${step.params.postNumber ?? 0}/labels`, json: [] };
+    translateYoram(step, resolved) {
+      return { method: "POST", path: `${yoramApiBase(step)}/posts/${resolved.postNumber}/labels`, json: [] };
     },
     async handler(ctx) {
       const { step, state } = ctx;

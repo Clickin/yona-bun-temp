@@ -304,6 +304,7 @@ function HomeScreen({
         {notificationHasMore && !isLoadingMoreNotifications ? (
           <li>
             <button
+              className="ybtn"
               id="notification-more"
               type="button"
               data-owner="authenticated-home-notification-pagination"
@@ -401,8 +402,8 @@ function HomeScreen({
                 data-owner="authenticated-home-content-grid"
               >
                 <div className={"span8 main-stream"} data-owner="authenticated-home-main-stream">
-                  <ul data-owner="authenticated-home-series-tabs">
-                    <li data-owner="authenticated-home-series-tab-item">
+                  <ul className="nav nav-tabs" data-owner="authenticated-home-series-tabs">
+                    <li className="active" data-owner="authenticated-home-series-tab-item">
                       <Link
                         {...LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS}
                         data-owner="authenticated-home-series-tab-link"
@@ -435,6 +436,7 @@ function HomeScreen({
                       {shouldShowDefaultLandingButton ? (
                         <>
                           <button
+                            className="ybtn hide-in-mobile"
                             id="setDefaultLoginPage"
                             type="button"
                             data-owner="authenticated-home-default-login-action"
@@ -491,6 +493,7 @@ function HomeScreen({
                     {notificationHasMore && !isLoadingMoreNotifications ? (
                       <li>
                         <button
+                          className="ybtn"
                           id="notification-more"
                           type="button"
                           data-owner="authenticated-home-notification-pagination"
@@ -617,21 +620,17 @@ function NotificationStreamItem({
   const notificationGlyph = notificationTypeTokens[0] || "megaphone";
   const isUpdated =
     notification.eventType === "ISSUE_BODY_CHANGED" || notification.eventType === "COMMENT_UPDATED";
-  const avatarClassName = `avatar-wrap smaller `;
+  const avatarClassName = "avatar-wrap smaller";
+  const hasActor = notification.actor.loginId.trim() !== "";
   React.useLayoutEffect(() => {
     const messageWrap = messageWrapRef.current;
     if (!messageWrap) {
       return;
     }
 
-    const currentOverflow = messageWrap.style.overflow;
-    if (!currentOverflow || currentOverflow === "visible") {
-      messageWrap.style.overflow = "hidden";
-    }
     const isOverflowing =
       messageWrap.clientWidth < messageWrap.scrollWidth ||
       messageWrap.clientHeight < messageWrap.scrollHeight;
-    messageWrap.style.overflow = currentOverflow;
     setHasOverflow(isOverflowing);
     setIsExpanded(false);
   }, [notification.message]);
@@ -650,8 +649,13 @@ function NotificationStreamItem({
   }
 
   return (
-    <li data-owner="authenticated-home-notification-row">
-      <div data-owner="authenticated-home-notification-type">
+    <li className="notification-stream" data-owner="authenticated-home-notification-row">
+      <div
+        className={
+          isUpdated ? "stream-type updated" : `stream-type ${notification.typeIcon}`
+        }
+        data-owner="authenticated-home-notification-type"
+      >
         {isUpdated ? (
           "Edit"
         ) : (
@@ -663,11 +667,16 @@ function NotificationStreamItem({
           />
         )}
       </div>
+      {" "}
       {/* oxlint-disable jsx-a11y/click-events-have-key-events -- legacy partial_notifications.scala.html uses a clickable plain div here. */}
       {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- legacy partial_notifications.scala.html uses a clickable plain div here. */}
-      <div data-owner="authenticated-home-notification-desc" onClick={handleLearnMoreClick}>
-        <div data-owner="authenticated-home-notification-info">
-          <div data-owner="authenticated-home-notification-title">
+      <div
+        className="stream-desc"
+        data-owner="authenticated-home-notification-desc"
+        onClick={handleLearnMoreClick}
+      >
+        <div className="stream-info" data-owner="authenticated-home-notification-info">
+          <div className="title" data-owner="authenticated-home-notification-title">
             {notification.targetHref ? (
               <Link to={targetHref} {...LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS}>
                 {notification.targetTitle}
@@ -677,50 +686,70 @@ function NotificationStreamItem({
             )}
           </div>
           <div
+            className={`message-wrap${isExpanded ? "" : " nowrap"}`}
             data-owner="authenticated-home-notification-message-wrap"
             id={`message-${notification.id}`}
             ref={messageWrapRef}
             style={{ maxHeight: isExpanded ? "none" : undefined }}
             data-part="authenticated-home-notification-expanded-height"
           >
-            <div data-owner="authenticated-home-notification-message" ref={messageRef}>
+            <div
+              className="message"
+              data-owner="authenticated-home-notification-message"
+              ref={messageRef}
+            >
               <LegacyNotificationMessage message={notification.message} />
             </div>
           </div>
           {hasOverflow && !isExpanded ? (
-            <div data-owner="authenticated-home-notification-more">...</div>
+            <div className="more" data-owner="authenticated-home-notification-more">
+              ...
+            </div>
           ) : null}
-          <div data-owner="authenticated-home-notification-meta">
-            <Link
-              to="/$user"
-              params={{ user: notification.actor.loginId }}
-              search={LEGACY_USER_LINK_SEARCH}
-              className={avatarClassName}
-              activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-              activeProps={{
-                "aria-current": undefined,
-                className: avatarClassName,
-                "data-status": undefined,
-              }}
+          <div className="meta" data-owner="authenticated-home-notification-meta">
+            {hasActor ? (
+              <>
+                <Link
+                  to="/$user"
+                  params={{ user: notification.actor.loginId }}
+                  search={LEGACY_USER_LINK_SEARCH}
+                  className={avatarClassName}
+                  activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: avatarClassName,
+                    "data-status": undefined,
+                  }}
+                >
+                  <img src={notification.actor.avatarUrl} alt="" />
+                </Link>
+                <Link
+                  to="/$user"
+                  params={{ user: notification.actor.loginId }}
+                  search={LEGACY_USER_LINK_SEARCH}
+                  className="author"
+                  data-owner="authenticated-home-notification-author"
+                  activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: "author",
+                    "data-status": undefined,
+                  }}
+                >
+                  {notification.actor.displayName}
+                </Link>
+                @{notification.actor.loginId}
+              </>
+            ) : (
+              <div className="smaller">
+                <img src={notification.actor.avatarUrl} alt="" height={42} width={42} />
+              </div>
+            )}
+            <span
+              className="ago pull-right"
+              data-owner="authenticated-home-notification-ago"
+              title={notification.createdAt}
             >
-              <img src={notification.actor.avatarUrl} alt="" />
-            </Link>
-            <Link
-              to="/$user"
-              params={{ user: notification.actor.loginId }}
-              search={LEGACY_USER_LINK_SEARCH}
-              data-owner="authenticated-home-notification-author"
-              activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-              activeProps={{
-                "aria-current": undefined,
-                className: undefined,
-                "data-status": undefined,
-              }}
-            >
-              {notification.actor.displayName}
-            </Link>
-            @{notification.actor.loginId}
-            <span data-owner="authenticated-home-notification-ago" title={notification.createdAt}>
               {notification.createdLabel}
             </span>
           </div>
@@ -741,6 +770,7 @@ function LegacyNotificationMessage({ message }: { message: string }) {
     offset += line.length;
     if (lineNumber < lines.length - 1) {
       content.push(<br key={`break-${offset}`} />);
+      content.push("\n");
       offset += 1;
     }
   }
@@ -971,7 +1001,7 @@ export function SiteLayoutShell({
           workspace={navbarWorkspaceQuery.data}
         />
       ) : null}
-      <div data-owner="framed-site-main">
+      <div className={projectSearchAction ? "prj" : undefined} data-owner="framed-site-main">
         <div className="unsupported hidden">
           <div className="unsupported-inner">
             <p id="unsupported-content" />

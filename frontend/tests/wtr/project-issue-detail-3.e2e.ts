@@ -396,8 +396,18 @@ test("project issue detail renders legacy read-only metadata fields", async ({ p
 
   await page.goto(`${basePath}/admin/sample/issue/11`);
 
+  const assigneeAvatar = page.locator(
+    ".issue-info form dl:has(dt:text('Assignee')) > dd:nth-of-type(2) img",
+  );
+  await expect.poll(() => assigneeAvatar.evaluate((image) => image.naturalWidth)).toBe(128);
+  expect(await assigneeAvatar.evaluate(async (image) => {
+    const bytes = await (await fetch(image.currentSrc)).arrayBuffer();
+    const digest = await crypto.subtle.digest("SHA-256", bytes);
+    return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  })).toBe("781a764b1f86352b2c23acd7e7807feb39b45aac11b905cf731bd764859aa891");
+  const bundledDefaultAvatarUrl = await assigneeAvatar.getAttribute("src");
   const expectedAssignee =
-    `<dd><a href="__BASE_PATH__/admin" class="usf-group"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Site Admin</strong><span class="loginid"> <strong>@</strong>admin</span></a></dd>`.replaceAll(
+    `<dd><a href="__BASE_PATH__/admin" class="usf-group"><span class="avatar-wrap smaller"><img src="${bundledDefaultAvatarUrl}" width="20" height="20"></span><strong class="name">Site Admin</strong><span class="loginid"> <strong>@</strong>admin</span></a></dd>`.replaceAll(
       "__BASE_PATH__",
       basePath,
     );
@@ -639,7 +649,6 @@ test("project issue detail renders legacy read-only sharer list", async ({ page 
   const content = sharerList.locator(":scope > #sharer-list");
   await expect(sharerList).toHaveClass(/sharer-list/);
   await expect(title).toHaveClass(/issue-share-title/);
-  await expect(title).not.toHaveClass(/(?:^|\s)mb10(?:\s|$)/u);
   await expect(title).toHaveText("Issue Sharer 2");
   await expect(title.locator(".issue-sharer-count")).toHaveText("2");
   await expect(content).toBeVisible();
@@ -759,9 +768,20 @@ test("project issue detail deletes through legacy confirmation modal", async ({ 
   expect(deleteRequests).toEqual([]);
 
   await trigger.first().click();
+  const issueDeleteConfirmHitTarget = await page
+    .locator("#deleteConfirm .ybtn-danger")
+    .evaluate((button) => {
+      const rect = button.getBoundingClientRect();
+      const hit = document.elementFromPoint(
+        rect.left + rect.width / 2,
+        rect.top + rect.height / 2,
+      );
+      return hit === button || (hit instanceof Element && button.contains(hit));
+    });
+  expect(issueDeleteConfirmHitTarget).toBe(true);
   await page
     .locator("#deleteConfirm .ybtn-danger")
-    .evaluate((button: HTMLButtonElement) => button.click());
+    .click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/issues`);
   await expect.poll(() => deleteRequests).toEqual(["DELETE"]);
 });
@@ -781,7 +801,7 @@ test("project issue detail deletes comments through legacy confirmation modal", 
   });
   await armRootModalBridgeTrap(page);
   const commentDeleteButton = page.locator(
-    '#comment-77 > .media-body > .meta-info > .act-row [data-owner="project-issue-detail-comment-action-delete"]',
+    '#comments[data-owner="project-issue-detail-timeline"] #comment-77 > .media-body > .meta-info > .act-row [data-owner="project-issue-detail-comment-action-delete"]',
   );
   await expect(commentDeleteButton).not.toHaveAttribute("data-toggle", "comment-delete");
   await commentDeleteButton.click();
@@ -878,6 +898,17 @@ test("project issue detail deletes comments through legacy confirmation modal", 
   expect(commentDeleteRequests).toEqual([]);
 
   await commentDeleteButton.click();
+  const commentDeleteConfirmHitTarget = await page
+    .locator("#comment-delete-confirm")
+    .evaluate((button) => {
+      const rect = button.getBoundingClientRect();
+      const hit = document.elementFromPoint(
+        rect.left + rect.width / 2,
+        rect.top + rect.height / 2,
+      );
+      return hit === button || (hit instanceof Element && button.contains(hit));
+    });
+  expect(commentDeleteConfirmHitTarget).toBe(true);
   await page.locator("#comment-delete-confirm").click();
   await expect.poll(() => commentDeleteRequests).toEqual(["DELETE"]);
   await expect(page.locator("#comment-delete-modal")).toHaveClass(/hide/);

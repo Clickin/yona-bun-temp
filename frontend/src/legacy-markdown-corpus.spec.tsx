@@ -29,6 +29,7 @@ import {
   type MarkdownReferenceReplacement,
 } from "./components/legacy-markdown";
 import { MarkdownCodeBlock } from "./components/markdown-code-block";
+import { updateTasklistMarkdown } from "./components/tasklist";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -58,6 +59,21 @@ async function renderMarkdown(node: React.ReactNode): Promise<HTMLDivElement> {
 }
 
 const PLAIN_EXTENSIONS = [gfmAutolinkLiterals];
+
+test("task toggles preserve fenced text and another list item's descendants", () => {
+  const source = [
+    "```markdown",
+    "- [ ] literal",
+    "```",
+    "- [ ] parent",
+    "  - [ ] child",
+    "- ordinary sibling",
+    "  - [ ] unrelated",
+  ].join("\r\n");
+  expect(updateTasklistMarkdown(source, 0, true)).toBe(
+    source.replace("- [ ] parent", "- [x] parent").replace("- [ ] child", "- [x] child"),
+  );
+});
 
 function plain(children: string, components?: Parameters<typeof LegacyMarkdown>[0]["components"]) {
   return (

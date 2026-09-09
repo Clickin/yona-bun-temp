@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page, readFileSync } from "../wtr-compat.ts";
+import { expect, test, type Locator, type Page } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
 // (a recorded shim gap); resolve only builds those paths.
@@ -9,16 +9,6 @@ const BASE_PATH = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const SCREENSHOT_DIRECTORY = resolve("..", "output", "playwright");
 
 test.use({ locale: "en-US" });
-
-test("authenticated Recent History shell has narrow global-theme Style ownership", () => {
-  const source = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const recentStart = source.indexOf("function SidebarRecentIssueList");
-  const recentEnd = source.indexOf("function SidebarRecentIssueItem", recentStart);
-  expect(recentStart).toBeGreaterThanOrEqual(0);
-  expect(recentEnd).toBeGreaterThan(recentStart);
-  const recentSource = source.slice(recentStart, recentEnd);
-  expect(recentSource).toContain('"authenticated-sidenav-recent-shell"');
-});
 
 for (const state of ["populated", "empty"] as const) {
   for (const viewport of [
@@ -41,19 +31,8 @@ for (const state of ["populated", "empty"] as const) {
       const input = shell.getByRole("textbox", { name: "Type name" });
       const result = shell.locator("#recentlyVisitedIssues");
       await expect(shell).toBeVisible();
-      // F5 dist-truth: the panel is right-anchored (#mySidenav {position:absolute;right:0},
-      // yona-original/app/assets/stylesheets/less/_usermenu.less:852) and animates its
-      // width over 0.5s; wait until #mySidenav's width stops changing so the
-      // snapshot reads the rest geometry the pins pin ({left: viewport.x,
-      // width: viewport.shellWidth}). Mirrors the favorite-shell settle poll.
-      // WTR-iframe ceiling (F5-verified 2026-08-13): the 0.5s width transition
-      // stalls in the harness iframe, so this poll resolves mid-transition and
-      // the snapshot reads the drifting panel (left ~1289); a real browser
-      // settles the panel at left 1004/right 1366 and the shell at left 1015/
-      // width 350 (desktop) and left 9/width 390 (mobile) — the pins below.
-      // Mobile toBeVisible fails under the stalled panel: the mobile frame is
-      // width:100% of the panel content, so a panel stuck at width 0 collapses
-      // the shell rect to 0 (the real browser renders it fully visible).
+      // Legacy _usermenu.less right-anchors the panel and animates its width.
+      // Measure after settling, including the layout viewport's scrollbar gutter.
       await page.evaluate(
         () =>
           new Promise<void>((resolve) => {
@@ -75,6 +54,9 @@ for (const state of ["populated", "empty"] as const) {
             setTimeout(poll, 50);
           }),
       );
+      const scrollbarGutter = await page.evaluate(
+        () => window.innerWidth - document.documentElement.clientWidth,
+      );
       const initial = await readEvidence(shell);
       console.log(
         `authenticated-sidenav-recent-shell-${state}-${viewport.label}`,
@@ -89,7 +71,7 @@ for (const state of ["populated", "empty"] as const) {
       expect(initial.pluginAttributes).toEqual([]);
       expect(initial.geometry.root).toMatchObject({
         height: state === "populated" ? 106 : 95,
-        left: viewport.x,
+        left: viewport.x - scrollbarGutter,
         width: viewport.shellWidth,
       });
       expect(initial.geometry.group).toMatchObject({ height: 42, width: viewport.shellWidth });

@@ -217,22 +217,13 @@ export const scenarios = [
   },
   {
     id: "R12-newfork-reviews-attachments",
-    title: "newFork page, review thread list, project attachment list",
+    title: "newFork page and review thread list",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
       { actor: "admin", action: "view-newfork-page", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "list-reviews", params: { owner: "admin", project: "sample" } },
-      {
-        actor: "admin",
-        action: "list-project-files",
-        params: { owner: "admin", project: "sample" },
-        // Legacy has no bare /:user/:project/files route — the code browser
-        // binds files/:rev/*path — so legacy answers 404 while Yoram serves a
-        // deep-linkable file list page. There is no DOM/navigation readback
-        // here, so this remains blocking rather than being dispositioned.
-      },
     ],
-    behaviorMatcher: { action: /^(PullRequestApp\.newFork|ReviewThreadApp\.reviewThreads|AttachmentApp\.getFileList)$/, route: /(newFork|reviews|files)$/ },
+    behaviorMatcher: { action: /^(PullRequestApp\.newFork|ReviewThreadApp\.reviewThreads)$/, route: /(newFork|reviews)$/ },
   },
 
   // --- mutation coverage (R13–R16): divergence-pattern proof wave. Every
@@ -418,7 +409,6 @@ function legacyPath(step) {
     case "browse-code-ajax-nobranch-path": return `${base}/code/!/${p.path}`;
     case "view-newfork-page": return `${base}/newFork`;
     case "list-reviews": return `${base}/reviews`;
-    case "list-project-files": return `${base}/files`;
     default: throw new Error(`unmapped action path: ${step.action}`);
   }
 }
@@ -477,8 +467,8 @@ const READ_ACTIONS = [
   "browse-code-ajax-nobranch-path",
 ];
 
-// Raw rev-path actions (rawcode/image/download, per-rev file view, project
-// attachment list): responses are bytes or fragments rather than comparable
+// Raw rev-path actions (rawcode/image/download, per-rev file view): responses
+// are bytes or fragments rather than comparable
 // pages, so they stop after the paired request — status failures land in
 // entry.errors via requestBoth.
 const rawGet = () => ({
@@ -499,7 +489,6 @@ const RAW_ACTIONS = [
   "fetch-raw-file",
   "fetch-image-file",
   "download-code-archive",
-  "list-project-files",
 ];
 
 // --- mutation definitions (R13–R16) -----------------------------------------

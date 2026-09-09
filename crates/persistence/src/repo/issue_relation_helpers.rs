@@ -262,6 +262,49 @@ impl AppRepositoryImpl<'_> {
         comment_markdown: &str,
         parent_comment_id: Option<i64>,
     ) -> Result<Option<Vec<i64>>, DbErr> {
+        self.issue_comment_notification_receiver_ids_for_event(
+            owner_name,
+            project_name,
+            issue_number,
+            actor_id,
+            comment_markdown,
+            parent_comment_id,
+            "NEW_COMMENT",
+        )
+        .await
+    }
+
+    pub(super) async fn issue_comment_update_notification_receiver_ids(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        issue_number: i64,
+        actor_id: i64,
+        comment_markdown: &str,
+        parent_comment_id: Option<i64>,
+    ) -> Result<Option<Vec<i64>>, DbErr> {
+        self.issue_comment_notification_receiver_ids_for_event(
+            owner_name,
+            project_name,
+            issue_number,
+            actor_id,
+            comment_markdown,
+            parent_comment_id,
+            "COMMENT_UPDATED",
+        )
+        .await
+    }
+
+    async fn issue_comment_notification_receiver_ids_for_event(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        issue_number: i64,
+        actor_id: i64,
+        comment_markdown: &str,
+        parent_comment_id: Option<i64>,
+        event_type: &str,
+    ) -> Result<Option<Vec<i64>>, DbErr> {
         let Some((project, issue)) = self
             .read_project_issue_model(owner_name, project_name, issue_number)
             .await?
@@ -271,7 +314,7 @@ impl AppRepositoryImpl<'_> {
         let mut seen = HashSet::new();
         let mut receiver_ids = Vec::new();
         for user_id in self
-            .issue_notification_receiver_ids(&project, &issue, "NEW_COMMENT")
+            .issue_notification_receiver_ids(&project, &issue, event_type)
             .await?
         {
             if user_id != actor_id && seen.insert(user_id) {

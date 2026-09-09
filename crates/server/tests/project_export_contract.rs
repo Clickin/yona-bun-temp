@@ -1,9 +1,7 @@
 use axum::body::Body;
 use http::{header, Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
-use sea_orm::{
-    ActiveModelTrait, Database, DatabaseConnection, NotSet, Set,
-};
+use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, NotSet, Set};
 use serde_json::{json, Value};
 use tower::ServiceExt;
 use yoram_migration::Migrator;
@@ -255,10 +253,24 @@ async fn seed_exportable_project(
     user_id: i64,
 ) -> (i64, i64) {
     create_project(app.clone(), cookie, csrf, "member", "dataproj").await;
-    let post_attachment =
-        insert_attachment(&db, "USER", user_id, "member", "post-export.png", "image/png").await;
-    let issue_attachment =
-        insert_attachment(&db, "USER", user_id, "member", "issue-export.png", "image/png").await;
+    let post_attachment = insert_attachment(
+        &db,
+        "USER",
+        user_id,
+        "member",
+        "post-export.png",
+        "image/png",
+    )
+    .await;
+    let issue_attachment = insert_attachment(
+        &db,
+        "USER",
+        user_id,
+        "member",
+        "issue-export.png",
+        "image/png",
+    )
+    .await;
     write_uploaded_test_file(data_dir, &post_attachment, &[b'x'; 256]);
     write_uploaded_test_file(data_dir, &issue_attachment, &[b'y'; 256]);
 
@@ -600,8 +612,16 @@ async fn project_import_rejects_project_metadata_mismatch() {
 async fn project_import_requires_manager_or_site_admin() {
     let (app, _repo, _db) = build_app_with_repository().await;
     let (_member_csrf, member_cookie, _member_id) = register_user(app.clone(), "member").await;
-    create_project(app.clone(), &member_cookie, &_member_csrf, "member", "dataproj").await;
-    let (_outsider_csrf, outsider_cookie, _outsider_id) = register_user(app.clone(), "outsider").await;
+    create_project(
+        app.clone(),
+        &member_cookie,
+        &_member_csrf,
+        "member",
+        "dataproj",
+    )
+    .await;
+    let (_outsider_csrf, outsider_cookie, _outsider_id) =
+        register_user(app.clone(), "outsider").await;
 
     let body = r#"{"kind":"project","owner":"member","projectName":"dataproj","projectDescription":"","projectVcs":"GIT","projectScope":"public"}
 {"kind":"done","memberCount":0,"issueCount":0,"postCount":0,"milestoneCount":0}
@@ -705,7 +725,6 @@ async fn project_import_denies_missing_project_for_non_admin() {
     .await;
     assert_eq!(response.status(), StatusCode::FORBIDDEN);
 }
-
 
 async fn mark_site_admin(db: &DatabaseConnection, user_id: i64) {
     site_admin::ActiveModel {

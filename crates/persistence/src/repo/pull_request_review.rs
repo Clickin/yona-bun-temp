@@ -1,6 +1,16 @@
 use super::*;
 
 impl AppRepositoryImpl<'_> {
+    pub async fn read_review_comment_thread_id(
+        &self,
+        comment_id: i64,
+    ) -> Result<Option<i64>, DbErr> {
+        Ok(review_comment::Entity::find_by_id(comment_id)
+            .one(&self.db)
+            .await?
+            .and_then(|comment| comment.thread_id))
+    }
+
     pub async fn read_legacy_review_comment_delete_target(
         &self,
         comment_id: i64,
@@ -201,6 +211,14 @@ impl AppRepositoryImpl<'_> {
         {
             return Ok(None);
         }
+        attachment::Entity::delete_many()
+            .filter(
+                attachment::Column::ContainerType
+                    .eq(Some(REVIEW_COMMENT_ATTACHMENT_CONTAINER.to_string())),
+            )
+            .filter(attachment::Column::ContainerId.eq(input.comment_id))
+            .exec(&self.db)
+            .await?;
         review_comment::Entity::delete_by_id(input.comment_id)
             .exec(&self.db)
             .await?;
@@ -209,6 +227,11 @@ impl AppRepositoryImpl<'_> {
             .count(&self.db)
             .await?;
         if remaining == 0 {
+            attachment::Entity::delete_many()
+                .filter(attachment::Column::ContainerType.eq(Some("COMMENT_THREAD".to_string())))
+                .filter(attachment::Column::ContainerId.eq(thread_id))
+                .exec(&self.db)
+                .await?;
             comment_thread::Entity::delete_by_id(thread_id)
                 .exec(&self.db)
                 .await?;

@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts"; // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
+// Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts) => parts.join("/");
 
@@ -12,72 +12,6 @@ const ACTION = ':scope > [data-owner="authenticated-home-series-tab-action-item"
 const SCREENSHOT_DIRECTORY = resolve("..", "output", "playwright");
 
 test.use({ locale: "ko-KR" });
-
-test("authenticated Home series tabs have bounded global-theme Style ownership", () => {
-  const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/app.css", "utf8");
-  const appCss = curatedAppCss();
-  const projectRoute = readFileSync("src/routes/$ownerName/$projectName.tsx", "utf8");
-  for (const token of [
-    "authenticatedHomeSeriesTabsZero",
-    "authenticatedHomeSeriesTabsMarginBottom",
-    "authenticatedHomeSeriesTabsListStyle",
-    "authenticatedHomeSeriesTabsBorderColor",
-    "authenticatedHomeSeriesTabsTransparentBorder",
-    "authenticatedHomeSeriesTabsBorderStyle",
-    "authenticatedHomeSeriesTabsBorderWidth",
-    "authenticatedHomeSeriesTabsPseudoDisplay",
-    "authenticatedHomeSeriesTabsPseudoContent",
-    "authenticatedHomeSeriesTabsPseudoClear",
-    "authenticatedHomeSeriesTabItemFloat",
-    "authenticatedHomeSeriesTabItemMarginBottom",
-    "authenticatedHomeSeriesTabActionPosition",
-    "authenticatedHomeSeriesTabLinkDisplay",
-    "authenticatedHomeSeriesTabLinkPaddingBlock",
-    "authenticatedHomeSeriesTabLinkPaddingInline",
-    "authenticatedHomeSeriesTabLinkMobilePaddingInline",
-    "authenticatedHomeSeriesTabLinkMarginRight",
-    "authenticatedHomeSeriesTabLinkLineHeight",
-    "authenticatedHomeSeriesTabLinkRadius",
-    "authenticatedHomeSeriesTabLinkText",
-    "authenticatedHomeSeriesTabLinkFontWeight",
-    "authenticatedHomeSeriesTabLinkCursor",
-    "authenticatedHomeSeriesTabLinkTextDecoration",
-    "authenticatedHomeSeriesTabLinkHoverSurface",
-    "authenticatedHomeSeriesTabLinkFocusSurface",
-    "authenticatedHomeSeriesTabLinkInteractionBorderBlockStart",
-    "authenticatedHomeSeriesTabLinkInteractionBorderInline",
-    "authenticatedHomeSeriesTabLinkInteractionBorderBlockEnd",
-    "authenticatedHomeSeriesTabActiveText",
-    "authenticatedHomeSeriesTabActiveSurface",
-    "authenticatedHomeSeriesTabActiveCursor",
-  ]) {
-    if (theme.includes(`${token}:`)) {
-    } else {
-    }
-  }
-
-  const markupStart = route.indexOf('data-owner="authenticated-home-series-tabs"');
-  const notificationOwner = route.indexOf(
-    'data-owner="authenticated-home-notification-list"',
-    markupStart,
-  );
-  const markupEnd = route.lastIndexOf("<ul", notificationOwner);
-  const markup = route.slice(route.lastIndexOf("<ul", markupStart), markupEnd);
-  expect(markup).not.toMatch(/className=[^\n]*(?:\bnav\b|\bnav-tabs\b|\bactive\b)/u);
-
-  expect(markup.match(/authenticated-home-series-tab-item/g)).toHaveLength(3);
-  expect(markup).toContain("authenticated-home-series-tab-action-item");
-  expect(markup.match(/authenticated-home-series-tab-link/g)).toHaveLength(3);
-  expect(markup).toContain('to="/notifications"');
-  expect(markup).toContain('to="/user/issues"');
-  expect(markup).toContain('to="/user/files"');
-  expect(markup).toContain("LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS");
-
-  // The generic fallback remains live for project tabs outside this owner.
-  expect(projectRoute).toContain('<ul className="nav nav-tabs">');
-  expect(appCss).toContain(".nav-tabs {");
-});
 
 for (const viewport of [
   { height: 900, label: "desktop", width: 1366 },
@@ -289,7 +223,8 @@ test("notifications keeps the React-owned default-login action behavior outside 
   await expect(action).toHaveCSS("position", "relative");
   await expect(button).toHaveText("기본 페이지로 지정");
   await expect(button).toHaveAttribute("data-owner", "authenticated-home-default-login-action");
-  await expect(button).not.toHaveClass(/(?:^|\s)(?:ybtn|hide-in-mobile)(?:\s|$)/u);
+  await expect(button).toHaveClass(/(?:^|\s)ybtn(?:\s|$)/u);
+  await expect(button).toHaveClass(/(?:^|\s)hide-in-mobile(?:\s|$)/u);
   await expect(button).not.toHaveAttribute("data-toggle");
   await button.hover();
   const popup = action.locator('[data-owner="authenticated-home-default-login-popover"]');
@@ -331,7 +266,8 @@ test("authenticated Home series tab paint is isolated from retired classes", asy
 
 async function assertSeriesTabDom(tabs: Locator, actionIsEmpty = true) {
   await expect(tabs).toBeVisible();
-  await expect(tabs).not.toHaveClass(/(?:^|\s)(?:nav|nav-tabs)(?:\s|$)/u);
+  await expect(tabs).toHaveClass(/(?:^|\s)nav(?:\s|$)/u);
+  await expect(tabs).toHaveClass(/(?:^|\s)nav-tabs(?:\s|$)/u);
   await expect(tabs.locator(ITEMS)).toHaveCount(3);
   await expect(tabs.locator(ACTION)).toHaveCount(1);
   await expect(tabs.locator(":scope > li")).toHaveCount(4);
@@ -342,8 +278,12 @@ async function assertSeriesTabDom(tabs: Locator, actionIsEmpty = true) {
   if (actionIsEmpty) {
     await expect(tabs.locator(ACTION)).toBeEmpty();
   }
-  for (const item of await tabs.locator(":scope > li").all()) {
-    await expect(item).not.toHaveClass(/(?:^|\s)active(?:\s|$)/u);
+  for (const [index, item] of (await tabs.locator(":scope > li").all()).entries()) {
+    if (index === 0) {
+      await expect(item).toHaveClass(/(?:^|\s)active(?:\s|$)/u);
+    } else {
+      await expect(item).not.toHaveClass(/(?:^|\s)active(?:\s|$)/u);
+    }
   }
   for (const link of await tabs.locator(LINKS).all()) {
     await expect(link).not.toHaveAttribute("aria-current");

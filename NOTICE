@@ -13,3 +13,35 @@ compatibility, and document legacy parity behavior.
 
 Do not reuse upstream Yona logos, icons, screenshots, or CI imagery as Yoram
 release assets unless their license and attribution are reviewed separately.
+
+The compatibility workflow illustration frontend/src/assets/legacy/images/fork.jpg
+is an unmodified copy of Yona public/images/fork-pull/fork.jpg, covered by the
+upstream Apache License, Version 2.0 and attribution above. It is not Yoram
+branding. SHA-256:
+af23f45dbe39f317736a03c89794178e05e3e27790a62e5e739c0ef9ff761bdf
+
+The code browser's frontend/src/assets/legacy/dynatree/ stylesheet and GIFs
+are unmodified copies from Yona 60a5ac40689fc36ee5b55eddedd345fc34878190,
+public/stylesheets/dynatree/skin/. The bundled jQuery Dynatree 1.2.4 header
+credits Copyright (c) 2013 Martin Wendt and offers MIT or GPL licensing.
+These compatibility assets are distributed under the MIT license below.
+
+Copyright (c) 2013 Martin Wendt
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.

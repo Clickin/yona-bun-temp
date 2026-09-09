@@ -65,6 +65,44 @@ import {
   dueDateInlineUpdateMetrics,
 } from "./project-issue-detail-shared.ts";
 
+test("issue comment deep link scrolls after the issue response arrives", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await mockProjectIssueDetail(page, {
+    bodyMarkdown: "Paragraph before the comment.\n\n".repeat(40),
+  });
+  let releaseDetail!: () => void;
+  const detailReady = new Promise<void>((resolve) => {
+    releaseDetail = resolve;
+  });
+  await page.route("**/api/v1/projects/admin/sample/issues/11", async (route) => {
+    await detailReady;
+    await route.fallback();
+  });
+  const navigation = page.goto(`${basePath}/admin/sample/issue/11#comment-77`);
+  try {
+    await expect(page.locator('[data-wireframe="project-issue-detail"]')).toBeVisible();
+  } finally {
+    releaseDetail();
+  }
+  await navigation;
+  await expect(page.locator(".span-left-pane #comment-77")).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const comment = document.querySelector(".span-left-pane #comment-77");
+        if (!comment) throw new Error("Loaded issue comment is missing");
+        const documentTop = comment.getBoundingClientRect().top + window.scrollY;
+        const maximumScroll = document.documentElement.scrollHeight - window.innerHeight;
+        return (
+          window.scrollY > 0 &&
+          Math.abs(window.scrollY - Math.min(documentTop, maximumScroll)) <= 1
+        );
+      }),
+    )
+    .toBe(true);
+});
+
 test("project issue detail switches legacy comment editor tabs through React state controls", async ({
   page,
 }) => {
@@ -1190,6 +1228,124 @@ test("project issue detail owns the parent comment action-row float with Style",
   await page.setViewportSize({ width: 1366, height: 900 });
 });
 
+test("project issue detail keeps the legacy sidebar, action, and timeline order", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const parentComment = {
+    attachments: [],
+    authorAvatarUrl: "/assets/images/default-avatar-32.png",
+    authorLabel: "Dev Member",
+    authorLoginId: "dev",
+    childComments: [],
+    contentsHtml: "<p>Server HTML should not render</p>",
+    contentsMarkdown: "Comment **markdown**",
+    createdLabel: "Jul 2, 2026",
+    id: 77,
+    viewerCanDelete: true,
+    viewerCanUpdate: true,
+    viaEmail: false,
+    voterCount: 0,
+    voters: [],
+  };
+  await mockProjectIssueDetail(page, {
+    comments: [parentComment],
+    timeline: [
+      {
+        createdLabel: "Jul 3, 2026",
+        eventType: "ISSUE_STATE_CHANGED",
+        id: 88,
+        kind: "event",
+        newValue: "closed",
+        oldValue: "open",
+        senderAvatarUrl: "/assets/images/default-avatar-32.png",
+        senderLabel: "Dev Member",
+        senderLoginId: "dev",
+      },
+      { comment: parentComment, id: 77, kind: "comment" },
+    ],
+  });
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+
+  const sidebar = page.locator(".span-right-pane[data-owner='project-issue-detail-sidebar']");
+  const issueInfo = sidebar.locator(":scope > .issue-info");
+  const labelEdit = issueInfo.locator("#issueUpdateForm a.label-edit");
+  await expect(sidebar).toHaveClass(/(?:^|\s)mb20(?:\s|$)/u);
+  await expect(issueInfo).toHaveClass(/(?:^|\s)affix-top(?:\s|$)/u);
+  await expect(labelEdit).toHaveCount(1);
+  await expect(labelEdit).toHaveText("[Edit]");
+  await expect(labelEdit).toHaveAttribute("target", "_blank");
+  await expect(labelEdit).toHaveAttribute("href", /\/admin\/sample\/issue\/labelsform/u);
+
+  const issueActions = page.locator(
+    ".span-left-pane > .board-actrow[data-owner='project-issue-detail-actions']",
+  );
+  await expect(issueActions).toHaveClass(/(?:^|\s)right-txt(?:\s|$)/u);
+  const editIssueButton = issueActions.locator(
+    "[data-owner='project-issue-detail-action-edit']",
+  );
+  const deleteIssueButton = issueActions.locator(
+    "[data-owner='project-issue-detail-action-delete']",
+  );
+  await expect(editIssueButton).toHaveClass(/(?:^|\s)ml10(?:\s|$)/u);
+  await expect(editIssueButton).toHaveClass(/(?:^|\s)pt5px(?:\s|$)/u);
+  await expect(deleteIssueButton).toHaveClass(/(?:^|\s)ml6(?:\s|$)/u);
+
+  const order = await page.evaluate(() => {
+    const directIndex = (parent: Element | null, selector: string) => {
+      if (!parent) return -1;
+      const child = parent.querySelector(`:scope > ${selector}`);
+      return child ? Array.from(parent.children).indexOf(child) : -1;
+    };
+    const comment = document.querySelector("#comment-77");
+    const meta = comment?.querySelector(":scope > .media-body > .meta-info");
+    const commentDate = meta?.querySelector(".ago-date");
+    const indexComment = document.querySelector(".span-right-pane #comment-77.index-comment");
+    const indexAuthor = indexComment?.querySelector(".index-comment-author");
+    const indexDate = indexAuthor?.querySelector(".ago-date");
+    const event = document.querySelector("#event-88");
+    return {
+      avatarBeforeBody:
+        directIndex(comment, ".comment-avatar") < directIndex(comment, ".media-body"),
+      authorBeforeDate: directIndex(meta, ".comment_author") < directIndex(meta, ".ago-date"),
+      agoBeforeShare:
+        directIndex(commentDate, ".ago") < directIndex(commentDate, ".share-link"),
+      indexAuthorBeforeDate:
+        directIndex(indexAuthor, ".comment_author") < directIndex(indexAuthor, ".ago-date"),
+      indexAgoBeforeShare:
+        directIndex(indexDate, ".ago") < directIndex(indexDate, ".share-link"),
+      eventParts: event
+        ? Array.from(event.children).map((child) => child.className || child.tagName.toLowerCase())
+        : [],
+    };
+  });
+  expect(order.avatarBeforeBody).toBe(true);
+  expect(order.authorBeforeDate).toBe(true);
+  expect(order.agoBeforeShare).toBe(true);
+  expect(order.indexAuthorBeforeDate).toBe(true);
+  expect(order.indexAgoBeforeShare).toBe(true);
+  expect(order.eventParts.slice(0, 3)).toEqual(["state closed", "usf-group", "usf-group"]);
+  expect(order.eventParts[order.eventParts.length - 1]).toBe("date");
+
+  const containment = await page.evaluate(() => {
+    const label = document.querySelector("#issueUpdateForm a.label-edit");
+    const labelDt = label?.closest("dt");
+    const labelRect = label?.getBoundingClientRect();
+    const labelDtRect = labelDt?.getBoundingClientRect();
+    return {
+      labelIsInLabelTerm: labelDt?.contains(label) ?? false,
+      labelFitsTerm:
+        labelRect !== undefined &&
+        labelDtRect !== undefined &&
+        labelRect.left >= labelDtRect.left &&
+        labelRect.right <= labelDtRect.right &&
+        labelRect.top >= labelDtRect.top &&
+        labelRect.bottom <= labelDtRect.bottom,
+    };
+  });
+  expect(containment).toEqual({ labelIsInLabelTerm: true, labelFitsTerm: true });
+});
+
 test("project issue detail matches authored comment edit branch from legacy partial_comment/commentUpdateForm", async ({
   page,
 }) => {
@@ -1506,12 +1662,11 @@ test("project issue detail reveals legacy sharer list from share button", async 
   const sharerList = page.locator(".span-left-pane > .sharer-list");
   const title = sharerList.locator(":scope > dt");
   const content = sharerList.locator(":scope > #sharer-list");
-  await expect(sharerList).toHaveClass(/sharer-list/);
   await expect(sharerList).toHaveClass(/hideFromDisplayOnly/);
   await expect(sharerList).toHaveClass(/sharer-list-border/);
   await expect(sharerList).toHaveCSS("display", "block");
   await expect(title).toHaveClass(/issue-share-title/);
-  await expect(title).not.toHaveClass(/(?:^|\s)mb10(?:\s|$)/u);
+  await expect(title).toHaveClass(/(?:^|\s)mb10(?:\s|$)/u);
   await expect(title).toHaveText("Issue Sharer");
   await expect(title.locator(".issue-sharer-count")).toHaveText("");
   await expect(content).toHaveAttribute("id", "sharer-list");
@@ -1526,12 +1681,7 @@ test("project issue detail reveals legacy sharer list from share button", async 
   await expect(content.locator("#issueSharer")).toHaveValue("");
 });
 
-test("project issue detail owns sharer title spacing with route Style", async ({ page }) => {
-  const routeSource = readFileSync(
-    "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
-    "utf8",
-  );
-  const styleSource = readFileSync("src/app.css", "utf8");
+test("project issue detail matches legacy sharer title spacing", async ({ page }) => {
   const legacyView = readFileSync("../yona-original/app/views/issue/view.scala.html", "utf8");
   const legacyCommon = readFileSync(
     "../yona-original/app/assets/stylesheets/less/_common.less",
@@ -1542,12 +1692,6 @@ test("project issue detail owns sharer title spacing with route Style", async ({
   expect(legacyView).toContain('<dt class="issue-share-title mb10">');
   expect(legacyCommon).toContain(".mb10 { margin-bottom:10px; }");
   expect(legacyYobi).toContain('@import "less/_common.less";');
-
-  expect(routeSource).toContain('data-owner="project-issue-detail-sharer-title"');
-  expect(routeSource).not.toContain('className="issue-share-title mb10"');
-  expect(styleSource).toMatch(
-    /\[data-owner="project-issue-detail-sharer-title"\]\s*\{\s*margin-bottom:\s*10px;\s*\}/u,
-  );
 
   await mockProjectIssueDetail(page, { sharers: [] });
   await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/admin/sample/issue/11`);

@@ -8,6 +8,7 @@ import {
 } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
 import type { ProjectForkOptionsResponse } from "../../../api/org-project";
+import forkHelpImageUrl from "../../../assets/legacy/images/fork.jpg";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
@@ -294,15 +295,16 @@ function ProjectForkBody({
                       <div className="pull-left">
                         <img
                           data-owner="project-fork-help-image"
-                          src={prefixBasePath(
-                            runtimeConfig.basePath,
-                            "/legacy-assets/images/fork-pull/fork.jpg",
-                          )}
+                          className="img-polaroid"
+                          src={prefixBasePath(runtimeConfig.basePath, forkHelpImageUrl)}
                           alt=""
                         />
                         <br />
                       </div>
-                      <div data-owner="project-fork-help-copy">
+                      <div
+                        className="pull-left help-messages"
+                        data-owner="project-fork-help-copy"
+                      >
                         <p className="lead">{t("fork.help.title")}</p>
                         <p>{t("fork.help.message.1")}</p>
                         <p>{t("fork.help.message.2")}</p>
@@ -457,8 +459,12 @@ function ProjectForkBody({
                 </div>
               </div>
               <div className="control-group" data-owner="project-fork-actions">
-                <div className="controls pr-fork-controls">
-                  <button data-owner="project-fork-submit" type="submit">
+                <div className="controls">
+                  <button
+                    className="ybtn ybtn-info"
+                    data-owner="project-fork-submit"
+                    type="submit"
+                  >
                     {t("fork")}
                   </button>{" "}
                   <Link

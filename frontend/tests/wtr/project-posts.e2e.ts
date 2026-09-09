@@ -3799,6 +3799,7 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     await expect(textarea).toHaveCSS("margin", "0px");
     await expect(textarea).toHaveCSS("resize", "vertical");
     await textarea.focus();
+    await expect(textarea).toBeFocused();
     await expect(textarea).toHaveCSS("border-color", "rgb(243, 108, 34)");
     await expect(
       page.locator('.comment-update-form [data-owner^="post-detail-comment-create-checklist-"]'),
@@ -6134,33 +6135,40 @@ test("project board detail renders legacy post and comment attachments", async (
   await page.goto(`${basePath}/admin/sample/post/3`);
   await expect(page.locator(".span-left-pane > #attachments > ul.attaches.wm")).toHaveCount(1);
   await expect(
-    page.locator(".span-left-pane > #attachments > ul.attaches.wm > li.attached-file"),
+    page.locator(".span-left-pane > #attachments > ul.attaches.wm > li.attach"),
   ).toHaveCount(1);
-  await expect(page.locator(".span-left-pane > #attachments > .attached-file")).toHaveCount(0);
-  await expect(page.locator("#attachments .attached-file")).not.toHaveAttribute("data-href", /.+/u);
-  await expect(page.locator("#attachments .attached-file")).toHaveAttribute(
-    "data-name",
-    "post-note.txt",
+  const postDownload = page.locator("#attachments .attach > a.download");
+  const postPreview = page.locator("#attachments .attach > a.vmiddle");
+  await expect(postDownload).toHaveAttribute(
+    "href",
+    `${basePath}/files/31?action=download`,
   );
-  await expect(page.locator("#attachments .attached-file")).toHaveAttribute(
-    "data-mime",
-    "text/plain",
-  );
-  await expect(page.locator("#attachments .attached-delete")).toHaveCount(1);
+  await expect(postDownload).toHaveAttribute("title", "Download a file post-note.txt");
+  await expect(postPreview).toHaveAttribute("href", `${basePath}/files/31`);
+  await expect(postPreview).toHaveAttribute("target", "_blank");
+  await expect(postPreview).toContainText("post-note.txt");
+  await expect(postPreview).toContainText("(1.00 Kb)");
+  await expect(page.locator("#attachments .attached-delete")).toHaveCount(0);
+  await expect(page.locator("#attachments .attached-file")).toHaveCount(0);
   await expect(page.locator("#comment-body-21 > .attachments > ul.attaches.wm")).toHaveCount(1);
   await expect(
-    page.locator("#comment-body-21 > .attachments > ul.attaches.wm > li.attached-file"),
+    page.locator("#comment-body-21 > .attachments > ul.attaches.wm > li.attach"),
   ).toHaveCount(1);
-  await expect(page.locator("#comment-body-21 > .attachments > .attached-file")).toHaveCount(0);
-  await expect(page.locator("#comment-body-21 .attachments .attached-file")).not.toHaveAttribute(
-    "data-href",
-    /.+/u,
+  const commentDownload = page.locator("#comment-body-21 .attachments .attach > a.download");
+  const commentPreview = page.locator("#comment-body-21 .attachments .attach > a.vmiddle");
+  await expect(commentDownload).toHaveAttribute(
+    "href",
+    `${basePath}/files/41?action=download`,
   );
-  await expect(page.locator("#comment-body-21 .attachments .attached-file")).toHaveAttribute(
-    "data-name",
-    "comment-shot.png",
-  );
-  await expect(page.locator("#comment-body-21 .attachments .attached-delete")).toHaveCount(1);
+  await expect(commentDownload).toHaveAttribute("title", "Download a file comment-shot.png");
+  await expect(commentPreview).toHaveAttribute("href", `${basePath}/files/41`);
+  await expect(commentPreview).toHaveAttribute("target", "_blank");
+  await expect(commentPreview).toContainText("comment-shot.png");
+  await expect(commentPreview).toContainText("(2.00 Kb)");
+  await expect(page.locator("#comment-body-21 .attachments .attached-delete")).toHaveCount(0);
+  await expect(page.locator("#comment-body-21 .attachments .attached-file")).toHaveCount(0);
+  await expect(page.locator("#attachments .attach > a")).toHaveCount(2);
+  await expect(page.locator("#comment-body-21 .attachments .attach > a")).toHaveCount(2);
   const editableAttachment = page.locator(
     "#comment-editform-21 .attachment-files .attached-file-marker",
   );
@@ -6183,7 +6191,7 @@ test("project board detail renders legacy post and comment attachments", async (
 
   const postAttachments = [{ id: "31", mimeType: "text/plain", name: "post-note.txt", size: 1024 }];
   const expectedPostAttachments =
-    `<div class="attachments" id="attachments" data-attachments='${JSON.stringify(postAttachments)}'><ul class="attaches wm"><li class="attached-file" data-name="post-note.txt" data-mime="text/plain" data-size="1024"><strong>post-note.txt(1024)</strong><button type="button" class="attached-delete"><i class="ico btn-delete"></i></button></li></ul></div>`.replaceAll(
+    `<div class="attachments" id="attachments" data-attachments='${JSON.stringify(postAttachments)}'><ul class="attaches wm"><li class="attach"><a href="${basePath}/files/31?action=download" class="download ybtn ybtn-mini" title="Download a file post-note.txt"><i class="yobicon-download"></i></a><a href="${basePath}/files/31" target="_blank" class="vmiddle"><i class="yobicon-paperclip"></i><span class="filename">post-note.txt</span><span class="filesize">(1.00 Kb)</span></a></li></ul></div>`.replaceAll(
       "__BASE_PATH__",
       basePath,
     );
@@ -6195,7 +6203,7 @@ test("project board detail renders legacy post and comment attachments", async (
     { id: "41", mimeType: "image/png", name: "comment-shot.png", size: 2048 },
   ];
   const expectedCommentAttachments =
-    `<div class="attachments" data-attachments='${JSON.stringify(commentAttachments)}'><ul class="attaches wm"><li class="attached-file" data-name="comment-shot.png" data-mime="image/png" data-size="2048"><strong>comment-shot.png(2048)</strong><button type="button" class="attached-delete"><i class="ico btn-delete"></i></button></li></ul></div>`.replaceAll(
+    `<div class="attachments" data-attachments='${JSON.stringify(commentAttachments)}'><ul class="attaches wm"><li class="attach"><a href="${basePath}/files/41?action=download" class="download ybtn ybtn-mini" title="Download a file comment-shot.png"><i class="yobicon-download"></i></a><a href="${basePath}/files/41" target="_blank" class="vmiddle"><i class="yobicon-paperclip"></i><span class="filename">comment-shot.png</span><span class="filesize">(2.00 Kb)</span></a></li></ul></div>`.replaceAll(
       "__BASE_PATH__",
       basePath,
     );
@@ -6224,9 +6232,12 @@ test("project board detail renders legacy post and comment attachments", async (
   expect(routeSource).not.toContain("function attachedFilesHtml");
   expect(routeSource).not.toContain("function attachmentFileHtml");
   expect(attachmentSource).not.toContain("dangerouslySetInnerHTML");
+  expect(attachmentSource).toContain('className="download ybtn ybtn-mini"');
+  expect(attachmentSource).toContain('className="vmiddle"');
+  expect(attachmentSource).toContain("humanFileSize(file.size)");
+  expect(attachmentSource).toContain("action=download");
+  expect(attachmentSource).not.toContain("attached-delete");
   expect(attachmentSource).not.toContain("data-href");
-  expect(attachmentSource).not.toContain("data-href={href}");
-  expect(attachmentSource).toContain('<button type="button" className="attached-delete">');
   expect(attachmentSource).toContain('className="attached-file attached-file-marker"');
   const commentEditAttachmentSource = routeSource.slice(
     routeSource.indexOf("function CommentEditAttachmentFiles"),
@@ -9342,6 +9353,7 @@ test("authenticated populated board post owns open parent comment update form in
     });
 
     await previewTab.hover();
+    // The full legacy nav-tabs cascade overrides Bootstrap's base #eee hover.
     await expect(previewTab).toHaveCSS("background-color", "rgb(242, 242, 242)");
     await expect(previewTab).toHaveCSS(
       "border-color",

@@ -356,6 +356,38 @@ test("project issue detail keeps the frozen desktop and mobile issue-info gutter
   );
 });
 
+test("project issue detail applies the legacy issue-info affix threshold", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page);
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+
+  const issueInfo = page.locator(".span-right-pane .issue-info");
+  await expect(issueInfo).toHaveClass(/(?:^|\s)affix-top(?:\s|$)/u);
+  const offsetTop = await page.evaluate(() => {
+    const issueInfo = document.querySelector<HTMLElement>(".span-right-pane .issue-info");
+    if (!issueInfo) {
+      throw new Error("Missing issue-info");
+    }
+    const spacer = document.createElement("div");
+    spacer.style.height = "3000px";
+    document.body.append(spacer);
+    return issueInfo.getBoundingClientRect().top + window.scrollY - 10;
+  });
+
+  await page.evaluate((scrollTop) => window.scrollTo(0, scrollTop), Math.floor(offsetTop));
+  await expect(issueInfo).toHaveClass(/(?:^|\s)affix-top(?:\s|$)/u);
+  await page.evaluate((scrollTop) => window.scrollTo(0, scrollTop), Math.ceil(offsetTop + 1));
+  await expect(issueInfo).toHaveClass(/(?:^|\s)affix(?:\s|$)/u);
+  await expect(issueInfo).toHaveCSS("position", "fixed");
+  await expect(issueInfo).toHaveCSS("top", "0px");
+  await expect(issueInfo).toHaveCSS("overflow-y", "scroll");
+
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect(issueInfo).toHaveClass(/(?:^|\s)affix-top(?:\s|$)/u);
+});
+
 test("project issue detail matches legacy issue/view.scala.html voter state", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssueDetail(page);
@@ -401,7 +433,12 @@ test("project issue detail matches legacy issue/view.scala.html voter state", as
 
   const emptyTimeline =
     '<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"></div></div></div>';
-  const expected = EXPECTED_ISSUE_DETAIL.replace(emptyTimeline, LEFT_COMMENT_TIMELINE)
+  const expected = EXPECTED_ISSUE_DETAIL.replace(
+    '<div class="span-right-pane span3"><div class="issue-info">',
+    // yobi.issue.View._affixIssueInfoWrap() applies affix-top on startup.
+    '<div class="span-right-pane span3"><div class="affix-top issue-info">',
+  )
+    .replace(emptyTimeline, LEFT_COMMENT_TIMELINE)
     .replace(emptyTimeline, RIGHT_INDEX_COMMENT_TIMELINE)
     .replace(
       '<div id="issue-body-11"><div class="content markdown-wrap"',
@@ -500,7 +537,6 @@ test("project issue detail uses route-owned timeline and comment hash links", as
         kind: "event",
         newValue: "closed",
         oldValue: "open",
-        senderAvatarUrl: "/assets/images/default-avatar-32.png",
         senderLabel: "Dev Member",
         senderLoginId: "dev",
       },
@@ -529,6 +565,15 @@ test("project issue detail uses route-owned timeline and comment hash links", as
     "href",
     `${issueHref}#event-88`,
   );
+  const eventAvatar = page.locator("#event-88 img.avatar-wrap.small");
+  await expect
+    .poll(() => eventAvatar.evaluate((image) => image.naturalWidth))
+    .toBe(128);
+  expect(await eventAvatar.evaluate(async (image) => {
+    const bytes = await (await fetch(image.currentSrc)).arrayBuffer();
+    const digest = await crypto.subtle.digest("SHA-256", bytes);
+    return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  })).toBe("781a764b1f86352b2c23acd7e7807feb39b45aac11b905cf731bd764859aa891");
   await expect(page.locator("#comment-77 button.vote-description-people")).toHaveText(
     "6 Agreements",
   );
@@ -616,199 +661,7 @@ test("project issue detail preserves legacy clickable right-pane index comments"
   ).resolves.toBe("issue-index-comment-row");
 });
 
-test("project issue detail route source uses shared markdown help, legacy copy keys, and direct TanStack links", () => {
-  const routeSource = readFileSync(
-    "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
-    "utf8",
-  );
 
-  expect(routeSource).toContain(
-    'import { MarkdownEditor, type MarkdownEditorProps } from "../../../../components/markdown-editor";',
-  );
-  expect(routeSource).toContain("<MarkdownEditor");
-  const sharedMarkdownEditorSource = readFileSync("src/components/markdown-editor.tsx", "utf8");
-  expect(sharedMarkdownEditorSource).toContain(
-    'import { LegacyMarkdownHelp } from "../routes/-legacy-markdown-help";',
-  );
-  expect(sharedMarkdownEditorSource).toContain("help = <LegacyMarkdownHelp />");
-  expect(routeSource).not.toContain("help/markdown.scala.html?raw");
-  expect(routeSource).not.toContain("legacyMarkdownHelpTemplate");
-  expect(routeSource).not.toContain("legacyMarkdownHelpHtml");
-  expect(routeSource).not.toMatch(/markdown-help[\s\S]{0,160}dangerouslySetInnerHTML/u);
-  expect(routeSource).not.toContain("labelSelectOptionsHtml");
-  expect(routeSource).not.toContain("optionsHtml");
-  expect(routeSource).not.toContain("dangerouslySetInnerHTML={{ __html: optionsHtml }}");
-  expect(routeSource).not.toContain("yobi.Comment.init({'sContainer' : '#comments'});");
-  expect(routeSource).not.toContain("/assets/javascripts/common/yobi.Comment.js");
-  expect(routeSource).not.toContain("/assets/javascripts/common/yobi.CommentForm.js");
-  expect(routeSource).not.toContain("IssueViewBootstrapScript");
-  expect(routeSource).not.toContain('$yobi.loadModule("issue.View"');
-  expect(routeSource).not.toContain("yobi.ShortcutKey.setKeymapLink");
-  expect(routeSource).not.toContain("yobi.Mention({");
-  expect(routeSource).not.toContain(":contains(");
-  expect(routeSource).not.toContain("dangerouslySetInnerHTML");
-  expect(routeSource).not.toContain("yobi.OriginalMessage.hide");
-  for (const key of [
-    "button.newSubtask",
-    "button.comment.new",
-    "button.share.issue",
-    "issue.sharer.description",
-    "issue.sharer",
-    "issue.sharer.select",
-    "issue.assignee",
-    "issue.noAuthor",
-    "issue.noAssignee",
-    "issue.state.assigned",
-    "issue.state.closed",
-    "issue.state.open",
-    "issue.event.sharer.deleted.title",
-    "label.select",
-    "milestone",
-    "issue.noMilestone",
-    "milestone.menu.new",
-    "milestone.state.open",
-    "milestone.state.closed",
-    "issue.weight",
-    "issue.weight.description",
-    "button.edit",
-    "button.show.original",
-    "button.delete",
-    "issue.can.not.be.deleted",
-    "issue.delete",
-    "post.delete.confirm",
-    "button.yes",
-    "button.no",
-  ]) {
-    expect(routeSource).toContain(`t("${key}")`);
-  }
-  expect(routeSource).not.toContain(">Issue Sharing<");
-  expect(routeSource).not.toContain(">New subtask<");
-  expect(routeSource).not.toContain('<strong className="name">No author</strong>');
-  expect(routeSource).not.toContain('<span className="ybtn ybtn-disabled">Add a comment</span>');
-  expect(routeSource).not.toContain('<span className="state changed">Assigned</span>');
-  expect(routeSource).not.toContain(
-    'const stateLabel = issueState === "closed" ? "Closed" : "Open";',
-  );
-  expect(routeSource).not.toContain('{parentIssueState === "closed" ? "Closed" : "Open"}');
-  expect(routeSource).not.toContain('return state === "closed" ? "Closed" : "Open";');
-  expect(routeSource).not.toContain(">Issue Sharer{");
-  expect(routeSource).not.toContain(">Assignee<");
-  expect(routeSource).not.toContain('placeholder="No assignee"');
-  expect(routeSource).not.toContain('placeholder="Select Issue Sharer"');
-  expect(routeSource).not.toContain('data-placeholder="Select label"');
-  expect(routeSource).not.toContain(">Milestone<");
-  expect(routeSource).not.toContain(">No milestone<");
-  expect(routeSource).not.toContain(">New milestone<");
-  expect(routeSource).not.toContain('label="Open"');
-  expect(routeSource).not.toContain('label="Closed"');
-  expect(routeSource).not.toContain('content="Issue weight description"');
-  expect(routeSource).not.toContain('title="Issue weight: Upvote"');
-  expect(routeSource).not.toContain('title="Issue weight: Down vote"');
-  expect(routeSource).not.toContain('title="Edit"');
-  expect(routeSource).not.toContain('title="See text"');
-  expect(routeSource).not.toContain('title="Delete"');
-  expect(routeSource).not.toContain(
-    "content=\"Can\\'t be deleted because of other users\\' comments\"",
-  );
-  expect(routeSource).not.toContain(">Delete issue<");
-  expect(routeSource).not.toContain(">Yes<");
-  expect(routeSource).not.toContain(">No<");
-  expect(routeSource).toMatch(
-    /data-yobi-original-message-processed=\{viaEmail\s*\?\s*"true"\s*:\s*undefined\}/u,
-  );
-  expect(routeSource).toContain("function OriginalMessageMarkdown({");
-  expect(routeSource).toContain("function splitOriginalMessage(contentsMarkdown: string)");
-  expect(routeSource).not.toMatch(
-    /function CommentDeleteModalScripts[\s\S]*dangerouslySetInnerHTML[\s\S]*function IssueViewBootstrapScript/u,
-  );
-  expect(routeSource).not.toContain("LegacyInternalLink");
-  expect(routeSource).not.toContain("ComponentType");
-  expect(routeSource).not.toContain("AnchorHTMLAttributes");
-  expect(routeSource).not.toContain("createElement");
-  expect(routeSource).not.toMatch(/^\s*<a(?:\s|>)/mu);
-  expect(routeSource).not.toContain("function attachedFilesHtml");
-  expect(routeSource).not.toContain('<a class="attached-delete"');
-  expect(routeSource).not.toContain("attachedFilesHtml(issue.attachments)");
-  expect(routeSource).not.toContain("attachedFilesHtml(comment.attachments)");
-  expect(routeSource).not.toContain('className="attached-delete"');
-  const commentUpdateFormSource = routeSource.slice(
-    routeSource.indexOf("function CommentUpdateForm"),
-    routeSource.indexOf("function MarkdownEditor"),
-  );
-  expect(commentUpdateFormSource).toContain('className="attached-file attached-file-marker"');
-  expect(commentUpdateFormSource).toContain('className="btn-transparent btn-delete"');
-  expect(commentUpdateFormSource).not.toMatch(
-    /<button\s+type="button"\s+className="btn-transparent btn-delete"\s+data-id=/u,
-  );
-  expect(routeSource).toContain('<ul className="attaches wm">');
-  expect(routeSource).toContain('className="attach"');
-  expect(routeSource).toContain('className="download ybtn ybtn-mini"');
-  expect(routeSource).toContain('className="vmiddle"');
-  expect(routeSource).toContain("action=download");
-  expect(routeSource).toContain("const LEGACY_LINK_PROPS = {");
-  expect(routeSource).not.toContain("IssueLegacyLinkProps");
-  expect(routeSource).not.toContain("IssueHashLink");
-  expect(routeSource).not.toContain("IssueRouteLink");
-  expect(routeSource).not.toContain("as never");
-  expect(routeSource).not.toContain("const authorPath =");
-  expect(routeSource).not.toContain("const userPath =");
-  expect(routeSource).toContain('to="/$ownerName/$projectName/issue/$issueNumber"');
-  expect(routeSource).toContain('to="/$ownerName/$projectName/issue/$issueNumber/editform"');
-  expect(routeSource).toContain('to="/$user"');
-  expect(routeSource).toContain(
-    // copy-fix-current-dom: typed-route link form ($issueNumber.tsx:1213,3132)
-    'to="/$ownerName/$projectName/milestone/$milestoneId"',
-  );
-  expect(routeSource).toContain('to="/user/issues/new"');
-  expect(routeSource).toContain("commentId: Number(commentId) || undefined");
-  expect(routeSource).not.toContain('data-request-method="post"');
-  expect(routeSource).not.toContain("const voteHref =");
-  expect(routeSource).not.toContain("data-request-uri={voteHref}");
-  expect(routeSource).not.toMatch(/data-request-(?:type|uri|method)=/u);
-  expect(routeSource).not.toContain("data-clipboard-text");
-  expect(routeSource).toContain("navigator.clipboard.writeText(emailText)");
-  expect(routeSource).not.toMatch(
-    /document\.title|globalThis\[[^\]]*document[^\]]*\]|querySelector|addEventListener|classList|style\.display|setAttribute|removeAttribute|innerHTML|dangerouslySetInnerHTML|jQuery|\$\(/u,
-  );
-  expect(routeSource).toContain("function ProjectIssueDetailTitle({");
-  expect(routeSource).toContain("function legacyIssueOpenGraphDescription(");
-  expect(routeSource).toContain("issueBodyMarkdown.slice(0, 200)");
-  expect(routeSource).toContain(
-    "return `${issueBodyMarkdown.slice(0, 200)} - ${ownerName}/${projectName}`;",
-  );
-  expect(routeSource).toContain('<meta property="og:title" content={issueTitle} />');
-  expect(routeSource).toContain('<meta property="og:description" content={description} />');
-  expect(routeSource).toContain('<meta name="twitter:title" content={issueTitle} />');
-  expect(routeSource).toContain('<meta name="twitter:description" content={description} />');
-  expect(routeSource).toContain("function ProjectIssueNotFoundTitle({");
-  expect(routeSource).toContain(
-    '<title>{`${t("error.notfound")} - ${ownerName}/${projectName}`}</title>',
-  );
-  expect(routeSource).not.toContain("useProjectIssueDetailDocumentTitle");
-  expect(routeSource).not.toContain('data-toggle="comment-edit"');
-  expect(routeSource).not.toContain('data-toggle="comment-delete"');
-  expect(routeSource).not.toContain('data-toggle="modal"');
-  expect(routeSource).not.toContain('data-toggle="tab"');
-  expect(routeSource).not.toContain('data-toggle="tooltip"');
-  expect(routeSource).not.toContain('data-dismiss="modal"');
-  expect(routeSource).not.toMatch(
-    /data-target=(?:"#(?:-yona-posting-history|deleteConfirm|helpKeys|voters)"|\{`#voters-\$\{commentId\}`\})/u,
-  );
-  expect(routeSource).not.toMatch(/data-target=\{`#(?:edit|preview)-\$\{wrapId\}`\}/u);
-  expect(routeSource).toContain("setCommentEditOpen((current) => !current)");
-  expect(routeSource).toContain("event.stopPropagation();");
-  // The shared posting history modal owns the helper now.
-  const sharedModalSource = readFileSync(
-    new URL("../src/components/posting-history-modal.tsx", import.meta.url),
-    "utf8",
-  );
-  expect(sharedModalSource).toContain(
-    "function insulateModalButtonClick(event: MouseEvent<HTMLButtonElement>) {",
-  );
-  expect(
-    routeSource.match(/insulateModalButtonClick\(event\);/g)?.length ?? 0,
-  ).toBeGreaterThanOrEqual(12);
-});
 
 test("project issue detail not found renders legacy project error shell", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -941,9 +794,6 @@ test("project issue detail owns edit/delete action spacing in both legacy rows",
 
   expect(componentSource).toContain('data-owner="project-issue-detail-action-edit"');
   expect(componentSource).toContain('data-owner="project-issue-detail-action-delete"');
-  expect(componentSource).not.toContain("ml10");
-  expect(componentSource).not.toContain("pt5px");
-  expect(componentSource).not.toContain("ml6");
   expect(styleSource).toMatch(
     /\[data-owner="project-issue-detail-action-edit"\]\s*\{[\s\S]*?margin-left:\s*10px[\s\S]*?padding-top:\s*5px/u,
   );
@@ -1262,11 +1112,10 @@ test("project issue detail owns sidebar bottom spacing with route Style", async 
     "utf8",
   );
 
-  expect(legacyView.split(/\r?\n/u)[292]).toContain('<div class="span3 span-right-pane mb20">');
-  expect(legacyCommon.split(/\r?\n/u)[211]).toContain(".mb20 { margin-bottom:20px; }");
+  expect(legacyView).toContain('<div class="span3 span-right-pane mb20">');
+  expect(legacyCommon).toContain(".mb20 { margin-bottom:20px; }");
   expect(routeSource).toContain('data-owner="project-issue-detail-sidebar"');
   expect(routeSource).toContain("span3 span-right-pane");
-  expect(routeSource).not.toContain("span3 span-right-pane mb20");
   expect(styleSource).toMatch(
     /\[data-owner="project-issue-detail-sidebar"\]\s*\{[\s\S]*?margin-bottom:\s*20px/u,
   );
@@ -1505,7 +1354,12 @@ test("project issue detail renders legacy posting history modal", async ({ page 
 
   const history =
     '<div class="posting-history"><button type="button" data-toggle="modal" data-target="#-yona-posting-history"><span class="lastUpdatedBy"><span>Site Admin</span><span>Jul 3, 2026</span></span><span>edited</span></button><div id="-yona-posting-history" class="modal hide" role="dialog"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button><h5 class="nm">Change history</h5></div><div class="modal-body"><p>Previous <strong>body</strong></p></div><div class="modal-footer"><button class="ybtn ybtn-info ybtn-small" data-dismiss="modal" aria-hidden="true">Confirm</button></div></div></div>';
-  const expected = EXPECTED_ISSUE_DETAIL.replaceAll(' aria-hidden="true"', "")
+  const expected = EXPECTED_ISSUE_DETAIL.replace(
+    '<div class="span-right-pane span3"><div class="issue-info">',
+    // yobi.issue.View._affixIssueInfoWrap() applies affix-top on startup.
+    '<div class="span-right-pane span3"><div class="affix-top issue-info">',
+  )
+    .replaceAll(' aria-hidden="true"', "")
     .replace('</span></a></div><div id="issue-11"', `</span></a>${history}</div><div id="issue-11"`)
     .replace(
       '<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"></div></div></div>',
@@ -1523,15 +1377,28 @@ test("project issue detail renders legacy posting history modal", async ({ page 
     .replaceAll("__CHILD_REPLY_PLACEHOLDER__", await childReplyPlaceholder(page))
     .replaceAll("__BASE_PATH__", basePath);
 
-  // F5 dist-truth: the comment timeline hydrates after the modal asserts —
-  // snapshot the page only once the comment count lands (gate flake: the
-  // canonicalize raced the comments fetch under shard load).
+  // Gate the snapshot on the comment count before comparing the complete
+  // posting-history DOM, so a mismatch reports the first differing context.
   await expect(page.locator("#numOfComments")).toHaveAttribute("value", "1");
 
   const expectedHtml = normalizeIssueParserMarkers(await canonicalizeHtml(page, expected));
-  await expect
-    .poll(async () => normalizeIssueParserMarkers(await canonicalize(page, ".page-wrap-outer")))
-    .toBe(expectedHtml);
+  const actualHtml = normalizeIssueParserMarkers(await canonicalize(page, ".page-wrap-outer"));
+  if (actualHtml !== expectedHtml) {
+    let mismatchAt = 0;
+    while (
+      mismatchAt < actualHtml.length &&
+      mismatchAt < expectedHtml.length &&
+      actualHtml[mismatchAt] === expectedHtml[mismatchAt]
+    ) {
+      mismatchAt += 1;
+    }
+    const contextStart = Math.max(0, mismatchAt - 120);
+    throw new Error(
+      `Posting-history DOM mismatch at ${mismatchAt}: expected ${JSON.stringify(
+        expectedHtml.slice(contextStart, mismatchAt + 240),
+      )}; actual ${JSON.stringify(actualHtml.slice(contextStart, mismatchAt + 240))}`,
+    );
+  }
 
   await expect(
     page.locator('.posting-history a[href="#-yona-posting-history"][data-toggle="modal"]'),

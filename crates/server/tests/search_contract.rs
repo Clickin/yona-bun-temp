@@ -329,7 +329,7 @@ async fn seed_project_review_comment(
     )
     .await;
     let thread = comment_thread::ActiveModel {
-        dtype: Set("ReviewThread".to_string()),
+        dtype: Set("ranged".to_string()),
         id: NotSet,
         author_id: Set(Some(project_owner_id)),
         author_login_id: Set(Some("owner".to_string())),

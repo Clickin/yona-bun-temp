@@ -153,6 +153,63 @@ async fn creates_organizations_and_rewrites_org_owned_project_owner_on_rename() 
 }
 
 #[tokio::test]
+async fn duplicate_project_memberships_preserve_manager_authority() {
+    let db = Database::connect("sqlite::memory:")
+        .await
+        .expect("sqlite connection");
+    Migrator::fresh(&db).await.expect("fresh migration");
+    let repo = AppRepository::new(db.clone());
+    let actor = repo
+        .create_user(CreateUserInput {
+            display_name: "Manager".to_string(),
+            email_address: "manager@example.com".to_string(),
+            is_confirmed: true,
+            is_site_admin: false,
+            login_id: "manager".to_string(),
+            password_hash: "hashed".to_string(),
+        })
+        .await
+        .expect("create manager");
+    let project = repo
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "manager".to_string(),
+            overview: None,
+            project_name: "legacy-roles".to_string(),
+            project_scope: "private".to_string(),
+            vcs: "GIT".to_string(),
+            initial_manager_user_id: None,
+        })
+        .await
+        .expect("create project");
+    repo.add_project_membership(project.id, actor.id, "manager")
+        .await
+        .expect("initialize manager role");
+    repo.add_project_membership(project.id, actor.id, "member")
+        .await
+        .expect("retain an earlier member row");
+    sea_orm::ConnectionTrait::execute(
+        &db,
+        sea_orm::Statement::from_sql_and_values(
+            sea_orm::DbBackend::Sqlite,
+            "INSERT INTO project_user (project_id, user_id, role_id) \
+             SELECT ?, ?, id FROM role WHERE name = 'manager'",
+            [project.id.into(), actor.id.into()],
+        ),
+    )
+    .await
+    .expect("restore a second legacy membership");
+
+    let authorization = repo
+        .read_project_authorization("manager", "legacy-roles", Some(actor.id))
+        .await
+        .expect("read authorization")
+        .expect("project exists");
+    assert!(authorization.viewer.is_project_manager);
+    assert!(authorization.viewer.is_project_member);
+}
+
+#[tokio::test]
 async fn reads_project_members_enrollment_requests_and_workspace_project_lists() {
     let db = Database::connect("sqlite::memory:")
         .await

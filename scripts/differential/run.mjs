@@ -100,10 +100,16 @@ export const SKELETON_EXTRACT = (selector) => {
   const visit = (element) => {
     // Global overlays are owned by dedicated shell WTR lanes. Exclude only
     // these exact IDs from selector-less route captures; explicit shell
-    // selectors remain available to their dedicated comparisons.
+    // selectors remain available to their dedicated comparisons. The shared
+    // confirmation shell is excluded only while closed and unrendered;
+    // an open or unexpectedly visible dialog remains a route finding.
     if (
       !selector &&
-      (element.getAttribute("id") === "mySidenav" || element.getAttribute("id") === "loginDialog")
+      (element.getAttribute("id") === "mySidenav" ||
+        element.getAttribute("id") === "loginDialog" ||
+        (element.getAttribute("id") === "yobiDialog" &&
+          element.getAttribute("aria-hidden") === "true" &&
+          element.getClientRects().length === 0))
     ) {
       return;
     }
@@ -816,6 +822,10 @@ async function bootYoram(port) {
   const seedModule = await import(pathToFileURL(path.join(repoRoot, "scripts/run-dev-backend-once.mjs")).href);
   seedModule.reconcileDefaultDevSiteAdmin(databasePath);
   seedModule.reconcileDefaultDevParitySeed(databasePath, yoramRuntimeDir);
+  // The legacy parity database is the fixture authority for canonical
+  // notification rows. Keep only the matching issue/post comments and their
+  // notification events comparable; runtime-created history stays untouched.
+  reconcileYoramNotificationFixtures(databasePath);
   for (const repo of [
     path.join(yoramRuntimeDir, "data/repo/git/admin/sample.git"),
     path.join(yoramRuntimeDir, "data/repo/git/alice/sample.git"),
@@ -1405,6 +1415,174 @@ function legacyH2Shell(sql) {
 
 function sqlQuote(value) {
   return `'${String(value).replaceAll("'", "''")}'`;
+}
+
+function encodedLegacyColumn(column) {
+  return (
+    `REPLACE(REPLACE(REPLACE(CAST(${column} AS VARCHAR), '|', '<PIPE>'), ` +
+    `CHAR(13), ''), CHAR(10), '<NL>')`
+  );
+}
+
+function readSingleLegacyFixtureRow(sql, kind) {
+  const lines = legacyH2Shell(sql)
+    .split("\n")
+    .slice(1)
+    .filter((line) => line && !/^\(\d+ rows?,/u.test(line));
+  if (lines.length !== 1) {
+    throw new Error(`legacy ${kind} parity fixture expected one row, found ${lines.length}`);
+  }
+  return lines[0].split("|").map((value) => value.replaceAll("<NL>", "\n").replaceAll("<PIPE>", "|"));
+}
+
+function readLegacyNotificationFixtureRows() {
+  const sampleProjectId = `(SELECT ID FROM PROJECT WHERE OWNER = 'admin' AND NAME = 'sample' ORDER BY ID LIMIT 1)`;
+  const issue = readSingleLegacyFixtureRow(
+    `SELECT 'issue|' || i.ID || '|' || ${encodedLegacyColumn("i.CREATED_DATE")} || '|' || ` +
+      `ic.ID || '|' || ${encodedLegacyColumn("ic.CREATED_DATE")} || '|' || ne.ID || '|' || ` +
+      `${encodedLegacyColumn("ne.CREATED")} || '|' || ${encodedLegacyColumn("ne.TITLE")} || '|' || ` +
+      `${encodedLegacyColumn("ne.OLD_VALUE")} || '|' || ${encodedLegacyColumn("ne.NEW_VALUE")} AS DATA ` +
+      `FROM ISSUE i ` +
+      `JOIN ISSUE_COMMENT ic ON ic.ISSUE_ID = i.ID ` +
+      `  AND ic.AUTHOR_LOGIN_ID = 'bob' ` +
+      `  AND ic.CONTENTS = ${sqlQuote(parityProjectSeed.issue.commentBody)} ` +
+      `JOIN NOTIFICATION_EVENT ne ON ne.RESOURCE_TYPE = 'ISSUE_COMMENT' ` +
+      `  AND ne.EVENT_TYPE = 'NEW_COMMENT' ` +
+      `  AND ne.RESOURCE_ID = CAST(ic.ID AS VARCHAR) ` +
+      `WHERE i.PROJECT_ID = ${sampleProjectId} ` +
+      `  AND i.NUMBER = 1 ` +
+      `  AND i.TITLE = ${sqlQuote(parityProjectSeed.issue.title)} ` +
+      `  AND i.BODY = ${sqlQuote(parityProjectSeed.issue.body)}`,
+    "issue notification",
+  );
+  const posting = readSingleLegacyFixtureRow(
+    `SELECT 'posting|' || p.ID || '|' || ${encodedLegacyColumn("p.CREATED_DATE")} || '|' || ` +
+      `pc.ID || '|' || ${encodedLegacyColumn("pc.CREATED_DATE")} || '|' || ne.ID || '|' || ` +
+      `${encodedLegacyColumn("ne.CREATED")} || '|' || ${encodedLegacyColumn("ne.TITLE")} || '|' || ` +
+      `${encodedLegacyColumn("ne.OLD_VALUE")} || '|' || ${encodedLegacyColumn("ne.NEW_VALUE")} AS DATA ` +
+      `FROM POSTING p ` +
+      `JOIN POSTING_COMMENT pc ON pc.POSTING_ID = p.ID ` +
+      `  AND pc.AUTHOR_LOGIN_ID = 'alice' ` +
+      `  AND pc.CONTENTS = ${sqlQuote(parityProjectSeed.post.commentBody)} ` +
+      `JOIN NOTIFICATION_EVENT ne ON ne.RESOURCE_TYPE = 'NONISSUE_COMMENT' ` +
+      `  AND ne.EVENT_TYPE = 'NEW_COMMENT' ` +
+      `  AND ne.RESOURCE_ID = CAST(pc.ID AS VARCHAR) ` +
+      `WHERE p.PROJECT_ID = ${sampleProjectId} ` +
+      `  AND p.NUMBER = 1 ` +
+      `  AND p.TITLE = ${sqlQuote(parityProjectSeed.post.title)} ` +
+      `  AND p.BODY = ${sqlQuote(parityProjectSeed.post.body)}`,
+    "posting notification",
+  );
+  const parse = (row) => ({
+    parentId: Number(row[1]),
+    parentCreated: row[2],
+    commentId: Number(row[3]),
+    commentCreated: row[4],
+    notificationId: Number(row[5]),
+    notificationCreated: row[6],
+    title: row[7],
+    oldValue: row[8],
+    newValue: row[9],
+  });
+  if (issue.length !== 10 || issue[0] !== "issue" || posting.length !== 10 || posting[0] !== "posting") {
+    throw new Error("legacy parity notification fixture row shape is invalid");
+  }
+  return { issue: parse(issue), posting: parse(posting) };
+}
+
+function reconcileYoramNotificationFixtures(databasePath) {
+  const legacyRows = readLegacyNotificationFixtureRows();
+  const database = new DatabaseSync(databasePath);
+  try {
+    database.exec("pragma busy_timeout = 5000; begin");
+    const sampleProject = database
+      .prepare("select id from project where owner = 'admin' and name = 'sample' limit 1")
+      .get();
+    if (!sampleProject?.id) throw new Error("Yoram parity notification fixture requires admin/sample");
+    const userId = (loginId) =>
+      Number(database.prepare("select id from n4user where login_id = ? limit 1").get(loginId)?.id ?? 0);
+    const align = ({
+      authorLoginId,
+      commentTable,
+      commentText,
+      eventResourceType,
+      parent,
+      source,
+      table,
+    }) => {
+      const parentRow = database
+        .prepare(
+          `select id from ${table}
+             where project_id = ? and number = 1 and title = ? and body = ?
+             limit 1`,
+        )
+        .get(sampleProject.id, parent.title, parent.body);
+      const authorId = userId(authorLoginId);
+      if (!parentRow?.id || !authorId) {
+        throw new Error(`Yoram ${table} parity notification fixture is missing`);
+      }
+      const commentRows = database
+        .prepare(
+          `select id from ${commentTable}
+             where project_id = ? and ${table === "issue" ? "issue_id" : "posting_id"} = ?
+               and author_login_id = ? and contents = ?`,
+        )
+        .all(sampleProject.id, parentRow.id, authorLoginId, commentText);
+      if (commentRows.length !== 1) {
+        throw new Error(`Yoram ${commentTable} parity notification fixture expected one row, found ${commentRows.length}`);
+      }
+      const commentId = Number(commentRows[0].id);
+      const eventRows = database
+        .prepare(
+          `select id from notification_event
+             where sender_id = ? and resource_type = ? and resource_id = ?
+               and event_type = 'NEW_COMMENT'`,
+        )
+        .all(authorId, eventResourceType, String(commentId));
+      if (eventRows.length !== 1) {
+        throw new Error(
+          `Yoram ${eventResourceType} parity notification fixture expected one event, found ${eventRows.length}`,
+        );
+      }
+      database
+        .prepare(`update ${table} set created_date = ? where id = ?`)
+        .run(source.parentCreated, parentRow.id);
+      database
+        .prepare(`update ${commentTable} set created_date = ? where id = ?`)
+        .run(source.commentCreated, commentId);
+      database
+        .prepare(
+          `update notification_event
+              set title = ?, created = ?, old_value = ?, new_value = ?
+            where id = ?`,
+        )
+        .run(source.title, source.notificationCreated, source.oldValue, source.newValue, eventRows[0].id);
+    };
+    align({
+      authorLoginId: "bob",
+      commentTable: "issue_comment",
+      commentText: parityProjectSeed.issue.commentBody,
+      eventResourceType: "issue_comment",
+      parent: parityProjectSeed.issue,
+      source: legacyRows.issue,
+      table: "issue",
+    });
+    align({
+      authorLoginId: "alice",
+      commentTable: "posting_comment",
+      commentText: parityProjectSeed.post.commentBody,
+      eventResourceType: "posting_comment",
+      parent: parityProjectSeed.post,
+      source: legacyRows.posting,
+      table: "posting",
+    });
+    database.exec("commit; pragma foreign_keys = on");
+  } catch (error) {
+    database.exec("rollback; pragma foreign_keys = on");
+    throw new Error(`Yoram notification fixture reconciliation failed: ${error.message}`, { cause: error });
+  } finally {
+    database.close();
+  }
 }
 
 function featureCommitFor(repoPath) {

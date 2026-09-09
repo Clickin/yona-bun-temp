@@ -1,4 +1,3 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -7,13 +6,6 @@ const owner = (page: Page, name: string) => page.locator(`[data-owner="${name}"]
 test.use({ locale: "ko-KR" });
 
 test("preserves the populated fork notice and project link geometry", async ({ page }) => {
-  const route = readFileSync("src/routes/$ownerName/$projectName/newFork.tsx", "utf8");
-  const template = readFileSync("../yona-original/app/views/git/fork.scala.html", "utf8");
-  expect(template).toContain("fork.already.exist");
-  expect(template).toContain('class="help-messages center-txt"');
-  expect(route).toContain('data-owner="project-fork-existing"');
-  expect(route).toContain('data-owner="project-fork-existing-link"');
-
   await mockFork(page);
   for (const viewport of [
     { width: 1366, height: 900 },
@@ -30,15 +22,14 @@ test("preserves the populated fork notice and project link geometry", async ({ p
     await expect(link).toHaveAttribute("href", `${basePath}/admin/demo-fork`);
     await expect(owner(page, "project-fork-help-image")).toHaveCount(0);
     const geometry = await owner(page, "project-fork-existing").evaluate((element) => ({
-      width: element.getBoundingClientRect().width,
+      clientWidth: document.documentElement.clientWidth,
       right: element.getBoundingClientRect().right,
       viewport: window.innerWidth,
       scrollWidth: document.documentElement.scrollWidth,
       textAlign: getComputedStyle(element).textAlign,
     }));
-    expect(geometry.width).toBeGreaterThan(0);
     expect(geometry.right).toBeLessThanOrEqual(geometry.viewport + 1);
-    expect(geometry.scrollWidth).toBe(viewport.width);
+    expect(geometry.scrollWidth).toBe(Math.max(geometry.clientWidth, 400));
     expect(geometry.textAlign).toBe("center");
   }
 });

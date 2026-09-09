@@ -28,6 +28,7 @@
  */
 import {
   parseMarkdown,
+  type BlockNode,
   type InlineNode,
   type MarkdownDocument,
   type MarkdownExtension,
@@ -314,9 +315,13 @@ const BOOLEAN_HTML_ATTRIBUTES: Record<string, true> = {
  * Raw-HTML path: parse → render → sanitize walk → React elements.
  * ------------------------------------------------------------------------- */
 
+type TasklistInputRenderer = (props: { checked: boolean; tasklistIndex: number }) => ReactNode;
+
 type WalkerOptions = {
   schema: LegacySanitizeSchema;
   components: MarkdownComponents;
+  tasklistInput?: TasklistInputRenderer;
+  tasklistToken?: string;
   styleFilter?: (style: string) => string | undefined;
   urlTransform?: (url: string) => string;
   urlAttributes?: ReadonlyArray<string>;
@@ -414,6 +419,24 @@ function walkSanitizedElement(element: Element, state: WalkerState, key: string)
     return children.length === 0 ? null : <Fragment key={key}>{children}</Fragment>;
   }
 
+  const tasklistMarker = name === "input" ? element.getAttribute("data-yona-task-token") : null;
+  const tasklistIndex =
+    tasklistMarker && state.options.tasklistToken
+      ? tasklistMarker.startsWith(`${state.options.tasklistToken}:`)
+        ? tasklistMarker.slice(state.options.tasklistToken.length + 1)
+        : null
+      : null;
+  if (tasklistIndex !== null && options.tasklistInput) {
+    // A render callback must not become a new component type on every parent render.
+    return (
+      <Fragment key={key}>
+        {options.tasklistInput({
+          checked: properties.checked === true,
+          tasklistIndex: Number(tasklistIndex),
+        })}
+      </Fragment>
+    );
+  }
   const component = options.components[name];
   if (component) {
     return createElement(component, { key, ...properties }, ...children);
@@ -1055,6 +1078,7 @@ export function LegacyMarkdownHtml({
   children,
   components,
   extensions,
+  tasklistInput,
   sanitize,
   styleFilter,
   urlTransform,
@@ -1062,28 +1086,64 @@ export function LegacyMarkdownHtml({
   children: string;
   components?: MarkdownComponents;
   extensions?: MarkdownExtension[];
+  tasklistInput?: TasklistInputRenderer;
   sanitize: LegacySanitizeSchema;
   styleFilter?: (style: string) => string | undefined;
   urlTransform?: (url: string) => string;
 }): ReactNode {
+  const tasklistToken = useMemo(() => crypto.randomUUID(), []);
   const html = useMemo(
-    () =>
-      renderHtml(
-        parseMarkdown(children, {
-          allowHtml: true,
-          extensions,
-          frontmatter: false,
-          headingIds: false,
-        }),
-        { allowHtml: true },
-      ),
-    [children, extensions],
+    () => {
+      const renderExtensions = [...(extensions ?? []), tasklistMarkerExtension(tasklistToken)];
+      const document = parseMarkdown(children, {
+        allowHtml: true,
+        extensions: renderExtensions,
+        frontmatter: false,
+        headingIds: false,
+      });
+      return renderHtml(document, { allowHtml: true, extensions: renderExtensions });
+    },
+    [children, extensions, tasklistToken],
   );
   return renderSanitizedHtmlToReact(html, {
     schema: sanitize,
     components: components ?? {},
+    tasklistInput,
+    tasklistToken,
     styleFilter,
     urlAttributes: ["href", "src", "cite", "longdesc", "srcset"],
     urlTransform,
   });
+}
+
+function tasklistMarkerExtension(token: string): MarkdownExtension {
+  let index = 0;
+  return {
+    name: "yona-tasklist-markers",
+    renderHtml(node, context) {
+      if (node.type !== "list" || !node.items.some((item) => item.checked !== undefined)) {
+        return undefined;
+      }
+      const tag = node.ordered ? "ol" : "ul";
+      const start = node.ordered && node.start && node.start !== 1 ? ` start="${node.start}"` : "";
+      const items = node.items
+        .map((item) => {
+          const marker =
+            item.checked === undefined
+              ? ""
+              : `<input type="checkbox" disabled${item.checked ? " checked" : ""} data-yona-task-token="${token}:${index++}"> `;
+          const first = item.children[0];
+          if (first?.type === "paragraph") {
+            const content = marker + first.children.map(context.renderInline).join("");
+            const rest = item.children.length > 1
+              ? `\n${item.children.slice(1).map(context.renderBlock).join("\n")}`
+              : "";
+            return `<li>${node.loose ? `<p>${content}</p>` : content}${rest}</li>`;
+          }
+          return `<li>${marker}${item.children.map(context.renderBlock).join("\n")}</li>`;
+        })
+        .join("\n");
+      return `<${tag}${start}>\n${items}\n</${tag}>`;
+    },
+  };
 }

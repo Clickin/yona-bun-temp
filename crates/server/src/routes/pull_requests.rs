@@ -11,6 +11,7 @@ use std::path::PathBuf;
 use yoram_vcs::{CodeCommitFileDiffRecord, VcsError};
 
 use crate::api_types::IssueAttachment;
+use crate::routes::utils::remove_unreferenced_attachment_blobs;
 use crate::{
     code_browser_error, decode_query_component, dispatch_pull_request_webhooks, gravatar_url,
     internal_error, issue_attachment_from_record, markdown_issue_references_for_project,

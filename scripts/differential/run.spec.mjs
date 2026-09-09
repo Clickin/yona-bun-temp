@@ -182,23 +182,11 @@ test("parity repository alignment mirrors canonical trees and commit messages", 
   }
 });
 
-test("SKELETON_EXTRACT stays in sync with the sanctioned side-effect anchor marker", () => {
-  // The browser-side extract inlines the sideEffectAnchorTag decision (it is
-  // serialized into the page, so it cannot import diff.mjs). These guards fail
-  // if the inlined copy is dropped or its marker/behavior attributes drift.
-  const source = SKELETON_EXTRACT.toString();
-  assert.match(source, /a#/u);
-  assert.match(source, /data-request-method/u);
-  assert.match(source, /data-request-uri/u);
-  assert.match(source, /data-toggle/u);
-  assert.match(source, /javascript:/u);
-});
-
 function skeletonElement(
   tagName,
-  { id = "", className = "", text = "", children = [] } = {},
+  { id = "", className = "", text = "", children = [], attrs = {}, rendered = true } = {},
 ) {
-  const attributes = new Map(id ? [["id", id]] : []);
+  const attributes = new Map(Object.entries({ ...attrs, ...(id ? { id } : {}) }));
   return {
     tagName: tagName.toUpperCase(),
     className,
@@ -209,6 +197,9 @@ function skeletonElement(
     },
     hasAttribute(name) {
       return attributes.has(name);
+    },
+    getClientRects() {
+      return rendered ? [{}] : [];
     },
   };
 }
@@ -226,6 +217,46 @@ function extractTestSkeleton(root, selector) {
     else globalThis.document = previousDocument;
   }
 }
+
+test("skeleton extraction distinguishes navigation from side-effect anchors", () => {
+  const body = skeletonElement("body", {
+    children: [
+      skeletonElement("a", { text: "Open", attrs: { href: "/issue/1", "data-toggle": "tooltip" } }),
+      skeletonElement("a", { text: "Delete", attrs: { href: "/issue/1", "data-request-method": "delete" } }),
+      skeletonElement("a", { text: "Update", attrs: { href: "/issue/1", "data-request-uri": "/issue/1/update" } }),
+      skeletonElement("a", { text: "Expand", attrs: { href: "#details" } }),
+    ],
+  });
+  assert.deepEqual(extractTestSkeleton(body), ["a:Open", "a#:Delete", "a#:Update", "a#:Expand"]);
+});
+
+test("route capture excludes only an unrendered closed confirmation shell", () => {
+  const closed = skeletonElement("div", {
+    id: "yobiDialog",
+    className: "modal hide yobiDialog",
+    attrs: { "aria-hidden": "true" },
+    rendered: false,
+    children: [skeletonElement("button", { text: "Confirm" })],
+  });
+  assert.deepEqual(extractTestSkeleton(closed), []);
+  assert.deepEqual(extractTestSkeleton(closed, "#yobiDialog"), [
+    "div.modal.hide.yobiDialog:",
+    "button:Confirm",
+  ]);
+  for (const [hidden, rendered] of [["false", true], ["true", true], ["false", false]]) {
+    const visible = skeletonElement("div", {
+      id: "yobiDialog",
+      className: "modal yobiDialog",
+      attrs: { "aria-hidden": hidden },
+      rendered,
+      children: [skeletonElement("button", { text: "Delete" })],
+    });
+    assert.deepEqual(extractTestSkeleton(visible), [
+      "div.modal.yobiDialog:",
+      "button:Delete",
+    ]);
+  }
+});
 
 test("generic skeleton extraction excludes only the exact global shell IDs", () => {
   const sidebar = skeletonElement("div", {

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-05T15:25:50.535Z",
-  "gitHead": "ref: refs/heads/main",
+  "generatedAt": "2026-09-09T11:19:39.211Z",
+  "gitHead": "ref: refs/heads/feature/pull-request",
   "effectiveLayerOrder": [
     "homeb",
     "legacy",
@@ -83387,11 +83387,6 @@
                 "i": false
               },
               {
-                "p": "overflow-y",
-                "v": "scroll",
-                "i": false
-              },
-              {
                 "p": "text-rendering",
                 "v": "auto",
                 "i": false
@@ -84329,26 +84324,6 @@
               {
                 "p": "box-shadow",
                 "v": "0 1px 0 rgba(0, 0, 0, 0.05)",
-                "i": false
-              }
-            ]
-          },
-          {
-            "s": ".ybtn:hover, .ybtn:focus",
-            "d": [
-              {
-                "p": "color",
-                "v": "#292929",
-                "i": false
-              },
-              {
-                "p": "text-decoration",
-                "v": "none",
-                "i": false
-              },
-              {
-                "p": "background-color",
-                "v": "#f1f1f1",
                 "i": false
               }
             ]
@@ -94294,16 +94269,6 @@
             ]
           },
           {
-            "s": ".site-breadcrumb-outer",
-            "d": [
-              {
-                "p": "border-bottom",
-                "v": "1px solid #ddd",
-                "i": false
-              }
-            ]
-          },
-          {
             "s": ".site-breadcrumb-inner h3",
             "d": [
               {
@@ -94323,7 +94288,7 @@
               },
               {
                 "p": "font-weight",
-                "v": "400",
+                "v": "bold",
                 "i": false
               },
               {
@@ -108840,7 +108805,7 @@
               },
               {
                 "p": "z-index",
-                "v": "1000",
+                "v": "1050",
                 "i": false
               },
               {
@@ -114226,386 +114191,6 @@
               {
                 "p": "text-align",
                 "v": "center",
-                "i": false
-              }
-            ]
-          },
-          {
-            "s": "[data-owner=\"project-fork-page\"]",
-            "d": [
-              {
-                "p": "margin",
-                "v": "20px auto 0px",
-                "i": false
-              },
-              {
-                "p": "padding",
-                "v": "0px 10px",
-                "i": false
-              },
-              {
-                "p": "width",
-                "v": "100%",
-                "i": false
-              },
-              {
-                "p": "box-sizing",
-                "v": "border-box",
-                "i": false
-              }
-            ]
-          },
-          {
-            "s": "[data-owner=\"project-fork-help\"]",
-            "d": [
-              {
-                "p": "background-color",
-                "v": "var(--color-yona-surface-muted)",
-                "i": false
-              },
-              {
-                "p": "border-radius",
-                "v": "4px",
-                "i": false
-              },
-              {
-                "p": "color",
-                "v": "var(--color-yona-text)",
-                "i": false
-              },
-              {
-                "p": "margin-bottom",
-                "v": "20px",
-                "i": false
-              },
-              {
-                "p": "padding",
-                "v": "19px",
-                "i": false
-              }
-            ]
-          },
-          {
-            "s": "[data-owner=\"project-fork-help-image\"]",
-            "d": [
-              {
-                "p": "border",
-                "v": "1px solid #ddd",
-                "i": false
-              },
-              {
-                "p": "padding",
-                "v": "4px",
-                "i": false
-              },
-              {
-                "p": "vertical-align",
-                "v": "middle",
-                "i": false
-              }
-            ]
-          },
-          {
-            "s": "[data-owner=\"project-fork-help-copy\"]",
-            "d": [
-              {
-                "p": "margin-left",
-                "v": "20px",
-                "i": false
-              }
-            ]
-          },
-          {
-            "s": "[data-owner=\"project-fork-existing-row\"]",
-            "d": [
-              {
-                "p": "text-align",
-                "v": "center",
-                "i": false
-              }
-            ]
-          },
-          {
-            "s": "[data-owner=\"project-fork-existing-icon\"]",
-            "d": [
-              {
-                "p": "display",
-                "v": "inline-block",
-                "i": false
-              }
-            ]
-          },
-          {
-            "s": "[data-owner=\"project-fork-existing-arrow\"]",
-            "d": [
-              {
-                "p": "display",
-                "v": "inline-block",
-                "i": false
-              },
-              {
-                "p": "vertical-align",
-                "v": "middle",
-                "i": false
-              }
-            ]
-          },
-          {
-            "s": "[data-owner=\"project-fork-existing-link\"]",
-            "d": [
-              {
-                "p": "color",
-                "v": "var(--color-yona-orange)",
-                "i": false
-              },
-              {
-                "p": "vertical-align",
-                "v": "middle",
-                "i": false
-              }
-            ]
-          },
-          {
-            "s": "[data-owner=\"project-fork-owner-group\"], [data-owner=\"project-fork-name-group\"], [data-owner=\"project-fork-scope-group\"], [data-owner=\"project-fork-actions\"]",
-            "d": [
-              {
-                "p": "margin-bottom",
-                "v": "20px",
-                "i": false
-              }
-            ]
-          },
-          {
-            "s": "[data-owner=\"project-fork-owner-label\"], [data-owner=\"project-fork-name-label\"], [data-owner=\"project-fork-scope-label\"]",
-            "d": [
-              {
-                "p": "color",
-                "v": "var(--color-yona-text)",
-                "i": false
-              },
-              {
-                "p": "display",
-                "v": "inline-block",
-                "i": false
-              },
-              {
-                "p": "font-weight",
-                "v": "400",
-                "i": false
-              },
-              {
-                "p": "margin-right",
-                "v": "20px",
-                "i": false
-              },
-              {
-                "p": "text-align",
-                "v": "right",
-                "i": false
-              },
-              {
-                "p": "vertical-align",
-                "v": "top",
-                "i": false
-              },
-              {
-                "p": "width",
-                "v": "140px",
-                "i": false
-              }
-            ]
-          },
-          {
-            "s": "[data-owner=\"project-fork-owner-controls\"], [data-owner=\"project-fork-name-controls\"], [data-owner=\"project-fork-scope-controls\"]",
-            "d": [
-              {
-                "p": "display",
-                "v": "inline-block",
-                "i": false
-              },
-              {
-                "p": "vertical-align",
-                "v": "top",
-                "i": false
-              }
-            ]
-          },
-          {
-            "s": ".pr-fork-controls",
-            "d": [
-              {
-                "p": "display",
-                "v": "inline-block",
-                "i": false
-              },
-              {
-                "p": "vertical-align",
-                "v": "top",
-                "i": false
-              }
-            ]
-          },
-          {
-            "s": "[data-owner=\"project-fork-name-input\"]",
-            "d": [
-              {
-                "p": "border-color",
-                "v": "#cccccc",
-                "i": false
-              },
-              {
-                "p": "border-style",
-                "v": "solid",
-                "i": false
-              },
-              {
-                "p": "border-width",
-                "v": "1px",
-                "i": false
-              },
-              {
-                "p": "color",
-                "v": "#555555",
-                "i": false
-              },
-              {
-                "p": "padding",
-                "v": "4px",
-                "i": false
-              }
-            ]
-          },
-          {
-            "s": "[data-owner=\"project-fork-submit\"]",
-            "d": [
-              {
-                "p": "background-color",
-                "v": "#49afcd",
-                "i": false
-              },
-              {
-                "p": "border-color",
-                "v": "#49afcd",
-                "i": false
-              },
-              {
-                "p": "border-radius",
-                "v": "4px",
-                "i": false
-              },
-              {
-                "p": "border-style",
-                "v": "solid",
-                "i": false
-              },
-              {
-                "p": "border-width",
-                "v": "1px",
-                "i": false
-              },
-              {
-                "p": "color",
-                "v": "#fff",
-                "i": false
-              },
-              {
-                "p": "display",
-                "v": "inline-block",
-                "i": false
-              },
-              {
-                "p": "padding",
-                "v": "4px 12px",
-                "i": false
-              },
-              {
-                "p": "text-decoration",
-                "v": "none",
-                "i": false
-              }
-            ]
-          },
-          {
-            "s": "[data-owner=\"project-fork-cancel\"]",
-            "d": [
-              {
-                "p": "background-color",
-                "v": "#49afcd",
-                "i": false
-              },
-              {
-                "p": "border-color",
-                "v": "#49afcd",
-                "i": false
-              },
-              {
-                "p": "border-radius",
-                "v": "4px",
-                "i": false
-              },
-              {
-                "p": "border-style",
-                "v": "solid",
-                "i": false
-              },
-              {
-                "p": "border-width",
-                "v": "1px",
-                "i": false
-              },
-              {
-                "p": "color",
-                "v": "var(--color-yona-text)",
-                "i": false
-              },
-              {
-                "p": "display",
-                "v": "inline-block",
-                "i": false
-              },
-              {
-                "p": "padding",
-                "v": "4px 12px",
-                "i": false
-              },
-              {
-                "p": "text-decoration",
-                "v": "none",
-                "i": false
-              }
-            ]
-          },
-          {
-            "s": "[data-owner=\"project-fork-public-radio\"], [data-owner=\"project-fork-protected-radio\"], [data-owner=\"project-fork-private-radio\"]",
-            "d": [
-              {
-                "p": "color",
-                "v": "var(--color-yona-text)",
-                "i": false
-              },
-              {
-                "p": "margin",
-                "v": "2px",
-                "i": false
-              }
-            ]
-          },
-          {
-            "s": "[data-owner=\"project-fork-public-label\"], [data-owner=\"project-fork-protected-label\"], [data-owner=\"project-fork-private-label\"]",
-            "d": [
-              {
-                "p": "color",
-                "v": "var(--color-yona-text)",
-                "i": false
-              }
-            ]
-          },
-          {
-            "s": "[data-owner=\"project-fork-name-help\"]",
-            "d": [
-              {
-                "p": "color",
-                "v": "#b94a48",
                 "i": false
               }
             ]
@@ -131334,11 +130919,6 @@
                 "i": false
               },
               {
-                "p": "line-height",
-                "v": "normal",
-                "i": false
-              },
-              {
                 "p": "padding",
                 "v": "10px",
                 "i": false
@@ -139394,8 +138974,8 @@
                 "i": false
               },
               {
-                "p": "border-color",
-                "v": "rgba(0, 0, 0, 0.1)",
+                "p": "border",
+                "v": "1px solid rgba(0, 0, 0, 0.1)",
                 "i": false
               },
               {
@@ -139404,23 +138984,8 @@
                 "i": false
               },
               {
-                "p": "border-style",
-                "v": "solid",
-                "i": false
-              },
-              {
-                "p": "border-top-color",
-                "v": "#ffffff",
-                "i": false
-              },
-              {
-                "p": "border-top-width",
-                "v": "2px",
-                "i": false
-              },
-              {
-                "p": "border-width",
-                "v": "1px",
+                "p": "border-top",
+                "v": "2px solid #ffffff",
                 "i": false
               },
               {
@@ -169256,26 +168821,6 @@
             ]
           },
           {
-            "s": ".site-admin-affix-surface",
-            "d": [
-              {
-                "p": "font-family",
-                "v": "\"Helvetica Neue\", Helvetica, Arial, sans-serif",
-                "i": false
-              },
-              {
-                "p": "line-height",
-                "v": "23px",
-                "i": false
-              },
-              {
-                "p": "height",
-                "v": "43px",
-                "i": false
-              }
-            ]
-          },
-          {
             "s": "[data-owner=\"new-pull-request-error-wrap\"]",
             "d": [
               {
@@ -179385,51 +178930,6 @@
             ]
           },
           {
-            "s": "[data-owner=\"project-fork-page\"] .form-horizontal .control-label",
-            "d": [
-              {
-                "p": "float",
-                "v": "none",
-                "i": false
-              },
-              {
-                "p": "width",
-                "v": "auto",
-                "i": false
-              },
-              {
-                "p": "padding-top",
-                "v": "0",
-                "i": false
-              },
-              {
-                "p": "text-align",
-                "v": "left",
-                "i": false
-              }
-            ]
-          },
-          {
-            "s": "[data-owner=\"project-fork-page\"] .form-horizontal .controls",
-            "d": [
-              {
-                "p": "margin-left",
-                "v": "0",
-                "i": false
-              }
-            ]
-          },
-          {
-            "s": "[data-owner=\"project-fork-page\"] select, [data-owner=\"project-fork-page\"] input[type=\"text\"]",
-            "d": [
-              {
-                "p": "max-width",
-                "v": "100%",
-                "i": false
-              }
-            ]
-          },
-          {
             "s": "div[data-owner=\"project-delete-action\"], div[data-owner=\"project-transfer-action-box\"]",
             "d": [
               {
@@ -180725,16 +180225,6 @@
               {
                 "p": "margin",
                 "v": "0px",
-                "i": false
-              }
-            ]
-          },
-          {
-            "s": ".site-admin-affix-surface",
-            "d": [
-              {
-                "p": "height",
-                "v": "66px",
                 "i": false
               }
             ]
@@ -184772,8 +184262,8 @@
       {
         "name": "app.css",
         "path": "/Users/senghyunjo/github/yona-bun-temp/frontend/src/app.css",
-        "sha256": "623f585ae837ecadc2b511b6f082ed84d69c8020653cf6b9b336e74bae3d81a0",
-        "bytes": 1218610
+        "sha256": "8039b97bbb9469a6e54d3acf325672a1bcfaf5449c38b6c445559f941af78bad",
+        "bytes": 1214194
       },
       {
         "name": "import",
@@ -184897,7 +184387,7 @@
         "count": 1
       }
     ],
-    "ruleCount": 9234,
+    "ruleCount": 9209,
     "bucketCount": 25,
     "fontFaceCount": 2,
     "keyframeCount": 16

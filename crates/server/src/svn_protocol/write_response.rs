@@ -27,9 +27,18 @@ pub(super) fn put(
     if revision.is_some() || path.trim().is_empty() {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     }
-    let existed = match yoram_vcs::svn_path_exists(repo_path, None, &path) {
+    let activity_id = path::working_activity_id(&route.svn_path);
+    let existed = match activity_id.as_deref() {
+        Some(activity_id) => yoram_vcs::svn_activity_path_exists(repo_path, activity_id, &path),
+        None => yoram_vcs::svn_path_exists(repo_path, None, &path),
+    };
+    let existed = match existed {
         Ok(exists) => exists,
+        Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
+        Err(VcsError::FilesystemFailed(_)) => {
+            return svn_protocol_status_response(StatusCode::CONFLICT)
+        }
         Err(VcsError::SvnLookUnavailable) => {
             return svn_protocol_not_implemented_response(route, "PUT");
         }
@@ -37,7 +46,11 @@ pub(super) fn put(
             return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     };
-    let contents = match write::put_contents(repo_path, &path, body) {
+    let contents = match activity_id.as_deref() {
+        Some(activity_id) => write::put_activity_contents(repo_path, activity_id, &path, body),
+        None => write::put_contents(repo_path, &path, body),
+    };
+    let contents = match contents {
         Ok(contents) => contents,
         Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
@@ -48,6 +61,25 @@ pub(super) fn put(
             return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     };
+    if let Some(activity_id) = activity_id.as_deref() {
+        return match yoram_vcs::svn_activity_put_file(repo_path, activity_id, &path, &contents) {
+            Ok(_) => {
+                let status = if existed {
+                    StatusCode::NO_CONTENT
+                } else {
+                    StatusCode::CREATED
+                };
+                svn_protocol_status_response(status)
+            }
+            Err(VcsError::NotFound) => svn_protocol_status_response(StatusCode::NOT_FOUND),
+            Err(VcsError::InvalidPath) => svn_protocol_status_response(StatusCode::BAD_REQUEST),
+            Err(VcsError::SvnUnavailable) => svn_protocol_not_implemented_response(route, "PUT"),
+            Err(VcsError::SvnFailed(_)) | Err(VcsError::FilesystemFailed(_)) => {
+                svn_protocol_status_response(StatusCode::CONFLICT)
+            }
+            Err(error) => RestRouteError::from_connect_error(internal_error(error)).into_response(),
+        };
+    }
     let message = write::activity_log(
         repo_path,
         path::working_activity_id(&route.svn_path)
@@ -92,16 +124,39 @@ pub(super) fn copy(
     if source_path.trim().is_empty() {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     }
-    let Some(destination) = headers
+    let Some(destination_value) = headers
         .get("destination")
         .and_then(|value| value.to_str().ok())
-        .and_then(|value| path::destination_file_lookup(route, value))
     else {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    };
+    let Some(destination) = path::destination_file_lookup(route, destination_value) else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
     let (destination_revision, destination_path) = destination;
     if destination_revision.is_some() || destination_path.trim().is_empty() {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    }
+    let activity_id =
+        path::working_activity_id(&href::repo_relative_request_path(route, destination_value))
+            .or_else(|| path::working_activity_id(&route.svn_path));
+    if let Some(activity_id) = activity_id.as_deref() {
+        return match yoram_vcs::svn_activity_copy_path(
+            repo_path,
+            activity_id,
+            source_revision,
+            &source_path,
+            &destination_path,
+        ) {
+            Ok(()) => svn_protocol_status_response(StatusCode::CREATED),
+            Err(VcsError::NotFound) => svn_protocol_status_response(StatusCode::NOT_FOUND),
+            Err(VcsError::InvalidPath) => svn_protocol_status_response(StatusCode::BAD_REQUEST),
+            Err(VcsError::SvnUnavailable) => svn_protocol_not_implemented_response(route, "COPY"),
+            Err(VcsError::SvnFailed(_)) | Err(VcsError::FilesystemFailed(_)) => {
+                svn_protocol_status_response(StatusCode::CONFLICT)
+            }
+            Err(error) => RestRouteError::from_connect_error(internal_error(error)).into_response(),
+        };
     }
     let message = write::activity_log(
         repo_path,
@@ -148,16 +203,38 @@ pub(super) fn move_path(
     if source_revision.is_some() || source_path.trim().is_empty() {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     }
-    let Some(destination) = headers
+    let Some(destination_value) = headers
         .get("destination")
         .and_then(|value| value.to_str().ok())
-        .and_then(|value| path::destination_file_lookup(route, value))
     else {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    };
+    let Some(destination) = path::destination_file_lookup(route, destination_value) else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
     let (destination_revision, destination_path) = destination;
     if destination_revision.is_some() || destination_path.trim().is_empty() {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    }
+    let activity_id =
+        path::working_activity_id(&href::repo_relative_request_path(route, destination_value))
+            .or_else(|| path::working_activity_id(&route.svn_path));
+    if let Some(activity_id) = activity_id.as_deref() {
+        return match yoram_vcs::svn_activity_move_path(
+            repo_path,
+            activity_id,
+            &source_path,
+            &destination_path,
+        ) {
+            Ok(()) => svn_protocol_status_response(StatusCode::CREATED),
+            Err(VcsError::NotFound) => svn_protocol_status_response(StatusCode::NOT_FOUND),
+            Err(VcsError::InvalidPath) => svn_protocol_status_response(StatusCode::BAD_REQUEST),
+            Err(VcsError::SvnUnavailable) => svn_protocol_not_implemented_response(route, "MOVE"),
+            Err(VcsError::SvnFailed(_)) | Err(VcsError::FilesystemFailed(_)) => {
+                svn_protocol_status_response(StatusCode::CONFLICT)
+            }
+            Err(error) => RestRouteError::from_connect_error(internal_error(error)).into_response(),
+        };
     }
     let message = write::activity_log(
         repo_path,
@@ -196,6 +273,18 @@ pub(super) fn mkcol(
     };
     if revision.is_some() || path.trim().is_empty() {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    }
+    if let Some(activity_id) = path::working_activity_id(&route.svn_path) {
+        return match yoram_vcs::svn_activity_make_collection(repo_path, &activity_id, &path) {
+            Ok(()) => svn_protocol_status_response(StatusCode::CREATED),
+            Err(VcsError::NotFound) => svn_protocol_status_response(StatusCode::NOT_FOUND),
+            Err(VcsError::InvalidPath) => svn_protocol_status_response(StatusCode::BAD_REQUEST),
+            Err(VcsError::SvnUnavailable) => svn_protocol_not_implemented_response(route, "MKCOL"),
+            Err(VcsError::SvnFailed(_)) | Err(VcsError::FilesystemFailed(_)) => {
+                svn_protocol_status_response(StatusCode::CONFLICT)
+            }
+            Err(error) => RestRouteError::from_connect_error(internal_error(error)).into_response(),
+        };
     }
     let message = write::activity_log(
         repo_path,
@@ -257,6 +346,40 @@ pub(super) fn proppatch(
         Some(patches) if !patches.is_empty() => patches,
         _ => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
     };
+    if let Some(activity_id) = path::working_activity_id(&route.svn_path) {
+        return match yoram_vcs::svn_activity_patch_properties(
+            repo_path,
+            &activity_id,
+            &path,
+            &patches,
+        ) {
+            Ok(()) => {
+                let mut response = (
+                    StatusCode::MULTI_STATUS,
+                    report_items::proppatch_multistatus(
+                        &href::resource(route, &path, false),
+                        &patches,
+                    ),
+                )
+                    .into_response();
+                add_svn_dav_headers(&mut response);
+                response.headers_mut().insert(
+                    http::header::CONTENT_TYPE,
+                    HeaderValue::from_static("application/xml; charset=utf-8"),
+                );
+                response
+            }
+            Err(VcsError::NotFound) => svn_protocol_status_response(StatusCode::NOT_FOUND),
+            Err(VcsError::InvalidPath) => svn_protocol_status_response(StatusCode::BAD_REQUEST),
+            Err(VcsError::SvnUnavailable) => {
+                svn_protocol_not_implemented_response(route, "PROPPATCH")
+            }
+            Err(VcsError::SvnFailed(_)) | Err(VcsError::FilesystemFailed(_)) => {
+                svn_protocol_status_response(StatusCode::CONFLICT)
+            }
+            Err(error) => RestRouteError::from_connect_error(internal_error(error)).into_response(),
+        };
+    }
     let message = format!(
         "Update properties on {path} through WebDAV by {}",
         actor.login_id
@@ -297,6 +420,18 @@ pub(super) fn delete(
     };
     if revision.is_some() || path.trim().is_empty() {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    }
+    if let Some(activity_id) = path::working_activity_id(&route.svn_path) {
+        return match yoram_vcs::svn_activity_delete_path(repo_path, &activity_id, &path) {
+            Ok(()) => svn_protocol_status_response(StatusCode::NO_CONTENT),
+            Err(VcsError::NotFound) => svn_protocol_status_response(StatusCode::NOT_FOUND),
+            Err(VcsError::InvalidPath) => svn_protocol_status_response(StatusCode::BAD_REQUEST),
+            Err(VcsError::SvnUnavailable) => svn_protocol_not_implemented_response(route, "DELETE"),
+            Err(VcsError::SvnFailed(_)) | Err(VcsError::FilesystemFailed(_)) => {
+                svn_protocol_status_response(StatusCode::CONFLICT)
+            }
+            Err(error) => RestRouteError::from_connect_error(internal_error(error)).into_response(),
+        };
     }
     let message = write::activity_log(
         repo_path,

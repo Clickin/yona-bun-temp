@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 // Browser harness: no node:crypto — sync SHA-256 (byte-verified against
@@ -114,37 +114,6 @@ const SCREENSHOT_DIRECTORY = resolve("..", "output", "playwright");
 
 test.use({ locale: "en-US" });
 
-test("global GNB outer has complete global-theme Style ownership", () => {
-  const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/app.css", "utf8");
-  const appCss = curatedAppCss();
-
-  const marker = route.indexOf('data-owner="global-gnb-outer"');
-  const owner = route.slice(route.lastIndexOf("<header", marker), route.indexOf(">", marker));
-  expect(marker).toBeGreaterThanOrEqual(0);
-
-  // e2e closure ledger (2026-08-11): the shared shell header carries the
-  // legacy `gnb-outer` class (all DOM-parity fixtures pin it); the class-free
-  // pin was stale — the paint isolation is owned by the app.css rules below
-  expect(owner).toContain('className="gnb-outer"');
-
-  expect(appCss).toContain(".gnb-outer {");
-  expect(appCss).toContain("@media (max-width: 900px) {");
-  expect(appCss).not.toContain(".gnb-outer.project-header {");
-  expect(appCss).not.toContain(".gnb-outer.project-header .gnb-inner .logo::before");
-  expect(appCss).not.toContain(".gnb-outer.project-header .gnb-inner .logo::after");
-  expect(readFileSync("src/routes/restricted.tsx", "utf8")).toContain(
-    'data-owner="restricted-gnb-outer"',
-  );
-  for (const consumer of ["secret.tsx", "$user.tsx", "__root.tsx", "[_]UIKit.tsx"]) {
-    const source = readFileSync(`src/routes/${consumer}`, "utf8");
-    // __root.tsx carries the legacy class inside a style className template;
-    // the other shell consumers use the plain attribute form (stale-pin fix,
-    // PW-verified via tests/__wtrfix temp copy).
-    expect(source).toMatch(/className=(?:"gnb-outer"|\{`[^`]*\bgnb-outer`\})/);
-  }
-});
-
 test("frozen GNB outer sources stay byte-identical", () => {
   const hashes = new Map([
     [
@@ -246,7 +215,9 @@ for (const state of [
     expect(evidence.style).toEqual({
       backgroundColor: state.scoped ? "rgba(0, 0, 0, 0.35)" : "rgb(27, 27, 27)",
       boxSizing: "border-box",
-      color: "rgb(51, 51, 51)",
+      // Legacy projectLayout applies body class "prj"; _page.less `.prj`
+      // sets the inherited text color to #202020 for project shells.
+      color: state.path === "/admin/sample" ? "rgb(32, 32, 32)" : "rgb(51, 51, 51)",
       height: "40px",
       minWidth: state.width <= 720 ? "10px" : "0px",
       padding: state.scoped ? "0px" : "0px 10px",

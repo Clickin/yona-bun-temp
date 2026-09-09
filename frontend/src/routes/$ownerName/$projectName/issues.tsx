@@ -2,6 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { createFileRoute, Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   Fragment,
+  use,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -39,6 +40,7 @@ import {
   type ProjectIssueListRestResponse,
   type RestIssueListItem,
 } from "../../../auth-workspace-client";
+import { ProjectLayoutContext } from "../$projectName";
 
 export type ProjectIssuesSearch = {
   assigneeId: string;
@@ -145,9 +147,13 @@ export function ProjectIssuesScreen({
   search: ProjectIssuesSearch;
 }) {
   const location = useLocation();
-  const projectQuery = useQuery(
-    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
-  );
+  const projectFromLayout = use(ProjectLayoutContext);
+  const projectQuery = useQuery({
+    ...readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
+    enabled: !projectFromLayout,
+    placeholderData: keepPreviousData,
+  });
+  const project = projectFromLayout ?? projectQuery.data;
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
   useWireframeContentProgress([["project", ownerName, projectName, "issues"]]);
   const issuesQuery = useQuery({
@@ -247,7 +253,7 @@ export function ProjectIssuesScreen({
     queryKey: ["project", ownerName, projectName, "issue-search-users", "assignee"],
   });
 
-  if (!projectQuery.data || !sessionQuery.data) {
+  if (!project || !sessionQuery.data) {
     return (
       <ProjectIssuesWireframe
         ownerName={ownerName}
@@ -284,7 +290,7 @@ export function ProjectIssuesScreen({
         }}
         milestonesPending={openMilestonesQuery.isPending || closedMilestonesQuery.isPending}
         ownerName={ownerName}
-        project={projectQuery.data}
+        project={project}
         projectName={projectName}
         runtimeConfig={runtimeConfig}
         search={search}
@@ -1184,6 +1190,7 @@ function MassUpdateToolbar({
     selectedIssueIds.has(stringField(issue.id, String(issue.issueNumber))),
   );
   const massUpdateWrapRef = useRef<HTMLDivElement>(null);
+  const massUpdateOffsetTopRef = useRef<number | null>(null);
   const selectedIssueCount = selectedIssues.length;
   const hasSelectedIssues = selectedIssueCount > 0;
   const [massUpdateAffixed, setMassUpdateAffixed] = useState(false);
@@ -1219,51 +1226,32 @@ function MassUpdateToolbar({
   }, [hasSelectedIssues]);
   useEffect(() => {
     const wrap = massUpdateWrapRef.current;
-    const affixAnchor = wrap?.parentElement;
-    if (!wrap || !affixAnchor || typeof IntersectionObserver === "undefined") {
+    if (!wrap) {
       return;
     }
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry) {
-          setMassUpdateAffixed(false);
-          return;
-        }
-        setMassUpdateAffixed(entry.intersectionRatio < 1);
-      },
-      {
-        root: null,
-        rootMargin: "-15px 0px 0px 0px",
-        threshold: [1],
-      },
-    );
-    observer.observe(affixAnchor);
+    // Legacy Bootstrap affix uses the toolbar's document offset minus 15px
+    // as its scroll threshold. Keep that threshold stable after the toolbar
+    // becomes fixed; reading its rect on every scroll would otherwise make a
+    // fixed toolbar move its own threshold.
+    massUpdateOffsetTopRef.current =
+      wrap.getBoundingClientRect().top + window.scrollY - 15;
+    const updateAffixState = () => {
+      const offsetTop = massUpdateOffsetTopRef.current;
+      if (offsetTop === null) {
+        return;
+      }
+      setMassUpdateAffixed(window.scrollY >= offsetTop);
+    };
+    updateAffixState();
+    window.addEventListener("scroll", updateAffixState, { passive: true });
     return () => {
-      observer.disconnect();
+      window.removeEventListener("scroll", updateAffixState);
+      massUpdateOffsetTopRef.current = null;
       setMassUpdateAffixed(false);
     };
   }, []);
 
-  useEffect(() => {
-    if (!massUpdateAffixed) {
-      return;
-    }
-    const wrap = massUpdateWrapRef.current;
-    if (!wrap) {
-      setMassUpdateAffixed(false);
-      return;
-    }
-    const affixAnchor = wrap.parentElement;
-    if (!affixAnchor) {
-      setMassUpdateAffixed(false);
-      return;
-    }
-    const anchorTop = affixAnchor.getBoundingClientRect().top;
-    if (anchorTop >= 15) {
-      setMassUpdateAffixed(false);
-    }
-  }, [massUpdateAffixed, selectedIssueIds]);
   const toggleMassUpdateDropdown = (dropdownId: string) => {
     if (!hasSelectedIssues) {
       return;
@@ -2937,7 +2925,18 @@ function IssueSearchSingleSelectDisplay({
 }) {
   return (
     // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- legacy Select2 emits a clickable div; React forwards it to the native select.
-    <div id={`s2id_${id}`} className="select2-container fullsize" onClick={onActivate}>
+    <div
+      id={`s2id_${id}`}
+      className="select2-container fullsize"
+      onMouseDown={(event) => {
+        // Select2 focuses its offscreen native control before the browser's
+        // click handling. Prevent the non-focusable display div from stealing
+        // that focus, which also keeps an unchanged text field blur inert.
+        event.preventDefault();
+        onActivate();
+      }}
+      onClick={onActivate}
+    >
       <div className="select2-choice" role="presentation">
         <span className="select2-chosen">{label}</span>
         <span className="select2-arrow" aria-hidden="true">

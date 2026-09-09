@@ -150,7 +150,7 @@ impl AppRepositoryImpl<'_> {
     pub async fn delete_site_import_attachment_row(
         &self,
         attachment_id: i64,
-    ) -> Result<Option<AttachmentRecord>, DbErr> {
+    ) -> Result<Option<(AttachmentRecord, bool)>, DbErr> {
         let Some(model) = attachment::Entity::find_by_id(attachment_id)
             .one(&self.db)
             .await?
@@ -168,10 +168,19 @@ impl AppRepositoryImpl<'_> {
             owner_login_id: model.owner_login_id.clone().unwrap_or_default(),
             size: model.size.unwrap_or_default(),
         };
+        let (_write_guard, txn, txn_started_at) = self.begin_serialized_write().await?;
         attachment::Entity::delete_by_id(model.id)
-            .exec(&self.db)
+            .exec(&txn)
             .await?;
-        Ok(Some(record))
+        let has_reference = !record.hash.is_empty()
+            && attachment::Entity::find()
+                .filter(attachment::Column::Hash.eq(Some(record.hash.clone())))
+                .one(&txn)
+                .await?
+                .is_some();
+        self.commit_serialized_write(txn, _write_guard, txn_started_at)
+            .await?;
+        Ok(Some((record, !has_reference)))
     }
 
     pub async fn read_site_import_attachment_snapshot(
@@ -244,6 +253,27 @@ impl AppRepositoryImpl<'_> {
             .into_iter()
             .map(|comment| comment.id)
             .collect::<Vec<_>>();
+        if !comment_ids.is_empty() {
+            attachment::Entity::delete_many()
+                .filter(
+                    attachment::Column::ContainerType.is_in(
+                        attachment_container_aliases(BOARD_COMMENT_ATTACHMENT_CONTAINER)
+                            .into_iter()
+                            .map(Some),
+                    ),
+                )
+                .filter(attachment::Column::ContainerId.is_in(comment_ids.iter().copied()))
+                .exec(&self.db)
+                .await?;
+        }
+        attachment::Entity::delete_many()
+            .filter(
+                attachment::Column::ContainerType
+                    .eq(Some(BOARD_POST_ATTACHMENT_CONTAINER.to_string())),
+            )
+            .filter(attachment::Column::ContainerId.eq(model.id))
+            .exec(&self.db)
+            .await?;
         recent_issue::Entity::delete_many()
             .filter(recent_issue::Column::PostingId.eq(Some(model.id)))
             .exec(&self.db)
@@ -388,6 +418,27 @@ impl AppRepositoryImpl<'_> {
             .into_iter()
             .map(|comment| comment.id)
             .collect::<Vec<_>>();
+        if !comment_ids.is_empty() {
+            attachment::Entity::delete_many()
+                .filter(
+                    attachment::Column::ContainerType
+                        .eq(Some(ISSUE_COMMENT_ATTACHMENT_CONTAINER.to_string())),
+                )
+                .filter(attachment::Column::ContainerId.is_in(comment_ids.iter().copied()))
+                .exec(&self.db)
+                .await?;
+        }
+        attachment::Entity::delete_many()
+            .filter(
+                attachment::Column::ContainerType.is_in(
+                    attachment_container_aliases(ISSUE_ATTACHMENT_CONTAINER)
+                        .into_iter()
+                        .map(Some),
+                ),
+            )
+            .filter(attachment::Column::ContainerId.eq(model.id))
+            .exec(&self.db)
+            .await?;
         favorite_issue::Entity::delete_many()
             .filter(favorite_issue::Column::IssueId.eq(Some(model.id)))
             .exec(&self.db)
@@ -462,6 +513,14 @@ impl AppRepositoryImpl<'_> {
             .col_expr(issue::Column::MilestoneId, Expr::value(Option::<i64>::None))
             .exec(&self.db)
             .await?;
+        attachment::Entity::delete_many()
+            .filter(
+                attachment::Column::ContainerType
+                    .eq(Some(MILESTONE_ATTACHMENT_CONTAINER.to_string())),
+            )
+            .filter(attachment::Column::ContainerId.eq(row.id))
+            .exec(&self.db)
+            .await?;
         milestone::Entity::delete_by_id(row.id)
             .exec(&self.db)
             .await?;
@@ -503,6 +562,18 @@ impl AppRepositoryImpl<'_> {
             .into_iter()
             .map(|row| row.id)
             .collect::<Vec<_>>();
+        let project_attachments = self
+            .list_project_attachments_for_cleanup(project_id)
+            .await?;
+        if !project_attachments.is_empty() {
+            attachment::Entity::delete_many()
+                .filter(
+                    attachment::Column::Id
+                        .is_in(project_attachments.iter().map(|attachment| attachment.id)),
+                )
+                .exec(&self.db)
+                .await?;
+        }
         let project_resource_id = project_id.to_string();
         let issue_label_ids = issue_label::Entity::find()
             .filter(issue_label::Column::ProjectId.eq(Some(project_id)))

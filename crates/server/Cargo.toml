@@ -39,6 +39,7 @@ base64.workspace = true
 bcrypt.workspace = true
 bytes.workspace = true
 chardetng.workspace = true
+chrono.workspace = true
 encoding_rs.workspace = true
 futures.workspace = true
 http.workspace = true
@@ -71,7 +72,6 @@ yoram-search = { path = "../search" }
 yoram-vcs = { path = "../vcs" }
 
 [dev-dependencies]
-chrono.workspace = true
 tempfile.workspace = true
 testcontainers-modules = { version = "0.15", features = ["postgres", "mariadb"] }
 
@@ -86,6 +86,10 @@ path = "tests/server_core_contract.rs"
 [[test]]
 name = "assets_contract"
 path = "tests/assets_contract.rs"
+
+[[test]]
+name = "attachment_acl_contract"
+path = "tests/attachment_acl_contract.rs"
 
 [[test]]
 name = "auth_workspace_contract"

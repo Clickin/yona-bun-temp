@@ -91,6 +91,14 @@ impl AppRepositoryImpl<'_> {
             .collect())
     }
 
+    pub async fn attachment_hash_is_referenced(&self, hash: &str) -> Result<bool, DbErr> {
+        Ok(attachment::Entity::find()
+            .filter(attachment::Column::Hash.eq(Some(hash.to_string())))
+            .one(&self.db)
+            .await?
+            .is_some())
+    }
+
     pub async fn read_attachment_project_resource(
         &self,
         container_type: &str,
@@ -172,6 +180,10 @@ impl AppRepositoryImpl<'_> {
                     None
                 }
             }
+            "COMMIT_COMMENT" => commit_comment::Entity::find_by_id(container_id)
+                .one(&self.db)
+                .await?
+                .and_then(|row| row.project_id),
             _ => None,
         };
 
@@ -185,6 +197,247 @@ impl AppRepositoryImpl<'_> {
             owner_name: project.owner_name,
             project_name: project.project_name,
         }))
+    }
+
+    pub async fn read_issue_attachment_target(
+        &self,
+        issue_id: i64,
+    ) -> Result<Option<IssueAttachmentTargetRecord>, DbErr> {
+        let Some(issue) = issue::Entity::find_by_id(issue_id).one(&self.db).await? else {
+            return Ok(None);
+        };
+        let Some(project_id) = issue.project_id else {
+            return Ok(None);
+        };
+        let Some(project) = self.read_project_by_id(project_id).await? else {
+            return Ok(None);
+        };
+        Ok(Some(IssueAttachmentTargetRecord {
+            issue_number: issue.number.unwrap_or_default(),
+            owner_name: project.owner_name,
+            project_name: project.project_name,
+            author_id: issue.author_id,
+        }))
+    }
+
+    pub async fn read_attachment_resource_target(
+        &self,
+        container_type: &str,
+        container_id: i64,
+    ) -> Result<Option<AttachmentResourceTargetRecord>, DbErr> {
+        let normalized = container_type.trim().to_ascii_uppercase();
+        let target = match normalized.as_str() {
+            ISSUE_ATTACHMENT_CONTAINER | RUST_ISSUE_ATTACHMENT_CONTAINER => {
+                let Some(issue) = issue::Entity::find_by_id(container_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                let Some(project_id) = issue.project_id else {
+                    return Ok(None);
+                };
+                let Some(project) = self.read_project_by_id(project_id).await? else {
+                    return Ok(None);
+                };
+                AttachmentResourceTargetRecord {
+                    author_id: issue.author_id,
+                    issue_number: issue.number,
+                    owner_name: project.owner_name,
+                    project_name: project.project_name,
+                }
+            }
+            ISSUE_COMMENT_ATTACHMENT_CONTAINER => {
+                let Some(comment) = issue_comment::Entity::find_by_id(container_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                let Some(issue_id) = comment.issue_id else {
+                    return Ok(None);
+                };
+                let Some(issue) = issue::Entity::find_by_id(issue_id).one(&self.db).await? else {
+                    return Ok(None);
+                };
+                let Some(project_id) = issue.project_id else {
+                    return Ok(None);
+                };
+                let Some(project) = self.read_project_by_id(project_id).await? else {
+                    return Ok(None);
+                };
+                AttachmentResourceTargetRecord {
+                    author_id: comment.author_id,
+                    issue_number: issue.number,
+                    owner_name: project.owner_name,
+                    project_name: project.project_name,
+                }
+            }
+            BOARD_POST_ATTACHMENT_CONTAINER => {
+                let Some(post) = posting::Entity::find_by_id(container_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                let Some(project_id) = post.project_id else {
+                    return Ok(None);
+                };
+                let Some(project) = self.read_project_by_id(project_id).await? else {
+                    return Ok(None);
+                };
+                AttachmentResourceTargetRecord {
+                    author_id: post.author_id,
+                    issue_number: post.number,
+                    owner_name: project.owner_name,
+                    project_name: project.project_name,
+                }
+            }
+            BOARD_COMMENT_ATTACHMENT_CONTAINER | RUST_BOARD_COMMENT_ATTACHMENT_CONTAINER => {
+                let Some(comment) = posting_comment::Entity::find_by_id(container_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                let Some(posting_id) = comment.posting_id else {
+                    return Ok(None);
+                };
+                let Some(post) = posting::Entity::find_by_id(posting_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                let Some(project_id) = post.project_id else {
+                    return Ok(None);
+                };
+                let Some(project) = self.read_project_by_id(project_id).await? else {
+                    return Ok(None);
+                };
+                AttachmentResourceTargetRecord {
+                    author_id: comment.author_id,
+                    issue_number: post.number,
+                    owner_name: project.owner_name,
+                    project_name: project.project_name,
+                }
+            }
+            PULL_REQUEST_ATTACHMENT_CONTAINER => {
+                let Some(pull_request) = pull_request::Entity::find_by_id(container_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                let Some(project_id) = pull_request.to_project_id else {
+                    return Ok(None);
+                };
+                let Some(project) = self.read_project_by_id(project_id).await? else {
+                    return Ok(None);
+                };
+                AttachmentResourceTargetRecord {
+                    author_id: None,
+                    issue_number: pull_request.number,
+                    owner_name: project.owner_name,
+                    project_name: project.project_name,
+                }
+            }
+            "COMMENT_THREAD" => {
+                let Some(thread) = comment_thread::Entity::find_by_id(container_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                let pull_request = match thread.pull_request_id {
+                    Some(pull_request_id) => {
+                        pull_request::Entity::find_by_id(pull_request_id)
+                            .one(&self.db)
+                            .await?
+                    }
+                    None => None,
+                };
+                let Some(project_id) = pull_request
+                    .as_ref()
+                    .and_then(|row| row.to_project_id)
+                    .or(thread.project_id)
+                else {
+                    return Ok(None);
+                };
+                let Some(project) = self.read_project_by_id(project_id).await? else {
+                    return Ok(None);
+                };
+                AttachmentResourceTargetRecord {
+                    author_id: thread.author_id,
+                    issue_number: pull_request.as_ref().and_then(|row| row.number),
+                    owner_name: project.owner_name,
+                    project_name: project.project_name,
+                }
+            }
+            "COMMIT_COMMENT" => {
+                let Some(comment) = commit_comment::Entity::find_by_id(container_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                let Some(project_id) = comment.project_id else {
+                    return Ok(None);
+                };
+                let Some(project) = self.read_project_by_id(project_id).await? else {
+                    return Ok(None);
+                };
+                AttachmentResourceTargetRecord {
+                    author_id: comment.author_id,
+                    issue_number: None,
+                    owner_name: project.owner_name,
+                    project_name: project.project_name,
+                }
+            }
+            REVIEW_COMMENT_ATTACHMENT_CONTAINER => {
+                let Some(comment) = review_comment::Entity::find_by_id(container_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                let Some(thread_id) = comment.thread_id else {
+                    return Ok(None);
+                };
+                let Some(thread) = comment_thread::Entity::find_by_id(thread_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                let pull_request = match thread.pull_request_id {
+                    Some(pull_request_id) => {
+                        pull_request::Entity::find_by_id(pull_request_id)
+                            .one(&self.db)
+                            .await?
+                    }
+                    None => None,
+                };
+                let Some(project_id) = pull_request
+                    .as_ref()
+                    .and_then(|row| row.to_project_id)
+                    .or(thread.project_id)
+                else {
+                    return Ok(None);
+                };
+                let Some(project) = self.read_project_by_id(project_id).await? else {
+                    return Ok(None);
+                };
+                AttachmentResourceTargetRecord {
+                    author_id: comment.author_id,
+                    issue_number: pull_request.as_ref().and_then(|row| row.number),
+                    owner_name: project.owner_name,
+                    project_name: project.project_name,
+                }
+            }
+            _ => return Ok(None),
+        };
+        Ok(Some(target))
     }
 
     pub async fn read_attachment_location_path(
@@ -663,8 +916,26 @@ impl AppRepositoryImpl<'_> {
         &self,
         attachment_id: i64,
         actor_id: i64,
-        actor_login_id: &str,
+        _actor_login_id: &str,
         actor_is_site_admin: bool,
+    ) -> Result<DeleteAttachmentResult, DbErr> {
+        self.delete_attachment_for_actor_with_access(
+            attachment_id,
+            actor_id,
+            _actor_login_id,
+            actor_is_site_admin,
+            false,
+        )
+        .await
+    }
+
+    pub async fn delete_attachment_for_actor_with_access(
+        &self,
+        attachment_id: i64,
+        actor_id: i64,
+        _actor_login_id: &str,
+        actor_is_site_admin: bool,
+        actor_can_update_container: bool,
     ) -> Result<DeleteAttachmentResult, DbErr> {
         let Some(model) = attachment::Entity::find_by_id(attachment_id)
             .one(&self.db)
@@ -684,22 +955,39 @@ impl AppRepositoryImpl<'_> {
             owner_login_id: model.owner_login_id.clone().unwrap_or_default(),
             size: model.size.unwrap_or_default(),
         };
-        let actor_login_id = normalize_identity(actor_login_id);
-        let owner_login_id = normalize_identity(&record.owner_login_id);
         let owns_temporary_upload = matches!(
             record.container_type.as_str(),
             USER_ATTACHMENT_CONTAINER | USER_AVATAR_ATTACHMENT_CONTAINER
         ) && record.container_id == actor_id;
-        let owns_uploaded_file = !owner_login_id.is_empty() && owner_login_id == actor_login_id;
-        if !actor_is_site_admin && !owns_temporary_upload && !owns_uploaded_file {
+        if !actor_is_site_admin && !owns_temporary_upload && !actor_can_update_container {
             return Ok(DeleteAttachmentResult::Forbidden);
         }
 
+        let (_write_guard, txn, txn_started_at) = self.begin_serialized_write().await?;
+        let Some(model) = attachment::Entity::find_by_id(attachment_id)
+            .one(&txn)
+            .await?
+        else {
+            self.commit_serialized_write(txn, _write_guard, txn_started_at)
+                .await?;
+            return Ok(DeleteAttachmentResult::NotFound);
+        };
         attachment::Entity::delete_by_id(model.id)
-            .exec(&self.db)
+            .exec(&txn)
+            .await?;
+        let has_reference = !record.hash.is_empty()
+            && attachment::Entity::find()
+                .filter(attachment::Column::Hash.eq(Some(record.hash.clone())))
+                .one(&txn)
+                .await?
+                .is_some();
+        self.commit_serialized_write(txn, _write_guard, txn_started_at)
             .await?;
 
-        Ok(DeleteAttachmentResult::Deleted(record))
+        Ok(DeleteAttachmentResult::Deleted {
+            attachment: record,
+            remove_blob: !has_reference,
+        })
     }
 
     pub async fn promote_avatar_attachment_for_user(

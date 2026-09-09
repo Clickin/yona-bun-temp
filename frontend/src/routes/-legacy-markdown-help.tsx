@@ -1,4 +1,4 @@
-import { Link, useRouteContext, useRouter } from "@tanstack/react-router";
+import { Link, useRouteContext } from "@tanstack/react-router";
 import type { ComponentPropsWithoutRef } from "react";
 import { useState } from "react";
 import {
@@ -191,37 +191,11 @@ function MarkdownSampleHeading({
   level,
   ...props
 }: ComponentPropsWithoutRef<"h1"> & { headingId: string; level: 1 | 2 | 3 }) {
-  const router = useRouter();
   const Heading = `h${level}` as "h1" | "h2" | "h3";
 
   return (
     <Heading {...props} id={headingId}>
       {children}
-      <Link
-        className="head-anchor"
-        to="."
-        search={true}
-        hash={headingId}
-        onClick={(event) => {
-          // TanStack Router 1.168 re-stringifies validated search during Link click; commit the already-built location.
-          if (
-            event.defaultPrevented ||
-            event.button !== 0 ||
-            event.altKey ||
-            event.ctrlKey ||
-            event.metaKey ||
-            event.shiftKey
-          ) {
-            return;
-          }
-          event.preventDefault();
-          void router.commitLocation(
-            router.buildLocation({ hash: headingId, search: true, to: "." }),
-          );
-        }}
-      >
-        #
-      </Link>
     </Heading>
   );
 }
@@ -372,7 +346,9 @@ function MarkdownHelpPane({ target, active }: { target: MarkdownHelpTarget; acti
       </div>
       <div className="row-fluid markdwon-syntax-wrap">
         <div className="span6 markdwon-syntax">
-          <pre data-owner="markdown-help-input-pre">{MARKDOWN_HELP_INPUT_SAMPLES[target]}</pre>
+          <pre data-owner="markdown-help-input-pre">
+            {MARKDOWN_HELP_INPUT_SAMPLES[target].replace(/^\r?\n/u, "")}
+          </pre>
         </div>
         <div className="span6">
           <MarkdownHelpPaneOutput target={target} />

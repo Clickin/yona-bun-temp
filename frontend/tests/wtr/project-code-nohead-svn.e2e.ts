@@ -80,11 +80,9 @@ test("live ko-KR empty svn code root keeps the legacy title and responsive shell
     pageWidth: 1366,
     pageY: 213,
     projectWidth: 1346,
-    // F5 (2026-08-13): .project-util-wrap is content-sized (legacy
-    // _page.less:594-613 absolute, no width) — the React shell renders the same
-    // 163px util as the issues page (project-issues-svn.e2e.ts:35 dist truth);
-    // the 147px pin predates the shared shell render.
-    utilWidth: 163,
+    // Legacy's content-sized watched ko-KR group is 146.609px with its full
+    // 12px button cascade, not Bootstrap's isolated 14px base.
+    utilWidth: 147,
   });
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await readNoHeadSvnShellMetrics(page)).toEqual({

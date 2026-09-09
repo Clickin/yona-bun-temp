@@ -22,6 +22,7 @@ use yoram_integrations::{deliver_with_config, OutboundMail};
 
 use crate::assets::serve_frontend_page;
 use crate::persistence::PilotRepository;
+use crate::routes::utils::remove_unreferenced_attachment_blobs;
 use crate::{
     base_path_href, decode_query_component, delete_project_repository_storage,
     detect_upload_mime_type, gravatar_url, headers_with_form_csrf, internal_error,
@@ -2917,12 +2918,11 @@ impl RestSiteImportRollbackLedger {
                 .await
                 .ok()
                 .flatten();
-            let hash = deleted
-                .as_ref()
-                .map(|record| record.hash.as_str())
-                .filter(|hash| !hash.is_empty())
-                .unwrap_or(attachment.hash.as_str());
-            if !hash.is_empty() {
+            let Some((deleted, remove_blob)) = deleted else {
+                continue;
+            };
+            let hash = deleted.hash.as_str();
+            if remove_blob && !hash.is_empty() {
                 let _ =
                     std::fs::remove_file(uploaded_file_path_with_root(&service.data_root, hash));
             }
@@ -5441,11 +5441,14 @@ async fn rest_site_import_cleanup_attachments(
     attachments: &[persistence::AttachmentRecord],
 ) {
     for attachment in attachments.iter().rev() {
-        if let Ok(persistence::DeleteAttachmentResult::Deleted(deleted)) = repository
+        if let Ok(persistence::DeleteAttachmentResult::Deleted {
+            attachment: deleted,
+            remove_blob,
+        }) = repository
             .delete_attachment_for_actor(attachment.id, actor.id, &actor.login_id, true)
             .await
         {
-            if !deleted.hash.is_empty() {
+            if remove_blob && !deleted.hash.is_empty() {
                 let _ = std::fs::remove_file(uploaded_file_path_with_root(
                     &service.data_root,
                     &deleted.hash,
@@ -6478,6 +6481,10 @@ pub(crate) async fn rest_delete_site_project(
         .await
         .map_err(|error| RestRouteError::internal(error.to_string()))?
         .ok_or_else(|| RestRouteError::not_found("project not found"))?;
+    let attachments = repository
+        .list_project_attachments_for_cleanup(project.id)
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
     delete_project_repository_storage(
         &service,
         project.id,
@@ -6492,6 +6499,13 @@ pub(crate) async fn rest_delete_site_project(
         },
     )
     .await?;
+    remove_unreferenced_attachment_blobs(
+        repository,
+        &service.data_root,
+        attachments.iter().map(|attachment| &attachment.hash),
+    )
+    .await
+    .map_err(|error| RestRouteError::internal(error.to_string()))?;
 
     Ok(Json(RestProjectDeleteResponse {
         ok: true,

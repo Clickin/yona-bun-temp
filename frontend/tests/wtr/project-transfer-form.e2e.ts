@@ -188,15 +188,12 @@ test("project transfer reuses the ko-KR legacy project shell geometry", async ({
       watcherCountWidth: Math.round(watcherCount.getBoundingClientRect().width),
     };
   });
-  // e2e closure ledger (2026-08-11): ko-KR text-driven widths measure 159/113
-  // in the rebase full run (font-metric delta; same values as the
-  // project-settings-form watcher shell pins).
+  // Live legacy's full cascade uses 12px buttons: watched ko-KR utility
+  // group 146.609px, action 102.031px, count 29.578px.
   expect(geometry).toEqual({
     menuWidth: 573,
-    // F5 dist-truth (2026-08-11): the util/watch widths oscillate 4px between
-    // runs (badge render race + font-metric delta), so assert the invariants.
-    utilWidth: 163,
-    watchActionWidth: 117,
+    utilWidth: 147,
+    watchActionWidth: 102,
     watcherCountWidth: 30,
   });
 });

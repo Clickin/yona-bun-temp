@@ -441,12 +441,8 @@ pub fn load_startup_config(
     let github_client_secret = env_string(&env, "YONA_GITHUB_CLIENT_SECRET")
         .or_else(|| env_string(&env, "github.client.secret"))
         .or(github_client.secret);
-    let oauth_providers = oauth_providers_from_env_and_file(
-        &env,
-        file.oauth,
-        github_client_id,
-        github_client_secret,
-    );
+    let oauth_providers =
+        oauth_providers_from_env_and_file(&env, file.oauth, github_client_id, github_client_secret);
     let session_timeout_seconds = env
         .get("YONA_SESSION_TIMEOUT_SECONDS")
         .and_then(|value| value.trim().parse::<u64>().ok())

@@ -102,7 +102,10 @@ impl AppRepositoryImpl<'_> {
                 .read_text_column("issue_comment", "contents", row.id)
                 .await?,
             created_at: row.created_date,
-            created_label: format_workspace_date_label(row.created_date),
+            created_label: row
+                .created_date
+                .map(|created| created.and_utc().to_rfc3339())
+                .unwrap_or_default(),
             id: row.id,
             parent_comment_id: row.parent_comment_id,
             via_email,
@@ -187,7 +190,10 @@ impl AppRepositoryImpl<'_> {
                 row.created,
                 row.id,
                 IssueTimelineItemRecord::Event {
-                    created_label: format_workspace_date_label(row.created),
+                    created_label: row
+                        .created
+                        .map(|created| created.and_utc().to_rfc3339())
+                        .unwrap_or_default(),
                     event_type,
                     id: row.id,
                     new_value,

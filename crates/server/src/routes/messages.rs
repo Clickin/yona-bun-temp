@@ -7,13 +7,16 @@ use axum::{response::IntoResponse, routing::get, Router};
 // Values are verbatim legacy message values; Play/MessageFormat unescaping is
 // applied at parse time (see play_unescape_message_value) so every output path
 // serves the same unescaped copy legacy `play.i18n.Messages.get` produces.
-const LEGACY_DEFAULT_MESSAGES: &str = include_str!("../../../../frontend/src/i18n/messages/en-US.json");
+const LEGACY_DEFAULT_MESSAGES: &str =
+    include_str!("../../../../frontend/src/i18n/messages/en-US.json");
 const LEGACY_JAPANESE_MESSAGES: &str =
     include_str!("../../../../frontend/src/i18n/messages/ja-JP.json");
-const LEGACY_KOREAN_MESSAGES: &str = include_str!("../../../../frontend/src/i18n/messages/ko-KR.json");
+const LEGACY_KOREAN_MESSAGES: &str =
+    include_str!("../../../../frontend/src/i18n/messages/ko-KR.json");
 const LEGACY_RUSSIAN_MESSAGES: &str =
     include_str!("../../../../frontend/src/i18n/messages/ru-RU.json");
-const LEGACY_UZBEK_MESSAGES: &str = include_str!("../../../../frontend/src/i18n/messages/uz-UZ.json");
+const LEGACY_UZBEK_MESSAGES: &str =
+    include_str!("../../../../frontend/src/i18n/messages/uz-UZ.json");
 
 static EN_MESSAGES: OnceLock<BTreeMap<String, String>> = OnceLock::new();
 static JA_MESSAGES: OnceLock<BTreeMap<String, String>> = OnceLock::new();
@@ -42,8 +45,8 @@ fn uz_messages() -> &'static BTreeMap<String, String> {
 }
 
 fn parse_legacy_message_json(source: &str) -> BTreeMap<String, String> {
-    let raw: BTreeMap<String, String> = serde_json::from_str(source)
-        .expect("frontend i18n dictionary JSON must parse");
+    let raw: BTreeMap<String, String> =
+        serde_json::from_str(source).expect("frontend i18n dictionary JSON must parse");
     raw.into_iter()
         .map(|(key, value)| (key, play_unescape_message_value(&value)))
         .collect()
@@ -172,8 +175,14 @@ mod tests {
     #[test]
     fn parses_legacy_default_messages_without_new_keyspace() {
         let messages = en_messages();
-        assert_eq!(messages.get("title.no.results").map(String::as_str), Some("No results"));
-        assert_eq!(messages.get("button.login").map(String::as_str), Some("Log in"));
+        assert_eq!(
+            messages.get("title.no.results").map(String::as_str),
+            Some("No results")
+        );
+        assert_eq!(
+            messages.get("button.login").map(String::as_str),
+            Some("Log in")
+        );
         assert!(!messages
             .keys()
             .any(|key| key.starts_with("yoram.") || key.starts_with("react.")));

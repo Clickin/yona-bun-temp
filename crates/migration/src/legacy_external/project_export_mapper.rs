@@ -18,7 +18,10 @@ impl std::fmt::Display for ProjectExportMapError {
                 write!(formatter, "invalid legacy project export JSON: {error}")
             }
             Self::AttachmentContent(error) => {
-                write!(formatter, "failed to read legacy export attachment content: {error}")
+                write!(
+                    formatter,
+                    "failed to read legacy export attachment content: {error}"
+                )
             }
             Self::Emit(error) => write!(formatter, "failed to emit import record: {error}"),
         }
@@ -998,10 +1001,7 @@ where
     }
 }
 
-fn emit_record<F>(
-    emit: &mut F,
-    record: YonaImportRecord,
-) -> Result<(), serde_json::Error>
+fn emit_record<F>(emit: &mut F, record: YonaImportRecord) -> Result<(), serde_json::Error>
 where
     F: FnMut(YonaImportRecord) -> Result<(), ProjectExportMapError>,
 {
@@ -1108,8 +1108,9 @@ fn map_attachment_record(
 ) -> Result<YonaImportAttachmentRecord, ProjectExportMapError> {
     let content_bytes = attachment_content_base64(attachment.id)
         .map_err(ProjectExportMapError::AttachmentContent)?;
-    let content_base64 =
-        content_bytes.as_ref().map(|bytes| general_purpose::STANDARD.encode(bytes));
+    let content_base64 = content_bytes
+        .as_ref()
+        .map(|bytes| general_purpose::STANDARD.encode(bytes));
     let content_sha256 = content_bytes.as_deref().map(sha256_hex);
     Ok(YonaImportAttachmentRecord {
         content_base64,

@@ -419,6 +419,10 @@ pub(crate) async fn project_milestone_delete(
             "milestone delete is not allowed",
         ));
     }
+    let attachments = repository
+        .list_attachments_by_container("MILESTONE", request.milestone_id)
+        .await
+        .map_err(internal_error)?;
     let ok = repository
         .delete_project_milestone(
             &request.owner_name,
@@ -430,6 +434,13 @@ pub(crate) async fn project_milestone_delete(
     if !ok {
         return Err(ConnectError::not_found("milestone not found"));
     }
+    remove_unreferenced_attachment_blobs(
+        repository,
+        &service.data_root,
+        attachments.iter().map(|attachment| &attachment.hash),
+    )
+    .await
+    .map_err(internal_error)?;
     Ok((
         ProjectMilestoneDeleteResponse {
             ok,
@@ -598,14 +609,33 @@ pub(super) async fn direct_delete_project_milestone(
     {
         return response;
     }
+    let attachments = match repository
+        .list_attachments_by_container("MILESTONE", milestone_id)
+        .await
+    {
+        Ok(attachments) => attachments,
+        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    };
     match repository
         .delete_project_milestone(&owner, &project, milestone_id)
         .await
     {
-        Ok(true) => redirect_to(
-            &service.base_path,
-            &format!("/{owner}/{project}/milestones"),
-        ),
+        Ok(true) => {
+            if remove_unreferenced_attachment_blobs(
+                repository,
+                &service.data_root,
+                attachments.iter().map(|attachment| &attachment.hash),
+            )
+            .await
+            .is_err()
+            {
+                return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+            }
+            redirect_to(
+                &service.base_path,
+                &format!("/{owner}/{project}/milestones"),
+            )
+        }
         Ok(false) => StatusCode::NOT_FOUND.into_response(),
         Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
     }

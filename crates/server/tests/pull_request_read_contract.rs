@@ -445,7 +445,7 @@ async fn seed_pull_request_detail_rows(
     .unwrap();
 
     let thread = comment_thread::ActiveModel {
-        dtype: Set("ReviewThread".to_string()),
+        dtype: Set("ranged".to_string()),
         id: NotSet,
         author_id: Set(Some(contributor_id)),
         author_login_id: Set(Some("owner".to_string())),
@@ -512,7 +512,7 @@ async fn seed_pull_request_detail_rows(
     .unwrap();
 
     let non_ranged_thread = comment_thread::ActiveModel {
-        dtype: Set("NonRangedCodeCommentThread".to_string()),
+        dtype: Set("non_ranged".to_string()),
         id: NotSet,
         author_id: Set(Some(contributor_id)),
         author_login_id: Set(Some("owner".to_string())),
@@ -555,7 +555,7 @@ async fn seed_pull_request_detail_rows(
     .await;
 
     let commit_only_thread = comment_thread::ActiveModel {
-        dtype: Set("ReviewThread".to_string()),
+        dtype: Set("ranged".to_string()),
         id: NotSet,
         author_id: Set(Some(contributor_id)),
         author_login_id: Set(Some("owner".to_string())),
@@ -1214,7 +1214,7 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
     );
 
     let older_thread_with_newer_comment = comment_thread::ActiveModel {
-        dtype: Set("ReviewThread".to_string()),
+        dtype: Set("ranged".to_string()),
         id: NotSet,
         author_id: Set(Some(owner_id)),
         author_login_id: Set(Some("owner".to_string())),
@@ -1320,7 +1320,7 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
     assert_eq!(commit_only_review["commitId"], "abcdef123456");
 
     comment_thread::ActiveModel {
-        dtype: Set("ReviewThread".to_string()),
+        dtype: Set("ranged".to_string()),
         id: NotSet,
         author_id: Set(Some(owner_id)),
         author_login_id: Set(Some("owner".to_string())),

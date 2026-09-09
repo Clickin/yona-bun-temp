@@ -248,6 +248,20 @@ async fn count_rows(db: &DatabaseConnection, table: &str, event_type: &str) -> u
     rows.len() as u64
 }
 
+async fn comment_thread_dtype(db: &DatabaseConnection, thread_id: i64) -> String {
+    let row = db
+        .query_one(Statement::from_sql_and_values(
+            db.get_database_backend(),
+            "SELECT dtype FROM comment_thread WHERE id = ?",
+            vec![thread_id.into()],
+        ))
+        .await
+        .expect("read comment thread dtype")
+        .expect("comment thread row");
+    row.try_get("", "dtype")
+        .expect("comment thread dtype value")
+}
+
 async fn notification_receivers_for_event(
     db: &DatabaseConnection,
     event_type: &str,
@@ -1242,7 +1256,10 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         }
         tokio::time::sleep(Duration::from_millis(20)).await;
     }
-    assert!(merge_check_settled, "pull request merge check did not settle");
+    assert!(
+        merge_check_settled,
+        "pull request merge check did not settle"
+    );
     let settled_detail = settled_detail.expect("settled pull request detail");
     assert_eq!(created["requiredReviewerCount"], 1);
     assert_eq!(created["lackingReviewerCount"], 1);
@@ -1254,10 +1271,7 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         .iter()
         .find(|event| event["eventType"] == "PULL_REQUEST_COMMIT_CHANGED")
         .expect("initial commit changed event");
-    assert_eq!(
-        commit_changed_event["commits"][0]["commitMessage"],
-        "topic"
-    );
+    assert_eq!(commit_changed_event["commits"][0]["commitMessage"], "topic");
     assert_eq!(
         commit_changed_event["commits"][0]["authorDateLabel"],
         preview_commit_day
@@ -1512,6 +1526,8 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     )
     .await;
     let thread_id = commented["threads"][0]["id"].as_i64().unwrap();
+    let general_dtype = comment_thread_dtype(&db, thread_id).await;
+    assert_eq!(general_dtype, "non_ranged");
     assert_eq!(commented["threads"][0]["commitId"], "topic-head");
     assert_eq!(
         commented["threads"][0]["comments"][0]["contentsMarkdown"],
@@ -1684,6 +1700,8 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         .iter()
         .find(|thread| thread["path"] == "src/lib.rs")
         .expect("ranged thread");
+    let ranged_dtype = comment_thread_dtype(&db, ranged_thread["id"].as_i64().unwrap()).await;
+    assert_eq!(ranged_dtype, "ranged");
     assert_eq!(ranged_thread["commitId"], "topic-head");
     assert_eq!(ranged_thread["prevCommitId"], "base-head");
     assert_eq!(ranged_thread["startSide"], "A");

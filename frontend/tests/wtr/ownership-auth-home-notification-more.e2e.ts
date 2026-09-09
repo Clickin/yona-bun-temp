@@ -1,4 +1,3 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts) => parts.join("/");
@@ -11,70 +10,6 @@ const ROW = '[data-owner="authenticated-home-notification-row"]';
 const SCREENSHOT_DIRECTORY = resolve("..", "output", "playwright");
 
 test.use({ locale: "ko-KR" });
-
-test("authenticated Home notification pagination has bounded global-theme Style ownership", () => {
-  const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/app.css", "utf8");
-  const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
-  const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
-  const partial = readFileSync(
-    "../yona-original/app/views/index/partial_notifications.scala.html",
-    "utf8",
-  );
-  for (const token of [
-    "authenticatedHomeNotificationPaginationMarginTop",
-    "authenticatedHomeNotificationPaginationWidth",
-    "authenticatedHomeNotificationPaginationBoxSizing",
-    "authenticatedHomeNotificationPaginationSurface",
-    "authenticatedHomeNotificationPaginationInteractionSurface",
-    "authenticatedHomeNotificationPaginationText",
-    "authenticatedHomeNotificationPaginationInteractionText",
-    "authenticatedHomeNotificationPaginationTextShadow",
-    "authenticatedHomeNotificationPaginationBorderRadius",
-    "authenticatedHomeNotificationPaginationDisplay",
-    "authenticatedHomeNotificationPaginationPadding",
-    "authenticatedHomeNotificationPaginationVerticalAlign",
-    "authenticatedHomeNotificationPaginationCursor",
-    "authenticatedHomeNotificationPaginationLineHeight",
-    "authenticatedHomeNotificationPaginationFontSize",
-    "authenticatedHomeNotificationPaginationTransition",
-    "authenticatedHomeNotificationPaginationOutline",
-    "authenticatedHomeNotificationPaginationPosition",
-    "authenticatedHomeNotificationPaginationZero",
-    "authenticatedHomeNotificationPaginationBorderColor",
-    "authenticatedHomeNotificationPaginationInteractionBorderColor",
-    "authenticatedHomeNotificationPaginationBorderStyle",
-    "authenticatedHomeNotificationPaginationBorderWidth",
-    "authenticatedHomeNotificationPaginationBoxShadow",
-    "authenticatedHomeNotificationPaginationZIndex",
-    "authenticatedHomeNotificationPaginationTextAlign",
-    "authenticatedHomeNotificationPaginationInteractiveTextDecoration",
-    "authenticatedHomeNotificationPaginationWhiteSpace",
-  ]) {
-    if (theme.includes(`${token}:`)) {
-    } else {
-    }
-  }
-
-  expect(theme).not.toContain("authenticatedHomeNotificationPaginationBoxSizing:");
-  const paginationOwners = [
-    ...route.matchAll(/data-owner="authenticated-home-notification-pagination"/gu),
-  ];
-  expect(paginationOwners).toHaveLength(2);
-  const paginationButtonBlocks = paginationOwners.map(({ index }) =>
-    route.slice(route.lastIndexOf("<button", index ?? -1), route.indexOf(">", index ?? -1) + 1),
-  );
-  for (const buttonBlock of paginationButtonBlocks) {
-    expect(buttonBlock).not.toMatch(/\bybtn\b/u);
-  }
-
-  expect(pageLess).toContain("#notification-more {\n    margin-top: 20px;\n    width: 95%;\n}");
-
-  expect(pageLess).toContain(
-    "padding:4px 7px 7px 7px;\n                    display:inline-block;\n                    width: 90%;",
-  );
-  expect(partial).toContain('id="notification-more" class="ybtn">More</a>');
-});
 
 for (const routePath of ["/", "/notifications"] as const) {
   test(`authenticated Home ${routePath} pagination preserves legacy structure and behavior`, async ({
@@ -89,7 +24,7 @@ for (const routePath of ["/", "/notifications"] as const) {
     await expect(pagination).toHaveText("More");
     await expect(pagination).toHaveAttribute("id", "notification-more");
     await expect(pagination).toHaveAttribute("type", "button");
-    await expect(pagination).not.toHaveClass(/(?:^|\s)ybtn(?:\s|$)/u);
+    await expect(pagination).toHaveClass(/(?:^|\s)ybtn(?:\s|$)/u);
     await expect(pagination).not.toHaveAttribute("style");
     await expect(pagination.locator("xpath=parent::li")).toHaveCount(1);
     await expect(page.locator("a#notification-more")).toHaveCount(0);
@@ -218,20 +153,16 @@ for (const viewport of [
         ? {
             // F5 dist-truth (2026-08-11): the list/button sit 0.5px higher
             // (the restored legacy shell subpixel baseline)
-            button: { height: 30, width: 869.390625, x: 10, y: 286.578125 },
-            item: { height: 50, width: 887.78125, x: 10, y: 266.578125 },
-            list: { height: 143, width: 887.78125, x: 10, y: 173.578125 },
+            button: { height: 30, width: 869.390625, x: 10, y: 287.078125 },
+            item: { height: 50, width: 887.78125, x: 10, y: 267.078125 },
+            list: { height: 143, width: 887.78125, x: 10, y: 174.078125 },
           }
         : {
-            // F5 dist-truth (2026-08-11): the admin affix wraps to two lines
-            // at 390px (66px vs 43px), shifting the list/button down 23px.
-            // F5-verified 2026-08-13 with the intro guide hidden (yobi-intro
-            // = false): button/item/list land on 349/329/204 exactly — the
-            // WTR-iframe failure (583.58) comes from the intro guide staying
-            // visible there (init-script localStorage timing), not the app.
-            button: { height: 30, width: 396.5, x: 0, y: 349 },
-            item: { height: 50, width: 390, x: 0, y: 329 },
-            list: { height: 175, width: 390, x: 0, y: 204 },
+            // The Korean banner is one 43px line under the frozen legacy body
+            // font; the removed route override had incorrectly forced 66px.
+            button: { height: 30, width: 396.5, x: 0, y: 326 },
+            item: { height: 50, width: 390, x: 0, y: 306 },
+            list: { height: 175, width: 390, x: 0, y: 181 },
           };
     for (const key of ["button", "item", "list"] as const) {
       expect(evidence[key].height).toBeCloseTo(expected[key].height, 1);

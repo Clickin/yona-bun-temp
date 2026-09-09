@@ -87,6 +87,7 @@ import {
   readProjectPostQueryOptions,
   unwatchPostRest,
   updatePostCommentRest,
+  updateProjectPostContentRest,
   updateProjectPostLabelsRest,
   watchPostRest,
   type BoardAttachment,
@@ -103,10 +104,17 @@ import { useLegacyMessages } from "../../../../i18n";
 import { useWireframeContentProgress } from "../../../../components/route-fetch-lock";
 import { MarkdownCodeBlock } from "../../../../components/markdown-code-block";
 import { MarkdownEditor, type MarkdownEditorProps } from "../../../../components/markdown-editor";
+import { humanFileSize } from "../../../../components/file-uploader";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { SiteLayoutShell } from "../../../-home-route-screen";
 import { ProjectNestedShellContext } from "../../$projectName";
 import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
+import {
+  getTasklistProgress,
+  TasklistInput,
+  updateTasklistMarkdown,
+  type TasklistUpdate,
+} from "../../../../components/tasklist";
 
 type PostDetailModalId = "deleteConfirm" | "helpKeys" | "postingHistory";
 
@@ -334,6 +342,7 @@ function ProjectPostDetailBody({
   const queryClient = useQueryClient();
   const [openPostModal, setOpenPostModal] = useState<PostDetailModalId | null>(null);
   const [commentDeleteCommentId, setCommentDeleteCommentId] = useState<string | null>(null);
+  const [tasklistError, setTasklistError] = useState<string | null>(null);
   const deleteModalOpen = openPostModal === "deleteConfirm";
   const modalBackdropOpen = openPostModal !== null || commentDeleteCommentId !== null;
   const ownerName = stringField(project.ownerName, post.ownerName);
@@ -386,6 +395,31 @@ function ProjectPostDetailBody({
       router.history.push(prefixBasePath(basePath, `/${ownerName}/${projectName}/posts`));
     },
   });
+  const tasklistMutation = useMutation({
+    mutationFn: async ({ content, original }: TasklistUpdate) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return updateProjectPostContentRest(runtimeConfig, csrfToken, {
+        content,
+        original,
+        ownerName,
+        postNumber,
+        projectName,
+      });
+    },
+    onSuccess() {
+      queryClient.invalidateQueries({ queryKey: postQueryOptions.queryKey });
+    },
+    onError(error) {
+      setTasklistError(error instanceof Error && error.message ? error.message : t("error.internalServerError"));
+    },
+  });
+  const toggleTasklist = (index: number, checked: boolean) => {
+    const content = updateTasklistMarkdown(post.bodyMarkdown, index, checked);
+    if (content !== post.bodyMarkdown) {
+      setTasklistError(null);
+      tasklistMutation.mutate({ content, original: post.bodyMarkdown });
+    }
+  };
   const commentDeleteMutation = useMutation({
     mutationFn: async (commentId: string) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -419,14 +453,19 @@ function ProjectPostDetailBody({
     mutationFn: async ({
       commentId,
       contentsMarkdown,
+      original,
     }: {
       commentId: string;
       contentsMarkdown: string;
+      original?: string;
     }) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
       return updatePostCommentRest(runtimeConfig, csrfToken, {
+        attachmentIds: (post.comments.find((comment) => String(comment.id) === commentId)?.attachments ?? [])
+          .map((attachment) => attachment.id),
         commentId,
         contentsMarkdown,
+        original,
         ownerName,
         postNumber,
         projectName,
@@ -541,13 +580,23 @@ function ProjectPostDetailBody({
                   </form>
                 </div>
                 <div id={`post-body-${postNumber}`}>
-                  <TasklistBar />
+                  <TasklistBar markdown={post.bodyMarkdown} />
+                  {tasklistError ? (
+                    <div className="alert alert-error" role="alert" data-owner="post-tasklist-error">
+                      {tasklistError}
+                      <br />
+                      <br />
+                      Refresh the page!
+                    </div>
+                  ) : null}
                   <div
                     className="content markdown-wrap"
                     data-owner="post-detail-content"
                     data-allowed-update={String(canUpdate)}
                   >
-                    <PostBodyMarkdown>{post.bodyMarkdown}</PostBodyMarkdown>
+                    <PostBodyMarkdown tasklist={{ canUpdate, onToggle: toggleTasklist }}>
+                      {post.bodyMarkdown}
+                    </PostBodyMarkdown>
                   </div>
                 </div>
               </>
@@ -597,8 +646,8 @@ function ProjectPostDetailBody({
                 commentCreateMutation.mutateAsync(contentsMarkdown)
               }
               onCommentDeleteRequest={setCommentDeleteCommentId}
-              onUpdateComment={(commentId, contentsMarkdown) =>
-                commentUpdateMutation.mutateAsync({ commentId, contentsMarkdown })
+              onUpdateComment={(commentId, contentsMarkdown, original) =>
+                commentUpdateMutation.mutateAsync({ commentId, contentsMarkdown, original })
               }
               ownerName={ownerName}
               post={post}
@@ -1142,7 +1191,7 @@ function PostComments({
   canUpdate: boolean;
   onCreateComment: (contentsMarkdown: string) => Promise<unknown>;
   onCommentDeleteRequest: (commentId: string) => void;
-  onUpdateComment: (commentId: string, contentsMarkdown: string) => Promise<unknown>;
+  onUpdateComment: (commentId: string, contentsMarkdown: string, original?: string) => Promise<unknown>;
   ownerName: string;
   post: BoardPostDetail;
   postNumber: string;
@@ -1181,8 +1230,8 @@ function PostComments({
                   )
                 }
                 onCommentDeleteRequest={onCommentDeleteRequest}
-                onUpdateComment={async (commentId, contentsMarkdown) => {
-                  await onUpdateComment(commentId, contentsMarkdown);
+                onUpdateComment={async (commentId, contentsMarkdown, original) => {
+                  await onUpdateComment(commentId, contentsMarkdown, original);
                   setEditingCommentId(null);
                 }}
                 ownerName={ownerName}
@@ -1361,7 +1410,7 @@ function PostCommentRow({
   editingCommentId: string | null;
   onCommentEditRequest: (commentId: string | null) => void;
   onCommentDeleteRequest: (commentId: string) => void;
-  onUpdateComment: (commentId: string, contentsMarkdown: string) => Promise<unknown>;
+  onUpdateComment: (commentId: string, contentsMarkdown: string, original?: string) => Promise<unknown>;
   ownerName: string;
   postNumber: string;
   projectName: string;
@@ -1379,6 +1428,18 @@ function PostCommentRow({
     viaEmail && splitOriginalMessageMarkdown(comment.contentsMarkdown) !== null;
   const [replyVisible, setReplyVisible] = useState(false);
   const [childFormOpen, setChildFormOpen] = useState(false);
+  const [tasklistError, setTasklistError] = useState<string | null>(null);
+  const toggleCommentTasklist = (index: number, checked: boolean) => {
+    const content = updateTasklistMarkdown(comment.contentsMarkdown, index, checked);
+    if (content !== comment.contentsMarkdown) {
+      setTasklistError(null);
+      void onUpdateComment(commentId, content, comment.contentsMarkdown).catch((error: unknown) => {
+        setTasklistError(
+          error instanceof Error && error.message ? error.message : t("error.internalServerError"),
+        );
+      });
+    }
+  };
 
   useEffect(() => {
     if (hash !== `comment-${commentId}`) {
@@ -1523,7 +1584,15 @@ function PostCommentRow({
           className={isEditing ? "is-editing" : undefined}
           data-owner="post-detail-comment-body"
         >
-          <TasklistBar />
+          <TasklistBar markdown={comment.contentsMarkdown} />
+          {tasklistError ? (
+            <div className="alert alert-error" role="alert" data-owner="post-comment-tasklist-error">
+              {tasklistError}
+              <br />
+              <br />
+              Refresh the page!
+            </div>
+          ) : null}
           <div
             className="comment-body markdown-wrap"
             data-owner="post-detail-comment-body-content"
@@ -1534,6 +1603,7 @@ function PostCommentRow({
             <OriginalMessageMarkdown
               comment={comment}
               contentsMarkdown={comment.contentsMarkdown}
+              tasklist={{ canUpdate, onToggle: toggleCommentTasklist }}
               viaEmail={viaEmail}
             />
           </div>
@@ -1567,17 +1637,25 @@ function PostCommentRow({
 function OriginalMessageMarkdown({
   comment,
   contentsMarkdown,
+  tasklist,
   viaEmail,
 }: {
   comment: BoardPostComment;
   contentsMarkdown: string;
+  tasklist?: { canUpdate: boolean; onToggle: (index: number, checked: boolean) => void };
   viaEmail: boolean;
 }) {
   const [showsOriginalMessage, setShowsOriginalMessage] = useState(false);
   const originalMessage = viaEmail ? splitOriginalMessageMarkdown(contentsMarkdown) : null;
 
   if (!originalMessage) {
-    return <PostParentCommentMarkdown comment={comment} contentsMarkdown={contentsMarkdown} />;
+    return (
+      <PostParentCommentMarkdown
+        comment={comment}
+        contentsMarkdown={contentsMarkdown}
+        tasklist={tasklist}
+      />
+    );
   }
 
   return (
@@ -1627,9 +1705,11 @@ function splitOriginalMessageMarkdown(contentsMarkdown: string) {
 function PostParentCommentMarkdown({
   comment,
   contentsMarkdown,
+  tasklist,
 }: {
   comment: BoardPostComment;
   contentsMarkdown: string;
+  tasklist?: { canUpdate: boolean; onToggle: (index: number, checked: boolean) => void };
 }) {
   const referenceKit = useMemo(
     () => createPostCommentReferenceKit(comment, "post-detail-parent-comment"),
@@ -1679,6 +1759,18 @@ function PostParentCommentMarkdown({
     <LegacyMarkdownHtml
       components={components}
       extensions={extensions}
+      tasklistInput={
+        tasklist
+          ? (props) => (
+              <TasklistInput
+                checked={props.checked}
+                canUpdate={tasklist.canUpdate}
+                onToggle={tasklist.onToggle}
+                tasklistIndex={props.tasklistIndex}
+              />
+            )
+          : undefined
+      }
       sanitize={POST_MARKDOWN_SANITIZE_SCHEMA}
     >
       {contentsMarkdown}
@@ -1686,11 +1778,29 @@ function PostParentCommentMarkdown({
   );
 }
 
-function PostBodyMarkdown({ children }: { children: string }) {
+function PostBodyMarkdown({
+  children,
+  tasklist,
+}: {
+  children: string;
+  tasklist?: { canUpdate: boolean; onToggle: (index: number, checked: boolean) => void };
+}) {
   return (
     <LegacyMarkdownHtml
       components={POST_BODY_MARKDOWN_COMPONENTS}
       extensions={[gfmAutolinkLiterals]}
+      tasklistInput={
+        tasklist
+          ? (props) => (
+              <TasklistInput
+                checked={props.checked}
+                canUpdate={tasklist.canUpdate}
+                onToggle={tasklist.onToggle}
+                tasklistIndex={props.tasklistIndex}
+              />
+            )
+          : undefined
+      }
       sanitize={POST_MARKDOWN_SANITIZE_SCHEMA}
     >
       {children}
@@ -1945,6 +2055,12 @@ function PostChildComments({
   const { t } = useLegacyMessages();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  useEffect(() => {
+    if (formOpen) {
+      textareaRef.current?.focus();
+    }
+  }, [formOpen]);
+
   if (!childComments.length && !canComment) {
     return null;
   }
@@ -1959,9 +2075,6 @@ function PostChildComments({
         data-owner="post-detail-child-comment-reply"
         onClick={() => {
           toggleForm();
-          if (!formOpen) {
-            requestAnimationFrame(() => textareaRef.current?.focus());
-          }
         }}
       >
         {t("comment.oneline.comment.placeholder")}
@@ -2428,6 +2541,9 @@ function PostDetailMarkdownHelp() {
 }
 
 function AttachedFiles({ attachments }: { attachments: BoardAttachment[] }) {
+  const { t } = useLegacyMessages();
+  const router = useRouter();
+
   if (!attachments.length) {
     return null;
   }
@@ -2437,28 +2553,55 @@ function AttachedFiles({ attachments }: { attachments: BoardAttachment[] }) {
       {attachments.map((file) => {
         const id = stringField(file.id);
         const name = stringField(file.name);
-        const mimeType = stringField(file.mimeType);
-        const size = String(file.size);
+        const href = prefixBasePath(
+          router.basepath,
+          `/files/${encodeURIComponent(id)}`,
+        );
+        const downloadHref = `${href}?action=download`;
+        const sizeReadable = humanFileSize(file.size);
 
         return (
-          <li
-            className="attached-file"
-            data-name={name}
-            data-mime={mimeType}
-            data-size={size}
-            key={id}
-          >
-            <strong>
-              {name}({size})
-            </strong>
-            <button type="button" className="attached-delete">
-              <i className="ico btn-delete"></i>
-            </button>
+          <li className="attach" key={`${id}:${name}`}>
+            <Link
+              href={downloadHref}
+              reloadDocument
+              to={toLinkTarget(router.basepath, downloadHref)}
+              className="download ybtn ybtn-mini"
+              title={`${t("button.download")} ${name}`}
+            >
+              <i className="yobicon-download"></i>
+            </Link>
+            <Link
+              href={href}
+              reloadDocument
+              target="_blank"
+              to={toLinkTarget(router.basepath, href)}
+              className="vmiddle"
+            >
+              <i className="yobicon-paperclip"></i>
+              <span className="filename">{name}</span>
+              <span className="filesize">({sizeReadable})</span>
+            </Link>
           </li>
         );
       })}
     </ul>
   );
+}
+
+// TanStack Link prefixes `to` with the router basepath and overrides a bare
+// `href` prop with the current location. Keep the native file URL base-prefixed
+// while passing its base-relative target to Link.
+function toLinkTarget(basePath: string, href: string): string {
+  if (
+    basePath !== "/" &&
+    href.startsWith("/") &&
+    !href.startsWith("//") &&
+    href.startsWith(`${basePath}/`)
+  ) {
+    return href.slice(basePath.length) || "/";
+  }
+  return href;
 }
 
 function CommentEditAttachmentFiles({ attachments }: { attachments: BoardAttachment[] }) {
@@ -2490,18 +2633,22 @@ function CommentEditAttachmentFiles({ attachments }: { attachments: BoardAttachm
   );
 }
 
-function TasklistBar() {
+function TasklistBar({ markdown }: { markdown: string }) {
+  const { completed, total } = getTasklistProgress(markdown);
+  const width = total ? `${completed / total * 100}%` : 0;
   return (
-    <div className="tasklist" data-owner="post-detail-tasklist">
-      <div className="task-title" data-owner="post-detail-task-title">
+    <div className={`tasklist${total ? " task-show" : ""}`} data-owner="post-detail-tasklist">
+      <div className="task-title" data-owner="post-detail-task-title" style={total ? { width } : undefined}>
         Tasks
-        <span className="done-counter" data-owner="post-detail-task-done-counter"></span>
+        <span className="done-counter" data-owner="post-detail-task-done-counter">
+          {total ? `(${completed}/${total})` : null}
+        </span>
       </div>
       <div className="task-progress" data-owner="post-detail-task-progress">
         <div
-          className="bar red"
+          className={`bar ${total && completed === total ? "green" : "red"}`}
           data-owner="post-detail-tasklist-progress"
-          style={{ width: 0 }}
+          style={{ width }}
           title="Tasklist"
         ></div>
       </div>

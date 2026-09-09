@@ -1193,7 +1193,8 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
             Some(&owner_cookie),
             Some(&owner_csrf),
             Some(json!({
-                "contentsMarkdown": "Edited comment"
+                "contentsMarkdown": "Edited comment",
+                "original": "First **comment** @owner/projectYobi @nforge #1"
             })),
         )
         .await,
@@ -1201,6 +1202,35 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
     .await;
     assert_eq!(
         edited_comment["comments"][0]["contentsMarkdown"],
+        "Edited comment"
+    );
+    let stale_comment = rest(
+        app.clone(),
+        Method::PATCH,
+        &format!("/yona/api/v1/projects/owner/projectYobi/posts/1/comments/{comment_id}"),
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        Some(json!({
+            "contentsMarkdown": "Stale overwrite",
+            "original": "First **comment** @owner/projectYobi @nforge #1"
+        })),
+    )
+    .await;
+    assert_eq!(stale_comment.status(), StatusCode::CONFLICT);
+    let persisted = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/posts/1",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        persisted["comments"][0]["contentsMarkdown"],
         "Edited comment"
     );
 

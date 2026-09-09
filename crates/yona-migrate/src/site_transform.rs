@@ -105,7 +105,9 @@ fn row<'a>(rows: &'a [serde_json::Value], id: i64) -> Option<&'a serde_json::Val
 }
 
 fn text<'a>(row: &'a serde_json::Value, field: &str) -> &'a str {
-    row.get(field).and_then(|value| value.as_str()).unwrap_or("")
+    row.get(field)
+        .and_then(|value| value.as_str())
+        .unwrap_or("")
 }
 
 fn int(row: &serde_json::Value, field: &str) -> i64 {
@@ -113,7 +115,9 @@ fn int(row: &serde_json::Value, field: &str) -> i64 {
 }
 
 fn bool_value(row: &serde_json::Value, field: &str) -> bool {
-    row.get(field).and_then(|value| value.as_bool()).unwrap_or(false)
+    row.get(field)
+        .and_then(|value| value.as_bool())
+        .unwrap_or(false)
 }
 
 fn is_null_or_missing(row: &serde_json::Value, field: &str) -> bool {
@@ -267,7 +271,8 @@ impl Dump {
         self.attachment
             .iter()
             .filter(|row| {
-                text(row, "container_type") == container_type && int(row, "container_id") == container_id
+                text(row, "container_type") == container_type
+                    && int(row, "container_id") == container_id
             })
             .map(transform_attachment)
             .collect()
@@ -393,7 +398,10 @@ fn transform_organization(row: &serde_json::Value) -> Option<serde_json::Value> 
     }))
 }
 
-fn transform_organization_member(dump: &Dump, row: &serde_json::Value) -> Option<serde_json::Value> {
+fn transform_organization_member(
+    dump: &Dump,
+    row: &serde_json::Value,
+) -> Option<serde_json::Value> {
     let organization_id = int(row, "organization_id");
     let user_id = int(row, "user_id");
     if organization_id <= 0 || user_id <= 0 {
@@ -434,10 +442,7 @@ fn transform_project(row: &serde_json::Value) -> Option<serde_json::Value> {
     }))
 }
 
-fn transform_project_member(
-    dump: &Dump,
-    row: &serde_json::Value,
-) -> Option<serde_json::Value> {
+fn transform_project_member(dump: &Dump, row: &serde_json::Value) -> Option<serde_json::Value> {
     let project_id = int(row, "project_id");
     let user_id = int(row, "user_id");
     if project_id <= 0 || user_id <= 0 {
@@ -456,10 +461,7 @@ fn transform_project_member(
     }))
 }
 
-fn transform_label(
-    dump: &Dump,
-    row: &serde_json::Value,
-) -> Option<serde_json::Value> {
+fn transform_label(dump: &Dump, row: &serde_json::Value) -> Option<serde_json::Value> {
     let label_id = int(row, "id");
     let project_id = int(row, "project_id");
     let name = text(row, "name");
@@ -470,8 +472,7 @@ fn transform_label(
     if owner_name.is_empty() || project_name.is_empty() {
         return None;
     }
-    let (category_name, category_is_exclusive) =
-        dump.label_category(int(row, "category_id"));
+    let (category_name, category_is_exclusive) = dump.label_category(int(row, "category_id"));
     Some(serde_json::json!({
         "categoryIsExclusive": category_is_exclusive,
         "categoryName": category_name,
@@ -483,10 +484,7 @@ fn transform_label(
     }))
 }
 
-fn transform_milestone(
-    dump: &Dump,
-    row: &serde_json::Value,
-) -> Option<serde_json::Value> {
+fn transform_milestone(dump: &Dump, row: &serde_json::Value) -> Option<serde_json::Value> {
     let milestone_id = int(row, "id");
     let project_id = int(row, "project_id");
     let title = text(row, "title");
@@ -773,7 +771,11 @@ pub fn transform_dump(tables: &[(String, Vec<serde_json::Value>)]) -> Transforma
         left["ownerName"]
             .as_str()
             .cmp(&right["ownerName"].as_str())
-            .then_with(|| left["projectName"].as_str().cmp(&right["projectName"].as_str()))
+            .then_with(|| {
+                left["projectName"]
+                    .as_str()
+                    .cmp(&right["projectName"].as_str())
+            })
             .then_with(|| left["loginId"].as_str().cmp(&right["loginId"].as_str()))
     });
     ctx.project_members = members;
@@ -1039,7 +1041,10 @@ mod tests {
         let ctx = transform_dump(&sample_dump());
         assert_eq!(ctx.users.len(), 1);
         assert_eq!(ctx.users[0]["id"], 1);
-        assert_eq!(ctx.users[0]["password"], "r0egKhZzB4AkoXUp9kRF1BNxv9LWeaLAhV0yhz1lgmU=");
+        assert_eq!(
+            ctx.users[0]["password"],
+            "r0egKhZzB4AkoXUp9kRF1BNxv9LWeaLAhV0yhz1lgmU="
+        );
         assert_eq!(ctx.users[0]["passwordSalt"], "c2FsdC1mb3ItdGVzdA==");
         assert_eq!(ctx.users[0]["isSiteAdmin"], true);
         assert_eq!(ctx.users[0]["loginId"], "alice");
@@ -1094,9 +1099,7 @@ mod tests {
     #[test]
     fn test_transform_table_accumulates() {
         let mut ctx = TransformationContext::new();
-        let rows = vec![
-            serde_json::json!({"id": 5, "login_id": "a", "name": "A", "email": "a@x"}),
-        ];
+        let rows = vec![serde_json::json!({"id": 5, "login_id": "a", "name": "A", "email": "a@x"})];
         transform_table("N4USER", rows, &mut ctx);
         assert_eq!(ctx.users.len(), 1);
         assert!(ctx.projects.is_empty());

@@ -19,7 +19,7 @@ use tower::ServiceExt;
 use yoram_integrations::{clear_test_webhook_outbox, snapshot_test_webhook_outbox};
 use yoram_migration::Migrator;
 use yoram_persistence::{
-    email, issue, n4user, notification_event, notification_event_n4user, title_head,
+    email, issue, n4user, notification_event, notification_event_n4user, title_head, unwatch,
     user_project_notification, watch, AppRepository, CreateIssueCommentInput, CreateIssueInput,
     CreateOrganizationInput, CreatePostingCommentInput, CreatePostingInput, CreateProjectInput,
     CreateProjectLabelInput, CreateProjectWebhookInput, CreatePullRequestInput,
@@ -3446,7 +3446,9 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
         .any(|user| user["loginId"] == "visitor"
             && user["name"] == "visitor"
             && user["type"] == "user"
-            && user["avatarUrl"].as_str().is_some_and(|url| !url.is_empty())));
+            && user["avatarUrl"]
+                .as_str()
+                .is_some_and(|url| !url.is_empty())));
     let legacy_issue_assignable = ok_json(
         rest(
             app.clone(),
@@ -3801,6 +3803,10 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     .await;
     assert_legacy_external_unauthorized(anonymous_legacy_organization_toggle).await;
 
+    repository
+        .watch_issue(issue_id, owner_id)
+        .await
+        .expect("explicit issue owner watcher");
     repository
         .watch_issue(issue_id, visitor_id)
         .await
@@ -5201,6 +5207,122 @@ async fn rest_issue_meta_routes_manage_participation_assignment_sharing_and_comm
     )
     .await;
     assert_eq!(unwatched["isWatching"].as_bool().unwrap_or(false), false);
+}
+
+#[tokio::test]
+async fn rest_issue_watch_state_honors_legacy_unwatch_override_and_author_notifications() {
+    let (app, repository, db) = build_app_with_repository_and_db().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    let (guest_csrf, guest_cookie) = register_user(app.clone(), "guest").await;
+    let owner_id = repository
+        .find_user_by_identifier("owner")
+        .await
+        .unwrap()
+        .expect("issue author")
+        .id;
+    let guest_id = repository
+        .find_user_by_identifier("guest")
+        .await
+        .unwrap()
+        .expect("issue watcher")
+        .id;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let created = create_issue(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "Legacy watch state",
+    )
+    .await;
+    assert_eq!(created["isWatching"], false);
+    let issue_id = repository
+        .read_issue_detail("owner", "projectYobi", 1)
+        .await
+        .unwrap()
+        .expect("created issue")
+        .id;
+
+    watch::ActiveModel {
+        id: NotSet,
+        user_id: Set(Some(guest_id)),
+        resource_type: Set(Some("ISSUE".to_string())),
+        resource_id: Set(Some(issue_id.to_string())),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    unwatch::ActiveModel {
+        id: NotSet,
+        user_id: Set(Some(guest_id)),
+        resource_type: Set(Some("ISSUE".to_string())),
+        resource_id: Set(Some(issue_id.to_string())),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    let coexistence = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1",
+            Some(&guest_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(coexistence["isWatching"], false);
+
+    let unwatched = response_json(
+        rest(
+            app.clone(),
+            Method::DELETE,
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/watch",
+            Some(&guest_cookie),
+            Some(&guest_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(unwatched["isWatching"], false);
+    let watched = response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/watch",
+            Some(&guest_cookie),
+            Some(&guest_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(watched["isWatching"], true);
+
+    create_issue_comment(
+        app.clone(),
+        &guest_cookie,
+        &guest_csrf,
+        1,
+        "Guest comment keeps author eligible",
+    )
+    .await;
+    let event = notification_event::Entity::find()
+        .filter(notification_event::Column::EventType.eq(Some("NEW_COMMENT".to_string())))
+        .all(&db)
+        .await
+        .unwrap()
+        .pop()
+        .expect("comment notification event");
+    assert!(notification_event_n4user::Entity::find()
+        .filter(notification_event_n4user::Column::NotificationEventId.eq(event.id))
+        .filter(notification_event_n4user::Column::N4userId.eq(owner_id))
+        .one(&db)
+        .await
+        .unwrap()
+        .is_some());
 }
 
 #[tokio::test]

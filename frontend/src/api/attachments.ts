@@ -10,6 +10,27 @@ export type UploadedAttachment = {
 
 export type UploadProgressCallback = (percentComplete: number) => void;
 
+export function attachmentMarkdown(attachment: UploadedAttachment, basePath: string) {
+  const href = attachment.url || prefixBasePath(basePath, `/files/${attachment.id}`);
+  const link = `[${attachment.name}](${href}) `;
+  const mimeType = attachment.mimeType.trim().toLowerCase();
+  if (mimeType.startsWith("image/")) {
+    return `!${link}`;
+  }
+  if (["video/mp4", "video/ogg", "video/webm"].includes(mimeType)) {
+    return `<video class="video-js" data-setup="{}" controls><source src="${escapeHtmlAttribute(href)}" type="${escapeHtmlAttribute(mimeType)}"></video>${link}`;
+  }
+  return link;
+}
+
+function escapeHtmlAttribute(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
 function readStringField(value: Record<string, unknown>, fieldName: string): string {
   const fieldValue = value[fieldName];
   return typeof fieldValue === "string" ? fieldValue : "";

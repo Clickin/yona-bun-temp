@@ -24,10 +24,10 @@ pub(crate) async fn anonymous_access_gate(
         .any(|name| *name == path || path == crate::routes::base_path_href(&base_path, name));
     if !requires_authenticated_session
         && (allow_anonymous_access
-        || anonymous_access_path_is_public(&path)
-        || global_label_typeahead
-        || smart_http_route_from_path(request.uri().path(), &base_path).is_some()
-        || svn_protocol::route_from_path(request.uri().path(), &base_path).is_some())
+            || anonymous_access_path_is_public(&path)
+            || global_label_typeahead
+            || smart_http_route_from_path(request.uri().path(), &base_path).is_some()
+            || svn_protocol::route_from_path(request.uri().path(), &base_path).is_some())
     {
         return next.run(request).await;
     }

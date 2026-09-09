@@ -1,7 +1,7 @@
 use axum::body::Body;
 use http::{Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
-use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, NotSet, Set};
+use sea_orm::{ActiveModelTrait, ConnectionTrait, Database, DatabaseConnection, NotSet, Set};
 use serde_json::json;
 use tower::ServiceExt;
 use yoram_migration::Migrator;
@@ -371,6 +371,58 @@ async fn issue_comment_vote_contract_updates_projection_and_preserves_unvote_pol
     )
     .await;
     assert_eq!(not_voted.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn issue_and_comment_relative_dates_preserve_the_stored_creation_instant() {
+    let (app, _, db) = build_app_with_repository().await;
+    let (csrf, cookie, _) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &cookie, &csrf, "public").await;
+    create_issue(app.clone(), &cookie, &csrf, "Timestamp precision").await;
+    create_comment(app.clone(), &cookie, &csrf, 1, "A recent comment").await;
+
+    for sql in [
+        "UPDATE issue SET created_date = '2026-07-07 12:34:56.789'",
+        "UPDATE issue_comment SET created_date = '2026-07-07 12:34:56.789'",
+        "INSERT INTO issue_event \
+         (issue_id, sender_login_id, event_type, old_value, new_value, created) \
+         SELECT id, 'owner', 'ISSUE_STATE_CHANGED', 'open', 'closed', \
+         '2026-07-07 12:34:56.789' FROM issue",
+    ] {
+        db.execute_unprepared(sql).await.unwrap();
+    }
+
+    let detail = response_json(
+        rpc(
+            app,
+            "ReadIssueDetail",
+            Some(&cookie),
+            None,
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "issueNumber": "1"
+            }),
+        )
+        .await,
+    )
+    .await;
+    let event = detail["timeline"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|entry| entry["kind"] == "event")
+        .expect("issue event");
+    let expected = chrono::DateTime::parse_from_rfc3339("2026-07-07T12:34:56.789Z").unwrap();
+    for label in [
+        &detail["createdLabel"],
+        &detail["comments"][0]["createdLabel"],
+        &event["createdLabel"],
+    ] {
+        let actual = chrono::DateTime::parse_from_rfc3339(label.as_str().unwrap())
+            .expect("relative dates require the complete creation instant, not midnight");
+        assert_eq!(actual, expected);
+    }
 }
 
 #[tokio::test]

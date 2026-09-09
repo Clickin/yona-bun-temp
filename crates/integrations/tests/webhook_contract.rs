@@ -1,8 +1,8 @@
+use std::sync::{Mutex, OnceLock};
 use yoram_integrations::{
     clear_test_webhook_outbox, deliver_webhook_with_config, queue_test_webhook_failure,
     queue_test_webhook_response, snapshot_test_webhook_outbox, IntegrationConfig, OutboundWebhook,
 };
-use std::sync::{Mutex, OnceLock};
 
 fn webhook_test_lock() -> &'static Mutex<()> {
     static LOCK: OnceLock<Mutex<()>> = OnceLock::new();

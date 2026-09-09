@@ -238,6 +238,14 @@ impl AppRepositoryImpl<'_> {
             return Ok(false);
         };
 
+        attachment::Entity::delete_many()
+            .filter(
+                attachment::Column::ContainerType
+                    .eq(Some(ORGANIZATION_ATTACHMENT_CONTAINER.to_string())),
+            )
+            .filter(attachment::Column::ContainerId.eq(organization.id))
+            .exec(&self.db)
+            .await?;
         user_enrolled_organization::Entity::delete_many()
             .filter(user_enrolled_organization::Column::OrganizationId.eq(organization.id))
             .exec(&self.db)

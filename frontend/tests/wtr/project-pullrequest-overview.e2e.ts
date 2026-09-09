@@ -107,6 +107,9 @@ const EXPECTED_PULL_REQUEST_CLOSED_REOPEN = EXPECTED_PULL_REQUEST_OVERVIEW.repla
   );
 
 const EXPECTED_PULL_REQUEST_MERGING_STATE = EXPECTED_PULL_REQUEST_OVERVIEW.replace(
+  `<div class="page-wrap-outer">`,
+  `<div class="page-wrap-outer" aria-busy="true">`,
+).replace(
   `<div class="pull-right"><button id="btnAccept" type="button" class="ybtn ybtn-success">Merge</button></div>`,
   `<div class="pull-right"><button type="button" class="ybtn ybtn-disabled" title="Now, it's checking the code.">Merge</button></div>`,
 ).replace(

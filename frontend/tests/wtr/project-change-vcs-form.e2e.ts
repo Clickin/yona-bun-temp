@@ -225,9 +225,8 @@ test("SVN project change-VCS matches the live ko-KR shell without mobile overflo
     tabsHeight: 37,
     tabsWidth: 1346,
     utilHeight: 28,
-    // F5 dist-truth (2026-08-11): the ko-KR watch label widths the util row
-    // to 163px.
-    utilWidth: 163,
+    // Live legacy's full cascade: 12px buttons, watched ko-KR width 146.609px.
+    utilWidth: 147,
   });
 
   await page.setViewportSize({ width: 390, height: 844 });

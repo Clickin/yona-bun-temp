@@ -205,6 +205,20 @@ async fn count_event_rows(db: &DatabaseConnection, event_type: &str) -> u64 {
     rows.len() as u64
 }
 
+async fn comment_thread_dtype(db: &DatabaseConnection, thread_id: i64) -> String {
+    let row = db
+        .query_one(Statement::from_sql_and_values(
+            db.get_database_backend(),
+            "SELECT dtype FROM comment_thread WHERE id = ?",
+            vec![thread_id.into()],
+        ))
+        .await
+        .expect("read comment thread dtype")
+        .expect("comment thread row");
+    row.try_get("", "dtype")
+        .expect("comment thread dtype value")
+}
+
 async fn direct_get(app: axum::Router, path: &str, cookie_header: Option<&str>) -> Response<Body> {
     let mut builder = Request::builder()
         .method(Method::GET)
@@ -1219,6 +1233,10 @@ async fn rest_commit_detail_creates_comments_and_updates_threads_from_git_repo()
     assert_eq!(created["threads"][0]["state"], "open");
     assert_eq!(created["threads"][0]["commitId"], commit_id);
     assert_eq!(created["threads"][0]["authorLoginId"], "owner");
+    assert_eq!(
+        comment_thread_dtype(&db, created["threads"][0]["id"].as_i64().unwrap()).await,
+        "non_ranged"
+    );
     assert_eq!(
         created["threads"][0]["comments"][0]["contentsMarkdown"],
         "First **commit** note @owner @owner/projectYobi @ghost @owner/missing #1 owner/projectYobi#1 `<script>alert(1)</script> @owner #1`"

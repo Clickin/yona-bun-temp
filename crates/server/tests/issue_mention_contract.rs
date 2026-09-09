@@ -116,6 +116,29 @@ async fn rest(
         .unwrap()
 }
 
+async fn rest_json(
+    app: axum::Router,
+    method: Method,
+    uri: &str,
+    cookie_header: Option<&str>,
+    csrf: Option<&str>,
+    payload: serde_json::Value,
+) -> Response<Body> {
+    let mut builder = Request::builder()
+        .method(method)
+        .uri(uri)
+        .header(http::header::CONTENT_TYPE, "application/json");
+    if let Some(cookie_header) = cookie_header {
+        builder = builder.header(http::header::COOKIE, cookie_header);
+    }
+    if let Some(csrf) = csrf {
+        builder = builder.header("x-csrf-token", csrf);
+    }
+    app.oneshot(builder.body(Body::from(payload.to_string())).unwrap())
+        .await
+        .unwrap()
+}
+
 async fn register_user(app: axum::Router, login_id: &str) -> (String, String, i64) {
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
     let response = rpc(
@@ -905,4 +928,161 @@ async fn issue_mention_contract_indexes_comment_mentions_and_replaces_them_on_up
         other_notifications["items"][0]["typeIcon"],
         "ellipsis-horizontal"
     );
+}
+
+#[tokio::test]
+async fn issue_mention_contract_comment_update_notification_mail_matches_legacy_author_rules() {
+    let (app, repo, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _owner_id) = register_user(app.clone(), "owner").await;
+    let (_, guest_cookie, guest_id) = register_user(app.clone(), "guest").await;
+    let (editor_csrf, editor_cookie, editor_id) = register_user(app.clone(), "editor").await;
+    create_project(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "owner",
+        "projectYobi",
+        "public",
+    )
+    .await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .expect("comment notification project");
+    repo.add_project_membership(project.id, editor_id, "manager")
+        .await
+        .unwrap();
+    create_issue(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "owner",
+        "projectYobi",
+        "Comment notification",
+        "body",
+    )
+    .await;
+    let issue = repo
+        .read_issue_detail("owner", "projectYobi", 1)
+        .await
+        .unwrap()
+        .expect("comment notification issue");
+    repo.watch_issue(issue.id, guest_id).await.unwrap();
+
+    let created = response_json(
+        rpc(
+            app.clone(),
+            "CreateIssueComment",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "issueNumber": "1",
+                "contentsMarkdown": "original comment"
+            }),
+        )
+        .await,
+    )
+    .await;
+    let comment_id = int64_json(&created["comments"][0]["id"]);
+    let comment_uri =
+        format!("/yona/api/v1/projects/owner/projectYobi/issues/1/comments/{comment_id}");
+    assert_eq!(
+        notification_event::Entity::find()
+            .filter(notification_event::Column::EventType.eq(Some("NEW_COMMENT".to_string())))
+            .count(&db)
+            .await
+            .unwrap(),
+        1
+    );
+
+    // Legacy commentUpdateForm omits notificationMail when the author clears
+    // the checkbox, so an author edit must not notify issue watchers.
+    response_json(
+        rest_json(
+            app.clone(),
+            Method::PUT,
+            &comment_uri,
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "contentsMarkdown": "author edit without notification",
+                "notificationMail": "no"
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        notification_event::Entity::find()
+            .filter(notification_event::Column::EventType.eq(Some("COMMENT_UPDATED".to_string())))
+            .count(&db)
+            .await
+            .unwrap(),
+        0
+    );
+
+    // Checking the author-only control opts into the legacy update notice.
+    response_json(
+        rest_json(
+            app.clone(),
+            Method::PUT,
+            &comment_uri,
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "contentsMarkdown": "author edit with notification",
+                "notificationMail": "yes"
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        notification_event::Entity::find()
+            .filter(notification_event::Column::EventType.eq(Some("COMMENT_UPDATED".to_string())))
+            .count(&db)
+            .await
+            .unwrap(),
+        1
+    );
+
+    // A manager editing someone else's comment always notifies, regardless of
+    // the submitted checkbox value.
+    response_json(
+        rest_json(
+            app.clone(),
+            Method::PUT,
+            &comment_uri,
+            Some(&editor_cookie),
+            Some(&editor_csrf),
+            json!({
+                "contentsMarkdown": "manager edit without notification",
+                "notificationMail": "no"
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        notification_event::Entity::find()
+            .filter(notification_event::Column::EventType.eq(Some("COMMENT_UPDATED".to_string())))
+            .count(&db)
+            .await
+            .unwrap(),
+        2
+    );
+    let guest_notifications = response_json(
+        rest(
+            app,
+            Method::GET,
+            "/yona/api/v1/notifications?from=0&size=5",
+            Some(&guest_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert!(guest_notifications["total"].as_u64().unwrap_or_default() >= 3);
 }

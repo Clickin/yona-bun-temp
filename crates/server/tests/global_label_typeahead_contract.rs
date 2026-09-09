@@ -51,16 +51,14 @@ async fn response_text(response: Response<Body>) -> String {
     .unwrap()
 }
 
-async fn get(
-    app: axum::Router,
-    uri: &str,
-    accept: Option<&str>,
-) -> Response<Body> {
+async fn get(app: axum::Router, uri: &str, accept: Option<&str>) -> Response<Body> {
     let mut builder = Request::builder().method(Method::GET).uri(uri);
     if let Some(accept) = accept {
         builder = builder.header(http::header::ACCEPT, accept);
     }
-    app.oneshot(builder.body(Body::empty()).unwrap()).await.unwrap()
+    app.oneshot(builder.body(Body::empty()).unwrap())
+        .await
+        .unwrap()
 }
 
 async fn register_user(app: axum::Router, login_id: &str) -> (String, String) {
@@ -88,7 +86,15 @@ async fn register_user(app: axum::Router, login_id: &str) -> (String, String) {
         .headers()
         .get_all(http::header::SET_COOKIE)
         .iter()
-        .map(|value| value.to_str().unwrap().split(';').next().unwrap().to_string())
+        .map(|value| {
+            value
+                .to_str()
+                .unwrap()
+                .split(';')
+                .next()
+                .unwrap()
+                .to_string()
+        })
         .collect();
     let session_cookie = session_cookie.join("; ");
     let response = rest_test_support::pilot_rest(
@@ -110,17 +116,20 @@ async fn register_user(app: axum::Router, login_id: &str) -> (String, String) {
         .headers()
         .get_all(http::header::SET_COOKIE)
         .iter()
-        .map(|value| value.to_str().unwrap().split(';').next().unwrap().to_string())
+        .map(|value| {
+            value
+                .to_str()
+                .unwrap()
+                .split(';')
+                .next()
+                .unwrap()
+                .to_string()
+        })
         .collect();
     (csrf, cookies.join("; "))
 }
 
-async fn create_public_project(
-    app: axum::Router,
-    cookie: &str,
-    csrf: &str,
-    project_name: &str,
-) {
+async fn create_public_project(app: axum::Router, cookie: &str, csrf: &str, project_name: &str) {
     let response = rest_test_support::pilot_rest(
         app,
         "CreateProject",
@@ -144,15 +153,10 @@ async fn seed_labels(repo: &AppRepository) {
         ("Chore", "Type"),
         ("Blocking", "Priority"),
     ] {
-        repo.attach_legacy_project_label(
-            "owner",
-            "projectYobi",
-            Some(category_name),
-            label_name,
-        )
-        .await
-        .unwrap()
-        .expect("project exists");
+        repo.attach_legacy_project_label("owner", "projectYobi", Some(category_name), label_name)
+            .await
+            .unwrap()
+            .expect("project exists");
     }
 }
 
@@ -187,7 +191,10 @@ async fn labels_lists_all_names_without_content_range_when_total_fits() {
     let app = app_with_seeded_labels().await;
     let response = get(app, "/yona/labels?limit=1000", Some("application/json")).await;
     assert_eq!(response.status(), StatusCode::OK);
-    assert!(response.headers().get(http::header::CONTENT_RANGE).is_none());
+    assert!(response
+        .headers()
+        .get(http::header::CONTENT_RANGE)
+        .is_none());
     let names = serde_json::from_str::<Vec<String>>(&response_text(response).await).unwrap();
     assert_eq!(names.len(), 3);
     assert!(names.contains(&"Guide".to_string()));
@@ -201,10 +208,7 @@ async fn labels_cap_rows_and_set_content_range_when_total_exceeds_limit() {
     let response = get(app, "/yona/labels?limit=2", Some("application/json")).await;
     assert_eq!(response.status(), StatusCode::OK);
     assert_eq!(
-        response
-            .headers()
-            .get(http::header::CONTENT_RANGE)
-            .unwrap(),
+        response.headers().get(http::header::CONTENT_RANGE).unwrap(),
         "items 2/3"
     );
     let names = serde_json::from_str::<Vec<String>>(&response_text(response).await).unwrap();
@@ -216,13 +220,23 @@ async fn labels_filter_by_icontains_name_and_category() {
     let app = app_with_seeded_labels().await;
     // icontains is case-insensitive on both name and category
     // (LabelApp.java:61 Expr.icontains).
-    let response = get(app.clone(), "/yona/labels?query=GUIDE&limit=1000", Some("application/json")).await;
+    let response = get(
+        app.clone(),
+        "/yona/labels?query=GUIDE&limit=1000",
+        Some("application/json"),
+    )
+    .await;
     assert_eq!(response.status(), StatusCode::OK);
     assert_eq!(
         serde_json::from_str::<Vec<String>>(&response_text(response).await).unwrap(),
         ["Guide"]
     );
-    let response = get(app, "/yona/labels?category=priority&limit=1000", Some("application/json")).await;
+    let response = get(
+        app,
+        "/yona/labels?category=priority&limit=1000",
+        Some("application/json"),
+    )
+    .await;
     assert_eq!(response.status(), StatusCode::OK);
     assert_eq!(
         serde_json::from_str::<Vec<String>>(&response_text(response).await).unwrap(),
@@ -233,9 +247,17 @@ async fn labels_filter_by_icontains_name_and_category() {
 #[tokio::test]
 async fn categories_list_distinct_names_with_limit_clamp() {
     let app = app_with_seeded_labels().await;
-    let response = get(app.clone(), "/yona/categories?limit=1000", Some("application/json")).await;
+    let response = get(
+        app.clone(),
+        "/yona/categories?limit=1000",
+        Some("application/json"),
+    )
+    .await;
     assert_eq!(response.status(), StatusCode::OK);
-    assert!(response.headers().get(http::header::CONTENT_RANGE).is_none());
+    assert!(response
+        .headers()
+        .get(http::header::CONTENT_RANGE)
+        .is_none());
     let names = serde_json::from_str::<Vec<String>>(&response_text(response).await).unwrap();
     assert_eq!(names.len(), 2);
     assert!(names.contains(&"Type".to_string()));
@@ -245,10 +267,7 @@ async fn categories_list_distinct_names_with_limit_clamp() {
     let response = get(app, "/yona/categories?limit=1", Some("application/json")).await;
     assert_eq!(response.status(), StatusCode::OK);
     assert_eq!(
-        response
-            .headers()
-            .get(http::header::CONTENT_RANGE)
-            .unwrap(),
+        response.headers().get(http::header::CONTENT_RANGE).unwrap(),
         "items 1/2"
     );
     let names = serde_json::from_str::<Vec<String>>(&response_text(response).await).unwrap();

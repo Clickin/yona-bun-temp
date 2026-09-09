@@ -687,7 +687,10 @@ async fn site_admin_direct_mutation_aliases_follow_legacy_routes() {
         Some(&admin_csrf),
     )
     .await;
-    assert_eq!(missing_legacy_reset_action.status(), StatusCode::BAD_REQUEST);
+    assert_eq!(
+        missing_legacy_reset_action.status(),
+        StatusCode::BAD_REQUEST
+    );
     assert_eq!(
         serde_json::from_str::<Value>(&response_text(missing_legacy_reset_action).await)
             .expect("legacy reset bad request json"),
@@ -4318,7 +4321,10 @@ async fn site_admin_user_list_and_toggles_follow_legacy_state_buckets() {
         .await,
     )
     .await;
-    assert_eq!(login_ids(&case_insensitive_active), vec!["member".to_string()]);
+    assert_eq!(
+        login_ids(&case_insensitive_active),
+        vec!["member".to_string()]
+    );
 
     let protected_revoke = rest_post(
         app.clone(),

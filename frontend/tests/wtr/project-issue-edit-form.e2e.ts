@@ -12,7 +12,7 @@ const ROUTE_SOURCE = readFileSync(
 function withLegacyEditor(html: string, markdownHelpHtml: string) {
   return html.replace(
     `<div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2">Editable body</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div>`,
-    `<div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible">${markdownHelpHtml}<div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body" tabindex="2">Editable body</textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
+    `<div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible">${markdownHelpHtml}<div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body" tabindex="2">Editable body</textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"><p>Editable body</p></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
   );
 }
 
@@ -67,6 +67,11 @@ async function legacyPrePluginEditFormHtml(page: Page) {
     clone.querySelector("#milestoneId")?.removeAttribute("class");
     clone.querySelector("#labelIds")?.setAttribute("class", "hide");
     clone.querySelector(".help-pastable")?.removeAttribute("style");
+    // yobi.Attachway injects display:none on the upload help at init; the
+    // pre-plugin template state carries no inline style.
+    clone
+      .querySelector('.upload-wrap p.right-txt.help, .upload-wrap p.help')
+      ?.removeAttribute("style");
     clone.querySelectorAll<HTMLSelectElement>("select").forEach((select, index) => {
       Array.from(select.options).forEach((option) => {
         if (selectedValues[index]?.includes(option.value)) option.setAttribute("selected", "");
@@ -890,6 +895,156 @@ test("project issue edit form translates legacy write validation behavior", asyn
   expect(updateBody?.assigneeLoginId).toBe("dev");
   expect(updateBody?.dueDate).toBe("2026-08-03");
   expect(updateBody?.labelIds).toEqual([8]);
+  expect(updateBody?.notificationMail).toBe(true);
+});
+
+test("project issue edit form sends unchecked notification intent", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueEditForm(page);
+
+  const updateRequest = page.waitForRequest(
+    (request) =>
+      request.method() === "PUT" &&
+      request.url().includes("/api/v1/projects/admin/sample/issues/1"),
+  );
+  await page.goto(`${basePath}/admin/sample/issue/1/editform`);
+  await expect(page.locator("#notificationMail")).toBeChecked();
+  await page.locator("#notificationMail").uncheck();
+  await page.locator("#button-save").click();
+
+  expect((await updateRequest).postDataJSON()).toMatchObject({ notificationMail: false });
+});
+
+test("project issue edit form inserts a non-image upload at the caret", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueEditForm(page);
+  await page.route("**/files", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        id: 202,
+        mimeType: "application/pdf",
+        name: "report.pdf",
+        size: 7,
+        url: "/files/202",
+      }),
+    });
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/1/editform`);
+  const body = page.locator("#editor-body-body");
+  await body.fill("Existing body\n");
+  await body.press("End");
+  await page.locator('input.file[name="filePath"]').setInputFiles({
+    buffer: Buffer.from("pdf data"),
+    mimeType: "application/pdf",
+    name: "report.pdf",
+  });
+  await expect(page.locator("#upload .attached-file.complete")).toHaveCount(1);
+  await page
+    .locator("#upload .attached-file-main")
+    .filter({ hasText: "report.pdf" })
+    .click();
+
+  await expect(body).toHaveValue("Existing body\n[report.pdf](/files/202) ");
+  await page.locator(".nav-tabs > li > button").nth(1).click();
+  await expect(page.locator("#preview-body a[href='/files/202']")).toHaveText("report.pdf");
+});
+
+test("project issue edit form preserves existing attachments across save and remount", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const editFormUrl = `${basePath}/admin/sample/issue/1/editform`;
+  const updateBodies: Array<Record<string, unknown>> = [];
+  await mockProjectIssueEditForm(page, {
+    issue: {
+      attachments: [
+        {
+          id: 303,
+          mimeType: "application/pdf",
+          name: "existing.pdf",
+          size: 12,
+          url: "/files/303",
+        },
+      ],
+    },
+  });
+  page.on("request", (request) => {
+    if (
+      request.method() === "PUT" &&
+      request.url().includes("/api/v1/projects/admin/sample/issues/1")
+    ) {
+      updateBodies.push(request.postDataJSON() as Record<string, unknown>);
+    }
+  });
+
+  await page.goto(editFormUrl);
+  await expect(page.locator("#issue-form")).toBeVisible();
+  await expect(page.locator("#title")).toHaveValue("Editable issue");
+  await page.locator("#button-save").click();
+  await expect.poll(() => updateBodies.length).toBe(1);
+  await page.goto(editFormUrl);
+  await expect(page.locator("#issue-form")).toBeVisible();
+  await expect(page.locator("#title")).toHaveValue("Editable issue");
+  await page.locator("#button-save").click();
+  await expect.poll(() => updateBodies.length).toBe(2);
+
+  expect(updateBodies[0]?.attachmentIds).toEqual([303]);
+  expect(updateBodies[1]?.attachmentIds).toEqual([303]);
+});
+
+test("project issue edit form restores, autosaves, and clears only its draft", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const draftKey = `${basePath === "/" ? "" : basePath}/admin/sample/issue/1/editform`;
+  await mockProjectIssueEditForm(page);
+  await page.route("**/files", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        id: 404,
+        mimeType: "application/pdf",
+        name: "keep.pdf",
+        size: 4,
+        url: "/files/404",
+      }),
+    });
+  });
+  let deleteRequests = 0;
+  page.on("request", (request) => {
+    if (request.method() === "DELETE" && request.url().endsWith("/files/404")) {
+      deleteRequests += 1;
+    }
+  });
+
+  await page.goto(`${draftKey}`);
+  // Seed after the first load: an init-script seed would replay on the
+  // clear-button reload and resurrect the draft the assertion removes.
+  await page.evaluate((key) => localStorage.setItem(key, "Restored draft"), draftKey);
+  await page.reload();
+  await expect(page.locator("#editor-body-body")).toHaveValue("Restored draft");
+  await expect(page.locator("#button-clear-temporary")).toBeVisible();
+  const body = page.locator("#editor-body-body");
+  await body.fill("Autosaved draft");
+  await page.locator('input.file[name="filePath"]').setInputFiles({
+    buffer: Buffer.from("keep"),
+    mimeType: "application/pdf",
+    name: "keep.pdf",
+  });
+  await expect(page.locator("#upload .attached-file.complete")).toHaveCount(1);
+  await expect
+    .poll(() => page.evaluate((key) => localStorage.getItem(key), draftKey), {
+      timeout: 7_000,
+    })
+    .toBe("Autosaved draft");
+
+  await page.locator("#button-clear-temporary").click();
+  await expect
+    .poll(() => page.evaluate((key) => localStorage.getItem(key), draftKey), {
+      timeout: 7_000,
+    })
+    .toBeNull();
+  expect(deleteRequests).toBe(0);
 });
 
 test("project issue draft edit form submits legacy draft save and publish flags", async ({

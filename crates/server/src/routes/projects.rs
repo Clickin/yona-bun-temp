@@ -15,7 +15,8 @@ use crate::api_types::*;
 use crate::assets::serve_frontend_page;
 use crate::routes::utils::{
     gravatar_url, legacy_assignable_user_avatar_urls, preferred_language_from_headers,
-    project_member_summary_from_record, resolve_project_origin,
+    project_member_summary_from_record, remove_unreferenced_attachment_blobs,
+    resolve_project_origin,
 };
 use crate::{
     absolute_app_url, accepts_legacy_json, attach_session_headers, base_path_href,
@@ -118,7 +119,6 @@ pub(crate) use webhooks::{
     dispatch_issue_webhooks, dispatch_posting_comment_webhooks, dispatch_posting_webhooks,
     dispatch_pull_request_webhooks, project_webhook_type_label, record_project_webhook_delivery,
 };
-
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
@@ -2209,6 +2209,11 @@ pub(crate) async fn rest_delete_project(
             ConnectError::permission_denied("project delete is not allowed"),
         ));
     }
+    let project_attachments = repository
+        .list_project_attachments_for_cleanup(authorization.project.id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
     delete_project_repository_storage(
         &service,
         authorization.project.id,
@@ -2223,6 +2228,16 @@ pub(crate) async fn rest_delete_project(
         },
     )
     .await?;
+    remove_unreferenced_attachment_blobs(
+        repository,
+        &service.data_root,
+        project_attachments
+            .iter()
+            .map(|attachment| &attachment.hash),
+    )
+    .await
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
 
     Ok(Json(RestProjectDeleteResponse {
         ok: true,
@@ -3854,8 +3869,7 @@ async fn legacy_external_project_assignable_users(
     };
     let mut record = record;
     legacy_assignable_user_avatar_urls(repository, &mut record).await;
-    let language =
-        preferred_language_from_headers(&headers, &service.supported_languages);
+    let language = preferred_language_from_headers(&headers, &service.supported_languages);
     Json(legacy_external_assignable_users_result(
         record,
         language.as_deref(),

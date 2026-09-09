@@ -1,10 +1,12 @@
 use std::ffi::OsString;
 use std::io::{Read, Write};
+#[cfg(unix)]
+use std::os::unix::process::CommandExt;
 use std::path::{Component, Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::thread;
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime};
 
 pub const CRATE_OWNER: &str = "vcs";
 pub const HISTORY_ITEM_LIMIT: usize = 25;
@@ -1459,6 +1461,339 @@ pub fn svn_patch_properties(
     svn_youngest_revision(repo_path)
 }
 
+fn svn_activity_work_dir(repo_path: &Path, activity_id: &str) -> Result<PathBuf, VcsError> {
+    validate_repository_component(activity_id).map_err(|_| VcsError::InvalidPath)?;
+    let parent = repo_path.parent().ok_or(VcsError::InvalidPath)?;
+    Ok(parent.join(".svn-activities").join(activity_id))
+}
+
+fn cleanup_stale_svn_activities(parent: &Path) {
+    let Ok(entries) = std::fs::read_dir(parent) else {
+        return;
+    };
+    let now = SystemTime::now();
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if !path.is_dir() {
+            continue;
+        }
+        let Ok(modified) = entry.metadata().and_then(|metadata| metadata.modified()) else {
+            continue;
+        };
+        let stale = now
+            .duration_since(modified)
+            .map(|age| age > Duration::from_secs(60 * 60))
+            .unwrap_or(false);
+        if stale {
+            let _ = std::fs::remove_dir_all(&path);
+            if let Some(activity_id) = path.file_name().and_then(|name| name.to_str()) {
+                let _ = std::fs::remove_file(parent.join(format!("{activity_id}.log")));
+            }
+        }
+    }
+}
+
+pub fn svn_activity_begin(repo_path: &Path, activity_id: &str) -> Result<i64, VcsError> {
+    if !repo_path.exists() || !repo_path.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    let work_dir = svn_activity_work_dir(repo_path, activity_id)?;
+    if let Some(parent) = work_dir.parent() {
+        cleanup_stale_svn_activities(parent);
+    }
+    if work_dir.exists() {
+        return Err(VcsError::SvnFailed(format!(
+            "SVN activity already exists: {activity_id}"
+        )));
+    }
+    if let Some(parent) = work_dir.parent() {
+        std::fs::create_dir_all(parent).map_err(|error| {
+            VcsError::FilesystemFailed(format!("create SVN activity directory: {error}"))
+        })?;
+    }
+    let revision = svn_youngest_revision(repo_path)?;
+    run_svn_command(
+        svn_command("svn")
+            .args(["checkout", "--non-interactive", "-r", &revision.to_string()])
+            .arg(svn_file_url(repo_path))
+            .arg(&work_dir),
+    )?;
+    Ok(revision)
+}
+
+pub fn svn_activity_path_exists(
+    repo_path: &Path,
+    activity_id: &str,
+    path: &str,
+) -> Result<bool, VcsError> {
+    let work_dir = svn_activity_work_dir(repo_path, activity_id)?;
+    if !work_dir.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    let clean_path = normalize_repo_path(path)?;
+    if clean_path.is_empty() {
+        return Ok(true);
+    }
+    Ok(work_dir.join(clean_path).exists())
+}
+
+pub fn svn_activity_file_contents(
+    repo_path: &Path,
+    activity_id: &str,
+    path: &str,
+) -> Result<Vec<u8>, VcsError> {
+    let work_dir = svn_activity_work_dir(repo_path, activity_id)?;
+    if !work_dir.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    let clean_path = normalize_repo_path(path)?;
+    if clean_path.is_empty() {
+        return Err(VcsError::InvalidPath);
+    }
+    std::fs::read(work_dir.join(clean_path)).map_err(|error| {
+        if error.kind() == std::io::ErrorKind::NotFound {
+            VcsError::NotFound
+        } else {
+            VcsError::FilesystemFailed(error.to_string())
+        }
+    })
+}
+
+pub fn svn_activity_put_file(
+    repo_path: &Path,
+    activity_id: &str,
+    path: &str,
+    contents: &[u8],
+) -> Result<bool, VcsError> {
+    let work_dir = svn_activity_work_dir(repo_path, activity_id)?;
+    if !work_dir.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    let clean_path = normalize_repo_path(path)?;
+    if clean_path.is_empty() {
+        return Err(VcsError::InvalidPath);
+    }
+    let target_path = work_dir.join(&clean_path);
+    let existed = target_path.exists();
+    if let Some(parent) = target_path.parent() {
+        std::fs::create_dir_all(parent).map_err(|error| {
+            VcsError::FilesystemFailed(format!("create SVN activity PUT parent: {error}"))
+        })?;
+    }
+    std::fs::write(&target_path, contents)
+        .map_err(|error| VcsError::FilesystemFailed(format!("write SVN activity file: {error}")))?;
+    if !existed {
+        run_svn_command(
+            svn_command("svn")
+                .args(["add", "--parents", "--force"])
+                .arg(&target_path),
+        )?;
+    }
+    Ok(existed)
+}
+
+pub fn svn_activity_delete_path(
+    repo_path: &Path,
+    activity_id: &str,
+    path: &str,
+) -> Result<(), VcsError> {
+    let work_dir = svn_activity_work_dir(repo_path, activity_id)?;
+    if !work_dir.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    let clean_path = normalize_repo_path(path)?;
+    if clean_path.is_empty() {
+        return Err(VcsError::InvalidPath);
+    }
+    let target_path = work_dir.join(&clean_path);
+    if !target_path.exists() {
+        return Err(VcsError::NotFound);
+    }
+    run_svn_command(svn_command("svn").arg("delete").arg(&target_path))
+}
+
+pub fn svn_activity_make_collection(
+    repo_path: &Path,
+    activity_id: &str,
+    path: &str,
+) -> Result<(), VcsError> {
+    let work_dir = svn_activity_work_dir(repo_path, activity_id)?;
+    if !work_dir.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    let clean_path = normalize_repo_path(path)?;
+    if clean_path.is_empty() {
+        return Err(VcsError::InvalidPath);
+    }
+    let target_path = work_dir.join(&clean_path);
+    if target_path.exists() {
+        return Err(VcsError::FilesystemFailed(format!(
+            "SVN collection already exists: {clean_path}"
+        )));
+    }
+    std::fs::create_dir_all(&target_path).map_err(|error| {
+        VcsError::FilesystemFailed(format!("create SVN activity collection: {error}"))
+    })?;
+    run_svn_command(
+        svn_command("svn")
+            .args(["add", "--parents", "--force"])
+            .arg(&target_path),
+    )
+}
+
+pub fn svn_activity_copy_path(
+    repo_path: &Path,
+    activity_id: &str,
+    source_revision: Option<i64>,
+    source_path: &str,
+    destination_path: &str,
+) -> Result<(), VcsError> {
+    let work_dir = svn_activity_work_dir(repo_path, activity_id)?;
+    if !work_dir.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    let clean_source = normalize_repo_path(source_path)?;
+    let clean_destination = normalize_repo_path(destination_path)?;
+    if clean_source.is_empty() || clean_destination.is_empty() {
+        return Err(VcsError::InvalidPath);
+    }
+    let source = if source_revision.is_some() {
+        let mut source_url = svn_file_url(repo_path);
+        source_url.push('/');
+        source_url.push_str(&clean_source);
+        source_url.push('@');
+        source_url.push_str(&source_revision.unwrap_or_default().to_string());
+        source_url
+    } else {
+        work_dir.join(&clean_source).display().to_string()
+    };
+    run_svn_command(
+        svn_command("svn")
+            .arg("copy")
+            .arg(source)
+            .arg(work_dir.join(&clean_destination)),
+    )
+}
+
+pub fn svn_activity_move_path(
+    repo_path: &Path,
+    activity_id: &str,
+    source_path: &str,
+    destination_path: &str,
+) -> Result<(), VcsError> {
+    let work_dir = svn_activity_work_dir(repo_path, activity_id)?;
+    if !work_dir.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    let clean_source = normalize_repo_path(source_path)?;
+    let clean_destination = normalize_repo_path(destination_path)?;
+    if clean_source.is_empty() || clean_destination.is_empty() {
+        return Err(VcsError::InvalidPath);
+    }
+    run_svn_command(
+        svn_command("svn")
+            .arg("move")
+            .arg(work_dir.join(clean_source))
+            .arg(work_dir.join(clean_destination)),
+    )
+}
+
+pub fn svn_activity_patch_properties(
+    repo_path: &Path,
+    activity_id: &str,
+    path: &str,
+    patches: &[SvnPropertyPatch],
+) -> Result<(), VcsError> {
+    let work_dir = svn_activity_work_dir(repo_path, activity_id)?;
+    if !work_dir.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    let clean_path = normalize_repo_path(path)?;
+    if clean_path.is_empty() || patches.is_empty() {
+        return Err(VcsError::InvalidPath);
+    }
+    for patch in patches {
+        validate_svn_property_name(&patch.name)?;
+        let target_path = work_dir.join(&clean_path);
+        if !target_path.exists() {
+            return Err(VcsError::NotFound);
+        }
+        match &patch.value {
+            Some(value) => run_svn_command(
+                svn_command("svn")
+                    .arg("propset")
+                    .arg(&patch.name)
+                    .arg(value)
+                    .arg(&target_path),
+            )?,
+            None => run_svn_command(
+                svn_command("svn")
+                    .arg("propdel")
+                    .arg(&patch.name)
+                    .arg(&target_path),
+            )?,
+        }
+    }
+    Ok(())
+}
+
+pub fn svn_activity_commit(
+    repo_path: &Path,
+    activity_id: &str,
+    author: &str,
+    message: &str,
+) -> Result<i64, VcsError> {
+    let work_dir = svn_activity_work_dir(repo_path, activity_id)?;
+    if !work_dir.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    let status = svn_command("svn")
+        .args(["status", "--quiet"])
+        .arg(&work_dir)
+        .output()
+        .map_err(|_| VcsError::SvnUnavailable)?;
+    if !status.status.success() {
+        return Err(VcsError::SvnFailed(
+            String::from_utf8_lossy(&status.stderr).trim().to_string(),
+        ));
+    }
+    if status.stdout.is_empty() {
+        let revision = svn_youngest_revision(repo_path)?;
+        let _ = std::fs::remove_dir_all(&work_dir);
+        return Ok(revision);
+    }
+    let output = svn_command("svn")
+        .args([
+            "commit",
+            "--non-interactive",
+            "--no-auth-cache",
+            "--username",
+            author,
+            "-m",
+            message,
+        ])
+        .arg(&work_dir)
+        .output()
+        .map_err(|_| VcsError::SvnUnavailable)?;
+    if !output.status.success() {
+        return Err(VcsError::SvnFailed(
+            String::from_utf8_lossy(&output.stderr).trim().to_string(),
+        ));
+    }
+    let revision = svn_youngest_revision(repo_path)?;
+    let _ = std::fs::remove_dir_all(&work_dir);
+    Ok(revision)
+}
+
+pub fn svn_activity_abort(repo_path: &Path, activity_id: &str) -> Result<(), VcsError> {
+    let work_dir = svn_activity_work_dir(repo_path, activity_id)?;
+    if work_dir.exists() {
+        std::fs::remove_dir_all(&work_dir)
+            .map_err(|error| VcsError::FilesystemFailed(error.to_string()))?;
+    }
+    Ok(())
+}
+
 pub fn svn_path_exists(
     repo_path: &Path,
     revision: Option<i64>,
@@ -2027,6 +2362,8 @@ pub fn run_git_http_backend(
         .stdin(Stdio::piped())
         .stderr(Stdio::piped())
         .stdout(Stdio::piped());
+    #[cfg(unix)]
+    command.process_group(0);
 
     if request.method != "GET" {
         command.env("CONTENT_LENGTH", request.body.len().to_string());
@@ -2040,30 +2377,78 @@ pub fn run_git_http_backend(
     }
 
     let mut child = command.spawn().map_err(|_| VcsError::GitUnavailable)?;
-    if let Some(mut stdin) = child.stdin.take() {
-        if !request.body.is_empty() {
-            stdin
-                .write_all(request.body)
-                .map_err(|error| VcsError::GitFailed(error.to_string()))?;
-        }
-    }
+    let Some(mut stdin) = child.stdin.take() else {
+        let _ = child.kill();
+        let _ = child.wait();
+        return Err(VcsError::GitUnavailable);
+    };
+    let Some(stdout) = child.stdout.take() else {
+        let _ = child.kill();
+        let _ = child.wait();
+        return Err(VcsError::GitUnavailable);
+    };
+    let Some(stderr) = child.stderr.take() else {
+        let _ = child.kill();
+        let _ = child.wait();
+        return Err(VcsError::GitUnavailable);
+    };
 
-    let start = Instant::now();
-    loop {
-        match child.try_wait().map_err(|_| VcsError::GitUnavailable)? {
-            Some(_) => break,
-            None if start.elapsed() > Duration::from_secs(30) => {
-                let _ = child.kill();
-                let _ = child.wait();
-                return Err(VcsError::GitTimedOut);
+    let output = thread::scope(|scope| {
+        let stdin_writer = scope.spawn(|| {
+            let result = if request.body.is_empty() {
+                Ok(())
+            } else {
+                stdin.write_all(request.body)
+            };
+            drop(stdin);
+            result
+        });
+        let stdout_reader = scope.spawn(|| read_stream(stdout, None));
+        let stderr_reader = scope.spawn(|| read_stream(stderr, None));
+
+        let start = Instant::now();
+        let status = loop {
+            match child.try_wait() {
+                Ok(Some(status)) => break status,
+                Ok(None) if start.elapsed() > Duration::from_secs(30) => {
+                    terminate_git_process_group(child.id());
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    let _ = stdin_writer.join();
+                    let _ = stdout_reader.join();
+                    let _ = stderr_reader.join();
+                    return Err(VcsError::GitTimedOut);
+                }
+                Ok(None) => thread::sleep(Duration::from_millis(10)),
+                Err(_) => {
+                    terminate_git_process_group(child.id());
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    let _ = stdin_writer.join();
+                    let _ = stdout_reader.join();
+                    let _ = stderr_reader.join();
+                    return Err(VcsError::GitUnavailable);
+                }
             }
-            None => thread::sleep(Duration::from_millis(10)),
-        }
-    }
+        };
 
-    let output = child
-        .wait_with_output()
-        .map_err(|_| VcsError::GitUnavailable)?;
+        let stdin_result = stdin_writer.join().map_err(|_| VcsError::GitUnavailable)?;
+        let stdout = stdout_reader
+            .join()
+            .map_err(|_| VcsError::GitUnavailable)?
+            .map_err(|error| VcsError::GitFailed(error.to_string()))?;
+        let stderr = stderr_reader
+            .join()
+            .map_err(|_| VcsError::GitUnavailable)?
+            .map_err(|error| VcsError::GitFailed(error.to_string()))?;
+        stdin_result.map_err(|error| VcsError::GitFailed(error.to_string()))?;
+
+        Ok(std::process::Output {
+            status,
+            stdout: stdout.bytes,
+            stderr: stderr.bytes,
+        })
+    })?;
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
         if stderr.contains("not found") || stderr.contains("No such file") {
@@ -2074,6 +2459,24 @@ pub fn run_git_http_backend(
 
     parse_git_http_backend_output(&output.stdout)
 }
+
+#[cfg(unix)]
+fn terminate_git_process_group(pid: u32) {
+    let _ = Command::new("kill")
+        .args(["-KILL", &format!("-{pid}")])
+        .status();
+}
+
+#[cfg(windows)]
+fn terminate_git_process_group(pid: u32) {
+    let _ = Command::new("taskkill")
+        .args(["/PID", &pid.to_string(), "/T", "/F"])
+        .status();
+}
+
+#[cfg(not(unix))]
+#[cfg(not(windows))]
+fn terminate_git_process_group(_pid: u32) {}
 
 pub fn read_head_refs(repo_path: &Path) -> Result<Vec<GitHeadRefRecord>, VcsError> {
     if !repo_path.exists() {
@@ -3970,9 +4373,7 @@ fn parse_pull_request_commit_records(output: &str) -> Vec<PullRequestDiffCommitR
             let commit_message = parts.next().unwrap_or_default().to_string();
             let author_email = parts.next().unwrap_or_default().to_string();
             let author_date_label = parts.next().unwrap_or_default().to_string();
-            let author_timestamp = parts
-                .next()
-                .and_then(|value| value.parse::<i64>().ok());
+            let author_timestamp = parts.next().and_then(|value| value.parse::<i64>().ok());
             Some(PullRequestDiffCommitRecord {
                 author_date_label,
                 author_email,

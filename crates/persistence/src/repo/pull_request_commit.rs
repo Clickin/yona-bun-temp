@@ -87,9 +87,9 @@ impl AppRepositoryImpl<'_> {
                 path.is_some() || input.start_line.is_some() || input.end_line.is_some();
             comment_thread::ActiveModel {
                 dtype: Set(if is_ranged {
-                    "CodeCommentThread".to_string()
+                    "ranged".to_string()
                 } else {
-                    "NonRangedCodeCommentThread".to_string()
+                    "non_ranged".to_string()
                 }),
                 id: NotSet,
                 author_id: Set(Some(input.actor_id)),

@@ -342,9 +342,10 @@ async fn issue_core_contract_enqueues_legacy_body_changed_webhook_payload() {
     clear_test_webhook_outbox();
     let data_dir = tempdir().expect("yona data tempdir");
 
-    let (app, _) = build_app_with_repository_in_data_root(data_dir.path()).await;
+    let (app, repository) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (csrf, cookie, _) = register_user(app.clone(), "owner").await;
-    let _ = register_user(app.clone(), "assigned").await;
+    let (editor_csrf, editor_cookie, editor_id) =
+        register_user(app.clone(), "assigned").await;
     response_json(
         rpc(
             app.clone(),
@@ -412,7 +413,7 @@ async fn issue_core_contract_enqueues_legacy_body_changed_webhook_payload() {
 
     response_json(
         rest(
-            app,
+            app.clone(),
             Method::PUT,
             "/yona/api/v1/projects/owner/projectYobi/issues/1",
             Some(&cookie),
@@ -437,6 +438,45 @@ async fn issue_core_contract_enqueues_legacy_body_changed_webhook_payload() {
     assert!(text.contains("notification.type.issue.body.changed"));
     assert!(text.contains("/yona/owner/projectYobi/issue/1|#1: Issue body webhook parity"));
 
+    clear_test_webhook_outbox();
+    let project = repository
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    repository
+        .add_project_membership(project.id, editor_id, "manager")
+        .await
+        .unwrap();
+    for (actor_cookie, actor_csrf, notification_mail, body, expected_deliveries) in [
+        (&cookie, &csrf, false, "Author silent edit", 0),
+        (&cookie, &csrf, true, "Author notified edit", 1),
+        (&editor_cookie, &editor_csrf, false, "Manager edit", 1),
+    ] {
+        clear_test_webhook_outbox();
+        let updated = response_json(
+            rest(
+                app.clone(),
+                Method::PUT,
+                "/yona/api/v1/projects/owner/projectYobi/issues/1",
+                Some(actor_cookie),
+                Some(actor_csrf),
+                Some(json!({
+                    "title": "Issue body webhook parity",
+                    "bodyMarkdown": body,
+                    "notificationMail": notification_mail,
+                })),
+            )
+            .await,
+        )
+        .await;
+        assert_eq!(updated["bodyMarkdown"], body);
+        let deliveries = snapshot_test_webhook_outbox();
+        assert_eq!(deliveries.len(), expected_deliveries, "{body}");
+        if let Some(delivery) = deliveries.first() {
+            assert_eq!(delivery.event_type, "ISSUE_BODY_CHANGED");
+        }
+    }
     clear_test_webhook_outbox();
 }
 
@@ -1294,7 +1334,7 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
     assert_eq!(created["projectName"], "projectYobi");
     assert_eq!(created["title"], "Markdown issue");
     assert_eq!(created["state"], "open");
-    assert_eq!(created["isWatching"], true);
+    assert_eq!(created["isWatching"], false);
     assert_eq!(created["bodyHtml"].as_str().unwrap_or(""), "");
     assert!(created["bodyMarkdown"]
         .as_str()

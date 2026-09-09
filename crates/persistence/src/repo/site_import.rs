@@ -42,8 +42,36 @@ impl AppRepositoryImpl<'_> {
             .map(|thread| thread.id)
             .collect::<Vec<_>>();
         if !thread_ids.is_empty() {
+            let review_comment_ids = review_comment::Entity::find()
+                .filter(
+                    review_comment::Column::ThreadId.is_in(thread_ids.iter().copied().map(Some)),
+                )
+                .all(&self.db)
+                .await?
+                .into_iter()
+                .map(|comment| comment.id)
+                .collect::<Vec<_>>();
+            if !review_comment_ids.is_empty() {
+                attachment::Entity::delete_many()
+                    .filter(
+                        attachment::Column::ContainerType
+                            .eq(Some(REVIEW_COMMENT_ATTACHMENT_CONTAINER.to_string())),
+                    )
+                    .filter(
+                        attachment::Column::ContainerId.is_in(review_comment_ids.iter().copied()),
+                    )
+                    .exec(&self.db)
+                    .await?;
+            }
+            attachment::Entity::delete_many()
+                .filter(attachment::Column::ContainerType.eq(Some("COMMENT_THREAD".to_string())))
+                .filter(attachment::Column::ContainerId.is_in(thread_ids.iter().copied()))
+                .exec(&self.db)
+                .await?;
             review_comment::Entity::delete_many()
-                .filter(review_comment::Column::ThreadId.is_in(thread_ids.iter().copied().map(Some)))
+                .filter(
+                    review_comment::Column::ThreadId.is_in(thread_ids.iter().copied().map(Some)),
+                )
                 .exec(&self.db)
                 .await?;
             comment_thread_n4user::Entity::delete_many()
@@ -66,6 +94,14 @@ impl AppRepositoryImpl<'_> {
                 .exec(&self.db)
                 .await?;
         }
+        attachment::Entity::delete_many()
+            .filter(
+                attachment::Column::ContainerType
+                    .eq(Some(PULL_REQUEST_ATTACHMENT_CONTAINER.to_string())),
+            )
+            .filter(attachment::Column::ContainerId.eq(pull_request_id))
+            .exec(&self.db)
+            .await?;
         pull_request::Entity::delete_by_id(model.id)
             .exec(&self.db)
             .await?;
@@ -91,16 +127,12 @@ impl AppRepositoryImpl<'_> {
             id: if id > 0 { Set(id) } else { NotSet },
             name: Set(Some(display_name.trim().to_string())),
             login_id: Set(Some(login_id.clone())),
-            password: Set(
-                password_hash
-                    .map(|value| value.trim().to_string())
-                    .filter(|value| !value.is_empty()),
-            ),
-            password_salt: Set(
-                password_salt
-                    .map(|value| value.trim().to_string())
-                    .filter(|value| !value.is_empty()),
-            ),
+            password: Set(password_hash
+                .map(|value| value.trim().to_string())
+                .filter(|value| !value.is_empty())),
+            password_salt: Set(password_salt
+                .map(|value| value.trim().to_string())
+                .filter(|value| !value.is_empty())),
             email: Set(Some(normalize_identity(email_address))),
             remember_me: Set(Some(0)),
             state: Set(user_state_from_confirmed(is_confirmed)),
@@ -270,11 +302,7 @@ impl AppRepositoryImpl<'_> {
             )
             .await?;
         if let Some(existing) = self
-            .find_issue_label_by_project_category_name(
-                project.id,
-                category.id,
-                label_name.trim(),
-            )
+            .find_issue_label_by_project_category_name(project.id, category.id, label_name.trim())
             .await?
         {
             return Ok(Some((self.issue_label_record(existing).await?, false)));
@@ -313,7 +341,12 @@ impl AppRepositoryImpl<'_> {
         else {
             return Ok(None);
         };
-        if id > 0 && milestone::Entity::find_by_id(id).one(&self.db).await?.is_some() {
+        if id > 0
+            && milestone::Entity::find_by_id(id)
+                .one(&self.db)
+                .await?
+                .is_some()
+        {
             return Ok(None);
         }
         let created = milestone::ActiveModel {
@@ -462,7 +495,9 @@ impl AppRepositoryImpl<'_> {
             .one(&self.db)
             .await?
         else {
-            return Err(DbErr::Custom("project missing after issue insert".to_string()));
+            return Err(DbErr::Custom(
+                "project missing after issue insert".to_string(),
+            ));
         };
         if project_model.last_issue_number.unwrap_or_default() < issue_number {
             let mut project_active = project::ActiveModel {
@@ -501,7 +536,11 @@ impl AppRepositoryImpl<'_> {
         let Some(project_record) = self.read_project_by_id(project_id).await? else {
             return Ok(None);
         };
-        if (id > 0 && posting::Entity::find_by_id(id).one(&self.db).await?.is_some())
+        if (id > 0
+            && posting::Entity::find_by_id(id)
+                .one(&self.db)
+                .await?
+                .is_some())
             || (number > 0
                 && posting::Entity::find()
                     .filter(posting::Column::ProjectId.eq(Some(project_record.id)))
@@ -603,7 +642,12 @@ impl AppRepositoryImpl<'_> {
         else {
             return Ok(None);
         };
-        if id > 0 && issue_comment::Entity::find_by_id(id).one(&self.db).await?.is_some() {
+        if id > 0
+            && issue_comment::Entity::find_by_id(id)
+                .one(&self.db)
+                .await?
+                .is_some()
+        {
             return Ok(None);
         }
         let created = issue_comment::ActiveModel {
@@ -666,7 +710,12 @@ impl AppRepositoryImpl<'_> {
         else {
             return Ok(None);
         };
-        if id > 0 && posting_comment::Entity::find_by_id(id).one(&self.db).await?.is_some() {
+        if id > 0
+            && posting_comment::Entity::find_by_id(id)
+                .one(&self.db)
+                .await?
+                .is_some()
+        {
             return Ok(None);
         }
         let created = posting_comment::ActiveModel {
@@ -735,7 +784,11 @@ impl AppRepositoryImpl<'_> {
         let Some(to_project) = self.read_project_by_id(project_id).await? else {
             return Ok(None);
         };
-        if (id > 0 && pull_request::Entity::find_by_id(id).one(&self.db).await?.is_some())
+        if (id > 0
+            && pull_request::Entity::find_by_id(id)
+                .one(&self.db)
+                .await?
+                .is_some())
             || (number > 0
                 && pull_request::Entity::find()
                     .filter(pull_request::Column::ToProjectId.eq(Some(to_project.id)))
@@ -783,7 +836,7 @@ impl AppRepositoryImpl<'_> {
             is_merging: Set(Some(0)),
             last_commit_id: Set(None),
             merged_commit_id_from: Set(
-                merged_commit_id_from.filter(|value| !value.trim().is_empty()),
+                merged_commit_id_from.filter(|value| !value.trim().is_empty())
             ),
             merged_commit_id_to: Set(merged_commit_id_to.filter(|value| !value.trim().is_empty())),
             number: Set(Some(pull_request_number)),
@@ -796,13 +849,11 @@ impl AppRepositoryImpl<'_> {
         for event in events {
             let created_event = pull_request_event::ActiveModel {
                 id: if event.id > 0 { Set(event.id) } else { NotSet },
-                sender_login_id: Set(
-                    Some(event.sender_login_id.trim().to_string())
-                        .filter(|value| !value.is_empty()),
-                ),
+                sender_login_id: Set(Some(event.sender_login_id.trim().to_string())
+                    .filter(|value| !value.is_empty())),
                 pull_request_id: Set(Some(created.id)),
                 event_type: Set(
-                    Some(event.event_type.trim().to_string()).filter(|value| !value.is_empty()),
+                    Some(event.event_type.trim().to_string()).filter(|value| !value.is_empty())
                 ),
                 created: Set(Some(event.created_at.unwrap_or_else(current_datetime))),
             }
@@ -827,40 +878,40 @@ impl AppRepositoryImpl<'_> {
 
         for thread in threads {
             comment_thread::ActiveModel {
-                dtype: Set(
-                    if thread.dtype.trim().is_empty() {
-                        "review".to_string()
-                    } else {
-                        thread.dtype.trim().to_string()
-                    },
-                ),
-                id: if thread.id > 0 { Set(thread.id) } else { NotSet },
+                dtype: Set(if thread.dtype.trim().is_empty() {
+                    "review".to_string()
+                } else {
+                    thread.dtype.trim().to_string()
+                }),
+                id: if thread.id > 0 {
+                    Set(thread.id)
+                } else {
+                    NotSet
+                },
                 author_id: Set(Some(thread.author_id)),
-                author_login_id: Set(
-                    Some(thread.author_login_id.trim().to_string())
-                        .filter(|value| !value.is_empty()),
-                ),
+                author_login_id: Set(Some(thread.author_login_id.trim().to_string())
+                    .filter(|value| !value.is_empty())),
                 author_name: Set(
-                    Some(thread.author_name.trim().to_string()).filter(|value| !value.is_empty()),
+                    Some(thread.author_name.trim().to_string()).filter(|value| !value.is_empty())
                 ),
-                state: Set(
-                    Some(thread.state.trim().to_string()).filter(|value| !value.is_empty()),
-                ),
+                state: Set(Some(thread.state.trim().to_string()).filter(|value| !value.is_empty())),
                 created_date: Set(Some(thread.created_at.unwrap_or_else(current_datetime))),
                 pull_request_id: Set(Some(created.id)),
                 project_id: Set(Some(to_project.id)),
                 prev_commit_id: Set(None),
                 commit_id: Set(
-                    Some(thread.commit_id.trim().to_string()).filter(|value| !value.is_empty()),
+                    Some(thread.commit_id.trim().to_string()).filter(|value| !value.is_empty())
                 ),
-                path: Set(
-                    Some(thread.path.trim().to_string()).filter(|value| !value.is_empty()),
-                ),
+                path: Set(Some(thread.path.trim().to_string()).filter(|value| !value.is_empty())),
                 start_side: Set(None),
                 start_line: Set(None),
                 start_column: Set(None),
                 end_side: Set(None),
-                end_line: Set(Some(if thread.line > 0 { thread.line as i32 } else { 0 })),
+                end_line: Set(Some(if thread.line > 0 {
+                    thread.line as i32
+                } else {
+                    0
+                })),
                 end_column: Set(None),
             }
             .insert(&self.db)
@@ -869,15 +920,17 @@ impl AppRepositoryImpl<'_> {
 
         for comment in review_comments {
             let created_comment = review_comment::ActiveModel {
-                id: if comment.id > 0 { Set(comment.id) } else { NotSet },
+                id: if comment.id > 0 {
+                    Set(comment.id)
+                } else {
+                    NotSet
+                },
                 created_date: Set(Some(comment.created_at.unwrap_or_else(current_datetime))),
                 author_id: Set(Some(comment.author_id)),
-                author_login_id: Set(
-                    Some(comment.author_login_id.trim().to_string())
-                        .filter(|value| !value.is_empty()),
-                ),
+                author_login_id: Set(Some(comment.author_login_id.trim().to_string())
+                    .filter(|value| !value.is_empty())),
                 author_name: Set(
-                    Some(comment.author_name.trim().to_string()).filter(|value| !value.is_empty()),
+                    Some(comment.author_name.trim().to_string()).filter(|value| !value.is_empty())
                 ),
                 thread_id: Set(Some(comment.thread_id).filter(|value| *value > 0)),
             }
@@ -894,24 +947,28 @@ impl AppRepositoryImpl<'_> {
 
         for comment in commit_comments {
             let created_comment = commit_comment::ActiveModel {
-                id: if comment.id > 0 { Set(comment.id) } else { NotSet },
+                id: if comment.id > 0 {
+                    Set(comment.id)
+                } else {
+                    NotSet
+                },
                 project_id: Set(Some(to_project.id)),
-                path: Set(
-                    Some(comment.path.trim().to_string()).filter(|value| !value.is_empty()),
-                ),
-                line: Set(Some(if comment.line > 0 { comment.line as i32 } else { 0 })),
+                path: Set(Some(comment.path.trim().to_string()).filter(|value| !value.is_empty())),
+                line: Set(Some(if comment.line > 0 {
+                    comment.line as i32
+                } else {
+                    0
+                })),
                 side: Set(None),
                 created_date: Set(Some(comment.created_at.unwrap_or_else(current_datetime))),
                 author_id: Set(Some(comment.author_id)),
-                author_login_id: Set(
-                    Some(comment.author_login_id.trim().to_string())
-                        .filter(|value| !value.is_empty()),
-                ),
+                author_login_id: Set(Some(comment.author_login_id.trim().to_string())
+                    .filter(|value| !value.is_empty())),
                 author_name: Set(
-                    Some(comment.author_name.trim().to_string()).filter(|value| !value.is_empty()),
+                    Some(comment.author_name.trim().to_string()).filter(|value| !value.is_empty())
                 ),
                 commit_id: Set(
-                    Some(comment.commit_id.trim().to_string()).filter(|value| !value.is_empty()),
+                    Some(comment.commit_id.trim().to_string()).filter(|value| !value.is_empty())
                 ),
             }
             .insert(&self.db)
@@ -928,5 +985,3 @@ impl AppRepositoryImpl<'_> {
         Ok(Some(created.id))
     }
 }
-
-

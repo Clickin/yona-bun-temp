@@ -271,10 +271,6 @@ function OrganizationPullRequestPagination({
   }
 
   const safeCurrentPage = clampPageNum(currentPage, totalPages);
-  const route =
-    category === "closed"
-      ? "/organizations/$organizationName/closedPullrequests"
-      : "/organizations/$organizationName/pullrequests";
   const pathForPage = (pageNum: number) =>
     `/organizations/${organizationName}/${
       category === "closed" ? "closedPullrequests" : "pullrequests"
@@ -314,9 +310,7 @@ function OrganizationPullRequestPagination({
                 className: undefined,
                 "data-status": undefined,
               }}
-              params={{ organizationName }}
-              search={{ filter: search.filter, pageNum: safeCurrentPage - 1 }}
-              to={route}
+              to={pathForPage(safeCurrentPage - 1)}
             >
               <i
                 className="ico btn-pg-prev"
@@ -372,9 +366,7 @@ function OrganizationPullRequestPagination({
                 className: undefined,
                 "data-status": undefined,
               }}
-              params={{ organizationName }}
-              search={{ filter: search.filter, pageNum: safeCurrentPage + 1 }}
-              to={route}
+              to={pathForPage(safeCurrentPage + 1)}
             >
               <span data-owner="organization-pullrequests-pagination-next-label">
                 {t("button.nextPage")}

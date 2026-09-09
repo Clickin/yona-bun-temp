@@ -2812,12 +2812,7 @@ const CLASSIFICATION_RULES = [
     reason: "SPA shell: legacy /_init uikit bootstrap redirect is meaningless to the React shell, which serves its own init payload",
   },
 
-  {
-    test: ({ kind, route, detail }) => kind === "api" && /postlabel\//u.test(route) && /"status":500/u.test(JSON.stringify(detail.expected ?? {})),
-    classification: "LEGACY_BUG_NOT_REPRODUCED",
-    reason:
-      "legacy -_-api postlabel handler crashes with 500 on an empty label set where yoram's mapped route answers 404; degenerate-payload crash, not specified behavior (yona-original/app/controllers/api/BoardApi.java:42-52 parses each label node unconditionally)",
-  },
+
   {
     // Stored-state drift: both sides hold DIFFERENT contents at patch time, so
     // the chain broke somewhere upstream — harness defect, not product.

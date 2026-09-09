@@ -5,9 +5,9 @@ use axum::{
     routing::{get, post},
     Router,
 };
+use sea_orm::entity::prelude::DateTime;
 use std::collections::HashMap;
 use std::path::Path;
-use sea_orm::entity::prelude::DateTime;
 
 use crate::assets::serve_frontend_page;
 use crate::{
@@ -169,7 +169,10 @@ async fn exchange_github_migration_code(
 
     let response = reqwest::Client::new()
         .post(provider.access_token_url.trim())
-        .header(reqwest::header::ACCEPT, "application/json, application/x-www-form-urlencoded")
+        .header(
+            reqwest::header::ACCEPT,
+            "application/json, application/x-www-form-urlencoded",
+        )
         .form(&[
             ("client_id", provider.client_id.as_str()),
             ("client_secret", provider.client_secret.as_str()),
@@ -183,9 +186,8 @@ async fn exchange_github_migration_code(
     if !status.is_success() {
         return Err(format!("github OAuth token endpoint returned {status}"));
     }
-    parse_github_access_token(&body).ok_or_else(|| {
-        "github OAuth token response did not include access_token".to_string()
-    })
+    parse_github_access_token(&body)
+        .ok_or_else(|| "github OAuth token response did not include access_token".to_string())
 }
 
 fn parse_github_access_token(body: &str) -> Option<String> {
@@ -300,11 +302,7 @@ async fn migration_projects(
     let mut result = Vec::new();
     for project in projects {
         let Some(actor_authorization) = repository
-            .read_project_authorization(
-                &project.owner_name,
-                &project.project_name,
-                Some(actor_id),
-            )
+            .read_project_authorization(&project.owner_name, &project.project_name, Some(actor_id))
             .await
             .map_err(MigrationRouteError::Database)?
         else {
@@ -337,10 +335,8 @@ async fn migration_project(
     else {
         return Err(MigrationRouteError::NotFound);
     };
-    let issues = migration_issue_records(repository, owner, project_name)
-        .await?;
-    let posts = migration_post_records(repository, owner, project_name)
-        .await?;
+    let issues = migration_issue_records(repository, owner, project_name).await?;
+    let posts = migration_post_records(repository, owner, project_name).await?;
     let milestones = repository
         .list_project_milestones(
             owner,
@@ -571,7 +567,8 @@ async fn migration_issue_records(
                 records.push(issue);
             }
         }
-        if page.items.len() < page.page_size as usize || records.len() >= page.total_count as usize {
+        if page.items.len() < page.page_size as usize || records.len() >= page.total_count as usize
+        {
             break;
         }
         page_num += 1;
@@ -623,7 +620,8 @@ async fn migration_post_records(
                 records.push(post);
             }
         }
-        if page.items.len() < page.page_size as usize || records.len() >= page.total_count as usize {
+        if page.items.len() < page.page_size as usize || records.len() >= page.total_count as usize
+        {
             break;
         }
         page_num += 1;
@@ -689,8 +687,14 @@ fn migration_issue_json(
         );
     }
     if issue.milestone_id.is_some() {
-        node.insert("milestone".to_string(), serde_json::json!(issue.milestone_title));
-        node.insert("milestoneId".to_string(), serde_json::json!(issue.milestone_id));
+        node.insert(
+            "milestone".to_string(),
+            serde_json::json!(issue.milestone_title),
+        );
+        node.insert(
+            "milestoneId".to_string(),
+            serde_json::json!(issue.milestone_id),
+        );
     }
     node.insert(
         "closed".to_string(),
@@ -811,7 +815,11 @@ fn migration_body(
                         attachment.name.replace('#', "%23")
                     )
                 } else {
-                    format!("{}/files/{}", base_path.trim_end_matches('/'), attachment.id)
+                    format!(
+                        "{}/files/{}",
+                        base_path.trim_end_matches('/'),
+                        attachment.id
+                    )
                 }
             ));
         }
@@ -821,14 +829,8 @@ fn migration_body(
 
 fn migration_body_links(body: &str, base_prefix: &str, with_wiki_commit: bool) -> String {
     let mut result = body
-        .replace(
-            "<img src=\"/",
-            &format!("<img src=\"{base_prefix}/"),
-        )
-        .replace(
-            "<img src='/",
-            &format!("<img src='{base_prefix}/"),
-        );
+        .replace("<img src=\"/", &format!("<img src=\"{base_prefix}/"))
+        .replace("<img src='/", &format!("<img src='{base_prefix}/"));
     let original = std::mem::take(&mut result);
     let mut result = String::with_capacity(original.len());
     let mut rest = original.as_str();
@@ -1068,7 +1070,12 @@ fn accepts_application_json(headers: &HeaderMap) -> bool {
         return true;
     };
     accept.split(',').any(|part| {
-        let media = part.split(';').next().unwrap_or("").trim().to_ascii_lowercase();
+        let media = part
+            .split(';')
+            .next()
+            .unwrap_or("")
+            .trim()
+            .to_ascii_lowercase();
         media == "application/json" || media == "application/*" || media == "*/*"
     })
 }
@@ -1110,7 +1117,8 @@ async fn direct_global_labels(
         return legacy_plain_response(StatusCode::BAD_REQUEST, "No limit");
     };
     let PilotBackend::Repository(repository) = &service.backend else {
-        return RestRouteError::not_implemented("labels requires repository backend").into_response();
+        return RestRouteError::not_implemented("labels requires repository backend")
+            .into_response();
     };
     let query_text = query.get("query").map(String::as_str).unwrap_or("");
     let category = query.get("category").map(String::as_str).unwrap_or("");
@@ -1140,7 +1148,8 @@ async fn direct_global_label_categories(
         limit = LEGACY_MAX_FETCH_LABELS;
     }
     let PilotBackend::Repository(repository) = &service.backend else {
-        return RestRouteError::not_implemented("labels requires repository backend").into_response();
+        return RestRouteError::not_implemented("labels requires repository backend")
+            .into_response();
     };
     let query_text = query.get("query").map(String::as_str).unwrap_or("");
     match repository
@@ -1195,25 +1204,25 @@ pub(crate) fn routes(
         )
         .route(
             "/migration",
-            get(move |headers: HeaderMap, query: Query<HashMap<String, String>>| {
-                let assets = legacy_migration_assets.clone();
-                let browser_runtime = legacy_migration_browser_runtime.clone();
-                let service = legacy_migration_service.clone();
-                async move {
-                    direct_legacy_migration(headers, query, service, assets, browser_runtime)
-                        .await
-                }
-            }),
+            get(
+                move |headers: HeaderMap, query: Query<HashMap<String, String>>| {
+                    let assets = legacy_migration_assets.clone();
+                    let browser_runtime = legacy_migration_browser_runtime.clone();
+                    let service = legacy_migration_service.clone();
+                    async move {
+                        direct_legacy_migration(headers, query, service, assets, browser_runtime)
+                            .await
+                    }
+                },
+            ),
         )
         .route(
             "/migration/{*legacy_path}",
             get(
-                move |
-                    headers: HeaderMap,
-                    path: AxumPath<String>,
-                    query: Query<HashMap<String, String>>,
-                | {
-                let service = legacy_migration_json_service.clone();
+                move |headers: HeaderMap,
+                      path: AxumPath<String>,
+                      query: Query<HashMap<String, String>>| {
+                    let service = legacy_migration_json_service.clone();
                     async move { direct_legacy_migration_json(headers, path, query, service).await }
                 },
             ),
@@ -1255,24 +1264,42 @@ mod tests {
     #[test]
     // Legacy MigrationApp.java:346 `isNotBlank(v) && v.endsWith("true")`.
     fn migration_wiki_commit_requested_matches_legacy_ends_with_semantics() {
-        assert!(migration_wiki_commit_requested(&wiki_commit_query(Some("true"))));
+        assert!(migration_wiki_commit_requested(&wiki_commit_query(Some(
+            "true"
+        ))));
         // Legacy accepts any non-blank raw value ending in "true".
-        assert!(migration_wiki_commit_requested(&wiki_commit_query(Some("nottrue"))));
+        assert!(migration_wiki_commit_requested(&wiki_commit_query(Some(
+            "nottrue"
+        ))));
         // Blank, false, case variants, and trailing-whitespace values are
         // rejected because endsWith runs on the raw (untrimmed) value; a
         // leading space still ends with "true".
-        assert!(migration_wiki_commit_requested(&wiki_commit_query(Some(" true"))));
-        assert!(!migration_wiki_commit_requested(&wiki_commit_query(Some("TRUE"))));
-        assert!(!migration_wiki_commit_requested(&wiki_commit_query(Some(""))));
-        assert!(!migration_wiki_commit_requested(&wiki_commit_query(Some("   "))));
-        assert!(!migration_wiki_commit_requested(&wiki_commit_query(Some("true "))));
+        assert!(migration_wiki_commit_requested(&wiki_commit_query(Some(
+            " true"
+        ))));
+        assert!(!migration_wiki_commit_requested(&wiki_commit_query(Some(
+            "TRUE"
+        ))));
+        assert!(!migration_wiki_commit_requested(&wiki_commit_query(Some(
+            ""
+        ))));
+        assert!(!migration_wiki_commit_requested(&wiki_commit_query(Some(
+            "   "
+        ))));
+        assert!(!migration_wiki_commit_requested(&wiki_commit_query(Some(
+            "true "
+        ))));
         assert!(!migration_wiki_commit_requested(&wiki_commit_query(None)));
     }
 
     #[test]
     fn migration_body_links_preserve_legacy_wiki_commit_mode() {
         assert_eq!(
-            migration_body_links("<img src=\"/image.png\"> [image](/image.png)", "/yona", false),
+            migration_body_links(
+                "<img src=\"/image.png\"> [image](/image.png)",
+                "/yona",
+                false
+            ),
             "<img src=\"/yona/image.png\"> [image](/yona/image.png)"
         );
         assert_eq!(
@@ -1332,7 +1359,14 @@ mod tests {
             attachment(6, "한글 파일.png"),
         ];
         let body = migration_body(
-            "", "author", "Author", "이슈", "/owner/project/issue/1", "/yona", &attachments, true,
+            "",
+            "author",
+            "Author",
+            "이슈",
+            "/owner/project/issue/1",
+            "/yona",
+            &attachments,
+            true,
         );
         assert!(body.contains("[screen shot.png](../wiki/files/1/screen shot.png)"));
         assert!(body.contains("[a#b.png](../wiki/files/2/a%23b.png)"));
@@ -1350,7 +1384,14 @@ mod tests {
     fn migration_body_plain_attachments_use_working_absolute_path() {
         let attachments = vec![attachment(7, "a#b.png")];
         let body = migration_body(
-            "", "author", "Author", "이슈", "/owner/project/issue/1", "/yona", &attachments, false,
+            "",
+            "author",
+            "Author",
+            "이슈",
+            "/owner/project/issue/1",
+            "/yona",
+            &attachments,
+            false,
         );
         assert!(body.contains("[a#b.png](/yona/files/7)"));
     }

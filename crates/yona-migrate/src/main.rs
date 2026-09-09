@@ -167,8 +167,14 @@ struct Args {
     dry_run: bool,
 
     /// Transfer repositories after the data import (default on)
-    #[arg(long, default_value_t = true)]
+    #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
     with_repos: bool,
+}
+
+#[test]
+fn project_import_can_disable_repository_transfer() {
+    let args = Args::try_parse_from(["yona-migrate", "--with-repos=false"]).unwrap();
+    assert!(!args.with_repos);
 }
 
 fn main() -> Result<()> {

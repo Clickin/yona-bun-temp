@@ -402,7 +402,13 @@ async fn notification_contract_comment_events_include_legacy_previous_context() 
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
     let (watcher_csrf, watcher_cookie, _) = register_user(app.clone(), "watcher").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
-    create_issue(app.clone(), &owner_cookie, &owner_csrf, "Legacy context issue").await;
+    create_issue(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "Legacy context issue",
+    )
+    .await;
 
     response_json(
         rpc(
@@ -1526,7 +1532,7 @@ async fn notification_contract_review_comment_mail_replies_to_parent_thread_like
         .expect("issue row");
     let project_id = issue_model.project_id.expect("issue project id");
     let thread = comment_thread::ActiveModel {
-        dtype: Set("NonRangedCodeCommentThread".to_string()),
+        dtype: Set("non_ranged".to_string()),
         id: NotSet,
         author_id: Set(Some(owner_id)),
         author_login_id: Set(Some("owner".to_string())),

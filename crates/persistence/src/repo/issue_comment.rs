@@ -221,6 +221,8 @@ impl AppRepositoryImpl<'_> {
         let old_contents = self
             .read_text_column("issue_comment", "contents", comment.id)
             .await?;
+        let comment_author_id = comment.author_id;
+        let parent_comment_id = comment.parent_comment_id;
         let active = issue_comment::ActiveModel::from(comment);
         let updated = active.update(&self.db).await?;
         self.write_text_column(
@@ -230,16 +232,41 @@ impl AppRepositoryImpl<'_> {
             &input.contents_markdown,
         )
         .await?;
-        self.sync_mentions_and_notify(
-            input.actor_id,
-            "issue_comment",
-            updated.id,
-            &input.contents_markdown,
-            "COMMENT_UPDATED",
-            &old_contents,
-            &input.contents_markdown,
-        )
-        .await?;
+        let mention_sync = self
+            .sync_mentions_and_notify(
+                input.actor_id,
+                "issue_comment",
+                updated.id,
+                &input.contents_markdown,
+                "COMMENT_UPDATED",
+                &old_contents,
+                &input.contents_markdown,
+            )
+            .await?;
+        if input.send_notification || comment_author_id != Some(input.actor_id) {
+            let mut receiver_ids = self
+                .issue_comment_update_notification_receiver_ids(
+                    &input.owner_name,
+                    &input.project_name,
+                    input.issue_number,
+                    input.actor_id,
+                    &input.contents_markdown,
+                    parent_comment_id,
+                )
+                .await?
+                .ok_or_else(|| DbErr::Custom("issue comment parent issue not found".to_string()))?;
+            receiver_ids.extend(mention_sync.newly_mentioned_user_ids);
+            self.create_notification_event_for_receivers(
+                input.actor_id,
+                "issue_comment",
+                &updated.id.to_string(),
+                "COMMENT_UPDATED",
+                &old_contents,
+                &input.contents_markdown,
+                &receiver_ids,
+            )
+            .await?;
+        }
         self.sync_attachments(
             ISSUE_COMMENT_ATTACHMENT_CONTAINER,
             updated.id,

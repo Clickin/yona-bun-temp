@@ -1,6 +1,6 @@
 /* oxlint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions, jsx-a11y/no-aria-hidden-on-focusable, jsx-a11y/prefer-tag-over-role -- legacy issue detail Bootstrap modal, Select2 generated DOM, and index-comment DOM parity keep their visible element composition while React owns behavior. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, Outlet, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import {
   Fragment,
   isValidElement,
@@ -56,6 +56,7 @@ import {
   unvoteIssue,
   unvoteIssueComment,
   updateIssueComment,
+  updateIssueContent,
   updateIssueState,
   updateIssueWeight,
   voteIssue,
@@ -63,14 +64,21 @@ import {
   watchIssue,
   type RestIssueDetailResponse,
 } from "../../../../auth-workspace-client";
+import { deleteTemporaryAttachment, uploadTemporaryAttachment } from "../../../../api/attachments";
 import { SiteLayoutShell } from "../../../-home-route-screen";
 import { ProjectNestedShellContext } from "../../$projectName";
 import { useRootToast } from "../../../__root";
+import defaultAvatarUrl from "../../../../assets/legacy/default-avatar-128.png";
 import legacySpriteUrl from "../../../../assets/legacy/sprite.png";
 import { UploadForm } from "../../../../components/file-uploader";
 import { IssueLabel } from "../../../../components/issue-label";
 import { IssueDueDateInput } from "../../../../components/issue-due-date-input";
 import { MarkdownEditor, type MarkdownEditorProps } from "../../../../components/markdown-editor";
+import {
+  TasklistInput,
+  updateTasklistMarkdown,
+  type TasklistUpdate,
+} from "../../../../components/tasklist";
 import "../../../../yobicon-font.css";
 
 const LEGACY_LINK_PROPS = {
@@ -206,7 +214,15 @@ const ISSUE_MARKDOWN_COMPONENTS = {
   },
 };
 
-function IssueMarkdown({ basePath, children }: { basePath: string; children: string }) {
+function IssueMarkdown({
+  basePath,
+  children,
+  tasklist,
+}: {
+  basePath: string;
+  children: string;
+  tasklist?: { canUpdate: boolean; onToggle: (index: number, checked: boolean) => void };
+}) {
   const components = useMemo(
     () => ({
       ...ISSUE_MARKDOWN_COMPONENTS,
@@ -219,6 +235,18 @@ function IssueMarkdown({ basePath, children }: { basePath: string; children: str
   return (
     <LegacyMarkdownHtml
       components={components}
+      tasklistInput={
+        tasklist
+          ? (props) => (
+              <TasklistInput
+                checked={props.checked}
+                canUpdate={tasklist.canUpdate}
+                onToggle={tasklist.onToggle}
+                tasklistIndex={props.tasklistIndex}
+              />
+            )
+          : undefined
+      }
       sanitize={ISSUE_MARKDOWN_SANITIZE_SCHEMA}
       urlTransform={(url) => basePathUrlTransform(basePath, url)}
     >
@@ -426,8 +454,8 @@ function ProjectIssueDetailWireframe({ runtimeConfig }: { runtimeConfig: Runtime
               {"\u00a0"}
             </div>
           </div>
-          <div className="span3 span-right-pane" aria-hidden="true">
-            <div className="issue-detail-issue-info issue-info">
+          <div className="span3 span-right-pane mb20" aria-hidden="true">
+            <div className="issue-detail-issue-info issue-info affix-top">
               <dl>
                 <dt>{"\u00a0"}</dt>
                 <dd>{"\u00a0"}</dd>
@@ -600,16 +628,50 @@ function IssueDetailBody({
   runtimeConfig: RuntimeConfig;
 }) {
   const router = useRouter();
+  const hash = useRouterState({ select: (state) => state.location.hash });
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const issueInfoRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const { language, t } = useLegacyMessages();
+  const setRootToast = useRootToast();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [sharerListOpen, setSharerListOpen] = useState(false);
   const [translatedBodyMarkdown, setTranslatedBodyMarkdown] = useState<string | null>(null);
   const [translatePending, setTranslatePending] = useState(false);
+  const [issueInfoAffixed, setIssueInfoAffixed] = useState(false);
   const ownerName = stringField(issue.ownerName);
   const projectName = stringField(issue.projectName);
   const issueNumber = stringField(issue.issueNumber);
   const issueId = stringField(issue.issueId, issueNumber);
+  useEffect(() => {
+    if (!hash) return;
+    // The router can finish its fragment scroll before the issue query renders the anchor.
+    const frameId = window.requestAnimationFrame(() => {
+      bodyRef.current
+        ?.querySelector<HTMLElement>(`#${CSS.escape(hash)}`)
+        ?.scrollIntoView({ block: "start" });
+    });
+    return () => window.cancelAnimationFrame(frameId);
+  }, [hash, issueId]);
+  useEffect(() => {
+    const issueInfo = issueInfoRef.current;
+    if (!issueInfo) {
+      return;
+    }
+
+    // Legacy Bootstrap affix uses the issue-info document offset minus 10px
+    // as its threshold (yobi.issue.View._affixIssueInfoWrap). Keep the
+    // threshold stable after the sidebar becomes fixed.
+    const offsetTop = issueInfo.getBoundingClientRect().top + window.scrollY - 10;
+    const updateAffixState = () => {
+      setIssueInfoAffixed(window.scrollY > offsetTop);
+    };
+    updateAffixState();
+    window.addEventListener("scroll", updateAffixState, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", updateAffixState);
+    };
+  }, []);
   const editIssuePath = `/${ownerName}/${projectName}/issue/${issueNumber}/editform`;
   const issueState = stringField(issue.state, "open").toLowerCase();
   const stateLabel = issueStateLabel(issueState, t);
@@ -670,6 +732,34 @@ function IssueDetailBody({
   const shouldShowDueDateStatus = dueDateLabel !== "" && issueState === "open";
   const weight = numberField(issue.weight);
   const [commentDeleteRequestUri, setCommentDeleteRequestUri] = useState<string | null>(null);
+  const [tasklistError, setTasklistError] = useState<string | null>(null);
+  const tasklistMutation = useMutation({
+    mutationFn: async ({ content, original }: TasklistUpdate) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return updateIssueContent(runtimeConfig, csrfToken, {
+        content,
+        issueNumber,
+        original,
+        ownerName,
+        projectName,
+      });
+    },
+    onSuccess() {
+      queryClient.invalidateQueries({
+        queryKey: ["project-issue-detail", ownerName, projectName, Number(issueNumber) || 0],
+      });
+    },
+    onError(error) {
+      setTasklistError(error instanceof Error && error.message ? error.message : t("error.internalServerError"));
+    },
+  });
+  const toggleTasklist = (index: number, checked: boolean) => {
+    const content = updateTasklistMarkdown(bodyMarkdown, index, checked);
+    if (content !== bodyMarkdown) {
+      setTasklistError(null);
+      tasklistMutation.mutate({ content, original: bodyMarkdown });
+    }
+  };
   const deleteMutation = useMutation({
     mutationFn: async () => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -888,7 +978,7 @@ function IssueDetailBody({
   };
 
   return (
-    <div className="page-wrap-outer">
+    <div className="page-wrap-outer" ref={bodyRef}>
       <div className="project-page-wrap board-view issue-detail-page">
         <div className="board-header issue" data-owner="project-issue-detail-header">
           <div
@@ -996,12 +1086,23 @@ function IssueDetailBody({
                 </div>
                 <div id={`issue-body-${issueNumber}`}>
                   <TasklistBar markdown={bodyMarkdown} />
+                  {tasklistError ? (
+                    <div className="alert alert-error" role="alert" data-owner="issue-tasklist-error">
+                      {tasklistError}
+                      <br />
+                      <br />
+                      Refresh the page!
+                    </div>
+                  ) : null}
                   <div
                     className="content markdown-wrap"
                     data-owner="project-issue-detail-content"
                     data-allowed-update={String(canUpdate)}
                   >
-                    <IssueMarkdown basePath={basePath}>
+                    <IssueMarkdown
+                      basePath={basePath}
+                      tasklist={{ canUpdate, onToggle: toggleTasklist }}
+                    >
                       {stripMarkdownComments(bodyMarkdown)}
                     </IssueMarkdown>
                   </div>
@@ -1017,7 +1118,7 @@ function IssueDetailBody({
             >
               <AttachedFiles attachments={issue.attachments} />
             </div>
-            <div className="board-actrow" data-owner="project-issue-detail-actions">
+            <div className="board-actrow right-txt" data-owner="project-issue-detail-actions">
               <div className="pull-left" data-owner="project-issue-detail-board-action-group">
                 <div>
                   {canWatch ? (
@@ -1104,7 +1205,7 @@ function IssueDetailBody({
               data-owner="issue-detail-sharer-list"
               style={sharerListOpen ? { display: "block" } : undefined}
             >
-              <dt className="issue-share-title" data-owner="project-issue-detail-sharer-title">
+              <dt className="issue-share-title mb10" data-owner="project-issue-detail-sharer-title">
                 {t("issue.sharer")}{" "}
                 <span className="num issue-sharer-count">
                   {sharers.length ? ` ${String(sharers.length)}` : ""}
@@ -1160,9 +1261,10 @@ function IssueDetailBody({
               />
             ) : null}
           </div>
-          <div className="span3 span-right-pane" data-owner="project-issue-detail-sidebar">
+          <div className="span3 span-right-pane mb20" data-owner="project-issue-detail-sidebar">
             <div
-              className="issue-info"
+              ref={issueInfoRef}
+              className={`issue-info ${issueInfoAffixed ? "affix" : "affix-top"}`}
               data-owner="project-issue-detail-sidebar-meta"
               data-owner-issue-info="project-issue-detail-issue-info"
             >
@@ -1216,7 +1318,7 @@ function IssueDetailBody({
                           <img
                             src={stringField(
                               issue.assigneeAvatarUrl,
-                              "/assets/images/default-avatar-32.png",
+                              prefixBasePath(basePath, defaultAvatarUrl),
                             )}
                             width="20"
                             height="20"
@@ -2133,7 +2235,7 @@ function LegacySharerControl({
         value={value}
         readOnly
       />
-      <div className="select2-container select2-container-multi width100p">
+      <div className="select2-container select2-container-multi bigdrop width100p">
         <ul className="select2-choices">
           {(issue.sharers ?? []).map((sharer) => {
             const loginId = stringField(sharer.loginId);
@@ -2350,11 +2452,17 @@ function LegacyLabelControl({
 }) {
   const { t } = useLegacyMessages();
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const selectedIds = [...selectedLabelIds];
-  const toggle = (id: string) =>
+  const filteredLabels = labels.filter((label) =>
+    stringField(label.name).toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()),
+  );
+  const toggle = (id: string) => {
     onChange(
       selectedLabelIds.has(id) ? selectedIds.filter((item) => item !== id) : [...selectedIds, id],
     );
+    setQuery("");
+  };
   return (
     <div
       className={`select2-container select2-container-multi issue-labels bordered fullsize${open ? " select2-container-active" : ""}`.trim()}
@@ -2393,16 +2501,21 @@ function LegacyLabelControl({
             className="select2-input"
             aria-label={t("label.select")}
             autoComplete="off"
+            value={query}
             data-owner="project-issue-detail-label-search-input"
             onFocus={() => setOpen(true)}
             onClick={() => setOpen(true)}
+            onChange={(event) => {
+              setQuery(event.currentTarget.value);
+              setOpen(true);
+            }}
           />
         </li>
       </ul>
       {open ? (
         <div className="select2-drop issue-labels select2-drop-active">
           <ul className="select2-results" role="listbox" aria-multiselectable="true">
-            {labels.map((label) => {
+            {filteredLabels.map((label) => {
               const id = stringField(label.id);
               return (
                 <li
@@ -2857,7 +2970,7 @@ function IssueActionButtons({
       {canUpdate ? (
         <button
           type="button"
-          className="icon btn-transparent-with-fontsize-lineheight"
+          className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
           data-owner="project-issue-detail-action-edit"
           title={t("button.edit")}
           onClick={onEditClick}
@@ -2872,7 +2985,7 @@ function IssueActionButtons({
         >
           <button
             type="button"
-            className="icon btn-transparent-with-fontsize-lineheight"
+            className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
             data-owner="project-issue-detail-action-edit"
             title={t("button.show.original")}
           >
@@ -2883,7 +2996,7 @@ function IssueActionButtons({
       {canBeDeleted && canDelete ? (
         <button
           type="button"
-          className="icon btn-transparent-with-fontsize-lineheight"
+          className="icon btn-transparent-with-fontsize-lineheight ml6"
           data-owner="project-issue-detail-action-delete"
           title={t("button.delete")}
           onClick={onDeleteClick}
@@ -2896,7 +3009,7 @@ function IssueActionButtons({
           {(popoverProps) => (
             <button
               type="button"
-              className="icon disabled btn-transparent-with-fontsize-lineheight"
+              className="icon disabled btn-transparent-with-fontsize-lineheight ml6"
               data-owner="project-issue-detail-action-delete"
               {...popoverProps}
             >
@@ -3152,7 +3265,7 @@ function IssueEventRow({
     <EventUserLink
       avatarUrl={stringField(
         event.senderAvatarUrl,
-        prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png"),
+        prefixBasePath(runtimeConfig.basePath, defaultAvatarUrl),
       )}
       label={senderLabel}
       loginId={senderLoginId}
@@ -3190,7 +3303,7 @@ function IssueEventRow({
           <EventUserLink
             avatarUrl={stringField(
               event.targetAvatarUrl,
-              prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png"),
+              prefixBasePath(runtimeConfig.basePath, defaultAvatarUrl),
             )}
             label={targetLabel}
             loginId={targetLoginId}
@@ -3343,7 +3456,7 @@ function IssueEventRow({
       <EventUserLink
         avatarUrl={stringField(
           event.targetAvatarUrl,
-          prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png"),
+          prefixBasePath(runtimeConfig.basePath, defaultAvatarUrl),
         )}
         label={stringField(event.targetLabel, targetLoginId)}
         loginId={targetLoginId}
@@ -3468,7 +3581,8 @@ function IssueCommentRow({
   onCommentVote: (commentId: string, hasVoted: boolean) => void;
   runtimeConfig: RuntimeConfig;
 }) {
-  const { language } = useLegacyMessages();
+  const { language, t } = useLegacyMessages();
+  const queryClient = useQueryClient();
   const commentId = stringField(comment.id);
   const commentHash = `comment-${commentId}`;
   const authorLoginId = stringField(comment.authorLoginId);
@@ -3490,6 +3604,7 @@ function IssueCommentRow({
   const [replyVisible, setReplyVisible] = useState(false);
   const [childFormOpen, setChildFormOpen] = useState(false);
   const [commentEditOpen, setCommentEditOpen] = useState(false);
+  const [tasklistError, setTasklistError] = useState<string | null>(null);
   const translationApiEnabled = booleanField(issue.translationApiEnabled);
   const contentsMarkdown = translatedContentsMarkdown ?? stringField(comment.contentsMarkdown);
   const viaEmail = booleanField(comment.viaEmail);
@@ -3498,6 +3613,39 @@ function IssueCommentRow({
     ? (comment.childComments as IssueChildComment[])
     : [];
   const hasCurrentUserMention = hasLegacyMention(comment.contentsMarkdown, currentUserLoginId);
+  const commentTasklistMutation = useMutation({
+    mutationFn: async ({ content, original }: TasklistUpdate) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return updateIssueComment(runtimeConfig, csrfToken, {
+        attachmentIds: attachmentItems(comment.attachments)
+          .map((attachment) => stringField(attachment.id))
+          .filter(Boolean),
+        commentId,
+        contentsMarkdown: content,
+        issueNumber,
+        original,
+        ownerName,
+        projectName,
+      });
+    },
+    onSuccess() {
+      queryClient.invalidateQueries({
+        queryKey: ["project-issue-detail", ownerName, projectName, Number(issueNumber) || 0],
+      });
+    },
+    onError(error) {
+      setTasklistError(
+        error instanceof Error && error.message ? error.message : "Internal server error",
+      );
+    },
+  });
+  const toggleCommentTasklist = (index: number, checked: boolean) => {
+    const content = updateTasklistMarkdown(contentsMarkdown, index, checked);
+    if (content !== contentsMarkdown) {
+      setTasklistError(null);
+      commentTasklistMutation.mutate({ content, original: contentsMarkdown });
+    }
+  };
 
   async function translateComment() {
     if (translatePending || translatedContentsMarkdown !== null) {
@@ -3605,7 +3753,7 @@ function IssueCommentRow({
                   }
                 }
               >
-                Reference in new issue
+                {t("issue.menu.new.by")}
               </Link>
             </span>
             <CommentVoters commentId={commentId} voters={voters} />
@@ -3687,6 +3835,7 @@ function IssueCommentRow({
           </span>
         </div>
         <CommentUpdateForm
+          key={commentEditOpen ? "editing" : "closed"}
           basePath={basePath}
           canUpdate={canUpdate}
           comment={comment}
@@ -3707,6 +3856,14 @@ function IssueCommentRow({
           {...(commentEditOpen ? { style: { display: "none" } } : {})}
         >
           <TasklistBar markdown={contentsMarkdown} />
+          {tasklistError ? (
+            <div className="alert alert-error" role="alert" data-owner="issue-comment-tasklist-error">
+              {tasklistError}
+              <br />
+              <br />
+              Refresh the page!
+            </div>
+          ) : null}
           <div
             className="comment-body markdown-wrap"
             data-allowed-update={String(canUpdate)}
@@ -3716,6 +3873,7 @@ function IssueCommentRow({
             <OriginalMessageMarkdown
               basePath={basePath}
               contentsMarkdown={contentsMarkdown}
+              tasklist={{ canUpdate, onToggle: toggleCommentTasklist }}
               viaEmail={viaEmail}
             />
           </div>
@@ -3753,10 +3911,12 @@ function IssueCommentRow({
 function OriginalMessageMarkdown({
   basePath,
   contentsMarkdown,
+  tasklist,
   viaEmail,
 }: {
   basePath: string;
   contentsMarkdown: string;
+  tasklist?: { canUpdate: boolean; onToggle: (index: number, checked: boolean) => void };
   viaEmail: boolean;
 }) {
   const [showOriginalMessage, setShowOriginalMessage] = useState(false);
@@ -3764,7 +3924,11 @@ function OriginalMessageMarkdown({
   const originalMessage = viaEmail ? splitOriginalMessage(sanitizedContentsMarkdown) : null;
 
   if (!originalMessage) {
-    return <IssueMarkdown basePath={basePath}>{sanitizedContentsMarkdown}</IssueMarkdown>;
+    return (
+      <IssueMarkdown basePath={basePath} tasklist={tasklist}>
+        {sanitizedContentsMarkdown}
+      </IssueMarkdown>
+    );
   }
 
   return (
@@ -3838,6 +4002,7 @@ function ChildComments({
   runtimeConfig: RuntimeConfig;
   toggleForm: () => void;
 }) {
+  const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
   const ownerName = stringField(issue.ownerName);
   const projectName = stringField(issue.projectName);
@@ -3885,7 +4050,7 @@ function ChildComments({
         }}
         className={`add-a-comment${replyVisible ? "" : " issue-detail-child-comment-reply-hidden"}`}
       >
-        Reply
+        {t("comment.oneline.comment.placeholder")}
       </div>
       <div
         className="subcomment-media-body"
@@ -3932,7 +4097,7 @@ function ChildComments({
                   value={contentsMarkdown}
                   name="contents"
                   rows={1}
-                  placeholder={`Reply (${replyShortcutKey} + ENTER)`}
+                  placeholder={`${t("comment.oneline.comment.placeholder")} (${replyShortcutKey} + ENTER)`}
                   onFocus={() => setNotificationVisible(true)}
                   onChange={(event) => setContentsMarkdown(event.currentTarget.value)}
                   onKeyDown={(event) => {
@@ -3964,7 +4129,7 @@ function ChildComments({
                   data-owner="project-issue-detail-child-comment-notification-receiver-title"
                   className="notification-receiver-title"
                 >
-                  {"Notification receivers "}
+                  {t("notification.receiver.list.title")}{" "}
                 </span>
                 <span className="notification-receiver-list"></span>
               </div>
@@ -4068,14 +4233,46 @@ function CommentUpdateForm({
   runtimeConfig: RuntimeConfig;
   showNotification: boolean;
 }) {
+  const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
   const commentId = stringField(comment.id);
   const ownerName = stringField(issue.ownerName);
   const projectName = stringField(issue.projectName);
   const issueNumber = stringField(issue.issueNumber);
-  const attachments = attachmentItems(comment.attachments);
+  const initialAttachments = attachmentItems(comment.attachments);
+  const [attachments, setAttachments] = useState(initialAttachments);
+  const [sendNotification, setSendNotification] = useState(true);
+  const [attachmentPending, setAttachmentPending] = useState(false);
   const [editedMarkdown, setEditedMarkdown] = useState(contentsMarkdown);
-  useEffect(() => setEditedMarkdown(contentsMarkdown), [contentsMarkdown]);
+  useEffect(() => {
+    setEditedMarkdown(contentsMarkdown);
+    setAttachments(attachmentItems(comment.attachments));
+    setSendNotification(true);
+  }, [comment.attachments, contentsMarkdown]);
+  async function uploadFiles(files: File[]) {
+    if (files.length === 0 || attachmentPending) {
+      return;
+    }
+    setAttachmentPending(true);
+    try {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      const uploaded = await Promise.all(
+        files.map((file) => uploadTemporaryAttachment(runtimeConfig, csrfToken, file)),
+      );
+      setAttachments((current) => [
+        ...current,
+        ...(uploaded as Array<Record<string, unknown>>),
+      ]);
+    } finally {
+      setAttachmentPending(false);
+    }
+  }
+  function removeAttachment(attachment: Record<string, unknown>) {
+    const id = stringField(attachment.id);
+    setAttachments((current) =>
+      current.filter((candidate) => stringField(candidate.id) !== id),
+    );
+  }
   const updateMutation = useMutation({
     mutationFn: async () => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -4084,6 +4281,7 @@ function CommentUpdateForm({
         commentId,
         contentsMarkdown: editedMarkdown,
         issueNumber,
+        notificationMail: sendNotification ? "yes" : undefined,
         ownerName,
         projectName,
       });
@@ -4128,7 +4326,7 @@ function CommentUpdateForm({
             />
             <div className="upload-drop-here">
               <div className="msg-wrap">
-                <div className="msg">Drag &amp; Drop files here to upload.</div>
+                <div className="msg">{t("common.attach.dropFilesHere")}</div>
               </div>
             </div>
             <div
@@ -4137,7 +4335,7 @@ function CommentUpdateForm({
             >
               <span className="file-upload">
                 <label htmlFor={`upload-${commentId}`} className="file-upload__label ybtn">
-                  File upload
+                  {t("button.upload")}
                 </label>
                 <input
                   id={`upload-${commentId}`}
@@ -4145,18 +4343,29 @@ function CommentUpdateForm({
                   type="file"
                   name="filePath"
                   multiple
+                  disabled={attachmentPending}
+                  onChange={(event) => {
+                    void uploadFiles(Array.from(event.currentTarget.files ?? []));
+                    event.currentTarget.value = "";
+                  }}
                 />
               </span>
               {showNotification ? (
                 <LegacyHoverPopover
-                  content="If you are not the original author, this option will be ignored. Notification mail will be sent."
+                  content={t("notification.send.mail.warning")}
                   focusable
                 >
                   {(popoverProps) => (
                     <span className="send-notification-check" {...popoverProps}>
                       <label className="checkbox inline">
-                        <input type="checkbox" name="notificationMail" value="yes" defaultChecked />
-                        <strong>Send notification mail</strong>
+                        <input
+                          type="checkbox"
+                          name="notificationMail"
+                          value="yes"
+                          checked={sendNotification}
+                          onChange={(event) => setSendNotification(event.currentTarget.checked)}
+                        />
+                        <strong>{t("notification.send.mail")}</strong>
                       </label>
                     </span>
                   )}
@@ -4168,7 +4377,7 @@ function CommentUpdateForm({
                 data-comment-id={commentId}
                 onClick={onCancel}
               >
-                Cancel
+                {t("button.cancel")}
               </button>
               {canUpdate ? (
                 <button
@@ -4176,7 +4385,7 @@ function CommentUpdateForm({
                   className="ybtn ybtn-info"
                   disabled={updateMutation.isPending}
                 >
-                  Save
+                  {t("button.save")}
                 </button>
               ) : null}
             </div>
@@ -4203,7 +4412,11 @@ function CommentUpdateForm({
                   <span className="size">
                     {stringField(file.sizeLabel, stringField(file.size))}
                   </span>
-                  <button type="button" className="btn-transparent btn-delete">
+                  <button
+                    type="button"
+                    className="btn-transparent btn-delete"
+                    onClick={() => removeAttachment(file)}
+                  >
                     &times;
                   </button>
                 </div>

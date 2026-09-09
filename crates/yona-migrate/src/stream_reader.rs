@@ -46,9 +46,7 @@ impl Iterator for TableRows {
 /// - One table's array is in memory while processing that table.
 /// - After a table is done, the array is dropped.
 #[allow(dead_code)]
-pub fn stream_tables<R: Read>(
-    reader: R,
-) -> Result<Vec<(String, TableRows)>, serde_json::Error> {
+pub fn stream_tables<R: Read>(reader: R) -> Result<Vec<(String, TableRows)>, serde_json::Error> {
     // Parse the full JSON into a Value
     let value: serde_json::Value = serde_json::from_reader(reader)?;
 

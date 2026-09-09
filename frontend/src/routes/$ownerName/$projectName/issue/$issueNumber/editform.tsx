@@ -1,29 +1,51 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { UploadForm } from "../../../../../components/file-uploader";
-import { LegacyTabIndexInput } from "../../../../../components/legacy-tab-index-input";
-import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import {
+  IssuePostFileUploader,
+  humanFileSize,
+  type UploadRow,
+} from "../../../../../components/file-uploader";
+import { LegacyTabIndexInput } from "../../../../../components/legacy-tab-index-input";
+import {
+  Link,
+  createFileRoute,
+  useRouter,
+  useRouterState,
+} from "@tanstack/react-router";
+import {
+  useCallback,
   useEffect,
   useRef,
   useState,
   use,
   type InputHTMLAttributes,
+  type HTMLAttributes,
+  type DragEvent,
   type KeyboardEvent,
   type MouseEvent,
   type ReactNode,
+  type RefObject,
 } from "react";
 import { listProjectLabelsQueryOptions } from "../../../../../api/project-labels";
 import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
 import type { ProjectContainer, YoramRecord } from "../../../../../api/types";
 import { TabButton } from "../../../../../components/tab-button";
 import { IssueDueDateInput } from "../../../../../components/issue-due-date-input";
+import { LegacyMarkdown } from "../../../../../components/legacy-markdown";
 import {
   listIssueParentOptions,
   readIssueDetail,
   readSessionBootstrap,
+  searchProjectAssignableUsers,
+  listProjectMilestones,
   updateIssue,
   type RestIssueDetailResponse,
 } from "../../../../../auth-workspace-client";
+import {
+  attachmentMarkdown,
+  deleteTemporaryAttachment,
+  uploadTemporaryAttachment,
+  type UploadedAttachment,
+} from "../../../../../api/attachments";
 import { useLegacyMessages } from "../../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
 import { SiteLayoutShell } from "../../../../-home-route-screen";
@@ -36,6 +58,9 @@ const legacyRouteLocalActiveProps = {
   className: undefined,
   "data-status": undefined,
 };
+const CHECKLIST_TEMPLATE = "\n- [ ] Todo A\n- [ ] Todo B\n- [ ] Todo C";
+const DRAFT_SAVE_DELAY_MS = 5_000;
+type BodySelection = { end: number; start: number };
 
 export const Route = createFileRoute("/$ownerName/$projectName/issue/$issueNumber/editform")({
   component: ProjectIssueEditFormRoute,
@@ -49,6 +74,8 @@ function ProjectIssueEditFormRoute() {
 function ProjectIssueEditFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName, issueNumber } = Route.useParams();
   const { t } = useLegacyMessages();
+  const routePathname = useRouterState({ select: (state) => state.location.pathname });
+  const draftKey = prefixBasePath(runtimeConfig.basePath, routePathname);
   const numericIssueNumber = Number(issueNumber) || 0;
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
@@ -56,6 +83,24 @@ function ProjectIssueEditFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
   const labelsQuery = useQuery(
     listProjectLabelsQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
+  const assignableUsersQuery = useQuery({
+    queryFn: () =>
+      searchProjectAssignableUsers(runtimeConfig, {
+        ownerName,
+        projectName,
+        query: "",
+      }),
+    queryKey: ["project", ownerName, projectName, "assignable-users", ""],
+  });
+  const milestonesQuery = useQuery({
+    queryFn: () =>
+      listProjectMilestones(runtimeConfig, ownerName, projectName, {
+        orderBy: "dueDate",
+        orderDir: "asc",
+        state: "open",
+      }),
+    queryKey: ["project", ownerName, projectName, "milestones", "open", "issue-editform"],
+  });
   const issueQuery = useQuery({
     queryFn: () => readIssueDetail(runtimeConfig, ownerName, projectName, numericIssueNumber),
     queryKey: ["project", ownerName, projectName, "issues", numericIssueNumber],
@@ -88,7 +133,14 @@ function ProjectIssueEditFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
     return <SiteLayoutShell runtimeConfig={runtimeConfig}>{notFoundContent}</SiteLayoutShell>;
   }
 
-  if (!projectQuery.data || !labelsQuery.data || !issueQuery.data || !parentOptionsQuery.data) {
+  if (
+    !projectQuery.data ||
+    !labelsQuery.data ||
+    !issueQuery.data ||
+    !parentOptionsQuery.data ||
+    !assignableUsersQuery.data ||
+    !milestonesQuery.data
+  ) {
     if (nestedProjectShell) {
       return editTitle;
     }
@@ -99,8 +151,11 @@ function ProjectIssueEditFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
     <>
       {editTitle}
       <ProjectIssueEditFormBody
+        draftKey={draftKey}
         issue={issueQuery.data}
         labels={labelsQuery.data.labels}
+        assignableUsers={assignableUsersQuery.data.items}
+        milestones={milestonesQuery.data.milestones}
         parentOptions={parentOptionsQuery.data.items}
         project={projectQuery.data}
         runtimeConfig={runtimeConfig}
@@ -147,14 +202,24 @@ function restApiErrorStatus(error: unknown) {
 }
 
 function ProjectIssueEditFormBody({
+  assignableUsers,
+  draftKey,
   issue,
   labels,
+  milestones,
   parentOptions,
   project,
   runtimeConfig,
 }: {
+  assignableUsers: Array<{
+    avatarUrl: string;
+    displayName: string;
+    loginId: string;
+  }>;
+  draftKey: string;
   issue: RestIssueDetailResponse;
   labels: YoramRecord[];
+  milestones: YoramRecord[];
   parentOptions: Array<{
     id: bigint | number;
     issueNumber: bigint | number;
@@ -178,16 +243,60 @@ function ProjectIssueEditFormBody({
   const showSubtaskOptionOnMount = parentIssueId !== "" || currentIssueId !== "";
   const [isSubtaskOptionVisible, setIsSubtaskOptionVisible] = useState(showSubtaskOptionOnMount);
   const [isSubtaskMessageOn, setIsSubtaskMessageOn] = useState(false);
-  const [assigneeLoginId, setAssigneeLoginId] = useState(() =>
-    stringField(issue.assigneeLoginId, ""),
-  );
+  const initialAssigneeLoginId = stringField(issue.assigneeLoginId, "");
+  const [assigneeLoginId, setAssigneeLoginId] = useState(initialAssigneeLoginId);
   const [milestoneId, setMilestoneId] = useState(() => stringField(issue.milestoneId, "0"));
   const [selectedLabelIds, setSelectedLabelIds] = useState(() =>
     (issue.labels ?? []).map((label) => stringField(label.id, "")),
   );
+  const serverBodyMarkdown = stringField(issue.bodyMarkdown, "");
+  const [bodyMarkdown, setBodyMarkdown] = useState(serverBodyMarkdown);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const draftTouchedRef = useRef(false);
+  const [draftAvailable, setDraftAvailable] = useState(false);
+  const [uploadRows, setUploadRows] = useState<UploadRow[]>([]);
+  const [isFileDragActive, setIsFileDragActive] = useState(false);
+  const [uploadErrorNotice, setUploadErrorNotice] = useState("");
+  const [uploadErrorNoticeKey, setUploadErrorNoticeKey] = useState(0);
+  const canceledUploadKeysRef = useRef(new Set<number>());
+  const uploadSequenceRef = useRef(0);
   const dueDateRef = useRef<HTMLInputElement>(null);
   const dueDatePickerRef = useRef<HTMLInputElement>(null);
   const submitIntentRef = useRef<"draft" | "publish" | "save">("save");
+
+  useEffect(() => {
+    if (typeof localStorage === "undefined") return;
+    const storedDraft = localStorage.getItem(draftKey);
+    if (storedDraft === null) return;
+    setBodyMarkdown(storedDraft);
+    setDraftAvailable(true);
+  }, [draftKey]);
+
+  useEffect(() => {
+    if (!draftTouchedRef.current || typeof localStorage === "undefined") return;
+    if (bodyMarkdown === "") {
+      localStorage.removeItem(draftKey);
+      setDraftAvailable(false);
+      return;
+    }
+    const timeoutId = setTimeout(() => {
+      localStorage.setItem(draftKey, bodyMarkdown);
+      setDraftAvailable(true);
+    }, DRAFT_SAVE_DELAY_MS);
+    return () => clearTimeout(timeoutId);
+  }, [bodyMarkdown, draftKey]);
+
+  const updateBodyMarkdown = useCallback((value: string) => {
+    draftTouchedRef.current = true;
+    setBodyMarkdown(value);
+  }, []);
+  const clearSavedDraft = useCallback(() => {
+    if (typeof localStorage !== "undefined") {
+      localStorage.removeItem(draftKey);
+    }
+    setDraftAvailable(false);
+    window.location.reload();
+  }, [draftKey]);
 
   function toggleSubtaskOption() {
     setIsSubtaskOptionVisible((current) => {
@@ -207,13 +316,24 @@ function ProjectIssueEditFormBody({
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
       return updateIssue(runtimeConfig, csrfToken, {
         assigneeLoginId: stringFormValue(formData, "assigneeLoginId"),
-        bodyMarkdown: stringFormValue(formData, "body"),
+        attachmentIds: [
+          ...new Set([
+            ...(issue.attachments ?? []).map((attachment) => Number(attachment.id)),
+            ...uploadRows.flatMap((row) =>
+              row.status === "ready" && row.attachment ? [row.attachment.id] : [],
+            ),
+          ]),
+        ],
+        bodyMarkdown,
         dueDate: stringFormValue(formData, "dueDate"),
         isDraft: stringFormValue(formData, "isDraft") === "true",
         isPublish: stringFormValue(formData, "isPublish") === "true",
         issueNumber: numericIssueNumber,
         labelIds: formData.getAll("labelIds").map((value) => Number(value)),
         milestoneId: Number(stringFormValue(formData, "milestoneId")) || undefined,
+        notificationMail: showNotification
+          ? formData.get("notificationMail") === "yes"
+          : undefined,
         ownerName,
         parentIssueId: stringFormValue(formData, "parentIssueId"),
         projectName,
@@ -235,11 +355,213 @@ function ProjectIssueEditFormBody({
     },
   });
   const isDraft = booleanField(issueRecord.isDraft);
-  const authorId = stringField(issueRecord.authorId, "");
-  const viewerUserId = stringField(issueRecord.viewerUserId, "");
+  const authorId = stringField(issue.authorId, "");
+  const viewerUserId = stringField(issue.viewerUserId, "");
   const showNotification = !isDraft && authorId !== "" && authorId === viewerUserId;
   const draftPublishDescription = t("button.draft.publish.description");
   const draftSaveDescription = t("button.draft.save.description");
+  const reportUploadError = useCallback((message: string) => {
+    setUploadErrorNotice(message);
+    setUploadErrorNoticeKey((current) => current + 1);
+  }, []);
+  const insertAttachment = useCallback(
+    (attachment: UploadedAttachment) => {
+      const textarea = bodyRef.current;
+      const start = textarea?.selectionStart ?? bodyMarkdown.length;
+      const insertion = attachmentMarkdown(attachment, runtimeConfig.basePath);
+      draftTouchedRef.current = true;
+      setBodyMarkdown(
+        `${bodyMarkdown.slice(0, start)}${insertion}${bodyMarkdown.slice(start)}`,
+      );
+      requestAnimationFrame(() => {
+        const nextCursor = start + insertion.length;
+        bodyRef.current?.focus();
+        bodyRef.current?.setSelectionRange(nextCursor, nextCursor);
+      });
+    },
+    [bodyMarkdown, runtimeConfig.basePath],
+  );
+  const replaceBodyMarker = useCallback((marker: string, replacement: string) => {
+    draftTouchedRef.current = true;
+    setBodyMarkdown((current) => current.replace(marker, replacement));
+  }, []);
+  const removeAttachment = useCallback(
+    async (row: UploadRow) => {
+      if (!row.attachment || row.status !== "ready") {
+        canceledUploadKeysRef.current.add(row.key);
+        if (row.placeholder) replaceBodyMarker(row.placeholder, "");
+        setUploadRows((current) => current.filter((candidate) => candidate.key !== row.key));
+        return;
+      }
+      setUploadRows((current) =>
+        current.map((candidate) =>
+          candidate.key === row.key ? { ...candidate, status: "deleting" } : candidate,
+        ),
+      );
+      try {
+        const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+        await deleteTemporaryAttachment(runtimeConfig, csrfToken, row.attachment.id);
+        const link = attachmentMarkdown(row.attachment, runtimeConfig.basePath);
+        draftTouchedRef.current = true;
+        setBodyMarkdown((current) => current.split(link).join("").split(link.trim()).join(""));
+        setUploadRows((current) => current.filter((candidate) => candidate.key !== row.key));
+      } catch (error) {
+        setUploadRows((current) =>
+          current.map((candidate) =>
+            candidate.key === row.key ? { ...candidate, status: "ready" } : candidate,
+          ),
+        );
+        reportUploadError(error instanceof Error ? error.message : "Attachment delete failed.");
+      }
+    },
+    [replaceBodyMarker, reportUploadError, runtimeConfig],
+  );
+  const uploadFiles = useCallback(
+    async (files: File[], insertionSelection?: BodySelection) => {
+      const maxFileSize = runtimeConfig.maxUploadedFileSize ?? Number.MAX_SAFE_INTEGER;
+      const uploadableFiles = files.filter((file) => file.size <= maxFileSize);
+      if (uploadableFiles.length !== files.length) {
+        reportUploadError(t("error.toolargefile", { args: [humanFileSize(maxFileSize)] }));
+      }
+      if (uploadableFiles.length === 0) return;
+      const rows = uploadableFiles.map((file) => ({
+        key: ++uploadSequenceRef.current,
+        name: file.name || "upload.bin",
+        placeholder:
+          insertionSelection === undefined
+            ? undefined
+            : `<!--_upload-${uploadSequenceRef.current}_-->`,
+        progress: 0,
+        size: file.size,
+        status: "uploading" as const,
+      }));
+      rows.forEach((row) => canceledUploadKeysRef.current.delete(row.key));
+      if (insertionSelection !== undefined) {
+        const placeholders = rows
+          .flatMap((row) => (row.placeholder ? [row.placeholder] : []))
+          .join("");
+        setBodyMarkdown((current) => {
+          draftTouchedRef.current = true;
+          const start = Math.max(0, Math.min(insertionSelection.start, current.length));
+          const end = Math.max(start, Math.min(insertionSelection.end, current.length));
+          return `${current.slice(0, start)}${placeholders}${current.slice(end)}`;
+        });
+      }
+      setUploadRows((current) => [...current, ...rows]);
+      try {
+        const csrfToken = (await readSessionBootstrap(runtimeConfig)).csrfToken;
+        await Promise.all(
+          uploadableFiles.map(async (file, index) => {
+            const row = rows[index];
+            try {
+              const attachment = await uploadTemporaryAttachment(
+                runtimeConfig,
+                csrfToken,
+                file,
+                fetch,
+                (progress) =>
+                  setUploadRows((current) =>
+                    current.map((candidate) =>
+                      candidate.key === row.key ? { ...candidate, progress } : candidate,
+                    ),
+                  ),
+              );
+              if (canceledUploadKeysRef.current.has(row.key)) {
+                await deleteTemporaryAttachment(runtimeConfig, csrfToken, attachment.id);
+                return;
+              }
+              setUploadRows((current) =>
+                current.map((candidate) =>
+                  candidate.key === row.key
+                    ? {
+                        ...candidate,
+                        attachment,
+                        name: attachment.name,
+                        progress: 100,
+                        size: attachment.size,
+                        status: "ready",
+                      }
+                    : candidate,
+                ),
+              );
+              if (row.placeholder) {
+                replaceBodyMarker(
+                  row.placeholder,
+                  attachmentMarkdown(attachment, runtimeConfig.basePath),
+                );
+              }
+            } catch (error) {
+              setUploadRows((current) =>
+                current.filter((candidate) => candidate.key !== row.key),
+              );
+              if (row.placeholder) replaceBodyMarker(row.placeholder, "");
+              reportUploadError(
+                error instanceof Error ? error.message : "Attachment upload failed.",
+              );
+            }
+          }),
+        );
+      } catch (error) {
+        setUploadRows((current) =>
+          current.filter((candidate) => !rows.some((row) => row.key === candidate.key)),
+        );
+        rows.forEach((row) => {
+          if (row.placeholder) replaceBodyMarker(row.placeholder, "");
+        });
+        reportUploadError(error instanceof Error ? error.message : "Attachment upload failed.");
+      }
+    },
+    [replaceBodyMarker, reportUploadError, runtimeConfig, t],
+  );
+  const handleFileDrop = (event: DragEvent<HTMLDivElement>) => {
+    if (!event.dataTransfer.types.includes("Files")) return;
+    event.preventDefault();
+    setIsFileDragActive(false);
+    void uploadFiles(Array.from(event.dataTransfer.files));
+  };
+  const fileDragProps = {
+    onDragEnter(event) {
+      if (!event.dataTransfer.types.includes("Files")) return;
+      event.preventDefault();
+      setIsFileDragActive(true);
+    },
+    onDragLeave(event) {
+      if (
+        event.relatedTarget instanceof Node &&
+        event.currentTarget.contains(event.relatedTarget)
+      ) {
+        return;
+      }
+      setIsFileDragActive(false);
+    },
+    onDragOver(event) {
+      if (!event.dataTransfer.types.includes("Files")) return;
+      event.preventDefault();
+      setIsFileDragActive(true);
+    },
+    onDrop(event) {
+      handleFileDrop(event);
+    },
+  } satisfies Pick<
+    HTMLAttributes<HTMLDivElement>,
+    "onDragEnter" | "onDragLeave" | "onDragOver" | "onDrop"
+  >;
+  const assigneeOptions = [
+    { label: t("issue.noAssignee"), value: "" },
+    ...assignableUsers.map((user) => ({
+      label: `${user.displayName || user.loginId} ${user.loginId}`,
+      value: user.loginId,
+    })),
+    ...(assigneeLoginId &&
+    !assignableUsers.some((user) => user.loginId === assigneeLoginId)
+      ? [
+          {
+            label: `${stringField(issue.assigneeLabel, assigneeLoginId)} ${assigneeLoginId}`,
+            value: assigneeLoginId,
+          },
+        ]
+      : []),
+  ];
 
   function handleDraftPublishClick(event: MouseEvent<HTMLButtonElement>) {
     event.preventDefault();
@@ -281,6 +603,10 @@ function ProjectIssueEditFormBody({
                 dueDateRef.current?.focus();
                 return;
               }
+              if (typeof localStorage !== "undefined") {
+                localStorage.removeItem(draftKey);
+              }
+              setDraftAvailable(false);
               mutation.mutate(formData);
             }}
           >
@@ -288,6 +614,7 @@ function ProjectIssueEditFormBody({
               noticeKey={invalidDueDateNoticeKey}
               message={t("issue.error.invalid.duedate")}
             />
+            <YoramToast noticeKey={uploadErrorNoticeKey} message={uploadErrorNotice} />
             <input type="hidden" name="authorId" value={authorId} />
             <input type="hidden" id="isDraft" name="isDraft" value="false" />
             <input type="hidden" id="isPublish" name="isPublish" value="false" />
@@ -350,21 +677,33 @@ function ProjectIssueEditFormBody({
                   <dl>
                     <dd style={{ position: "relative" }} data-owner="issue-editform-editor-wrapper">
                       <IssueEditMarkdownEditor
+                        bodyRef={bodyRef}
                         focusRequest={bodyFocusRequest}
-                        value={stringField(issue.bodyMarkdown, "")}
+                        value={bodyMarkdown}
+                        dragOverlay={isFileDragActive}
+                        dragProps={fileDragProps}
+                        onBodyChange={updateBodyMarkdown}
+                        onDropFiles={() => setIsFileDragActive(false)}
+                        onFiles={(files, selection) => void uploadFiles(files, selection)}
+                        onClearTemporary={clearSavedDraft}
+                        showClearTemporary={draftAvailable}
                       />
                     </dd>
                   </dl>
 
-                  <UploadForm
-                    resourceType="ISSUE_POST"
-                    wrapperId="upload"
-                    resourceId={stringField(issue.issueId, "")}
-                    pasteHelpFixedStyleProps={{ style: { display: "block" } }}
-                    pasteHelpOwner="issue-editform-paste-help"
-                    helpClassName="right-txt help"
-                    helpStyleFirst={false}
-                    helpOwner="issue-editform-upload-help"
+                  <IssuePostFileUploader
+                    alwaysMountedSaveHelp
+                    isDragging={isFileDragActive}
+                    resourceId={currentIssueId === "" ? undefined : currentIssueId}
+                    rows={uploadRows}
+                    onDragEnter={fileDragProps.onDragEnter}
+                    onDragLeave={fileDragProps.onDragLeave}
+                    onDragOver={fileDragProps.onDragOver}
+                    onDrop={fileDragProps.onDrop}
+                    onFiles={(files) => void uploadFiles(files)}
+                    onInsert={insertAttachment}
+                    onRemove={(row) => void removeAttachment(row)}
+                    dragOverlay={false}
                   />
 
                   <div className="actrow right-txt" data-owner="issue-editform-actions">
@@ -449,21 +788,11 @@ function ProjectIssueEditFormBody({
                       <LegacyEditSingleSelect
                         label={t("issue.assignee")}
                         value={assigneeLoginId}
-                        options={[
-                          { label: t("issue.noAssignee"), value: "" },
-                          ...(stringField(issue.assigneeLoginId, "")
-                            ? [
-                                {
-                                  label: `${stringField(issue.assigneeLabel, assigneeLoginId)} ${assigneeLoginId}`,
-                                  value: assigneeLoginId,
-                                },
-                              ]
-                            : []),
-                        ]}
+                        options={assigneeOptions}
                         onChange={setAssigneeLoginId}
                         className="bigdrop"
                         selectedContent={
-                          assigneeLoginId ? (
+                          assigneeLoginId && assigneeLoginId === initialAssigneeLoginId ? (
                             <span className="usf-group">
                               {issue.assigneeAvatarUrl ? (
                                 <span className="avatar-wrap smaller">
@@ -487,6 +816,7 @@ function ProjectIssueEditFormBody({
                   </dl>
                   <MilestoneOption
                     issue={issue}
+                    milestones={milestones}
                     milestoneId={milestoneId}
                     onChange={setMilestoneId}
                   />
@@ -592,10 +922,12 @@ function normalizeIssueState(state: string) {
 
 function MilestoneOption({
   issue,
+  milestones,
   milestoneId,
   onChange,
 }: {
   issue: RestIssueDetailResponse;
+  milestones: YoramRecord[];
   milestoneId: string;
   onChange: (value: string) => void;
 }) {
@@ -603,8 +935,17 @@ function MilestoneOption({
   const milestoneTitle = stringField(issue.milestoneTitle, "");
   const options = [
     { label: t("issue.noMilestone"), value: "0" },
-    ...(milestoneTitle ? [{ label: milestoneTitle, value: milestoneId }] : []),
+    ...milestones
+      .map((milestone) => ({
+        label: stringField(milestone.title, ""),
+        value: stringField(milestone.id, ""),
+      }))
+      .filter((option) => option.value !== "" && option.label !== ""),
+    ...(milestoneTitle && !milestones.some((milestone) => stringField(milestone.id, "") === milestoneId)
+      ? [{ label: milestoneTitle, value: milestoneId }]
+      : []),
   ];
+  const selectedMilestoneTitle = options.find((option) => option.value === milestoneId)?.label ?? "";
   return (
     <dl id="milestoneOption" className="issue-option">
       <dt>{t("milestone")}</dt>
@@ -619,13 +960,23 @@ function MilestoneOption({
           onChange={(event) => onChange(event.currentTarget.value)}
         >
           <option value="0">{t("issue.noMilestone")}</option>
-          {milestoneTitle ? (
-            <optgroup label={t("milestone.state.open")}>
+          <optgroup label={t("milestone.state.open")}>
+            {milestones.map((milestone) => {
+              const value = stringField(milestone.id, "");
+              const title = stringField(milestone.title, "");
+              return value && title ? (
+                <option key={value} value={value} data-state="open">
+                  {title}
+                </option>
+              ) : null;
+            })}
+            {milestoneTitle &&
+            !milestones.some((milestone) => stringField(milestone.id, "") === milestoneId) ? (
               <option value={milestoneId} data-state="open">
                 {milestoneTitle}
               </option>
-            </optgroup>
-          ) : null}
+            ) : null}
+          </optgroup>
         </select>
         <LegacyEditSingleSelect
           className="fullsize"
@@ -634,8 +985,10 @@ function MilestoneOption({
           options={options}
           value={milestoneId}
           selectedContent={
-            milestoneTitle ? (
-              <div title={`${t("milestone.state.open")} ${milestoneTitle}`}>{milestoneTitle}</div>
+            milestoneId !== "0" && selectedMilestoneTitle ? (
+              <div title={`${t("milestone.state.open")} ${selectedMilestoneTitle}`}>
+                {selectedMilestoneTitle}
+              </div>
             ) : undefined
           }
         />
@@ -919,11 +1272,23 @@ function LegacyEditLabelSelect({
   selectedLabelIds: Set<string>;
 }) {
   const { t } = useLegacyMessages();
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const selected = [...selectedLabelIds];
-  const toggle = (id: string) =>
+  const toggle = (id: string) => {
     onChange(
       selectedLabelIds.has(id) ? selected.filter((value) => value !== id) : [...selected, id],
     );
+    setQuery("");
+  };
+  const visibleGroups = groupLabels(labels)
+    .map((group) => ({
+      ...group,
+      labels: group.labels.filter((label) =>
+        label.name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()),
+      ),
+    }))
+    .filter((group) => group.labels.length > 0);
   const selectedLabelElements: ReactNode[] = [];
   for (const label of labels) {
     const labelId = stringField(label.id, "");
@@ -965,9 +1330,62 @@ function LegacyEditLabelSelect({
             aria-label={t("label.select")}
             autoComplete="off"
             data-owner="issue-editform-label-search-input"
+            aria-expanded={open}
+            value={query}
+            onFocus={() => setOpen(true)}
+            onClick={() => setOpen(true)}
+            onChange={(event) => {
+              setQuery(event.currentTarget.value);
+              setOpen(true);
+            }}
           />
         </li>
       </ul>
+      <div
+        className={`select2-drop select2-drop-multi issue-labels ${
+          open ? "select2-drop-active" : "select2-display-none"
+        }`}
+        data-owner="issue-editform-label-menu"
+      >
+        <ul className="select2-results" role="listbox">
+          {visibleGroups.map((group) => (
+            <li
+              className="select2-results-dept-0 select2-result select2-result-unselectable select2-result-with-children"
+              key={group.categoryId}
+            >
+              <div className="select2-result-label">
+                <span>{group.categoryName}</span>
+              </div>
+              <ul className="select2-result-sub">
+                {group.labels.map((label) => {
+                  const selectedLabel = selectedLabelIds.has(label.id);
+                  return (
+                    <li
+                      className={`select2-results-dept-1 select2-result select2-result-selectable${
+                        selectedLabel ? " select2-selected" : ""
+                      }`}
+                      key={label.id}
+                    >
+                      <div
+                        className="select2-result-label"
+                        role="option"
+                        tabIndex={open ? 0 : -1}
+                        aria-selected={selectedLabel}
+                        onClick={() => toggle(label.id)}
+                        onKeyDown={(event) =>
+                          activateEditControl(event, () => toggle(label.id))
+                        }
+                      >
+                        {label.name}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
@@ -979,15 +1397,39 @@ function activateEditControl(event: KeyboardEvent<HTMLElement>, activate: () => 
   }
 }
 
-function IssueEditMarkdownEditor({ focusRequest, value }: { focusRequest: number; value: string }) {
+function IssueEditMarkdownEditor({
+  bodyRef,
+  dragOverlay,
+  dragProps,
+  focusRequest,
+  onBodyChange,
+  onClearTemporary,
+  onDropFiles,
+  showClearTemporary,
+  onFiles,
+  value,
+}: {
+  bodyRef: RefObject<HTMLTextAreaElement | null>;
+  dragOverlay: boolean;
+  dragProps: Pick<
+    HTMLAttributes<HTMLDivElement>,
+    "onDragEnter" | "onDragLeave" | "onDragOver" | "onDrop"
+  >;
+  focusRequest: number;
+  onBodyChange: (value: string) => void;
+  onClearTemporary: () => void;
+  onDropFiles: () => void;
+  onFiles: (files: File[], selection?: BodySelection) => void;
+  showClearTemporary: boolean;
+  value: string;
+}) {
   const { t } = useLegacyMessages();
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
-  const bodyRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     if (focusRequest > 0) {
       bodyRef.current?.focus();
     }
-  }, [focusRequest]);
+  }, [bodyRef, focusRequest]);
   return (
     <div className="mt10" data-owner="issue-editform-markdown-editor-wrapper">
       <ul className="nav nav-tabs nm small">
@@ -1012,18 +1454,34 @@ function IssueEditMarkdownEditor({ focusRequest, value }: { focusRequest: number
             <button
               type="button"
               className="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"
+              onClick={() => {
+                const textarea = bodyRef.current;
+                const start = textarea?.selectionStart ?? value.length;
+                onBodyChange(
+                  `${value.slice(0, start)}${CHECKLIST_TEMPLATE}${value.slice(start)}`,
+                );
+                requestAnimationFrame(() => {
+                  const nextCursor = start + CHECKLIST_TEMPLATE.length;
+                  bodyRef.current?.focus();
+                  bodyRef.current?.setSelectionRange(nextCursor, nextCursor);
+                });
+              }}
             >
               <i className="yobicon-list task-list-icon"></i> {t("button.add.checklist")}
             </button>
           </div>
         </li>
         <li>
-          <div className="editor-clear-temporary">
+          <div
+            className="editor-clear-temporary"
+            style={showClearTemporary ? { display: "block" } : undefined}
+          >
             <div className="editor-clear-temporary-button">
               <button
                 type="button"
                 id="button-clear-temporary"
                 className="ybtn ybtn-small ybtn-warning"
+                onClick={onClearTemporary}
               >
                 {t("button.clear.temporary")}
               </button>
@@ -1041,7 +1499,17 @@ function IssueEditMarkdownEditor({ focusRequest, value }: { focusRequest: number
       >
         <LegacyMarkdownHelp />
         <div id="edit-body" className={`tab-pane${activeTab === "edit" ? " active" : ""}`}>
-          <div className="textarea-box">
+          <div
+            {...dragProps}
+            className={`textarea-box${dragOverlay ? " dragover" : ""}`}
+          >
+            {dragOverlay ? (
+              <div className="upload-drop-here">
+                <div className="msg-wrap">
+                  <div className="msg">{t("common.attach.dropFilesHere")}</div>
+                </div>
+              </div>
+            ) : null}
             <textarea
               data-owner="issue-editform-editor"
               ref={bodyRef}
@@ -1049,14 +1517,42 @@ function IssueEditMarkdownEditor({ focusRequest, value }: { focusRequest: number
               className="editorSeries content comment nm"
               data-editor-mode="content-body"
               id="editor-body-body"
-              defaultValue={value}
+              value={value}
+              onChange={(event) => onBodyChange(event.currentTarget.value)}
+              onPaste={(event) => {
+                const files = Array.from(event.clipboardData.files).filter((file) =>
+                  file.type.startsWith("image/"),
+                );
+                if (files.length === 0) return;
+                event.preventDefault();
+                onFiles(files, {
+                  end: event.currentTarget.selectionEnd,
+                  start: event.currentTarget.selectionStart,
+                });
+              }}
+              onDragOver={(event) => {
+                if (event.dataTransfer.types.includes("Files")) event.preventDefault();
+              }}
+              onDrop={(event) => {
+                const files = Array.from(event.dataTransfer.files);
+                if (files.length === 0) return;
+                event.preventDefault();
+                event.stopPropagation();
+                onDropFiles();
+                onFiles(files, {
+                  end: event.currentTarget.selectionEnd,
+                  start: event.currentTarget.selectionStart,
+                });
+              }}
               tabIndex={Number("2")}
               {...{ markdown: "true" }}
             ></textarea>
           </div>
         </div>
         <div id="preview-body" className={`tab-pane${activeTab === "preview" ? " active" : ""}`}>
-          <div className="markdown-preview markdown-wrap content-body" data-via-email="false"></div>
+          <div className="markdown-preview markdown-wrap content-body" data-via-email="false">
+            <LegacyMarkdown>{value}</LegacyMarkdown>
+          </div>
         </div>
         <div className="notification-receiver">
           <span className="notification-receiver-title">

@@ -16,6 +16,7 @@ use yoram_vcs::{
 };
 
 use crate::persistence::{self, PilotRepository};
+use crate::routes::utils::remove_unreferenced_attachment_blobs;
 use crate::{
     base_path_href, code_branch_error, code_browser_error, code_file_record_is_renderable_markdown,
     code_path_is_markdown, form_value, gravatar_url, internal_error,
@@ -2404,6 +2405,35 @@ async fn rest_delete_commit_discussion_comment(
             ConnectError::permission_denied("commit comment delete is not allowed"),
         ));
     }
+    let thread_id = current
+        .threads
+        .iter()
+        .find(|thread| {
+            thread
+                .comments
+                .iter()
+                .any(|comment| comment.id == comment_id)
+        })
+        .map(|thread| thread.id);
+    let mut attachment_hashes = repository
+        .list_attachments_by_container("REVIEW_COMMENT", comment_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .into_iter()
+        .map(|attachment| attachment.hash)
+        .collect::<Vec<_>>();
+    if let Some(thread_id) = thread_id {
+        attachment_hashes.extend(
+            repository
+                .list_attachments_by_container("COMMENT_THREAD", thread_id)
+                .await
+                .map_err(internal_error)
+                .map_err(RestRouteError::from_connect_error)?
+                .into_iter()
+                .map(|attachment| attachment.hash),
+        );
+    }
     repository
         .delete_commit_discussion_comment(persistence::DeleteCommitDiscussionCommentInput {
             actor_id: actor.id,
@@ -2416,6 +2446,10 @@ async fn rest_delete_commit_discussion_comment(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("commit comment not found"))?;
+    remove_unreferenced_attachment_blobs(repository, &service.data_root, attachment_hashes.iter())
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
     Ok(Json(
         rest_code_commit_detail_response(
             repository,

@@ -9,6 +9,7 @@ pub(super) struct RestIssueCommentBody {
     )]
     attachment_ids: Vec<i64>,
     contents_markdown: String,
+    notification_mail: Option<String>,
     original: Option<String>,
     parent_comment_id: Option<i64>,
 }
@@ -39,6 +40,7 @@ fn direct_issue_comment_body(form: &HashMap<String, String>) -> RestIssueComment
     RestIssueCommentBody {
         attachment_ids: direct_comment_attachment_ids(form),
         contents_markdown: direct_comment_contents(form),
+        notification_mail: form.get("notificationMail").cloned(),
         original: form.get("original").cloned(),
         parent_comment_id: form
             .get("parentCommentId")
@@ -370,6 +372,11 @@ pub(super) async fn rest_update_issue_comment(
             issue_number,
             owner_name,
             project_name,
+            send_notification: body
+                .notification_mail
+                .as_deref()
+                .is_some_and(|value| value.eq_ignore_ascii_case("yes"))
+                || comment_author != Some(actor.id),
         })
         .await
         .map_err(internal_error)
@@ -423,6 +430,19 @@ pub(super) async fn rest_delete_issue_comment(
         .iter()
         .find(|comment| comment.id == comment_id)
         .and_then(|comment| comment.author_id);
+    let comment_attachment_hashes = access
+        .issue
+        .comments
+        .iter()
+        .find(|comment| comment.id == comment_id)
+        .map(|comment| {
+            comment
+                .attachments
+                .iter()
+                .map(|attachment| attachment.hash.clone())
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
     if comment_author != Some(actor.id) && !access.viewer_can_manage() {
         return Err(RestRouteError::from_connect_error(
             ConnectError::permission_denied("issue comment delete is not allowed"),
@@ -434,6 +454,14 @@ pub(super) async fn rest_delete_issue_comment(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
+    remove_unreferenced_attachment_blobs(
+        repository,
+        &service.data_root,
+        comment_attachment_hashes.iter(),
+    )
+    .await
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
     Ok(Json(
         rest_issue_detail_response_from_record_with_access_issue_references(
             repository,

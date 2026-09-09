@@ -25016,7 +25016,6 @@ img.mfp-img {
   body {
     margin: 0;
     background-color: #fff;
-    overflow-y: scroll;
     text-rendering: auto;
   }
 
@@ -25320,19 +25319,6 @@ img.mfp-img {
     border: 1px solid rgba(0, 0, 0, 0.15);
     border-radius: 3px;
     box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
-  }
-
-  .ybtn:hover,
-  .ybtn:focus {
-    color: #292929;
-    text-decoration: none;
-    background-color: #f1f1f1;
-    /* border-color intentionally omitted: the frozen fallback
-       .ybtn:hover/:focus/:active border (rgba(0,0,0,0.25)) precedes
-       .ybtn.ybtn-success/.ybtn-info in source order, so the colored variants
-       keep their legacy borders on hover/focus; an app-side border-color here
-       would re-order the cascade and override them (project-posts createSubmit
-       border pin). */
   }
 
   .ybtn-primary,
@@ -28893,17 +28879,13 @@ img.mfp-img {
     color: #3592b5;
   }
 
-  .site-breadcrumb-outer {
-    border-bottom: 1px solid #ddd;
-  }
-
   .site-breadcrumb-inner h3 {
     margin: 0;
     padding: 10px 10px 5px;
     /* legacy bootstrap h3 { font-size: 24.5px } bootstrap.css:726-728 — the
        app has no bootstrap typography cascade, so restore it on the breadcrumb */
     font-size: 24.5px;
-    font-weight: 400;
+    font-weight: bold;
     line-height: 30px;
   }
 
@@ -32607,7 +32589,8 @@ img.mfp-img {
   position: fixed;
   top: 18%;
   left: 50vw;
-  z-index: 1000;
+  /* Legacy _yobiUI.less .modal stays above Bootstrap's 1040 backdrop. */
+  z-index: 1050;
   width: min(480px, calc(100vw - 32px));
   margin-left: 0;
   color: var(--color-yona-text);
@@ -34344,130 +34327,7 @@ img.mfp-img {
   text-align: center;
 }
 
-/* --- -newFork (newFork.tsx) --- */
-[data-owner="project-fork-page"] {
-  margin: 20px auto 0px;
-  padding: 0px 10px;
-  width: 100%;
-  box-sizing: border-box;
-}
-[data-owner="project-fork-help"] {
-  background-color: var(--color-yona-surface-muted);
-  border-radius: 4px;
-  color: var(--color-yona-text);
-  margin-bottom: 20px;
-  padding: 19px;
-}
-[data-owner="project-fork-help-image"] {
-  border: 1px solid #ddd;
-  padding: 4px;
-  vertical-align: middle;
-}
-[data-owner="project-fork-help-copy"] {
-  margin-left: 20px;
-}
-[data-owner="project-fork-existing-row"] {
-  text-align: center;
-}
-[data-owner="project-fork-existing-icon"] {
-  display: inline-block;
-}
-[data-owner="project-fork-existing-arrow"] {
-  display: inline-block;
-  vertical-align: middle;
-}
-[data-owner="project-fork-existing-link"] {
-  color: var(--color-yona-orange);
-  vertical-align: middle;
-}
-[data-owner="project-fork-owner-group"],
-[data-owner="project-fork-name-group"],
-[data-owner="project-fork-scope-group"],
-[data-owner="project-fork-actions"] {
-  margin-bottom: 20px;
-}
-[data-owner="project-fork-owner-label"],
-[data-owner="project-fork-name-label"],
-[data-owner="project-fork-scope-label"] {
-  color: var(--color-yona-text);
-  display: inline-block;
-  font-weight: 400;
-  margin-right: 20px;
-  text-align: right;
-  vertical-align: top;
-  width: 140px;
-}
-[data-owner="project-fork-owner-controls"],
-[data-owner="project-fork-name-controls"],
-[data-owner="project-fork-scope-controls"] {
-  display: inline-block;
-  vertical-align: top;
-}
-.pr-fork-controls {
-  display: inline-block;
-  vertical-align: top;
-}
-[data-owner="project-fork-name-input"] {
-  border-color: #cccccc;
-  border-style: solid;
-  border-width: 1px;
-  color: #555555;
-  padding: 4px;
-}
-[data-owner="project-fork-submit"] {
-  background-color: #49afcd;
-  border-color: #49afcd;
-  border-radius: 4px;
-  border-style: solid;
-  border-width: 1px;
-  color: #fff;
-  display: inline-block;
-  padding: 4px 12px;
-  text-decoration: none;
-}
-[data-owner="project-fork-cancel"] {
-  background-color: #49afcd;
-  border-color: #49afcd;
-  border-radius: 4px;
-  border-style: solid;
-  border-width: 1px;
-  color: var(--color-yona-text);
-  display: inline-block;
-  padding: 4px 12px;
-  text-decoration: none;
-}
-[data-owner="project-fork-public-radio"],
-[data-owner="project-fork-protected-radio"],
-[data-owner="project-fork-private-radio"] {
-  color: var(--color-yona-text);
-  margin: 2px;
-}
-[data-owner="project-fork-public-label"],
-[data-owner="project-fork-protected-label"],
-[data-owner="project-fork-private-label"] {
-  color: var(--color-yona-text);
-}
-[data-owner="project-fork-name-help"] {
-  color: #b94a48;
-}
-@media (max-width: 720px) {
-  /* Legacy mobile cascade (bootstrap-responsive 480px + yobi 720px): the
-    form-horizontal .controls 180px offset and fixed 220px selects overflow
-    the 390px fork screen by 10px; the frozen legacy collapses them. */
-  [data-owner="project-fork-page"] .form-horizontal .control-label {
-    float: none;
-    width: auto;
-    padding-top: 0;
-    text-align: left;
-  }
-  [data-owner="project-fork-page"] .form-horizontal .controls {
-    margin-left: 0;
-  }
-  [data-owner="project-fork-page"] select,
-  [data-owner="project-fork-page"] input[type="text"] {
-    max-width: 100%;
-  }
-}
+
 .pr-fork-clone-page {
   box-sizing: border-box;
   margin-top: 10px;
@@ -38928,13 +38788,13 @@ div[data-owner="project-transfer-modal-backdrop"] {
   padding: 100px 0px;
   text-align: center;
 }
+/* Frozen _page.less .admin-logged-in-affix; typography inherits from the body. */
 .site-admin-affix-surface {
   background-color: #ad0000;
   box-sizing: border-box;
   color: #ffffff;
   font-size: 20px;
   font-weight: 700;
-  line-height: normal;
   padding: 10px;
   text-align: center;
   width: 100%;
@@ -41160,12 +41020,9 @@ body:has(.site-admin-affix-surface) #mySidenav {
 }
 [data-owner="authenticated-home-intro-guide-toggle"] button {
   background-color: transparent;
-  border-color: rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 0px 0px 6px 6px;
-  border-style: solid;
-  border-top-color: #ffffff;
-  border-top-width: 2px;
-  border-width: 1px;
+  border-top: 2px solid #ffffff;
   color: #95a5a6;
   display: inline-block;
   outline: none;
@@ -50036,21 +49893,6 @@ label[data-owner="organization-new-label"] {
 /* Sidenav favorite shell keeps the popover anchor context. */
 [data-owner="authenticated-sidenav-favorite-shell"] {
   position: relative;
-}
-
-/* legacy retired: site-admin affix line box — legacy Helvetica Neue metrics expand the 20px line box to 23px (43px/66px tall); the app :root system-ui font keeps it at 20px */
-.site-admin-affix-surface {
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  line-height: 23px;
-  height: 43px;
-}
-@media (max-width: 720px) {
-  .site-admin-affix-surface {
-    /* e2e closure ledger (2026-08-11): keep the legacy 2-line mobile wrap — the
-       affix content wraps at 390px and measures 66px (23px x2 + 20px padding);
-       the earlier 43px override shifted every page under the affix up 23px. */
-    height: 66px;
-  }
 }
 
 /* ============================================================

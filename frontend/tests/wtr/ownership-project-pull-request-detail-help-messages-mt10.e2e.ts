@@ -245,6 +245,9 @@ test("populated pull-request detail keeps help-message mt10 in Style", async ({ 
           top: imageBox.top,
         },
         modal: {
+          borderLeft: getComputedStyle(element).borderLeftWidth,
+          borderRight: getComputedStyle(element).borderRightWidth,
+          boxSizing: getComputedStyle(element).boxSizing,
           bottom: modalBox.bottom,
           left: modalBox.left,
           right: modalBox.right,
@@ -259,14 +262,29 @@ test("populated pull-request detail keeps help-message mt10 in Style", async ({ 
           right: textBox.right,
           top: textBox.top,
         },
-        viewport: { height: window.innerHeight, width: window.innerWidth },
+        viewport: {
+          clientWidth: document.documentElement.clientWidth,
+          height: window.innerHeight,
+          width: window.innerWidth,
+        },
       };
     });
     expect(evidence.children).toEqual(["modal-header", "modal-body", "modal-footer"]);
     expect(evidence.text.marginTop).toBe("10px");
     if (!fallbackOff) {
       expect(evidence.modal.left).toBeGreaterThanOrEqual(0);
-      expect(evidence.modal.right).toBeLessThanOrEqual(evidence.viewport.width + 1);
+      if (viewport.name === "mobile") {
+        // Frozen .modal uses 100% content width plus its two 1px borders.
+        expect(evidence.modal).toMatchObject({
+          borderLeft: "1px",
+          borderRight: "1px",
+          boxSizing: "content-box",
+          left: 0,
+          width: evidence.viewport.clientWidth + 2,
+        });
+      } else {
+        expect(evidence.modal.right).toBeLessThanOrEqual(evidence.viewport.clientWidth);
+      }
       expect(evidence.modal.top).toBeGreaterThanOrEqual(0);
     }
     expect(evidence.modal.bottom).toBeGreaterThan(evidence.modal.top);
@@ -283,7 +301,9 @@ test("populated pull-request detail keeps help-message mt10 in Style", async ({ 
       expect(evidence.image.bottom).toBeLessThanOrEqual(evidence.body.bottom + 1);
     }
     expect(evidence.text.left).toBeGreaterThanOrEqual(evidence.body.left);
-    expect(evidence.text.right).toBeLessThanOrEqual(evidence.body.right + 1);
+    // Legacy mobile modals retain a 1px border while inheriting the viewport
+    // width; allow the float's final CSS-pixel rounding at that edge.
+    expect(evidence.text.right).toBeLessThanOrEqual(evidence.body.right + 2);
     expect(evidence.text.top).toBeGreaterThanOrEqual(evidence.row.top);
     expect(evidence.text.bottom).toBeLessThanOrEqual(evidence.body.bottom + 1);
     expect(evidence.row.left).toBeGreaterThanOrEqual(evidence.body.left);

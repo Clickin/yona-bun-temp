@@ -583,9 +583,17 @@ fn streams_yona_export_to_import_records_matching_yobi_data_mapping() {
 
     let files_dir = tempfile::tempdir().expect("files dir");
     std::fs::create_dir_all(files_dir.path().join("files/301")).expect("issue file dir");
-    std::fs::write(files_dir.path().join("files/301/issue.png"), b"issue-file-bytes").unwrap();
+    std::fs::write(
+        files_dir.path().join("files/301/issue.png"),
+        b"issue-file-bytes",
+    )
+    .unwrap();
     std::fs::create_dir_all(files_dir.path().join("files/501")).expect("post file dir");
-    std::fs::write(files_dir.path().join("files/501/post.png"), b"post-file-bytes").unwrap();
+    std::fs::write(
+        files_dir.path().join("files/501/post.png"),
+        b"post-file-bytes",
+    )
+    .unwrap();
 
     let mut records = Vec::new();
     stream_yona_export_to_import_records(
@@ -632,14 +640,23 @@ fn streams_yona_export_to_import_records_matching_yobi_data_mapping() {
         projects[0].project_description,
         snapshot.projects[0].overview
     );
-    assert_eq!(projects[0].project_scope, snapshot.projects[0].project_scope);
+    assert_eq!(
+        projects[0].project_scope,
+        snapshot.projects[0].project_scope
+    );
     assert_eq!(projects[0].project_vcs, snapshot.projects[0].vcs);
     assert_eq!(projects[0].project_created_date, "2026-01-01T00:00:00Z");
 
     assert_eq!(members.len(), snapshot.project_members.len());
     assert_eq!(members[0].login_id, snapshot.project_members[0].login_id);
-    assert_eq!(members[0].owner_name, snapshot.project_members[0].owner_name);
-    assert_eq!(members[0].project_name, snapshot.project_members[0].project_name);
+    assert_eq!(
+        members[0].owner_name,
+        snapshot.project_members[0].owner_name
+    );
+    assert_eq!(
+        members[0].project_name,
+        snapshot.project_members[0].project_name
+    );
     assert_eq!(members[0].role, snapshot.project_members[0].role);
 
     assert_eq!(labels.len(), snapshot.labels.len());
@@ -662,9 +679,18 @@ fn streams_yona_export_to_import_records_matching_yobi_data_mapping() {
     assert_eq!(issues[0].title, snapshot.issues[0].title);
     assert_eq!(issues[0].body_markdown, snapshot.issues[0].body_markdown);
     assert_eq!(issues[0].state, snapshot.issues[0].state);
-    assert_eq!(issues[0].assignee_login_id, snapshot.issues[0].assignee_login_id);
-    assert_eq!(issues[0].author_login_id, snapshot.issues[0].author_login_id);
-    assert_eq!(issues[0].milestone_title, snapshot.issues[0].milestone_title);
+    assert_eq!(
+        issues[0].assignee_login_id,
+        snapshot.issues[0].assignee_login_id
+    );
+    assert_eq!(
+        issues[0].author_login_id,
+        snapshot.issues[0].author_login_id
+    );
+    assert_eq!(
+        issues[0].milestone_title,
+        snapshot.issues[0].milestone_title
+    );
     assert_eq!(issues[0].labels[0].name, snapshot.issues[0].labels[0].name);
     assert_eq!(
         issues[0].comments[0].contents_markdown,
@@ -674,7 +700,10 @@ fn streams_yona_export_to_import_records_matching_yobi_data_mapping() {
         issues[0].comments[0].author_login_id,
         snapshot.issues[0].comments[0].author_login_id
     );
-    assert_eq!(issues[0].attachments[0].name, snapshot.issues[0].attachments[0].name);
+    assert_eq!(
+        issues[0].attachments[0].name,
+        snapshot.issues[0].attachments[0].name
+    );
     assert_eq!(
         issues[0].attachments[0].content_base64,
         snapshot.issues[0].attachments[0].content_base64
@@ -688,7 +717,10 @@ fn streams_yona_export_to_import_records_matching_yobi_data_mapping() {
     assert_eq!(posts[0].post_number, snapshot.posts[0].post_number);
     assert_eq!(posts[0].title, snapshot.posts[0].title);
     assert_eq!(posts[0].body_markdown, snapshot.posts[0].body_markdown);
-    assert_eq!(posts[0].attachments[0].name, snapshot.posts[0].attachments[0].name);
+    assert_eq!(
+        posts[0].attachments[0].name,
+        snapshot.posts[0].attachments[0].name
+    );
     assert_eq!(
         posts[0].attachments[0].content_base64,
         snapshot.posts[0].attachments[0].content_base64

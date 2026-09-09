@@ -250,10 +250,7 @@ draft_time = "1s"
         Some(vec!["ko-KR".to_string(), "en-US".to_string()])
     );
     assert_eq!(config.auth_email_verification_enabled, Some(true));
-    assert_eq!(
-        config.auth_hashing_silent_migration_to_argon2id,
-        Some(true)
-    );
+    assert_eq!(config.auth_hashing_silent_migration_to_argon2id, Some(true));
     assert_eq!(
         config.auth_login_id_placeholder.as_deref(),
         Some("Employee ID")

@@ -26,7 +26,7 @@ const EXPECTED_PROJECT_FORK_FORM = `
 </header>
 <div class="project-header-outer" style="background-image:url('__BASE_PATH__/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="__BASE_PATH__/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7" role="button" tabindex="0"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class="active"><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li><li></li></ul></div></div></div>
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/fork" method="post" class="form-horizontal nm"><input type="hidden" name="owner" value="admin"><fieldset><legend><h4>admin / sample Fork</h4></legend><div id="helpMessage" class="well"><div class="row-fluid"><div class="pull-left"><img src="__BASE_PATH__/legacy-assets/images/fork-pull/fork.jpg"><br></div><div><p class="lead">Fork this project's repository.</p><p>"Forking" is a great way to contribute to someone else's project even without write access to it.</p><p>Once you fork a project, you can contribute your code by sending pull requests.</p></div></div></div><div class="control-group"><label class="control-label" for="inputOwner">Owner Name</label><div class="controls"><select id="project-owner" name="owner"><option value="admin">admin</option><option value="devs">devs</option></select></div></div><div class="control-group"><label class="control-label" for="inputName">Project name</label><div class="controls"><input type="text" id="inputName" name="name" value="sample"><span class="help-inline">Enter name in alphabetnumerical or symbol characters(_-.)</span></div></div><div class="control-group"><label class="control-label">Share Options</label><div class="controls"><input name="projectScope" type="radio" id="public" value="PUBLIC" class="radio-btn" checked=""><label for="public" class="bg-radiobtn label-public">PUBLIC</label><input name="projectScope" type="radio" id="private" value="PRIVATE" class="radio-btn"><label for="private" class="bg-radiobtn label-private">PRIVATE</label></div></div><div class="control-group"><div class="controls"><button type="submit">Fork</button><a href="__BASE_PATH__/admin/sample/pullRequests" class="ybtn">Cancel</a></div></div></fieldset></form></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/fork" method="post" class="form-horizontal nm"><input type="hidden" name="owner" value="admin"><fieldset><legend><h4>admin / sample Fork</h4></legend><div id="helpMessage" class="well"><div class="row-fluid"><div class="pull-left"><img class="img-polaroid" src="__BASE_PATH__/legacy-assets/images/fork-pull/fork.jpg"><br></div><div class="pull-left help-messages"><p class="lead">Fork this project's repository.</p><p>"Forking" is a great way to contribute to someone else's project even without write access to it.</p><p>Once you fork a project, you can contribute your code by sending pull requests.</p></div></div></div><div class="control-group"><label class="control-label" for="inputOwner">Owner Name</label><div class="controls"><select id="project-owner" name="owner"><option value="admin">admin</option><option value="devs">devs</option></select></div></div><div class="control-group"><label class="control-label" for="inputName">Project name</label><div class="controls"><input type="text" id="inputName" name="name" value="sample"><span class="help-inline">Enter name in alphabetnumerical or symbol characters(_-.)</span></div></div><div class="control-group"><label class="control-label">Share Options</label><div class="controls"><input name="projectScope" type="radio" id="public" value="PUBLIC" class="radio-btn" checked=""><label for="public" class="bg-radiobtn label-public">PUBLIC</label><input name="projectScope" type="radio" id="private" value="PRIVATE" class="radio-btn"><label for="private" class="bg-radiobtn label-private">PRIVATE</label></div></div><div class="control-group"><div class="controls"><button class="ybtn ybtn-info" type="submit">Fork</button><a href="__BASE_PATH__/admin/sample/pullRequests" class="ybtn">Cancel</a></div></div></fieldset></form></div></div></div>
 <footer><div><span>Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" rel="noreferrer" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" rel="noreferrer" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" rel="noreferrer" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" rel="noreferrer" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
@@ -35,7 +35,7 @@ const EXPECTED_PROJECT_FORK_CLONE_BODY = `
 `;
 
 const EXPECTED_PROJECT_FORK_EXISTING_BODY = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/fork" method="post" class="form-horizontal nm"><input type="hidden" name="owner" value="devs"><fieldset><legend><h4>admin / sample Fork</h4></legend><div id="helpMessage" class="well"><div class="row-fluid"><div class="help-messages center-txt"><i class="ico ico-err2"></i><p>Same forked project already exists.</p><p><strong class="vmiddle">admin / sample</strong><i class="yobicon-right vmiddle"></i><a href="__BASE_PATH__/devs/sample" class="vmiddle">devs / sample</a></p></div></div></div><div class="control-group"><label class="control-label" for="inputOwner">Owner Name</label><div class="controls"><select id="project-owner" name="owner"><option value="admin">admin</option><option value="devs" selected="">devs</option></select></div></div><div class="control-group"><label class="control-label" for="inputName">Project name</label><div class="controls"><input type="text" id="inputName" name="name" value="sample"><span class="help-inline">Enter name in alphabetnumerical or symbol characters(_-.)</span></div></div><div class="control-group"><label class="control-label">Share Options</label><div class="controls"><input name="projectScope" type="radio" id="public" value="PUBLIC" class="radio-btn" checked=""><label for="public" class="bg-radiobtn label-public">PUBLIC</label><input name="projectScope" type="radio" id="protected" value="PROTECTED" class="radio-btn"><label for="protected" class="bg-radiobtn label-protected">GROUP PUBLIC</label><input name="projectScope" type="radio" id="private" value="PRIVATE" class="radio-btn"><label for="private" class="bg-radiobtn label-private">PRIVATE</label></div></div><div class="control-group"><div class="controls"><button type="submit">Fork</button><a href="__BASE_PATH__/admin/sample/pullRequests" class="ybtn">Cancel</a></div></div></fieldset></form></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/fork" method="post" class="form-horizontal nm"><input type="hidden" name="owner" value="devs"><fieldset><legend><h4>admin / sample Fork</h4></legend><div id="helpMessage" class="well"><div class="row-fluid"><div class="help-messages center-txt"><i class="ico ico-err2"></i><p>Same forked project already exists.</p><p><strong class="vmiddle">admin / sample</strong><i class="yobicon-right vmiddle"></i><a href="__BASE_PATH__/devs/sample" class="vmiddle">devs / sample</a></p></div></div></div><div class="control-group"><label class="control-label" for="inputOwner">Owner Name</label><div class="controls"><select id="project-owner" name="owner"><option value="admin">admin</option><option value="devs" selected="">devs</option></select></div></div><div class="control-group"><label class="control-label" for="inputName">Project name</label><div class="controls"><input type="text" id="inputName" name="name" value="sample"><span class="help-inline">Enter name in alphabetnumerical or symbol characters(_-.)</span></div></div><div class="control-group"><label class="control-label">Share Options</label><div class="controls"><input name="projectScope" type="radio" id="public" value="PUBLIC" class="radio-btn" checked=""><label for="public" class="bg-radiobtn label-public">PUBLIC</label><input name="projectScope" type="radio" id="protected" value="PROTECTED" class="radio-btn"><label for="protected" class="bg-radiobtn label-protected">GROUP PUBLIC</label><input name="projectScope" type="radio" id="private" value="PRIVATE" class="radio-btn"><label for="private" class="bg-radiobtn label-private">PRIVATE</label></div></div><div class="control-group"><div class="controls"><button class="ybtn ybtn-info" type="submit">Fork</button><a href="__BASE_PATH__/admin/sample/pullRequests" class="ybtn">Cancel</a></div></div></fieldset></form></div></div></div>
 `;
 
 const EXPECTED_PROJECT_FORK_BAD_REQUEST_SCREEN = `
@@ -109,6 +109,39 @@ test("project fork form matches legacy git/fork.scala.html DOM", async ({ page }
     "action",
     `${basePath}/admin/sample/fork`,
   );
+  await expect(page.locator(".content-wrap.frm-wrap > form > fieldset")).toBeVisible();
+  await expect(page.locator("[data-owner=project-fork-submit]")).toHaveClass(
+    /(?:^|\s)ybtn(?:\s|$)/u,
+  );
+  await expect(page.locator("[data-owner=project-fork-submit]")).toHaveClass(
+    /(?:^|\s)ybtn-info(?:\s|$)/u,
+  );
+  await expect(page.locator("[data-owner=project-fork-cancel]")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/pullRequests`,
+  );
+  const submitButton = page.locator("[data-owner=project-fork-submit]");
+  const cancelLink = page.locator("[data-owner=project-fork-cancel]");
+  await expect(page.locator("[data-owner=project-fork-help-copy]")).toHaveCSS(
+    "margin-left",
+    "10px",
+  );
+  await expect(submitButton).toHaveCSS("background-color", "rgb(58, 126, 229)");
+  await expect(cancelLink).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await submitButton.hover();
+  await expect(submitButton).toHaveCSS("background-color", "rgb(32, 110, 229)");
+  await cancelLink.hover();
+  await expect(cancelLink).toHaveCSS("background-color", "rgb(241, 241, 241)");
+  await expect(page.locator("#helpMessage .help-messages")).toHaveCSS("color", "rgb(32, 32, 32)");
+  const formSkeleton = await projectForkFormSkeletonMetrics(page);
+  expect(formSkeleton.formDirectChild).toBe(true);
+  expect(formSkeleton.fieldsetDirectChild).toBe(true);
+  expect(formSkeleton.actionsControlsDirectChild).toBe(true);
+  expect(formSkeleton.wrapInsideProjectPage).toBe(true);
+  expect(formSkeleton.formWidth).toBeGreaterThan(0);
+  expect(formSkeleton.formWidth).toBeLessThanOrEqual(formSkeleton.wrapWidth + 1);
+  expect(formSkeleton.actionsTop).toBeGreaterThanOrEqual(formSkeleton.formTop);
+  expect(Math.abs(formSkeleton.submitCenterY - formSkeleton.cancelCenterY)).toBeLessThanOrEqual(1);
   expect(await projectForkInlineControlMetrics(page)).toEqual({
     cancelGap: 4,
     privateLabelGap: 6,
@@ -120,7 +153,10 @@ test("project fork form matches legacy git/fork.scala.html DOM", async ({ page }
     await canonicalizeHtml(
       page,
       EXPECTED_PROJECT_FORK_FORM.replaceAll("__BASE_PATH__", basePath)
-        .replace("/assets/images/fork-pull/fork.jpg", "/legacy-assets/images/fork-pull/fork.jpg")
+        .replace(
+          `${basePath}/legacy-assets/images/fork-pull/fork.jpg`,
+          "legacy:images/fork-pull/fork.jpg",
+        )
         .replace(/ selected=""/gu, "")
         .replaceAll("__ROOT_PATH__", rootPath),
     ),
@@ -143,7 +179,7 @@ for (const viewport of [
   { name: "desktop", width: 1280, height: 720 },
   { name: "mobile", width: 390, height: 844 },
 ]) {
-  test(`project fork fallback assets preserve the context path on ${viewport.name}`, async ({
+  test(`project fork artwork renders on ${viewport.name}`, async ({
     page,
   }) => {
     const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -151,18 +187,11 @@ for (const viewport of [
     await mockProjectAdmin(page);
     await page.goto(`${basePath}/admin/sample/newFork`);
 
-    await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
-      "src",
-      `${basePath}/assets/images/project_default_logo.png`,
-    );
-    await expect(page.locator("#helpMessage img").last()).toHaveAttribute(
-      "src",
-      `${basePath}/legacy-assets/images/fork-pull/fork.jpg`,
-    );
-    await expect(page.locator(".project-header-outer")).toHaveAttribute(
-      "style",
-      new RegExp(`${basePath}/assets/images/bg-default-project\\.png`),
-    );
+    const artwork = page.locator("#helpMessage img").last();
+    await expect(artwork).toBeVisible();
+    await expect.poll(() => artwork.evaluate((image) =>
+      image instanceof HTMLImageElement ? [image.naturalWidth, image.naturalHeight] : [],
+    )).toEqual([324, 223]);
   });
 }
 
@@ -1005,6 +1034,11 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     function normalizeAttr(attr: Attr) {
+      if (attr.name === "src") {
+        return /\/assets\/fork-[^/]+\.jpg$/u.test(attr.value)
+          ? "legacy:images/fork-pull/fork.jpg"
+          : attr.value;
+      }
       if (attr.name === "class") {
         return attr.value
           .split(/\s+/u)
@@ -1013,7 +1047,6 @@ async function canonicalizeScreenRoots(page: Page) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
-              token !== "pr-fork-controls" &&
               token !== "pr-fork-clone-page" &&
               token !== "pr-fork-clone-project-page" &&
               !/^x[0-9a-z]+$/u.test(token) &&
@@ -1091,7 +1124,6 @@ async function canonicalizePageWrap(page: Page) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
-              token !== "pr-fork-controls" &&
               token !== "pr-fork-clone-page" &&
               token !== "pr-fork-clone-project-page" &&
               !/^x[0-9a-z]+$/u.test(token) &&
@@ -1220,6 +1252,56 @@ async function projectForkHeaderSearchScopeMetrics(page: Page) {
   });
 }
 
+async function projectForkFormSkeletonMetrics(page: Page) {
+  return page.evaluate(() => {
+    const wrap = document.querySelector<HTMLElement>(".content-wrap.frm-wrap");
+    const projectPageWrap = wrap?.parentElement;
+    const form = wrap?.querySelector<HTMLFormElement>(":scope > form");
+    const fieldset = form?.querySelector<HTMLElement>(":scope > fieldset");
+    const actions = fieldset?.querySelector<HTMLElement>(
+      '[data-owner="project-fork-actions"]',
+    );
+    const controls = actions?.querySelector<HTMLElement>(":scope > .controls");
+    const submit = controls?.querySelector<HTMLElement>("button[type=submit]");
+    const cancel = controls?.querySelector<HTMLElement>("a.ybtn");
+    if (
+      !actions ||
+      !cancel ||
+      !controls ||
+      !fieldset ||
+      !form ||
+      !projectPageWrap ||
+      !submit ||
+      !wrap
+    ) {
+      throw new Error("Expected fork form skeleton targets are missing");
+    }
+
+    const rect = (element: HTMLElement) => {
+      const { bottom, height, top, width } = element.getBoundingClientRect();
+      return { bottom, centerY: top + height / 2, top, width };
+    };
+    const wrapRect = rect(wrap);
+    const formRect = rect(form);
+    const actionsRect = rect(actions);
+    const submitRect = rect(submit);
+    const cancelRect = rect(cancel);
+
+    return {
+      actionsControlsDirectChild: controls.parentElement === actions,
+      actionsTop: actionsRect.top,
+      cancelCenterY: cancelRect.centerY,
+      fieldsetDirectChild: fieldset.parentElement === form,
+      formDirectChild: form.parentElement === wrap,
+      formTop: formRect.top,
+      formWidth: formRect.width,
+      wrapInsideProjectPage: projectPageWrap.classList.contains("project-page-wrap"),
+      submitCenterY: submitRect.centerY,
+      wrapWidth: wrapRect.width,
+    };
+  });
+}
+
 async function projectForkInlineControlMetrics(page: Page) {
   return page.evaluate(() => {
     const submit = document.querySelector<HTMLElement>(".controls > button[type=submit]");
@@ -1309,7 +1391,6 @@ async function canonicalizeHtml(page: Page, html: string) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
-              token !== "pr-fork-controls" &&
               token !== "pr-fork-clone-page" &&
               token !== "pr-fork-clone-project-page" &&
               !/^x[0-9a-z]+$/u.test(token) &&

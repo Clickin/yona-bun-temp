@@ -39,7 +39,11 @@
       "sourceFiles": [
         {
           "path": "frontend/src/routes/$ownerName/$projectName/code/legacy-dynatree.css",
-          "sha256": "3021579fe5b158720a46bca736b54aa768c88dbac2738b82be08c643e34b8558"
+          "sha256": "6a11e5b93406df42c856e7473124029061d1e509979187da347cffd3fba466a5"
+        },
+        {
+          "path": "frontend/src/assets/legacy/dynatree/ui.dynatree.css",
+          "sha256": "5448638e232bc7b1c8f9f536434e85d02d588a07248ee0adc668285498f915d8"
         },
         {
           "path": "yona-original/public/stylesheets/dynatree/skin/ui.dynatree.css",

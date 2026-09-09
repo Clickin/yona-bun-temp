@@ -19,6 +19,7 @@ node_modules
 
 # Yona runtime data
 .yona-data/
+.meta/
 yona-original/
 
 # OS

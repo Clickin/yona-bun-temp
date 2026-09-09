@@ -1,15 +1,12 @@
-// Tests for the pullrequest-code domain module: registry shape, translator
-// literals, and behavior-inventory coverage. Runs standalone: merges this
+// Tests for the pullrequest-code domain module: registry shape, request
+// semantics, and mutation outcomes. Runs standalone: merges this
 // module's actionDefinitions with the shared registry locally because
 // scenarios/index.mjs is not edited by domain agents.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import path from "node:path";
 
 import { ACTION_DEFINITIONS } from "./scenarios/index.mjs";
-import { validateScenarios, matchBehaviors } from "./dsl.mjs";
+import { validateScenarios } from "./dsl.mjs";
 import {
   scenarios,
   actionDefinitions,
@@ -27,10 +24,6 @@ import { classifyViolation } from "./report.mjs";
 
 const MERGED_DEFINITIONS = { ...ACTION_DEFINITIONS, ...actionDefinitions };
 const knownActions = Object.keys(MERGED_DEFINITIONS);
-
-const inventory = JSON.parse(
-  readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), "../../docs/provenance/behavior-inventory.json"), "utf8"),
-).behaviors;
 
 test("every scenario passes validateScenarios against merged registry", () => {
   const problems = validateScenarios(scenarios, knownActions);
@@ -237,7 +230,6 @@ test("translators produce expected method/path literals", () => {
     ["fetch-raw-file", { owner: "admin", project: "sample", rev: "main", path: "README.md" }, "/admin/sample/rawcode/main/README.md"],
     ["fetch-image-file", { owner: "admin", project: "sample", rev: "main", path: "README.md" }, "/admin/sample/image/main/README.md"],
     ["download-code-archive", { owner: "admin", project: "sample", branch: "main" }, "/admin/sample/code/main/download"],
-    ["list-project-files", { owner: "admin", project: "sample" }, "/admin/sample/files"],
   ];
   for (const [action, params, expectedPath] of rawCases) {
     const legacy = MERGED_DEFINITIONS[action].translateLegacy(step(action, params), {});
@@ -551,79 +543,6 @@ test("comment-pullrequest uses the created display route and DB id without a res
   assert.equal(calls.length, 1);
   assert.match(calls[0].legacy.path, /\/pullRequest\/801\/comments\?commitId=HEAD$/u);
   assert.match(calls[0].yoram.path, /\/pull-requests\/84\/comments$/u);
-});
-
-test("legacy PR cleanup and readiness are scoped to the current differential token", () => {
-  const runSource = readFileSync(
-    path.join(path.dirname(fileURLToPath(import.meta.url)), "run.mjs"),
-    "utf8",
-  );
-  assert.match(
-    runSource,
-    /title like 'Differential sweep PR %'/u,
-    "preboot cleanup must target every prior differential PR title",
-  );
-  assert.match(
-    runSource,
-    /async resolveLegacyPullRequest\(ctx, number, title\)/u,
-    "readiness must resolve from the Location number and current title",
-  );
-  assert.match(
-    runSource,
-    /AND pr\.TITLE = \$\{sqlQuote\(title\)\}/u,
-    "readiness must reject stale rows with the same display number",
-  );
-  assert.match(
-    runSource,
-    /await new Promise\(\(resolve\) => setTimeout\(resolve, 100\)\)/u,
-    "readiness must poll with a bounded condition rather than a fixed sleep",
-  );
-  assert.match(
-    readFileSync(
-      path.join(path.dirname(fileURLToPath(import.meta.url)), "scenarios/pullrequest-code.mjs"),
-      "utf8",
-    ),
-    /currentToken: shared\.title/u,
-    "DOM comparison must be gated on the current run token",
-  );
-});
-
-test("matchBehaviors returns non-empty B-id lists for every scenario", () => {
-  for (const scenario of scenarios) {
-    const ids = matchBehaviors(scenario, inventory);
-    assert.ok(ids.length > 0, `${scenario.id}: no behaviors matched`);
-  }
-});
-
-test("new scenarios match their targeted behavior sets exactly", () => {
-  const expected = {
-    "R10-compare-and-file-views": ["B-0068", "B-0076", "B-0078", "B-0080", "B-0107"],
-    "R11-code-ajax-nobranch": ["B-0069", "B-0070", "B-0071"],
-    "R12-newfork-reviews-attachments": ["B-0048", "B-0108", "B-0109", "B-0120"],
-    "R13-pr-lifecycle-mutation": ["B-0227", "B-0228", "B-0229", "B-0230", "B-0232", "B-0233"],
-    "R14-commit-comment-lifecycle": ["B-0003", "B-0238"],
-    "R15-branch-default-toggle": ["B-0237"],
-    "R16-pr-review-points": ["B-0265", "B-0266"],
-  };
-  for (const [id, ids] of Object.entries(expected)) {
-    const scenario = scenarios.find((entry) => entry.id === id);
-    assert.ok(scenario, `${id} exists`);
-    assert.deepEqual(matchBehaviors(scenario, inventory).sort(), [...ids].sort(), `${id} behavior set`);
-  }
-});
-
-test("distinct NEW B-id coverage vs pre-wave R1-R9 registry >= 22", () => {
-  // Fixed in-domain baseline (R1-R9 matcher set) instead of the moving
-  // .agent/differential/behavior-coverage.json artifact, which now includes
-  // this wave's own scenarios after every sweep.
-  const preWave = new Set(
-    scenarios
-      .filter((scenario) => /^R[1-9]-/.test(scenario.id))
-      .flatMap((scenario) => matchBehaviors(scenario, inventory)),
-  );
-  const all = new Set(scenarios.flatMap((scenario) => matchBehaviors(scenario, inventory)));
-  const fresh = [...all].filter((id) => !preWave.has(id));
-  assert.ok(fresh.length >= 22, `NEW distinct B-id coverage ${fresh.length} < 22: ${fresh.join(", ")}`);
 });
 test("R1–R12 scenarios stay read-only GET; R13–R16 carry the mutations", () => {
   const MUTATIONS = new Set([

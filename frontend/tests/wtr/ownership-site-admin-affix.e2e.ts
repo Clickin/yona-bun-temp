@@ -1,4 +1,3 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Locator, type Page } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
@@ -11,18 +10,7 @@ const OWNER = '[data-owner="site-admin-affix"]';
 
 test.use({ locale: "en-US" });
 
-test("site-admin affix source owns the legacy surface through global Style variables", () => {
-  const appSource = curatedAppCss();
-  const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const themeSource = readFileSync("src/app.css", "utf8");
-  expect(routeSource).toContain('data-owner="site-admin-affix"');
-  expect(routeSource).not.toContain('className="admin-logged-in-affix"');
-  expect(routeSource).not.toContain('className="small-font"');
-  expect(appSource).not.toContain(".admin-logged-in-affix");
-  expect(themeSource).not.toMatch(
-    /siteAdminAffix(?:Padding|Width|FontSize|FontWeight|ZIndex|DetailFontSize|DetailFontWeight):/u,
-  );
-});
+
 
 for (const viewport of [
   { affix: { height: 43, width: 1366, x: 0, y: 0 }, headerY: 43, label: "desktop" },

@@ -29,8 +29,9 @@ use super::site_admin::{
 use crate::persistence::{IssueListFilter, MilestoneListFilter, PostingListFilter};
 use crate::{
     append_response_headers, internal_error, require_project_read, rest_actor_id,
-    rest_json_response, rest_migration_actor_from_user_id, rest_require_migration_actor,
-    rest_repository, ConnectError, Context, PilotBackend, PilotServiceImpl, RestRouteError,
+    rest_json_response, rest_migration_actor_from_user_id, rest_repository,
+    rest_require_migration_actor, ConnectError, Context, PilotBackend, PilotServiceImpl,
+    RestRouteError,
 };
 
 const NDJSON_CONTENT_TYPE: &str = "application/x-ndjson";
@@ -251,12 +252,8 @@ async fn stream_project_ndjson(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
     for milestone in milestones {
-        let item = rest_site_export_milestone_from_record(
-            data_root,
-            owner_name,
-            project_name,
-            &milestone,
-        );
+        let item =
+            rest_site_export_milestone_from_record(data_root, owner_name, project_name, &milestone);
         send_record(tx, "milestone", item).await?;
         milestone_count += 1;
     }
@@ -295,15 +292,12 @@ async fn stream_project_ndjson(
                     .await
                     .map_err(internal_error)
                     .map_err(RestRouteError::from_connect_error)?
-                    .ok_or_else(|| {
-                        RestRouteError::internal("project export issue disappeared")
-                    })?;
+                    .ok_or_else(|| RestRouteError::internal("project export issue disappeared"))?;
                 let export_item = rest_site_export_issue_from_record(data_root, &detail);
                 send_record(tx, "issue", export_item).await?;
                 issue_count += 1;
             }
-            let total_pages =
-                (record.total_count + record.page_size - 1) / record.page_size.max(1);
+            let total_pages = (record.total_count + record.page_size - 1) / record.page_size.max(1);
             if page >= total_pages {
                 break;
             }
@@ -409,7 +403,8 @@ async fn rest_project_import(
         }
     }
 
-    let mut source = NdjsonImportRecordSource::new(body.into_data_stream(), owner_name, project_name);
+    let mut source =
+        NdjsonImportRecordSource::new(body.into_data_stream(), owner_name, project_name);
     if query.dry_run {
         let counts = source.count_records().await?;
         let mut response = RestSiteImportResponse::dry_run(
@@ -463,11 +458,7 @@ struct NdjsonImportRecordSource {
 }
 
 impl NdjsonImportRecordSource {
-    fn new(
-        stream: axum::body::BodyDataStream,
-        owner_name: String,
-        project_name: String,
-    ) -> Self {
+    fn new(stream: axum::body::BodyDataStream, owner_name: String, project_name: String) -> Self {
         Self {
             stream,
             line_buffer: Vec::new(),
@@ -523,11 +514,10 @@ impl NdjsonImportRecordSource {
             .ok_or_else(|| RestRouteError::bad_request("ndjson record missing kind"))?;
         match kind {
             "project" => {
-                let line: NdjsonProjectImportLine = serde_json::from_value(value).map_err(
-                    |error| {
+                let line: NdjsonProjectImportLine =
+                    serde_json::from_value(value).map_err(|error| {
                         RestRouteError::bad_request(format!("invalid project record: {error}"))
-                    },
-                )?;
+                    })?;
                 Ok(NdjsonRecord::Project(RestSiteImportProjectItem {
                     created_at: line.created_at,
                     id: line.id,
@@ -539,10 +529,13 @@ impl NdjsonImportRecordSource {
                     vcs: line.vcs,
                 }))
             }
-            "member" => parse_item::<RestSiteExportProjectMemberItem>(value).map(NdjsonRecord::Member),
+            "member" => {
+                parse_item::<RestSiteExportProjectMemberItem>(value).map(NdjsonRecord::Member)
+            }
             "label" => parse_item::<RestSiteExportProjectLabelItem>(value).map(NdjsonRecord::Label),
-            "milestone" => parse_item::<RestSiteExportMilestoneItem>(value)
-                .map(NdjsonRecord::Milestone),
+            "milestone" => {
+                parse_item::<RestSiteExportMilestoneItem>(value).map(NdjsonRecord::Milestone)
+            }
             "post" => parse_item::<RestSiteExportPostItem>(value).map(NdjsonRecord::Post),
             "issue" => parse_item::<RestSiteExportIssueItem>(value).map(NdjsonRecord::Issue),
             "done" => Ok(NdjsonRecord::Done),
@@ -592,20 +585,23 @@ impl NdjsonImportRecordSource {
                 Some(NdjsonRecord::Milestone(milestone)) => {
                     self.validate_ref(&milestone.owner_name, &milestone.project_name)?;
                     counts.milestones = counts.milestones.saturating_add(1);
-                    counts.attachments =
-                        counts.attachments.saturating_add(milestone.attachments.len() as u32);
+                    counts.attachments = counts
+                        .attachments
+                        .saturating_add(milestone.attachments.len() as u32);
                 }
                 Some(NdjsonRecord::Post(post)) => {
                     self.validate_ref(&post.owner_name, &post.project_name)?;
                     counts.posts = counts.posts.saturating_add(1);
-                    counts.attachments =
-                        counts.attachments.saturating_add(post.attachments.len() as u32);
+                    counts.attachments = counts
+                        .attachments
+                        .saturating_add(post.attachments.len() as u32);
                 }
                 Some(NdjsonRecord::Issue(issue)) => {
                     self.validate_ref(&issue.owner_name, &issue.project_name)?;
                     counts.issues = counts.issues.saturating_add(1);
-                    counts.attachments =
-                        counts.attachments.saturating_add(issue.attachments.len() as u32);
+                    counts.attachments = counts
+                        .attachments
+                        .saturating_add(issue.attachments.len() as u32);
                 }
                 Some(NdjsonRecord::Done) | None => break,
             }
@@ -679,8 +675,8 @@ impl ImportRecordSource for NdjsonImportRecordSource {
         &mut self,
     ) -> BoxFuture<'_, Result<Option<RestSiteExportProjectMemberItem>, RestRouteError>> {
         Box::pin(async move {
-            if let Some(NdjsonRecord::Member(member)) = self
-                .take_pending_matching(|record| matches!(record, NdjsonRecord::Member(_)))
+            if let Some(NdjsonRecord::Member(member)) =
+                self.take_pending_matching(|record| matches!(record, NdjsonRecord::Member(_)))
             {
                 return Ok(Some(member));
             }
@@ -705,9 +701,11 @@ impl ImportRecordSource for NdjsonImportRecordSource {
                     Some(NdjsonRecord::Project(_)) => {
                         return Err(RestRouteError::bad_request("duplicate project metadata"));
                     }
-                    Some(record @ (NdjsonRecord::Post(_)
-                    | NdjsonRecord::Issue(_)
-                    | NdjsonRecord::Done)) => {
+                    Some(
+                        record @ (NdjsonRecord::Post(_)
+                        | NdjsonRecord::Issue(_)
+                        | NdjsonRecord::Done),
+                    ) => {
                         self.stash_pending(record)?;
                         return Ok(None);
                     }
@@ -721,8 +719,8 @@ impl ImportRecordSource for NdjsonImportRecordSource {
         &mut self,
     ) -> BoxFuture<'_, Result<Option<RestSiteExportProjectLabelItem>, RestRouteError>> {
         Box::pin(async move {
-            if let Some(NdjsonRecord::Label(label)) = self
-                .take_pending_matching(|record| matches!(record, NdjsonRecord::Label(_)))
+            if let Some(NdjsonRecord::Label(label)) =
+                self.take_pending_matching(|record| matches!(record, NdjsonRecord::Label(_)))
             {
                 return Ok(Some(label));
             }
@@ -747,9 +745,11 @@ impl ImportRecordSource for NdjsonImportRecordSource {
                     Some(NdjsonRecord::Member(_)) => {
                         return Err(RestRouteError::bad_request("ndjson records out of order"));
                     }
-                    Some(record @ (NdjsonRecord::Post(_)
-                    | NdjsonRecord::Issue(_)
-                    | NdjsonRecord::Done)) => {
+                    Some(
+                        record @ (NdjsonRecord::Post(_)
+                        | NdjsonRecord::Issue(_)
+                        | NdjsonRecord::Done),
+                    ) => {
                         self.stash_pending(record)?;
                         return Ok(None);
                     }
@@ -763,8 +763,8 @@ impl ImportRecordSource for NdjsonImportRecordSource {
         &mut self,
     ) -> BoxFuture<'_, Result<Option<RestSiteExportMilestoneItem>, RestRouteError>> {
         Box::pin(async move {
-            if let Some(NdjsonRecord::Milestone(milestone)) = self
-                .take_pending_matching(|record| matches!(record, NdjsonRecord::Milestone(_)))
+            if let Some(NdjsonRecord::Milestone(milestone)) =
+                self.take_pending_matching(|record| matches!(record, NdjsonRecord::Milestone(_)))
             {
                 return Ok(Some(milestone));
             }
@@ -786,9 +786,11 @@ impl ImportRecordSource for NdjsonImportRecordSource {
                     Some(NdjsonRecord::Member(_)) | Some(NdjsonRecord::Label(_)) => {
                         return Err(RestRouteError::bad_request("ndjson records out of order"));
                     }
-                    Some(record @ (NdjsonRecord::Post(_)
-                    | NdjsonRecord::Issue(_)
-                    | NdjsonRecord::Done)) => {
+                    Some(
+                        record @ (NdjsonRecord::Post(_)
+                        | NdjsonRecord::Issue(_)
+                        | NdjsonRecord::Done),
+                    ) => {
                         self.stash_pending(record)?;
                         return Ok(None);
                     }
@@ -802,8 +804,8 @@ impl ImportRecordSource for NdjsonImportRecordSource {
         &mut self,
     ) -> BoxFuture<'_, Result<Option<RestSiteExportPostItem>, RestRouteError>> {
         Box::pin(async move {
-            if let Some(NdjsonRecord::Post(post)) = self
-                .take_pending_matching(|record| matches!(record, NdjsonRecord::Post(_)))
+            if let Some(NdjsonRecord::Post(post)) =
+                self.take_pending_matching(|record| matches!(record, NdjsonRecord::Post(_)))
             {
                 return Ok(Some(post));
             }
@@ -838,8 +840,8 @@ impl ImportRecordSource for NdjsonImportRecordSource {
         &mut self,
     ) -> BoxFuture<'_, Result<Option<RestSiteExportIssueItem>, RestRouteError>> {
         Box::pin(async move {
-            if let Some(NdjsonRecord::Issue(issue)) = self
-                .take_pending_matching(|record| matches!(record, NdjsonRecord::Issue(_)))
+            if let Some(NdjsonRecord::Issue(issue)) =
+                self.take_pending_matching(|record| matches!(record, NdjsonRecord::Issue(_)))
             {
                 return Ok(Some(issue));
             }

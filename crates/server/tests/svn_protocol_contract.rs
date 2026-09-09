@@ -4223,6 +4223,170 @@ async fn svn_protocol_external_client_can_commit_file_update() {
 }
 
 #[tokio::test]
+async fn svn_protocol_external_client_commits_multi_path_activity_once() {
+    if !svn_tools_available() || !svn_client_available() {
+        eprintln!(
+            "skipping external SVN multi-path commit smoke because svnadmin/svnlook/svn is unavailable"
+        );
+        return;
+    }
+
+    let data_dir = tempdir().expect("yona data tempdir");
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
+    seed_svn_readme(&repo_path, "initial README for multi-path commit\n")
+        .expect("seed svn README for multi-path commit");
+    let Some(before) = seed_svn_nested_tree(&repo_path) else {
+        eprintln!("skipping external SVN multi-path smoke because executable seed failed");
+        return;
+    };
+
+    let (base_url, shutdown) = spawn_app_server(app).await;
+    let svn_url = format!("{base_url}/yona/svn/owner/projectYobi");
+    let checkout_dir = tempdir().expect("svn multi-path checkout tempdir");
+    run_svn_blocking(
+        vec![
+            "checkout".to_string(),
+            "--non-interactive".to_string(),
+            svn_url.clone(),
+            checkout_dir.path().to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+
+    let readme = checkout_dir.path().join("trunk").join("README.md");
+    let guide = checkout_dir
+        .path()
+        .join("trunk")
+        .join("manual")
+        .join("guide.md");
+    std::fs::write(&readme, "multi-path README update\n").expect("edit multi-path README");
+    run_svn_blocking(
+        vec![
+            "propset".to_string(),
+            "yoram-test".to_string(),
+            "yes".to_string(),
+            readme.to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+    run_svn_blocking(
+        vec!["delete".to_string(), guide.to_string_lossy().to_string()],
+        None,
+    )
+    .await;
+    let new_dir = checkout_dir.path().join("trunk").join("newdir");
+    std::fs::create_dir(&new_dir).expect("create multi-path directory");
+    let new_file = new_dir.join("new.txt");
+    std::fs::write(&new_file, "multi-path new file\n").expect("write multi-path file");
+    run_svn_blocking(
+        vec!["add".to_string(), new_dir.to_string_lossy().to_string()],
+        None,
+    )
+    .await;
+
+    run_svn_blocking(
+        vec![
+            "commit".to_string(),
+            "--non-interactive".to_string(),
+            "--username".to_string(),
+            "owner".to_string(),
+            "--password".to_string(),
+            "doorpass1".to_string(),
+            "-m".to_string(),
+            "external multi-path atomic commit".to_string(),
+            checkout_dir.path().to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+
+    let after = yoram_vcs::svn_youngest_revision(&repo_path).expect("read multi-path revision");
+    assert_eq!(
+        after,
+        before + 1,
+        "one SVN CLI commit must create exactly one repository revision"
+    );
+    assert_eq!(
+        yoram_vcs::svn_cat_file(&repo_path, None, "trunk/README.md")
+            .expect("read committed multi-path README"),
+        b"multi-path README update\n"
+    );
+    assert_eq!(
+        yoram_vcs::svn_path_exists(&repo_path, None, "trunk/manual/guide.md")
+            .expect("check deleted guide"),
+        false
+    );
+    assert_eq!(
+        yoram_vcs::svn_cat_file(&repo_path, None, "trunk/newdir/new.txt")
+            .expect("read committed multi-path file"),
+        b"multi-path new file\n"
+    );
+    assert_eq!(
+        yoram_vcs::svn_property(&repo_path, None, "trunk/README.md", "yoram-test")
+            .expect("read committed multi-path property")
+            .as_deref(),
+        Some("yes")
+    );
+    let logs = yoram_vcs::svn_log_entries(&repo_path, after, after, 1)
+        .expect("read multi-path commit log");
+    assert_eq!(logs[0].author, "owner");
+    assert_eq!(logs[0].message, "external multi-path atomic commit");
+
+    let fresh_checkout = tempdir().expect("fresh SVN checkout tempdir");
+    run_svn_blocking(
+        vec![
+            "checkout".to_string(),
+            "--non-interactive".to_string(),
+            svn_url,
+            fresh_checkout.path().to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+    assert_eq!(
+        std::fs::read_to_string(fresh_checkout.path().join("trunk/README.md"))
+            .expect("read fresh checkout README"),
+        "multi-path README update\n"
+    );
+    assert!(
+        !fresh_checkout.path().join("trunk/manual/guide.md").exists(),
+        "fresh checkout must not resurrect deleted guide"
+    );
+    assert_eq!(
+        std::fs::read_to_string(fresh_checkout.path().join("trunk/newdir/new.txt"))
+            .expect("read fresh checkout new file"),
+        "multi-path new file\n"
+    );
+    let diff = run_svn_capture(
+        &["diff", fresh_checkout.path().to_string_lossy().as_ref()],
+        None,
+    );
+    assert!(
+        diff.status.success(),
+        "svn diff failed\nstderr: {}",
+        String::from_utf8_lossy(&diff.stderr)
+    );
+    assert!(
+        diff.stdout.is_empty(),
+        "fresh checkout should have no local diff\nstdout: {}",
+        String::from_utf8_lossy(&diff.stdout)
+    );
+
+    let _ = shutdown.send(());
+}
+
+#[tokio::test]
 async fn svn_protocol_external_client_can_update_after_remote_commit() {
     if !svn_tools_available() || !svn_client_available() {
         eprintln!("skipping external SVN update smoke because svnadmin/svnlook/svn is unavailable");
@@ -5973,15 +6137,11 @@ async fn svn_protocol_supports_checkout_merge_choreography() {
     )
     .await;
     assert_eq!(response.status(), StatusCode::NO_CONTENT);
-    let put_revision = response
-        .headers()
-        .get("svn-revision")
-        .and_then(|value| value.to_str().ok())
-        .and_then(|value| value.parse::<i64>().ok())
-        .expect("working resource PUT should return committed SVN revision");
-    assert!(
-        put_revision > revision,
-        "working resource PUT should commit a newer repository revision"
+    assert!(response.headers().get("svn-revision").is_none());
+    assert_eq!(
+        yoram_vcs::svn_youngest_revision(&repo_path).expect("youngest SVN revision after PUT"),
+        revision,
+        "working resource PUT should remain staged until MERGE"
     );
 
     let merge = Method::from_bytes(b"MERGE").expect("MERGE method");
@@ -6017,17 +6177,25 @@ async fn svn_protocol_supports_checkout_merge_choreography() {
             .and_then(|value| value.to_str().ok()),
         Some("1,2")
     );
+    let merge_revision = response
+        .headers()
+        .get("svn-revision")
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.parse::<i64>().ok())
+        .expect("MERGE should return committed SVN revision");
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let text = String::from_utf8(body.to_vec()).unwrap();
     assert!(
         text.contains("<D:merge-response")
             && text.contains("<D:updated-set>")
-            && text.contains(&format!("<D:version-name>{put_revision}</D:version-name>"))
             && text.contains(&format!(
-                "/yona/svn/owner/projectYobi/!svn/bln/{put_revision}"
+                "<D:version-name>{merge_revision}</D:version-name>"
             ))
             && text.contains(&format!(
-                "/yona/svn/owner/projectYobi/!svn/ver/{put_revision}/trunk/README.md"
+                "/yona/svn/owner/projectYobi/!svn/bln/{merge_revision}"
+            ))
+            && text.contains(&format!(
+                "/yona/svn/owner/projectYobi/!svn/ver/{merge_revision}/trunk/README.md"
             )),
         "SVN MERGE should expose ra_serf commit info and checked-in metadata: {text}"
     );
@@ -6037,6 +6205,420 @@ async fn svn_protocol_supports_checkout_merge_choreography() {
         app,
         delete,
         "/svn/owner/projectYobi/!svn/act/yona-test-activity",
+        Some(&owner_basic),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::NO_CONTENT);
+}
+
+#[tokio::test]
+async fn svn_protocol_activity_stages_multiple_paths_until_one_merge_revision() {
+    let data_dir = tempdir().expect("yona data tempdir");
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join("svn")
+        .join("owner")
+        .join("projectYobi");
+    seed_svn_readme(&repo_path, "initial README for atomic activity\n")
+        .expect("seed svn README for atomic activity");
+    let Some(revision) = seed_svn_nested_tree(&repo_path) else {
+        eprintln!(
+            "skipping executable SVN activity atomicity test because svnadmin/svnlook/svn is unavailable"
+        );
+        return;
+    };
+    let owner_basic = basic("owner", "doorpass1");
+    let activity_id = "yoram-atomic-activity";
+
+    let mkactivity = Method::from_bytes(b"MKACTIVITY").expect("MKACTIVITY method");
+    let response = direct_request(
+        app.clone(),
+        mkactivity,
+        &format!("/svn/owner/projectYobi/!svn/act/{activity_id}"),
+        Some(&owner_basic),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::CREATED);
+
+    let proppatch = Method::from_bytes(b"PROPPATCH").expect("PROPPATCH method");
+    let response = direct_request_with_body(
+        app.clone(),
+        proppatch,
+        &format!("/svn/owner/projectYobi/!svn/wrk/{activity_id}"),
+        Some(&owner_basic),
+        Body::from(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<S:propertyupdate xmlns:S="svn:" xmlns:D="DAV:">
+  <S:set>
+    <S:prop>
+      <S:log>atomic multi-path activity</S:log>
+    </S:prop>
+  </S:set>
+</S:propertyupdate>"#,
+        ),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+
+    let checkout = Method::from_bytes(b"CHECKOUT").expect("CHECKOUT method");
+    let checkout_body = format!(
+        r#"<?xml version="1.0" encoding="utf-8"?>
+<D:checkout xmlns:D="DAV:">
+  <D:activity-set>
+    <D:href>/svn/owner/projectYobi/!svn/act/{activity_id}</D:href>
+  </D:activity-set>
+  <D:apply-to-version/>
+</D:checkout>"#
+    );
+    let response = direct_request_with_body(
+        app.clone(),
+        checkout.clone(),
+        &format!("/svn/owner/projectYobi/!svn/ver/{revision}/trunk/README.md"),
+        Some(&owner_basic),
+        Body::from(checkout_body.clone()),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::CREATED);
+    let readme_working_href = response
+        .headers()
+        .get(http::header::LOCATION)
+        .and_then(|value| value.to_str().ok())
+        .expect("CHECKOUT should return README working resource")
+        .strip_prefix("/yona")
+        .unwrap_or_else(|| {
+            response
+                .headers()
+                .get(http::header::LOCATION)
+                .and_then(|value| value.to_str().ok())
+                .expect("README working resource location")
+        })
+        .to_string();
+
+    let response = direct_request_with_body(
+        app.clone(),
+        checkout,
+        &format!("/svn/owner/projectYobi/!svn/ver/{revision}/trunk/manual/guide.md"),
+        Some(&owner_basic),
+        Body::from(checkout_body),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::CREATED);
+    let guide_working_href = response
+        .headers()
+        .get(http::header::LOCATION)
+        .and_then(|value| value.to_str().ok())
+        .expect("CHECKOUT should return guide working resource")
+        .strip_prefix("/yona")
+        .unwrap_or_else(|| {
+            response
+                .headers()
+                .get(http::header::LOCATION)
+                .and_then(|value| value.to_str().ok())
+                .expect("guide working resource location")
+        })
+        .to_string();
+
+    let put = Method::from_bytes(b"PUT").expect("PUT method");
+    let response = direct_request_with_body(
+        app.clone(),
+        put.clone(),
+        &readme_working_href,
+        Some(&owner_basic),
+        Body::from("atomic README update\n"),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::NO_CONTENT);
+
+    let response = direct_request_with_body(
+        app.clone(),
+        put,
+        &guide_working_href,
+        Some(&owner_basic),
+        Body::from("atomic guide update\n"),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::NO_CONTENT);
+
+    assert_eq!(
+        yoram_vcs::svn_youngest_revision(&repo_path).expect("read pre-merge revision"),
+        revision,
+        "activity writes must not publish partial revisions before MERGE"
+    );
+
+    let merge = Method::from_bytes(b"MERGE").expect("MERGE method");
+    let response = direct_request_with_body(
+        app.clone(),
+        merge,
+        "/svn/owner/projectYobi",
+        Some(&owner_basic),
+        Body::from(format!(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<D:merge xmlns:D="DAV:">
+  <D:source>
+    <D:href>/svn/owner/projectYobi/!svn/act/{activity_id}</D:href>
+  </D:source>
+  <D:no-auto-merge/>
+  <D:no-checkout/>
+  <D:prop>
+    <D:checked-in/>
+    <D:version-name/>
+    <D:resourcetype/>
+    <D:creationdate/>
+    <D:creator-displayname/>
+  </D:prop>
+</D:merge>"#
+        )),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let merge_body = response.into_body().collect().await.unwrap().to_bytes();
+    let merge_text = String::from_utf8(merge_body.to_vec()).expect("MERGE XML");
+    let final_revision =
+        yoram_vcs::svn_youngest_revision(&repo_path).expect("read merged revision");
+    assert_eq!(
+        final_revision,
+        revision + 1,
+        "one logical SVN activity must publish exactly one revision"
+    );
+    assert!(
+        merge_text.contains(&format!(
+            "<D:version-name>{final_revision}</D:version-name>"
+        )),
+        "MERGE should report the single committed revision: {merge_text}"
+    );
+    assert_eq!(
+        yoram_vcs::svn_cat_file(&repo_path, None, "trunk/README.md").expect("read merged README"),
+        b"atomic README update\n"
+    );
+    assert_eq!(
+        yoram_vcs::svn_cat_file(&repo_path, None, "trunk/manual/guide.md")
+            .expect("read merged guide"),
+        b"atomic guide update\n"
+    );
+    let logs = yoram_vcs::svn_log_entries(&repo_path, final_revision, final_revision, 1)
+        .expect("read merged log");
+    assert_eq!(logs[0].author, "owner");
+    assert_eq!(logs[0].message, "atomic multi-path activity");
+
+    let response = direct_request(
+        app,
+        Method::DELETE,
+        &format!("/svn/owner/projectYobi/!svn/act/{activity_id}"),
+        Some(&owner_basic),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::NO_CONTENT);
+
+    let _ = project_id;
+}
+
+#[tokio::test]
+async fn svn_protocol_activity_copy_move_and_abort_are_staged() {
+    let data_dir = tempdir().expect("yona data tempdir");
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let repo_path = data_dir.path().join("repo/svn/owner/projectYobi");
+    let revision = seed_svn_readme(&repo_path, "copy source\n").expect("seed svn README");
+    let owner_basic = basic("owner", "doorpass1");
+    let activity_id = "yoram-copy-move-activity";
+
+    let response = direct_request(
+        app.clone(),
+        Method::from_bytes(b"MKACTIVITY").expect("MKACTIVITY method"),
+        &format!("/svn/owner/projectYobi/!svn/act/{activity_id}"),
+        Some(&owner_basic),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::CREATED);
+
+    let copy_destination =
+        format!("/yona/svn/owner/projectYobi/!svn/wrk/{activity_id}/trunk/README_COPY.md");
+    let response = direct_request_with_body_and_header(
+        app.clone(),
+        Method::from_bytes(b"COPY").expect("COPY method"),
+        &format!("/svn/owner/projectYobi/!svn/ver/{revision}/trunk/README.md"),
+        Some(&owner_basic),
+        "destination",
+        &copy_destination,
+        Body::empty(),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::CREATED);
+
+    let move_destination =
+        format!("/yona/svn/owner/projectYobi/!svn/wrk/{activity_id}/trunk/README_MOVED.md");
+    let response = direct_request_with_body_and_header(
+        app.clone(),
+        Method::from_bytes(b"MOVE").expect("MOVE method"),
+        &format!("/svn/owner/projectYobi/!svn/wrk/{activity_id}/trunk/README_COPY.md"),
+        Some(&owner_basic),
+        "destination",
+        &move_destination,
+        Body::empty(),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::CREATED);
+    assert_eq!(
+        yoram_vcs::svn_youngest_revision(&repo_path).expect("youngest before copy merge"),
+        revision
+    );
+
+    let abandon_id = "yoram-abandoned-activity";
+    let response = direct_request(
+        app.clone(),
+        Method::from_bytes(b"MKACTIVITY").expect("MKACTIVITY method"),
+        &format!("/svn/owner/projectYobi/!svn/act/{abandon_id}"),
+        Some(&owner_basic),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::CREATED);
+    let response = direct_request_with_body(
+        app.clone(),
+        Method::PUT,
+        &format!("/svn/owner/projectYobi/!svn/wrk/{abandon_id}/trunk/README.md"),
+        Some(&owner_basic),
+        Body::from("abandoned staged content\n"),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::NO_CONTENT);
+    let response = direct_request(
+        app.clone(),
+        Method::DELETE,
+        &format!("/svn/owner/projectYobi/!svn/act/{abandon_id}"),
+        Some(&owner_basic),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::NO_CONTENT);
+    assert_eq!(
+        yoram_vcs::svn_youngest_revision(&repo_path).expect("youngest after abort"),
+        revision
+    );
+    assert_eq!(
+        yoram_vcs::svn_cat_file(&repo_path, None, "trunk/README.md")
+            .expect("read source after abort"),
+        b"copy source\n"
+    );
+
+    let response = direct_request_with_body(
+        app,
+        Method::from_bytes(b"MERGE").expect("MERGE method"),
+        "/svn/owner/projectYobi",
+        Some(&owner_basic),
+        Body::from(format!(
+            r#"<D:merge xmlns:D="DAV:"><D:source><D:href>/svn/owner/projectYobi/!svn/act/{activity_id}</D:href></D:source><D:no-auto-merge/><D:no-checkout/></D:merge>"#
+        )),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let final_revision = yoram_vcs::svn_youngest_revision(&repo_path).expect("copy merge revision");
+    assert_eq!(final_revision, revision + 1);
+    assert_eq!(
+        yoram_vcs::svn_cat_file(&repo_path, None, "trunk/README_MOVED.md")
+            .expect("read moved copy"),
+        b"copy source\n"
+    );
+    let changed_paths =
+        yoram_vcs::svn_changed_paths(&repo_path, final_revision).expect("read copy history");
+    assert!(
+        changed_paths.iter().any(|path| {
+            path.path == "trunk/README_MOVED.md"
+                && path.copy_from_path.as_deref() == Some("trunk/README.md")
+        }),
+        "COPY/MOVE should preserve SVN copy history: {changed_paths:?}"
+    );
+}
+
+#[tokio::test]
+async fn svn_protocol_stale_activity_merge_rejects_without_partial_changes() {
+    let data_dir = tempdir().expect("yona stale activity tempdir");
+    let (app, repository, db) = build_app_with_data_root(data_dir.path()).await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let repo_path = data_dir.path().join("repo/svn/owner/projectYobi");
+    let revision = seed_svn_readme(&repo_path, "stale base\n").expect("seed svn README");
+    let owner_basic = basic("owner", "doorpass1");
+    let activity_id = "yoram-stale-activity";
+    let response = direct_request(
+        app.clone(),
+        Method::from_bytes(b"MKACTIVITY").expect("MKACTIVITY method"),
+        &format!("/svn/owner/projectYobi/!svn/act/{activity_id}"),
+        Some(&owner_basic),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::CREATED);
+    let response = direct_request_with_body(
+        app.clone(),
+        Method::PUT,
+        &format!("/svn/owner/projectYobi/!svn/wrk/{activity_id}/trunk/README.md"),
+        Some(&owner_basic),
+        Body::from("stale staged content\n"),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::NO_CONTENT);
+    let response = direct_request_with_body(
+        app.clone(),
+        Method::PUT,
+        &format!("/svn/owner/projectYobi/!svn/wrk/{activity_id}/trunk/staged-only.txt"),
+        Some(&owner_basic),
+        Body::from("must not become visible\n"),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::CREATED);
+
+    let concurrent_revision = yoram_vcs::svn_put_file(
+        &repo_path,
+        "trunk/README.md",
+        b"concurrent commit\n",
+        "concurrent commit",
+    )
+    .expect("publish concurrent SVN revision");
+    assert_eq!(concurrent_revision, revision + 1);
+    let response = direct_request_with_body(
+        app.clone(),
+        Method::from_bytes(b"MERGE").expect("MERGE method"),
+        "/svn/owner/projectYobi",
+        Some(&owner_basic),
+        Body::from(format!(
+            r#"<D:merge xmlns:D="DAV:"><D:source><D:href>/svn/owner/projectYobi/!svn/act/{activity_id}</D:href></D:source><D:no-auto-merge/><D:no-checkout/></D:merge>"#
+        )),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::CONFLICT);
+    assert_eq!(
+        yoram_vcs::svn_youngest_revision(&repo_path).expect("youngest after stale merge"),
+        concurrent_revision
+    );
+    assert_eq!(
+        yoram_vcs::svn_cat_file(&repo_path, None, "trunk/README.md")
+            .expect("read concurrent README"),
+        b"concurrent commit\n"
+    );
+    assert!(yoram_vcs::svn_cat_file(&repo_path, None, "trunk/staged-only.txt").is_err());
+    let response = direct_request_with_body(
+        app.clone(),
+        Method::PUT,
+        &format!("/svn/owner/projectYobi/!svn/wrk/{activity_id}/trunk/README.md"),
+        Some(&owner_basic),
+        Body::from("stale retry must be rejected\n"),
+    )
+    .await;
+    assert_eq!(
+        response.status(),
+        StatusCode::NOT_FOUND,
+        "failed stale MERGE should clean up its activity working copy"
+    );
+    let response = direct_request(
+        app,
+        Method::DELETE,
+        &format!("/svn/owner/projectYobi/!svn/act/{activity_id}"),
         Some(&owner_basic),
     )
     .await;

@@ -4,7 +4,7 @@ use http::{HeaderValue, StatusCode};
 use std::path::Path as StdPath;
 
 use crate::base_path_href;
-use crate::{internal_error, RestRouteError};
+use crate::{internal_error, persistence, RestRouteError};
 use yoram_vcs::VcsError;
 
 use super::{
@@ -12,11 +12,20 @@ use super::{
     svn_protocol_status_response, xml, xml_escape, SvnProtocolRoute,
 };
 
-pub(super) fn mkactivity(route: &SvnProtocolRoute) -> Response {
-    if path::activity_id(&route.svn_path).is_none() {
+pub(super) fn mkactivity(repo_path: &StdPath, route: &SvnProtocolRoute) -> Response {
+    let Some(activity_id) = path::activity_id(&route.svn_path) else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    };
+    match yoram_vcs::svn_activity_begin(repo_path, &activity_id) {
+        Ok(_) => svn_protocol_status_response(StatusCode::CREATED),
+        Err(VcsError::NotFound) => svn_protocol_status_response(StatusCode::NOT_FOUND),
+        Err(VcsError::InvalidPath) => svn_protocol_status_response(StatusCode::BAD_REQUEST),
+        Err(VcsError::SvnUnavailable) => svn_protocol_not_implemented_response(route, "MKACTIVITY"),
+        Err(VcsError::SvnFailed(_)) | Err(VcsError::FilesystemFailed(_)) => {
+            svn_protocol_status_response(StatusCode::CONFLICT)
+        }
+        Err(error) => RestRouteError::from_connect_error(internal_error(error)).into_response(),
     }
-    svn_protocol_status_response(StatusCode::CREATED)
 }
 
 pub(super) fn checkout(route: &SvnProtocolRoute, body: &Bytes) -> Response {
@@ -37,24 +46,43 @@ pub(super) fn checkout(route: &SvnProtocolRoute, body: &Bytes) -> Response {
     response
 }
 
-pub(super) fn merge(repo_path: &StdPath, route: &SvnProtocolRoute, body: &Bytes) -> Response {
+pub(super) fn merge(
+    repo_path: &StdPath,
+    route: &SvnProtocolRoute,
+    principal: Option<&persistence::AppUserRecord>,
+    body: &Bytes,
+) -> Response {
     let request = String::from_utf8_lossy(body);
     let Some(activity_href) = xml::text(&request, "href") else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
-    if path::activity_id(&activity_href).is_none() {
+    let Some(activity_id) = path::activity_id(&activity_href) else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
-    }
-    let revision = match yoram_vcs::svn_youngest_revision(repo_path) {
+    };
+    let author = principal
+        .map(|user| user.login_id.as_str())
+        .unwrap_or("unknown");
+    let message = super::write::activity_log(repo_path, &activity_id)
+        .unwrap_or_else(|| format!("SVN activity {activity_id} by {author}"));
+    let revision = match yoram_vcs::svn_activity_commit(repo_path, &activity_id, author, &message) {
         Ok(revision) => revision,
         Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+        Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
         Err(VcsError::SvnLookUnavailable) => {
             return svn_protocol_not_implemented_response(route, "MERGE");
+        }
+        Err(VcsError::SvnUnavailable) => {
+            return svn_protocol_not_implemented_response(route, "MERGE")
+        }
+        Err(VcsError::SvnFailed(_)) => {
+            super::write::clear_activity(repo_path, &activity_id);
+            return svn_protocol_status_response(StatusCode::CONFLICT);
         }
         Err(error) => {
             return RestRouteError::from_connect_error(internal_error(error)).into_response();
         }
     };
+    super::write::clear_activity_log(repo_path, &activity_id);
     let merge_path = path::file_lookup_for_route(route)
         .map(|(_, path)| path)
         .unwrap_or_default();

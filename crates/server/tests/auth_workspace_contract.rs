@@ -23,8 +23,7 @@ use yoram_server::{
     create_router_with_repository_and_app_config,
     create_router_with_repository_and_filesystem_assets,
     create_router_with_repository_and_filesystem_assets_and_app_config, AppRuntimeConfig,
-    AuthUiConfig,
-    LdapFixtureUser, LdapRuntimeConfig, OAuthProviderRuntimeConfig, RuntimeConfig,
+    AuthUiConfig, LdapFixtureUser, LdapRuntimeConfig, OAuthProviderRuntimeConfig, RuntimeConfig,
     SmtpRuntimeConfig,
 };
 
@@ -1723,7 +1722,9 @@ async fn restricted_page_redirects_anonymous_users_to_base_path_root() {
             .headers()
             .get(http::header::SET_COOKIE)
             .and_then(|value| value.to_str().ok()),
-        Some("PLAY_FLASH=message=Nice+try%2C+but+you+need+to+log+in+first%21; Path=/yona; HttpOnly")
+        Some(
+            "PLAY_FLASH=message=Nice+try%2C+but+you+need+to+log+in+first%21; Path=/yona; HttpOnly"
+        )
     );
 }
 
@@ -1734,9 +1735,13 @@ async fn flash_cookie_paths_are_normalized_across_base_paths() {
     for (base_path, cookie_path) in [("/", "/"), ("/team/yoram", "/team/yoram")] {
         let prefix = if base_path == "/" { "" } else { base_path };
 
-        let (denied_app, _, _) =
-            build_auth_router_with_configs(false, AppRuntimeConfig::default(), RepositoryConfig::default(), base_path)
-                .await;
+        let (denied_app, _, _) = build_auth_router_with_configs(
+            false,
+            AppRuntimeConfig::default(),
+            RepositoryConfig::default(),
+            base_path,
+        )
+        .await;
         let denied = denied_app
             .oneshot(
                 Request::builder()
@@ -1764,11 +1769,17 @@ async fn flash_cookie_paths_are_normalized_across_base_paths() {
         assert!(set_cookies.iter().any(|cookie| cookie == &format!(
             "PLAY_FLASH=error=You+need+to+accept+the+OAuth+connection+in+order+to+use+this+website%21; Path={cookie_path}; HttpOnly"
         )));
-        assert!(!set_cookies.iter().any(|cookie| cookie.starts_with("yona_session=")));
+        assert!(!set_cookies
+            .iter()
+            .any(|cookie| cookie.starts_with("yona_session=")));
 
-        let (restricted_app, _, _) =
-            build_auth_router_with_configs(true, AppRuntimeConfig::default(), RepositoryConfig::default(), base_path)
-                .await;
+        let (restricted_app, _, _) = build_auth_router_with_configs(
+            true,
+            AppRuntimeConfig::default(),
+            RepositoryConfig::default(),
+            base_path,
+        )
+        .await;
         let restricted = restricted_app
             .oneshot(
                 Request::builder()
@@ -1796,7 +1807,9 @@ async fn flash_cookie_paths_are_normalized_across_base_paths() {
         assert!(set_cookies.iter().any(|cookie| cookie == &format!(
             "PLAY_FLASH=message=Nice+try%2C+but+you+need+to+log+in+first%21; Path={cookie_path}; HttpOnly"
         )));
-        assert!(!set_cookies.iter().any(|cookie| cookie.starts_with("yona_session=")));
+        assert!(!set_cookies
+            .iter()
+            .any(|cookie| cookie.starts_with("yona_session=")));
     }
 }
 
@@ -5912,7 +5925,7 @@ async fn workspace_overview_reads_and_updates_default_landing() {
     .await
     .unwrap();
     comment_thread::ActiveModel {
-        dtype: Set("ReviewThread".to_string()),
+        dtype: Set("non_ranged".to_string()),
         id: NotSet,
         author_id: Set(Some(user.id)),
         author_login_id: Set(Some("door".to_string())),
@@ -5935,7 +5948,7 @@ async fn workspace_overview_reads_and_updates_default_landing() {
     .await
     .unwrap();
     comment_thread::ActiveModel {
-        dtype: Set("ReviewThread".to_string()),
+        dtype: Set("non_ranged".to_string()),
         id: NotSet,
         author_id: Set(Some(user.id)),
         author_login_id: Set(Some("door".to_string())),

@@ -40,9 +40,8 @@ async fn main() -> anyhow::Result<()> {
     let mut repository = PilotRepository::new_with_config(db, repository_config);
     #[cfg(feature = "sqlite")]
     if is_file_sqlite(&startup.database_url) {
-        repository = repository.with_sqlite_write_coordinator(std::sync::Arc::new(
-            tokio::sync::Mutex::new(()),
-        ));
+        repository = repository
+            .with_sqlite_write_coordinator(std::sync::Arc::new(tokio::sync::Mutex::new(())));
     }
     reconcile_site_import_staging_uploads_for_startup(&app_config.data_root, &repository)
         .await

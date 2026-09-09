@@ -13,14 +13,14 @@ use std::collections::{HashMap, HashSet};
 use super::utils::organization_issue_list_item_to_api;
 use super::utils::{
     accepts_legacy_json, base_path_href, format_project_date_label, gravatar_url,
-    legacy_content_modified_by_others, legacy_content_update_body_from_value,
-    legacy_assignable_user_avatar_urls, legacy_external_api_auth_error_response,
-    legacy_user_avatar_url,
-    legacy_external_api_token_from_headers, legacy_external_attachment_result,
-    legacy_external_authenticated_user_id, legacy_external_post_author,
-    legacy_external_temporary_upload_file_ids, legacy_issue_comment_create_body_from_value,
-    legacy_issue_detect_change_body_from_value, legacy_issue_update_body_from_value,
-    legacy_json_find_value, preferred_language_from_headers, project_issue_list_item_to_api,
+    legacy_assignable_user_avatar_urls, legacy_content_modified_by_others,
+    legacy_content_update_body_from_value, legacy_external_api_auth_error_response,
+    legacy_external_api_token_from_headers, legacy_external_authenticated_user_id,
+    legacy_external_post_author, legacy_external_temporary_upload_file_ids,
+    legacy_issue_comment_create_body_from_value, legacy_issue_detect_change_body_from_value,
+    legacy_issue_update_body_from_value, legacy_json_find_value, legacy_user_avatar_url,
+    preferred_language_from_headers, project_issue_list_item_to_api,
+    remove_unreferenced_attachment_blobs,
 };
 use crate::api_types::*;
 use crate::markdown::{rest_markdown_references, RestMarkdownReferencesBody};
@@ -332,6 +332,7 @@ struct RestIssueMutationBody {
         deserialize_with = "deserialize_optional_i64_from_string_or_number"
     )]
     milestone_id: Option<i64>,
+    notification_mail: Option<bool>,
     #[serde(
         default,
         deserialize_with = "deserialize_optional_i64_from_string_or_number"
@@ -3532,12 +3533,15 @@ async fn rest_update_issue(
             ConnectError::permission_denied("issue update is not allowed"),
         ));
     }
+    let send_notification =
+        body.notification_mail.unwrap_or(true) || existing.author_id != Some(actor.id);
     let issue = repository
         .update_issue(persistence::UpdateIssueInput {
             actor_login_id: actor.login_id.clone(),
             issue_number,
             owner_name,
             project_name,
+            send_notification,
             values: rest_issue_mutation_input_from_body(body)
                 .map_err(RestRouteError::from_connect_error)?,
         })
@@ -3545,7 +3549,7 @@ async fn rest_update_issue(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
-    if !issue.is_draft && existing.body_markdown != issue.body_markdown {
+    if send_notification && !issue.is_draft && existing.body_markdown != issue.body_markdown {
         dispatch_issue_webhooks(
             repository,
             &issue,
@@ -3559,7 +3563,10 @@ async fn rest_update_issue(
         )
         .await;
     }
-    if !issue.is_draft && existing.assignee_login_id != issue.assignee_login_id {
+    if send_notification
+        && !issue.is_draft
+        && existing.assignee_login_id != issue.assignee_login_id
+    {
         dispatch_issue_webhooks(
             repository,
             &issue,
@@ -3573,7 +3580,7 @@ async fn rest_update_issue(
         )
         .await;
     }
-    if !issue.is_draft && existing.milestone_id != issue.milestone_id {
+    if send_notification && !issue.is_draft && existing.milestone_id != issue.milestone_id {
         dispatch_issue_webhooks(
             repository,
             &issue,
@@ -3645,6 +3652,24 @@ pub(crate) async fn rest_delete_issue(
     {
         return Err(RestRouteError::not_found("pilot issue not found"));
     }
+    remove_unreferenced_attachment_blobs(
+        repository,
+        &service.data_root,
+        existing
+            .attachments
+            .iter()
+            .map(|attachment| &attachment.hash)
+            .chain(
+                existing
+                    .comments
+                    .iter()
+                    .flat_map(|comment| comment.attachments.iter())
+                    .map(|attachment| &attachment.hash),
+            ),
+    )
+    .await
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
     if !existing.is_draft {
         dispatch_issue_webhooks(
             repository,
@@ -3783,6 +3808,24 @@ async fn rest_mass_update_issues(
                 .map_err(internal_error)
                 .map_err(RestRouteError::from_connect_error)?
             {
+                remove_unreferenced_attachment_blobs(
+                    repository,
+                    &service.data_root,
+                    issue
+                        .attachments
+                        .iter()
+                        .map(|attachment| &attachment.hash)
+                        .chain(
+                            issue
+                                .comments
+                                .iter()
+                                .flat_map(|comment| comment.attachments.iter())
+                                .map(|attachment| &attachment.hash),
+                        ),
+                )
+                .await
+                .map_err(internal_error)
+                .map_err(RestRouteError::from_connect_error)?;
                 dispatch_issue_webhooks(
                     repository,
                     issue,
@@ -4357,7 +4400,10 @@ fn rest_issue_detail_response_from_record_with_sharer_flags_and_references(
             .map(rest_issue_child_issue_from_record)
             .collect(),
         child_open_count: issue.child_open_count,
-        created_label: format_project_date_label(issue.created_at),
+        created_label: issue
+            .created_at
+            .map(|created| created.and_utc().to_rfc3339())
+            .unwrap_or_default(),
         due_date_label: issue.due_date_label.clone(),
         due_date_overdue: issue.due_date_overdue,
         due_date_until_label: issue.due_date_until_label.clone(),

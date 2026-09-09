@@ -43,7 +43,8 @@ test("project watchers matches legacy project/watchers.scala.html DOM", async ({
       await expect(page.locator(`[data-owner="${owner}"]`).first()).toHaveClass(expectedClass);
     }
   }
-  expect(await readDesktopWatchersMetrics(page)).toEqual({
+  const desktopMetrics = await readDesktopWatchersMetrics(page);
+  expect(desktopMetrics).toEqual({
     avatarBackground: "rgb(221, 221, 221)",
     avatarBorderRadius: "3px",
     avatarFloat: "left",
@@ -77,9 +78,11 @@ test("project watchers matches legacy project/watchers.scala.html DOM", async ({
     projectPageMarginTop: "5px",
     titleLineHeight: "30px",
     titlePadding: "10px 0px",
-    watchActionWidth: 97,
-    watcherCountWidth: 32,
-    watcherUtilWidth: 145,
+    // Live frozen legacy header, English Unwatch and two watchers at 1366px.
+    // Preserve template whitespace before the down-arrow pseudo-element.
+    watchActionWidth: 86,
+    watcherCountWidth: 31,
+    watcherUtilWidth: 132,
   });
 });
 
@@ -608,6 +611,8 @@ async function readDesktopWatchersMetrics(page: Page) {
     }
   });
 }
+
+
 
 async function readProtectedPortalWatchersShellMetrics(page: Page) {
   return page.evaluate(() => {

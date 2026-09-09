@@ -215,6 +215,7 @@ export type BoardCommentInput = {
 
 export type BoardCommentUpdateInput = BoardCommentInput & {
   commentId: number | string;
+  original?: string;
 };
 
 function encodePathSegment(value: string): string {
@@ -709,7 +710,7 @@ export function updatePostCommentRest(
     runtimeConfig,
     `${projectPostPath(input.ownerName, input.projectName, input.postNumber)}/comments/${String(input.commentId)}`,
     {
-      body: commentMutationBody(input),
+      body: { ...commentMutationBody(input), original: input.original },
       csrfToken,
       fetchImpl,
       method: "PATCH",

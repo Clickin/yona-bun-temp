@@ -80,8 +80,6 @@ test("root alias not-found error-wrap owns frozen legacy Style parity", async ({
   expect(bootstrapCss).toContain(".btn");
   expect(messages).toContain("error.notfound = Page not found");
   expect(messages).toContain("menu.home = Home");
-  expect(routeSource).toContain('import legacySpriteUrl from "../assets/legacy/sprite.png"');
-
   for (const owner of [
     "root-alias-notfound-error-wrap",
     "root-alias-notfound-error-icon",

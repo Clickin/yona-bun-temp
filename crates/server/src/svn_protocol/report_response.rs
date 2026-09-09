@@ -19,7 +19,10 @@ pub(super) fn report(repo_path: &StdPath, route: &SvnProtocolRoute, body: &Bytes
     if request.contains("update-report") {
         return report_update::update(repo_path, route, &request);
     }
-    if request.contains("replay-report") || request.contains("<S:replay") || request.contains("<s:replay") {
+    if request.contains("replay-report")
+        || request.contains("<S:replay")
+        || request.contains("<s:replay")
+    {
         return report_replay::replay(repo_path, route, &request);
     }
     if request.contains("file-revs-report") {

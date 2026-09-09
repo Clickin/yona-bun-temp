@@ -80,9 +80,11 @@ test("legacy singular notification browser route renders the raw notification fr
     ),
   );
   expect(await canonicalizeSelector(page, "#notification-more")).toEqual(
-    await canonicalizeHtml(page, '<button id="notification-more" type="button">More</button>'),
+    await canonicalizeHtml(
+      page,
+      '<button id="notification-more" type="button" class="ybtn">More</button>',
+    ),
   );
-
   const metrics = await readFragmentMetrics(page);
   expect(metrics.hasShell).toBe(false);
   expect(metrics.firstTag).toBe("LI");
@@ -125,6 +127,124 @@ test("legacy singular notification browser route keeps the anonymous warning fra
   expect(metrics.childTags[0]).toBe("DIV");
 });
 
+test("notifications list preserves authored metadata order and paginates rows", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const firstPage = [
+    {
+      actor: {
+        avatarUrl: "/assets/images/default-avatar-128.png",
+        displayName: "Alice Kim",
+        loginId: "alice",
+      },
+      createdAt: "2026-07-07 11:25:34 AM",
+      createdLabel: "12 minutes ago",
+      eventType: "NEW_COMMENT",
+      id: "notification-alice",
+      message: "Board seed confirmed from Alice.",
+      targetHref: "/admin/sample/post/1#comment-1",
+      targetTitle: "Re: [sample] Review rail parity check (#1)",
+      typeIcon: "comment2",
+    },
+    {
+      actor: {
+        avatarUrl: "/assets/images/default-avatar-128.png",
+        displayName: "Bob Park",
+        loginId: "bob",
+      },
+      createdAt: "2026-07-07 11:24:34 AM",
+      createdLabel: "13 minutes ago",
+      eventType: "NEW_COMMENT",
+      id: "notification-bob",
+      message: "Issue seed confirmed from Bob.",
+      targetHref: "/admin/sample/issue/1#comment-1",
+      targetTitle: "Re: [sample] Review rail parity check (#1)",
+      typeIcon: "comment2",
+    },
+  ];
+  const nextPage = {
+    actor: {
+      avatarUrl: "/assets/images/default-avatar-128.png",
+      displayName: "Alice Kim",
+      loginId: "alice",
+    },
+    createdAt: "2026-07-07 11:23:34 AM",
+    createdLabel: "14 minutes ago",
+    eventType: "NEW_COMMENT",
+    id: "notification-next",
+    message: "Next page notification.",
+    targetHref: "/admin/sample/post/2#comment-2",
+    targetTitle: "Re: [sample] Next page",
+    typeIcon: "comment2",
+  };
+
+  await mockAuthenticatedNotifications(page, firstPage, {
+    hasMore: true,
+    nextItems: [nextPage],
+  });
+  await page.goto(`${basePath}/notifications`);
+
+  const rows = page.locator('[data-owner="authenticated-home-notification-row"]');
+  await expect(rows).toHaveCount(2);
+  await expect(rows.nth(0).locator(".author")).toHaveText("Alice Kim");
+  await expect(rows.nth(1).locator(".author")).toHaveText("Bob Park");
+  await expect(rows.nth(0).locator(".meta")).toContainText("@alice");
+  await expect(rows.nth(1).locator(".meta")).toContainText("@bob");
+  await expect(rows.nth(0).locator(".avatar-wrap img")).toHaveAttribute(
+    "src",
+    "/assets/images/default-avatar-128.png",
+  );
+  await expect(rows.nth(0).locator(".title a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/post/1#comment-1`,
+  );
+  await expect(rows.nth(1).locator(".title a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issue/1#comment-1`,
+  );
+
+  const orderAndGeometry = await page.evaluate(() =>
+    Array.from(document.querySelectorAll('[data-owner="authenticated-home-notification-row"]')).map(
+      (row) => {
+        const element = row as HTMLElement;
+        const childOrder = Array.from(element.children).map((child) => child.className);
+        const meta = element.querySelector<HTMLElement>(".meta");
+        const avatar = element.querySelector<HTMLElement>(".avatar-wrap");
+        const author = element.querySelector<HTMLElement>(".author");
+        const ago = element.querySelector<HTMLElement>(".ago");
+        const box = (target: HTMLElement | null) => {
+          const rect = target?.getBoundingClientRect();
+          return rect ? { bottom: rect.bottom, left: rect.left, top: rect.top } : null;
+        };
+        return {
+          childOrder,
+          meta: box(meta),
+          avatar: box(avatar),
+          author: box(author),
+          ago: box(ago),
+        };
+      },
+    ),
+  );
+  expect(orderAndGeometry).toHaveLength(2);
+  expect(orderAndGeometry[0]?.childOrder).toEqual(["stream-type comment2", "stream-desc"]);
+  // Legacy _page.less: .stream-info .avatar-wrap has margin-top: 3px.
+  expect(orderAndGeometry[0]?.avatar?.top).toBe(
+    (orderAndGeometry[0]?.meta?.top ?? 0) + 3,
+  );
+  expect(orderAndGeometry[0]?.author?.left).toBeGreaterThan(
+    orderAndGeometry[0]?.avatar?.left ?? -1,
+  );
+  expect(orderAndGeometry[0]?.ago?.left).toBeGreaterThan(
+    orderAndGeometry[0]?.author?.left ?? -1,
+  );
+
+  await page.locator("#notification-more").click();
+  await expect(rows).toHaveCount(3);
+  await expect(rows.nth(2).locator(".author")).toHaveText("Alice Kim");
+  await expect(rows.nth(2).locator(".title a")).toHaveText("Re: [sample] Next page");
+  await expect(page.locator("#notification-more")).toHaveCount(0);
+});
+
 async function mockAnonymousSession(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -146,7 +266,7 @@ async function mockAnonymousSession(page: Page) {
 async function mockAuthenticatedNotifications(
   page: Page,
   items: unknown[],
-  options: { defaultLandingPath?: string; hasMore?: boolean } = {},
+  options: { defaultLandingPath?: string; hasMore?: boolean; nextItems?: unknown[] } = {},
 ) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -164,12 +284,15 @@ async function mockAuthenticatedNotifications(
     });
   });
   await page.route("**/api/v1/notifications?*", async (route) => {
+    const requestUrl = new URL(route.request().url());
+    const from = Number(requestUrl.searchParams.get("from") ?? "0");
+    const responseItems = from > 0 ? (options.nextItems ?? []) : items;
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
-        hasMore: options.hasMore ?? false,
-        items,
-        total: items.length,
+        hasMore: from > 0 ? false : (options.hasMore ?? false),
+        items: responseItems,
+        total: responseItems.length,
       }),
     });
   });

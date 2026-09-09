@@ -28,13 +28,13 @@ test("project home History tab matches legacy partial_history.scala.html DOM", a
   await expect(page.locator(".activity-streams .activity-stream")).toBeVisible();
   await expect(page.locator(".span-left-pane > .nav-tabs li.active a")).toHaveText("History");
 
-  const expectedHistoryHtml = EXPECTED_PROJECT_HISTORY.replaceAll(
+  const expectedHistoryHtml = `<div class="prj"><div class="main">${EXPECTED_PROJECT_HISTORY.replaceAll(
     "__BASE_PATH__",
     basePath,
   ).replace(
     '<span id="project-description" class="markdown-wrap">Sample overview</span>',
     '<span id="project-description" class="markdown-wrap"><p>Sample overview</p></span>',
-  );
+  )}</div></div>`;
   for (const selector of [".project-header-outer", ".project-menu-outer", ".page-wrap-outer"]) {
     await expectComputedParity(page, selector, expectedHistoryHtml);
   }

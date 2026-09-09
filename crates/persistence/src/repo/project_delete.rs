@@ -1,6 +1,209 @@
 use super::*;
 
 impl AppRepositoryImpl<'_> {
+    pub async fn list_project_attachments_for_cleanup(
+        &self,
+        project_id: i64,
+    ) -> Result<Vec<AttachmentRecord>, DbErr> {
+        let issue_ids = issue::Entity::find()
+            .filter(issue::Column::ProjectId.eq(Some(project_id)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|row| row.id)
+            .collect::<Vec<_>>();
+        let issue_comment_ids = if issue_ids.is_empty() {
+            Vec::new()
+        } else {
+            issue_comment::Entity::find()
+                .filter(issue_comment::Column::IssueId.is_in(issue_ids.iter().copied().map(Some)))
+                .all(&self.db)
+                .await?
+                .into_iter()
+                .map(|row| row.id)
+                .collect::<Vec<_>>()
+        };
+        let posting_ids = posting::Entity::find()
+            .filter(posting::Column::ProjectId.eq(Some(project_id)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|row| row.id)
+            .collect::<Vec<_>>();
+        let posting_comment_ids = if posting_ids.is_empty() {
+            Vec::new()
+        } else {
+            posting_comment::Entity::find()
+                .filter(
+                    posting_comment::Column::PostingId.is_in(posting_ids.iter().copied().map(Some)),
+                )
+                .all(&self.db)
+                .await?
+                .into_iter()
+                .map(|row| row.id)
+                .collect::<Vec<_>>()
+        };
+        let pull_request_ids = pull_request::Entity::find()
+            .filter(
+                Condition::any()
+                    .add(pull_request::Column::ToProjectId.eq(Some(project_id)))
+                    .add(pull_request::Column::FromProjectId.eq(Some(project_id))),
+            )
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|row| row.id)
+            .collect::<Vec<_>>();
+        let mut thread_filter =
+            Condition::any().add(comment_thread::Column::ProjectId.eq(Some(project_id)));
+        if !pull_request_ids.is_empty() {
+            thread_filter = thread_filter.add(
+                comment_thread::Column::PullRequestId
+                    .is_in(pull_request_ids.iter().copied().map(Some)),
+            );
+        }
+        let thread_ids = comment_thread::Entity::find()
+            .filter(thread_filter)
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|row| row.id)
+            .collect::<Vec<_>>();
+        let review_comment_ids = if thread_ids.is_empty() {
+            Vec::new()
+        } else {
+            review_comment::Entity::find()
+                .filter(
+                    review_comment::Column::ThreadId.is_in(thread_ids.iter().copied().map(Some)),
+                )
+                .all(&self.db)
+                .await?
+                .into_iter()
+                .map(|row| row.id)
+                .collect::<Vec<_>>()
+        };
+        let milestone_ids = milestone::Entity::find()
+            .filter(milestone::Column::ProjectId.eq(Some(project_id)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|row| row.id)
+            .collect::<Vec<_>>();
+
+        let mut filter = Condition::any().add(
+            Condition::all()
+                .add(
+                    attachment::Column::ContainerType
+                        .eq(Some(PROJECT_ATTACHMENT_CONTAINER.to_string())),
+                )
+                .add(attachment::Column::ContainerId.eq(project_id)),
+        );
+        if !issue_ids.is_empty() {
+            filter = filter.add(
+                Condition::all()
+                    .add(
+                        attachment::Column::ContainerType.is_in(
+                            attachment_container_aliases(ISSUE_ATTACHMENT_CONTAINER)
+                                .into_iter()
+                                .map(Some),
+                        ),
+                    )
+                    .add(attachment::Column::ContainerId.is_in(issue_ids.iter().copied())),
+            );
+        }
+        if !issue_comment_ids.is_empty() {
+            filter = filter.add(
+                Condition::all()
+                    .add(
+                        attachment::Column::ContainerType
+                            .eq(Some(ISSUE_COMMENT_ATTACHMENT_CONTAINER.to_string())),
+                    )
+                    .add(attachment::Column::ContainerId.is_in(issue_comment_ids.iter().copied())),
+            );
+        }
+        if !posting_ids.is_empty() {
+            filter = filter.add(
+                Condition::all()
+                    .add(
+                        attachment::Column::ContainerType
+                            .eq(Some(BOARD_POST_ATTACHMENT_CONTAINER.to_string())),
+                    )
+                    .add(attachment::Column::ContainerId.is_in(posting_ids.iter().copied())),
+            );
+        }
+        if !posting_comment_ids.is_empty() {
+            filter = filter.add(
+                Condition::all()
+                    .add(
+                        attachment::Column::ContainerType.is_in(
+                            attachment_container_aliases(BOARD_COMMENT_ATTACHMENT_CONTAINER)
+                                .into_iter()
+                                .map(Some),
+                        ),
+                    )
+                    .add(
+                        attachment::Column::ContainerId.is_in(posting_comment_ids.iter().copied()),
+                    ),
+            );
+        }
+        if !pull_request_ids.is_empty() {
+            filter = filter.add(
+                Condition::all()
+                    .add(
+                        attachment::Column::ContainerType
+                            .eq(Some(PULL_REQUEST_ATTACHMENT_CONTAINER.to_string())),
+                    )
+                    .add(attachment::Column::ContainerId.is_in(pull_request_ids.iter().copied())),
+            );
+        }
+        if !milestone_ids.is_empty() {
+            filter = filter.add(
+                Condition::all()
+                    .add(
+                        attachment::Column::ContainerType
+                            .eq(Some(MILESTONE_ATTACHMENT_CONTAINER.to_string())),
+                    )
+                    .add(attachment::Column::ContainerId.is_in(milestone_ids.iter().copied())),
+            );
+        }
+        if !thread_ids.is_empty() {
+            filter = filter.add(
+                Condition::all()
+                    .add(attachment::Column::ContainerType.eq(Some("COMMENT_THREAD".to_string())))
+                    .add(attachment::Column::ContainerId.is_in(thread_ids.iter().copied())),
+            );
+        }
+        if !review_comment_ids.is_empty() {
+            filter = filter.add(
+                Condition::all()
+                    .add(
+                        attachment::Column::ContainerType
+                            .eq(Some(REVIEW_COMMENT_ATTACHMENT_CONTAINER.to_string())),
+                    )
+                    .add(attachment::Column::ContainerId.is_in(review_comment_ids.iter().copied())),
+            );
+        }
+
+        Ok(attachment::Entity::find()
+            .filter(filter)
+            .order_by_asc(attachment::Column::Id)
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|model| AttachmentRecord {
+                container_id: model.container_id,
+                container_type: model.container_type.unwrap_or_default(),
+                created_at: model.created_date,
+                hash: model.hash.unwrap_or_default(),
+                id: model.id,
+                mime_type: model.mime_type.unwrap_or_default(),
+                name: model.name.unwrap_or_default(),
+                owner_login_id: model.owner_login_id.unwrap_or_default(),
+                size: model.size.unwrap_or_default(),
+            })
+            .collect())
+    }
+
     pub async fn delete_project_by_owner_and_name(
         &self,
         owner_name: &str,
@@ -81,8 +284,134 @@ impl AppRepositoryImpl<'_> {
             .into_iter()
             .map(|row| row.id)
             .collect::<Vec<_>>();
+        let review_comment_ids = if thread_ids.is_empty() {
+            Vec::new()
+        } else {
+            review_comment::Entity::find()
+                .filter(
+                    review_comment::Column::ThreadId.is_in(thread_ids.iter().copied().map(Some)),
+                )
+                .all(&self.db)
+                .await?
+                .into_iter()
+                .map(|row| row.id)
+                .collect::<Vec<_>>()
+        };
+        let milestone_ids = milestone::Entity::find()
+            .filter(milestone::Column::ProjectId.eq(Some(project_id)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|row| row.id)
+            .collect::<Vec<_>>();
+        let posting_comment_ids = if posting_ids.is_empty() {
+            Vec::new()
+        } else {
+            posting_comment::Entity::find()
+                .filter(
+                    posting_comment::Column::PostingId.is_in(posting_ids.iter().copied().map(Some)),
+                )
+                .all(&self.db)
+                .await?
+                .into_iter()
+                .map(|row| row.id)
+                .collect::<Vec<_>>()
+        };
 
         let (_write_guard, txn, txn_started_at) = self.begin_serialized_write().await?;
+        attachment::Entity::delete_many()
+            .filter(
+                attachment::Column::ContainerType
+                    .eq(Some(PROJECT_ATTACHMENT_CONTAINER.to_string())),
+            )
+            .filter(attachment::Column::ContainerId.eq(project_id))
+            .exec(&txn)
+            .await?;
+        if !issue_ids.is_empty() {
+            attachment::Entity::delete_many()
+                .filter(
+                    attachment::Column::ContainerType.is_in(
+                        attachment_container_aliases(ISSUE_ATTACHMENT_CONTAINER)
+                            .into_iter()
+                            .map(Some),
+                    ),
+                )
+                .filter(attachment::Column::ContainerId.is_in(issue_ids.iter().copied()))
+                .exec(&txn)
+                .await?;
+        }
+        if !issue_comment_ids.is_empty() {
+            attachment::Entity::delete_many()
+                .filter(
+                    attachment::Column::ContainerType
+                        .eq(Some(ISSUE_COMMENT_ATTACHMENT_CONTAINER.to_string())),
+                )
+                .filter(attachment::Column::ContainerId.is_in(issue_comment_ids.iter().copied()))
+                .exec(&txn)
+                .await?;
+        }
+        if !posting_ids.is_empty() {
+            attachment::Entity::delete_many()
+                .filter(
+                    attachment::Column::ContainerType
+                        .eq(Some(BOARD_POST_ATTACHMENT_CONTAINER.to_string())),
+                )
+                .filter(attachment::Column::ContainerId.is_in(posting_ids.iter().copied()))
+                .exec(&txn)
+                .await?;
+        }
+        if !pull_request_ids.is_empty() {
+            attachment::Entity::delete_many()
+                .filter(
+                    attachment::Column::ContainerType
+                        .eq(Some(PULL_REQUEST_ATTACHMENT_CONTAINER.to_string())),
+                )
+                .filter(attachment::Column::ContainerId.is_in(pull_request_ids.iter().copied()))
+                .exec(&txn)
+                .await?;
+        }
+        attachment::Entity::delete_many()
+            .filter(
+                attachment::Column::ContainerType
+                    .eq(Some(MILESTONE_ATTACHMENT_CONTAINER.to_string())),
+            )
+            .filter(attachment::Column::ContainerId.is_in(milestone_ids.iter().copied()))
+            .exec(&txn)
+            .await?;
+        if !thread_ids.is_empty() {
+            attachment::Entity::delete_many()
+                .filter(attachment::Column::ContainerType.eq(Some("COMMENT_THREAD".to_string())))
+                .filter(attachment::Column::ContainerId.is_in(thread_ids.iter().copied()))
+                .exec(&txn)
+                .await?;
+        }
+        if !review_comment_ids.is_empty() {
+            attachment::Entity::delete_many()
+                .filter(
+                    attachment::Column::ContainerType
+                        .eq(Some(REVIEW_COMMENT_ATTACHMENT_CONTAINER.to_string())),
+                )
+                .filter(attachment::Column::ContainerId.is_in(review_comment_ids.iter().copied()))
+                .exec(&txn)
+                .await?;
+        }
+        if !posting_ids.is_empty() {
+            if !posting_comment_ids.is_empty() {
+                attachment::Entity::delete_many()
+                    .filter(
+                        attachment::Column::ContainerType.is_in(
+                            attachment_container_aliases(BOARD_COMMENT_ATTACHMENT_CONTAINER)
+                                .into_iter()
+                                .map(Some),
+                        ),
+                    )
+                    .filter(
+                        attachment::Column::ContainerId.is_in(posting_comment_ids.iter().copied()),
+                    )
+                    .exec(&txn)
+                    .await?;
+            }
+        }
         if !issue_comment_ids.is_empty() {
             issue_comment_voter::Entity::delete_many()
                 .filter(

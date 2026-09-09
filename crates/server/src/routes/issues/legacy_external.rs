@@ -1,3 +1,5 @@
+use crate::legacy_external_attachment_result;
+
 use super::*;
 use sha1::{Digest as _, Sha1};
 
@@ -333,6 +335,7 @@ pub(super) async fn legacy_external_update_issue(
             issue_number: number,
             owner_name: owner.clone(),
             project_name: project_name.clone(),
+            send_notification: true,
             values: persistence::IssueMutationInput {
                 assignee_login_id,
                 attachment_ids: access
@@ -1170,6 +1173,7 @@ pub(super) async fn legacy_external_update_issue_comment(
             issue_number: number,
             owner_name: owner,
             project_name,
+            send_notification: existing_comment.author_id != Some(actor.id),
         })
         .await
     {
@@ -1249,8 +1253,7 @@ pub(super) async fn legacy_external_issue_assignable_users(
     };
     let mut record = record;
     legacy_assignable_user_avatar_urls(repository, &mut record).await;
-    let language =
-        preferred_language_from_headers(&headers, &service.supported_languages);
+    let language = preferred_language_from_headers(&headers, &service.supported_languages);
     Json(legacy_external_assignable_users_result(
         record,
         language.as_deref(),
@@ -1301,8 +1304,7 @@ pub(super) async fn legacy_external_issue_sharable_users(
     // gravatar servers are unreachable (Config.isConnectableToGravatar).
     let mut record = record;
     legacy_assignable_user_avatar_urls(repository, &mut record).await;
-    let language =
-        preferred_language_from_headers(&headers, &service.supported_languages);
+    let language = preferred_language_from_headers(&headers, &service.supported_languages);
     Json(legacy_external_assignable_users_result(
         record,
         language.as_deref(),
@@ -1352,4 +1354,3 @@ pub(crate) fn legacy_external_assignable_users_result(
         })
         .collect()
 }
-

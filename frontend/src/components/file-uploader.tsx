@@ -207,6 +207,10 @@ export type UploadFormProps = {
   /** Wrapper id (changes screen: `formId`, issue edit form: `"upload"`). */
   wrapperId?: string;
   resourceId?: string;
+  /** Legacy issue-form separators around the upload controls. */
+  attachSpacing?: boolean;
+  /** Additional props for the upload-wrap element (drag events for issue edit). */
+  wrapperExtraProps?: HTMLAttributes<HTMLDivElement>;
   /** Unconditional spread applied to the paste hint (issue edit form). */
   pasteHelpFixedStyleProps?: MarkdownEditorStyleProps;
   pasteHelpOwner?: string;
@@ -221,6 +225,8 @@ export function UploadForm({
   resourceType,
   wrapperId,
   resourceId,
+  attachSpacing,
+  wrapperExtraProps,
   pasteHelpFixedStyleProps,
   pasteHelpOwner,
   helpClassName = "help",
@@ -234,6 +240,8 @@ export function UploadForm({
       wrapperId={wrapperId}
       resourceType={resourceType}
       resourceId={resourceId}
+      attachSpacing={attachSpacing}
+      wrapperExtraProps={wrapperExtraProps}
       pasteHelpFixedStyleProps={pasteHelpFixedStyleProps}
       pasteHelpOwner={pasteHelpOwner}
       helpClassName={helpClassName}
@@ -351,6 +359,7 @@ export function BoardPostFileUploader({
 }
 
 export type IssuePostFileUploaderProps = {
+  dragOverlay?: boolean;
   isDragging: boolean;
   onDragEnter: (event: DragEvent<HTMLDivElement>) => void;
   onDragLeave: (event: DragEvent<HTMLDivElement>) => void;
@@ -359,10 +368,19 @@ export type IssuePostFileUploaderProps = {
   onFiles: (files: File[]) => void;
   onInsert: (attachment: UploadedAttachment) => void;
   onRemove: (row: UploadRow) => void;
+  /** Legacy uploadForm data-resource-id; omitted on create forms. */
+  resourceId?: string | number;
   rows: UploadRow[];
+  /**
+   * Legacy uploadForm.scala.html keeps `p.right-txt.help` mounted and
+   * yobi.Attachments toggles its display; the create screen predates this
+   * with a conditional React-owned marker element.
+   */
+  alwaysMountedSaveHelp?: boolean;
 };
 
 export function IssuePostFileUploader({
+  dragOverlay = true,
   isDragging,
   onDragEnter,
   onDragLeave,
@@ -371,7 +389,9 @@ export function IssuePostFileUploader({
   onFiles,
   onInsert,
   onRemove,
+  resourceId,
   rows,
+  alwaysMountedSaveHelp = false,
 }: IssuePostFileUploaderProps) {
   const { t } = useLegacyMessages();
   return (
@@ -379,11 +399,12 @@ export function IssuePostFileUploader({
       wrapperClassName={`upload-wrap content-footer${isDragging ? " dragover" : ""}`.trim()}
       wrapperId="upload"
       resourceType="ISSUE_POST"
+      resourceId={resourceId === undefined ? undefined : String(resourceId)}
       owner="project-issue-form-upload-shell"
       wrapperExtraProps={{ onDragEnter, onDragLeave, onDragOver, onDrop }}
       attachSpacing
       fileControl={
-        <label
+        <div
           className="nbtn medium white fake-file-wrap"
           data-owner="project-issue-form-upload-fake-file"
         >
@@ -399,11 +420,21 @@ export function IssuePostFileUploader({
               event.currentTarget.value = "";
             }}
           />
-        </label>
+        </div>
       }
       pasteHelpClassName="help help-pastable"
       pasteHelpStyleFirst
       pasteHelpOwner="project-issue-form-upload-help-pastable"
+      helpClassName={alwaysMountedSaveHelp ? "right-txt help" : "help attach-save-help"}
+      helpOwner={
+        alwaysMountedSaveHelp ? undefined : "project-issue-form-upload-attach-save-help"
+      }
+      showHelp={alwaysMountedSaveHelp || rows.length > 0}
+      helpStyleProps={
+        alwaysMountedSaveHelp
+          ? { style: { display: rows.length > 0 ? "block" : "none" } }
+          : undefined
+      }
       attachedFilesClassName={`attached-files unstyled${rows.length > 0 ? " has-files" : ""}`.trim()}
       attachedFilesOwner={rows.length > 0 ? "project-issue-form-attached-files" : undefined}
       attachedFilesChildren={rows.map((row) => {
@@ -470,10 +501,7 @@ export function IssuePostFileUploader({
           </li>
         );
       })}
-      showHelp={rows.length > 0}
-      helpClassName="help attach-save-help"
-      helpOwner="project-issue-form-upload-attach-save-help"
-      dragOverlay={isDragging}
+      dragOverlay={dragOverlay && isDragging}
     />
   );
 }

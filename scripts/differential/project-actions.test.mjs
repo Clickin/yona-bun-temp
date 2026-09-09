@@ -587,6 +587,33 @@ test("throwaway setting mutation reports the exact legacy route", async () => {
   assert.equal(request.translations.legacy.path, "/admin/throwaway/setting");
 });
 
+test("board label mutation changes only the posts created by the current scenario", async () => {
+  const posts = {
+    legacy: new Map([[0, [1]], [17, [2]]]),
+    yoram: new Map([[0, [1]], [31, [2]]]),
+  };
+  await MERGED_DEFINITIONS["set-post-labels-api"].handler({
+    step: { params: { owner: "admin", project: "sample", postNumber: 0 } },
+    state: { postL: 17, postY: 31 },
+    entry: { violations: [] },
+    helpers: {
+      async sendRaw(_ctx, side, request) {
+        const match = side === "legacy"
+          ? /\/postlabel\/(\d+)$/u.exec(request.path)
+          : /\/posts\/(\d+)\/labels$/u.exec(request.path);
+        const number = Number(match?.[1]);
+        if (!posts[side].has(number)) return { status: 404 };
+        posts[side].set(number, request.json);
+        return { status: 200 };
+      },
+    },
+  });
+  assert.deepEqual(posts.legacy.get(17), []);
+  assert.deepEqual(posts.yoram.get(31), []);
+  assert.deepEqual(posts.legacy.get(0), [1]);
+  assert.deepEqual(posts.yoram.get(0), [1]);
+});
+
 
 test("mutation actions avoid forbidden destructive routes", () => {
   const forbidden = [
@@ -635,7 +662,6 @@ test("mutation translators produce expected method/path literals", () => {
     ["edit-post", "translateYoram", { method: "PATCH", path: "/api/v1/projects/o/p/posts/3" }],
     ["patch-post-content-api", "translateLegacy", { method: "PATCH", path: "/-_-api/v1/owners/o/projects/p/posts/3/content" }],
     ["patch-post-content-api", "translateYoram", { method: "PATCH", path: "/api/v1/owners/o/projects/p/posts/3/content" }],
-    ["set-post-labels-api", "translateLegacy", { method: "POST", path: "/-_-api/v1/owners/o/projects/p/postlabel/0" }],
     ["create-post-comment", "translateLegacy", { method: "POST", path: "/o/p/post/3/comment" }],
     ["create-post-comment", "translateYoram", { method: "POST", path: "/api/v1/projects/o/p/posts/3/comments" }],
     ["update-post-comment", "translateLegacy", { method: "POST", path: "/o/p/post/3/comment/5" }],

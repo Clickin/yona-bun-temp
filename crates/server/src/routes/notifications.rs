@@ -6,13 +6,15 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
+use chrono::{Datelike, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 
+use super::{messages::legacy_message, utils::preferred_language_from_headers};
 use crate::assets::serve_frontend_page;
 use crate::{
     base_path_href, direct_toggle_workspace_notification, internal_error, persistence, redirect_to,
-    require_project_read, require_session, AssetMode, BrowserRuntimeConfig, ConnectError,
-    PilotBackend, PilotServiceImpl, RestRouteError,
+    require_project_read, require_session, AssetMode,
+    BrowserRuntimeConfig, ConnectError, PilotBackend, PilotServiceImpl, RestRouteError,
 };
 
 #[derive(Default, Deserialize)]
@@ -155,7 +157,9 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
 fn rest_notifications_response(
     record: persistence::NotificationListRecord,
     base_path: &str,
+    language: Option<&str>,
 ) -> RestNotificationsResponse {
+    let now = Utc::now().naive_utc();
     RestNotificationsResponse {
         has_more: record.has_more,
         items: record
@@ -164,25 +168,7 @@ fn rest_notifications_response(
             .map(|item| {
                 let created_label = item
                     .created
-                    .map(|created| {
-                        let now = sea_orm::entity::prelude::DateTimeUtc::from(
-                            std::time::SystemTime::now(),
-                        )
-                        .naive_utc();
-                        let elapsed = now - created;
-                        let calendar_days = (now.date() - created.date()).num_days();
-                        if elapsed.num_minutes() < 1 {
-                            "방금 전".to_string()
-                        } else if elapsed.num_hours() < 1 {
-                            format!("{}분 전", elapsed.num_minutes())
-                        } else if calendar_days < 1 {
-                            format!("{}시간 전", elapsed.num_hours())
-                        } else if calendar_days < 7 {
-                            format!("{calendar_days}일 전")
-                        } else {
-                            created.format("%Y-%m-%d").to_string()
-                        }
-                    })
+                    .map(|created| notification_created_label(created, now, language))
                     .unwrap_or_default();
                 RestNotificationItem {
                     actor: RestNotificationActor {
@@ -238,9 +224,11 @@ async fn rest_list_notifications(
         .await
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
+    let language = preferred_language_from_headers(&headers, &service.supported_languages);
     Ok(Json(rest_notifications_response(
         record,
         &service.base_path,
+        language.as_deref(),
     )))
 }
 
@@ -289,7 +277,15 @@ async fn direct_notification_api(
         .list_notifications_for_user(user_id, from, size)
         .await
     {
-        Ok(record) => Json(rest_notifications_response(record, &service.base_path)).into_response(),
+        Ok(record) => {
+            let language = preferred_language_from_headers(&headers, &service.supported_languages);
+            Json(rest_notifications_response(
+                record,
+                &service.base_path,
+                language.as_deref(),
+            ))
+            .into_response()
+        }
         Err(error) => RestRouteError::internal(error.to_string()).into_response(),
     }
 }
@@ -407,10 +403,60 @@ async fn direct_legacy_watch(
     }
 }
 
+fn notification_created_label(
+    created: NaiveDateTime,
+    now: NaiveDateTime,
+    language: Option<&str>,
+) -> String {
+    let seconds = (now - created).num_seconds();
+    let (singular, plural, count) = match seconds {
+        691_200.. => {
+            return created
+                .format(if created.year() == now.year() {
+                    "%m-%d"
+                } else {
+                    "%Y-%m-%d"
+                })
+                .to_string();
+        }
+        86_400.. => ("common.time.day", "common.time.days", seconds / 86_400),
+        3_600.. => ("common.time.hour", "common.time.hours", seconds / 3_600),
+        60.. => ("common.time.minute", "common.time.minutes", seconds / 60),
+        1.. => ("common.time.second", "common.time.seconds", seconds),
+        _ => return legacy_message(language, "common.time.just"),
+    };
+    legacy_message(language, if count == 1 { singular } else { plural })
+        .replace("{0}", &count.to_string())
+}
+
 fn legacy_prefers_json(headers: &HeaderMap) -> bool {
     headers
         .get(axum::http::header::ACCEPT)
         .and_then(|value| value.to_str().ok())
         .map(|value| value.to_ascii_lowercase().contains("application/json"))
         .unwrap_or(false)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::{Duration, NaiveDate};
+
+    #[test]
+    fn notification_dates_keep_legacy_age_boundaries_and_locale() {
+        let now = NaiveDate::from_ymd_opt(2026, 1, 9)
+            .unwrap()
+            .and_hms_opt(0, 0, 0)
+            .unwrap();
+        let label = |seconds, language| {
+            notification_created_label(now - Duration::seconds(seconds), now, Some(language))
+        };
+        assert_eq!(label(691_199, "en"), "7 days ago");
+        assert_eq!(label(691_200, "en"), "01-01");
+        assert_eq!(label(777_600, "en"), "2025-12-31");
+        assert_eq!(label(1, "en"), "1 second ago");
+        assert_eq!(label(2, "en"), "2 seconds ago");
+        assert_eq!(label(86_400, "ko-KR"), "1일 전");
+        assert_eq!(label(-1, "ko-KR"), "방금 전");
+    }
 }

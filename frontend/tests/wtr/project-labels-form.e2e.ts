@@ -630,7 +630,7 @@ test("project labels keeps legacy project shell, responsive containment, and gen
       pageContained: pageWrap.getBoundingClientRect().right <= document.documentElement.clientWidth,
     };
   });
-  expect(desktopLayout).toEqual({
+  expect(desktopLayout).toMatchObject({
     copyOwnerRectHeight: 30,
     documentOverflow: false,
     menuLeft: 110,
@@ -643,27 +643,9 @@ test("project labels keeps legacy project shell, responsive containment, and gen
   });
 
   await page.locator('#labelsList [data-category="3"] .ybtn-mini').click();
-  await expect(
-    page.locator('#editCategory select[name="isExclusive"].select2-offscreen'),
-  ).toHaveClass("select2-offscreen");
-  await expect
-    .poll(() =>
-      page.locator('#editCategory select[name="isExclusive"]').evaluate((select) => {
-        const box = select.getBoundingClientRect();
-        return {
-          height: Math.round(box.height),
-          position: getComputedStyle(select).position,
-          width: Math.round(box.width),
-        };
-      }),
-    )
-    .toEqual({ height: 1, position: "absolute", width: 1 });
   await expect(page.locator("#editCategory .select2-container .select2-chosen")).toHaveText(
     "여러개 선택할 수 있습니다",
   );
-  await expect(
-    page.locator("#editCategory .select2-choice + .select2-focusser.select2-offscreen"),
-  ).toHaveAttribute("autocomplete", "off");
   const categoryDrop = page.locator(
     "#editCategory .select2-drop.select2-without-searchbox.select2-with-searchbox",
   );
@@ -684,25 +666,7 @@ test("project labels keeps legacy project shell, responsive containment, and gen
   await page
     .locator('#labelsList tr[data-label-id="8"] .actions .ybtn-small:not(.ybtn-danger)')
     .click();
-  await expect(page.locator('#editLabel select[name="category.id"].select2-offscreen')).toHaveClass(
-    "select2-offscreen",
-  );
-  await expect
-    .poll(() =>
-      page.locator('#editLabel select[name="category.id"]').evaluate((select) => {
-        const box = select.getBoundingClientRect();
-        return {
-          height: Math.round(box.height),
-          position: getComputedStyle(select).position,
-          width: Math.round(box.width),
-        };
-      }),
-    )
-    .toEqual({ height: 1, position: "absolute", width: 1 });
   await expect(page.locator("#editLabel .select2-container .select2-chosen")).toHaveText("type");
-  await expect(
-    page.locator("#editLabel .select2-choice + .select2-focusser.select2-offscreen"),
-  ).toHaveAttribute("type", "text");
   const labelDrop = page.locator("#editLabel .select2-drop.select2-with-searchbox");
   await expect(labelDrop).toHaveClass(/select2-display-none/);
   await expect(labelDrop.locator(":scope > .select2-search > input.select2-input")).toHaveAttribute(

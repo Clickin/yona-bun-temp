@@ -205,7 +205,7 @@ pub(crate) async fn direct_request(request: Request, service: PilotServiceImpl) 
         return file_response::file(&repo_path, &route, method == "HEAD");
     }
     if method == "MKACTIVITY" {
-        return activity::mkactivity(&route);
+        return activity::mkactivity(&repo_path, &route);
     }
     if method == "CHECKOUT" {
         let body_bytes = match body.collect().await {
@@ -223,7 +223,7 @@ pub(crate) async fn direct_request(request: Request, service: PilotServiceImpl) 
                 return RestRouteError::from_connect_error(internal_error(error)).into_response();
             }
         };
-        return activity::merge(&repo_path, &route, &body_bytes);
+        return activity::merge(&repo_path, &route, principal.as_ref(), &body_bytes);
     }
     if method == "PUT" {
         let body_bytes = match body.collect().await {
@@ -242,7 +242,7 @@ pub(crate) async fn direct_request(request: Request, service: PilotServiceImpl) 
     }
     if method == "DELETE" {
         if let Some(activity_id) = path::activity_id(&route.svn_path) {
-            write::clear_activity_log(&repo_path, &activity_id);
+            write::clear_activity(&repo_path, &activity_id);
             return svn_protocol_status_response(StatusCode::NO_CONTENT);
         }
         return write_response::delete(&repo_path, &route, principal.as_ref());

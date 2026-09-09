@@ -10,6 +10,7 @@ use std::collections::HashMap;
 use std::path::Path as FsPath;
 use yoram_vcs::VcsError;
 
+use crate::routes::utils::remove_unreferenced_attachment_blobs;
 use crate::{
     code_browser_error, decode_query_component, deserialize_i64_vec_from_strings_or_numbers,
     dispatch_posting_comment_webhooks, dispatch_posting_webhooks, form_value, gravatar_url,
@@ -78,6 +79,7 @@ struct RestPostCommentBody {
     )]
     attachment_ids: Vec<i64>,
     contents_markdown: String,
+    original: Option<String>,
     parent_comment_id: Option<i64>,
 }
 
@@ -1158,6 +1160,7 @@ fn direct_post_comment_body(form: &HashMap<String, String>) -> RestPostCommentBo
     RestPostCommentBody {
         attachment_ids: direct_post_comment_attachment_ids(form),
         contents_markdown: direct_post_comment_contents(form),
+        original: None,
         parent_comment_id: form
             .get("parentCommentId")
             .and_then(|value| value.parse::<i64>().ok()),
@@ -1825,6 +1828,26 @@ async fn rest_delete_posting(
     {
         return Err(RestRouteError::not_found("pilot posting not found"));
     }
+    remove_unreferenced_attachment_blobs(
+        repository,
+        &service.data_root,
+        access
+            .posting
+            .attachments
+            .iter()
+            .map(|attachment| &attachment.hash)
+            .chain(
+                access
+                    .posting
+                    .comments
+                    .iter()
+                    .flat_map(|comment| comment.attachments.iter())
+                    .map(|attachment| &attachment.hash),
+            ),
+    )
+    .await
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -2017,15 +2040,24 @@ async fn rest_update_posting_comment(
     )
     .await
     .map_err(RestRouteError::from_connect_error)?;
-    let can_edit_comment = access
+    let existing_comment = access
         .posting
         .comments
         .iter()
-        .any(|comment| comment.id == comment_id && comment.author_id == Some(actor.id))
+        .find(|comment| comment.id == comment_id)
+        .ok_or_else(|| RestRouteError::not_found("posting comment not found"))?;
+    let can_edit_comment = existing_comment.author_id == Some(actor.id)
         || posting_can_update(&access.authorization, &access.posting, &actor);
     if !can_edit_comment {
         return Err(RestRouteError::from_connect_error(
             ConnectError::permission_denied("posting comment update is not allowed"),
+        ));
+    }
+    if body.original.as_deref().is_some_and(|original| {
+        crate::legacy_content_modified_by_others(&existing_comment.contents_markdown, original)
+    }) {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::already_exists("Already modified by someone."),
         ));
     }
     let posting = repository
@@ -2123,6 +2155,19 @@ async fn rest_delete_posting_comment(
             ConnectError::permission_denied("posting comment delete is not allowed"),
         ));
     }
+    let comment_attachment_hashes = access
+        .posting
+        .comments
+        .iter()
+        .find(|comment| comment.id == comment_id)
+        .map(|comment| {
+            comment
+                .attachments
+                .iter()
+                .map(|attachment| attachment.hash.clone())
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
     let posting = repository
         .delete_posting_comment(
             &owner_name,
@@ -2135,6 +2180,14 @@ async fn rest_delete_posting_comment(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("posting comment not found"))?;
+    remove_unreferenced_attachment_blobs(
+        repository,
+        &service.data_root,
+        comment_attachment_hashes.iter(),
+    )
+    .await
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
     Ok(Json(
         rest_post_detail_response_from_record_with_repository_issue_references(
             repository,

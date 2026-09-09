@@ -9,8 +9,9 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
 use crate::{
-    base_path_href, persistence, project_read_allowed, random_storage_token, PilotBackend,
-    PilotServiceImpl,
+    base_path_href, persistence, posting_can_update, project_code_menu_visible,
+    project_read_allowed, project_update_allowed, random_storage_token, read_issue_access,
+    read_posting_access, PilotBackend, PilotServiceImpl,
 };
 
 fn uploaded_files_root(data_root: &std::path::Path) -> PathBuf {
@@ -168,15 +169,94 @@ async fn project_attachment_read_allowed(
     project_read_allowed(&authorization, actor_id.is_none()).map_err(|_| ())
 }
 
+async fn project_code_attachment_read_allowed(
+    repository: &crate::persistence::PilotRepository,
+    owner_name: &str,
+    project_name: &str,
+    actor_id: Option<i64>,
+) -> Result<bool, ()> {
+    let authorization = repository
+        .read_project_authorization(owner_name, project_name, actor_id)
+        .await
+        .map_err(|_| ())?
+        .ok_or(())?;
+    Ok(
+        project_read_allowed(&authorization, actor_id.is_none()).map_err(|_| ())?
+            && project_code_menu_visible(&authorization, true),
+    )
+}
+
+fn project_resource_update_allowed(
+    authorization: &persistence::ProjectAuthorizationRecord,
+) -> bool {
+    let project_scope = authorization.project.project_scope.trim();
+    authorization.viewer.is_site_admin
+        || authorization.viewer.is_organization_admin
+        || authorization.viewer.is_project_manager
+        || authorization.viewer.is_project_member
+        || (authorization.project.organization_id.is_some()
+            && authorization.viewer.is_organization_member
+            && (project_scope.eq_ignore_ascii_case("public")
+                || project_scope.eq_ignore_ascii_case("protected")))
+}
+
 async fn attachment_container_read_allowed(
     repository: &crate::persistence::PilotRepository,
     container_type: &str,
     container_id: i64,
     actor_id: Option<i64>,
 ) -> Result<bool, ()> {
-    match container_type.trim().to_ascii_uppercase().as_str() {
-        "USER" => Ok(actor_id == Some(container_id)),
-        "USER_AVATAR" | "ORGANIZATION" => Ok(true),
+    attachment_container_allowed(
+        repository,
+        container_type,
+        container_id,
+        actor_id,
+        false,
+        AttachmentOperation::Read,
+    )
+    .await
+}
+
+#[derive(Clone, Copy)]
+enum AttachmentOperation {
+    Read,
+    Update,
+}
+
+async fn attachment_container_allowed(
+    repository: &crate::persistence::PilotRepository,
+    container_type: &str,
+    container_id: i64,
+    actor_id: Option<i64>,
+    actor_is_site_admin: bool,
+    operation: AttachmentOperation,
+) -> Result<bool, ()> {
+    let normalized = container_type.trim().to_ascii_uppercase();
+    match normalized.as_str() {
+        "USER" => Ok(actor_is_site_admin || actor_id == Some(container_id)),
+        "USER_AVATAR" => Ok(match operation {
+            AttachmentOperation::Read => true,
+            AttachmentOperation::Update => actor_is_site_admin || actor_id == Some(container_id),
+        }),
+        "ORGANIZATION" => {
+            if matches!(operation, AttachmentOperation::Read) {
+                return Ok(true);
+            }
+            let Some(organization) = repository
+                .read_organization_by_id(container_id)
+                .await
+                .map_err(|_| ())?
+            else {
+                return Ok(false);
+            };
+            let authorization = repository
+                .read_organization_authorization(&organization.organization_name, actor_id)
+                .await
+                .map_err(|_| ())?;
+            Ok(authorization.is_some_and(|authorization| {
+                actor_is_site_admin || authorization.viewer.is_organization_admin
+            }))
+        }
         "PROJECT" => {
             let Some(project) = repository
                 .read_project_by_id(container_id)
@@ -185,13 +265,26 @@ async fn attachment_container_read_allowed(
             else {
                 return Ok(false);
             };
-            project_attachment_read_allowed(
-                repository,
-                &project.owner_name,
-                &project.project_name,
-                actor_id,
-            )
-            .await
+            match operation {
+                AttachmentOperation::Read => {
+                    project_attachment_read_allowed(
+                        repository,
+                        &project.owner_name,
+                        &project.project_name,
+                        actor_id,
+                    )
+                    .await
+                }
+                AttachmentOperation::Update => {
+                    project_attachment_update_allowed(
+                        repository,
+                        &project.owner_name,
+                        &project.project_name,
+                        actor_id,
+                    )
+                    .await
+                }
+            }
         }
         _ => {
             let Some(resource) = repository
@@ -201,15 +294,293 @@ async fn attachment_container_read_allowed(
             else {
                 return Ok(false);
             };
-            project_attachment_read_allowed(
-                repository,
-                &resource.owner_name,
-                &resource.project_name,
-                actor_id,
-            )
-            .await
+            if normalized == "MILESTONE" {
+                let authorization = repository
+                    .read_project_authorization(
+                        &resource.owner_name,
+                        &resource.project_name,
+                        actor_id,
+                    )
+                    .await
+                    .map_err(|_| ())?
+                    .ok_or(())?;
+                return match operation {
+                    AttachmentOperation::Read => {
+                        project_read_allowed(&authorization, actor_id.is_none()).map_err(|_| ())
+                    }
+                    AttachmentOperation::Update => {
+                        Ok(project_resource_update_allowed(&authorization))
+                    }
+                };
+            }
+            match normalized.as_str() {
+                "ISSUE_POST" | "ISSUE" => {
+                    let Some(target) = repository
+                        .read_attachment_resource_target(container_type, container_id)
+                        .await
+                        .map_err(|_| ())?
+                    else {
+                        return Ok(false);
+                    };
+                    let Some(issue_number) = target.issue_number else {
+                        return Ok(false);
+                    };
+                    let access = read_issue_access(
+                        repository,
+                        &resource.owner_name,
+                        &resource.project_name,
+                        issue_number,
+                        actor_id,
+                    )
+                    .await;
+                    Ok(match operation {
+                        AttachmentOperation::Read => access.is_ok(),
+                        AttachmentOperation::Update => access.ok().is_some_and(|access| {
+                            access.viewer_can_manage()
+                                || project_resource_update_allowed(&access.authorization)
+                        }),
+                    })
+                }
+                "ISSUE_COMMENT" => {
+                    let Some(target) = repository
+                        .read_attachment_resource_target(container_type, container_id)
+                        .await
+                        .map_err(|_| ())?
+                    else {
+                        return Ok(false);
+                    };
+                    let Some(issue_number) = target.issue_number else {
+                        return Ok(false);
+                    };
+                    let access = read_issue_access(
+                        repository,
+                        &target.owner_name,
+                        &target.project_name,
+                        issue_number,
+                        actor_id,
+                    )
+                    .await;
+                    Ok(match operation {
+                        AttachmentOperation::Read => access.is_ok(),
+                        AttachmentOperation::Update => access.ok().is_some_and(|access| {
+                            access.viewer_can_manage()
+                                || project_resource_update_allowed(&access.authorization)
+                                || actor_id.is_some_and(|id| target.author_id == Some(id))
+                        }),
+                    })
+                }
+                _ => {
+                    let Some(target) = repository
+                        .read_attachment_resource_target(container_type, container_id)
+                        .await
+                        .map_err(|_| ())?
+                    else {
+                        return Ok(false);
+                    };
+                    match normalized.as_str() {
+                        "COMMENT_THREAD" | "COMMIT_COMMENT" => {
+                            return match operation {
+                                AttachmentOperation::Read => {
+                                    if actor_id.is_some_and(|id| target.author_id == Some(id)) {
+                                        Ok(true)
+                                    } else {
+                                        project_code_attachment_read_allowed(
+                                            repository,
+                                            &target.owner_name,
+                                            &target.project_name,
+                                            actor_id,
+                                        )
+                                        .await
+                                    }
+                                }
+                                AttachmentOperation::Update => {
+                                    let Some(actor_id) = actor_id else {
+                                        return Ok(false);
+                                    };
+                                    let authorization = repository
+                                        .read_project_authorization(
+                                            &target.owner_name,
+                                            &target.project_name,
+                                            Some(actor_id),
+                                        )
+                                        .await
+                                        .map_err(|_| ())?
+                                        .ok_or(())?;
+                                    Ok(project_resource_update_allowed(&authorization)
+                                        || target.author_id == Some(actor_id))
+                                }
+                            };
+                        }
+                        "PULL_REQUEST" => {
+                            return match operation {
+                                AttachmentOperation::Read => {
+                                    project_code_attachment_read_allowed(
+                                        repository,
+                                        &target.owner_name,
+                                        &target.project_name,
+                                        actor_id,
+                                    )
+                                    .await
+                                }
+                                AttachmentOperation::Update => {
+                                    let Some(actor_id) = actor_id else {
+                                        return Ok(false);
+                                    };
+                                    let authorization = repository
+                                        .read_project_authorization(
+                                            &target.owner_name,
+                                            &target.project_name,
+                                            Some(actor_id),
+                                        )
+                                        .await
+                                        .map_err(|_| ())?
+                                        .ok_or(())?;
+                                    Ok(project_resource_update_allowed(&authorization))
+                                }
+                            };
+                        }
+                        "REVIEW_COMMENT" => {
+                            return match operation {
+                                AttachmentOperation::Read => {
+                                    if actor_id.is_some_and(|id| target.author_id == Some(id)) {
+                                        Ok(true)
+                                    } else {
+                                        project_code_attachment_read_allowed(
+                                            repository,
+                                            &target.owner_name,
+                                            &target.project_name,
+                                            actor_id,
+                                        )
+                                        .await
+                                    }
+                                }
+                                AttachmentOperation::Update => {
+                                    let Some(actor_id) = actor_id else {
+                                        return Ok(false);
+                                    };
+                                    let authorization = repository
+                                        .read_project_authorization(
+                                            &target.owner_name,
+                                            &target.project_name,
+                                            Some(actor_id),
+                                        )
+                                        .await
+                                        .map_err(|_| ())?
+                                        .ok_or(())?;
+                                    Ok(project_resource_update_allowed(&authorization)
+                                        || target.author_id == Some(actor_id))
+                                }
+                            };
+                        }
+                        _ => {}
+                    }
+                    if let Some(actor_id) = actor_id {
+                        let Some(actor) =
+                            repository.find_user_by_id(actor_id).await.map_err(|_| ())?
+                        else {
+                            return Ok(false);
+                        };
+                        match normalized.as_str() {
+                            "BOARD_POST" => {
+                                let Some(number) = target.issue_number else {
+                                    return Ok(false);
+                                };
+                                let access = read_posting_access(
+                                    repository,
+                                    &target.owner_name,
+                                    &target.project_name,
+                                    number,
+                                    Some(actor_id),
+                                )
+                                .await;
+                                return Ok(match operation {
+                                    AttachmentOperation::Read => {
+                                        access.is_ok() || target.author_id == Some(actor_id)
+                                    }
+                                    AttachmentOperation::Update => {
+                                        target.author_id == Some(actor_id)
+                                            || access.ok().is_some_and(|access| {
+                                                posting_can_update(
+                                                    &access.authorization,
+                                                    &access.posting,
+                                                    &actor,
+                                                )
+                                            })
+                                    }
+                                });
+                            }
+                            "BOARD_POST_COMMENT" | "NONISSUE_COMMENT" => {
+                                let Some(number) = target.issue_number else {
+                                    return Ok(false);
+                                };
+                                let access = read_posting_access(
+                                    repository,
+                                    &target.owner_name,
+                                    &target.project_name,
+                                    number,
+                                    Some(actor_id),
+                                )
+                                .await;
+                                return Ok(match operation {
+                                    AttachmentOperation::Read => {
+                                        access.is_ok() || target.author_id == Some(actor_id)
+                                    }
+                                    AttachmentOperation::Update => {
+                                        target.author_id == Some(actor_id)
+                                            || access.ok().is_some_and(|access| {
+                                                posting_can_update(
+                                                    &access.authorization,
+                                                    &access.posting,
+                                                    &actor,
+                                                )
+                                            })
+                                    }
+                                });
+                            }
+                            _ => {}
+                        }
+                    }
+                    match operation {
+                        AttachmentOperation::Read => {
+                            project_attachment_read_allowed(
+                                repository,
+                                &resource.owner_name,
+                                &resource.project_name,
+                                actor_id,
+                            )
+                            .await
+                        }
+                        AttachmentOperation::Update => {
+                            project_attachment_update_allowed(
+                                repository,
+                                &resource.owner_name,
+                                &resource.project_name,
+                                actor_id,
+                            )
+                            .await
+                        }
+                    }
+                }
+            }
         }
     }
+}
+
+async fn project_attachment_update_allowed(
+    repository: &crate::persistence::PilotRepository,
+    owner_name: &str,
+    project_name: &str,
+    actor_id: Option<i64>,
+) -> Result<bool, ()> {
+    let Some(actor_id) = actor_id else {
+        return Ok(false);
+    };
+    let authorization = repository
+        .read_project_authorization(owner_name, project_name, Some(actor_id))
+        .await
+        .map_err(|_| ())?
+        .ok_or(())?;
+    project_update_allowed(&authorization).map_err(|_| ())
 }
 
 pub(crate) async fn list_uploaded_files(
@@ -390,9 +761,11 @@ pub(crate) async fn get_uploaded_file(
             .and_then(|session| session.user_id);
         let token_actor = match crate::routes::utils::migration_api_token_from_headers(&headers) {
             Some(token) => match &service.backend {
-                PilotBackend::Repository(repository) => {
-                    repository.read_user_id_by_api_token(&token).await.ok().flatten()
-                }
+                PilotBackend::Repository(repository) => repository
+                    .read_user_id_by_api_token(&token)
+                    .await
+                    .ok()
+                    .flatten(),
                 PilotBackend::Static => None,
             },
             None => None,
@@ -492,18 +865,39 @@ pub(crate) async fn delete_uploaded_file(
     let Ok(Some(actor)) = repository.find_user_by_id(actor_id).await else {
         return StatusCode::UNAUTHORIZED.into_response();
     };
+    let Ok(Some(attachment)) = repository.read_attachment_by_id(attachment_id).await else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    match attachment_container_allowed(
+        repository,
+        &attachment.container_type,
+        attachment.container_id,
+        Some(actor.id),
+        actor.is_site_admin,
+        AttachmentOperation::Update,
+    )
+    .await
+    {
+        Ok(true) => {}
+        Ok(false) => return StatusCode::FORBIDDEN.into_response(),
+        Err(()) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
 
     match repository
-        .delete_attachment_for_actor(
+        .delete_attachment_for_actor_with_access(
             attachment_id,
             actor.id,
             &actor.login_id,
             actor.is_site_admin,
+            true,
         )
         .await
     {
-        Ok(persistence::DeleteAttachmentResult::Deleted(attachment)) => {
-            if !attachment.hash.is_empty() {
+        Ok(persistence::DeleteAttachmentResult::Deleted {
+            attachment,
+            remove_blob,
+        }) => {
+            if remove_blob && !attachment.hash.is_empty() {
                 let _ = std::fs::remove_file(uploaded_file_path_with_root(
                     &data_root,
                     &attachment.hash,

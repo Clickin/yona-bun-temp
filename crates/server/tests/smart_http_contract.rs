@@ -6,9 +6,12 @@ use http_body_util::BodyExt;
 use sea_orm::{ColumnTrait, Database, DatabaseConnection, EntityTrait, QueryFilter};
 use serde_json::json;
 use std::fs;
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::process::Command;
 use std::sync::{Mutex, OnceLock};
+use std::time::Instant;
 use tempfile::tempdir;
 use tokio::sync::oneshot;
 use tower::ServiceExt;
@@ -313,6 +316,50 @@ fn seed_bare_repository(yona_data: &Path, owner: &str, project: &str) {
         ],
         None,
     );
+}
+
+fn large_blob(size: usize) -> Vec<u8> {
+    let mut bytes = vec![0_u8; size];
+    let mut state = 0x1234_5678_u32;
+    for byte in &mut bytes {
+        state = state.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+        *byte = (state >> 24) as u8;
+    }
+    bytes
+}
+
+fn seed_large_bare_repository(yona_data: &Path, owner: &str, project: &str) {
+    seed_bare_repository(yona_data, owner, project);
+    let bare_repo = yona_data
+        .join("repo")
+        .join("git")
+        .join(owner)
+        .join(format!("{project}.git"));
+    let parent = tempdir().expect("large seed parent");
+    let work = parent.path().join("work");
+    run_git(
+        &[
+            "clone",
+            bare_repo.to_str().expect("bare repo path"),
+            work.to_str().expect("large seed work path"),
+        ],
+        None,
+    );
+    fs::write(work.join("large-seed.bin"), large_blob(1024 * 1024)).expect("large seed blob");
+    run_git(&["add", "large-seed.bin"], Some(&work));
+    run_git(
+        &[
+            "-c",
+            "user.email=seed@example.com",
+            "-c",
+            "user.name=Seed",
+            "commit",
+            "-m",
+            "Seed large Smart HTTP pack",
+        ],
+        Some(&work),
+    );
+    run_git(&["push", "origin", "main"], Some(&work));
 }
 
 async fn spawn_app_server(app: axum::Router) -> (String, oneshot::Sender<()>) {
@@ -785,6 +832,157 @@ async fn smart_http_supports_real_git_clone_and_authenticated_push() {
 }
 
 #[tokio::test]
+async fn smart_http_supports_large_git_clone_fetch_and_push() {
+    let data_dir = tempdir().expect("yona data tempdir");
+    let (app, repo, _) = build_app_with_data_root(data_dir.path()).await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    let (_, _, member_id) = register_user(app.clone(), "member").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .expect("project");
+    repo.add_project_membership(project.id, member_id, "member")
+        .await
+        .unwrap();
+    seed_large_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
+
+    let bare_repo = data_dir
+        .path()
+        .join("repo")
+        .join("git")
+        .join(&project.owner_name)
+        .join(format!("{}.git", project.project_name));
+    let (base_url, shutdown) = spawn_app_server(app).await;
+    let client_parent = tempdir().expect("large client parent");
+    let clone_path = client_parent.path().join("clone");
+    run_git_blocking(
+        vec![
+            "clone".to_string(),
+            format!("{base_url}/yona/owner/projectYobi.git"),
+            clone_path.to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+    assert_eq!(
+        fs::read(clone_path.join("large-seed.bin"))
+            .expect("read large clone blob")
+            .len(),
+        1024 * 1024
+    );
+
+    let remote_parent = tempdir().expect("large fetch seed parent");
+    let remote_work = remote_parent.path().join("remote");
+    run_git_blocking(
+        vec![
+            "clone".to_string(),
+            bare_repo.to_string_lossy().to_string(),
+            remote_work.to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+    fs::write(remote_work.join("large-fetch.bin"), large_blob(1024 * 1024))
+        .expect("large fetch blob");
+    run_git_blocking(
+        vec!["add".to_string(), "large-fetch.bin".to_string()],
+        Some(remote_work.clone()),
+    )
+    .await;
+    run_git_blocking(
+        vec![
+            "-c".to_string(),
+            "user.email=seed@example.com".to_string(),
+            "-c".to_string(),
+            "user.name=Seed".to_string(),
+            "commit".to_string(),
+            "-m".to_string(),
+            "Seed large fetch pack".to_string(),
+        ],
+        Some(remote_work.clone()),
+    )
+    .await;
+    run_git_blocking(
+        vec!["push".to_string(), "origin".to_string(), "main".to_string()],
+        Some(remote_work),
+    )
+    .await;
+    run_git_blocking(
+        vec![
+            "fetch".to_string(),
+            "origin".to_string(),
+            "main".to_string(),
+        ],
+        Some(clone_path.clone()),
+    )
+    .await;
+    run_git_blocking(
+        vec![
+            "merge".to_string(),
+            "--ff-only".to_string(),
+            "FETCH_HEAD".to_string(),
+        ],
+        Some(clone_path.clone()),
+    )
+    .await;
+    assert_eq!(
+        fs::read(clone_path.join("large-fetch.bin")).expect("fetched blob"),
+        large_blob(1024 * 1024)
+    );
+
+    fs::write(clone_path.join("large-push.bin"), large_blob(1024 * 1024)).expect("large push blob");
+    run_git_blocking(
+        vec!["add".to_string(), "large-push.bin".to_string()],
+        Some(clone_path.clone()),
+    )
+    .await;
+    run_git_blocking(
+        vec![
+            "-c".to_string(),
+            "user.email=member@example.com".to_string(),
+            "-c".to_string(),
+            "user.name=Member".to_string(),
+            "commit".to_string(),
+            "-m".to_string(),
+            "Push large Smart HTTP pack".to_string(),
+        ],
+        Some(clone_path.clone()),
+    )
+    .await;
+    let authenticated_url = base_url.replacen("http://", "http://member:doorpass1@", 1);
+    run_git_blocking(
+        vec![
+            "remote".to_string(),
+            "set-url".to_string(),
+            "origin".to_string(),
+            format!("{authenticated_url}/yona/owner/projectYobi.git"),
+        ],
+        Some(clone_path.clone()),
+    )
+    .await;
+    run_git_blocking(
+        vec!["push".to_string(), "origin".to_string(), "main".to_string()],
+        Some(clone_path.clone()),
+    )
+    .await;
+    let client_head = git_stdout(&["rev-parse", "HEAD"], Some(&clone_path));
+    let server_head = git_stdout(
+        &[
+            "--git-dir",
+            bare_repo.to_str().expect("bare repo path"),
+            "rev-parse",
+            "main",
+        ],
+        None,
+    );
+    assert_eq!(server_head.trim(), client_head.trim());
+
+    let _ = shutdown.send(());
+}
+
+#[tokio::test]
 // Guards Smart HTTP webhook payload reuse of the route-utils-owned absolute app URL helper.
 async fn smart_http_push_records_legacy_post_receive_side_effects() {
     let _outbox_guard = webhook_outbox_lock().lock().unwrap();
@@ -922,7 +1120,107 @@ async fn smart_http_push_records_legacy_post_receive_side_effects() {
 }
 
 #[tokio::test]
-async fn smart_http_push_records_pull_request_commit_changed_side_effects() {
+async fn smart_http_receive_pack_drains_large_backend_stderr_on_failure() {
+    let data_dir = tempdir().expect("git stderr data tempdir");
+    let (app, repo, _) = build_app_with_data_root(data_dir.path()).await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    let (_, _, member_id) = register_user(app.clone(), "member").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .expect("project");
+    repo.add_project_membership(project.id, member_id, "member")
+        .await
+        .unwrap();
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
+
+    let bare_repo = data_dir
+        .path()
+        .join("repo")
+        .join("git")
+        .join(&project.owner_name)
+        .join(format!("{}.git", project.project_name));
+    let hook = bare_repo.join("hooks").join("pre-receive");
+    fs::write(
+        &hook,
+        "#!/bin/sh\ndd if=/dev/zero bs=65536 count=32 1>&2 2>/dev/null\nexit 1\n",
+    )
+    .expect("write noisy pre-receive hook");
+    #[cfg(unix)]
+    {
+        let mut permissions = fs::metadata(&hook).expect("hook metadata").permissions();
+        permissions.set_mode(0o755);
+        fs::set_permissions(&hook, permissions).expect("make hook executable");
+    }
+
+    let (base_url, shutdown) = spawn_app_server(app).await;
+    let client_parent = tempdir().expect("git stderr client parent");
+    let clone_path = client_parent.path().join("clone");
+    run_git_blocking(
+        vec![
+            "clone".to_string(),
+            format!("{base_url}/yona/owner/projectYobi.git"),
+            clone_path.to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+    fs::write(clone_path.join("NOISY.md"), "failed push\n").expect("write failed push file");
+    run_git_blocking(
+        vec!["add".to_string(), "NOISY.md".to_string()],
+        Some(clone_path.clone()),
+    )
+    .await;
+    run_git_blocking(
+        vec![
+            "-c".to_string(),
+            "user.email=member@example.com".to_string(),
+            "-c".to_string(),
+            "user.name=Member".to_string(),
+            "commit".to_string(),
+            "-m".to_string(),
+            "Noisy failed push".to_string(),
+        ],
+        Some(clone_path.clone()),
+    )
+    .await;
+    let authenticated_url = base_url.replacen("http://", "http://member:doorpass1@", 1);
+    run_git_blocking(
+        vec![
+            "remote".to_string(),
+            "set-url".to_string(),
+            "origin".to_string(),
+            format!("{authenticated_url}/yona/owner/projectYobi.git"),
+        ],
+        Some(clone_path.clone()),
+    )
+    .await;
+    let started = Instant::now();
+    let output = tokio::task::spawn_blocking(move || {
+        Command::new("git")
+            .args(["push", "origin", "main"])
+            .current_dir(clone_path)
+            .env("GIT_TERMINAL_PROMPT", "0")
+            .output()
+            .expect("run noisy failed push")
+    })
+    .await
+    .expect("noisy push task");
+    assert!(
+        !output.status.success(),
+        "pre-receive hook must reject push"
+    );
+    assert!(
+        started.elapsed().as_secs() < 10,
+        "large backend stderr push should not wait for the Git backend timeout"
+    );
+    let _ = shutdown.send(());
+}
+
+#[tokio::test]
+async fn smart_http_push_updates_pull_request_commits_and_notifications() {
     let _outbox_guard = webhook_outbox_lock().lock().unwrap();
     clear_test_webhook_outbox();
     let data_dir = tempdir().expect("yona data tempdir");

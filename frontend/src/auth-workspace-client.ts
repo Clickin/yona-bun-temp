@@ -52,6 +52,7 @@ import {
   unvoteIssueCommentRest,
   unvoteIssueRest,
   unwatchIssueRest,
+  updateIssueContentRest,
   voteIssueCommentRest,
   voteIssueRest,
   watchIssueRest,
@@ -600,6 +601,7 @@ type IssueMutationRestInput = (RequestInput | RequestInput) & {
   dueDate?: string;
   isDraft?: boolean;
   isPublish?: boolean;
+  notificationMail?: boolean;
   parentIssueId?: bigint | number | string | null;
   referCommentId?: bigint | number | string | null;
 };
@@ -615,6 +617,7 @@ function issueMutationRestBody(input: IssueMutationRestInput) {
     isPublish: input.isPublish ?? false,
     labelIds: input.labelIds ?? [],
     milestoneId: input.milestoneId && input.milestoneId !== 0n ? input.milestoneId : undefined,
+    notificationMail: input.notificationMail,
     parentIssueId: input.parentIssueId ? input.parentIssueId : undefined,
     referCommentId,
     targetProjectId: input.targetProjectId ? input.targetProjectId : undefined,
@@ -632,6 +635,8 @@ function issueCommentRestBody(
   return {
     attachmentIds: input.attachmentIds ?? [],
     contentsMarkdown: input.contentsMarkdown ?? "",
+    notificationMail: input.notificationMail,
+    original: input.original,
     parentCommentId: "parentCommentId" in input ? input.parentCommentId : undefined,
   };
 }
@@ -867,6 +872,7 @@ export async function updateIssue(
     dueDate?: string;
     isDraft?: boolean;
     isPublish?: boolean;
+    notificationMail?: boolean;
     parentIssueId?: bigint | number | string | null;
   },
   fetchImpl: typeof fetch = fetch,
@@ -884,6 +890,26 @@ export async function updateIssue(
       fetchImpl,
       method: "PUT",
     },
+  );
+}
+
+export async function updateIssueContent(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: RequestInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<unknown> {
+  return updateIssueContentRest(
+    runtimeConfig,
+    csrfToken,
+    {
+      content: input.content ?? "",
+      issueNumber: input.issueNumber ?? 0n,
+      original: input.original ?? "",
+      ownerName: input.ownerName ?? "",
+      projectName: input.projectName ?? "",
+    },
+    fetchImpl,
   );
 }
 

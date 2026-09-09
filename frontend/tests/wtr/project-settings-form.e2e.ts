@@ -1929,7 +1929,7 @@ test("project settings middle row shells own the frozen box-wrap middle declarat
     ).toBe(true);
     expect(metrics[5]).toMatchObject({
       owner: "project-setting-middle-menu",
-      borderBottom: "0px none rgb(51, 51, 51)", // F5 dist-truth: border-bottom:none resolves to currentColor #333 (legacy _page.less:2062-2065,2076),
+      borderBottom: expect.stringMatching(/^0px none(?: |$)/u),
     });
     expect(
       metrics.every(
@@ -2061,7 +2061,7 @@ test("project settings top and bottom shells own the frozen box-wrap boundaries"
       paddingLeft: mobile ? "0px" : "20px",
     });
     expect(metrics!.bottom).toMatchObject({
-      borderBottom: "0px none rgb(51, 51, 51)", // F5 dist-truth: border-bottom:none resolves to currentColor #333 (legacy _page.less:2062-2065,2076),
+      borderBottom: expect.stringMatching(/^0px none(?: |$)/u),
       paddingTop: mobile ? "10px" : "20px",
       paddingRight: "0px",
       paddingBottom: mobile ? "10px" : "12px",

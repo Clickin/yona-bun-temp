@@ -898,10 +898,21 @@ pub(crate) async fn organization_delete(
         return Err(ConnectError::invalid_argument("organization has projects"));
     }
 
+    let attachments = repository
+        .list_attachments_by_container("ORGANIZATION", authorization.organization.id)
+        .await
+        .map_err(internal_error)?;
     repository
         .delete_organization_by_name(&request.organization_name)
         .await
         .map_err(internal_error)?;
+    remove_unreferenced_attachment_blobs(
+        repository,
+        &service.data_root,
+        attachments.iter().map(|attachment| &attachment.hash),
+    )
+    .await
+    .map_err(internal_error)?;
     Ok((
         OrganizationRedirectResult {
             ok: true,

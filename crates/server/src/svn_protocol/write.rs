@@ -35,6 +35,11 @@ pub(crate) fn clear_activity_log(repo_path: &Path, activity_id: &str) {
     let _ = std::fs::remove_file(activity_log_path(repo_path, activity_id));
 }
 
+pub(crate) fn clear_activity(repo_path: &Path, activity_id: &str) {
+    let _ = yoram_vcs::svn_activity_abort(repo_path, activity_id);
+    clear_activity_log(repo_path, activity_id);
+}
+
 pub(crate) fn revision_response(status: StatusCode, revision: i64) -> Response {
     let mut response = status.into_response();
     add_dav_headers(&mut response);
@@ -53,6 +58,23 @@ pub(crate) fn put_contents(repo_path: &Path, path: &str, body: &Bytes) -> Result
         return Ok(body.clone());
     }
     let source = match yoram_vcs::svn_cat_file(repo_path, None, path) {
+        Ok(bytes) => bytes,
+        Err(VcsError::NotFound) => Vec::new(),
+        Err(error) => return Err(error),
+    };
+    svndiff::apply_svndiff0(&source, body).map(Bytes::from)
+}
+
+pub(crate) fn put_activity_contents(
+    repo_path: &Path,
+    activity_id: &str,
+    path: &str,
+    body: &Bytes,
+) -> Result<Bytes, VcsError> {
+    if !body.starts_with(b"SVN\0") {
+        return Ok(body.clone());
+    }
+    let source = match yoram_vcs::svn_activity_file_contents(repo_path, activity_id, path) {
         Ok(bytes) => bytes,
         Err(VcsError::NotFound) => Vec::new(),
         Err(error) => return Err(error),

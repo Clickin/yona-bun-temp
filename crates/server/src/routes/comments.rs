@@ -7,8 +7,9 @@ use axum::{
 };
 
 use crate::routes::utils::{
-    internal_error, project_update_allowed, require_authenticated_user, require_session,
-    require_valid_csrf, rest_require_project_code_read,
+    internal_error, project_update_allowed, remove_unreferenced_attachment_blobs,
+    require_authenticated_user, require_session, require_valid_csrf,
+    rest_require_project_code_read,
 };
 use crate::{persistence, PilotBackend, PilotServiceImpl, RestRouteError};
 
@@ -62,6 +63,30 @@ async fn delete_legacy_review_comment(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::bad_request("comment not found"))?;
+    let mut attachment_hashes = repository
+        .list_attachments_by_container("REVIEW_COMMENT", comment_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .into_iter()
+        .map(|attachment| attachment.hash)
+        .collect::<Vec<_>>();
+    if let Some(thread_id) = repository
+        .read_review_comment_thread_id(comment_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+    {
+        attachment_hashes.extend(
+            repository
+                .list_attachments_by_container("COMMENT_THREAD", thread_id)
+                .await
+                .map_err(internal_error)
+                .map_err(RestRouteError::from_connect_error)?
+                .into_iter()
+                .map(|attachment| attachment.hash),
+        );
+    }
 
     match (comment_type, target.kind) {
         (
@@ -93,6 +118,14 @@ async fn delete_legacy_review_comment(
                 .map_err(internal_error)
                 .map_err(RestRouteError::from_connect_error)?
                 .ok_or_else(|| RestRouteError::bad_request("comment not found"))?;
+            remove_unreferenced_attachment_blobs(
+                repository,
+                &service.data_root,
+                attachment_hashes.iter(),
+            )
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?;
             Ok(())
         }
         (
@@ -126,6 +159,14 @@ async fn delete_legacy_review_comment(
                 .map_err(internal_error)
                 .map_err(RestRouteError::from_connect_error)?
                 .ok_or_else(|| RestRouteError::bad_request("comment not found"))?;
+            remove_unreferenced_attachment_blobs(
+                repository,
+                &service.data_root,
+                attachment_hashes.iter(),
+            )
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?;
             Ok(())
         }
         _ => Err(RestRouteError::bad_request("comment type is invalid")),

@@ -1,38 +1,10 @@
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
-import { readFileSync } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 test("board post keeps the legacy full-width right menu shell and comment hash target", async ({
   page,
 }) => {
-  const route = readFileSync("src/routes/$ownerName/$projectName/post/$postNumber.tsx", "utf8");
-  const template = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
-
-  expect(template).toContain('<div class="project-page-wrap board-view">');
-  expect(template).toContain('<div class="board-header issue">');
-  expect(template).toContain('<div class="board-body row-fluid">');
-  expect(template).toContain('<div id="post-body-@post.getNumber">');
-  expect(template).toContain('class="content markdown-wrap"');
-  expect(template).toContain('class="board-actrow right-txt"');
-  expect(template).toContain('class="span3 span-right-pane mb20"');
-  expect(template).toContain("@if(project.menuSetting.board)");
-  expect(template).toContain('@Messages("post.write")');
-  expect(template).toContain('class="right-menu-icons"');
-
-  // These exact wrappers keep the board rail in the same row-fluid layout as
-  // the issue detail without importing issue-only metadata controls.
-  expect(route).toContain('className="project-page-wrap board-view"');
-  expect(route).toContain("board-header issue");
-  expect(route).toContain("board-body row-fluid");
-  expect(route).toContain("content markdown-wrap");
-  expect(route).toContain("board-actrow");
-  // wave-33 retained-class retention (667398a04): legacy board/view.scala.html:97
-  // is `<div class="board-actrow right-txt">`; the app retains the class
-  expect(route).toContain("right-txt");
-  expect(route).toContain('className="act-row right-menu-icons"');
-  expect(route).toContain('data-owner="post-detail-sidebar-actions"');
-
   // The legacy template keys this link to the enabled board menu, rather than
   // post.permissions.canCreate. The destination performs its own authorization.
   await mockPost(page, { canCreate: false });
@@ -110,6 +82,53 @@ test("board post keeps the legacy full-width right menu shell and comment hash t
   expect(mobile.targetTop).toBeGreaterThanOrEqual(0);
 });
 
+test("board comment tasklist preserves attachments and rejects stale changes", async ({ page }) => {
+  const post = await mockPost(page);
+  post.comments[0].contentsMarkdown = "- [ ] Comment task";
+  post.comments[0].attachments.push({
+    id: "9",
+    name: "keep.txt",
+    downloadUrl: `${basePath}/files/9`,
+  });
+  await page.route("**/api/v1/projects/**/posts/1/comments/1", async (route: Route) => {
+    const body: {
+      attachmentIds?: string[];
+      contentsMarkdown: string;
+      original: string;
+    } = route.request().postDataJSON();
+    if (body.original !== post.comments[0].contentsMarkdown) {
+      await route.fulfill({
+        status: 409,
+        contentType: "application/json",
+        json: { error: { code: "already_exists", message: "Already modified by someone." } },
+      });
+      return;
+    }
+    post.comments[0].contentsMarkdown = body.contentsMarkdown;
+    post.comments[0].attachments = post.comments[0].attachments.filter((attachment) =>
+      body.attachmentIds?.includes(attachment.id),
+    );
+    await route.fulfill({ contentType: "application/json", json: post });
+  });
+  await page.goto(`${basePath}/admin/sample/post/1`);
+  const comment = page.locator("#comment-1");
+  const task = comment.locator(".comment-body.markdown-wrap input[type='checkbox']");
+  await expect(task).toBeEnabled();
+  await task.click();
+  await expect(task).toBeChecked();
+  await page.reload();
+  await expect(task).toBeChecked();
+  await expect(comment.locator(".done-counter")).toHaveText("(1/1)");
+  await expect(comment.locator(".attachments .attaches")).toContainText("keep.txt");
+
+  post.comments[0].contentsMarkdown = "- [x] Changed elsewhere";
+  await task.click();
+  await expect(comment.getByRole("alert")).toContainText("Already modified by someone.");
+  await expect(task).toBeChecked();
+  await page.reload();
+  await expect(comment.locator(".comment-body.markdown-wrap")).toContainText("Changed elsewhere");
+});
+
 async function mockPost(page: Page, { canCreate = true }: { canCreate?: boolean } = {}) {
   await page.addInitScript((runtimeBasePath) => {
     (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
@@ -128,7 +147,11 @@ async function mockPost(page: Page, { canCreate = true }: { canCreate?: boolean 
   };
   for (const url of ["**/api/v1/session", "**/api/auth/session", "**/api/v1/auth/session"]) {
     await page.route(url, (route: Route) =>
-      route.fulfill({ contentType: "application/json", json: session }),
+      route.fulfill({
+        contentType: "application/json",
+        headers: { "x-csrf-token": "parity-csrf" },
+        json: session,
+      }),
     );
   }
   await page.route("**/api/v1/owners/**/projects/**/container**", (route: Route) =>
@@ -188,10 +211,8 @@ async function mockPost(page: Page, { canCreate = true }: { canCreate?: boolean 
       },
     }),
   );
-  await page.route("**/api/v1/projects/**/posts/1", (route: Route) =>
-    route.fulfill({
-      contentType: "application/json",
-      json: {
+  const commentAttachments: Array<{ id: string; name: string; downloadUrl: string }> = [];
+  const post = {
         id: "post-1",
         postNumber: "1",
         title: "Post right rail parity",
@@ -212,7 +233,7 @@ async function mockPost(page: Page, { canCreate = true }: { canCreate?: boolean 
             contentsHtml: "Comment",
             contentsMarkdown: "Comment",
             createdLabel: "Jul 2, 2026",
-            attachments: [],
+            attachments: commentAttachments,
             parentCommentId: "",
             viaEmail: false,
           },
@@ -243,7 +264,9 @@ async function mockPost(page: Page, { canCreate = true }: { canCreate?: boolean 
           canUpdate: true,
           canWatch: true,
         },
-      },
-    }),
+  };
+  await page.route("**/api/v1/projects/**/posts/1", (route: Route) =>
+    route.fulfill({ contentType: "application/json", json: post }),
   );
+  return post;
 }

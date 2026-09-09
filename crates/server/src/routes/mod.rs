@@ -30,9 +30,9 @@ pub(crate) use auth::rest_routes as auth_rest_routes;
 pub(crate) use auth::routes as auth_routes;
 #[cfg(debug_assertions)]
 pub(crate) use auth::{auth_register_with_password, auth_sign_out, auth_verify_user};
-pub(crate) use boards::read_posting_access;
 pub(crate) use boards::rest_routes as board_rest_routes;
 pub(crate) use boards::routes as board_routes;
+pub(crate) use boards::{posting_can_update, read_posting_access};
 pub(crate) use code::rest_routes as code_rest_routes;
 pub(crate) use code::rest_update_commit_discussion_thread_state;
 pub(crate) use code::routes as code_routes;
@@ -114,12 +114,12 @@ pub(crate) use utils::{
     legacy_external_api_auth_error_response, legacy_external_api_hello,
     legacy_external_attachment_result, legacy_external_authenticated_user_id,
     legacy_external_date_string, legacy_external_parse_datetime, legacy_external_post_author,
-    legacy_user_avatar_url,
-    legacy_external_temporary_upload_file_ids, legacy_json_find_value, map_project_scope,
-    max_uploaded_file_size_from_option, normalize_identifier, normalize_issue_label_color,
-    normalize_milestone_state, optional_i64_string, organization_detail_with_logo_from_record,
-    organization_logo_url, parse_attachment_ids, parse_milestone_due_date, parse_rest_query_i64,
-    parse_rest_query_u32, percent_encode_uri_component, persist_preferred_language_from_headers,
+    legacy_external_temporary_upload_file_ids, legacy_json_find_value, legacy_user_avatar_url,
+    map_project_scope, max_uploaded_file_size_from_option, normalize_identifier,
+    normalize_issue_label_color, normalize_milestone_state, optional_i64_string,
+    organization_detail_with_logo_from_record, organization_logo_url, parse_attachment_ids,
+    parse_milestone_due_date, parse_rest_query_i64, parse_rest_query_u32,
+    percent_encode_uri_component, persist_preferred_language_from_headers,
     project_code_menu_visible, project_default_menus_from_option,
     project_default_scope_from_option, project_detail_from_record,
     project_detail_with_logo_from_record, project_logo_url, project_read_allowed,
@@ -128,9 +128,8 @@ pub(crate) use utils::{
     require_project_read, require_project_resource_create, require_session, require_valid_csrf,
     resolve_current_session_response, rest_actor_id, rest_board_label_from_record,
     rest_json_response, rest_json_response_with_etag, rest_migration_actor_from_user_id,
-    rest_not_found_response, rest_owned_view, rest_read_current_session,
-    rest_require_migration_actor, rest_repository, rest_require_project_code_read,
-    send_password_reset_mail,
+    rest_not_found_response, rest_owned_view, rest_read_current_session, rest_repository,
+    rest_require_migration_actor, rest_require_project_code_read, send_password_reset_mail,
     send_project_transfer_request_mail, send_signup_verification_mail,
     send_workspace_email_validation_mail, site_export_filename_stamp, site_name_from_option,
     supported_languages_from_option, trimmed_option, user_issue_filter_name, user_issue_state,

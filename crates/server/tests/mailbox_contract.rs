@@ -184,7 +184,7 @@ async fn mailbox_creation_via_email_creates_issue_comment_and_review_comment_res
     );
 
     let thread = comment_thread::ActiveModel {
-        dtype: Set("NonRangedCodeCommentThread".to_string()),
+        dtype: Set("non_ranged".to_string()),
         id: NotSet,
         author_id: Set(Some(member.id)),
         author_login_id: Set(Some(member.login_id.clone())),

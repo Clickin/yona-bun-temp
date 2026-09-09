@@ -10,7 +10,11 @@ use md5::{Digest, Md5};
 use rand::RngCore;
 use sea_orm::entity::prelude::DateTime;
 use serde::{Deserialize, Deserializer, Serialize};
-use std::{collections::HashMap, time::SystemTime};
+use std::{
+    collections::{HashMap, HashSet},
+    path::Path,
+    time::SystemTime,
+};
 use yoram_integrations::{deliver_with_config, IntegrationConfig, OutboundMail};
 use yoram_vcs::{CodeFileRecord, VcsError};
 
@@ -59,6 +63,34 @@ pub(crate) fn confirmation_session_required_from_config(config: &AuthUiConfig) -
 
 pub(crate) fn internal_error(error: impl ToString) -> ConnectError {
     ConnectError::new(ErrorCode::Internal, error.to_string())
+}
+
+pub(crate) fn remove_unreferenced_attachment_blobs<'a, I, S>(
+    repository: &'a PilotRepository,
+    data_root: &'a Path,
+    hashes: I,
+) -> impl std::future::Future<Output = Result<(), sea_orm::DbErr>> + Send + 'a
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<str>,
+{
+    let hashes: HashSet<String> = hashes
+        .into_iter()
+        .filter_map(|hash| {
+            let hash = hash.as_ref();
+            (!hash.is_empty()).then(|| hash.to_owned())
+        })
+        .collect();
+    async move {
+        for hash in hashes {
+            if !repository.attachment_hash_is_referenced(&hash).await? {
+                let _ = std::fs::remove_file(crate::routes::uploaded_file_path_with_root(
+                    data_root, &hash,
+                ));
+            }
+        }
+        Ok(())
+    }
 }
 
 pub(crate) fn workspace_invalid_argument(message: impl Into<String>) -> ConnectError {
@@ -994,9 +1026,9 @@ pub(crate) async fn rest_require_migration_actor(
         }
     }
 
-    Err(RestRouteError::from_connect_error(ConnectError::unauthenticated(
-        "missing authenticated session",
-    )))
+    Err(RestRouteError::from_connect_error(
+        ConnectError::unauthenticated("missing authenticated session"),
+    ))
 }
 
 /// Resolve the acting user record for migration REST routes (repository

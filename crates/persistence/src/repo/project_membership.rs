@@ -307,13 +307,19 @@ impl AppRepositoryImpl<'_> {
                 }
             }
 
-            if let Some(membership) = project_user::Entity::find()
+            // Legacy checks all memberships; a weaker duplicate cannot hide a manager.
+            if let Some(role_name) = project_user::Entity::find()
+                .select_only()
+                .column(role::Column::Name)
+                .inner_join(role::Entity)
                 .filter(project_user::Column::ProjectId.eq(Some(project.id)))
                 .filter(project_user::Column::UserId.eq(Some(actor_id)))
+                .filter(role::Column::Name.is_in(["manager", "member"]))
+                .order_by_desc(Expr::col((role::Entity, role::Column::Name)).eq("manager"))
+                .into_tuple::<String>()
                 .one(&self.db)
                 .await?
             {
-                let role_name = self.role_name_for_id(membership.role_id).await?;
                 viewer.is_project_manager = role_name == "manager";
                 viewer.is_project_member = viewer.is_project_manager || role_name == "member";
             }

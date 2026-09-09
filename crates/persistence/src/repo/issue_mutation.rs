@@ -192,7 +192,6 @@ impl AppRepositoryImpl<'_> {
             Some(input.actor_id),
         )
         .await?;
-        self.watch_issue(created.id, input.actor_id).await?;
         self.issue_record_from_model(created, &project_record, Some(input.actor_id))
             .await
             .map(Some)
@@ -327,16 +326,24 @@ impl AppRepositoryImpl<'_> {
             project_active.last_issue_number = Set(updated.number);
             project_active.update(&self.db).await?;
         } else {
-            self.sync_mentions_and_notify(
-                actor_id,
-                "issue_post",
-                updated.id,
-                &input.values.body_markdown,
-                "ISSUE_BODY_CHANGED",
-                &old_body,
-                &input.values.body_markdown,
-            )
-            .await?;
+            let mentioned_user_ids = self
+                .mentioned_active_user_ids(&input.values.body_markdown)
+                .await?;
+            let sync_result = self
+                .sync_mentions_for_resource("issue_post", updated.id, mentioned_user_ids)
+                .await?;
+            if input.send_notification {
+                self.create_notification_event_for_receivers(
+                    actor_id,
+                    "issue_post",
+                    &updated.id.to_string(),
+                    "ISSUE_BODY_CHANGED",
+                    &old_body,
+                    &input.values.body_markdown,
+                    &sync_result.newly_mentioned_user_ids,
+                )
+                .await?;
+            }
         }
 
         self.replace_issue_labels(updated.id, project_record.id, &input.values.label_ids)
@@ -348,7 +355,7 @@ impl AppRepositoryImpl<'_> {
             Some(actor_id),
         )
         .await?;
-        if old_assignee != updated.assignee_id {
+        if input.send_notification && old_assignee != updated.assignee_id {
             self.create_issue_event(
                 updated.id,
                 &input.actor_login_id,
@@ -363,7 +370,7 @@ impl AppRepositoryImpl<'_> {
             )
             .await?;
         }
-        if old_milestone != updated.milestone_id {
+        if input.send_notification && old_milestone != updated.milestone_id {
             self.create_issue_event(
                 updated.id,
                 &input.actor_login_id,
@@ -507,10 +514,33 @@ impl AppRepositoryImpl<'_> {
             .insert(&self.db)
             .await?;
         }
+        unwatch::Entity::delete_many()
+            .filter(unwatch::Column::UserId.eq(Some(user_id)))
+            .filter(unwatch::Column::ResourceType.eq(Some("ISSUE".to_string())))
+            .filter(unwatch::Column::ResourceId.eq(Some(issue_id.to_string())))
+            .exec(&self.db)
+            .await?;
         Ok(())
     }
 
     pub async fn unwatch_issue(&self, issue_id: i64, user_id: i64) -> Result<(), DbErr> {
+        if unwatch::Entity::find()
+            .filter(unwatch::Column::UserId.eq(Some(user_id)))
+            .filter(unwatch::Column::ResourceType.eq(Some("ISSUE".to_string())))
+            .filter(unwatch::Column::ResourceId.eq(Some(issue_id.to_string())))
+            .one(&self.db)
+            .await?
+            .is_none()
+        {
+            unwatch::ActiveModel {
+                id: NotSet,
+                user_id: Set(Some(user_id)),
+                resource_type: Set(Some("ISSUE".to_string())),
+                resource_id: Set(Some(issue_id.to_string())),
+            }
+            .insert(&self.db)
+            .await?;
+        }
         watch::Entity::delete_many()
             .filter(watch::Column::UserId.eq(Some(user_id)))
             .filter(watch::Column::ResourceType.eq(Some("ISSUE".to_string())))

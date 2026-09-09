@@ -43,6 +43,7 @@ import {
   type MarkdownReferenceReplacement,
 } from "../../../components/legacy-markdown";
 import {
+  attachmentMarkdown,
   deleteTemporaryAttachment,
   uploadTemporaryAttachment,
   type UploadedAttachment,
@@ -1738,7 +1739,7 @@ function IssueBodyMarkdownEditor({
   const [textareaScrollTop, setTextareaScrollTop] = useState(0);
   const [textareaContentHeight, setTextareaContentHeight] = useState(300);
   const editorTextareaStyleProps = {
-    style: { boxSizing: "content-box", height: `${textareaContentHeight}px` },
+    style: { boxSizing: "border-box", height: `${textareaContentHeight}px` },
   };
   const textareaBoxRef = useRef<HTMLDivElement>(null);
   const mentionMarkerRef = useRef<HTMLSpanElement>(null);
@@ -2044,10 +2045,7 @@ function IssueBodyMarkdownEditor({
         requestAnimationFrame(() => {
           const textarea = bodyRef.current;
           if (!textarea) return;
-          const style = getComputedStyle(textarea);
-          const verticalPadding =
-            Number.parseFloat(style.paddingTop) + Number.parseFloat(style.paddingBottom);
-          setTextareaContentHeight(Math.max(300, textarea.scrollHeight - verticalPadding));
+          setTextareaContentHeight(Math.max(300, textarea.scrollHeight));
         });
       }}
       textareaOnFocus={onBodyFocus}
@@ -3255,27 +3253,6 @@ function legacyHtmlMessageToText(message: string) {
 
 function uploadPlaceholder(key: number) {
   return `<!--_upload-${key}_-->`;
-}
-
-function attachmentMarkdown(attachment: UploadedAttachment, basePath: string) {
-  const href = attachment.url || prefixBasePath(basePath, `/files/${attachment.id}`);
-  const link = `[${attachment.name}](${href}) `;
-  const mimeType = attachment.mimeType.trim().toLowerCase();
-  if (mimeType.startsWith("image/")) {
-    return `!${link}`;
-  }
-  if (["video/mp4", "video/ogg", "video/webm"].includes(mimeType)) {
-    return `<video class="video-js" data-setup="{}" controls><source src="${escapeHtmlAttribute(href)}" type="${escapeHtmlAttribute(mimeType)}"></video>${link}`;
-  }
-  return link;
-}
-
-function escapeHtmlAttribute(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
 }
 
 function projectIdNumber(project: ProjectContainer) {

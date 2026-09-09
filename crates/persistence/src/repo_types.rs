@@ -83,6 +83,22 @@ pub struct AttachmentProjectResourceRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct IssueAttachmentTargetRecord {
+    pub issue_number: i64,
+    pub owner_name: String,
+    pub project_name: String,
+    pub author_id: Option<i64>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AttachmentResourceTargetRecord {
+    pub author_id: Option<i64>,
+    pub issue_number: Option<i64>,
+    pub owner_name: String,
+    pub project_name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum SiteUserDeleteResult {
     Deleted(SiteUserRecord),
     ProtectedInitialAdmin,
@@ -879,6 +895,7 @@ pub struct UpdateIssueInput {
     pub issue_number: i64,
     pub owner_name: String,
     pub project_name: String,
+    pub send_notification: bool,
     pub values: IssueMutationInput,
 }
 
@@ -968,6 +985,7 @@ pub struct UpdateIssueCommentInput {
     pub issue_number: i64,
     pub owner_name: String,
     pub project_name: String,
+    pub send_notification: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -1576,7 +1594,10 @@ pub struct UserAttachmentListRecord {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DeleteAttachmentResult {
-    Deleted(AttachmentRecord),
+    Deleted {
+        attachment: AttachmentRecord,
+        remove_blob: bool,
+    },
     Forbidden,
     NotFound,
 }

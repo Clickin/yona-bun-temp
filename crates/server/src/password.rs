@@ -41,7 +41,9 @@ pub(crate) fn verify_password(
     }
 }
 
-pub(crate) fn hash_password_with_argon2id(password: &str) -> Result<String, argon2::password_hash::Error> {
+pub(crate) fn hash_password_with_argon2id(
+    password: &str,
+) -> Result<String, argon2::password_hash::Error> {
     let salt = SaltString::generate(&mut OsRng);
     Argon2::default()
         .hash_password(password.as_bytes(), &salt)

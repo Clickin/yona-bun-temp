@@ -10,8 +10,9 @@ use crate::{
     base_path_href, dispatch_pull_request_webhooks, form_value, internal_error,
     normalize_identifier, parse_attachment_ids, persistence, require_authenticated_user,
     require_project_resource_create, require_session, require_valid_csrf, rest_repository,
-    rest_require_project_code_read, rest_update_commit_discussion_thread_state, ConnectError,
-    PilotBackend, PilotServiceImpl, ProjectCreatableResource, RestRouteError,
+    rest_require_project_code_read, rest_update_commit_discussion_thread_state,
+    routes::utils::remove_unreferenced_attachment_blobs, ConnectError, PilotBackend,
+    PilotServiceImpl, ProjectCreatableResource, RestRouteError,
 };
 
 use super::{
@@ -371,6 +372,35 @@ pub(super) async fn rest_delete_pull_request_comment(
             ConnectError::permission_denied("pull request comment delete is not allowed"),
         ));
     }
+    let thread_id = current
+        .threads
+        .iter()
+        .find(|thread| {
+            thread
+                .comments
+                .iter()
+                .any(|comment| comment.id == comment_id)
+        })
+        .map(|thread| thread.id);
+    let mut attachment_hashes = repository
+        .list_attachments_by_container("REVIEW_COMMENT", comment_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .into_iter()
+        .map(|attachment| attachment.hash)
+        .collect::<Vec<_>>();
+    if let Some(thread_id) = thread_id {
+        attachment_hashes.extend(
+            repository
+                .list_attachments_by_container("COMMENT_THREAD", thread_id)
+                .await
+                .map_err(internal_error)
+                .map_err(RestRouteError::from_connect_error)?
+                .into_iter()
+                .map(|attachment| attachment.hash),
+        );
+    }
     let authorization =
         rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
             .await?;
@@ -386,6 +416,10 @@ pub(super) async fn rest_delete_pull_request_comment(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pull request comment not found"))?;
+    remove_unreferenced_attachment_blobs(repository, &service.data_root, attachment_hashes.iter())
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
     Ok(Json(
         rest_pull_request_detail_from_record_with_repository_issue_references(
             &service,

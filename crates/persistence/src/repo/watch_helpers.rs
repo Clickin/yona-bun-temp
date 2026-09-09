@@ -77,13 +77,24 @@ impl AppRepositoryImpl<'_> {
         issue_id: i64,
         user_id: i64,
     ) -> Result<bool, DbErr> {
-        Ok(watch::Entity::find()
+        let resource_id = issue_id.to_string();
+        let has_watch = watch::Entity::find()
             .filter(watch::Column::UserId.eq(Some(user_id)))
             .filter(watch::Column::ResourceType.eq(Some("ISSUE".to_string())))
-            .filter(watch::Column::ResourceId.eq(Some(issue_id.to_string())))
+            .filter(watch::Column::ResourceId.eq(Some(resource_id.clone())))
             .one(&self.db)
             .await?
-            .is_some())
+            .is_some();
+        if !has_watch {
+            return Ok(false);
+        }
+        Ok(unwatch::Entity::find()
+            .filter(unwatch::Column::UserId.eq(Some(user_id)))
+            .filter(unwatch::Column::ResourceType.eq(Some("ISSUE".to_string())))
+            .filter(unwatch::Column::ResourceId.eq(Some(resource_id)))
+            .one(&self.db)
+            .await?
+            .is_none())
     }
 
     pub(super) async fn is_pull_request_watched_by(
