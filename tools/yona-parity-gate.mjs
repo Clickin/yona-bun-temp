@@ -18,6 +18,7 @@ const GLOBAL_PROVENANCE_FILES = new Set([
 
 const NON_IMPLEMENTATION_PREFIXES = [
   ".agents/",
+  ".claude/skills/",
   ".codex/",
   ".github/",
   ".husky/",

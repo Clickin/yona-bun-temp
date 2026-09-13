@@ -3,7 +3,7 @@
 Status: Canonical v3.2
 Date: 2026-05-06
 Language: Korean-first, English identifiers
-Audience: Codex CLI 에이전트 및 개발자 — 이 문서는 외주 업무지시서 + 검수내역서를 대체한다
+Audience: Astra / Oh My Pi 등 coding agent 및 개발자 — 이 문서는 외주 업무지시서 + 검수내역서를 대체한다
 
 ## Phase 0 Closure Contract
 
@@ -877,6 +877,7 @@ GET   /:owner/:project/compare/:revA..:revB → 커밋 비교
 | 커밋 상세 (diff)             | 변경 파일 목록, unified diff        | ✅ Phase 3F 구현      | 3     |
 | 커밋 댓글                    | 커밋에 댓글 작성/삭제, thread open/close, 단일 라인 inline thread 작성 | ✅ Phase 3I 구현      | 3     |
 | 브랜치 관리                  | 브랜치 목록, 삭제, 기본 브랜치 설정 | ✅ Phase 3H 구현      | 3     |
+| 브랜치 커밋 날짜 표시        | `agoOrDateString` 상대 시간/같은 해 `MM-dd`, 전체 날짜 tooltip | gap — 2026-09-13 live pair에서 native가 날짜 문자열을 그대로 표시함 | 3 |
 | 커밋 비교                    | 두 revision 간 diff                 | ✅ Phase 3G 구현      | 3     |
 
 #### 검수 기준
@@ -1598,7 +1599,7 @@ legacy Yona는 `pageNum` 기반 offset 페이지네이션을 사용한다.
 | E2E             | `pnpm --dir frontend test:e2e`   | 브라우저 플로우            |
 | Multi-DB smoke  | `cargo test db_matrix*`          | SQLite/PostgreSQL/MySQL    |
 
-Agent/Codex가 Rust test를 실행할 때는 위 `cargo test ...` 명령을 직접 호출하지 않고 `pnpm agent:cargo-test -- ...`로 감싸서 sandbox 밖 `require_escalated` 실행을 요청한다. harness는 전체 cargo stdout/stderr를 `.agent/cargo-test-logs/`에 남기고 콘솔에는 시작/종료와 실패 tail만 출력해 장시간 test polling token 사용량을 제한한다.
+Agent의 Rust test 실행은 위 직접 명령 대신 `AGENTS.md`의 **검증 실행 환경**에 정의된 중앙 pnpm store와 `agent:cargo-test -- --outside-sandbox` wrapper를 사용한다. 실제 도구가 제공하는 권한 경로를 따르며 harness 자체가 sandbox를 탈출한다고 간주하지 않는다.
 
 ### 7.2 기능별 검수 절차
 

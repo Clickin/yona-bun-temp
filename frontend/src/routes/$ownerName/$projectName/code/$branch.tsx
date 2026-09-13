@@ -9,7 +9,6 @@ import type { ProjectContainer } from "../../../../api/types";
 import { useLegacyMessages } from "../../../../i18n";
 import { LastOutletTransition } from "../../../-last-outlet-transition";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
-import { ProjectCodeSearchPanel } from "../code";
 
 export const Route = createFileRoute("/$ownerName/$projectName/code/$branch")({
   beforeLoad: ({ location, params }) => {
@@ -366,13 +365,6 @@ function ProjectCodeFolderBody({
               </>
             ) : null}
           </div>
-
-          <ProjectCodeSearchPanel
-            branch={selectedBranch}
-            ownerName={ownerName}
-            projectName={projectName}
-            runtimeConfig={runtimeConfig}
-          />
 
           <div className="code-viewer-wrap" data-owner="project-code-branch-viewer">
             <div

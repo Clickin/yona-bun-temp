@@ -487,11 +487,15 @@ test("project code history branch selector navigates slash branch in the SPA", a
   });
 
   await page.goto(`${basePath}/admin/sample/commits/main`);
+  await expect(page.locator("#branches")).toHaveValue(`${basePath}/admin/sample/commits/main/`);
   await page
     .locator("#branches")
     .selectOption(`${basePath}/admin/sample/commits/feature%2Frelease/`);
 
   await expect(page).toHaveURL(new RegExp(`${basePath}/admin/sample/commits/feature%2Frelease/$`));
+  await expect(page.locator("#branches")).toHaveValue(
+    `${basePath}/admin/sample/commits/feature%2Frelease/`,
+  );
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
   await expect(page.locator(".nav-tabs a", { hasText: "Branches" }).last()).toHaveAttribute(
     "href",
@@ -502,6 +506,53 @@ test("project code history branch selector navigates slash branch in the SPA", a
       page.evaluate(() => window.sessionStorage.getItem("project-code-history-branch-spa-marker")),
     )
     .toBe("alive");
+});
+
+test("project code history branch picker filters options without navigation", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectCodeHistory(page);
+
+  await page.goto(`${basePath}/admin/sample/commits/main`);
+  const picker = page.locator('[data-owner="project-commits-branch-picker"]');
+  await picker.locator(".project-commits-branch-button.select2-choice").click();
+  const search = picker.locator(".project-commits-branch-dropdown .select2-input");
+  await search.fill("feature");
+
+  await expect(picker.locator(".select2-results > li")).toHaveCount(1);
+  await expect(picker.locator(".select2-results > li")).toHaveText(/feature\/release/u);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/commits/main`);
+
+  await search.fill("");
+  await expect(picker.locator(".select2-results > li")).toHaveCount(2);
+});
+
+test("project code history copy button copies commit id and shows legacy toast", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectCodeHistory(page);
+
+  await page.goto(`${basePath}/admin/sample/commits/main`);
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText(text: string) {
+          (window as typeof window & { __copiedCommitId?: string }).__copiedCommitId = text;
+          return Promise.resolve();
+        },
+      },
+    });
+  });
+
+  await page.locator("#history .tbody .commit-id").first().hover();
+  await page.locator("#history .tbody .btn-copy-commitId").first().click();
+  await expect(
+    page.evaluate(() => (window as typeof window & { __copiedCommitId?: string }).__copiedCommitId),
+  ).resolves.toBe("abcdef1234567890");
+  await expect(page.locator('#yobiToasts [data-part="toast-message"]')).toHaveText(
+    "Commit ID is copied",
+  );
 });
 
 test("project code history route source has no internal raw anchor patterns", () => {
@@ -951,7 +1002,8 @@ async function canonicalize(page: Page, selector: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-owner",
+            attr.name !== "data-owner" &&
+            !(attr.name === "value" && node.matches("input.select2-input")),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -1004,7 +1056,8 @@ async function canonicalizeHtml(page: Page, html: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "data-style-src" &&
-            attr.name !== "data-owner",
+            attr.name !== "data-owner" &&
+            !(attr.name === "value" && node.matches("input.select2-input")),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)

@@ -189,16 +189,6 @@ test("Alice code root reaches the default branch before the folder screen paints
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectCodeFolder(page, { ownerName: "alice", projectName: "sample" });
 
-  const routeSource = readFileSync(
-    new URL("../src/routes/$ownerName/$projectName/code.tsx", import.meta.url),
-    "utf8",
-  );
-  expect(routeSource).toContain(
-    'import { useState, useLayoutEffect, type FormEvent } from "react";',
-  );
-  expect(routeSource).not.toContain('import { useEffect } from "react";');
-  expect(routeSource).toContain("useLayoutEffect(() => {");
-
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/alice/sample/code`);
   await expect(page).toHaveURL(`${basePath}/alice/sample/code/main`);
@@ -773,12 +763,6 @@ async function canonicalize(page: Page, selector: string) {
         return "";
       }
       if (node.matches(".select2-container")) {
-        return "";
-      }
-      // App-owned React enhancement (270ee07ff find-file/grep panel) with its
-      // own parity spec (project-code-search.e2e.ts); legacy code/view.scala.html
-      // has no such panel — normalize it out of the legacy-DOM compare.
-      if (node.matches('[data-testid="code-search-panel"]')) {
         return "";
       }
       const attrs = Array.from(node.attributes)

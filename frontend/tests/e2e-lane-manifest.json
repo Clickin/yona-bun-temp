@@ -859,7 +859,6 @@
     "tests/wtr/ownership-user-issues-default-login-visibility.e2e.ts",
     "tests/wtr/ownership-user-profile-static-owners.e2e.ts",
     "tests/wtr/ownership-user-profile-static-popovers.e2e.ts",
-    "tests/wtr/project-code-search.e2e.ts",
     "tests/wtr/project-code-svn-main-trailing-slash.e2e.ts",
     "tests/wtr/project-code-tags.e2e.ts",
     "tests/wtr/project-issue-detail-parity.e2e.ts",

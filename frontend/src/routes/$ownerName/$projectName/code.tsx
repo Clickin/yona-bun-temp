@@ -1,8 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
-import { useState, useLayoutEffect, type FormEvent } from "react";
+import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
+import { useLayoutEffect } from "react";
 import { codeBrowserQueryOptions, type CodeBrowserResponse } from "../../../api/code-browser";
-import { codeFindFilesQueryOptions, codeGrepFilesQueryOptions } from "../../../api/code";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
 import { useLegacyMessages } from "../../../i18n";
@@ -55,152 +54,6 @@ function ProjectCodeScreen({
   return <ProjectCodeBody code={codeQuery.data} project={project} runtimeConfig={runtimeConfig} />;
 }
 
-export function ProjectCodeSearchPanel({
-  ownerName,
-  projectName,
-  branch,
-  runtimeConfig,
-}: {
-  ownerName: string;
-  projectName: string;
-  branch: string;
-  runtimeConfig: RuntimeConfig;
-}) {
-  const [mode, setMode] = useState<"find" | "grep">("find");
-  const [queryInput, setQueryInput] = useState("");
-  const [activeQuery, setActiveQuery] = useState("");
-
-  const findQuery = useQuery({
-    ...codeFindFilesQueryOptions(runtimeConfig, {
-      branch,
-      enabled: mode === "find" && activeQuery.trim().length > 0,
-      ownerName,
-      projectName,
-      query: activeQuery,
-    }),
-  });
-
-  const grepQuery = useQuery({
-    ...codeGrepFilesQueryOptions(runtimeConfig, {
-      branch,
-      enabled: mode === "grep" && activeQuery.trim().length > 0,
-      ownerName,
-      projectName,
-      query: activeQuery,
-    }),
-  });
-
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    setActiveQuery(queryInput);
-  };
-
-  return (
-    <div className="code-search-container" data-testid="code-search-panel">
-      <div className="code-search-header">
-        <button
-          type="button"
-          data-testid="code-search-tab-find"
-          className={`code-search-tab-button${mode === "find" ? " is-active" : ""}`}
-          onClick={() => setMode("find")}
-        >
-          Find File
-        </button>
-        <button
-          type="button"
-          data-testid="code-search-tab-grep"
-          className={`code-search-tab-button${mode === "grep" ? " is-active" : ""}`}
-          onClick={() => setMode("grep")}
-        >
-          Search in File
-        </button>
-      </div>
-
-      <form onSubmit={handleSubmit} className="code-search-form">
-        <input
-          type="text"
-          data-testid="code-search-input"
-          placeholder={
-            mode === "find"
-              ? "Search file path (git ls-tree)..."
-              : "Search file content (git grep)..."
-          }
-          value={queryInput}
-          onChange={(e) => setQueryInput(e.target.value)}
-          className="code-search-input"
-        />
-        <button type="submit" data-testid="code-search-submit" className="code-search-submit">
-          Search
-        </button>
-      </form>
-
-      {mode === "find" ? (
-        <div data-testid="code-search-find-results">
-          {findQuery.isLoading ? (
-            <div className="code-search-empty">Searching files…</div>
-          ) : findQuery.data?.paths && findQuery.data.paths.length > 0 ? (
-            <ul className="code-search-result-list">
-              {findQuery.data.paths.map((filePath) => (
-                <li
-                  key={filePath}
-                  className="code-search-result-item"
-                  data-testid="code-search-result-item"
-                >
-                  <Link
-                    to={
-                      `/${ownerName}/${projectName}/code/${encodeURIComponent(branch)}/${filePath}` as any
-                    }
-                    className="code-search-result-item-path"
-                  >
-                    {filePath}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : activeQuery.trim().length > 0 ? (
-            <div className="code-search-empty" data-testid="code-search-empty">
-              No matching files found.
-            </div>
-          ) : null}
-        </div>
-      ) : (
-        <div data-testid="code-search-grep-results">
-          {grepQuery.isLoading ? (
-            <div className="code-search-empty">Searching content…</div>
-          ) : grepQuery.data?.matches && grepQuery.data.matches.length > 0 ? (
-            <ul className="code-search-result-list">
-              {grepQuery.data.matches.map((item) => (
-                <li
-                  key={`${item.path}:${item.lineNumber}:${item.content}`}
-                  className="code-search-result-item"
-                  data-testid="code-search-result-item"
-                >
-                  <Link
-                    to={
-                      `/${ownerName}/${projectName}/code/${encodeURIComponent(branch)}/${item.path}` as any
-                    }
-                    className="code-search-result-item-path"
-                  >
-                    {item.path} (line {item.lineNumber})
-                  </Link>
-                  <div className="code-search-result-match-snippet">
-                    <span className="code-search-line-number">L{item.lineNumber}:</span>
-                    {item.content}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : activeQuery.trim().length > 0 ? (
-            <div className="code-search-empty" data-testid="code-search-empty">
-              No matching content found.
-            </div>
-          ) : null}
-        </div>
-      )}
-    </div>
-  );
-}
-
 function ProjectCodeBody({
   code,
   project,
@@ -210,24 +63,7 @@ function ProjectCodeBody({
   project: ProjectContainer;
   runtimeConfig: RuntimeConfig;
 }) {
-  const { ownerName, projectName } = Route.useParams();
-
-  if (!code.noHead) {
-    return (
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <ProjectCodeSearchPanel
-            branch={code.selectedBranch || "main"}
-            ownerName={ownerName}
-            projectName={projectName}
-            runtimeConfig={runtimeConfig}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  return <ProjectCodeNoHead project={project} runtimeConfig={runtimeConfig} />;
+  return code.noHead ? <ProjectCodeNoHead project={project} runtimeConfig={runtimeConfig} /> : null;
 }
 
 function ProjectCodeNoHead({

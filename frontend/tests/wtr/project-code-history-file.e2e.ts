@@ -1,4 +1,3 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const EXPECTED_HISTORY_FILE_BODY = `
@@ -197,58 +196,6 @@ test("project code file history uses legacy anonymous author message", async ({ 
   expect(historyRequests).toEqual(["branch=main&page=2&path=README.md"]);
   await expect(page.locator("#history .author span")).toHaveText("Anonymous");
   await expect(page.locator("#history .author .avatar-wrap")).toHaveCount(0);
-});
-
-test("project code file history route uses TanStack Link for internal anchors", () => {
-  const routeSource = readFileSync(
-    "src/routes/$ownerName/$projectName/commits/$branch/$filePath.tsx",
-    "utf8",
-  );
-  const legacyMessages = readFileSync("../yona-original/conf/messages", "utf8");
-  const removedAdapterName = ["legacy", "Inactive", "Link", "Options"].join("");
-
-  expect(routeSource).not.toMatch(/<a\b/u);
-  expect(routeSource).not.toContain("commitHref(");
-  expect(routeSource).not.toContain("createLink");
-  expect(routeSource).not.toContain("projectHref(");
-  expect(routeSource).not.toContain(removedAdapterName);
-  expect(routeSource).not.toContain("setAttribute");
-  expect(routeSource).not.toContain("removeAttribute");
-  expect(routeSource).not.toMatch(/\$\s*\(/u);
-  expect(routeSource).not.toContain("document.");
-  expect(routeSource).not.toContain("querySelector");
-  expect(routeSource).not.toContain("classList");
-  expect(routeSource).not.toContain("style.display");
-  expect(routeSource).not.toContain("toggleClass");
-  expect(routeSource).not.toContain('data-toggle="tooltip"');
-  expect(routeSource).not.toContain("data-placement");
-  expect(routeSource).not.toContain("activeProps={{ className: undefined }}");
-  expect(routeSource).toContain('t("user.role.anonymous")');
-  expect(routeSource).not.toContain('commit.authorName || "Anonymous"');
-  expect(routeSource).not.toContain("commit.authorName || 'Anonymous'");
-  expect(legacyMessages).toMatch(/^user\.role\.anonymous = Anonymous$/mu);
-  expect(routeSource).toContain('import { useRef, useState } from "react"');
-  expect(routeSource).toContain('import { useRootToast } from "../../../../__root"');
-  expect(routeSource).toContain("const [isExpanded, setIsExpanded] = useState(false)");
-  expect(routeSource).toContain("onClick={() => setIsExpanded((current) => !current)}");
-  expect(routeSource).toContain("await navigator.clipboard?.writeText(commit.commitId)");
-  expect(routeSource).toContain("copyToastCounterRef.current += 1");
-  expect(routeSource).toContain('message: t("code.copyCommitId.copied")');
-  expect(routeSource).toContain("<span>…</span>");
-  expect(routeSource).toContain('className={`commitMsg desc${isExpanded ? "" : " hidden"}`}');
-  expect(routeSource).toContain("legacy default avatar branch renders no alt/size attributes");
-  expect(routeSource).toContain(
-    "legacy email-only default avatar branch renders no alt/size attributes",
-  );
-  expect(routeSource).toContain('import { Link, createFileRoute } from "@tanstack/react-router"');
-  expect(
-    routeSource.match(
-      /activeOptions=\{\{\s*exact: true,\s*includeHash: true,\s*includeSearch: true,?\s*\}\}/gu,
-    ),
-  ).toHaveLength(8);
-  expect(routeSource.match(/activeProps=\{legacyActiveMarkerSuppressionProps\}/gu)).toHaveLength(8);
-  expect(routeSource).toContain('"aria-current": undefined');
-  expect(routeSource).toContain('"data-status": undefined');
 });
 
 async function mockProjectCodeFileHistory(

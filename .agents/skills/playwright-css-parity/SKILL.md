@@ -1,7 +1,7 @@
 ---
 name: playwright-css-parity
 description: Deterministic browser-rendered UI parity using Playwright and optional Chrome DevTools Protocol (CDP). Compare two routes, states, or implementations by DOM identity, bounding boxes, visibility, layout, and computed CSS—not by screenshot or image judgment alone. Use this skill whenever a user mentions visual parity, screenshot drift, low-resolution omissions, CSS comparison, geometry checks, legacy-versus-React screens, Playwright metrics, or CDP browser inspection, even if they do not explicitly ask for a CSS audit.
-compatibility: Requires Node.js and Playwright; Chrome/Chromium is recommended. CDP is optional and should be used only when it adds deterministic DOM/CSS access.
+compatibility: Requires Node.js and the repository WTR browser runner; system Chrome is recommended. CDP is optional and should be used only when it adds deterministic DOM/CSS access.
 ---
 
 # Playwright CSS Parity
@@ -149,7 +149,15 @@ The Markdown summary must state the environment, tolerance, number of compared e
 
 ## Interaction and CDP
 
-Use Playwright locators and assertions for user-visible behavior. Use `page.evaluate` for computed-style collection. If a persistent Chrome tab or remote browser is already available, reuse it rather than launching a second browser. Use CDP (`page.context().newCDPSession(page)`) for deterministic protocol-level inspection only when Playwright APIs cannot expose the needed node/style state; keep the Playwright selector/identity in the artifact so CDP node IDs do not become the report's identity.
+For repository specs, use the WTR Playwright-compatible `Page`/`Locator`/`Route`
+facade in `frontend/tests/wtr-compat.ts`; it owns the same locator, assertion,
+and `page.evaluate` evidence surface without bypassing the WTR harness. For an
+ad-hoc Astra browser check, reuse an existing tab with `browser.open` and its
+tab helpers; use `tab.run` for custom DOM/CSS collection rather than launching
+another browser. Use the raw Puppeteer page exposed inside `tab.run` for
+protocol-level inspection only when the tab helpers cannot expose the needed
+node/style state. Keep the Playwright selector/identity in the artifact so
+browser protocol node IDs do not become the report's identity.
 
 Check at least one representative interaction when the mismatch concerns hover, focus, open/closed menus, responsive controls, or transitions. Capture precondition and postcondition DOM/CSS states, not just a screenshot.
 

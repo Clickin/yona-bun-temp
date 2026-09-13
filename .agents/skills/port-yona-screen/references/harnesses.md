@@ -16,25 +16,40 @@ Use these references when porting one Yona screen from Scala HTML to React/TanSt
   browser/curl target. Only override `YONA_LEGACY_BASE_URL` or
   `YONA_LEGACY_PROXY_UPSTREAM` when a distinct legacy instance is explicitly
   under test.
-- Focused E2E: `pnpm --dir frontend test:e2e <frontend/tests/name.e2e.ts>`
-- Focused E2E browser contract: run the whole pnpm/Playwright invocation outside
-  the sandbox with `PW_CHANNEL=chrome`; `frontend/playwright.config.ts` consumes
-  that variable and defaults to the installed system Google Chrome.
+- Focused WTR E2E: `pnpm --dir frontend test:e2e <tests/wtr/name.e2e.ts>`
+- Focused browser contract: keep repository specs on the existing WTR
+  Playwright-compatible facade (`frontend/tests/wtr-compat.ts`); the WTR runner
+  owns the system Chrome launcher. Run the whole pnpm/WTR/Chrome invocation
+  outside the sandbox when the runtime is sandboxed. In Astra, inspect the
+  process environment for an active sandbox marker, if one is provided, first:
+  no `require_escalated` argument is available, so never fabricate one or clear
+  a marker. If no approved outside-sandbox path exists, report the capability
+  gate instead of running Chrome in the sandbox.
 - Frontend typecheck: `pnpm --dir frontend check`
 - Dev script contracts: `pnpm test:dev-scripts`
 - Legacy page audit: `pnpm smoke:legacy-html-pages`
 - Legacy anchor coverage: `pnpm smoke:legacy-anchor-coverage`
 - Legacy route coverage: `pnpm smoke:legacy-route-coverage`
 - Visual sweep: `node scripts/visual-parity-sweep.mjs` with `YORAM_SWEEP_PATHS=/path`
-- Visual sweep browser contract: run outside the sandbox with
-  `PW_CHANNEL=chrome`; screenshot parity is not established by sandboxed or
-  unavailable bundled Chromium.
+- Visual sweep browser contract: `scripts/visual-parity-sweep.mjs` uses the
+  repository's WTR browser helper and system Chrome. Run it outside the sandbox
+  when the runtime is sandboxed; screenshot parity is not established by a
+  sandboxed or unavailable browser. In Astra, use the browser session
+  (`browser.open` and tab helpers, or `tab.run` for custom DOM/CSS collection)
+  for ad-hoc checks, while keeping repository specs on the WTR facade.
 - Turn commit hook: `pnpm agent:turn-commit -- -m "<summary>"`
 - Goal turn resume: `pnpm agent:scala-html-goal-automation` (run before picking a target on a multi-day unattended `/goal` turn; stop if the history range marker is missing or the audit fails)
-- Cargo (escalated, outside sandbox): `pnpm agent:cargo -- --outside-sandbox <cargo args>`
-- Cargo test (escalated, outside sandbox): `pnpm agent:cargo-test -- --outside-sandbox <cargo args>`
+- Cargo (outside sandbox): after checking the runtime marker, use
+  `pnpm agent:cargo -- --outside-sandbox <cargo args>` through an approved
+  outside-sandbox invocation when sandboxed.
+- Cargo test (outside sandbox): after checking the runtime marker, use
+  `pnpm agent:cargo-test -- --outside-sandbox <cargo args>` through an approved
+  outside-sandbox invocation when sandboxed.
 
-Run cargo only through the repo wrappers and outside the sandbox, per `AGENTS.md`, when Rust verification is needed.
+Run cargo only through the repo wrappers and outside the sandbox, per
+`AGENTS.md`, when Rust verification is needed. Astra has no escalation flag;
+if this runtime cannot provide an outside-sandbox invocation, report that
+constraint and do not run cargo in the sandbox.
 
 ## Evidence To Capture
 

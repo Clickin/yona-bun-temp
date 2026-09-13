@@ -16,6 +16,7 @@
 
 ## Current UI Parity Gate
 
+- 2026-09-13 Ask-selected code/branch/history 후속: `.agent/differential/astra-code-parity/report.json`의 R5, R6(2건), R9, R15 총 5개 UNVERIFIED를 닫아야 한다. `partial_branchrow.scala.html` / `TemplateHelper.agoOrDateString`에 맞춰 브랜치 날짜 표시와 tooltip에 필요한 원본 committer timestamp를 API부터 보존하고, PR fixture 상태와 React-owned selector DOM 차이를 live pair로 분리한다. 이번 6-file WTR 103/103 통과는 최종 parity 승인이 아니다.
 - 2026-06-26부터 최종 closure 전 별도 phase로 전체 UI parity 전수조사를 먼저 완료한다.
 - 실행 기준은 `docs/plans/2026-06-26-full-ui-parity-subagent-phase.md`다.
 - 기존 broad smoke/visual sweep 결과는 baseline evidence일 뿐이며, route/page별

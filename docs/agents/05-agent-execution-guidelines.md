@@ -19,8 +19,8 @@
 2. `yona-original/`에서 대응 legacy reference를 찾는다.
 3. frontend component design 또는 화면 styling 작업이면 `DESIGN.md`와 legacy LESS/view 근거를 함께 확인한다.
 4. 보호해야 하는 intent, permission result, state transition을 legacy에서 추출한다.
-5. failing Red test를 먼저 작성한다.
-6. `repo root` ownership 경계 안에서 Green 구현을 작성한다.
+5. 버그는 보고된 실패와 대응 실행 경로를 기준으로 원인을 좁히고, 기존 focused test 또는 최소 재현으로 수정 전후 동작을 확인한다. 새 영구 테스트는 실제 회귀 위험이나 사용자 요청이 있을 때 추가한다.
+6. `repo root` ownership 경계 안에서 구현하고, 변경된 동작을 실제 실행으로 검증한다. UI는 브라우저에서 확인하며 final gate는 focused 결과와 구분한다.
 7. `deferred`, `gap`, `deviation`과 historical/banner 영향까지 함께 갱신한다.
 
 ## Scala HTML Goal 강제 규칙
@@ -38,11 +38,8 @@
 
 ## 테스트 실행
 
-- Agent가 Rust `cargo check`, `cargo test`, `cargo build --timings`, `cargo fmt` 등 cargo/rustc/rustfmt 기반 검증을 실행할 때는 Codex sandbox 안에서 실행하지 않는다. cargo/rustc/rustfmt는 macOS seatbelt sandbox에서 파일 접근 비용이 크게 늘어 feedback loop와 polling token 사용량을 왜곡하므로, cargo를 시작하는 tool invocation 전체를 항상 `require_escalated`로 sandbox 밖에서 실행한다.
-- 일반 cargo 검증은 `pnpm agent:cargo -- --outside-sandbox <cargo args>`를 사용한다. 이 wrapper는 로그/가드 harness일 뿐 실행 환경을 분리하지 못하고 sandbox를 탈출하지 못하므로, wrapper를 호출하는 tool invocation 자체가 반드시 `require_escalated`여야 한다. `--outside-sandbox`는 escalated tool call에서만 쓰는 명시적 assertion이며, active `CODEX_SANDBOX` marker가 있는 sandbox 안에서 실행되면 cargo를 시작하지 않고 실패해야 한다. `CODEX_SANDBOX_NETWORK_DISABLED`는 escalated 호출에도 남을 수 있으므로 active sandbox 판별 기준으로 쓰지 않는다.
-- Agent가 Rust 테스트를 실행할 때는 `cargo test ...`를 직접 호출하지 않고 `pnpm agent:cargo-test -- --outside-sandbox ...`를 사용하되, 이 wrapper를 호출하는 tool invocation도 `require_escalated`로 sandbox 밖에서 실행한다.
-- 모든 pnpm job(검증, E2E, build, goal automation, turn commit)은 tool invocation 전체를 `require_escalated`로 sandbox 밖에서 실행하고 `pnpm --config.store-dir=/Users/senghyunjo/.pnpm-store ...`처럼 중앙 store를 명시한다. workspace 내부 `.pnpm-store` 생성/이동은 금지한다.
-- `pnpm agent:cargo-test`는 전체 cargo 로그를 `.agent/cargo-test-logs/`에 저장하고 콘솔에는 시작/로그 경로/종료 결과와 실패 tail만 출력한다. 의도적 진단 외에는 `--allow-sandbox`를 사용하지 않는다.
+- 도구 선택과 위임은 `AGENTS.md`의 **Astra / Oh My Pi 실행**, sandbox 판정·중앙 pnpm store·cargo wrapper·WTR launcher·turn commit은 **검증 실행 환경**을 따른다. 이 mirror에 별도 실행 권한 규칙을 두지 않는다.
+- 구현 중에는 변경 경로의 focused 검증을 먼저 수행하고, 통합 후 필요한 기존 gate를 main이 실행한다. 기존 전체 suite의 실패를 focused 통과로 덮거나 최종 parity 완료로 기록하지 않는다.
 
 ## 코드 및 문서 배치 규칙
 

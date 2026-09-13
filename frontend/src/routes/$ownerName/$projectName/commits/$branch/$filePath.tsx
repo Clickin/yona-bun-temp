@@ -134,6 +134,27 @@ function ProjectCodeFileHistoryBody({
   const encodedBranch = encodeURIComponent(selectedBranch);
   const historyPath = projectRoutePath(ownerName, projectName, "commits", encodedBranch, filePath);
 
+  const copyCommitId = async (commitId: string) => {
+    copyToastCounterRef.current += 1;
+    const toastKey = `copy-commit-id:${commitId}:${copyToastCounterRef.current}`;
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("Clipboard API is not available.");
+      }
+      await navigator.clipboard.writeText(commitId);
+      setRootToast({
+        durationMs: 1000,
+        key: toastKey,
+        message: t("code.copyCommitId.copied"),
+      });
+    } catch {
+      setRootToast({
+        key: `${toastKey}:error`,
+        message: t("site.features.error.clipboard"),
+      });
+    }
+  };
+
   return (
     <div className="page-wrap-outer" data-owner="commit-file-page">
       <div className="project-page-wrap">
@@ -185,7 +206,11 @@ function ProjectCodeFileHistoryBody({
                 <tbody className="tbody">
                   {history.commits.length === 0 ? (
                     <tr>
-                      <td colSpan={5} data-owner="commit-file-empty-warning">
+                      <td
+                        colSpan={5}
+                        className="warning-none"
+                        data-owner="commit-file-empty-warning"
+                      >
                         {t("code.nocommits")}
                       </td>
                     </tr>
@@ -207,15 +232,7 @@ function ProjectCodeFileHistoryBody({
                               className="ybtn ybtn-mini btn-copy-commitId"
                               title={t("code.copyCommitId")}
                               data-commitid={commit.commitId}
-                              onClick={async () => {
-                                await navigator.clipboard?.writeText(commit.commitId);
-                                copyToastCounterRef.current += 1;
-                                setRootToast({
-                                  durationMs: 1000,
-                                  key: `copy-commit-id:${commit.commitId}:${copyToastCounterRef.current}`,
-                                  message: t("code.copyCommitId.copied"),
-                                });
-                              }}
+                              onClick={() => void copyCommitId(commit.commitId)}
                             >
                               <i className="yobicon-copy"></i>
                             </button>

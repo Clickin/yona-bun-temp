@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter } from "@tanstack/react-router";
 import { codeHistoryQueryOptions, type CodeHistoryResponse } from "../../../api/code-commits";
@@ -6,6 +6,7 @@ import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
+import { useRootToast } from "../../__root";
 
 type ProjectCodeHistorySearch = {
   page?: number;
@@ -151,6 +152,8 @@ export function ProjectCodeHistoryBody({
 }) {
   const { t } = useLegacyMessages();
   const router = useRouter();
+  const setRootToast = useRootToast();
+  const copyToastCounterRef = useRef(0);
   const isGit = project.vcs === "GIT";
   const selectedBranch = history.selectedBranch;
   const displayedBranch =
@@ -158,6 +161,11 @@ export function ProjectCodeHistoryBody({
     history.branches[0]?.name ??
     selectedBranch;
   const [branchMenuOpen, setBranchMenuOpen] = useState(false);
+  const [branchFilter, setBranchFilter] = useState("");
+  const normalizedBranchFilter = branchFilter.toLowerCase();
+  const visibleBranches = history.branches.filter((item) =>
+    item.name.toLowerCase().includes(normalizedBranchFilter),
+  );
   const selectedBranchHref = selectedBranch
     ? projectHref(
         runtimeConfig.basePath,
@@ -167,6 +175,28 @@ export function ProjectCodeHistoryBody({
         encodeBranch(selectedBranch),
       )
     : undefined;
+  const selectedBranchValue = selectedBranchHref ? `${selectedBranchHref}/` : "";
+
+  const copyCommitId = async (commitId: string) => {
+    copyToastCounterRef.current += 1;
+    const toastKey = `copy-commit-id:${commitId}:${copyToastCounterRef.current}`;
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("Clipboard API is not available.");
+      }
+      await navigator.clipboard.writeText(commitId);
+      setRootToast({
+        durationMs: 1000,
+        key: toastKey,
+        message: t("code.copyCommitId.copied"),
+      });
+    } catch {
+      setRootToast({
+        key: `${toastKey}:error`,
+        message: t("site.features.error.clipboard"),
+      });
+    }
+  };
 
   return (
     <div className="page-wrap-outer" data-owner="project-commits-page">
@@ -181,7 +211,12 @@ export function ProjectCodeHistoryBody({
                 type="button"
                 className="project-commits-branch-button select2-choice"
                 aria-expanded={branchMenuOpen}
-                onClick={() => setBranchMenuOpen((open) => !open)}
+                onClick={() => {
+                  setBranchMenuOpen((open) => !open);
+                  if (branchMenuOpen) {
+                    setBranchFilter("");
+                  }
+                }}
               >
                 <span className="select2-chosen">
                   {isGit ? <strong className="branch-label branch">branch</strong> : null}
@@ -206,10 +241,12 @@ export function ProjectCodeHistoryBody({
                     type="text"
                     className={`select2-input${branchMenuOpen ? " select2-focused" : ""}`}
                     aria-label={t("title.branches")}
+                    value={branchFilter}
+                    onChange={(event) => setBranchFilter(event.currentTarget.value)}
                   />
                 </div>
                 <ul className="select2-results">
-                  {history.branches.map((item) => (
+                  {visibleBranches.map((item) => (
                     <li
                       key={item.name}
                       className={`select2-results-dept-0 select2-result select2-result-selectable${item.name === displayedBranch ? " select2-selected" : ""}`}
@@ -219,6 +256,7 @@ export function ProjectCodeHistoryBody({
                         className="project-commits-branch-button select2-result-label"
                         onClick={() => {
                           setBranchMenuOpen(false);
+                          setBranchFilter("");
                           router.history.push(
                             `${projectHref(
                               runtimeConfig.basePath,
@@ -244,7 +282,7 @@ export function ProjectCodeHistoryBody({
               data-format="branch"
               data-dropdown-css-class="branches"
               className="pull-right select2-offscreen"
-              defaultValue={selectedBranchHref}
+              value={selectedBranchValue}
               onChange={(event) => {
                 router.history.push(event.currentTarget.value);
               }}
@@ -339,7 +377,11 @@ export function ProjectCodeHistoryBody({
                 <tbody className="tbody">
                   {history.commits.length === 0 ? (
                     <tr>
-                      <td colSpan={5} data-owner="project-commits-empty-warning">
+                      <td
+                        colSpan={5}
+                        className="warning-none"
+                        data-owner="project-commits-empty-warning"
+                      >
                         {t("code.nocommits")}
                       </td>
                     </tr>
@@ -359,6 +401,7 @@ export function ProjectCodeHistoryBody({
                               className="ybtn ybtn-mini btn-copy-commitId"
                               title={t("code.copyCommitId")}
                               data-commitid={commit.commitId}
+                              onClick={() => void copyCommitId(commit.commitId)}
                             >
                               <i className="yobicon-copy"></i>
                             </button>

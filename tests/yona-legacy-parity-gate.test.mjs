@@ -260,6 +260,7 @@ test("ignores reference-only spikes archive changes", () => {
 
 test("ignores repo tooling and bootstrap files that do not define parity semantics", () => {
   const result = runGate([
+    ".claude/skills/yona-frontend-parity/SKILL.md",
     ".gitignore",
     ".husky/pre-commit",
     "DESIGN.md",
