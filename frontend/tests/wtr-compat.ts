@@ -3963,6 +3963,7 @@ function runWithPage(fn: (fixture: Fixture) => void | Promise<void>): () => Prom
     installDefaultMocks(fixturePage);
     let bodyError: unknown = null;
     let skipRequested = false;
+    let teardownViolation: Error | null = null;
     try {
       await fn({ page: fixturePage as unknown as Page });
     } catch (error) {
@@ -4035,7 +4036,7 @@ function runWithPage(fn: (fixture: Fixture) => void | Promise<void>): () => Prom
       const teardownOk =
         iframeRemoved &&
         (teardownAfter === null || Object.values(teardownAfter).every((value) => value === 0));
-      const teardownViolation = teardownOk
+      teardownViolation = teardownOk
         ? null
         : new Error(
             `WTR teardown invariant failed: ${JSON.stringify({
@@ -4060,13 +4061,13 @@ function runWithPage(fn: (fixture: Fixture) => void | Promise<void>): () => Prom
       }
       activeMetric = null;
       currentPage = null;
-      if (bodyError && teardownViolation) {
-        throw new AggregateError([bodyError, teardownViolation], "WTR test and teardown both failed");
-      }
-      if (bodyError) throw bodyError;
-      if (strictTeardownEnabled && teardownViolation) throw teardownViolation;
-      if (skipRequested) this.skip();
     }
+    if (bodyError && teardownViolation) {
+      throw new AggregateError([bodyError, teardownViolation], "WTR test and teardown both failed");
+    }
+    if (bodyError) throw bodyError;
+    if (strictTeardownEnabled && teardownViolation) throw teardownViolation;
+    if (skipRequested) this.skip();
   };
 }
 
