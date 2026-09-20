@@ -6,6 +6,7 @@
 import { createHash } from "node:crypto";
 import { spawn } from "node:child_process";
 import {
+  createWriteStream,
   existsSync,
   lstatSync,
   mkdirSync,
@@ -28,24 +29,120 @@ const repoRoot = resolve(scriptDirectory, "..");
 const frontendRoot = resolve(repoRoot, "frontend");
 const wtrDir = resolve(frontendRoot, "tests", "wtr");
 const metricsEnabled = process.env.WTR_METRICS === "1";
-const metricsDir = resolve(repoRoot, ".agent", "wtr-metrics");
+const positiveInteger = (value) => {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+};
+const hangTimeoutMs = positiveInteger(process.env.WTR_HANG_TIMEOUT_MS);
+const hangHeartbeatMs = positiveInteger(process.env.WTR_HANG_HEARTBEAT_MS) ?? 15_000;
+const diagnosticsEnabled = metricsEnabled || hangTimeoutMs !== undefined;
+const metricsDir = join(repoRoot, ".agent", "wtr-metrics");
 const timingProfilePath = join(metricsDir, "wtr-timing-profile.json");
 const buildProofPath = join(metricsDir, "wtr-build-proof.json");
 const runId = `${Date.now().toString(36)}-${process.pid}`;
 const forwardedArgs = process.argv.slice(2).filter((arg) => arg !== "--");
 const startedAt = Date.now();
 
+function terminateProcessTree(child, signal) {
+  if (!child.pid) return;
+  try {
+    process.kill(-child.pid, signal);
+  } catch {
+    try {
+      child.kill(signal);
+    } catch {
+      // The process may already have exited.
+    }
+  }
+}
+
 async function run(command, args, options = {}) {
-  const { env = process.env, cwd = repoRoot } = options;
-  const child = spawn(command, args, { cwd, env, stdio: "inherit" });
-  const code = await new Promise((resolveExit) => {
+  const { env = process.env, cwd = repoRoot, label = command } = options;
+  const childStartedAt = Date.now();
+  const logPath = diagnosticsEnabled ? join(metricsDir, `${runId}-${label}.log`) : undefined;
+  if (logPath) mkdirSync(metricsDir, { recursive: true });
+  const logStream = logPath ? createWriteStream(logPath, { flags: "a" }) : null;
+  const child = spawn(command, args, {
+    cwd,
+    env,
+    detached: hangTimeoutMs !== undefined,
+    stdio: diagnosticsEnabled ? ["ignore", "pipe", "pipe"] : "inherit",
+  });
+  let lastOutputAt = childStartedAt;
+  let lastOutput = "";
+  let timedOut = false;
+  let timeoutHandle;
+  let hardKillHandle;
+  let heartbeatHandle;
+  const writeOutput = (stream, chunk) => {
+    const text = String(chunk);
+    lastOutputAt = Date.now();
+    lastOutput = text.slice(-2_000);
+    logStream?.write(text);
+    stream.write(text);
+  };
+  if (diagnosticsEnabled) {
+    child.stdout?.on("data", (chunk) => writeOutput(process.stdout, chunk));
+    child.stderr?.on("data", (chunk) => writeOutput(process.stderr, chunk));
+  }
+  if (logStream && hangTimeoutMs !== undefined) {
+    heartbeatHandle = setInterval(() => {
+      logStream.write(
+        `${JSON.stringify({
+          kind: "heartbeat",
+          pid: child.pid ?? null,
+          elapsedMs: Date.now() - childStartedAt,
+          idleMs: Date.now() - lastOutputAt,
+          lastOutput: lastOutput.slice(-500),
+        })}\n`,
+      );
+    }, hangHeartbeatMs);
+    heartbeatHandle.unref?.();
+  }
+  return await new Promise((resolveExit) => {
+    let settled = false;
+    const finish = (exitCode, signal) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeoutHandle);
+      clearTimeout(hardKillHandle);
+      clearInterval(heartbeatHandle);
+      logStream?.end();
+      resolveExit({
+        code: timedOut ? 1 : signal ? 1 : (exitCode ?? 1),
+        signal: signal ?? null,
+        timedOut,
+        elapsedMs: Date.now() - childStartedAt,
+        logPath: logPath ?? null,
+        pid: child.pid ?? null,
+        lastOutputAt,
+        lastOutput: lastOutput.slice(-500),
+      });
+    };
     child.once("error", (error) => {
       console.error(`failed to spawn ${command}:`, error.message);
-      resolveExit(1);
+      finish(1, "spawn-error");
     });
-    child.once("exit", (exitCode, signal) => resolveExit(signal ? 1 : (exitCode ?? 1)));
+    child.once("close", (exitCode, signal) => finish(exitCode, signal));
+    if (hangTimeoutMs !== undefined) {
+      timeoutHandle = setTimeout(() => {
+        timedOut = true;
+        logStream?.write(
+          `${JSON.stringify({
+            kind: "timeout",
+            pid: child.pid ?? null,
+            timeoutMs: hangTimeoutMs,
+            idleMs: Date.now() - lastOutputAt,
+            lastOutput: lastOutput.slice(-500),
+          })}\n`,
+        );
+        terminateProcessTree(child, "SIGTERM");
+        hardKillHandle = setTimeout(() => terminateProcessTree(child, "SIGKILL"), 5_000);
+        hardKillHandle.unref?.();
+      }, hangTimeoutMs);
+      timeoutHandle.unref?.();
+    }
   });
-  return code;
 }
 
 function currentMetricPath(label) {
@@ -64,8 +161,7 @@ function childEnv(label, outputPath) {
 
 async function runWtr(args, label) {
   const outputPath = metricsEnabled ? currentMetricPath(label) : undefined;
-  const runStartedAt = Date.now();
-  const code = await run(
+  const result = await run(
     "pnpm",
     [
       "--config.store-dir=/Users/senghyunjo/.pnpm-store",
@@ -78,9 +174,10 @@ async function runWtr(args, label) {
     {
       cwd: frontendRoot,
       env: metricsEnabled ? childEnv(label, outputPath) : process.env,
+      label: `wtr-${label}`,
     },
   );
-  return { code, label, elapsedMs: Date.now() - runStartedAt, outputPath };
+  return { ...result, label, outputPath };
 }
 
 function inputFilesUnder(root) {
@@ -334,7 +431,7 @@ function writeTimingProfile(files, metricPaths) {
 }
 
 function writeRunMetrics({ buildMs, buildCode, wtrRuns, exitCode, mode, files, shardCount }) {
-  if (!metricsEnabled) return;
+  if (!metricsEnabled && hangTimeoutMs === undefined) return;
   mkdirSync(metricsDir, { recursive: true });
   const childMetrics = wtrRuns.flatMap((runResult) => {
     if (!runResult.outputPath || !existsSync(runResult.outputPath)) return [];
@@ -357,6 +454,11 @@ function writeRunMetrics({ buildMs, buildCode, wtrRuns, exitCode, mode, files, s
         files: files.length,
         exitCode,
         wallClockMs: Date.now() - startedAt,
+        diagnostics: {
+          hangTimeoutMs: hangTimeoutMs ?? null,
+          hangHeartbeatMs: hangTimeoutMs === undefined ? null : hangHeartbeatMs,
+          logs: wtrRuns.map((runResult) => runResult.logPath).filter(Boolean),
+        },
         build: { elapsedMs: buildMs, exitCode: buildCode },
         wtr: {
           wallClockMs: wtrWallClockMs,
@@ -377,11 +479,17 @@ function writeRunMetrics({ buildMs, buildCode, wtrRuns, exitCode, mode, files, s
             (peak, item) => Math.max(peak, item.wtr?.peakRssBytes ?? 0),
             0,
           ),
+          timedOutShards: wtrRuns.filter((runResult) => runResult.timedOut).length,
         },
         shards: wtrRuns.map((runResult, index) => ({
           label: runResult.label,
           elapsedMs: runResult.elapsedMs,
           exitCode: runResult.code,
+          timedOut: runResult.timedOut ?? false,
+          logPath: runResult.logPath ?? null,
+          pid: runResult.pid ?? null,
+          lastOutputAt: runResult.lastOutputAt ?? null,
+          lastOutput: runResult.lastOutput ?? "",
           metrics: childMetrics[index] ?? null,
         })),
       },
@@ -390,6 +498,7 @@ function writeRunMetrics({ buildMs, buildCode, wtrRuns, exitCode, mode, files, s
     )}\n`,
   );
 }
+
 
 // Build once unless WTR_SKIP_BUILD=1 (fast iteration against a current dist).
 let buildCode = 0;
@@ -403,12 +512,17 @@ if (process.env.WTR_SKIP_BUILD !== "1") {
     console.log("[wtr] could not snapshot production inputs before build");
   }
   const buildStartedAt = Date.now();
-  buildCode = await run("pnpm", [
-    "--config.store-dir=/Users/senghyunjo/.pnpm-store",
-    "--dir",
-    "frontend",
-    "build",
-  ]);
+  const buildResult = await run(
+    "pnpm",
+    [
+      "--config.store-dir=/Users/senghyunjo/.pnpm-store",
+      "--dir",
+      "frontend",
+      "build",
+    ],
+    { label: "build" },
+  );
+  buildCode = buildResult.code;
   buildMs = Date.now() - buildStartedAt;
   if (buildCode !== 0) {
     writeRunMetrics({

@@ -16,7 +16,15 @@ const frontendDir = join(repoRoot, "frontend");
 const legacyDir = join(repoRoot, "yona-original");
 const basePath = "/yona";
 const metricsEnabled = process.env.WTR_METRICS === "1";
+const strictTeardownEnabled = process.env.WTR_STRICT_TEARDOWN === "1";
 const metricsMarker = "__WTR_METRICS__";
+const positiveInteger = (value) => {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+};
+const sessionLifecycleTimeoutMs = positiveInteger(process.env.WTR_SESSION_LIFECYCLE_TIMEOUT_MS);
+const testsFinishTimeoutMs = positiveInteger(process.env.WTR_TESTS_FINISH_TIMEOUT_MS) ?? 3_600_000;
+
 
 const RUNTIME_CONFIG_SCRIPT = '<script>window.__YONA_RUNTIME_CONFIG__={basePath:"/yona"};</script>';
 
@@ -499,6 +507,8 @@ esbuild.transform = async (context) => {
 let chromiumLaunches = 0;
 let sessionStarts = 0;
 let sessionStops = 0;
+let sessionStopCompletions = 0;
+let sessionStopTimeouts = 0;
 const sessionTimings = new Map();
 
 function flattenTestResults(suite, output = []) {
@@ -564,6 +574,43 @@ function timeoutSummary(records) {
       .filter(([, count]) => count > 0),
   );
 }
+function lifecycleTimeout(label, timeoutMs) {
+  const error = new Error(`${label} did not settle within ${timeoutMs}ms`);
+  error.code = "WTR_LIFECYCLE_TIMEOUT";
+  return error;
+}
+
+async function withLifecycleTimeout(promise, label) {
+  if (!sessionLifecycleTimeoutMs) return promise;
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(
+      () => reject(lifecycleTimeout(label, sessionLifecycleTimeoutMs)),
+      sessionLifecycleTimeoutMs,
+    );
+    timer.unref?.();
+  });
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function readPageLifecycleState(page) {
+  try {
+    return await page.evaluate(() => ({
+      visibility: document.visibilityState,
+      readyState: document.readyState,
+      frameCount: window.frames.length,
+      url: location.href,
+    }));
+  } catch (error) {
+    return { error: String(error) };
+  }
+
+}
+
 
 function metricsReporter() {
   let startedAt = Date.now();
@@ -610,7 +657,8 @@ function metricsReporter() {
           file: relative(repoRoot, session.testFile),
           passed: session.passed ?? false,
           testCount: tests.length,
-          elapsedMs: timing ? timing.end - timing.start : null,
+          elapsedMs: timing?.end ? timing.end - timing.start : null,
+          session: timing ?? null,
           tests: testResults,
           timeouts: timeoutSummary(metrics),
           harness: sumMetricRecords(metrics),
@@ -642,8 +690,12 @@ function metricsReporter() {
           chromiumLaunches,
           sessionStarts,
           sessionStops,
+          sessionStopCompletions,
+          sessionStopTimeouts,
+          sessionLifecycleTimeoutMs: sessionLifecycleTimeoutMs ?? null,
           peakRssBytes,
-          testsFinishTimeoutMs: 3600000,
+          testsFinishTimeoutMs,
+          sessionTimings: [...sessionTimings.entries()].map(([id, timing]) => ({ id, ...timing })),
         },
         tests: {
           runnableSpecs: sessions.length,
@@ -683,53 +735,90 @@ class RealMouseLauncher extends ChromeLauncher {
 
   async startSession(sessionId, url) {
     sessionStarts += 1;
-    sessionTimings.set(sessionId, { start: Date.now() });
-    await super.startSession(sessionId, url);
-    const page = this.activePages.get(sessionId).puppeteerPage;
-    // Modifier-click popups can leave a reused test page hidden and suspend its rAF.
-    await page.bringToFront();
+    const timing = { start: Date.now(), phase: "starting", url };
+    sessionTimings.set(sessionId, timing);
     try {
-      await page.exposeFunction("__wtrRealMouse", async (op, x, y) => {
-        if (op === "move") await page.mouse.move(x, y);
-        if (op === "down") {
-          await page.mouse.move(x, y);
-          await page.mouse.down();
-        }
-        if (op === "up") {
-          await page.mouse.move(x, y);
-          await page.mouse.up();
-        }
-        // Resize the real browser viewport to the requested test viewport so
-        // the iframe (fixed at 0,0 with the same size) fills it exactly and
-        // real-mouse coords map 1:1 (the WTR default 800x600 page clips moves).
-        if (op === "setViewport") {
-          await page.bringToFront();
-          await page.setViewport({ width: x, height: y });
-        }
-      });
+      const startPromise = Promise.resolve(super.startSession(sessionId, url));
+      startPromise.catch(() => {});
+      await withLifecycleTimeout(startPromise, `startSession ${sessionId}`);
+      const page = this.activePages.get(sessionId).puppeteerPage;
+      timing.pageBeforeBringToFront = await readPageLifecycleState(page);
+      await withLifecycleTimeout(page.bringToFront(), `bringToFront ${sessionId}`);
+      timing.pageAfterBringToFront = await readPageLifecycleState(page);
+      try {
+        await page.exposeFunction("__wtrRealMouse", async (op, x, y) => {
+          if (op === "move") await page.mouse.move(x, y);
+          if (op === "down") {
+            await page.mouse.move(x, y);
+            await page.mouse.down();
+          }
+          if (op === "up") {
+            await page.mouse.move(x, y);
+            await page.mouse.up();
+          }
+          // Resize the real browser viewport to the requested test viewport so
+          // the iframe (fixed at 0,0 with the same size) fills it exactly and
+          // real-mouse coords map 1:1 (the WTR default 800x600 page clips moves).
+          if (op === "setViewport") {
+            await page.bringToFront();
+            await page.setViewport({ width: x, height: y });
+          }
+        });
+      } catch (error) {
+        // WTR can reuse a Chrome page for another session. In that case the
+        // bridge is already installed and remains valid for the reused page.
+        if (!String(error?.message ?? error).includes("already exists")) throw error;
+      }
+      timing.phase = "running";
     } catch (error) {
-      // WTR can reuse a Chrome page for another session. In that case the
-      // bridge is already installed and remains valid for the reused page.
-      if (!String(error?.message ?? error).includes("already exists")) throw error;
+      timing.phase = "start-error";
+      timing.error = String(error);
+      timing.end = Date.now();
+      throw error;
     }
   }
 
   async stopSession(sessionId) {
     sessionStops += 1;
     const timing = sessionTimings.get(sessionId);
-    if (timing) timing.end = Date.now();
-    return super.stopSession(sessionId);
+    if (timing) {
+      timing.phase = "stopping";
+      timing.stopStartedAt = Date.now();
+    }
+    const stopPromise = Promise.resolve(super.stopSession(sessionId));
+    stopPromise.catch(() => {});
+    try {
+      const result = await withLifecycleTimeout(stopPromise, `stopSession ${sessionId}`);
+      sessionStopCompletions += 1;
+      if (timing) timing.phase = "stopped";
+      return result;
+    } catch (error) {
+      if (error?.code === "WTR_LIFECYCLE_TIMEOUT") sessionStopTimeouts += 1;
+      if (timing) {
+        timing.phase = error?.code === "WTR_LIFECYCLE_TIMEOUT" ? "stop-timeout" : "stop-error";
+        timing.error = String(error);
+      }
+      throw error;
+    } finally {
+      if (timing) timing.end = Date.now();
+    }
+  }
+
+  async stop() {
+    const stopPromise = Promise.resolve(super.stop());
+    stopPromise.catch(() => {});
+    return withLifecycleTimeout(stopPromise, "browser stop");
   }
 }
 
 export default {
   plugins: [fixturePlugin, esbuild],
   files: ["tests/wtr/**/*.e2e.ts"],
-  ...(metricsEnabled
+  ...(metricsEnabled || strictTeardownEnabled
     ? {
-        reporters: [defaultReporter(), metricsReporter()],
+        reporters: metricsEnabled ? [defaultReporter(), metricsReporter()] : [defaultReporter()],
         testRunnerHtml: (testRunnerImport) =>
-          `<!DOCTYPE html><html><head></head><body><script>globalThis.__WTR_METRICS__=true;</script><script type="module" src="${testRunnerImport}"></script></body></html>`,
+          `<!DOCTYPE html><html><head></head><body><script>globalThis.__WTR_METRICS__=${String(metricsEnabled)};globalThis.__WTR_STRICT_TEARDOWN__=${String(strictTeardownEnabled)};</script><script type="module" src="${testRunnerImport}"></script></body></html>`,
       }
     : {}),
   mimeTypes: { "**/*.ts": "text/javascript" },
@@ -744,11 +833,8 @@ export default {
   // the solo-visible state. Shards (WTR_SHARDS=2..4) restore parallelism at
   // the instance level.
   concurrency: 1,
-  // Serial per instance (see concurrency note): a shard of ~100 files takes
-  // well over 10 min, so the default testsFinishTimeout would abort long
-  // shards as false suite-hangs.
-  testsFinishTimeout: 3600000,
-  testFramework: { config: { timeout: 60000 } },
+  testsFinishTimeout: testsFinishTimeoutMs,
+  testFramework: { config: { timeout: positiveInteger(process.env.WTR_TEST_TIMEOUT_MS) ?? 60000 } },
   browserLogs: true,
   logBrowserLogs: true,
   browsers: [

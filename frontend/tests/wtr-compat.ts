@@ -31,7 +31,10 @@ export type Page = PageFacade;
   cwd: () => "/",
 };
 
-const metricsEnabled = (globalThis as { __WTR_METRICS__?: unknown }).__WTR_METRICS__ === true;
+const strictTeardownEnabled =
+  (globalThis as { __WTR_STRICT_TEARDOWN__?: unknown }).__WTR_STRICT_TEARDOWN__ === true;
+const metricsEnabled =
+  (globalThis as { __WTR_METRICS__?: unknown }).__WTR_METRICS__ === true || strictTeardownEnabled;
 const metricsMarker = "__WTR_METRICS__";
 const DEFAULT_HARNESS_WAIT_TIMEOUT_MS = 30_000;
 const metricCounterNames = [
@@ -3947,7 +3950,6 @@ if (typeof originalAfterEach === "function") {
     });
   };
 }
-
 function runWithPage(fn: (fixture: Fixture) => void | Promise<void>): () => Promise<void> {
   return async function (this: MochaContext) {
     const fixturePage = new PageFacade();
@@ -3959,21 +3961,24 @@ function runWithPage(fn: (fixture: Fixture) => void | Promise<void>): () => Prom
     currentPage = fixturePage;
     activeMetric = metric;
     installDefaultMocks(fixturePage);
+    let bodyError: unknown = null;
+    let skipRequested = false;
     try {
       await fn({ page: fixturePage as unknown as Page });
     } catch (error) {
       if (error instanceof Error && error.message === "__WTR_SKIP__") {
         if (metric) metric.status = "skipped";
-        this.skip();
-        return;
+        skipRequested = true;
+      } else {
+        bodyError = error;
+        if (metric) metric.status = "failed";
       }
-      if (metric) metric.status = "failed";
-      throw error;
     } finally {
       // Clear registrations at the END (not the start): mocha runs
       // beforeEach BEFORE the body, so start-of-body clears would wipe the
       // hook-registered mocks/initHooks right before they're needed.
-      const teardownBefore = metricsEnabled
+      const captureTeardown = metricsEnabled || strictTeardownEnabled;
+      const teardownBefore = captureTeardown
         ? {
             mockRoutes: mockRegistry.length,
             initHooks: initHooks.length,
@@ -4011,24 +4016,38 @@ function runWithPage(fn: (fixture: Fixture) => void | Promise<void>): () => Prom
         teardownError = error;
         metricIncrement("teardownFailures");
       }
+      const teardownAfter = captureTeardown
+        ? {
+            mockRoutes: mockRegistry.length,
+            initHooks: initHooks.length,
+            eventListeners: Array.from(eventListeners.values()).reduce(
+              (total, listeners) => total + listeners.length,
+              0,
+            ),
+            eventWaiters: Array.from(eventWaiters.values()).reduce(
+              (total, waiters) => total + waiters.length,
+              0,
+            ),
+            responseWatchers: responseWatchers.length,
+            requestWaiters: requestWaiters.size,
+          }
+        : null;
+      const teardownOk =
+        iframeRemoved &&
+        (teardownAfter === null || Object.values(teardownAfter).every((value) => value === 0));
+      const teardownViolation = teardownOk
+        ? null
+        : new Error(
+            `WTR teardown invariant failed: ${JSON.stringify({
+              before: teardownBefore,
+              after: teardownAfter,
+              iframeRemoved,
+              error: teardownError ? String(teardownError) : null,
+            })}`,
+          );
+      if (teardownViolation && !teardownError) metricIncrement("teardownFailures");
       if (metric) {
-        const teardownAfter = {
-          mockRoutes: mockRegistry.length,
-          initHooks: initHooks.length,
-          eventListeners: Array.from(eventListeners.values()).reduce(
-            (total, listeners) => total + listeners.length,
-            0,
-          ),
-          eventWaiters: Array.from(eventWaiters.values()).reduce(
-            (total, waiters) => total + waiters.length,
-            0,
-          ),
-          responseWatchers: responseWatchers.length,
-          requestWaiters: requestWaiters.size,
-        };
         metric.durationMs = performance.now() - metricStartedAt;
-        const teardownOk =
-          iframeRemoved && Object.values(teardownAfter).every((value) => value === 0);
         metric.teardown = {
           before: teardownBefore,
           after: teardownAfter,
@@ -4036,12 +4055,17 @@ function runWithPage(fn: (fixture: Fixture) => void | Promise<void>): () => Prom
           ok: teardownOk,
           ...(teardownError ? { error: String(teardownError) } : {}),
         };
-        if (!teardownOk && !teardownError) metricIncrement("teardownFailures");
         takePendingMetric(metric);
         emitMetric(metric);
       }
       activeMetric = null;
       currentPage = null;
+      if (bodyError && teardownViolation) {
+        throw new AggregateError([bodyError, teardownViolation], "WTR test and teardown both failed");
+      }
+      if (bodyError) throw bodyError;
+      if (strictTeardownEnabled && teardownViolation) throw teardownViolation;
+      if (skipRequested) this.skip();
     }
   };
 }
