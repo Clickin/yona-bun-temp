@@ -208,7 +208,7 @@ function GlobalSearchSuccessBody({
   return (
     <>
       <div className="site-breadcrumb-outer" data-owner="global-search-breadcrumb-outer">
-        <div data-owner="global-search-breadcrumb-inner">
+        <div className="site-breadcrumb-inner" data-owner="global-search-breadcrumb-inner">
           <h3>{t("title.search")}</h3>
         </div>
       </div>
@@ -266,12 +266,13 @@ function GlobalSearchSuccessBody({
                       type="text"
                       id="searchKeyword"
                       name="keyword"
+                      className="span11"
                       data-owner="global-search-input"
                       value={keywordValue}
                       onChange={(event) => {
                         setKeywordValue(event.currentTarget.value);
                       }}
-                    />
+                    />{" "}
                     <button type="submit" className="ybtn">
                       {t("title.search")}
                     </button>

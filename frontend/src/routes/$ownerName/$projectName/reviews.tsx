@@ -9,7 +9,7 @@ import {
 import type { ProjectContainer } from "../../../api/types";
 import defaultAvatarUrl from "../../../assets/legacy/default-avatar-64.png";
 import legacySpriteUrl from "../../../assets/legacy/sprite.png";
-import { useLegacyMessages } from "../../../i18n";
+import { formatLegacyTimestamp, useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SitePagination } from "../../sites/-pagination";
 import { ProjectLayoutContext } from "../$projectName";
@@ -366,6 +366,7 @@ function ProjectReviewRow({
   thread: ReviewThread;
 }) {
   const { t } = useLegacyMessages();
+  const createdDate = formatLegacyTimestamp(thread.createdLabel, t);
   const firstComment = thread.comments[0];
   const authorLoginId = firstComment?.authorLoginId || thread.authorLoginId;
   const authorLabel = firstComment?.authorLabel || thread.authorLabel;
@@ -421,8 +422,8 @@ function ProjectReviewRow({
         ) : (
           <span className="infos-item">{t("issue.noAuthor")}</span>
         )}
-        <span className="infos-item" title={thread.createdLabel}>
-          {formatReviewDate(thread.createdLabel, t)}
+        <span className="infos-item" title={createdDate.title}>
+          {createdDate.label}
         </span>
         {commentCount > 0 ? (
           <span className="infos-item item-count-groups">
@@ -513,58 +514,4 @@ function effectiveOrderBy(search: ProjectReviewsSearch) {
 
 function effectiveOrderDir(search: ProjectReviewsSearch) {
   return search.orderDir || "desc";
-}
-
-function formatReviewDate(
-  value: string,
-  t: ReturnType<typeof useLegacyMessages>["t"],
-  now = Date.now(),
-) {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/u.exec(value.trim());
-  if (!match) {
-    return value;
-  }
-
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-  const date = new Date(year, month - 1, day);
-  if (!Number.isFinite(date.getTime())) {
-    return value;
-  }
-
-  const elapsedMilliseconds = Math.max(0, now - date.getTime());
-  const elapsedSeconds = Math.floor(elapsedMilliseconds / 1_000);
-  const elapsedMinutes = Math.floor(elapsedSeconds / 60);
-  const elapsedHours = Math.floor(elapsedMinutes / 60);
-  const elapsedDays = Math.floor(elapsedHours / 24);
-  if (elapsedDays < 8) {
-    if (elapsedDays > 0) {
-      return t(elapsedDays === 1 ? "common.time.day" : "common.time.days", {
-        args: [elapsedDays],
-      });
-    }
-    if (elapsedHours > 0) {
-      return t(elapsedHours === 1 ? "common.time.hour" : "common.time.hours", {
-        args: [elapsedHours],
-      });
-    }
-    if (elapsedMinutes > 0) {
-      return t(elapsedMinutes === 1 ? "common.time.minute" : "common.time.minutes", {
-        args: [elapsedMinutes],
-      });
-    }
-    if (elapsedSeconds > 0) {
-      return t(elapsedSeconds === 1 ? "common.time.second" : "common.time.seconds", {
-        args: [elapsedSeconds],
-      });
-    }
-    return t("common.time.just");
-  }
-
-  const monthLabel = String(month).padStart(2, "0");
-  const dayLabel = String(day).padStart(2, "0");
-  return year === new Date(now).getFullYear()
-    ? `${monthLabel}-${dayLabel}`
-    : `${year}-${monthLabel}-${dayLabel}`;
 }

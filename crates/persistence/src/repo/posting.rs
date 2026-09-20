@@ -291,13 +291,6 @@ impl AppRepositoryImpl<'_> {
                 Err(error) => return Err(error),
             };
 
-            let mut project_active = project::ActiveModel {
-                id: Set(project_record.id),
-                ..Default::default()
-            };
-            project_active.last_posting_number = Set(Some(post_number));
-            project_active.update(&self.db).await?;
-
             self.write_text_column("posting", "body", created.id, &input.values.body_markdown)
                 .await?;
             if input.values.readme {
@@ -316,6 +309,7 @@ impl AppRepositoryImpl<'_> {
                 "",
                 &input.values.body_markdown,
                 PostingMentionNotificationMode::All,
+                true,
             )
             .await?;
 
@@ -377,22 +371,8 @@ impl AppRepositoryImpl<'_> {
         .insert(&self.db)
         .await?;
 
-        let Some(project_model) = project::Entity::find_by_id(project_record.id)
-            .one(&self.db)
-            .await?
-        else {
-            return Err(DbErr::Custom(
-                "project missing after posting insert".to_string(),
-            ));
-        };
-        if project_model.last_posting_number.unwrap_or_default() < post_number {
-            let mut project_active = project::ActiveModel {
-                id: Set(project_record.id),
-                ..Default::default()
-            };
-            project_active.last_posting_number = Set(Some(post_number));
-            project_active.update(&self.db).await?;
-        }
+        self.advance_project_number(project_record.id, "last_posting_number", post_number)
+            .await?;
 
         self.write_text_column("posting", "body", created.id, &input.values.body_markdown)
             .await?;
@@ -412,6 +392,7 @@ impl AppRepositoryImpl<'_> {
             "",
             &input.values.body_markdown,
             PostingMentionNotificationMode::All,
+            true,
         )
         .await?;
 
@@ -479,6 +460,7 @@ impl AppRepositoryImpl<'_> {
             &old_body,
             &input.values.body_markdown,
             PostingMentionNotificationMode::NewOnly,
+            input.send_notification,
         )
         .await?;
         self.replace_posting_labels(updated.id, project_record.id, &input.values.label_ids)

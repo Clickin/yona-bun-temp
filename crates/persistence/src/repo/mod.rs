@@ -92,8 +92,8 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use yoram_search::{
-    keyword_matches, make_snippets, relevance_score, resolve_search_type, SearchSnippet,
-    SearchType, SearchTypeCounts,
+    keyword_matches, make_snippets, resolve_search_type, SearchSnippet, SearchType,
+    SearchTypeCounts,
 };
 
 mod app_user;

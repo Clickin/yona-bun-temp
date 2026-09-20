@@ -1,80 +1,8 @@
-import { readFile, curatedAppCss } from "../wtr-compat.ts";
-import { expect, test } from "../wtr-compat.ts";
+import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const routeSource = new URL("../src/routes/[_]help.tsx", import.meta.url);
-const appCssSource = new URL("../src/app.css", import.meta.url);
-const pageLessSource = new URL(
-  "../../yona-original/app/assets/stylesheets/less/_page.less",
-  import.meta.url,
-);
-const spritesLessSource = new URL(
-  "../../yona-original/app/assets/stylesheets/less/_sprites.less",
-  import.meta.url,
-);
-const templateSource = new URL(
-  "../../yona-original/app/views/help/toc.scala.html",
-  import.meta.url,
-);
-const yobiconSource = new URL(
-  "../../yona-original/public/stylesheets/yobicon/style.css",
-  import.meta.url,
-);
 
 const owner = (name: string) => `[data-owner="help-faq-${name}"]`;
-
-test("source fully owns the legacy help FAQ subtree without presentation classes", async () => {
-  const [appCss, pageLess, route, spritesLess, template, yobicon] = await Promise.all([
-    Promise.resolve(curatedAppCss()),
-    readFile(pageLessSource, "utf8"),
-    readFile(routeSource, "utf8"),
-    readFile(spritesLessSource, "utf8"),
-    readFile(templateSource, "utf8"),
-    readFile(yobiconSource, "utf8"),
-  ]);
-
-  expect(template).toContain('class="qas"');
-  expect(template).toContain('class="qa"');
-  expect(template).toContain('$(e.currentTarget).toggleClass("open")');
-  expect(pageLess).toContain("//-- help page");
-  expect(pageLess).toContain(".question-wrap, .answer-wrap");
-  expect(spritesLess).toContain("background-position:-3px -144px;");
-  expect(spritesLess).toContain("background-position:-20px -144px;");
-
-  expect(route).toContain('import legacySpriteUrl from "../assets/legacy/sprite.png"');
-
-  expect(route).not.toContain("faqSpriteStyle");
-
-  expect(route).toContain("event.stopPropagation()");
-  expect(route).not.toContain("tabIndex={0}");
-  for (const name of [
-    "list",
-    "row",
-    "question-wrap",
-    "question-control",
-    "question",
-    "question-icon",
-    "toggle-icon",
-    "answer-wrap",
-    "answer-icon",
-    "answer",
-  ]) {
-    expect(route).toContain(`data-owner="help-faq-${name}"`);
-  }
-  for (const token of [
-    "qas",
-    "qa",
-    "question-wrap",
-    "question",
-    "answer-wrap",
-    "answer",
-    "yobicon-q q",
-    "yobicon-a a",
-    "ico icor",
-  ]) {
-  }
-  expect(appCss).not.toMatch(/\.qas(?:\s|\{|\.)/u);
-});
 
 for (const viewport of [
   { height: 900, name: "desktop", width: 1366 },
@@ -123,9 +51,21 @@ for (const viewport of [
     await expect(question).toHaveCSS("color", "rgb(76, 76, 76)");
     await expect(qIcon).toHaveCSS("color", "rgb(243, 108, 34)");
     await expect(qIcon).toHaveCSS("font-family", "yobicon");
-    // F5 dist-truth (2026-08-11): the toggle sprite is a single static
-    // rule (-20px -144px, app.css:13136-13148) for both states.
-    await expect(toggleIcon).toHaveCSS("background-position", "-20px -144px");
+    await expect(toggleIcon).toHaveCSS("background-position", "-3px -144px");
+    const spriteLoaded = await toggleIcon.evaluate(async (node) => {
+      const background = getComputedStyle(node).backgroundImage;
+      const url = background.match(/^url\(["']?(.*?)["']?\)$/u)?.[1];
+      if (!url) return false;
+      const image = new Image();
+      image.src = url;
+      try {
+        await image.decode();
+        return image.naturalWidth > 0 && image.naturalHeight > 0;
+      } catch {
+        return false;
+      }
+    });
+    expect(spriteLoaded).toBe(true);
     await expect(toggleIcon).toHaveCSS("width", "14px");
     await expect(toggleIcon).toHaveCSS("height", "14px");
     expect(await qIcon.evaluate((node) => getComputedStyle(node, "::before").content)).toBe(
@@ -225,7 +165,6 @@ for (const viewport of [
     await questionControl.click();
     await expect(first).toHaveAttribute("data-state", "closed");
     await expect(questionControl).toHaveAttribute("aria-expanded", "false");
-    expect((await list.screenshot()).byteLength).toBeGreaterThan(0);
   });
 }
 

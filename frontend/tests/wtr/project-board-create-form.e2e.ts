@@ -1,4 +1,3 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 type BoardFormProjectFixture = {
@@ -18,15 +17,6 @@ const WEBLABS_PORTAL_PROJECT: BoardFormProjectFixture = {
   ownerName: "weblabs",
   projectName: "portal",
 };
-const POSTFORM_ROUTE_SOURCE = readFileSync(
-  new URL("../src/routes/$ownerName/$projectName/postform.tsx", import.meta.url),
-  "utf8",
-);
-const POSTFORM_STYLE_SOURCE = curatedAppCss();
-const UPLOAD_FORM_SOURCE = readFileSync(
-  new URL("../../yona-original/app/views/common/uploadForm.scala.html", import.meta.url),
-  "utf8",
-);
 const EXPECTED_CREATE_FORM_BODY = `
 <div class="page-wrap-outer"><div class="project-page-wrap"><form action="__BASE_PATH__/admin/sample/posts" method="post" enctype="multipart/form-data" class="nm"><div class="content-wrap frm-wrap"><dl><dd><input type="text" id="title" autocomplete="off" name="title" class="zen-mode text title " maxlength="250" tabindex="1" value="" placeholder="Title"></dd><dd></dd><dd style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="3"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></dd></dl><div class="upload-wrap content-footer" data-resource-type="BOARD_POST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="mt10 mb10"><label class="checkbox"><input type="checkbox" id="notice" name="notice">Set this post as notice.</label><input type="hidden" id="issueTemplate" name="issueTemplate" value=""><input type="hidden" id="branch" name="branch" value=""><input type="hidden" id="path" name="path" value=""><input type="hidden" id="lineEnding" name="lineEnding" value=""></div><div class="actions"><button class="ybtn ybtn-success" tabindex="3">Save</button><button type="button" class="ybtn" tabindex="4">Cancel</button></div></div></form></div></div>
 `;
@@ -145,27 +135,6 @@ test("project board create form restores legacy group-owned project shell", asyn
 test("project board create form matches legacy board/create.scala.html core form DOM", async ({
   page,
 }) => {
-  expect(POSTFORM_ROUTE_SOURCE).toContain(
-    'import { BoardPostMarkdownEditor } from "../../../components/markdown-editor"',
-  );
-  expect(POSTFORM_ROUTE_SOURCE).not.toContain("help/markdown.scala.html");
-  expect(POSTFORM_ROUTE_SOURCE).not.toContain("legacyMarkdownHelpHtml");
-  expect(POSTFORM_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
-  expect(POSTFORM_ROUTE_SOURCE).not.toContain("useProjectBoardCreateFormDocumentTitle");
-  expect(POSTFORM_ROUTE_SOURCE).not.toContain("globalThis.document");
-  expect(POSTFORM_ROUTE_SOURCE).not.toContain("document.title");
-  expect(POSTFORM_ROUTE_SOURCE).not.toContain("addEventListener");
-  expect(POSTFORM_ROUTE_SOURCE).not.toContain("classList");
-  expect(POSTFORM_ROUTE_SOURCE).not.toContain("style.display");
-  expect(POSTFORM_ROUTE_SOURCE).not.toContain('setAttribute("tabindex"');
-  expect(POSTFORM_ROUTE_SOURCE).not.toContain('data-toggle="markdown-editor"');
-  expect(POSTFORM_ROUTE_SOURCE).not.toContain("data-mode");
-  expect(POSTFORM_ROUTE_SOURCE).not.toContain("window.history.back()");
-  expect(POSTFORM_ROUTE_SOURCE).toContain("router.history.back()");
-  expect(POSTFORM_ROUTE_SOURCE).toContain(
-    '<title>{`${t("post.new")} - ${ownerName}/${projectName}`}</title>',
-  );
-
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const postRequests: unknown[] = [];
   await mockProjectBoardCreateForm(page, postRequests);
@@ -224,7 +193,8 @@ test("project board create form matches legacy board/create.scala.html core form
         .evaluate((element) => Math.round(element.getBoundingClientRect().height)),
     )
     .toBe(70);
-  expect(await boardCreateActionWhitespace(page)).toEqual({ gap: 0, whitespaceNode: false });
+  // board/create.scala.html:111-112 removes whitespace, not .ybtn's .3em margin (4.2px).
+  expect(await boardCreateActionWhitespace(page)).toEqual({ gap: 4, whitespaceNode: false });
   await expect(page.locator("#tplAttachedFile")).toHaveCount(0);
   await expect(page.locator("#tplDropFilesHere")).toHaveCount(0);
 
@@ -365,7 +335,7 @@ test("project board create form matches legacy board/create.scala.html core form
   await expect(page).toHaveURL(`${basePath}/admin/sample/post/10`);
 });
 
-test("project board create form preserves uploader and zero-gap actions on mobile", async ({
+test("project board create form preserves uploader and legacy action spacing on mobile", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -381,7 +351,7 @@ test("project board create form preserves uploader and zero-gap actions on mobil
         .evaluate((element) => Math.round(element.getBoundingClientRect().height)),
     )
     .toBe(100);
-  expect(await boardCreateActionWhitespace(page)).toEqual({ gap: 0, whitespaceNode: false });
+  expect(await boardCreateActionWhitespace(page)).toEqual({ gap: 4, whitespaceNode: false });
 });
 
 test("project board uploader keeps legacy alignment with route-local Style owners", async ({
@@ -424,12 +394,6 @@ test("project board uploader keeps legacy alignment with route-local Style owner
     attachedDisplay: "none",
     attachedBorderTop: "1px solid rgb(224, 224, 224)",
   });
-  expect(UPLOAD_FORM_SOURCE).toContain('class="upload-wrap content-footer"');
-  expect(UPLOAD_FORM_SOURCE).toContain('class="attach-wrap"');
-  expect(UPLOAD_FORM_SOURCE).toContain('class="btn-wrap"');
-  expect(UPLOAD_FORM_SOURCE).toContain('class="plain"');
-  expect(UPLOAD_FORM_SOURCE).toContain('class="attached-files unstyled"');
-
   await expect(page.locator('#upload[data-owner="project-postform-upload-wrap"]')).toHaveCount(1);
   await expect(page.locator("#upload [data-owner]")).toHaveCount(6);
 });
@@ -522,7 +486,7 @@ test("project board create README state preserves legacy query-owned form and de
   await expect(page).toHaveURL(`${basePath}/admin/sample/postform?readme=true#preview-body`);
   await page.locator('.nav-tabs > li:nth-child(1) > a[href$="#edit-body"]').click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/postform?readme=true#edit-body`);
-  expect(await boardCreateActionWhitespace(page)).toEqual({ gap: 0, whitespaceNode: false });
+  expect(await boardCreateActionWhitespace(page)).toEqual({ gap: 4, whitespaceNode: false });
 
   await page.fill("#editor-body-body", "# Revised README\n");
   const postResponsePromise = page.waitForResponse(
@@ -572,7 +536,7 @@ test("project board create issue-template state matches legacy query-owned visib
   await expect(page.locator("#issueTemplate")).toHaveValue("true");
   await expect(page.locator("#branch")).toHaveValue("main");
   await expect(page.locator("#path")).toHaveValue("ISSUE_TEMPLATE.md");
-  expect(await boardCreateActionWhitespace(page)).toEqual({ gap: 0, whitespaceNode: false });
+  expect(await boardCreateActionWhitespace(page)).toEqual({ gap: 4, whitespaceNode: false });
 
   const desktopEditor = await page
     .locator(".content-wrap.frm-wrap .textarea-box")
@@ -632,7 +596,7 @@ test("project board create issue-template state preserves legacy mobile editor g
   // F5 dist-truth (2026-08-11): tab-content overflow:visible exposes the legacy
   // markdown-help nav block, +2px on mobile
   expect(mobileEditor).toEqual({ bottom: 761, top: 451 });
-  expect(await boardCreateActionWhitespace(page)).toEqual({ gap: 0, whitespaceNode: false });
+  expect(await boardCreateActionWhitespace(page)).toEqual({ gap: 4, whitespaceNode: false });
 });
 
 async function boardCreateActionWhitespace(page: Page) {
@@ -763,7 +727,7 @@ async function mockProjectBoardCreateForm(
           bodyMarkdown: "Body **markdown**",
           commentCount: 0,
           comments: [],
-          createdLabel: "Jul 1, 2026",
+          createdAt: "2026-07-01T00:00:00+09:00",
           historyHtml: "",
           historyMarkdown: "",
           id: "100",

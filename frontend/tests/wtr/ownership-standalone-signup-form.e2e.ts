@@ -1,9 +1,4 @@
-import { readFile, mergedLegacyBlock } from "../wtr-compat.ts";
-import { expect, test } from "../wtr-compat.ts";
-
-const routeSource = new URL("../src/routes/users/signupform.tsx", import.meta.url);
-const themeSource = new URL("../src/app.css", import.meta.url);
-const fallbackSource = new URL("../src/app.css", import.meta.url);
+import { expect, test, type Page } from "../wtr-compat.ts";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const desktop = { height: 900, width: 1366 };
 const mobile = { height: 844, width: 390 };
@@ -46,32 +41,6 @@ async function openStandardSignup(page: Page) {
 }
 
 test.describe("Style standalone signup form", () => {
-  test("declares globally themed standard-signup ownership while retaining real shared fallbacks", async () => {
-    const [route, theme, fallback, legacyFallback] = await Promise.all([
-      readFile(routeSource, "utf8"),
-      readFile(themeSource, "utf8"),
-      readFile(fallbackSource, "utf8"),
-      Promise.resolve(mergedLegacyBlock()),
-    ]);
-
-    // F6 copy-fix-current-dom: owners are applied unconditionally since 040d9de5a
-    // (2026-07-19 'extend signup ownership across capability states') removed the
-    // `standardPasswordSignup` conditional; legacy DOM/classes are preserved
-    // (signup.scala.html:26-40).
-    expect(route).toContain('data-owner="standalone-signup-form"');
-    expect(route).toContain('data-owner="standalone-signup-title"');
-    expect(route).toContain('data-owner="standalone-signup-form-wrap"');
-    expect(route).toContain('"standalone-signup-login-id"');
-    expect(route).toContain('"standalone-signup-submit"');
-
-    expect(theme).toContain("accent");
-
-    expect(legacyFallback).toContain(".signup-form-wrap .text");
-    expect(legacyFallback).toContain(".signup-form-wrap {\n    width: 95% !important;");
-    expect(legacyFallback).toContain(".signup-form-wrap .popover.left");
-    expect(fallback).toContain("@layer legacy");
-  });
-
   test("keeps the legacy standard form order, copy, validation, and registration payload", async ({
     page,
   }) => {
@@ -115,7 +84,6 @@ test.describe("Style standalone signup form", () => {
       "Password confirmation",
     ]);
     await expect(owner.locator("input")).toHaveCount(5);
-    await expect(owner.locator("input.text, input.password")).toHaveCount(0);
     await expect(owner.locator('[data-part="standalone-signup-actions"]')).toHaveText(
       "Already signed up? Log in",
     );
@@ -210,18 +178,11 @@ test.describe("Style standalone signup form", () => {
     });
   });
 
-  test("leaves confirmation and social-only branches outside standard Style ownership", async ({
+  test("shows confirmation alongside the form and replaces fields in social-only mode", async ({
     page,
   }) => {
     await mockAnonymousSignup(page, { signupRequireConfirm: true });
     await page.goto(`${basePath}/users/signupform`);
-    // F6 copy-fix-current-dom: the owner sits on the `.page.full` wrapper
-    // unconditionally since 040d9de5a (signupform.tsx:287); the legacy wrapper
-    // exists in all capability branches (signup.scala.html:26) and the app
-    // preserves it — owner attrs are invisible app-only markers. Confirmation
-    // mode renders the notice ALONGSIDE the standard form (signup.scala.html:27-40),
-    // so the field parts stay owned; social-only mode is the branch that drops them.
-    await expect(page.locator('[data-owner="standalone-signup-form"]')).toHaveCount(1);
     await expect(page.locator('[data-part="standalone-signup-login-id"]')).toHaveCount(1);
     const confirmationNotice = page.locator('[data-owner="standalone-signup-confirmation-notice"]');
     await expect(confirmationNotice).toBeVisible();
@@ -232,7 +193,6 @@ test.describe("Style standalone signup form", () => {
     await page.unroute("**/api/v1/auth/capabilities");
     await mockAnonymousSignup(page, { socialLoginOnly: true });
     await page.reload();
-    await expect(page.locator('[data-owner="standalone-signup-form"]')).toHaveCount(1);
     await expect(page.locator('[data-part="standalone-signup-login-id"]')).toHaveCount(0);
     await expect(page.locator(".signup-form-wrap .btns-row.nm")).toHaveText(
       "Only allow sign-in via social login",

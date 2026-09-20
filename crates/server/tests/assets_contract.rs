@@ -221,7 +221,10 @@ async fn upload_multipart(
         .unwrap();
     let status = response.status();
     let body = response.into_body().collect().await.unwrap().to_bytes();
-    (status, serde_json::from_slice(&body).expect("upload response JSON"))
+    (
+        status,
+        serde_json::from_slice(&body).expect("upload response JSON"),
+    )
 }
 
 async fn assert_attachment_container_acl(
@@ -2216,6 +2219,7 @@ async fn attachment_binding_uses_legacy_container_type_names() {
             attachment_ids: vec![private_review_comment_file_id],
             commit_id: None,
             contents_markdown: "private review comment body".to_string(),
+            end_column: None,
             end_line: None,
             end_side: None,
             owner_name: "owner".to_string(),
@@ -2223,6 +2227,7 @@ async fn attachment_binding_uses_legacy_container_type_names() {
             prev_commit_id: None,
             project_name: "privateYobi".to_string(),
             pull_request_number: private_pull_request.pull_request_number,
+            start_column: None,
             start_line: None,
             start_side: None,
             thread_id: None,
@@ -2417,6 +2422,7 @@ async fn attachment_binding_uses_legacy_container_type_names() {
             owner_name: "owner".to_string(),
             post_number: posting.post_number,
             project_name: "projectYobi".to_string(),
+            send_notification: true,
             values: PostingMutationInput {
                 attachment_ids: vec![replacement_board_file_id],
                 body_markdown: "updated board body".to_string(),
@@ -3404,27 +3410,15 @@ async fn file_upload_reuses_legacy_temporary_identity_and_normalizes_names() {
     assert_eq!(different_bytes_status, StatusCode::CREATED);
     assert_ne!(different_bytes["id"], first["id"]);
 
-    let (different_name_status, different_name) = upload_multipart(
-        app.clone(),
-        &owner_cookie,
-        &owner_csrf,
-        "other.txt",
-        bytes,
-    )
-    .await;
+    let (different_name_status, different_name) =
+        upload_multipart(app.clone(), &owner_cookie, &owner_csrf, "other.txt", bytes).await;
     assert_eq!(different_name_status, StatusCode::CREATED);
     assert_ne!(different_name["id"], first["id"]);
 
     let (other_csrf, other_cookie) = bootstrap(app.clone()).await;
     let other_id = register_user(app.clone(), &other_cookie, &other_csrf, "other").await;
-    let (other_user_status, other_user) = upload_multipart(
-        app,
-        &other_cookie,
-        &other_csrf,
-        "café.txt",
-        bytes,
-    )
-    .await;
+    let (other_user_status, other_user) =
+        upload_multipart(app, &other_cookie, &other_csrf, "café.txt", bytes).await;
     assert_eq!(other_user_status, StatusCode::CREATED);
     assert_ne!(other_user["id"], first["id"]);
 

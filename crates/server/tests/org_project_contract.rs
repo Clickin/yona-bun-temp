@@ -5,7 +5,7 @@ use serde_json::json;
 
 // Guards project route behavior while server root domain/VCS import forwarding
 // is replaced with module-local imports and stale route imports are removed.
-use sea_orm::Database;
+use sea_orm::{ConnectionTrait, Database};
 use std::fs;
 use std::path::Path;
 use std::process::Command;
@@ -1147,10 +1147,9 @@ async fn public_directory_lists_project_and_organization_logo_urls() {
         projects_json["items"][0]["logoUrl"],
         format!("/yona/files/{}", project_logo.id)
     );
-    assert!(projects_json["items"][0]["createdLabel"]
-        .as_str()
-        .is_some_and(|value| !value.is_empty()));
-    assert_eq!(projects_json["items"][0]["lastPushedLabel"], "");
+    chrono::DateTime::parse_from_rfc3339(projects_json["items"][0]["createdAt"].as_str().unwrap())
+        .expect("project creation must retain its complete timestamp");
+    assert_eq!(projects_json["items"][0]["lastPushedAt"], "");
     assert_eq!(projects_json["items"][0]["memberCount"], 1);
     assert_eq!(projects_json["items"][0]["watchCount"], 0);
 
@@ -1186,9 +1185,12 @@ async fn public_directory_lists_project_and_organization_logo_urls() {
         organizations_json["items"][0]["logoUrl"],
         format!("/yona/files/{}", organization_logo.id)
     );
-    assert!(organizations_json["items"][0]["createdLabel"]
-        .as_str()
-        .is_some_and(|value| !value.is_empty()));
+    chrono::DateTime::parse_from_rfc3339(
+        organizations_json["items"][0]["createdAt"]
+            .as_str()
+            .unwrap(),
+    )
+    .expect("organization creation must retain its complete timestamp");
 
     let guest_organizations = app
         .oneshot(
@@ -1202,6 +1204,212 @@ async fn public_directory_lists_project_and_organization_logo_urls() {
         .await
         .unwrap();
     assert_eq!(guest_organizations.status(), StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn project_directory_filters_labels_and_paginates_before_rendering() {
+    let (app, repository) = build_app_with_repository().await;
+    let (csrf, cookie) = bootstrap(app.clone()).await;
+    let owner_id = register_user(app.clone(), &cookie, &csrf, "owner").await;
+    for index in 0..12 {
+        repository
+            .create_project(CreateProjectInput {
+                organization_id: None,
+                owner_name: "owner".to_string(),
+                project_name: format!("directory-{index:02}"),
+                overview: Some(
+                    if index == 11 {
+                        "Distinct Overview"
+                    } else {
+                        "ordinary"
+                    }
+                    .to_string(),
+                ),
+                project_scope: "public".to_string(),
+                vcs: "GIT".to_string(),
+                initial_manager_user_id: Some(owner_id),
+            })
+            .await
+            .unwrap();
+    }
+    repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "owner".to_string(),
+            project_name: "private-project".to_string(),
+            overview: None,
+            project_scope: "private".to_string(),
+            vcs: "GIT".to_string(),
+            initial_manager_user_id: Some(owner_id),
+        })
+        .await
+        .unwrap();
+    let label = repository
+        .attach_legacy_project_label("owner", "directory-11", Some("Team"), "Discovery")
+        .await
+        .unwrap()
+        .unwrap()
+        .label;
+    let other_label = repository
+        .attach_legacy_project_label("owner", "directory-10", Some("Team"), "Other")
+        .await
+        .unwrap()
+        .unwrap()
+        .label;
+
+    let request_page = |path: String, cookie: Option<String>| {
+        let app = app.clone();
+        async move {
+            let mut request = Request::builder().uri(path);
+            if let Some(cookie) = cookie {
+                request = request.header(http::header::COOKIE, cookie);
+            }
+            let response = app
+                .oneshot(request.body(Body::empty()).unwrap())
+                .await
+                .unwrap();
+            assert_eq!(response.status(), StatusCode::OK);
+            serde_json::from_str::<serde_json::Value>(&response_json(response).await).unwrap()
+        }
+    };
+    let first = request_page("/yona/api/v1/projects".to_string(), None).await;
+    assert_eq!(first["totalCount"], 12);
+    assert_eq!(first["totalPages"], 2);
+    assert_eq!(first["items"].as_array().unwrap().len(), 10);
+    assert_eq!(first["items"][0]["projectName"], "directory-11");
+    assert_eq!(
+        first["items"][0]["labels"],
+        json!([{
+            "id": label.id, "category": "Team", "name": "Discovery",
+        }])
+    );
+    let second = request_page("/yona/api/v1/projects?pageNum=2".to_string(), None).await;
+    assert_eq!(second["pageNum"], 2);
+    assert_eq!(second["items"].as_array().unwrap().len(), 2);
+    assert_eq!(second["items"][0]["projectName"], "directory-01");
+    assert_eq!(second["items"][1]["projectName"], "directory-00");
+
+    for filter in ["discovery", "DISTINCT", "directory-11"] {
+        let filtered = request_page(format!("/yona/api/v1/projects?filter={filter}"), None).await;
+        assert_eq!(filtered["totalCount"], 1);
+        assert_eq!(filtered["items"][0]["projectName"], "directory-11");
+    }
+    let owner_matches = request_page("/yona/api/v1/projects?filter=OWNER".to_string(), None).await;
+    assert_eq!(owner_matches["totalCount"], 12);
+    let labeled = request_page(
+        format!(
+            "/yona/api/v1/projects?labelIds={}&labelIds={}",
+            label.id, other_label.id,
+        ),
+        None,
+    )
+    .await;
+    assert_eq!(labeled["totalCount"], 2);
+    let combined = request_page(
+        format!(
+            "/yona/api/v1/projects?labelIds={}&filter=ordinary",
+            label.id,
+        ),
+        None,
+    )
+    .await;
+    assert_eq!(combined["totalCount"], 0);
+    assert_eq!(combined["items"], json!([]));
+    let admin = request_page(
+        "/yona/api/v1/projects?filter=private".to_string(),
+        Some(cookie),
+    )
+    .await;
+    assert_eq!(admin["items"][0]["projectName"], "private-project");
+}
+
+#[tokio::test]
+async fn directory_and_member_project_dates_preserve_stored_instants() {
+    let yona_data = temp_yona_data_root();
+    let db = Database::connect("sqlite::memory:").await.unwrap();
+    Migrator::fresh(&db).await.unwrap();
+    let repository = AppRepository::new(db.clone());
+    let app = create_router_with_repository_and_app_config(
+        RuntimeConfig {
+            allow_anonymous_access: true,
+            base_path: "/yona".to_string(),
+            public_origin: String::new(),
+        },
+        repository,
+        AppRuntimeConfig {
+            data_root: yona_data.path().to_path_buf(),
+            ..AppRuntimeConfig::default()
+        },
+    );
+    let (csrf, cookie) = bootstrap(app.clone()).await;
+    register_user(app.clone(), &cookie, &csrf, "owner").await;
+    create_organization(app.clone(), &cookie, &csrf, "weblabs", "web labs").await;
+    create_project(
+        app.clone(),
+        &cookie,
+        &csrf,
+        "weblabs",
+        "dates",
+        "Project dates",
+        "public",
+    )
+    .await;
+    for sql in [
+        "UPDATE project SET created_date = '2026-07-07 12:34:56.789', \
+         last_pushed_date = '2026-07-08 23:45:12.345'",
+        "UPDATE organization SET created = '2026-07-07 12:34:56.789'",
+    ] {
+        db.execute_unprepared(sql).await.unwrap();
+    }
+
+    let created = chrono::DateTime::parse_from_rfc3339("2026-07-07T12:34:56.789Z").unwrap();
+    let pushed = chrono::DateTime::parse_from_rfc3339("2026-07-08T23:45:12.345Z").unwrap();
+    for (path, items_key, has_pushed_date) in [
+        ("/yona/api/v1/projects", "items", true),
+        ("/yona/api/v1/organizations", "items", false),
+        (
+            "/yona/api/v1/organizations/weblabs/container",
+            "visibleProjects",
+            true,
+        ),
+        (
+            "/yona/api/v1/users/owner/profile?selected=projects",
+            "memberProjects",
+            true,
+        ),
+        ("/yona/api/v1/workspace", "memberProjects", true),
+    ] {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method(Method::GET)
+                    .uri(path)
+                    .header(http::header::COOKIE, &cookie)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK, "{path}");
+        let body: serde_json::Value = serde_json::from_str(&response_json(response).await).unwrap();
+        let item = &body[items_key][0];
+        assert_eq!(
+            chrono::DateTime::parse_from_rfc3339(item["createdAt"].as_str().unwrap()).unwrap(),
+            created,
+            "{path} must not truncate project/organization creation to midnight",
+        );
+        assert!(item.get("createdLabel").is_none(), "{path}");
+        if has_pushed_date {
+            assert_eq!(
+                chrono::DateTime::parse_from_rfc3339(item["lastPushedAt"].as_str().unwrap())
+                    .unwrap(),
+                pushed,
+                "{path} must preserve the original push instant",
+            );
+            assert!(item.get("lastPushedLabel").is_none(), "{path}");
+        }
+    }
 }
 
 #[tokio::test]
@@ -2220,16 +2428,15 @@ async fn project_detail_enrollment_favorites_recent_and_workspace_overview_round
 }
 
 #[tokio::test]
-// Guards project-route-owned organization and project create/read/settings/container helper ownership.
 async fn organization_container_contract_returns_project_cards_and_gated_rosters() {
     let yona_data = temp_yona_data_root();
-    let app = build_app_in_data_root(yona_data.path()).await;
+    let (app, repository) = build_app_with_repository_in_data_root(yona_data.path()).await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
-    register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
+    let admin_id = register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
 
     let (guest_csrf, guest_cookie) = bootstrap(app.clone()).await;
-    register_user(app.clone(), &guest_cookie, &guest_csrf, "guest").await;
+    let guest_id = register_user(app.clone(), &guest_cookie, &guest_csrf, "aaron").await;
 
     create_organization(
         app.clone(),
@@ -2239,76 +2446,102 @@ async fn organization_container_contract_returns_project_cards_and_gated_rosters
         "web labs",
     )
     .await;
-    create_project(
-        app.clone(),
-        &admin_cookie,
-        &admin_csrf,
-        "weblabs",
-        "projectYobi",
-        "Wave 2A home",
-        "public",
-    )
-    .await;
-
-    let anonymous_container = app
-        .clone()
-        .oneshot(
-            Request::builder()
-                .method(Method::POST)
-                .uri("/yona/api/v1/_pilot/ReadOrganizationContainer")
-                .header(http::header::CONTENT_TYPE, "application/json")
-                .body(Body::from("{\"organizationName\":\"weblabs\"}"))
-                .unwrap(),
+    for (project_name, scope) in [
+        ("projectYobi", "public"),
+        ("protectedProject", "protected"),
+        ("privateProject", "private"),
+    ] {
+        create_project(
+            app.clone(),
+            &admin_cookie,
+            &admin_csrf,
+            "weblabs",
+            project_name,
+            "Wave 2A home",
+            scope,
         )
+        .await;
+    }
+    let project = repository
+        .read_project_by_owner_and_name("weblabs", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    repository
+        .add_project_membership(project.id, guest_id, "member")
         .await
         .unwrap();
-    assert_eq!(anonymous_container.status(), StatusCode::OK);
 
-    let anonymous_json = String::from_utf8(
-        anonymous_container
-            .into_body()
-            .collect()
+    for cookie in [None, Some(&guest_cookie)] {
+        let mut request = Request::builder()
+            .method(Method::GET)
+            .uri("/yona/api/v1/organizations/weblabs/container");
+        if let Some(cookie) = cookie {
+            request = request.header(http::header::COOKIE, cookie);
+        }
+        let container = app
+            .clone()
+            .oneshot(request.body(Body::empty()).unwrap())
             .await
-            .unwrap()
-            .to_bytes()
-            .to_vec(),
-    )
-    .unwrap();
-    assert!(anonymous_json.contains("\"organizationName\":\"weblabs\""));
-    assert!(!anonymous_json.contains("\"viewerCanUpdate\":true"));
-    assert!(!anonymous_json.contains("\"viewerCanCreateProject\":true"));
-    assert!(!anonymous_json.contains("\"adminMembers\":[{"));
-    assert!(!anonymous_json.contains("\"memberMembers\":[{"));
-    assert!(anonymous_json.contains("\"visibleProjects\":["));
+            .unwrap();
+        assert_eq!(container.status(), StatusCode::OK);
+        let container: serde_json::Value =
+            serde_json::from_str(&response_json(container).await).unwrap();
+        assert_eq!(container["organizationName"], "weblabs");
+        assert_eq!(container["viewerCanUpdate"], false);
+        assert_eq!(container["viewerCanCreateProject"], false);
+        assert_eq!(container["adminMembers"], json!([]));
+        assert_eq!(container["memberMembers"], json!([]));
+        let cards = container["visibleProjects"].as_array().unwrap();
+        assert_eq!(cards.len(), 1, "unreadable project cards must not leak");
+        assert_eq!(cards[0]["ownerName"], "weblabs");
+        assert_eq!(cards[0]["projectName"], "projectYobi");
+        assert_eq!(cards[0]["memberCount"], 2);
+        let members = cards[0]["members"].as_array().unwrap();
+        assert_eq!(members.len(), 2);
+        // Legacy orders by display name, not role or membership creation order.
+        for (member, user_id, login_id, role) in [
+            (&members[0], guest_id, "aaron", "member"),
+            (&members[1], admin_id, "admin", "manager"),
+        ] {
+            assert_eq!(member["userId"], user_id);
+            assert_eq!(member["loginId"], login_id);
+            assert_eq!(member["userLabel"], login_id);
+            assert_eq!(member["role"], role);
+            assert!(member["avatarUrl"]
+                .as_str()
+                .unwrap()
+                .starts_with("https://www.gravatar.com/avatar/"));
+        }
+        assert_ne!(members[0]["avatarUrl"], members[1]["avatarUrl"]);
+    }
 
     let admin_container = app
         .oneshot(
             Request::builder()
-                .method(Method::POST)
-                .uri("/yona/api/v1/_pilot/ReadOrganizationContainer")
-                .header(http::header::CONTENT_TYPE, "application/json")
+                .method(Method::GET)
+                .uri("/yona/api/v1/organizations/weblabs/container")
                 .header(http::header::COOKIE, &admin_cookie)
-                .body(Body::from("{\"organizationName\":\"weblabs\"}"))
+                .body(Body::empty())
                 .unwrap(),
         )
         .await
         .unwrap();
     assert_eq!(admin_container.status(), StatusCode::OK);
-
-    let admin_json = String::from_utf8(
-        admin_container
-            .into_body()
-            .collect()
-            .await
-            .unwrap()
-            .to_bytes()
-            .to_vec(),
-    )
-    .unwrap();
-    assert!(admin_json.contains("\"viewerCanUpdate\":true"));
-    assert!(admin_json.contains("\"viewerCanCreateProject\":true"));
-    assert!(admin_json.contains("\"ownerName\":\"weblabs\""));
-    assert!(admin_json.contains("\"projectName\":\"projectYobi\""));
+    let admin_container: serde_json::Value =
+        serde_json::from_str(&response_json(admin_container).await).unwrap();
+    assert_eq!(admin_container["viewerCanUpdate"], true);
+    assert_eq!(admin_container["viewerCanCreateProject"], true);
+    let cards = admin_container["visibleProjects"].as_array().unwrap();
+    assert_eq!(cards.len(), 3);
+    for project_name in ["protectedProject", "privateProject"] {
+        let card = cards
+            .iter()
+            .find(|card| card["projectName"] == project_name)
+            .unwrap();
+        assert_eq!(card["memberCount"], 1);
+        assert_eq!(card["members"][0]["loginId"], "admin");
+    }
 }
 
 #[tokio::test]
@@ -3261,7 +3494,7 @@ async fn toggle_project_watch_returns_refreshed_project_container() {
 }
 
 #[tokio::test]
-async fn organization_container_contract_returns_guest_member_and_last_admin_cta_flags() {
+async fn organization_container_contract_returns_guest_member_and_site_admin_cta_flags() {
     let yona_data = temp_yona_data_root();
     let (app, repository) = build_app_with_repository_in_data_root(yona_data.path()).await;
 
@@ -3303,7 +3536,10 @@ async fn organization_container_contract_returns_guest_member_and_last_admin_cta
         )
         .await
         .unwrap();
-    assert_eq!(non_guest_enroll.status(), StatusCode::BAD_REQUEST);
+    assert_eq!(non_guest_enroll.status(), StatusCode::OK);
+    assert!(response_json(non_guest_enroll)
+        .await
+        .contains("\"enrollmentRequested\":true"));
 
     let organization = repository
         .read_organization_by_name("weblabs")
@@ -3353,6 +3589,7 @@ async fn organization_container_contract_returns_guest_member_and_last_admin_cta
     assert!(!member_json.contains("\"viewerCanEnroll\":true"));
 
     let admin_response = app
+        .clone()
         .oneshot(
             Request::builder()
                 .method(Method::POST)
@@ -3367,7 +3604,28 @@ async fn organization_container_contract_returns_guest_member_and_last_admin_cta
     assert_eq!(admin_response.status(), StatusCode::OK);
     let admin_json = response_json(admin_response).await;
     assert!(admin_json.contains("\"viewerCanUpdate\":true"));
-    assert!(!admin_json.contains("\"viewerCanLeave\":true"));
+    assert!(admin_json.contains("\"viewerCanLeave\":true"));
+    let leave = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/organizations/weblabs/leave")
+                .header(http::header::COOKIE, &admin_cookie)
+                .header("x-csrf-token", &admin_csrf)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(leave.status(), StatusCode::OK);
+    let members = repository
+        .read_organization_members("weblabs")
+        .await
+        .unwrap();
+    assert!(!members
+        .members
+        .iter()
+        .any(|member| member.login_id == "admin"));
 }
 
 #[tokio::test]
@@ -3444,17 +3702,13 @@ async fn organization_admin_contract_requires_update_permission_and_exposes_memb
 async fn organization_enrollment_mutations_toggle_guest_request_state() {
     // Guards projects/organizations.rs enrollment request/cancel helpers.
     let yona_data = temp_yona_data_root();
-    let (app, repository) = build_app_with_repository_in_data_root(yona_data.path()).await;
+    let (app, _) = build_app_with_repository_in_data_root(yona_data.path()).await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
 
     let (guest_csrf, guest_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &guest_cookie, &guest_csrf, "guest").await;
-    repository
-        .toggle_site_user_guest_mode("guest")
-        .await
-        .expect("mark organization enrollment actor as guest");
 
     create_organization(
         app.clone(),
@@ -3690,6 +3944,8 @@ async fn organization_admin_mutations_add_accept_promote_and_delete_members() {
 async fn organization_leave_mutation_redirects_members_and_blocks_last_admins() {
     let yona_data = temp_yona_data_root();
     let (app, repository) = build_app_with_repository_in_data_root(yona_data.path()).await;
+    let (site_csrf, site_cookie) = bootstrap(app.clone()).await;
+    register_user(app.clone(), &site_cookie, &site_csrf, "siteadmin").await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;

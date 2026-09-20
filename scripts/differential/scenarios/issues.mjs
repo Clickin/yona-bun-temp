@@ -28,7 +28,11 @@ export const scenarios = [
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
       { actor: "admin", action: "create-issue", params: { owner: "admin", project: "sample" } },
-      { actor: "admin", action: "create-issue-comment", params: { owner: "admin", project: "sample" } },
+      {
+        actor: "admin",
+        action: "create-issue-comment",
+        params: { owner: "admin", project: "sample" },
+      },
     ],
     behaviorMatcher: { action: /^IssueApp\.newComment$|^IssueApi\.newIssueComment$/ },
   },
@@ -42,19 +46,28 @@ export const scenarios = [
       {
         actor: "admin",
         action: "hover-popover",
-        params: { owner: "admin", project: "sample", path: "/issues", selector: "#two-column-mode-checkbox" },
+        params: {
+          owner: "admin",
+          project: "sample",
+          path: "/issues",
+          selector: "#two-column-mode-checkbox",
+        },
       },
     ],
     behaviorMatcher: { action: /^IssueApp\.issues$/ },
   },
 
-  // --- read-only coverage (I1–I18) ---
+  // --- read coverage, plus isolated next-state mutation (I4) ---
   {
     id: "I1-issue-detail",
     title: "view seeded issue detail (watcher/voter lists render here)",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      { actor: "admin", action: "issue-detail", params: { owner: "admin", project: "sample", number: 1 } },
+      {
+        actor: "admin",
+        action: "issue-detail",
+        params: { owner: "admin", project: "sample", number: 1 },
+      },
     ],
     behaviorMatcher: { action: /^IssueApp\.issue$/, route: /issue\/\$number/ },
   },
@@ -63,7 +76,11 @@ export const scenarios = [
     title: "reveal issue edit form",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      { actor: "admin", action: "issue-edit-form", params: { owner: "admin", project: "sample", number: 1 } },
+      {
+        actor: "admin",
+        action: "issue-edit-form",
+        params: { owner: "admin", project: "sample", number: 1 },
+      },
     ],
     behaviorMatcher: { action: /^IssueApp\.editIssueForm$/ },
   },
@@ -72,16 +89,22 @@ export const scenarios = [
     title: "read issue timeline",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      { actor: "admin", action: "issue-timeline", params: { owner: "admin", project: "sample", number: 1 } },
+      {
+        actor: "admin",
+        action: "issue-timeline",
+        params: { owner: "admin", project: "sample", number: 1 },
+      },
     ],
     behaviorMatcher: { action: /^IssueApp\.timeline$/ },
   },
   {
     id: "I4-issue-next-state",
-    title: "read issue next-state transition target",
+    title: "advance a created issue to closed, verify persistence, then delete it",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      { actor: "admin", action: "issue-next-state", params: { owner: "admin", project: "sample", number: 1 } },
+      { actor: "admin", action: "create-issue", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "issue-next-state", params: { owner: "admin", project: "sample" } },
+      { actor: "admin", action: "delete-issue", params: { owner: "admin", project: "sample" } },
     ],
     behaviorMatcher: { action: /^IssueApp\.nextState$/ },
   },
@@ -99,10 +122,26 @@ export const scenarios = [
     title: "issue list per state tab + label/milestone/search filter params",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      { actor: "admin", action: "list-issues", params: { owner: "admin", project: "sample", state: "open" } },
-      { actor: "admin", action: "list-issues", params: { owner: "admin", project: "sample", state: "closed" } },
-      { actor: "admin", action: "list-issues", params: { owner: "admin", project: "sample", state: "open", milestoneId: 1 } },
-      { actor: "admin", action: "list-issues", params: { owner: "admin", project: "sample", search: "parity" } },
+      {
+        actor: "admin",
+        action: "list-issues",
+        params: { owner: "admin", project: "sample", state: "open" },
+      },
+      {
+        actor: "admin",
+        action: "list-issues",
+        params: { owner: "admin", project: "sample", state: "closed" },
+      },
+      {
+        actor: "admin",
+        action: "list-issues",
+        params: { owner: "admin", project: "sample", state: "open", milestoneId: 1 },
+      },
+      {
+        actor: "admin",
+        action: "list-issues",
+        params: { owner: "admin", project: "sample", search: "parity" },
+      },
     ],
     behaviorMatcher: { action: /^IssueApp\.issues$/, route: /\/issues$/ },
   },
@@ -120,7 +159,11 @@ export const scenarios = [
     title: "read issue label stylesheet",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      { actor: "admin", action: "issue-label-styles", params: { owner: "admin", project: "sample" } },
+      {
+        actor: "admin",
+        action: "issue-label-styles",
+        params: { owner: "admin", project: "sample" },
+      },
     ],
     behaviorMatcher: { action: /^IssueLabelApp\.labelStyles$/ },
   },
@@ -129,7 +172,11 @@ export const scenarios = [
     title: "view issue label management form",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      { actor: "admin", action: "issue-labels-form", params: { owner: "admin", project: "sample" } },
+      {
+        actor: "admin",
+        action: "issue-labels-form",
+        params: { owner: "admin", project: "sample" },
+      },
     ],
     behaviorMatcher: { action: /^IssueLabelApp\.labelsForm$/ },
   },
@@ -138,7 +185,11 @@ export const scenarios = [
     title: "read issue label categories + first category detail",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      { actor: "admin", action: "issue-label-categories", params: { owner: "admin", project: "sample" } },
+      {
+        actor: "admin",
+        action: "issue-label-categories",
+        params: { owner: "admin", project: "sample" },
+      },
     ],
     behaviorMatcher: { action: /^IssueLabelApp\.(categories|category)$/ },
   },
@@ -159,7 +210,8 @@ export const scenarios = [
         // documented transport difference, not a token-surface gap.
         expectedDisposition: {
           classification: "IMPLEMENTATION_DIFFERENCE",
-          evidence: "yona-original/app/controllers/api/UserApi.java:295-305 token gate vs AGENTS.md canonical /api/v1 REST contract",
+          evidence:
+            "yona-original/app/controllers/api/UserApi.java:295-305 token gate vs AGENTS.md canonical /api/v1 REST contract",
           signature: {
             scenarioId: "I11-issue-api-detail",
             action: "issue-api-probe",
@@ -167,12 +219,20 @@ export const scenarios = [
             events: [
               {
                 side: "legacy",
-                request: { method: "GET", route: "/-_-api/v1/owners/admin/projects/sample/issues/1", payload: null },
+                request: {
+                  method: "GET",
+                  route: "/-_-api/v1/owners/admin/projects/sample/issues/1",
+                  payload: null,
+                },
                 response: { status: 401 },
               },
               {
                 side: "yoram",
-                request: { method: "GET", route: "/api/v1/owners/admin/projects/sample/issues/1", payload: null },
+                request: {
+                  method: "GET",
+                  route: "/api/v1/owners/admin/projects/sample/issues/1",
+                  payload: null,
+                },
                 response: { status: 200 },
               },
             ],
@@ -188,18 +248,37 @@ export const scenarios = [
     title: "read assignable-users APIs (issue + project scope)",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      { actor: "admin", action: "issue-api-probe", params: { api: "/-_-api/v1/owners/admin/projects/sample/issues/1/assignableUsers" } },
-      { actor: "admin", action: "issue-api-probe", params: { api: "/-_-api/v1/owners/admin/projects/sample/assignableUsers" } },
+      {
+        actor: "admin",
+        action: "issue-api-probe",
+        params: { api: "/-_-api/v1/owners/admin/projects/sample/issues/1/assignableUsers" },
+      },
+      {
+        actor: "admin",
+        action: "issue-api-probe",
+        params: { api: "/-_-api/v1/owners/admin/projects/sample/assignableUsers" },
+      },
     ],
-    behaviorMatcher: { action: /^IssueApi\.findAssignableUsers(OfProject)?$/, route: /assignableUsers$/ },
+    behaviorMatcher: {
+      action: /^IssueApi\.findAssignableUsers(OfProject)?$/,
+      route: /assignableUsers$/,
+    },
   },
   {
     id: "I13-issue-api-sharing",
     title: "read issue sharer/sharable-users APIs",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      { actor: "admin", action: "issue-api-probe", params: { api: "/-_-api/v1/owners/admin/projects/sample/issues/1/findSharer" } },
-      { actor: "admin", action: "issue-api-probe", params: { api: "/-_-api/v1/owners/admin/projects/sample/issues/1/sharableUsers" } },
+      {
+        actor: "admin",
+        action: "issue-api-probe",
+        params: { api: "/-_-api/v1/owners/admin/projects/sample/issues/1/findSharer" },
+      },
+      {
+        actor: "admin",
+        action: "issue-api-probe",
+        params: { api: "/-_-api/v1/owners/admin/projects/sample/issues/1/sharableUsers" },
+      },
     ],
     behaviorMatcher: { action: /^IssueApi\.(findSharerByloginIds|findSharableUsers)$/ },
   },
@@ -238,7 +317,11 @@ export const scenarios = [
     title: "reveal comment edit form in browser (both sides)",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      { actor: "admin", action: "reveal-comment-editform", params: { owner: "admin", project: "sample", number: 1 } },
+      {
+        actor: "admin",
+        action: "reveal-comment-editform",
+        params: { owner: "admin", project: "sample", number: 1 },
+      },
     ],
     behaviorMatcher: { action: /^IssueApp\.issue$/ },
   },
@@ -254,10 +337,22 @@ export const scenarios = [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
       { actor: "admin", action: "create-issue", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "edit-issue", params: { owner: "admin", project: "sample" } },
-      { actor: "admin", action: "patch-issue-content", params: { owner: "admin", project: "sample" } },
+      {
+        actor: "admin",
+        action: "patch-issue-content",
+        params: { owner: "admin", project: "sample" },
+      },
       { actor: "admin", action: "resolve-issue-pk", params: { owner: "admin", project: "sample" } },
-      { actor: "admin", action: "change-issue-state", params: { owner: "admin", project: "sample" } },
-      { actor: "admin", action: "update-issue-assignees", params: { owner: "admin", project: "sample" } },
+      {
+        actor: "admin",
+        action: "change-issue-state",
+        params: { owner: "admin", project: "sample" },
+      },
+      {
+        actor: "admin",
+        action: "update-issue-assignees",
+        params: { owner: "admin", project: "sample" },
+      },
       {
         actor: "admin",
         action: "probe-issue-imports",
@@ -267,7 +362,8 @@ export const scenarios = [
       { actor: "admin", action: "delete-issue", params: { owner: "admin", project: "sample" } },
     ],
     behaviorMatcher: {
-      action: /^(IssueApp\.editIssue|IssueApi\.updateIssue|IssueApi\.updateIssueContent|IssueApi\.updateIssueState|IssueApp\.massUpdate|IssueApi\.updateAssginees|IssueApi\.imports|IssueApp\.deleteIssue)$/,
+      action:
+        /^(IssueApp\.editIssue|IssueApi\.updateIssue|IssueApi\.updateIssueContent|IssueApi\.updateIssueState|IssueApp\.massUpdate|IssueApi\.updateAssginees|IssueApi\.imports|IssueApp\.deleteIssue)$/,
     },
   },
   {
@@ -276,22 +372,36 @@ export const scenarios = [
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
       { actor: "admin", action: "create-issue", params: { owner: "admin", project: "sample" } },
-      { actor: "admin", action: "create-issue-comment", params: { owner: "admin", project: "sample" } },
+      {
+        actor: "admin",
+        action: "create-issue-comment",
+        params: { owner: "admin", project: "sample" },
+      },
       { actor: "admin", action: "edit-comment", params: { owner: "admin", project: "sample" } },
-      { actor: "admin", action: "put-issue-comment", params: { owner: "admin", project: "sample" } },
-      { actor: "admin", action: "patch-issue-comment", params: { owner: "admin", project: "sample" } },
+      {
+        actor: "admin",
+        action: "put-issue-comment",
+        params: { owner: "admin", project: "sample" },
+      },
+      {
+        actor: "admin",
+        action: "patch-issue-comment",
+        params: { owner: "admin", project: "sample" },
+      },
       { actor: "admin", action: "vote-comment", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "unvote-comment", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "delete-comment", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "delete-issue", params: { owner: "admin", project: "sample" } },
     ],
     behaviorMatcher: {
-      action: /^(IssueApp\.updateComment|IssueApi\.updateIssueComment|VoteApp\.voteComment|VoteApp\.unvoteComment|IssueApp\.deleteComment)$/,
+      action:
+        /^(IssueApp\.updateComment|IssueApi\.updateIssueComment|VoteApp\.voteComment|VoteApp\.unvoteComment|IssueApp\.deleteComment)$/,
     },
   },
   {
     id: "I20-issue-engagement",
-    title: "issue vote/unvote, watch/unwatch, favorite toggle, weight votes, sharer, noti receivers, detectChange",
+    title:
+      "issue vote/unvote, watch/unwatch, favorite toggle, weight votes, sharer, noti receivers, detectChange",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
       { actor: "admin", action: "create-issue", params: { owner: "admin", project: "sample" } },
@@ -300,9 +410,21 @@ export const scenarios = [
       { actor: "admin", action: "unvote-issue", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "watch-issue", params: { owner: "admin", project: "sample" } },
       { actor: "admin", action: "unwatch-issue", params: { owner: "admin", project: "sample" } },
-      { actor: "admin", action: "unwatch-issue-get", params: { owner: "admin", project: "sample" } },
-      { actor: "admin", action: "toggle-favorite-issue", params: { owner: "admin", project: "sample" } },
-      { actor: "admin", action: "issue-weight-votes", params: { owner: "admin", project: "sample" } },
+      {
+        actor: "admin",
+        action: "unwatch-issue-get",
+        params: { owner: "admin", project: "sample" },
+      },
+      {
+        actor: "admin",
+        action: "toggle-favorite-issue",
+        params: { owner: "admin", project: "sample" },
+      },
+      {
+        actor: "admin",
+        action: "issue-weight-votes",
+        params: { owner: "admin", project: "sample" },
+      },
       {
         actor: "admin",
         action: "update-sharer",
@@ -311,12 +433,21 @@ export const scenarios = [
         // Use the seeded carol account; the action handler adds then deletes
         // that direct user share so the fixture state is restored.
       },
-      { actor: "admin", action: "comment-noti-receivers", params: { owner: "admin", project: "sample" } },
-      { actor: "admin", action: "detect-issue-change", params: { owner: "admin", project: "sample" } },
+      {
+        actor: "admin",
+        action: "comment-noti-receivers",
+        params: { owner: "admin", project: "sample" },
+      },
+      {
+        actor: "admin",
+        action: "detect-issue-change",
+        params: { owner: "admin", project: "sample" },
+      },
       { actor: "admin", action: "delete-issue", params: { owner: "admin", project: "sample" } },
     ],
     behaviorMatcher: {
-      action: /^(VoteApp\.vote|VoteApp\.unvote|WatchApp\.watch|WatchApp\.unwatch|UserApi\.toggleFoveriteIssue|IssueApi\.upvoteWeight|IssueApi\.downvoteWeight|IssueApi\.updateSharer|IssueApi\.commentNotiRecivers|IssueApi\.detectChange)$/,
+      action:
+        /^(VoteApp\.vote|VoteApp\.unvote|WatchApp\.watch|WatchApp\.unwatch|UserApi\.toggleFoveriteIssue|IssueApi\.upvoteWeight|IssueApi\.downvoteWeight|IssueApi\.updateSharer|IssueApi\.commentNotiRecivers|IssueApi\.detectChange)$/,
     },
   },
   {
@@ -325,16 +456,37 @@ export const scenarios = [
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
       { actor: "admin", action: "create-issue", params: { owner: "admin", project: "sample" } },
-      { actor: "admin", action: "create-issue-label", params: { owner: "admin", project: "sample" } },
+      {
+        actor: "admin",
+        action: "create-issue-label",
+        params: { owner: "admin", project: "sample" },
+      },
       { actor: "admin", action: "issue-label-ids", params: { owner: "admin", project: "sample" } },
-      { actor: "admin", action: "attach-issue-labels", params: { owner: "admin", project: "sample" } },
-      { actor: "admin", action: "update-issue-label", params: { owner: "admin", project: "sample" } },
-      { actor: "admin", action: "delete-issue-label", params: { owner: "admin", project: "sample" } },
-      { actor: "admin", action: "delete-label-category", params: { owner: "admin", project: "sample" } },
+      {
+        actor: "admin",
+        action: "attach-issue-labels",
+        params: { owner: "admin", project: "sample" },
+      },
+      {
+        actor: "admin",
+        action: "update-issue-label",
+        params: { owner: "admin", project: "sample" },
+      },
+      {
+        actor: "admin",
+        action: "delete-issue-label",
+        params: { owner: "admin", project: "sample" },
+      },
+      {
+        actor: "admin",
+        action: "delete-label-category",
+        params: { owner: "admin", project: "sample" },
+      },
       { actor: "admin", action: "delete-issue", params: { owner: "admin", project: "sample" } },
     ],
     behaviorMatcher: {
-      action: /^(IssueLabelApp\.newLabel|IssueApi\.updateIssueLabel|IssueLabelApp\.update|IssueLabelApp\.delete)$/,
+      action:
+        /^(IssueLabelApp\.newLabel|IssueApi\.updateIssueLabel|IssueLabelApp\.update|IssueLabelApp\.delete)$/,
     },
   },
   {
@@ -342,13 +494,26 @@ export const scenarios = [
     title: "label category create → update → delete",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      { actor: "admin", action: "create-label-category", params: { owner: "admin", project: "sample" } },
+      {
+        actor: "admin",
+        action: "create-label-category",
+        params: { owner: "admin", project: "sample" },
+      },
       { actor: "admin", action: "issue-label-ids", params: { owner: "admin", project: "sample" } },
-      { actor: "admin", action: "update-label-category", params: { owner: "admin", project: "sample" } },
-      { actor: "admin", action: "delete-label-category", params: { owner: "admin", project: "sample" } },
+      {
+        actor: "admin",
+        action: "update-label-category",
+        params: { owner: "admin", project: "sample" },
+      },
+      {
+        actor: "admin",
+        action: "delete-label-category",
+        params: { owner: "admin", project: "sample" },
+      },
     ],
     behaviorMatcher: {
-      action: /^(IssueLabelApp\.newCategory|IssueLabelApp\.updateCategory|IssueLabelApp\.deleteCategory)$/,
+      action:
+        /^(IssueLabelApp\.newCategory|IssueLabelApp\.updateCategory|IssueLabelApp\.deleteCategory)$/,
     },
   },
   {
@@ -357,14 +522,31 @@ export const scenarios = [
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
       { actor: "admin", action: "render-markdown", params: { owner: "admin", project: "sample" } },
-      { actor: "admin", action: "migration-export-issues", params: { owner: "admin", project: "sample" } },
-      { actor: "admin", action: "migration-export-labels", params: { owner: "admin", project: "sample" } },
-      { actor: "admin", action: "restore-migration-issue-labels", params: { owner: "admin", project: "sample" } },
-      { actor: "admin", action: "migration-export-issuelabel-pairs", params: { owner: "admin", project: "sample" } },
+      {
+        actor: "admin",
+        action: "migration-export-issues",
+        params: { owner: "admin", project: "sample" },
+      },
+      {
+        actor: "admin",
+        action: "migration-export-labels",
+        params: { owner: "admin", project: "sample" },
+      },
+      {
+        actor: "admin",
+        action: "restore-migration-issue-labels",
+        params: { owner: "admin", project: "sample" },
+      },
+      {
+        actor: "admin",
+        action: "migration-export-issuelabel-pairs",
+        params: { owner: "admin", project: "sample" },
+      },
       { actor: "admin", action: "global-labels", params: {} },
     ],
     behaviorMatcher: {
-      action: /^(MarkdownApp\.render|MigrationApp\.exportIssues|MigrationApp\.exportLabels|MigrationApp\.exportIssueLabelPairs|LabelApp\.labels)$/,
+      action:
+        /^(MarkdownApp\.render|MigrationApp\.exportIssues|MigrationApp\.exportLabels|MigrationApp\.exportIssueLabelPairs|LabelApp\.labels)$/,
     },
   },
 ];
@@ -393,7 +575,11 @@ function getAction(pathFor, { dom = false, spa = true, domTarget } = {}) {
     async handler(ctx) {
       const { step, resolved, options, yoramBaseUrl, helpers } = ctx;
       const target = pathFor(step);
-      await helpers.requestBoth(ctx, translateLegacy(step, resolved), translateYoram(step, resolved));
+      await helpers.requestBoth(
+        ctx,
+        translateLegacy(step, resolved),
+        translateYoram(step, resolved),
+      );
       if (!dom) return;
       await helpers.renderDomTarget(ctx, {
         legacy: `${options.legacyUrl}${target}`,
@@ -452,23 +638,27 @@ const COMMENT_EDIT_EXTRACT = () => {
     .filter((el) => el.getClientRects().length > 0)
     .map((el) => `${el.tagName} ${el.className}`.trim())
     .sort();
-
 };
 
 // --- mutation support helpers (I18–I23) -------------------------------------
 
-const apiCompatBase = (step) => `/-_-api/v1/owners/${step.params.owner}/projects/${step.params.project}`;
+const apiCompatBase = (step) =>
+  `/-_-api/v1/owners/${step.params.owner}/projects/${step.params.project}`;
 const spaRestBase = (step) => `/api/v1/projects/${step.params.owner}/${step.params.project}`;
 // Yoram's migrated owner-scoped compat family keeps the /api/v1/owners/{o}/
 // projects/{p} prefix while legacy keeps its external /-_-api/v1 spelling
 // (restful-uri-mapping v1).
-const yoramApiBase = (step) => `/api/v1/owners/${step.params.owner}/projects/${step.params.project}`;
+const yoramApiBase = (step) =>
+  `/api/v1/owners/${step.params.owner}/projects/${step.params.project}`;
 // Legacy /-_-api/v1 probe path → its RESTful /api/v1 counterpart. Endpoints
 // whose segment spelling is unchanged only need the prefix swap; the explicit
 // rules below are the renamed rows of restful-uri-mapping v1.
 function compatToRest(path) {
   return `/api/v1${path.slice("/-_-api/v1".length)}`
-    .replace(/^\/api\/v1\/favorite(Issues|Projects|Organizations)(?=\/|$)/u, (_, kind) => `/api/v1/user/favorites/${kind.toLowerCase()}`)
+    .replace(
+      /^\/api\/v1\/favorite(Issues|Projects|Organizations)(?=\/|$)/u,
+      (_, kind) => `/api/v1/user/favorites/${kind.toLowerCase()}`,
+    )
     .replace(/\/issuelabel\/([^/?]+)/u, "/issues/$1/labels")
     .replace(/\/postlabel\/([^/?]+)/u, "/posts/$1/labels")
     .replace(/\/assignableUsers(?=\/|\?|$)/u, "/assignable-users/find")
@@ -512,7 +702,10 @@ function issueImportLegacyConversion(step, project, postNumber) {
 function issueImportNativeTranslation(step, resolved) {
   // yona-migrate posts the project export as NDJSON to this REST endpoint.
   const project = resolved.projectName ?? step.params.project;
-  return { method: "POST", path: `/api/v1/owners/${step.params.owner}/projects/${project}/imports` };
+  return {
+    method: "POST",
+    path: `/api/v1/owners/${step.params.owner}/projects/${project}/imports`,
+  };
 }
 
 function extractIssueImportNumber(value) {
@@ -584,7 +777,9 @@ async function cleanupIssueImportProject(ctx, plan, created) {
     try {
       return await helpers.sendRaw(ctx, side, request);
     } catch (error) {
-      entry.errors.push(`issue import cleanup ${side} request failed [${ctx.suffix}]: ${error.message}`);
+      entry.errors.push(
+        `issue import cleanup ${side} request failed [${ctx.suffix}]: ${error.message}`,
+      );
       return null;
     }
   };
@@ -604,10 +799,14 @@ async function cleanupIssueImportProject(ctx, plan, created) {
       : Promise.resolve(null),
   ]);
   if (yoramDelete && yoramDelete.status >= 400) {
-    entry.errors.push(`issue import cleanup target failed [${ctx.suffix}]: HTTP ${yoramDelete.status}`);
+    entry.errors.push(
+      `issue import cleanup target failed [${ctx.suffix}]: HTTP ${yoramDelete.status}`,
+    );
   }
   if (legacyDelete && legacyDelete.status >= 400) {
-    entry.errors.push(`issue import cleanup source failed [${ctx.suffix}]: HTTP ${legacyDelete.status}`);
+    entry.errors.push(
+      `issue import cleanup source failed [${ctx.suffix}]: HTTP ${legacyDelete.status}`,
+    );
   }
   const [yoramGone, legacyGone] = await Promise.all([
     created.yoram
@@ -681,7 +880,8 @@ async function runIssueImportAction(ctx) {
         path: "",
       },
     });
-    if (post.status >= 400) issueImportFailure(ctx, `source post creation failed: HTTP ${post.status}`);
+    if (post.status >= 400)
+      issueImportFailure(ctx, `source post creation failed: HTTP ${post.status}`);
     const postNumber = extractIssueImportNumber(post);
     if (!(postNumber > 0)) issueImportFailure(ctx, "source post number was not returned");
     state.issueImportPostNumber = postNumber;
@@ -691,7 +891,8 @@ async function runIssueImportAction(ctx) {
       path: `/${plan.owner}/${plan.project}/post/${postNumber}/comment`,
       form: { contents: plan.comment },
     });
-    if (comment.status >= 400) issueImportFailure(ctx, `source post comment failed: HTTP ${comment.status}`);
+    if (comment.status >= 400)
+      issueImportFailure(ctx, `source post comment failed: HTTP ${comment.status}`);
 
     const converted = await helpers.sendRaw(
       ctx,
@@ -702,14 +903,16 @@ async function runIssueImportAction(ctx) {
       issueImportFailure(ctx, `source post-to-issue conversion failed: HTTP ${converted.status}`);
     }
     const issueNumber = extractIssueImportNumber(converted);
-    if (!(issueNumber > 0)) issueImportFailure(ctx, "source conversion did not return an issue number");
+    if (!(issueNumber > 0))
+      issueImportFailure(ctx, "source conversion did not return an issue number");
     state.issueImportIssueNumberLegacy = issueNumber;
 
     const sourceIssue = await helpers.sendRaw(ctx, "legacy", {
       method: "GET",
       path: `/${plan.owner}/${plan.project}/issue/${issueNumber}`,
     });
-    if (sourceIssue.status >= 400) issueImportFailure(ctx, `source issue readback failed: HTTP ${sourceIssue.status}`);
+    if (sourceIssue.status >= 400)
+      issueImportFailure(ctx, `source issue readback failed: HTTP ${sourceIssue.status}`);
     for (const marker of [plan.title, plan.body, plan.comment]) {
       if (!issueImportMarkerPresent(sourceIssue.body, marker)) {
         issueImportFailure(ctx, `source issue readback omitted marker ${marker}`);
@@ -724,7 +927,10 @@ async function runIssueImportAction(ctx) {
     const tokenResponse = await helpers.sendRaw(ctx, "yoram", {
       method: "POST",
       path: "/api/v1/auth/token",
-      json: { id: step.actor ?? "admin", password: process.env.YONA_DIFFERENTIAL_PASSWORD ?? "admin" },
+      json: {
+        id: step.actor ?? "admin",
+        password: process.env.YONA_DIFFERENTIAL_PASSWORD ?? "admin",
+      },
     });
     const token = String(tokenResponse.json?.access_token ?? "").trim();
     if (tokenResponse.status >= 400 || !token) {
@@ -750,7 +956,8 @@ async function runIssueImportAction(ctx) {
     ];
     const migration = await (ctx.migrationRunner ?? migrationProcess)(migrationArgs, ctx);
     if (migration.error || migration.status !== 0) {
-      const output = `${migration.error ?? ""} ${migration.stderr ?? ""} ${migration.stdout ?? ""}`.trim();
+      const output =
+        `${migration.error ?? ""} ${migration.stderr ?? ""} ${migration.stdout ?? ""}`.trim();
       issueImportFailure(ctx, `source export → Rust project import failed: ${output.slice(-1200)}`);
     }
 
@@ -764,7 +971,10 @@ async function runIssueImportAction(ctx) {
     );
     const failedTargetIssueList = targetIssueLists.find((result) => result.status >= 400);
     if (failedTargetIssueList) {
-      issueImportFailure(ctx, `target issue list readback failed: HTTP ${failedTargetIssueList.status}`);
+      issueImportFailure(
+        ctx,
+        `target issue list readback failed: HTTP ${failedTargetIssueList.status}`,
+      );
     }
     const imported = targetIssueLists
       .map((result) => findIssueImportRow(result.json, plan.title))
@@ -782,7 +992,8 @@ async function runIssueImportAction(ctx) {
       method: "GET",
       path: `/api/v1/projects/${plan.owner}/${plan.project}/issues/${importedNumber}`,
     });
-    if (targetIssue.status >= 400) issueImportFailure(ctx, `target issue detail readback failed: HTTP ${targetIssue.status}`);
+    if (targetIssue.status >= 400)
+      issueImportFailure(ctx, `target issue detail readback failed: HTTP ${targetIssue.status}`);
     const targetJson = targetIssue.json ?? {};
     const targetTitle = targetJson.title ?? targetJson.issue?.title;
     const targetBody = targetJson.bodyMarkdown ?? targetJson.issue?.bodyMarkdown;
@@ -790,7 +1001,11 @@ async function runIssueImportAction(ctx) {
     const targetCommentBodies = targetComments.map(
       (item) => item.contentsMarkdown ?? item.content ?? item.bodyMarkdown ?? "",
     );
-    if (targetTitle !== plan.title || targetBody !== plan.body || !targetCommentBodies.includes(plan.comment)) {
+    if (
+      targetTitle !== plan.title ||
+      targetBody !== plan.body ||
+      !targetCommentBodies.includes(plan.comment)
+    ) {
       issueImportFailure(
         ctx,
         `target issue readback mismatch (title=${String(targetTitle)}, body=${String(targetBody)}, comments=${JSON.stringify(targetCommentBodies)})`,
@@ -801,12 +1016,12 @@ async function runIssueImportAction(ctx) {
   }
 }
 
-
 // Avatar URLs are environment-dependent: legacy serves /assets fallbacks when
 // its ICMP reachability probe fails while yoram emits live gravatar URLs for
 // the same email hash. Both are legacy-legal outcomes of the same code path,
 // so exact URL equality is not measurable across environments.
-const AVATAR_URL_PATTERN = /^(https?:\/\/[^"']*gravatar\.com\/.*|\/assets\/images\/default-avatar[^"']*)$/iu;
+const AVATAR_URL_PATTERN =
+  /^(https?:\/\/[^"']*gravatar\.com\/.*|\/assets\/images\/default-avatar[^"']*)$/iu;
 
 function normalizeAvatars(value) {
   const walk = (node) => {
@@ -845,7 +1060,8 @@ function normalizeIssueLabelPayload(value) {
 // different per-side display numbers. Normalize only the exact issue reference
 // for this pair; unrelated URLs and arbitrary strings remain comparable.
 function normalizeIssuePairValue(value, side, step, vars, key = "") {
-  if (Array.isArray(value)) return value.map((entry) => normalizeIssuePairValue(entry, side, step, vars, key));
+  if (Array.isArray(value))
+    return value.map((entry) => normalizeIssuePairValue(entry, side, step, vars, key));
   if (value && typeof value === "object") {
     const out = {};
     for (const [entryKey, entryValue] of Object.entries(value)) {
@@ -862,7 +1078,8 @@ function normalizeIssuePairValue(value, side, step, vars, key = "") {
     const targetPath = `/${step.params.owner}/${step.params.project}/issue/${issueNumber}`;
     try {
       const parsed = new URL(value, "http://differential.invalid");
-      if (parsed.pathname === targetPath && parsed.search === "" && parsed.hash === "") return "<issue-ref>";
+      if (parsed.pathname === targetPath && parsed.search === "" && parsed.hash === "")
+        return "<issue-ref>";
     } catch {
       // Keep malformed/non-URL values unchanged so the comparison stays strict.
     }
@@ -881,12 +1098,27 @@ function requestEvidence(translation) {
 // Legacy models issues as issue_post resources for watch (ResourceType has no
 // plain "issue" value; WatchApp.resource binding 400s on anything else).
 function watchTranslation(method, route) {
-  return (step, v) => ({ method, path: `${route}?resource.type=issue_post&resource.id=${v.issuePk}` });
+  return (step, v) => ({
+    method,
+    path: `${route}?resource.type=issue_post&resource.id=${v.issuePk}`,
+  });
 }
-const favoriteLegacy = (step, v) => ({ method: "POST", path: `/-_-api/v1/favoriteIssues/${v.issuePk}` });
-const favoriteYoram = (step, v) => ({ method: "POST", path: `/api/v1/user/favorites/issues/${v.issuePk}` });
-const downvoteLegacy = (step, v) => ({ method: "POST", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/downvoteWeight` });
-const downvoteYoram = (step, v) => ({ method: "POST", path: `${yoramApiBase(step)}/issues/${v.issueNumber}/weight/downvote` });
+const favoriteLegacy = (step, v) => ({
+  method: "POST",
+  path: `/-_-api/v1/favoriteIssues/${v.issuePk}`,
+});
+const favoriteYoram = (step, v) => ({
+  method: "POST",
+  path: `/api/v1/user/favorites/issues/${v.issuePk}`,
+});
+const downvoteLegacy = (step, v) => ({
+  method: "POST",
+  path: `${apiCompatBase(step)}/issues/${v.issueNumber}/downvoteWeight`,
+});
+const downvoteYoram = (step, v) => ({
+  method: "POST",
+  path: `${yoramApiBase(step)}/issues/${v.issueNumber}/weight/downvote`,
+});
 const ISSUE_SHARER_TARGET = "carol";
 const sharerTranslation = (base, tail, step, v, action) => ({
   method: "POST",
@@ -896,7 +1128,11 @@ const sharerTranslation = (base, tail, step, v, action) => ({
 const canonicalSharerTranslation = (step, v, action) => {
   const issuePath = `${yoramApiBase(step)}/issues/${v.issueNumber}/sharers`;
   return action === "add"
-    ? { method: "POST", path: issuePath, json: { loginId: ISSUE_SHARER_TARGET, targetType: "user" } }
+    ? {
+        method: "POST",
+        path: issuePath,
+        json: { loginId: ISSUE_SHARER_TARGET, targetType: "user" },
+      }
     : { method: "DELETE", path: `${issuePath}/${ISSUE_SHARER_TARGET}?targetType=user` };
 };
 
@@ -910,8 +1146,9 @@ function issueSharerPresent(result) {
     }
   }
   const sharers = Array.isArray(payload) ? payload : payload?.sharers;
-  return Array.isArray(sharers) && sharers.some(
-    (sharer) => String(sharer?.loginId ?? "").toLowerCase() === ISSUE_SHARER_TARGET,
+  return (
+    Array.isArray(sharers) &&
+    sharers.some((sharer) => String(sharer?.loginId ?? "").toLowerCase() === ISSUE_SHARER_TARGET)
   );
 }
 
@@ -976,7 +1213,11 @@ async function runSharerMutation(ctx, action) {
     { ...ctx.resolved, ...state, issueNumber: state.issueNumberYoram },
     action,
   );
-  const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
+  const { legacyResult, yoramResult } = await helpers.requestBoth(
+    ctx,
+    legacyTranslation,
+    yoramTranslation,
+  );
   if (legacyResult.status >= 400 || yoramResult.status >= 400) {
     entry.violations.push(
       violation({
@@ -1034,12 +1275,18 @@ async function mutationPair(ctx, legacyBuild, yoramBuild, extraVars = {}) {
   });
   const legacyTranslation = legacyBuild(ctx.step, sideVars("Legacy"));
   const yoramTranslation = yoramBuild(ctx.step, sideVars("Yoram"));
-  const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
+  const { legacyResult, yoramResult } = await helpers.requestBoth(
+    ctx,
+    legacyTranslation,
+    yoramTranslation,
+  );
   const behaviorId = ctx.step.behaviorId ?? null;
   // Agreed failures are parity (same rule as pairLenient); only success/failure
   // disagreement or differing failure statuses are violations.
   const agreedFailure =
-    legacyResult.status >= 400 && yoramResult.status >= 400 && legacyResult.status === yoramResult.status;
+    legacyResult.status >= 400 &&
+    yoramResult.status >= 400 &&
+    legacyResult.status === yoramResult.status;
   if ((legacyResult.status >= 400 || yoramResult.status >= 400) && !agreedFailure) {
     entry.violations.push(
       violation({
@@ -1067,16 +1314,8 @@ async function mutationPair(ctx, legacyBuild, yoramBuild, extraVars = {}) {
         ctx.step,
         vars,
       );
-    const expected = normalizeMutationPayload(
-      legacyResult.json,
-      "Legacy",
-      sideVars("Legacy"),
-    );
-    const actual = normalizeMutationPayload(
-      yoramResult.json,
-      "Yoram",
-      sideVars("Yoram"),
-    );
+    const expected = normalizeMutationPayload(legacyResult.json, "Legacy", sideVars("Legacy"));
+    const actual = normalizeMutationPayload(yoramResult.json, "Yoram", sideVars("Yoram"));
     if (JSON.stringify(expected) !== JSON.stringify(actual)) {
       entry.violations.push(
         violation({ route: legacyTranslation.path, behaviorId, kind: "api", expected, actual }),
@@ -1093,7 +1332,9 @@ function whenIds(keys) {
   return async (ctx, run) => {
     const missing = keys.filter((key) => !(Number(ctx.state[key]) > 0));
     if (missing.length > 0) {
-      throw new HarnessError(`${ctx.step.action}: unresolved id(s) ${missing.join(", ")} — mutation skipped`);
+      throw new HarnessError(
+        `${ctx.step.action}: unresolved id(s) ${missing.join(", ")} — mutation skipped`,
+      );
     }
     await run(ctx);
   };
@@ -1101,7 +1342,14 @@ function whenIds(keys) {
 
 // Factory for mutation actions: independent per-side translations plus an
 // optional follow-up (DOM verify / second toggle half) and an id guard.
-function pairMutation(legacyBuild, yoramBuild, followUp = null, guard = null, varsFn = null, onSuccess = null) {
+function pairMutation(
+  legacyBuild,
+  yoramBuild,
+  followUp = null,
+  guard = null,
+  varsFn = null,
+  onSuccess = null,
+) {
   return {
     translateLegacy(step, resolved) {
       return legacyBuild(step, resolved);
@@ -1125,30 +1373,7 @@ function pairMutation(legacyBuild, yoramBuild, followUp = null, guard = null, va
 
 // Depth-first search for the numeric `id` of the object named `name`.
 function findIdByName(node, name) {
-  const names = new Set([name]);
-  if (typeof node === "object" && node !== null && !Array.isArray(node)) {
-    for (const key of ["name", "labelName", "categoryName"]) {
-      if (typeof node[key] === "string") names.add(node[key]);
-    }
-  }
-  const matches = (candidate) => typeof candidate === "string" && names.has(candidate);
-  if (Array.isArray(node)) {
-    for (const child of node) {
-      const found = findIdByName(child, name);
-      if (found !== null) return found;
-    }
-    return null;
-  }
-  if (node && typeof node === "object") {
-    for (const key of ["name", "labelName", "categoryName"]) {
-      if (matches(node[key]) && Number(node.id) > 0) return Number(node.id);
-    }
-    for (const value of Object.values(node)) {
-      const found = findIdByName(value, name);
-      if (found !== null) return found;
-    }
-  }
-  return null;
+  return Number(findNodeByName(node, name)?.id) || null;
 }
 
 // Depth-first search for the first object NODE named `name` (by name-ish key);
@@ -1205,7 +1430,13 @@ function exportReadAction(name, pathFor) {
         const actual = normalizeApiValue(yoramResult.json);
         if (JSON.stringify(expected) !== JSON.stringify(actual)) {
           entry.violations.push(
-            violation({ route: translateLegacy(step).path, behaviorId: step.behaviorId ?? null, kind: "api", expected, actual }),
+            violation({
+              route: translateLegacy(step).path,
+              behaviorId: step.behaviorId ?? null,
+              kind: "api",
+              expected,
+              actual,
+            }),
           );
         }
       },
@@ -1230,7 +1461,10 @@ function findSemanticLabel(node, seed) {
   const name = node.name ?? node.labelName;
   const category = node.category?.name ?? node.categoryName ?? node.category;
   const color = node.color ?? node.labelColor;
-  const normalizeColor = (value) => String(value ?? "").replace(/^#/u, "").toLowerCase();
+  const normalizeColor = (value) =>
+    String(value ?? "")
+      .replace(/^#/u, "")
+      .toLowerCase();
   if (
     name === seed.name &&
     (category == null || String(category).toLowerCase() === seed.category) &&
@@ -1272,14 +1506,17 @@ function findNamedCategory(node, name) {
 
 function labelNamesFromIssue(node) {
   if (typeof node === "string") {
-    return MIGRATION_LABEL_SEEDS
-      .filter((seed) => new RegExp(`(?<![\\p{L}\\p{N}_-])${seed.name}(?![\\p{L}\\p{N}_-])`, "u").test(node))
-      .map((seed) => seed.name);
+    return MIGRATION_LABEL_SEEDS.filter((seed) =>
+      new RegExp(`(?<![\\p{L}\\p{N}_-])${seed.name}(?![\\p{L}\\p{N}_-])`, "u").test(node),
+    ).map((seed) => seed.name);
   }
   if (Array.isArray(node)) return node.flatMap(labelNamesFromIssue);
   if (!node || typeof node !== "object") return [];
   const directName = node.name ?? node.labelName;
-  if (typeof directName === "string" && MIGRATION_LABEL_SEEDS.some((seed) => seed.name === directName)) {
+  if (
+    typeof directName === "string" &&
+    MIGRATION_LABEL_SEEDS.some((seed) => seed.name === directName)
+  ) {
     return [directName];
   }
   if (Array.isArray(node.labels)) {
@@ -1316,7 +1553,8 @@ async function ensureMigrationLabels(ctx) {
             method: "GET",
             path: `/${step.params.owner}/${step.params.project}`,
           });
-          legacyProjectId = Number((/data-project-id="(\d+)"/u.exec(page.body ?? "") ?? [])[1]) || null;
+          legacyProjectId =
+            Number((/data-project-id="(\d+)"/u.exec(page.body ?? "") ?? [])[1]) || null;
           if (!legacyProjectId) {
             throw new HarnessError("restore-migration-issue-labels: legacy project id unresolved");
           }
@@ -1342,25 +1580,26 @@ async function ensureMigrationLabels(ctx) {
       if (!semantic) {
         const existing = findNamedLabel(labels.json, seed.name);
         const categoryId = Number(category?.id ?? category?.categoryId) || null;
-        const labelResult = existing?.id && categoryId
-          ? await helpers.sendRaw(ctx, side, {
-            method: "PUT",
-            path: ownerPath(step, `/issue/label/${existing.id}`),
-            form: {
-              name: seed.name,
-              color: seed.color,
-              "category.id": String(categoryId),
-            },
-          })
-          : await helpers.sendRaw(ctx, side, {
-            method: "POST",
-            path: labelPath,
-            form: {
-              labelName: seed.name,
-              categoryName: seed.category,
-              labelColor: seed.color,
-            },
-          });
+        const labelResult =
+          existing?.id && categoryId
+            ? await helpers.sendRaw(ctx, side, {
+                method: "PUT",
+                path: ownerPath(step, `/issue/label/${existing.id}`),
+                form: {
+                  name: seed.name,
+                  color: seed.color,
+                  "category.id": String(categoryId),
+                },
+              })
+            : await helpers.sendRaw(ctx, side, {
+                method: "POST",
+                path: labelPath,
+                form: {
+                  labelName: seed.name,
+                  categoryName: seed.category,
+                  labelColor: seed.color,
+                },
+              });
         if (labelResult.status >= 400) {
           throw new HarnessError(
             `restore-migration-issue-labels: ${side} label ${seed.name} create/update failed (${labelResult.status})`,
@@ -1372,7 +1611,9 @@ async function ensureMigrationLabels(ctx) {
 
     resolved[side] = MIGRATION_LABEL_SEEDS.map((seed) => findSemanticLabel(labels.json, seed));
     if (resolved[side].some((row) => !row)) {
-      throw new HarnessError(`restore-migration-issue-labels: ${side} canonical label rows are missing`);
+      throw new HarnessError(
+        `restore-migration-issue-labels: ${side} canonical label rows are missing`,
+      );
     }
   }
   return resolved;
@@ -1409,12 +1650,17 @@ export const actionDefinitions = {
       const { step, resolved, state, entry, options, yoramBaseUrl, helpers } = ctx;
       const legacyTranslation = translateLegacy(step, resolved);
       const yoramTranslation = translateYoram(step, resolved);
-      const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
+      const { legacyResult, yoramResult } = await helpers.requestBoth(
+        ctx,
+        legacyTranslation,
+        yoramTranslation,
+      );
 
       state.issueNumberLegacy = helpers.issueNumberFromLocation(legacyResult?.location ?? "");
       const yoramJson = yoramResult?.json ?? {};
       // REST issue payloads carry `issueNumber`; older shapes kept `number`.
-      state.issueNumberYoram = Number(yoramJson.number ?? yoramJson.issueNumber ?? yoramJson.issue?.number ?? 0) || null;
+      state.issueNumberYoram =
+        Number(yoramJson.number ?? yoramJson.issueNumber ?? yoramJson.issue?.number ?? 0) || null;
 
       const semantic = {
         legacy: { title: legacyTranslation.form.title, body: legacyTranslation.form.body },
@@ -1423,7 +1669,10 @@ export const actionDefinitions = {
           body: yoramJson.bodyMarkdown ?? yoramJson.issue?.bodyMarkdown ?? null,
         },
       };
-      const route = step.params.owner && step.params.project ? `/${step.params.owner}/${step.params.project}` : "/";
+      const route =
+        step.params.owner && step.params.project
+          ? `/${step.params.owner}/${step.params.project}`
+          : "/";
       if (
         semantic.yoram.title === null ||
         normalizeApiValue(semantic.legacy.title) !== normalizeApiValue(semantic.yoram.title)
@@ -1440,7 +1689,9 @@ export const actionDefinitions = {
       }
 
       if (!state.issueNumberLegacy || !state.issueNumberYoram) {
-        throw new HarnessError(`create-issue: issue id unresolved (legacy=${state.issueNumberLegacy} yoram=${state.issueNumberYoram})`);
+        throw new HarnessError(
+          `create-issue: issue id unresolved (legacy=${state.issueNumberLegacy} yoram=${state.issueNumberYoram})`,
+        );
       }
       await helpers.renderDomTarget(ctx, {
         legacy: `${options.legacyUrl}/${step.params.owner}/${step.params.project}/issue/${state.issueNumberLegacy}`,
@@ -1471,11 +1722,23 @@ export const actionDefinitions = {
     async handler(ctx) {
       const { step, resolved, state, options, yoramBaseUrl, helpers } = ctx;
       if (!state.issueNumberLegacy || !state.issueNumberYoram) {
-        throw new HarnessError(`create-issue-comment: issue id unresolved (legacy=${state.issueNumberLegacy} yoram=${state.issueNumberYoram}) — comment step skipped`);
+        throw new HarnessError(
+          `create-issue-comment: issue id unresolved (legacy=${state.issueNumberLegacy} yoram=${state.issueNumberYoram}) — comment step skipped`,
+        );
       }
-      const legacyTranslation = translateLegacy(step, { ...resolved, issueNumber: state.issueNumberLegacy });
-      const yoramTranslation = translateYoram(step, { ...resolved, issueNumber: state.issueNumberYoram });
-      const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
+      const legacyTranslation = translateLegacy(step, {
+        ...resolved,
+        issueNumber: state.issueNumberLegacy,
+      });
+      const yoramTranslation = translateYoram(step, {
+        ...resolved,
+        issueNumber: state.issueNumberYoram,
+      });
+      const { legacyResult, yoramResult } = await helpers.requestBoth(
+        ctx,
+        legacyTranslation,
+        yoramTranslation,
+      );
 
       // Capture the created comment id per side (legacy redirect anchor,
       // Yoram final-page anchor) so later edit/delete/vote steps can chain.
@@ -1486,7 +1749,9 @@ export const actionDefinitions = {
       state.commentIdLegacy = anchor(legacyResult?.location) ?? state.commentIdLegacy;
       // Yoram's comment POST returns the issue JSON; the new comment is last.
       state.commentIdYoram =
-        yoramResult?.json?.comments?.at(-1)?.id ?? anchor(yoramResult?.body) ?? state.commentIdYoram;
+        yoramResult?.json?.comments?.at(-1)?.id ??
+        anchor(yoramResult?.body) ??
+        state.commentIdYoram;
       if (state.issueNumberLegacy && state.issueNumberYoram) {
         await helpers.renderDomTarget(ctx, {
           legacy: `${options.legacyUrl}/${step.params.owner}/${step.params.project}/issue/${state.issueNumberLegacy}`,
@@ -1504,7 +1769,18 @@ export const actionDefinitions = {
   // reason; a one-sided popover is a violation, not a crash.
   "hover-popover": {
     async handler(ctx) {
-      const { step, suffix, entry, legacySession, yoramSession, legacyPage, yoramPage, options, yoramBaseUrl, helpers } = ctx;
+      const {
+        step,
+        suffix,
+        entry,
+        legacySession,
+        yoramSession,
+        legacyPage,
+        yoramPage,
+        options,
+        yoramBaseUrl,
+        helpers,
+      } = ctx;
       const { owner, project, path: pagePath = "/issues", selector } = step.params;
       const pages = { legacy: legacyPage, yoram: yoramPage };
       const sessions = { legacy: legacySession, yoram: yoramSession };
@@ -1515,12 +1791,22 @@ export const actionDefinitions = {
           await helpers.setCookiesFromHeader(pages[side], url, sessions[side].cookies);
           await pages[side].goto(url, { waitUntil: "load", timeout: 30_000 });
           const method = await helpers.hoverAnchor(pages[side], selector);
-          if (process.env.DIFF_HOVER_DEBUG) console.error(`[hover-debug] ${side}: trigger=${method}`);
-          skeletons[side] = await helpers.raceTimeout(pages[side].evaluate(helpers.popoverExtract), `${side} popover extract`);
+          if (process.env.DIFF_HOVER_DEBUG)
+            console.error(`[hover-debug] ${side}: trigger=${method}`);
+          skeletons[side] = await helpers.raceTimeout(
+            pages[side].evaluate(helpers.popoverExtract),
+            `${side} popover extract`,
+          );
         } catch (error) {
           entry.errors.push(`browser ${side} (${step.action}) [${suffix}]: ${error.message}`);
           entry.violations.push(
-            violation({ route: url, behaviorId: step.behaviorId ?? null, kind: "infra", expected: "hover observable", actual: error.message }),
+            violation({
+              route: url,
+              behaviorId: step.behaviorId ?? null,
+              kind: "infra",
+              expected: "hover observable",
+              actual: error.message,
+            }),
           );
           skeletons[side] = null;
         }
@@ -1542,7 +1828,13 @@ export const actionDefinitions = {
       const diffs = diffSkeletons(skeletons.legacy, skeletons.yoram);
       if (diffs.length > 0) {
         entry.violations.push(
-          violation({ route, behaviorId: step.behaviorId ?? null, kind: "browser", expected: skeletons.legacy, actual: skeletons.yoram }),
+          violation({
+            route,
+            behaviorId: step.behaviorId ?? null,
+            kind: "browser",
+            expected: skeletons.legacy,
+            actual: skeletons.yoram,
+          }),
         );
       }
     },
@@ -1557,15 +1849,18 @@ export const actionDefinitions = {
 
   "issue-edit-form": getAction((step) => ownerPath(step, `/issue/${step.params.number}/editform`)),
 
-  "issue-timeline": getAction((step) => ownerPath(step, `/issue/${step.params.number}/timeline`), { dom: false }),
-
-  "issue-next-state": getAction((step) => ownerPath(step, `/issue/${step.params.number}/nextstate`), { dom: false }),
+  "issue-timeline": getAction((step) => ownerPath(step, `/issue/${step.params.number}/timeline`), {
+    dom: false,
+  }),
 
   "new-issue-form": getAction((step) => ownerPath(step, "/issueform")),
 
   "list-issues": getAction(listIssuesPath),
 
-  "issue-labels": getJsonAction((step) => ownerPath(step, "/issue/labels"), normalizeIssueLabelPayload),
+  "issue-labels": getJsonAction(
+    (step) => ownerPath(step, "/issue/labels"),
+    normalizeIssueLabelPayload,
+  ),
 
   "issue-label-styles": getAction((step) => ownerPath(step, "/issue/labels.css"), { dom: false }),
 
@@ -1596,8 +1891,14 @@ export const actionDefinitions = {
       if (!legacyCategoryId && !yoramCategoryId) return;
       await helpers.requestJsonBoth(
         ctx,
-        { method: "GET", path: ownerPath(step, `/issue/label/category/${legacyCategoryId ?? yoramCategoryId}`) },
-        { method: "GET", path: ownerPath(step, `/issue/label/category/${yoramCategoryId ?? legacyCategoryId}`) },
+        {
+          method: "GET",
+          path: ownerPath(step, `/issue/label/category/${legacyCategoryId ?? yoramCategoryId}`),
+        },
+        {
+          method: "GET",
+          path: ownerPath(step, `/issue/label/category/${yoramCategoryId ?? legacyCategoryId}`),
+        },
       );
     },
   },
@@ -1616,7 +1917,11 @@ export const actionDefinitions = {
       const { step, entry, helpers } = ctx;
       const legacyTranslation = translateLegacy(step);
       const yoramTranslation = translateYoram(step);
-      const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
+      const { legacyResult, yoramResult } = await helpers.requestBoth(
+        ctx,
+        legacyTranslation,
+        yoramTranslation,
+      );
       if (legacyResult.status >= 400 || yoramResult.status >= 400) return;
       let legacyJson = null;
       try {
@@ -1630,20 +1935,29 @@ export const actionDefinitions = {
       // avatar URLs.
       const stable = (value) =>
         JSON.stringify(normalizeAvatars(value), (key, val) =>
-          Array.isArray(val) ? [...val].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))) : val,
+          Array.isArray(val)
+            ? [...val].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)))
+            : val,
         );
       const expected = normalizeApiValue(legacyJson);
       const actual = normalizeApiValue(yoramResult.json);
       if (stable(expected) !== stable(actual)) {
         entry.violations.push(
-          violation({ route: step.params.api, behaviorId: step.behaviorId ?? null, kind: "api", expected, actual }),
+          violation({
+            route: step.params.api,
+            behaviorId: step.behaviorId ?? null,
+            kind: "api",
+            expected,
+            actual,
+          }),
         );
       }
     },
   },
 
   "org-issues": getAction(
-    (step) => `/organizations/${step.params.organization}/issues${step.params.state ? `?state=${step.params.state}` : ""}`,
+    (step) =>
+      `/organizations/${step.params.organization}/issues${step.params.state ? `?state=${step.params.state}` : ""}`,
   ),
 
   "site-issue-list": getAction(() => "/sites/issueList"),
@@ -1653,7 +1967,18 @@ export const actionDefinitions = {
   // reveals. A side without a working trigger lands in entry.errors.
   "reveal-comment-editform": {
     async handler(ctx) {
-      const { step, suffix, entry, legacySession, yoramSession, legacyPage, yoramPage, options, yoramBaseUrl, helpers } = ctx;
+      const {
+        step,
+        suffix,
+        entry,
+        legacySession,
+        yoramSession,
+        legacyPage,
+        yoramPage,
+        options,
+        yoramBaseUrl,
+        helpers,
+      } = ctx;
       const { owner, project, number } = step.params;
       const selectors = step.params.selectors ?? [
         '[data-owner="project-issue-detail-comment-action-edit"]',
@@ -1672,54 +1997,69 @@ export const actionDefinitions = {
         while (attempt < 2 && revealed[side] === undefined) {
           attempt += 1;
           try {
-          await helpers.setCookiesFromHeader(pages[side], url, sessions[side].cookies);
-          await pages[side].goto(url, { waitUntil: "load", timeout: 30_000 });
-          // Comments render client-side on yoram: poll for the trigger instead
-          // of failing on the first paint race.
-          let element = null;
-          for (let attempt = 0; attempt < 12 && !element; attempt += 1) {
-            const handle = await pages[side].evaluateHandle((candidates) => {
-              for (const selector of candidates) {
-                const el = [...document.querySelectorAll(selector)].find((node) => node.getClientRects().length > 0);
-                if (el) return el;
-              }
-              return null;
-            }, selectors);
-            element = handle.asElement();
-            if (!element) await new Promise((resolve) => setTimeout(resolve, 250));
-          }
-          if (!element) throw new Error(`no comment-edit trigger matched: ${selectors.join(", ")}`);
-          await element.click();
-          // Deterministic wait: poll the revealed form instead of a timing
-          // sleep; bounded so a missing reveal is a clean selector miss.
-          const deadline = Date.now() + 2_000;
-          do {
-            revealed[side] = await pages[side].evaluate(COMMENT_EDIT_EXTRACT);
-            if (revealed[side].length > 0) break;
-            await new Promise((resolve) => setTimeout(resolve, 100));
-          } while (Date.now() < deadline);
-        } catch (error) {
-          const cdpWedge = /Runtime\.callFunctionOn timed out|protocolTimeout|timed? ?out/iu.test(error.message ?? "");
-          if (cdpWedge && attempt < 2) {
-            // A protocol timeout wedges the tab permanently, so a same-tab
-            // retry is doomed; recreate the page once and take the second
-            // attempt on the fresh tab.
-            const key = side === "legacy" ? "legacyPage" : "yoramPage";
-            await helpers.raceTimeout(pages[side].close(), `close wedged page (${side})`).catch(() => {});
-            // Write through browserPages: later steps rebuild their ctx from
-            // it, so a stale closed page would poison the rest of the sweep.
-            pages[side] = ctx.browserPages[key] = ctx[key] =
-              await ctx.browser.defaultBrowserContext().newPage();
-            continue;
-          }
-          if (attempt >= 2) {
-            entry.errors.push(`browser ${side} (${step.action}) [${suffix}]: ${error.message}`);
-            entry.violations.push(
-              violation({ route: url, behaviorId: step.behaviorId ?? null, kind: "infra", expected: "comment-edit trigger observable", actual: error.message }),
+            await helpers.setCookiesFromHeader(pages[side], url, sessions[side].cookies);
+            await pages[side].goto(url, { waitUntil: "load", timeout: 30_000 });
+            // Comments render client-side on yoram: poll for the trigger instead
+            // of failing on the first paint race.
+            let element = null;
+            for (let attempt = 0; attempt < 12 && !element; attempt += 1) {
+              const handle = await pages[side].evaluateHandle((candidates) => {
+                for (const selector of candidates) {
+                  const el = [...document.querySelectorAll(selector)].find(
+                    (node) => node.getClientRects().length > 0,
+                  );
+                  if (el) return el;
+                }
+                return null;
+              }, selectors);
+              element = handle.asElement();
+              if (!element) await new Promise((resolve) => setTimeout(resolve, 250));
+            }
+            if (!element)
+              throw new Error(`no comment-edit trigger matched: ${selectors.join(", ")}`);
+            await element.click();
+            // Deterministic wait: poll the revealed form instead of a timing
+            // sleep; bounded so a missing reveal is a clean selector miss.
+            const deadline = Date.now() + 2_000;
+            do {
+              revealed[side] = await pages[side].evaluate(COMMENT_EDIT_EXTRACT);
+              if (revealed[side].length > 0) break;
+              await new Promise((resolve) => setTimeout(resolve, 100));
+            } while (Date.now() < deadline);
+          } catch (error) {
+            const cdpWedge = /Runtime\.callFunctionOn timed out|protocolTimeout|timed? ?out/iu.test(
+              error.message ?? "",
             );
-            revealed[side] = null;
+            if (cdpWedge && attempt < 2) {
+              // A protocol timeout wedges the tab permanently, so a same-tab
+              // retry is doomed; recreate the page once and take the second
+              // attempt on the fresh tab.
+              const key = side === "legacy" ? "legacyPage" : "yoramPage";
+              await helpers
+                .raceTimeout(pages[side].close(), `close wedged page (${side})`)
+                .catch(() => {});
+              // Write through browserPages: later steps rebuild their ctx from
+              // it, so a stale closed page would poison the rest of the sweep.
+              pages[side] =
+                ctx.browserPages[key] =
+                ctx[key] =
+                  await ctx.browser.defaultBrowserContext().newPage();
+              continue;
+            }
+            if (attempt >= 2) {
+              entry.errors.push(`browser ${side} (${step.action}) [${suffix}]: ${error.message}`);
+              entry.violations.push(
+                violation({
+                  route: url,
+                  behaviorId: step.behaviorId ?? null,
+                  kind: "infra",
+                  expected: "comment-edit trigger observable",
+                  actual: error.message,
+                }),
+              );
+              revealed[side] = null;
+            }
           }
-        }
         }
         if (revealed[side] === undefined) revealed[side] = null;
       }
@@ -1740,18 +2080,73 @@ export const actionDefinitions = {
       const diffs = diffSkeletons(revealed.legacy, revealed.yoram);
       if (diffs.length > 0) {
         entry.violations.push(
-          violation({ route, behaviorId: step.behaviorId ?? null, kind: "browser", expected: revealed.legacy, actual: skeletons.yoram }),
+          violation({
+            route,
+            behaviorId: step.behaviorId ?? null,
+            kind: "browser",
+            expected: revealed.legacy,
+            actual: skeletons.yoram,
+          }),
         );
       }
     },
   },
-  // --- mutation actions (I18–I23) -------------------------------------------
+  // --- mutation actions (I4, I18–I23) ---------------------------------------
   //
   // Legacy keeps its direct form routes from yona-original conf/routes;
   // Yoram either mirrors the same route or takes the closest REST equivalent.
   // mutationPair pushes a violation when either side returns >=400 or both
   // JSON bodies diverge semantically, then lets the chain continue so later
   // steps degrade gracefully into entry.errors.
+
+  // IssueApp.nextState is a mutating GET, not a read of the next state.
+  // I4 creates an OPEN issue on each side; the SPA uses the native state API.
+  "issue-next-state": pairMutation(
+    (step, v) => ({ method: "GET", path: ownerPath(step, `/issue/${v.issueNumber}/nextstate`) }),
+    (step, v) => ({
+      method: "PUT",
+      path: `${spaRestBase(step)}/issues/${v.issueNumber}/state`,
+      json: { state: "closed" },
+    }),
+    async (ctx) => {
+      const { step, state, entry, helpers } = ctx;
+      const route = ownerPath(step, `/issue/${state.issueNumberLegacy}`);
+      const [legacy, yoram] = await Promise.all([
+        helpers.sendRaw(ctx, "legacy", { method: "GET", path: route }),
+        helpers.sendRaw(ctx, "yoram", {
+          method: "GET",
+          path: `${spaRestBase(step)}/issues/${state.issueNumberYoram}`,
+        }),
+      ]);
+      // Read the persisted detail, not the mutation response or SPA shell's 200.
+      // Legacy view.scala.html renders the current state in this badge class.
+      const legacyState =
+        /\bbadge-issue-(open|closed|draft)\b/u.exec(legacy.body ?? "")?.[1] ?? null;
+      const yoramState = yoram.json?.state ?? null;
+      if (
+        legacy.status >= 400 ||
+        yoram.status >= 400 ||
+        legacyState !== "closed" ||
+        yoramState !== "closed"
+      ) {
+        entry.violations.push(
+          violation({
+            route,
+            behaviorId: step.behaviorId ?? null,
+            kind: "api",
+            expected: { status: "<400", state: "closed" },
+            actual: {
+              legacyStatus: legacy.status,
+              yoramStatus: yoram.status,
+              legacyState,
+              yoramState,
+            },
+          }),
+        );
+      }
+    },
+    whenIds(["issueNumberLegacy", "issueNumberYoram"]),
+  ),
 
   // Resolves each side's DB pk for the created issue (watch/favorite/mass-update
   // resource params key on the pk, not the issue number).
@@ -1782,49 +2177,82 @@ export const actionDefinitions = {
       const candidate = Number(json.id ?? json.issueId ?? json.issue?.id ?? 0);
       state.issuePkYoram = candidate > 0 ? candidate : null;
       if (!state.issuePkLegacy || !state.issuePkYoram) {
-        throw new HarnessError(`resolve-issue-pk: issue pk unresolved (legacy=${state.issuePkLegacy} yoram=${state.issuePkYoram})`);
+        throw new HarnessError(
+          `resolve-issue-pk: issue pk unresolved (legacy=${state.issuePkLegacy} yoram=${state.issuePkYoram})`,
+        );
       }
     },
   },
 
-
   // Legacy POST /issue/:n/edit (full form bind) vs Yoram compat PUT issue.
-  "edit-issue": pairMutation(editIssueLegacy, editIssueYoram, async (ctx) => {
-    if (ctx.state.issueNumberLegacy && ctx.state.issueNumberYoram) {
-      await ctx.helpers.renderDomTarget(ctx, {
-        legacy: `${ctx.options.legacyUrl}/${ctx.step.params.owner}/${ctx.step.params.project}/issue/${ctx.state.issueNumberLegacy}`,
-        yoram: `${ctx.yoramBaseUrl}/${ctx.step.params.owner}/${ctx.step.params.project}/issue/${ctx.state.issueNumberYoram}`,
-        spa: true,
-        state: "edit-issue-state",
-        ...ISSUE_DETAIL_DOM_SELECTORS,
-      });
-    }
-  }, whenIds(["issueNumberLegacy", "issueNumberYoram"])),
+  "edit-issue": pairMutation(
+    editIssueLegacy,
+    editIssueYoram,
+    async (ctx) => {
+      if (ctx.state.issueNumberLegacy && ctx.state.issueNumberYoram) {
+        await ctx.helpers.renderDomTarget(ctx, {
+          legacy: `${ctx.options.legacyUrl}/${ctx.step.params.owner}/${ctx.step.params.project}/issue/${ctx.state.issueNumberLegacy}`,
+          yoram: `${ctx.yoramBaseUrl}/${ctx.step.params.owner}/${ctx.step.params.project}/issue/${ctx.state.issueNumberYoram}`,
+          spa: true,
+          state: "edit-issue-state",
+          ...ISSUE_DETAIL_DOM_SELECTORS,
+        });
+      }
+    },
+    whenIds(["issueNumberLegacy", "issueNumberYoram"]),
+  ),
 
   "patch-issue-content": pairMutation(
-    (step, v) => ({ method: "PATCH", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/content`, json: { content: `${v.body} patched`, original: v.body } }),
-    (step, v) => ({ method: "PATCH", path: `${yoramApiBase(step)}/issues/${v.issueNumber}/content/update`, json: { content: `${v.body} patched`, original: v.body } }),
+    (step, v) => ({
+      method: "PATCH",
+      path: `${apiCompatBase(step)}/issues/${v.issueNumber}/content`,
+      json: { content: `${v.body} patched`, original: v.body },
+    }),
+    (step, v) => ({
+      method: "PATCH",
+      path: `${yoramApiBase(step)}/issues/${v.issueNumber}/content/update`,
+      json: { content: `${v.body} patched`, original: v.body },
+    }),
     null,
     whenIds(["issueNumberLegacy", "issueNumberYoram"]),
   ),
 
   // Legacy mass-update form (cookie auth, keyed on DB pk) vs Yoram compat PATCH.
   "change-issue-state": pairMutation(
-    (step, v) => ({ method: "POST", path: `/${step.params.owner}/${step.params.project}/issues`, form: { "issues[0].id": String(v.issuePk ?? ""), state: "CLOSED" } }),
-    (step, v) => ({ method: "PATCH", path: `${yoramApiBase(step)}/issues/${v.issueNumber}`, json: { state: "closed" } }),
+    (step, v) => ({
+      method: "POST",
+      path: `/${step.params.owner}/${step.params.project}/issues`,
+      form: { "issues[0].id": String(v.issuePk ?? ""), state: "CLOSED" },
+    }),
+    (step, v) => ({
+      method: "PATCH",
+      path: `${yoramApiBase(step)}/issues/${v.issueNumber}`,
+      json: { state: "closed" },
+    }),
     null,
     whenIds(["issuePkLegacy", "issuePkYoram"]),
   ),
 
   "update-issue-assignees": pairMutation(
-    (step, v) => ({ method: "POST", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/assignees`, json: { assignees: ["admin"] } }),
-    (step, v) => ({ method: "POST", path: `${yoramApiBase(step)}/issues/${v.issueNumber}/assignees`, json: { assignees: ["admin"] } }),
+    (step, v) => ({
+      method: "POST",
+      path: `${apiCompatBase(step)}/issues/${v.issueNumber}/assignees`,
+      json: { assignees: ["admin"] },
+    }),
+    (step, v) => ({
+      method: "POST",
+      path: `${yoramApiBase(step)}/issues/${v.issueNumber}/assignees`,
+      json: { assignees: ["admin"] },
+    }),
     null,
     whenIds(["issueNumberLegacy", "issueNumberYoram"]),
   ),
 
   "delete-issue": pairMutation(
-    (step, v) => ({ method: "DELETE", path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/delete` }),
+    (step, v) => ({
+      method: "DELETE",
+      path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/delete`,
+    }),
     (step, v) => ({ method: "DELETE", path: `${spaRestBase(step)}/issues/${v.issueNumber}` }),
     null,
     whenIds(["issueNumberLegacy", "issueNumberYoram"]),
@@ -1853,8 +2281,16 @@ export const actionDefinitions = {
     // Legacy's update form carries the hidden `id` field
     // (common/commentUpdateForm.scala.html) — without it IssueApp re-routes
     // through newComment and CREATES a new comment instead of updating.
-    (step, v) => ({ method: "POST", path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/comments/${v.commentId}`, form: { id: String(v.commentId), contents: `${v.body} edited` } }),
-    (step, v) => ({ method: "POST", path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/comments/${v.commentId}`, form: { id: String(v.commentId), contents: `${v.body} edited` } }),
+    (step, v) => ({
+      method: "POST",
+      path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/comments/${v.commentId}`,
+      form: { id: String(v.commentId), contents: `${v.body} edited` },
+    }),
+    (step, v) => ({
+      method: "POST",
+      path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/comments/${v.commentId}`,
+      form: { id: String(v.commentId), contents: `${v.body} edited` },
+    }),
     null,
     whenIds(["commentIdLegacy", "commentIdYoram"]),
   ),
@@ -1863,8 +2299,20 @@ export const actionDefinitions = {
   // (yona-original IssueApi.java:588-617): each write carries the previously
   // stored contents as `original`; a stale original yields 409 on BOTH sides.
   "put-issue-comment": pairMutation(
-    (step, v) => ({ method: "PUT", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/comments/${v.commentId}`, json: { content: `${v.body} put`, original: `${v.body} edited` } }),
-    (step, v) => ({ method: "PUT", path: `${yoramApiBase(step)}/issues/${v.issueNumber}/comments/${v.commentId}/update`, json: { contentsMarkdown: `${v.body} put`, content: `${v.body} put`, original: `${v.body} edited` } }),
+    (step, v) => ({
+      method: "PUT",
+      path: `${apiCompatBase(step)}/issues/${v.issueNumber}/comments/${v.commentId}`,
+      json: { content: `${v.body} put`, original: `${v.body} edited` },
+    }),
+    (step, v) => ({
+      method: "PUT",
+      path: `${yoramApiBase(step)}/issues/${v.issueNumber}/comments/${v.commentId}/update`,
+      json: {
+        contentsMarkdown: `${v.body} put`,
+        content: `${v.body} put`,
+        original: `${v.body} edited`,
+      },
+    }),
     null,
     whenIds(["commentIdLegacy", "commentIdYoram"]),
   ),
@@ -1874,8 +2322,20 @@ export const actionDefinitions = {
     //   PUT /-_-api/v1/.../issues/:number/comments/:commentId
     // (IssueApi.updateIssueComment) — legacy has no PATCH spelling for this
     // resource, so the second edit in the chain reuses the same route.
-    (step, v) => ({ method: "PUT", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/comments/${v.commentId}`, json: { content: `${v.body} patched`, original: `${v.body} put` } }),
-    (step, v) => ({ method: "PUT", path: `${yoramApiBase(step)}/issues/${v.issueNumber}/comments/${v.commentId}/update`, json: { contentsMarkdown: `${v.body} patched`, content: `${v.body} patched`, original: `${v.body} put` } }),
+    (step, v) => ({
+      method: "PUT",
+      path: `${apiCompatBase(step)}/issues/${v.issueNumber}/comments/${v.commentId}`,
+      json: { content: `${v.body} patched`, original: `${v.body} put` },
+    }),
+    (step, v) => ({
+      method: "PUT",
+      path: `${yoramApiBase(step)}/issues/${v.issueNumber}/comments/${v.commentId}/update`,
+      json: {
+        contentsMarkdown: `${v.body} patched`,
+        content: `${v.body} patched`,
+        original: `${v.body} put`,
+      },
+    }),
     null,
     async (ctx, run) => {
       if (!(Number(ctx.state.commentIdLegacy) > 0 && Number(ctx.state.commentIdYoram) > 0)) {
@@ -1894,13 +2354,21 @@ export const actionDefinitions = {
       const legacyIds = new Set(
         [...(legacyPage.body ?? "").matchAll(/comment-(\d+)/gu)].map((m) => Number(m[1])),
       );
-      checks.push({ side: "legacy", id: ctx.state.commentIdLegacy, present: legacyIds.has(Number(ctx.state.commentIdLegacy)) });
+      checks.push({
+        side: "legacy",
+        id: ctx.state.commentIdLegacy,
+        present: legacyIds.has(Number(ctx.state.commentIdLegacy)),
+      });
       const yoramIssue = await ctx.helpers.sendRaw(ctx, "yoram", {
         method: "GET",
         path: `${spaRestBase(ctx.step)}/issues/${ctx.state.issueNumberYoram}`,
       });
       const yoramIds = new Set((yoramIssue.json?.comments ?? []).map((c) => Number(c.id)));
-      checks.push({ side: "yoram", id: ctx.state.commentIdYoram, present: yoramIds.has(Number(ctx.state.commentIdYoram)) });
+      checks.push({
+        side: "yoram",
+        id: ctx.state.commentIdYoram,
+        present: yoramIds.has(Number(ctx.state.commentIdYoram)),
+      });
       const missing = checks.filter((c) => !c.present);
       if (missing.length > 0) {
         throw new HarnessError(
@@ -1912,36 +2380,66 @@ export const actionDefinitions = {
   ),
 
   "delete-comment": pairMutation(
-    (step, v) => ({ method: "DELETE", path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/comment/${v.commentId}/delete` }),
-    (step, v) => ({ method: "DELETE", path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/comment/${v.commentId}/delete` }),
+    (step, v) => ({
+      method: "DELETE",
+      path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/comment/${v.commentId}/delete`,
+    }),
+    (step, v) => ({
+      method: "DELETE",
+      path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/comment/${v.commentId}/delete`,
+    }),
     null,
     whenIds(["commentIdLegacy", "commentIdYoram"]),
   ),
 
   "vote-issue": pairMutation(
-    (step, v) => ({ method: "POST", path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/vote` }),
-    (step, v) => ({ method: "POST", path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/vote` }),
+    (step, v) => ({
+      method: "POST",
+      path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/vote`,
+    }),
+    (step, v) => ({
+      method: "POST",
+      path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/vote`,
+    }),
     null,
     whenIds(["issueNumberLegacy", "issueNumberYoram"]),
   ),
 
   "unvote-issue": pairMutation(
-    (step, v) => ({ method: "POST", path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/unvote` }),
-    (step, v) => ({ method: "POST", path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/unvote` }),
+    (step, v) => ({
+      method: "POST",
+      path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/unvote`,
+    }),
+    (step, v) => ({
+      method: "POST",
+      path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/unvote`,
+    }),
     null,
     whenIds(["issueNumberLegacy", "issueNumberYoram"]),
   ),
 
   "vote-comment": pairMutation(
-    (step, v) => ({ method: "POST", path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/comment/${v.commentId}/vote` }),
-    (step, v) => ({ method: "POST", path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/comment/${v.commentId}/vote` }),
+    (step, v) => ({
+      method: "POST",
+      path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/comment/${v.commentId}/vote`,
+    }),
+    (step, v) => ({
+      method: "POST",
+      path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/comment/${v.commentId}/vote`,
+    }),
     null,
     whenIds(["commentIdLegacy", "commentIdYoram"]),
   ),
 
   "unvote-comment": pairMutation(
-    (step, v) => ({ method: "POST", path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/comment/${v.commentId}/unvote` }),
-    (step, v) => ({ method: "POST", path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/comment/${v.commentId}/unvote` }),
+    (step, v) => ({
+      method: "POST",
+      path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/comment/${v.commentId}/unvote`,
+    }),
+    (step, v) => ({
+      method: "POST",
+      path: `/${step.params.owner}/${step.params.project}/issue/${v.issueNumber}/comment/${v.commentId}/unvote`,
+    }),
     null,
     whenIds(["commentIdLegacy", "commentIdYoram"]),
   ),
@@ -1979,8 +2477,14 @@ export const actionDefinitions = {
 
   // +1 then -1 — weight restored by scenario end.
   "issue-weight-votes": pairMutation(
-    (step, v) => ({ method: "POST", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/upvoteWeight` }),
-    (step, v) => ({ method: "POST", path: `${yoramApiBase(step)}/issues/${v.issueNumber}/weight/upvote` }),
+    (step, v) => ({
+      method: "POST",
+      path: `${apiCompatBase(step)}/issues/${v.issueNumber}/upvoteWeight`,
+    }),
+    (step, v) => ({
+      method: "POST",
+      path: `${yoramApiBase(step)}/issues/${v.issueNumber}/weight/upvote`,
+    }),
     async (ctx) => {
       await mutationPair(ctx, downvoteLegacy, downvoteYoram);
     },
@@ -2006,15 +2510,31 @@ export const actionDefinitions = {
   },
 
   "comment-noti-receivers": pairMutation(
-    (step, v) => ({ method: "POST", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/commentNotiReceivers`, json: { comment: v.body, parentCommentId: "" } }),
-    (step, v) => ({ method: "POST", path: `${yoramApiBase(step)}/issues/${v.issueNumber}/comments/notification-receivers`, json: { comment: v.body, parentCommentId: "" } }),
+    (step, v) => ({
+      method: "POST",
+      path: `${apiCompatBase(step)}/issues/${v.issueNumber}/commentNotiReceivers`,
+      json: { comment: v.body, parentCommentId: "" },
+    }),
+    (step, v) => ({
+      method: "POST",
+      path: `${yoramApiBase(step)}/issues/${v.issueNumber}/comments/notification-receivers`,
+      json: { comment: v.body, parentCommentId: "" },
+    }),
     null,
     whenIds(["issueNumberLegacy", "issueNumberYoram"]),
   ),
 
   "detect-issue-change": pairMutation(
-    (step, v) => ({ method: "POST", path: `${apiCompatBase(step)}/issues/${v.issueNumber}/detectChange`, json: { issueBodyChecksum: "differential-sweep-checksum", numOfComments: 0 } }),
-    (step, v) => ({ method: "POST", path: `${yoramApiBase(step)}/issues/${v.issueNumber}/detect-change`, json: { issueBodyChecksum: "differential-sweep-checksum", numOfComments: 0 } }),
+    (step, v) => ({
+      method: "POST",
+      path: `${apiCompatBase(step)}/issues/${v.issueNumber}/detectChange`,
+      json: { issueBodyChecksum: "differential-sweep-checksum", numOfComments: 0 },
+    }),
+    (step, v) => ({
+      method: "POST",
+      path: `${yoramApiBase(step)}/issues/${v.issueNumber}/detect-change`,
+      json: { issueBodyChecksum: "differential-sweep-checksum", numOfComments: 0 },
+    }),
     null,
     whenIds(["issueNumberLegacy", "issueNumberYoram"]),
   ),
@@ -2022,11 +2542,23 @@ export const actionDefinitions = {
   // Label CRUD. Created names embed the sweep suffix so discovery is exact and
   // cleanup deletes exactly what was created.
   "create-issue-label": pairMutation(
-    (step, v) => ({ method: "POST", path: `/${step.params.owner}/${step.params.project}/issue/labels`, form: { labelName: v.labelName, categoryName: v.categoryName, labelColor: "#123456" } }),
-    (step, v) => ({ method: "POST", path: `/${step.params.owner}/${step.params.project}/issue/labels`, form: { labelName: v.labelName, categoryName: v.categoryName, labelColor: "#123456" } }),
+    (step, v) => ({
+      method: "POST",
+      path: `/${step.params.owner}/${step.params.project}/issue/labels`,
+      form: { labelName: v.labelName, categoryName: v.categoryName, labelColor: "#123456" },
+    }),
+    (step, v) => ({
+      method: "POST",
+      path: `/${step.params.owner}/${step.params.project}/issue/labels`,
+      form: { labelName: v.labelName, categoryName: v.categoryName, labelColor: "#123456" },
+    }),
     null,
     null,
-    (resolved, suffix) => ({ ...resolved, labelName: `parity-label-${suffix}`, categoryName: `parity-cat-${suffix}` }),
+    (resolved, suffix) => ({
+      ...resolved,
+      labelName: `parity-label-${suffix}`,
+      categoryName: `parity-cat-${suffix}`,
+    }),
     (ctx, pair) => {
       ctx.state.labelIdLegacy = Number(pair.legacyResult.json?.id) || null;
       ctx.state.labelIdYoram = Number(pair.yoramResult.json?.id) || null;
@@ -2067,18 +2599,34 @@ export const actionDefinitions = {
       // a name-searched category id can drift from the label's real category.
       const legacyLabel = findNodeByName(legacyJson, `parity-label-${suffix}`);
       const yoramLabel = findNodeByName(yoramResult.json, `parity-label-${suffix}`);
-      if (Number(legacyLabel?.categoryId) > 0) state.categoryIdLegacy = Number(legacyLabel.categoryId);
+      if (Number(legacyLabel?.categoryId) > 0)
+        state.categoryIdLegacy = Number(legacyLabel.categoryId);
       if (Number(yoramLabel?.categoryId) > 0) state.categoryIdYoram = Number(yoramLabel.categoryId);
-      if (!state.labelIdLegacy && !state.labelIdYoram && !state.categoryIdLegacy && !state.categoryIdYoram) {
-        entry.errors.push(`label/category ids unresolved (${step.action}) [${suffix}]: nothing matched the sweep-suffixed names`);
+      if (
+        !state.labelIdLegacy &&
+        !state.labelIdYoram &&
+        !state.categoryIdLegacy &&
+        !state.categoryIdYoram
+      ) {
+        entry.errors.push(
+          `label/category ids unresolved (${step.action}) [${suffix}]: nothing matched the sweep-suffixed names`,
+        );
       }
     },
   },
 
   // Attach replaces the issue's whole label set; sending [] detaches again.
   "attach-issue-labels": pairMutation(
-    (step, v) => ({ method: "POST", path: `${apiCompatBase(step)}/issuelabel/${v.issueNumber}`, json: [String(v.labelId)] }),
-    (step, v) => ({ method: "POST", path: `${yoramApiBase(step)}/issues/${v.issueNumber}/labels`, json: [String(v.labelId)] }),
+    (step, v) => ({
+      method: "POST",
+      path: `${apiCompatBase(step)}/issuelabel/${v.issueNumber}`,
+      json: [String(v.labelId)],
+    }),
+    (step, v) => ({
+      method: "POST",
+      path: `${yoramApiBase(step)}/issues/${v.issueNumber}/labels`,
+      json: [String(v.labelId)],
+    }),
     null,
     whenIds(["labelIdLegacy", "labelIdYoram", "issueNumberLegacy", "issueNumberYoram"]),
   ),
@@ -2087,15 +2635,39 @@ export const actionDefinitions = {
     // Legacy binds Form<IssueLabel> whose @Required category must arrive as
     // category.id (models/IssueLabel.java); without it legacy 400s and the
     // pair never reaches the update contract.
-    (step, v) => ({ method: "PUT", path: `/${step.params.owner}/${step.params.project}/issue/label/${v.labelId}`, form: { name: `${v.labelName}-renamed`, color: "#654321", "category.id": String(v.categoryIdLegacy ?? "") } }),
-    (step, v) => ({ method: "PUT", path: `/${step.params.owner}/${step.params.project}/issue/label/${v.labelId}`, form: { name: `${v.labelName}-renamed`, color: "#654321", "category.id": String(v.categoryIdYoram ?? "") } }),
+    (step, v) => ({
+      method: "PUT",
+      path: `/${step.params.owner}/${step.params.project}/issue/label/${v.labelId}`,
+      form: {
+        name: `${v.labelName}-renamed`,
+        color: "#654321",
+        "category.id": String(v.categoryIdLegacy ?? ""),
+      },
+    }),
+    (step, v) => ({
+      method: "PUT",
+      path: `/${step.params.owner}/${step.params.project}/issue/label/${v.labelId}`,
+      form: {
+        name: `${v.labelName}-renamed`,
+        color: "#654321",
+        "category.id": String(v.categoryIdYoram ?? ""),
+      },
+    }),
     null,
     whenIds(["labelIdLegacy", "labelIdYoram", "categoryIdLegacy", "categoryIdYoram"]),
   ),
 
   "delete-issue-label": pairMutation(
-    (step, v) => ({ method: "POST", path: `/${step.params.owner}/${step.params.project}/issue/label/${v.labelId}/delete`, form: { _method: "delete" } }),
-    (step, v) => ({ method: "POST", path: `/${step.params.owner}/${step.params.project}/issue/label/${v.labelId}/delete`, form: { _method: "delete" } }),
+    (step, v) => ({
+      method: "POST",
+      path: `/${step.params.owner}/${step.params.project}/issue/label/${v.labelId}/delete`,
+      form: { _method: "delete" },
+    }),
+    (step, v) => ({
+      method: "POST",
+      path: `/${step.params.owner}/${step.params.project}/issue/label/${v.labelId}/delete`,
+      form: { _method: "delete" },
+    }),
     null,
     whenIds(["labelIdLegacy", "labelIdYoram"]),
   ),
@@ -2104,25 +2676,48 @@ export const actionDefinitions = {
     // Legacy binds Form<IssueLabelCategory> whose @Required project field must
     // arrive as project.id; yoram's compat route ignores it.
     translateLegacy(step, resolved) {
-      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/issue/label/categories`, form: { name: resolved.categoryName, "project.id": String(resolved.legacyProjectId ?? "") } };
+      return {
+        method: "POST",
+        path: `/${step.params.owner}/${step.params.project}/issue/label/categories`,
+        form: { name: resolved.categoryName, "project.id": String(resolved.legacyProjectId ?? "") },
+      };
     },
     translateYoram(step, resolved) {
-      return { method: "POST", path: `/${step.params.owner}/${step.params.project}/issue/label/categories`, form: { name: resolved.categoryName } };
+      return {
+        method: "POST",
+        path: `/${step.params.owner}/${step.params.project}/issue/label/categories`,
+        form: { name: resolved.categoryName },
+      };
     },
     async handler(ctx) {
       const { step, state, entry, suffix, helpers } = ctx;
-      const page = await helpers.sendRaw(ctx, "legacy", { method: "GET", path: `/${step.params.owner}/${step.params.project}` });
-      const legacyProjectId = Number((/data-project-id="(\d+)"/u.exec(page.body ?? "") ?? [])[1]) || null;
-      if (!legacyProjectId) entry.errors.push(`create-label-category: legacy project id unresolved [${suffix}]`);
+      const page = await helpers.sendRaw(ctx, "legacy", {
+        method: "GET",
+        path: `/${step.params.owner}/${step.params.project}`,
+      });
+      const legacyProjectId =
+        Number((/data-project-id="(\d+)"/u.exec(page.body ?? "") ?? [])[1]) || null;
+      if (!legacyProjectId)
+        entry.errors.push(`create-label-category: legacy project id unresolved [${suffix}]`);
       // Persisted for the update-label-category pair, whose legacy form binds
       // the @Required project field.
       if (legacyProjectId) state.legacyProjectId = legacyProjectId;
       const categoryName = `parity-cat-${suffix}`;
-      const legacyResult = await helpers.sendRaw(ctx, "legacy", this.translateLegacy(step, { categoryName, legacyProjectId }));
-      const yoramResult = await helpers.sendRaw(ctx, "yoram", this.translateYoram(step, { categoryName }));
+      const legacyResult = await helpers.sendRaw(
+        ctx,
+        "legacy",
+        this.translateLegacy(step, { categoryName, legacyProjectId }),
+      );
+      const yoramResult = await helpers.sendRaw(
+        ctx,
+        "yoram",
+        this.translateYoram(step, { categoryName }),
+      );
       const diverged =
-        (legacyResult.status >= 400) !== (yoramResult.status >= 400) ||
-        (legacyResult.status >= 400 && yoramResult.status >= 400 && legacyResult.status !== yoramResult.status);
+        legacyResult.status >= 400 !== yoramResult.status >= 400 ||
+        (legacyResult.status >= 400 &&
+          yoramResult.status >= 400 &&
+          legacyResult.status !== yoramResult.status);
       if (diverged) {
         entry.violations.push(
           violation({
@@ -2141,8 +2736,16 @@ export const actionDefinitions = {
     // Legacy binds Form<IssueLabelCategory> whose @Required project must
     // arrive as project.id (models/IssueLabelCategory.java); without it
     // legacy 400s while yoram's compat route accepts the bare name.
-    (step, v) => ({ method: "PUT", path: `/${step.params.owner}/${step.params.project}/issue/label/category/${v.categoryIdLegacy}`, form: { name: `${v.categoryName}-renamed`, "project.id": String(v.legacyProjectId ?? "") } }),
-    (step, v) => ({ method: "PUT", path: `/${step.params.owner}/${step.params.project}/issue/label/category/${v.categoryIdYoram}`, form: { name: `${v.categoryName}-renamed`, "project.id": String(v.legacyProjectId ?? "") } }),
+    (step, v) => ({
+      method: "PUT",
+      path: `/${step.params.owner}/${step.params.project}/issue/label/category/${v.categoryIdLegacy}`,
+      form: { name: `${v.categoryName}-renamed`, "project.id": String(v.legacyProjectId ?? "") },
+    }),
+    (step, v) => ({
+      method: "PUT",
+      path: `/${step.params.owner}/${step.params.project}/issue/label/category/${v.categoryIdYoram}`,
+      form: { name: `${v.categoryName}-renamed`, "project.id": String(v.legacyProjectId ?? "") },
+    }),
     null,
     whenIds(["categoryIdLegacy", "categoryIdYoram"]),
   ),
@@ -2158,10 +2761,18 @@ export const actionDefinitions = {
   // absent Yoram server-render route instead of issuing a legacy request.
   "render-markdown": {
     translateLegacy(step, resolved) {
-      return { method: "POST", path: `/markdown/${step.params.owner}/${step.params.project}`, json: { body: resolved.body, breaks: false } };
+      return {
+        method: "POST",
+        path: `/markdown/${step.params.owner}/${step.params.project}`,
+        json: { body: resolved.body, breaks: false },
+      };
     },
     translateYoram(step, resolved) {
-      return { method: "POST", path: `/markdown/${step.params.owner}/${step.params.project}`, json: { body: resolved.body, breaks: false } };
+      return {
+        method: "POST",
+        path: `/markdown/${step.params.owner}/${step.params.project}`,
+        json: { body: resolved.body, breaks: false },
+      };
     },
     async handler(ctx) {
       const { step, entry, suffix, helpers } = ctx;
@@ -2181,9 +2792,18 @@ export const actionDefinitions = {
     },
   },
 
-  ...exportReadAction("migration-export-issues", (step) => `/${step.params.owner}/projects/${step.params.project}/issues`),
-  ...exportReadAction("migration-export-labels", (step) => `/${step.params.owner}/projects/${step.params.project}/labels`),
-  ...exportReadAction("migration-export-issuelabel-pairs", (step) => `/${step.params.owner}/projects/${step.params.project}/issuelabel`),
+  ...exportReadAction(
+    "migration-export-issues",
+    (step) => `/${step.params.owner}/projects/${step.params.project}/issues`,
+  ),
+  ...exportReadAction(
+    "migration-export-labels",
+    (step) => `/${step.params.owner}/projects/${step.params.project}/labels`,
+  ),
+  ...exportReadAction(
+    "migration-export-issuelabel-pairs",
+    (step) => `/${step.params.owner}/projects/${step.params.project}/issuelabel`,
+  ),
   "restore-migration-issue-labels": {
     translateLegacy(step) {
       return { method: "GET", path: ownerPath(step, "/issue/labels") };

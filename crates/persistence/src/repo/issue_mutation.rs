@@ -108,13 +108,11 @@ impl AppRepositoryImpl<'_> {
         let parent_id = self
             .resolve_issue_parent_id(project_record.id, input.values.parent_issue_id, None)
             .await?;
-        // Re-allocate the number on unique-number conflict: two concurrent
-        // creates can compute the same `MAX(number)+1`, so retry until the
-        // (project_id, number) unique index admits the insert.
-        let mut issue_number = 0i64;
+        // Explicit-number imports can race a reservation; retry the unique
+        // index conflict with a fresh project high-water number.
         let mut created = None;
         for _attempt in 0..32 {
-            issue_number = self.next_issue_number(project_record.id).await?;
+            let issue_number = self.next_issue_number(project_record.id).await?;
             let now = current_datetime();
             let insert_result = issue::ActiveModel {
                 id: NotSet,
@@ -175,13 +173,6 @@ impl AppRepositoryImpl<'_> {
             )
             .await?;
         }
-
-        let mut project_active = project::ActiveModel {
-            id: Set(project_record.id),
-            ..Default::default()
-        };
-        project_active.last_issue_number = Set(Some(issue_number));
-        project_active.update(&self.db).await?;
 
         self.replace_issue_labels(created.id, project_record.id, &input.values.label_ids)
             .await?;
@@ -329,12 +320,6 @@ impl AppRepositoryImpl<'_> {
                 &receiver_ids,
             )
             .await?;
-            let mut project_active = project::ActiveModel {
-                id: Set(project_record.id),
-                ..Default::default()
-            };
-            project_active.last_issue_number = Set(updated.number);
-            project_active.update(&self.db).await?;
         } else {
             let mentioned_user_ids = self
                 .mentioned_active_user_ids(&input.values.body_markdown)
@@ -465,7 +450,10 @@ impl AppRepositoryImpl<'_> {
             .filter(issue_comment::Column::IssueId.eq(Some(model.id)))
             .all(&transaction)
             .await?;
-        let comment_ids = comments.iter().map(|comment| comment.id).collect::<Vec<_>>();
+        let comment_ids = comments
+            .iter()
+            .map(|comment| comment.id)
+            .collect::<Vec<_>>();
         issue_issue_label::Entity::delete_many()
             .filter(issue_issue_label::Column::IssueId.eq(model.id))
             .exec(&transaction)

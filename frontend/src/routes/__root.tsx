@@ -99,6 +99,7 @@ function RootResetShell() {
   const router = useRouter();
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
   const [rootToast, setRootToast] = React.useState<RootToast | null>(null);
+  const dismissRootToast = React.useCallback(() => setRootToast(null), []);
   const [rootShellModal, setRootShellModal] = React.useState<RootShellModalId | null>(null);
   const [authenticatedRevision, setAuthenticatedRevision] = React.useState(0);
   const [rootLoginDialogResetNonce, setRootLoginDialogResetNonce] = React.useState(0);
@@ -217,7 +218,7 @@ function RootResetShell() {
                 durationMs={rootToast.durationMs}
                 key={rootToast.key}
                 message={rootToast.message}
-                onDismiss={() => setRootToast(null)}
+                onDismiss={dismissRootToast}
               />
             ) : null}
           </div>
@@ -305,21 +306,30 @@ function RootYoramToast({
   message: string;
   onDismiss: () => void;
 }) {
+  const [fading, setFading] = React.useState(false);
   React.useEffect(() => {
     const timeoutMs = durationMs ?? ROOT_YOBI_TOAST_DURATION_MS;
     if (timeoutMs <= 0) {
       return;
     }
-    const timeoutId = window.setTimeout(onDismiss, timeoutMs);
-    return () => window.clearTimeout(timeoutId);
+    const fadeTimeoutId = window.setTimeout(() => setFading(true), timeoutMs);
+    const dismissTimeoutId = window.setTimeout(onDismiss, timeoutMs + 300);
+    return () => {
+      window.clearTimeout(fadeTimeoutId);
+      window.clearTimeout(dismissTimeoutId);
+    };
   }, [durationMs, onDismiss]);
 
   return (
-    <div tabIndex={-1} data-owner="root-yoram-toast" data-part="toast">
+    <div
+      tabIndex={-1}
+      data-owner="root-yoram-toast"
+      data-part="toast"
+      onClick={onDismiss}
+      style={{ opacity: fading ? 0 : 1 }}
+    >
       <div data-part="toast-dismiss">
-        <button type="button" onClick={onDismiss}>
-          &times;
-        </button>
+        <button type="button">&times;</button>
       </div>
       <div>
         <span />

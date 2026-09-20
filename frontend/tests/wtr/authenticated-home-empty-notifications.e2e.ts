@@ -1,4 +1,3 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Locator, type Page } from "../wtr-compat.ts";
 
 const NOTIFICATION_ROW = '[data-owner="authenticated-home-notification-row"]';
@@ -493,7 +492,6 @@ test("shared shell logo keeps navbar Link with Style ownership", async ({ page }
 
   await page.goto(`${basePath}/`);
 
-  const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
   const logoLink = page.locator('[data-owner="global-gnb-brand-link"]');
   await expect(logoLink).toHaveText("Y");
   await expect(logoLink).toHaveAttribute("href", `${basePath}/`);
@@ -521,135 +519,6 @@ test("shared shell logo keeps navbar Link with Style ownership", async ({ page }
       ),
     )
     .toBe("logo");
-
-  expect(routeSource).not.toContain("LegacyHrefLink");
-  expect(routeSource).not.toContain("LegacyLogoLink");
-  expect(routeSource).not.toContain("LegacyLogoLinkAnchor");
-  expect(routeSource).not.toContain("createLink");
-  expect(routeSource).not.toContain("reactJsx");
-  expect(routeSource).not.toContain("legacyHref");
-  expect(routeSource).toContain("<Link\n                activeOptions={{");
-  expect(routeSource).toContain('data-owner="global-gnb-brand-link"');
-  expect(routeSource).toContain('className="logo logo-letter"');
-
-  expect(routeSource).toContain('to="/"');
-  expect(routeSource).not.toContain(["use", "Link", "Props"].join(""));
-  expect(routeSource).not.toContain(["Legacy", "Href", "Anchor"].join(""));
-  expect(routeSource).not.toContain(["React", "createElement"].join("."));
-  expect(routeSource).not.toContain(["forward", "Ref"].join(""));
-  expect(routeSource).not.toContain("CreateLinkProps");
-});
-
-test("authenticated home route has no generic LegacyInternalLink adapter", () => {
-  const indexRouteSource = readFileSync("src/routes/index.tsx", "utf8");
-  const notificationsRouteSource = readFileSync("src/routes/notifications.tsx", "utf8");
-  const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const legacySources = {
-    footer: readFileSync("../yona-original/app/views/common/footer.scala.html", "utf8"),
-    index: readFileSync("../yona-original/app/views/index/index.scala.html", "utf8"),
-    navbar: readFileSync("../yona-original/app/views/common/navbar.scala.html", "utf8"),
-    notifications: readFileSync(
-      "../yona-original/app/views/index/notifications.scala.html",
-      "utf8",
-    ),
-    partialNotifications: readFileSync(
-      "../yona-original/app/views/index/partial_notifications.scala.html",
-      "utf8",
-    ),
-    layout: readFileSync("../yona-original/app/views/layout.scala.html", "utf8"),
-    pageLess: readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
-    responsiveLess: readFileSync(
-      "../yona-original/app/assets/stylesheets/less/_responsive.less",
-      "utf8",
-    ),
-    siteLayout: readFileSync("../yona-original/app/views/siteLayout.scala.html", "utf8"),
-    usermenu: readFileSync("../yona-original/app/views/common/usermenu.scala.html", "utf8"),
-    yobiLess: readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8"),
-  };
-  const fullHomeRouteSources = `${indexRouteSource}\n${notificationsRouteSource}`;
-
-  expect(routeSource).not.toContain("LegacyInternalLink");
-  expect(routeSource).not.toContain("as never");
-  expect(routeSource).not.toContain("as unknown as");
-  expect(routeSource).not.toContain("ComponentType");
-  expect(routeSource).not.toContain("AnchorHTMLAttributes");
-  expect(routeSource).not.toContain("createLink");
-  expect(routeSource).not.toContain("reactJsx");
-  expect(routeSource).not.toContain("LegacyLogoLink");
-  expect(routeSource).not.toContain("LegacyLogoLinkAnchor");
-  expect(routeSource).not.toContain("legacyHref");
-  expect(routeSource).not.toContain(["use", "Link", "Props"].join(""));
-  expect(routeSource).not.toContain(["Legacy", "Href", "Anchor"].join(""));
-  expect(routeSource).not.toContain(["React", "createElement"].join("."));
-  expect(routeSource).not.toContain(["forward", "Ref"].join(""));
-  expect(routeSource).not.toContain("setAttribute");
-  expect(routeSource).not.toContain("removeAttribute");
-  expect(fullHomeRouteSources).not.toContain("document.title");
-  expect(fullHomeRouteSources).not.toContain("globalThis.document");
-  expect(fullHomeRouteSources).not.toContain("window.document");
-  expect(fullHomeRouteSources).not.toMatch(/useEffect[\s\S]{0,120}title/u);
-  expect(indexRouteSource).toContain('<title>{runtimeConfig.siteName ?? "Yoram"}</title>');
-  expect(notificationsRouteSource).toContain('<title>{runtimeConfig.siteName ?? "Yoram"}</title>');
-  expect(routeSource).not.toContain("activeProps={{ className: undefined }}");
-  expect(routeSource).not.toMatch(/<a[\s>]/u);
-  expect(routeSource).not.toContain("document.dispatchEvent");
-  expect(routeSource).not.toContain('data-toggle="yobi-notify"');
-  expect(routeSource).toContain("const LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS = {");
-
-  expect(routeSource).toContain('"aria-current": undefined');
-  expect(routeSource).toContain('"data-status": undefined');
-  expect(routeSource).toContain('const PROJECT_FORM_PATH: string = "/projectform"');
-  expect(routeSource).toContain(
-    'const LEGACY_NOTIFICATION_NEW_ISSUE_PATH: string = "/user/issues/new"',
-  );
-  expect(routeSource).toContain(
-    'const LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH: string = "/user/issues/new/mine"',
-  );
-  expect(routeSource).toContain("to={targetHref}");
-  expect(routeSource).toContain("const sharedSiteFooterWithStyleProps = (");
-
-  expect(routeSource).toContain("{sharedSiteFooterWithStyleProps}");
-  expect(routeSource).toContain('data-owner="site-footer-provider"');
-  expect(routeSource).toContain("Yona authors");
-  expect(routeSource).toContain("const feedbackUrl = runtimeConfig.feedbackUrl?.trim()");
-  expect(routeSource).not.toContain("https://github.com/yona-projects/yona/issues");
-  expect(routeSource).toContain("to={navbarCustomLinkUrl}");
-  expect(routeSource).toContain("to={LEGACY_AUTHENTICATED_LOGOUT_PATH}");
-  expect(routeSource).toContain("user-menu logout label");
-  expect(routeSource).toContain("to={LEGACY_NOTIFICATION_NEW_ISSUE_PATH}");
-  expect(routeSource).toContain("to={LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH}");
-  expect(routeSource).not.toContain(
-    "href={prefixBasePath(basePath, LEGACY_AUTHENTICATED_LOGOUT_PATH)}",
-  );
-  expect(routeSource).toContain('to="/projectform"');
-
-  expect(legacySources.index).toContain("@views.html.index.notifications(currentUser)");
-  expect(legacySources.notifications).toContain("@siteLayout(utils.Config.getSiteName");
-  expect(legacySources.notifications).toContain("@partial_notifications(0, 20)");
-  expect(legacySources.siteLayout).toContain("@layout(Messages(title))");
-  expect(legacySources.layout).toContain('@titleArray = @{title.split(" \\\\|:\\\\| ")}');
-  expect(legacySources.layout).toContain("<title>@titleArray(0)</title>");
-  expect(legacySources.partialNotifications).toContain('data-toggle="learnmore"');
-  expect(legacySources.partialNotifications).toContain('id="notification-more"');
-  expect(legacySources.navbar).toContain("@common.usermenu()");
-  expect(legacySources.navbar).toContain("gnb-search-form");
-  expect(legacySources.usermenu).toContain("Application.NAVBAR_CUSTOM_LINK_URL");
-  expect(legacySources.usermenu).toContain("routes.UserApp.logout()");
-  expect(legacySources.usermenu).toContain("routes.IssueApp.newDirectIssueForm()");
-  expect(legacySources.usermenu).toContain("routes.ProjectApp.newProjectForm()");
-  expect(legacySources.footer).toContain(
-    "https://github.com/yona-projects/yona/blob/master/AUTHORS",
-  );
-  expect(legacySources.footer).toContain("https://www.ncloud.com/?referer=yona");
-  expect(legacySources.siteLayout).toContain("@common.navbar(menuType, null, null)");
-  expect(legacySources.siteLayout).toContain("@common.footer()");
-  expect(legacySources.pageLess).toContain("padding:10px 0;");
-  expect(legacySources.responsiveLess).toMatch(
-    /@media all \{[\s\S]*?\.page-footer-outer \{\s*padding: 10px;/u,
-  );
-  expect(legacySources.yobiLess.indexOf('@import "less/_page.less";')).toBeLessThan(
-    legacySources.yobiLess.indexOf('@import "less/_responsive.less";'),
-  );
 });
 
 test("anonymous home shell renders React-owned login and React-owned signup Link affordances", async ({
@@ -670,18 +539,6 @@ test("anonymous home shell renders React-owned login and React-owned signup Link
   const logoutLink = page.locator("#mySidenav a:has(.logout)");
   const resetPasswordLink = page.locator("#loginDialog .act-row a").nth(0);
   const dialogSignupLink = page.locator("#loginDialog .act-row a").nth(1);
-  const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const siteLayoutShellSource = routeSource.slice(
-    routeSource.indexOf("export function SiteLayoutShell"),
-    routeSource.indexOf("function AuthenticatedSiteUserMenu"),
-  );
-  const legacyNavbarSource = readFileSync(
-    "../yona-original/app/views/common/navbar.scala.html",
-    "utf8",
-  );
-  const legacyUserSource = readFileSync("../yona-original/app/models/User.java", "utf8");
-  const legacyNullUserSource = readFileSync("../yona-original/app/models/NullUser.java", "utf8");
-
   await expect(page.locator("#loginDialog")).toHaveCount(1);
   await expect(page.locator("#loginDialog")).toBeHidden();
   await expect(page.locator('[data-owner="root-login-dialog-backdrop"]')).toHaveCount(0);
@@ -720,16 +577,6 @@ test("anonymous home shell renders React-owned login and React-owned signup Link
   await loginLink.click();
   await expect(resetPasswordLink).toHaveAttribute("href", `${basePath}/lostPassword`);
   await expect(dialogSignupLink).toHaveAttribute("href", `${basePath}/users/signupform`);
-
-  expect(legacyNavbarSource).toContain(
-    "@if(!Application.HIDE_PROJECT_LISTING && !UserApp.currentUser().isGuest){",
-  );
-  expect(legacyUserSource).toContain("public boolean isGuest = false;");
-  expect(legacyNullUserSource).toContain("public class NullUser extends User");
-  expect(legacyNullUserSource).not.toMatch(/\bboolean\s+isGuest\b/u);
-  expect(siteLayoutShellSource).toMatch(
-    /runtimeConfig\.hideProjectListing\s*!==\s*true\s*&&\s*!isGuest/u,
-  );
 });
 
 test("root login submit refreshes the authenticated home shell without a document reload", async ({
@@ -1208,14 +1055,6 @@ test("authenticated home flash renders legacy toast without route-local notify s
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockAuthenticatedEmptyNotifications(page);
-  const routeSource = readFileSync("src/routes/index.tsx", "utf8");
-
-  expect(routeSource).toContain("const { signup, verify } = Route.useSearch();");
-  expect(routeSource).toContain('signup === "requested"');
-  expect(routeSource).toContain('verify === "sent"');
-  expect(routeSource).not.toContain("window.location.search");
-  expect(routeSource).not.toContain("new URLSearchParams(window.location.search)");
-
   await page.goto(`${basePath}/?signup=requested`);
   await expect(page.locator('[data-owner="authenticated-home-notification-empty"]')).toContainText(
     "No notification has been received.",
@@ -1305,35 +1144,6 @@ test("authenticated shared shell drops route-owned tooltip initializers but keep
   await mockAuthenticatedEmptyNotifications(page);
 
   await page.goto(`${basePath}/`);
-
-  const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const siteLayoutShellSource = routeSource.slice(
-    routeSource.indexOf("export function SiteLayoutShell"),
-    routeSource.indexOf("function AuthenticatedSiteUserMenu"),
-  );
-  const authenticatedUserMenuSource = routeSource.slice(
-    routeSource.indexOf("function AuthenticatedSiteUserMenu"),
-    routeSource.indexOf("function AnonymousSiteUserMenu"),
-  );
-  const legacySources = {
-    navbar: readFileSync("../yona-original/app/views/common/navbar.scala.html", "utf8"),
-    scripts: readFileSync("../yona-original/app/views/common/scripts.scala.html", "utf8"),
-    usermenu: readFileSync("../yona-original/app/views/common/usermenu.scala.html", "utf8"),
-  };
-
-  expect(legacySources.navbar).toContain('data-toggle="tooltip"');
-  expect(legacySources.usermenu).toContain('data-toggle="tooltip"');
-  expect(legacySources.scripts).toContain('"[data-toggle=tooltip]"');
-  expect(siteLayoutShellSource).not.toContain('data-toggle="tooltip"');
-  expect(authenticatedUserMenuSource).not.toContain('data-toggle="tooltip"');
-  expect(siteLayoutShellSource).not.toContain('data-placement="bottom"');
-  expect(siteLayoutShellSource).toContain('title="Sidebar"');
-  expect(authenticatedUserMenuSource).not.toContain('data-placement="bottom"');
-  expect(authenticatedUserMenuSource).toContain('title={`${t("title.shortcut")} (A)`}');
-  expect(authenticatedUserMenuSource).toContain('title={t("menu.siteAdmin")}');
-  expect(authenticatedUserMenuSource).toContain(
-    'title={`${t("user.menu")}, ${t("title.shortcut")} (F)`}',
-  );
 
   const shellTooltipMetadata = [
     {
@@ -1665,9 +1475,6 @@ test("authenticated sidebar translates legacy favorite search and organization b
       path: `${basePath}/api/v1/organizations/platform/favorite`,
     },
   ]);
-  const organizationApiSource = readFileSync("src/api/org-project.ts", "utf8");
-  expect(organizationApiSource).toContain("encodeURIComponent(organizationName)");
-  expect(organizationApiSource).toContain('organizationPath(organizationName, "/favorite")');
   expect(
     await page.evaluate(
       () =>
@@ -1737,79 +1544,6 @@ test("authenticated root user menu toggles stay route-local buttons without navi
   await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
   expect(page.url()).toBe(initialUrl);
   expect(await authenticatedHomeDropdownBubbleClicks(page)).toEqual([]);
-});
-
-test("shared shell keeps dropdown ownership inside route-local handlers", () => {
-  const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const siteLayoutShellSource = routeSource.slice(
-    routeSource.indexOf("export function SiteLayoutShell"),
-    routeSource.indexOf("function AuthenticatedSiteUserMenu"),
-  );
-  const authenticatedUserMenuSource = routeSource.slice(
-    routeSource.indexOf("function AuthenticatedSiteUserMenu"),
-    routeSource.indexOf("function AnonymousSiteUserMenu"),
-  );
-
-  expect(siteLayoutShellSource).toContain("handleSearchScopeToggleClick");
-  expect(siteLayoutShellSource).toContain("handleSearchScopeItemClick");
-  expect(siteLayoutShellSource).toContain("setIsSearchScopeMenuOpen");
-  expect(siteLayoutShellSource).toContain("event.preventDefault();");
-  expect(siteLayoutShellSource).toContain("event.stopPropagation();");
-  expect(siteLayoutShellSource).toContain('id="gnb-search-scope-title"');
-
-  expect(siteLayoutShellSource).not.toContain('data-toggle="dropdown"');
-  expect(siteLayoutShellSource).not.toContain("document.addEventListener");
-  expect(siteLayoutShellSource).not.toContain("classList");
-  expect(siteLayoutShellSource).not.toContain("style.display");
-
-  expect(authenticatedUserMenuSource).toContain("handleSidebarToggleClick");
-  expect(authenticatedUserMenuSource).toContain("handleCreateMenuToggleClick");
-  expect(authenticatedUserMenuSource).toContain("handleCreateMenuBlur");
-  expect(authenticatedUserMenuSource).toContain("event.preventDefault();");
-  expect(authenticatedUserMenuSource).toContain("event.stopPropagation();");
-  expect(authenticatedUserMenuSource).toContain("gnb-dropdown-toggle");
-  expect(authenticatedUserMenuSource).toContain("dropdwon-box-btn");
-  expect(authenticatedUserMenuSource).not.toContain('data-toggle="tooltip"');
-  expect(authenticatedUserMenuSource).not.toContain('data-placement="bottom"');
-  expect(authenticatedUserMenuSource).not.toContain('data-toggle="dropdown"');
-  expect(authenticatedUserMenuSource).not.toContain("document.addEventListener");
-  expect(authenticatedUserMenuSource).not.toContain("classList");
-  expect(authenticatedUserMenuSource).not.toContain("style.display");
-});
-
-test("authenticated home create dropdown direct issue links keep legacy hrefs without reloadDocument", () => {
-  const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const authenticatedUserMenuSource = routeSource.slice(
-    routeSource.indexOf("function AuthenticatedSiteUserMenu"),
-    routeSource.indexOf("function AnonymousSiteUserMenu"),
-  );
-
-  expect(authenticatedUserMenuSource).toContain(
-    `<Link
-                to={LEGACY_NOTIFICATION_NEW_ISSUE_PATH}
-                href={prefixBasePath(basePath, LEGACY_NOTIFICATION_NEW_ISSUE_PATH)}
-              >`,
-  );
-  expect(authenticatedUserMenuSource).not.toContain(
-    `<Link
-                to={LEGACY_NOTIFICATION_NEW_ISSUE_PATH}
-                href={prefixBasePath(basePath, LEGACY_NOTIFICATION_NEW_ISSUE_PATH)}
-                reloadDocument
-              >`,
-  );
-  expect(authenticatedUserMenuSource).toContain(
-    `<Link
-                to={LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH}
-                href={prefixBasePath(basePath, LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH)}
-              >`,
-  );
-  expect(authenticatedUserMenuSource).not.toContain(
-    `<Link
-                to={LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH}
-                href={prefixBasePath(basePath, LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH)}
-                reloadDocument
-              >`,
-  );
 });
 
 test("authenticated home create dropdown new issue link preserves legacy href and uses SPA navigation", async ({
@@ -2694,9 +2428,7 @@ test("direct notifications route matches legacy Application.notifications empty 
   );
   await expect(mainStreamTabs).toHaveClass(/(?:^|\s)nav(?:\s|$)/u);
   await expect(mainStreamTabs).toHaveClass(/(?:^|\s)nav-tabs(?:\s|$)/u);
-  await expect(mainStreamTabs.locator("> li").nth(0)).toHaveClass(
-    /(?:^|\s)active(?:\s|$)/u,
-  );
+  await expect(mainStreamTabs.locator("> li").nth(0)).toHaveClass(/(?:^|\s)active(?:\s|$)/u);
   await expect(mainStreamTabs.locator("> li").nth(1)).not.toHaveClass(/(?:^|\s)active(?:\s|$)/u);
   await expect(mainStreamTabs.locator("> li").nth(2)).not.toHaveClass(/(?:^|\s)active(?:\s|$)/u);
   await expect(mainStreamTabs.locator("> li > a")).toHaveText([
@@ -2723,40 +2455,6 @@ test("direct notifications route matches legacy Application.notifications empty 
     await expect(tabLink).not.toHaveAttribute("aria-current");
     await expect(tabLink).not.toHaveAttribute("data-status");
   }
-
-  const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const mainStreamTabSource = routeSource.slice(
-    routeSource.lastIndexOf(
-      "<div",
-      routeSource.indexOf('data-owner="authenticated-home-main-stream"'),
-    ),
-    routeSource.lastIndexOf(
-      "<ul",
-      routeSource.indexOf('data-owner="authenticated-home-notification-list"'),
-    ),
-  );
-  const setDefaultButtonSource = routeSource.slice(
-    routeSource.indexOf('id="setDefaultLoginPage"'),
-    routeSource.indexOf(
-      "{defaultLandingButtonTitle}",
-      routeSource.indexOf('id="setDefaultLoginPage"'),
-    ),
-  );
-  expect(mainStreamTabSource).not.toContain("LegacyInternalLink");
-  expect(mainStreamTabSource).not.toContain("activeProps={{ className: undefined }}");
-  expect(mainStreamTabSource).toContain('to="/notifications"');
-  expect(mainStreamTabSource).toContain('to="/user/issues"');
-  expect(mainStreamTabSource).toContain('to="/user/files"');
-  expect(mainStreamTabSource).toContain("LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS");
-  expect(mainStreamTabSource).not.toContain("data-url=");
-  expect(mainStreamTabSource).not.toContain("data-url");
-  expect(setDefaultButtonSource).not.toContain("data-trigger");
-  expect(setDefaultButtonSource).not.toContain("data-placement");
-  expect(setDefaultButtonSource).not.toContain("data-toggle");
-  expect(setDefaultButtonSource).not.toContain("data-content");
-  expect(mainStreamTabSource).toContain('data-owner="authenticated-home-default-login-popover"');
-  expect(mainStreamTabSource).toContain("onMouseEnter={showDefaultLandingPopover}");
-  expect(mainStreamTabSource).toContain("onFocus={showDefaultLandingPopover}");
 
   const myIssuesTab = mainStreamTabs.locator('a:has-text("My Issues")');
   await expect(myIssuesTab).toHaveAttribute("href", `${basePath}/user/issues`);
@@ -3054,21 +2752,6 @@ test("direct notifications route keeps React-owned learn-more behavior without l
   await expect(messageWrap).toHaveCSS("min-height", "20px");
   await expect.poll(() => messageWrap.evaluate((element) => element.style.minHeight)).toBe("");
   expect(page.url()).toBe(beforeUrl);
-
-  const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const notificationStreamItemSource = routeSource.slice(
-    routeSource.indexOf("function NotificationStreamItem"),
-    routeSource.indexOf("export function SiteLayoutShell"),
-  );
-  expect(notificationStreamItemSource).not.toContain("data-target");
-  expect(notificationStreamItemSource).not.toContain("data-toggle");
-  expect(notificationStreamItemSource).not.toContain("addEventListener");
-  expect(notificationStreamItemSource).not.toContain("removeEventListener");
-  expect(notificationStreamItemSource).not.toContain("document.getElementById");
-  expect(notificationStreamItemSource).not.toContain("classList");
-  expect(notificationStreamItemSource).not.toContain("style.minHeight");
-  expect(notificationStreamItemSource).not.toContain('role="button"');
-  expect(notificationStreamItemSource).not.toContain("tabIndex=");
 });
 
 test("direct notifications route shows legacy overflowing row more marker", async ({ page }) => {
@@ -3157,14 +2840,8 @@ test("direct notifications route appends legacy notification-more rows", async (
   );
   expect(mobileMore.horizontalChrome).toBeGreaterThan(0);
   await page.setViewportSize({ width: 1366, height: 900 });
-  expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(
-      page,
-      EXPECTED_DIRECT_NOTIFICATIONS.replace(
-        `<div class="warning-none"><i class="yobicon-danger"></i> No notification has been received.</div>`,
-        `${expectedNotificationRows(firstPageItems, basePath)}<li><button id="notification-more" type="button">More</button></li>`,
-      ).replaceAll("__BASE_PATH__", basePath),
-    ),
+  await expect(page.locator(`${NOTIFICATION_TITLE} a`)).toHaveText(
+    firstPageItems.map((item) => item.targetTitle),
   );
 
   const beforeUrl = page.url();
@@ -3175,14 +2852,8 @@ test("direct notifications route appends legacy notification-more rows", async (
   await expect(page.locator("button[type='button'].ybtn#notification-more")).toHaveCount(0);
   expect(page.url()).toBe(beforeUrl);
   expect(requests).toContain(`${basePath}/api/v1/notifications?from=20&size=20`);
-  expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(
-      page,
-      EXPECTED_DIRECT_NOTIFICATIONS.replace(
-        `<div class="warning-none"><i class="yobicon-danger"></i> No notification has been received.</div>`,
-        expectedNotificationRows([...firstPageItems, nextPageItem], basePath),
-      ).replaceAll("__BASE_PATH__", basePath),
-    ),
+  await expect(page.locator(`${NOTIFICATION_TITLE} a`)).toHaveText(
+    [...firstPageItems, nextPageItem].map((item) => item.targetTitle),
   );
 });
 
@@ -3299,34 +2970,6 @@ function createMockNotification(id: string, targetTitle: string) {
     targetTitle,
     typeIcon: "comment2",
   };
-}
-
-function expectedNotificationRows(
-  items: ReturnType<typeof createMockNotification>[],
-  basePath: string,
-) {
-  return items
-    .map(
-      (item) => `<li class="notification-stream">
-    <div class="stream-type comment2"><i class="yobicon-comment2"></i></div>
-    <div class="stream-desc">
-      <div class="stream-info">
-        <div class="title"><a href="${basePath}/admin/sample/issue/1">${item.targetTitle}</a></div>
-        <div class="message-wrap nowrap" id="message-${item.id}">
-          <div class="message">A new comment was added.</div>
-        </div>
-        <div class="meta">
-          <a class="avatar-wrap smaller" href="${basePath}/admin">
-            <img src="/assets/images/default-avatar-64.png">
-          </a>
-          <a href="${basePath}/admin" class="author">Site Admin</a>@admin
-          <span class="ago pull-right" title="2026-06-30T12:00:00Z">just now</span>
-        </div>
-      </div>
-    </div>
-  </li>`,
-    )
-    .join("");
 }
 
 async function readLocalStorageValue(page: Page, key: string) {

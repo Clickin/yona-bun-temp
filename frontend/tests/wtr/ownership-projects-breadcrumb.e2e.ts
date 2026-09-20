@@ -1,4 +1,3 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
@@ -12,6 +11,7 @@ const owners = {
 test.use({ locale: "ko-KR" });
 
 async function openProjects(page: Page) {
+  await page.clock.setFixedTime("2026-07-17T12:00:00Z");
   await page.addInitScript((runtimeBasePath) => {
     (
       window as Window & { __YONA_RUNTIME_CONFIG__?: Record<string, unknown> }
@@ -43,10 +43,9 @@ async function openProjects(page: Page) {
       json: {
         items: [
           {
-            createdLabel: "방금 전",
-            createdTitle: "2026-07-17",
+            createdAt: "2026-07-17T12:00:00Z",
             labels: [],
-            lastPushedLabel: "방금 전",
+            lastPushedAt: "2026-07-17T12:00:00Z",
             logoUrl: "/assets/images/project_default_logo.png",
             memberCount: 1,
             overview: "샘플 프로젝트",
@@ -66,49 +65,6 @@ async function openProjects(page: Page) {
   await page.goto(`${basePath}/projects`);
   await expect(page.locator(`[data-owner="${owners.outer}"]`)).toBeVisible();
 }
-
-test("projects breadcrumb records the two future wrapper owners from frozen legacy sources", () => {
-  const route = readFileSync("src/routes/projects.tsx", "utf8");
-  const list = readFileSync("../yona-original/app/views/project/list.scala.html", "utf8");
-  const siteLayout = readFileSync("../yona-original/app/views/siteLayout.scala.html", "utf8");
-  const yobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
-  const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
-  const responsive = readFileSync(
-    "../yona-original/app/assets/stylesheets/less/_responsive.less",
-    "utf8",
-  );
-  const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
-  const messages = readFileSync("../yona-original/conf/messages", "utf8");
-  const koMessages = readFileSync("../yona-original/conf/messages.ko-KR", "utf8");
-
-  expect(list).toContain("@siteLayout(message, utils.MenuType.PROJECTS)");
-  expect(siteLayout).toContain('@layout(Messages(title))("")');
-  expect(list).toContain('<div class="site-breadcrumb-outer">');
-  expect(list).toContain('<div class="site-breadcrumb-inner">');
-  expect(list).toContain('<div class="title_area">');
-  for (const key of ["project.public", "title.projectList", "title.organization.list"]) {
-    expect(messages).toMatch(new RegExp(`^${key.replaceAll(".", "\\.")}\\s*=`, "mu"));
-    expect(koMessages).toMatch(new RegExp(`^${key.replaceAll(".", "\\.")}\\s*=`, "mu"));
-  }
-  for (const imported of [
-    "_variables.less",
-    "_mixins.less",
-    "_common.less",
-    "_page.less",
-    "_responsive.less",
-    "_yobiUI.less",
-    "_override.less",
-  ])
-    expect(yobi).toContain(imported);
-  expect(pageLess).toContain(".site-breadcrumb-outer {");
-  expect(pageLess).toContain("margin:0 auto;");
-  expect(responsive).toContain("min-width: 10px !important;");
-  expect(responsive).toContain("padding: 0 10px;");
-  expect(bootstrap).toContain(".nav-tabs");
-  for (const owner of Object.values(owners)) expect(route).toContain(`data-owner="${owner}"`);
-  expect(route).not.toContain('className="site-breadcrumb-outer"');
-  expect(route).not.toContain('className="site-breadcrumb-inner"');
-});
 
 for (const viewport of [
   { height: 900, name: "desktop", width: 1366 },

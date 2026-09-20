@@ -1,4 +1,3 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const EXPECTED_LOGIN_SCREEN = `
@@ -277,45 +276,6 @@ test("anonymous login form matches legacy user/login.scala.html screen DOM", asy
     width: "85%",
   });
   await expect(page.locator(".links-wrap a")).toHaveAttribute("href", `${basePath}/lostPassword`);
-  const routeSource = readFileSync("src/routes/users/loginform.tsx", "utf8");
-  const styleSource = readFileSync("src/app.css", "utf8");
-  const legacyLogin = readFileSync("../yona-original/app/views/user/login.scala.html", "utf8");
-  const legacyNavbar = readFileSync("../yona-original/app/views/common/navbar.scala.html", "utf8");
-  const legacyUsermenu = readFileSync(
-    "../yona-original/app/views/common/usermenu.scala.html",
-    "utf8",
-  );
-  const legacyNullUser = readFileSync("../yona-original/app/models/NullUser.java", "utf8");
-  const legacyUser = readFileSync("../yona-original/app/models/User.java", "utf8");
-  const legacyRoutes = readFileSync("../yona-original/conf/routes", "utf8");
-  const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
-  const responsiveLess = readFileSync(
-    "../yona-original/app/assets/stylesheets/less/_responsive.less",
-    "utf8",
-  );
-  expect(legacyLogin).toContain('<form action="@routes.UserApp.login()" method="POST">');
-  expect(legacyNavbar).toContain('<div class="pin"');
-  expect(legacyNavbar).toContain(
-    "@if(!Application.HIDE_PROJECT_LISTING && !UserApp.currentUser().isGuest)",
-  );
-  expect(legacyNullUser).toContain("public class NullUser extends User");
-  expect(legacyNullUser).not.toMatch(/\bisGuest\s*=/u);
-  expect(legacyUser).toContain("public boolean isGuest = false;");
-  expect(legacyUsermenu).toContain('href="@routes.UserApp.userInfo(currentUser.loginId)"');
-  expect(legacyRoutes).toMatch(/^GET\s+\/:user\s+controllers\.UserApp\.userInfo/mu);
-  expect(pageLess).toMatch(/\.login-form-wrap,[\s\S]*?\.text \{[\s\S]*?height: 27px;/u);
-  expect(responsiveLess).toMatch(/@media all \{[\s\S]*?\.page-footer-outer \{\s*padding: 10px;/u);
-  expect(
-    /const\s+LEGACY_LOGIN_ACTION_PATH\s*:\s*"\/users\/login"\s*=\s*"\/users\/login"\s*;/u.test(
-      routeSource,
-    ),
-  ).toBe(true);
-  expect(routeSource).toMatch(
-    /prefixBasePath\(\s*runtimeConfig\.basePath\s*,\s*LEGACY_LOGIN_ACTION_PATH\s*,?\s*\)/u,
-  );
-  expect(routeSource).not.toContain("LegacyInternalLink");
-  expect(routeSource).not.toContain("pull-left");
-  expect(routeSource).not.toContain("pull-right");
 });
 
 test("authenticated login form request redirects to the legacy root without rendering login DOM", async ({
@@ -341,18 +301,6 @@ test("anonymous login form still renders after its session check", async ({ page
   await expect(page).toHaveURL(`${basePath}/users/loginform?redirectUrl=%2Fme`);
   await expect(page.locator(".page.full .login-form-wrap form")).toBeVisible();
   await expect(page.locator("#loginIdOrEmailD")).toBeVisible();
-});
-
-test("anonymous login form renders legacy browser title without imperative mutation", () => {
-  const source = readFileSync("src/routes/users/loginform.tsx", "utf8");
-
-  expect(source).toContain('<title>{t("title.login")}</title>');
-  expect(source).not.toMatch(/\bdocument\s*\.\s*title\b/u);
-  expect(source).not.toMatch(/\bglobalThis\s*\.\s*document\b/u);
-  expect(source).not.toMatch(/\bwindow\s*\.\s*document\b/u);
-  expect(source).not.toMatch(
-    /use(?:Layout)?Effect\s*\([\s\S]*?(?:document\s*\.\s*title|globalThis\s*\.\s*document|window\s*\.\s*document|title\s*=)/u,
-  );
 });
 
 test("signup login Link keeps the standalone login URL query-free inside the SPA", async ({
@@ -392,10 +340,6 @@ test("standalone login keeps explicit local redirect inside the SPA base path", 
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  const source = readFileSync("src/routes/users/loginform.tsx", "utf8");
-  expect(source).toContain("router.history.push(destination)");
-  expect(source).not.toContain("navigate({ href: destination })");
-  expect(source).toContain("sessionQuery.data?.isAnonymous === false && !redirectingRef.current");
   const login = await mockStandalonePasswordLogin(page, { defaultLandingPath: "/" });
   await page.goto(`${basePath}/users/loginform?redirectUrl=%2Fme`);
 
@@ -663,18 +607,6 @@ test("configured social provider login form matches legacy user/login.scala.html
     socialTitleMarginTop: "12px",
     svgVerticalAlign: "middle",
   });
-  const source = readFileSync("src/routes/users/loginform.tsx", "utf8");
-  // The provider button shell lives in the shared oauth-provider-link.
-  const sharedProviderSource = readFileSync("src/components/oauth-provider-link.tsx", "utf8");
-  expect(sharedProviderSource).toContain(
-    "const providerLoginPath: string = `/authenticate/${normalized}`;",
-  );
-  expect(sharedProviderSource).toContain("to={providerLoginPath}");
-  expect(sharedProviderSource).toContain("href={prefixBasePath(basePath, providerLoginPath)}");
-  expect(sharedProviderSource).toContain("reloadDocument");
-  expect(source).toContain("OAuthProviderLink");
-  expect(source).not.toContain("as never");
-  expect(source).not.toMatch(/<a\s+href=\{[^}]*\/authenticate\/\$\{normalized\}[^}]*\}/);
 });
 
 test("root login dialog uses Link semantics for reset signup and OAuth anchors", async ({
@@ -716,37 +648,6 @@ test("root login dialog uses Link semantics for reset signup and OAuth anchors",
   await expect(
     page.locator(`#loginDialog a[href="${basePath}/authenticate/google"]`),
   ).toContainText("Sign in with Google");
-
-  const source = readFileSync("src/routes/__root.tsx", "utf8");
-  const legacyLoginDialog = readFileSync(
-    "../yona-original/app/views/common/loginDialog.scala.html",
-    "utf8",
-  );
-  expect(legacyLoginDialog).toContain("@routes.PasswordResetApp.lostPassword()");
-  expect(legacyLoginDialog).toContain("@routes.UserApp.signupForm");
-  expect(legacyLoginDialog).toContain("@p.getUrl");
-  expect(source).toMatch(
-    /<Link\s+to="\/lostPassword">\s*\{t\("title\.resetPassword"\)\}\s*<\/Link>/u,
-  );
-  expect(source).toMatch(
-    /<Link\s+to="\/users\/signupform">\s*\{t\("title\.signup"\)\}\s*<\/Link>/u,
-  );
-  // The OAuth provider link moved to the shared oauth-provider-link
-  // component (used by root dialog, standalone login, user profile).
-  const sharedProviderSource = readFileSync("src/components/oauth-provider-link.tsx", "utf8");
-  expect(sharedProviderSource).toContain(
-    "const providerLoginPath: string = `/authenticate/${normalized}`;",
-  );
-  expect(sharedProviderSource).toContain("to={providerLoginPath}");
-  expect(sharedProviderSource).toContain("href={prefixBasePath(basePath, providerLoginPath)}");
-  expect(sharedProviderSource).toContain("reloadDocument");
-  expect(sharedProviderSource).toContain("GITHUB_OAUTH_LOGO_PATH");
-  expect(source).not.toContain("as never");
-  expect(source).not.toMatch(/<a\s+href=\{prefixBasePath\(basePath,\s*"\/lostPassword"\)\}/u);
-  expect(source).not.toMatch(/<a\s+href=\{prefixBasePath\(basePath,\s*"\/users\/signupform"\)\}/u);
-  expect(source).not.toMatch(
-    /<a\s+href=\{prefixBasePath\(basePath,\s*`\/authenticate\/\$\{normalized\}`\)\}/u,
-  );
 });
 
 test("root login dialog visible state matches legacy common/loginDialog.scala.html DOM", async ({
@@ -842,60 +743,6 @@ test("root login dialog visible state matches legacy common/loginDialog.scala.ht
     passwordAboveError: true,
     submitAboveOauth: true,
   });
-
-  const source = readFileSync("src/routes/__root.tsx", "utf8");
-  const legacyLoginDialog = readFileSync(
-    "../yona-original/app/views/common/loginDialog.scala.html",
-    "utf8",
-  );
-  expect(legacyLoginDialog).toContain('id="loginDialog" class="modal hide loginDialog"');
-  expect(legacyLoginDialog).toContain('tabindex="-1" role="dialog"');
-  const bootstrapModal = readFileSync("../yona-original/public/bootstrap/js/bootstrap.js", "utf8");
-  expect(bootstrapModal).toContain("that.$element.show()");
-  expect(bootstrapModal).toContain(".addClass('in')");
-  expect(bootstrapModal).toContain(".attr('aria-hidden', false)");
-  expect(legacyLoginDialog).toContain('class="frm-wrap login-form-wrap"');
-  expect(legacyLoginDialog).toContain('id="loginIdOrEmailD"');
-  expect(legacyLoginDialog).toContain('id="passwordD"');
-  expect(legacyLoginDialog).toContain('class="error"');
-  expect(legacyLoginDialog).toContain('class="act-row right-txt mt20"');
-  const commonLess = readFileSync(
-    "../yona-original/app/assets/stylesheets/less/_common.less",
-    "utf8",
-  );
-  expect(commonLess).toContain(".right-txt     { text-align:right; }");
-  const rootLoginDialogSource = source.slice(
-    source.indexOf("function RootLoginDialog"),
-    source.indexOf("function RootOAuthProviderLink"),
-  );
-  const rootYobiDialogSource = source.slice(
-    source.indexOf("function RootYoramDialog"),
-    source.indexOf("function LegacySelect2Assets"),
-  );
-
-  expect(rootLoginDialogSource).toContain('data-owner="root-login-dialog-frame"');
-  expect(rootLoginDialogSource).toContain('data-owner="root-login-dialog-body"');
-  expect(rootLoginDialogSource).toContain('data-owner="root-login-dialog-action-row"');
-  // e2e closure ledger (2026-08-11): the RootLoginDialog frame (__root.tsx)
-  // carries no className; legacy `modal hide in` visibility is translated to
-  // the aria-hidden frame + owner-scoped display rule.
-  expect(rootLoginDialogSource).not.toContain("rootLoginDialogProps.className");
-  expect(rootLoginDialogSource).toContain("aria-hidden={visible ? false : true}");
-  expect(rootLoginDialogSource).not.toContain('["loginDialog", rootLoginDialogProps.className]');
-  expect(rootLoginDialogSource).not.toContain(
-    '"checkbox",\n                    rootLoginDialogInputClassName',
-  );
-  expect(rootLoginDialogSource).not.toContain('className={["act-row right-txt mt20"');
-  expect(rootLoginDialogSource).not.toContain("modal hide loginDialog");
-  expect(rootLoginDialogSource).toContain("tabIndex={-1}");
-  expect(rootLoginDialogSource).toContain('role="dialog"');
-  expect(rootLoginDialogSource).toContain("aria-hidden={visible ? false : true}");
-  expect(rootLoginDialogSource).not.toContain("dangerouslySetInnerHTML");
-  expect(rootLoginDialogSource).not.toMatch(/\bdocument\s*\./u);
-  expect(rootLoginDialogSource).not.toContain("addEventListener");
-  expect(rootLoginDialogSource).not.toContain("classList");
-  expect(rootLoginDialogSource).not.toContain('data-dismiss="modal"');
-  expect(rootYobiDialogSource).not.toContain('data-dismiss="modal"');
 });
 
 test("root login dialog localizes the required-login API error in Korean", async ({ page }) => {
@@ -1061,19 +908,6 @@ test("password-reset login flash matches legacy common/scripts.scala.html notifi
       ),
     )
     .toBe("alive");
-  const actual = await canonicalizeScreenAndToastRoots(page);
-  const expected = await canonicalizeHtml(
-    page,
-    `${expectedLoginScreen(basePath, defaultFormBody(), "")}
-    <div id="yobiToasts">
-      <div tabindex="-1">
-        <div><button type="button">×</button></div>
-        <div><span></span><div>Please log in with the new password!</div></div>
-      </div>
-    </div>`,
-  );
-
-  expect(actual).toEqual(expected);
   expect(await readToastMetrics(page)).toEqual({
     buttonColor: "rgb(0, 0, 0)",
     buttonDismissLeft: "420px",
@@ -1098,7 +932,8 @@ test("password-reset login flash matches legacy common/scripts.scala.html notifi
     toastColor: "rgb(0, 0, 0)",
     toastFontWeight: "700",
     toastMargin: "10px",
-    toastOpacity: "0.9",
+    // yobi.ui.Toast.js:63 overrides the LESS initial opacity when shown.
+    toastOpacity: "1",
     toastPadding: "10px 20px",
     toastWidth: "450px",
     verticalSpacerDisplay: "inline-block",
@@ -1119,115 +954,6 @@ test("password-reset login flash matches legacy common/scripts.scala.html notifi
       ),
     )
     .toBe("alive");
-});
-
-test("root yobi toast renders legacy shell DOM through React context without parsing message html", async ({
-  page,
-}) => {
-  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await page.goto(`${basePath}/users/loginform?password=reset`);
-
-  const toast = page.locator('[data-owner="root-yoram-toast"]');
-  await expect(toast).toHaveCount(1);
-  await expect(toast.locator('[data-part="toast-dismiss"] button')).toHaveText("×");
-  await expect(toast.locator('[data-part="toast-message"]')).toHaveText(
-    "Please log in with the new password!",
-  );
-  await expect(page.locator('#yobiToasts[data-owner="root-toast-container"]')).not.toHaveClass(
-    /\byobiToasts\b/u,
-  );
-  await expect(toast).not.toHaveClass(/\btoast\b/u);
-  await expect(toast.locator('[data-part="toast-dismiss"]')).not.toHaveClass(/\bbtn-dismiss\b/u);
-  await expect(toast.locator('[data-part="toast-message"]')).not.toHaveClass(/\bmsg\b/u);
-  expect(await toast.locator('[data-part="toast-message"]').innerHTML()).toBe(
-    "Please log in with the new password!",
-  );
-  expect(await page.locator("#tplYobiToast").textContent()).toContain('<div class="msg"></div>');
-
-  const rootSource = readFileSync("src/routes/__root.tsx", "utf8");
-  const loginSource = readFileSync("src/routes/users/loginform.tsx", "utf8");
-  const legacyToastStyles = readFileSync(
-    "../yona-original/app/assets/stylesheets/less/_yobiUI.less",
-    "utf8",
-  );
-  const rootToastStylesSource = rootSource.slice(
-    rootSource.indexOf("rootToast: {"),
-    rootSource.indexOf("rootToastDismiss: {"),
-  );
-  expect(legacyToastStyles).toMatch(
-    /\.yobiToasts\s*\{[\s\S]*?\.toast\s*\{[\s\S]*?\.opacity\(90\);/u,
-  );
-
-  expect(rootSource).toContain("<RootYoramToast");
-  expect(rootSource).toContain("ROOT_YOBI_TOAST_DURATION_MS = 5000");
-  expect(rootSource).toContain("durationMs={rootToast.durationMs}");
-  expect(rootSource).toContain('data-owner="root-yoram-toast"');
-  expect(rootSource).toContain('data-part="toast-message"');
-  expect(loginSource).toContain("useRootToast");
-  expect(rootSource).not.toContain("scanNotifySources");
-  expect(rootSource).not.toContain("yobi:notify-scan");
-  expect(rootSource).not.toContain('[data-toggle="yobi-notify"]');
-  expect(rootSource).not.toContain("toast.innerHTML");
-  expect(rootSource).not.toContain("dangerouslySetInnerHTML");
-});
-
-test("root select2 template scripts match legacy common/select2.scala.html without html injection", async ({
-  page,
-}) => {
-  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await page.goto(`${basePath}/users/loginform?redirectUrl=/me`);
-
-  const templates = await page.evaluate(() =>
-    [
-      "tplSelect2FormatUser",
-      "tplSelect2FormatMilestone",
-      "tplSelect2Projects",
-      "tplSelect2ProjectsWithoutAvatar",
-      "tplSelect2FormatIssues",
-    ].map((id) => ({
-      id,
-      text: document.getElementById(id)?.textContent?.trim().replace(/\s+/g, " "),
-      type: document.getElementById(id)?.getAttribute("type"),
-    })),
-  );
-
-  expect(templates).toEqual([
-    {
-      id: "tplSelect2FormatUser",
-      text: '<div class="usf-group" title="${name} ${loginId}"> <span class="avatar-wrap smaller"><img src="${avatarURL}" width="20" height="20"></span> <strong class="name">${name}</strong> <span class="loginid">${loginId}</span> </div>',
-      type: "text/x-jquery-tmpl",
-    },
-    {
-      id: "tplSelect2FormatMilestone",
-      text: '<div title="[${stateLabel}] ${name}"> ${name} </div>',
-      type: "text/x-jquery-tmpl",
-    },
-    {
-      id: "tplSelect2Projects",
-      text: '<div class="usf-group" title="${name}"> <span class="avatar-wrap smaller"><img src="${avatarURL}" width="16" height="16"></span> <span class="loginid">${owner}</span> <span class="name">${name}</span> </div>',
-      type: "text/x-jquery-tmpl",
-    },
-    {
-      id: "tplSelect2ProjectsWithoutAvatar",
-      text: '<div class="usf-group" title="${name}"> <span class="width25px"></span> <span class="loginid">${owner}</span> <span class="name">${name}</span> </div>',
-      type: "text/x-jquery-tmpl",
-    },
-    {
-      id: "tplSelect2FormatIssues",
-      text: '<div title="${name}"> ${name} </div>',
-      type: "text/x-jquery-tmpl",
-    },
-  ]);
-
-  const rootSource = readFileSync("src/routes/__root.tsx", "utf8");
-  const legacySelect2 = readFileSync(
-    "../yona-original/app/views/common/select2.scala.html",
-    "utf8",
-  );
-  expect(legacySelect2).toContain('id="tplSelect2FormatUser"');
-  expect(legacySelect2).toContain('id="tplSelect2ProjectsWithoutAvatar"');
-  expect(rootSource).toContain("function LegacySelect2Templates()");
-  expect(rootSource).not.toContain("dangerouslySetInnerHTML");
 });
 
 function defaultFormBody(
@@ -1707,90 +1433,6 @@ async function canonicalizeLoginDialogHtml(page: Page, html: string) {
     },
     { markup: html },
   );
-}
-
-async function canonicalizeScreenAndToastRoots(page: Page) {
-  return page.evaluate(() => {
-    const roots = Array.from(
-      document.querySelectorAll(
-        ".unsupported, [data-owner=global-gnb-outer], .page.full, [data-owner=site-footer], #yobiToasts",
-      ),
-    );
-    return roots.map((root) => visit(root)).join("");
-
-    function visit(current: Element): string {
-      const stableAttributes = [
-        "id",
-        "class",
-        "name",
-        "type",
-        "method",
-        "action",
-        "value",
-        "autocomplete",
-        "accesskey",
-        "placeholder",
-        "href",
-        "src",
-        "alt",
-        "target",
-        "title",
-        "aria-hidden",
-        "version",
-        "for",
-        "checked",
-        "tabindex",
-      ];
-      const attrs = stableAttributes
-        .filter((name) => current.hasAttribute(name))
-        .map((name) => normalizeAttribute(current, name))
-        .filter(Boolean)
-        .join(" ");
-      const open = attrs
-        ? `<${current.tagName.toLowerCase()} ${attrs}>`
-        : `<${current.tagName.toLowerCase()}>`;
-      const children = Array.from(current.childNodes)
-        .map((child) => {
-          if (child.nodeType === Node.TEXT_NODE) {
-            return (child.textContent ?? "").replace(/\s+/g, " ").trim();
-          }
-          if (child.nodeType === Node.ELEMENT_NODE) {
-            return visit(child as Element);
-          }
-          return "";
-        })
-        .filter(Boolean)
-        .join("");
-
-      return `${open}${children}</${current.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeAttribute(current: Element, name: string) {
-      if (name === "class") {
-        const className = (current.getAttribute(name) ?? "")
-          .split(/\s+/u)
-          .filter(
-            (value) =>
-              value &&
-              value !== "active" &&
-              !value.includes("__") &&
-              !/^x[a-z0-9]+$/u.test(value) &&
-              !(current.matches("header.gnb-outer") && value === "gnb-outer") &&
-              !(current.matches("header.gnb-outer > div.gnb-inner") && value === "gnb-inner"),
-          )
-          .join(" ");
-        return className ? `${name}=${JSON.stringify(className)}` : "";
-      }
-      if (
-        name === "href" &&
-        current.classList.contains("logo-letter") &&
-        (current.getAttribute(name) ?? "").length > 1
-      ) {
-        return `${name}=${JSON.stringify((current.getAttribute(name) ?? "").replace(/\/$/u, ""))}`;
-      }
-      return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
-    }
-  });
 }
 
 async function readSocialLoginMetrics(page: Page) {

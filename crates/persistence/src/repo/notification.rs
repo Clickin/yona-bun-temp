@@ -209,7 +209,7 @@ impl AppRepositoryImpl<'_> {
         let watched_rows = watch::Entity::find()
             .filter(watch::Column::UserId.eq(Some(user_id)))
             .filter(watch::Column::ResourceType.eq(Some("PROJECT".to_string())))
-            .order_by_desc(watch::Column::Id)
+            .order_by_asc(watch::Column::Id)
             .all(&self.db)
             .await?;
 

@@ -127,6 +127,7 @@ impl AppRepositoryImpl<'_> {
             &previous_notification_contents,
             &input.contents_markdown,
             PostingMentionNotificationMode::All,
+            true,
         )
         .await?;
         self.bind_attachments(
@@ -237,6 +238,7 @@ impl AppRepositoryImpl<'_> {
             &old_contents,
             &input.contents_markdown,
             PostingMentionNotificationMode::All,
+            true,
         )
         .await?;
         self.sync_attachments(

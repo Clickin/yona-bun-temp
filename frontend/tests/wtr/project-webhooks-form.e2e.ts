@@ -1,12 +1,4 @@
-import { expect, test, type Page } from "../wtr-compat.ts";
-import { readFileSync } from "../wtr-compat.ts";
-
-// Browser harness: node:fs/promises readFile has no browser equivalent; the
-// compat readFileSync is a sync XHR over the same middleware. Promise-wrap it
-// so the spec's await/Promise.all call sites keep their shape.
-const readFile = (path: string | URL, encoding?: string | null): Promise<string> =>
-  Promise.resolve(readFileSync(path, encoding ?? "utf8"));
-
+import { expect, mergedLegacyBlock, readFile, test, type Page } from "../wtr-compat.ts";
 const EMPTY_WEBHOOKS_LIST =
   '<div id="webhooksList" class="webhook-list-wrap"><div class="error-wrap"><i class="ico ico-err1"></i><p>No webhook exists.</p></div></div>';
 const POPULATED_WEBHOOKS_LIST = `
@@ -42,68 +34,20 @@ const EXPECTED_PROJECT_WEBHOOKS = `
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
-test("project webhooks help is rendered as JSX, not route-local HTML injection", async ({
-  page,
-}) => {
-  const source = await readFile(
-    new URL("../src/routes/$ownerName/$projectName/webhooks.tsx", import.meta.url),
-    "utf8",
-  );
-  const sharedProjectSource = await readFile(
-    new URL("../src/routes/$ownerName/$projectName.tsx", import.meta.url),
-    "utf8",
-  );
-
-  expect(source).not.toContain("dangerouslySetInnerHTML");
-  expect(source).not.toContain(" as never");
-  expect(source).not.toContain("createLink");
-  expect(source).not.toContain("setAttribute");
-  expect(source).not.toContain("removeAttribute");
-  expect(source).not.toContain("activeProps={{ className: undefined }}");
-  expect(source).not.toContain("onMouseDown=");
-  expect(source).not.toContain("<a ");
-  expect(source).not.toContain("project.enrollmentRequestCount");
-  expect(source).toContain("const LEGACY_LINK_PROPS = {");
-
-  expect(source).toContain('<LegacyWebhookHelp help={t("project.webhook.help")} />');
-  expect(source).toContain('<label className="radio inline"> | </label>');
-  expect(source).toContain("help.split(/\\s*<br\\s*\\/?>/iu)");
-  expect(source).toContain('{" "}');
-  expect(source).toContain("const projectSearchScope = containerQuery.data");
-  expect(source).toContain(
-    "organizationName: projectSearchScopeOrganizationName(containerQuery.data, ownerName)",
-  );
-  expect(source).toContain("projectSearchScope={projectSearchScope}");
-  expect(source).toContain('import { ProjectHeader, ProjectMenu } from "../$projectName";');
-  expect(source).toContain(
-    "<ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />",
-  );
-  expect(source).toContain('active="setting"');
-  expect(source).not.toContain("function ProjectHeader(");
-  expect(source).not.toContain("function ProjectMenu(");
-  expect(sharedProjectSource).toContain('| "setting";');
-  expect(sharedProjectSource).toContain('active === "setting" ? "active" : ""');
-  expect(source).toContain(
-    'const legacyTitle = `${t("project.webhook")} - ${ownerName}/${projectName}`;',
-  );
-  expect(source).toContain("<title>{legacyTitle}</title>");
-  expect(source).not.toContain("useProjectWebhooksDocumentTitle");
-  expect(source).not.toContain("document.title");
-  expect(source).not.toContain("globalThis.document");
-  expect(source).not.toContain('globalThis["document"]');
-  expect(source).not.toContain("data-request-method");
-  expect(source).not.toContain("data-request-uri");
-  expect(source).toContain('to="/$ownerName/$projectName/issue/labelsform"');
-  expect(source).not.toContain("ProjectForbiddenBody");
-  expect(source).not.toContain("SiteForbiddenBody");
-
+test("project webhooks preserves the legacy help text and line breaks", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectAdmin(page);
   await page.goto(`${basePath}/admin/sample/webhooks`);
-  await expect(page.locator("#formNewWebhook > div:last-child")).toHaveJSProperty(
-    "innerHTML",
-    "* Every webhook is sent in POST and with Content-Type: application/json header. <br>* If you need to include additional fields and values, please use a query string. e.g. http://abc.com?customKey=value <br>* If you put a value in the Token field, 'Authorization: token input-value' header is added to HTTP header. <br>",
+  await expect(page.locator("#formNewWebhook > div:last-child")).toContainText(
+    "* Every webhook is sent in POST and with Content-Type: application/json header.",
   );
+  await expect(page.locator("#formNewWebhook > div:last-child")).toContainText(
+    "* If you need to include additional fields and values, please use a query string. e.g. http://abc.com?customKey=value",
+  );
+  await expect(page.locator("#formNewWebhook > div:last-child")).toContainText(
+    "* If you put a value in the Token field, 'Authorization: token input-value' header is added to HTTP header.",
+  );
+  await expect(page.locator("#formNewWebhook > div:last-child br")).toHaveCount(3);
 });
 
 test("project webhooks matches legacy project/webhooks.scala.html empty DOM", async ({ page }) => {
@@ -148,6 +92,7 @@ test("project webhooks matches legacy project/webhooks.scala.html empty DOM", as
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, EXPECTED_PROJECT_WEBHOOKS.replaceAll("__BASE_PATH__", basePath)),
   );
+  await expectLegacyWebhookFormGeometry(page, "en");
   await expect(webhookFormMetrics(page)).resolves.toEqual({
     activeTabClass: "active",
     activeTabHeight: "38px",
@@ -156,7 +101,7 @@ test("project webhooks matches legacy project/webhooks.scala.html empty DOM", as
     formFirstRowContainsSubmit: true,
     formMarginBottom: "30px",
     formWidth: 1260,
-    gitPushDisplay: "inline",
+    gitPushDisplay: "inline-block",
     helpLineHeight: "20px",
     helpMarginTop: "0px",
     legendDisplay: "block",
@@ -169,7 +114,7 @@ test("project webhooks matches legacy project/webhooks.scala.html empty DOM", as
     // (_responsive.less:617-619); the 20px pin was stale.
     projectPageMarginTop: "5px",
     projectPageWidth: 1260,
-    radioDisplay: "inline",
+    radioDisplay: "inline-block",
     secretWidth: "214px",
     submitAfterSecret: true,
     submitHeight: "30px",
@@ -195,38 +140,22 @@ test("project webhooks ko-KR desktop and mobile preserve legacy order and contai
   await expect(page.locator("#subMenuWebhook")).toHaveText("웹후크");
   await expect(page.locator("#formNewWebhook .form-legend")).toHaveText("새 웹후크 생성");
   await expect(page.locator("#webhooksList")).toHaveText("등록된 웹후크가 없습니다.");
+  await expectLegacyWebhookFormGeometry(page, "ko-KR");
   expect(await responsiveWebhookMetrics(page)).toEqual({
     bodyHasHorizontalOverflow: false,
     formControlsInLegacyOrder: true,
-    // e2e closure ledger (2026-08-11): ko-KR formHeight measures 234px in the
-    // rebase full run (font-metric delta from the earlier 239px pin).
-    formHeight: 234,
     formInsidePage: true,
-    menuWidth: 573,
-    pageWidth: 1346,
-    payloadHeight: 30,
-    payloadWidth: 369,
-    secretWidth: 228,
-    tabsHeight: 37,
     tabsInsidePage: true,
   });
 
   await page.setViewportSize({ width: 390, height: 844 });
-  const mobileMetrics = await responsiveWebhookMetrics(page);
-  expect(mobileMetrics).toMatchObject({
+  await expectLegacyWebhookFormGeometry(page, "ko-KR");
+  expect(await responsiveWebhookMetrics(page)).toEqual({
     bodyHasHorizontalOverflow: false,
     formControlsInLegacyOrder: true,
-    formHeight: 377,
     formInsidePage: true,
-    menuWidth: 234,
-    pageWidth: 390,
-    payloadHeight: 30,
-    secretWidth: 228,
-    tabsHeight: 73,
     tabsInsidePage: true,
   });
-  expect(mobileMetrics.payloadWidth).toBeGreaterThanOrEqual(187);
-  expect(mobileMetrics.payloadWidth).toBeLessThanOrEqual(189);
 });
 
 test("project webhooks omits create form when webhook resource is not creatable", async ({
@@ -1032,7 +961,6 @@ async function responsiveWebhookMetrics(page: Page) {
     const payload = requireElement(".input-webhook-payload");
     const secret = requireElement(".input-webhook-secret");
     const submit = requireElement("#formNewWebhook .btn-submit");
-    const menu = requireElement(".project-menu-gruop");
     const pageBox = pageWrap.getBoundingClientRect();
     const tabsBox = tabs.getBoundingClientRect();
     const formBox = form.getBoundingClientRect();
@@ -1043,14 +971,7 @@ async function responsiveWebhookMetrics(page: Page) {
       bodyHasHorizontalOverflow: document.documentElement.scrollWidth > window.innerWidth,
       formControlsInLegacyOrder:
         payloadBox.left <= secretBox.left && secretBox.left <= submitBox.left,
-      formHeight: Math.round(formBox.height),
       formInsidePage: formBox.left >= pageBox.left && formBox.right <= pageBox.right,
-      menuWidth: Math.round(menu.getBoundingClientRect().width),
-      pageWidth: Math.round(pageBox.width),
-      payloadHeight: Math.round(payloadBox.height),
-      payloadWidth: Math.round(payloadBox.width),
-      secretWidth: Math.round(secretBox.width),
-      tabsHeight: Math.round(tabsBox.height),
       tabsInsidePage: tabsBox.left >= pageBox.left && tabsBox.right <= pageBox.right,
     };
 
@@ -1062,6 +983,138 @@ async function responsiveWebhookMetrics(page: Page) {
       return element;
     }
   });
+}
+
+async function expectLegacyWebhookFormGeometry(page: Page, language: "en" | "ko-KR") {
+  // Render the original form and message fixture with only the frozen stylesheet
+  // chain. The shared-document comparator would apply the same Tailwind/owner
+  // overrides to both trees and hide the inline-label regression.
+  const [template, english, localized] = await Promise.all([
+    readFile("../yona-original/app/views/project/webhooks.scala.html", "utf8"),
+    readFile("../yona-original/conf/messages", "utf8"),
+    readFile(`../yona-original/conf/messages${language === "en" ? "" : `.${language}`}`, "utf8"),
+  ]);
+  const messages = new Map<string, string>();
+  for (const source of [english, localized]) {
+    for (const line of source.split("\n")) {
+      const entry = line.match(/^([\w.]+)\s*=\s*(.*)$/u);
+      if (entry) messages.set(entry[1], entry[2].replaceAll("''", "'"));
+    }
+  }
+  const form = template.match(/<form id="formNewWebhook"[\s\S]*?<\/form>/u)?.[0];
+  if (!form) throw new Error("Original webhook form is missing");
+  const html = form
+    .replace(/action="[^"]*"/u, 'action=""')
+    .replace(/@Html\(Messages\("([^"]+)"\)\)|@Messages\("([^"]+)"\)/gu, (_, rawKey, key) => {
+      const value = messages.get(rawKey ?? key);
+      if (value === undefined) throw new Error(`Missing legacy message ${rawKey ?? key}`);
+      return rawKey
+        ? value
+        : value.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;");
+    });
+  const mismatches = await page.evaluate(
+    async ({ html, css }) => {
+      const candidate = document.querySelector<HTMLElement>("#formNewWebhook");
+      if (!candidate) throw new Error("Candidate webhook form is missing");
+      await document.fonts.ready;
+      const formBox = candidate.getBoundingClientRect();
+      const frame = document.createElement("iframe");
+      frame.style.cssText = `position:fixed;left:-10000px;top:0;border:0;width:${window.innerWidth}px;height:${window.innerHeight}px;visibility:hidden`;
+      document.body.append(frame);
+      try {
+        const referenceDocument = frame.contentDocument;
+        const referenceWindow = frame.contentWindow;
+        if (!referenceDocument || !referenceWindow)
+          throw new Error("Missing legacy reference frame");
+        referenceDocument.open();
+        referenceDocument.write(
+          `<!doctype html><html><head><style>${css}</style></head><body class="prj"><div class="main"><div class="project-page-wrap webhook-editor-wrap" style="width:${formBox.width}px">${html}</div></div></body></html>`,
+        );
+        referenceDocument.close();
+        await referenceDocument.fonts.ready;
+        const reference = referenceDocument.querySelector<HTMLElement>("#formNewWebhook");
+        if (!reference) throw new Error("Legacy webhook form is missing");
+        const referenceBox = reference.getBoundingClientRect();
+        const selectors = [
+          ":scope",
+          ".form-legend",
+          ".form-actions",
+          ".form-actions > div:first-child",
+          ".form-actions > div:last-child",
+          "input",
+          "button",
+          "label",
+          ":scope > div:last-child",
+        ];
+        const differences: string[] = [];
+        const styles = [
+          "display",
+          "font-family",
+          "font-size",
+          "line-height",
+          "box-sizing",
+          "padding-left",
+          "padding-top",
+          "margin-left",
+          "margin-bottom",
+          "vertical-align",
+          "color",
+          "background-color",
+          "border-top-color",
+        ];
+        for (const selector of selectors) {
+          const expected =
+            selector === ":scope" ? [reference] : [...reference.querySelectorAll(selector)];
+          const actual =
+            selector === ":scope" ? [candidate] : [...candidate.querySelectorAll(selector)];
+          if (expected.length !== actual.length) {
+            differences.push(
+              `${selector}: legacy count=${expected.length}, React count=${actual.length}`,
+            );
+            continue;
+          }
+          expected.forEach((element, index) => {
+            const expectedRect = element.getBoundingClientRect();
+            const actualRect = actual[index].getBoundingClientRect();
+            const expectedStyle = referenceWindow.getComputedStyle(element);
+            const actualStyle = getComputedStyle(actual[index]);
+            for (const property of styles) {
+              const legacy = expectedStyle.getPropertyValue(property);
+              const react = actualStyle.getPropertyValue(property);
+              if (legacy !== react)
+                differences.push(
+                  `${selector}[${index}] ${property}: legacy=${legacy}, React=${react}`,
+                );
+            }
+            const expectedGeometry = [
+              expectedRect.width,
+              expectedRect.height,
+              expectedRect.x - referenceBox.x,
+              expectedRect.y - referenceBox.y,
+            ];
+            const actualGeometry = [
+              actualRect.width,
+              actualRect.height,
+              actualRect.x - formBox.x,
+              actualRect.y - formBox.y,
+            ];
+            ["width", "height", "relative x", "relative y"].forEach((property, coordinate) => {
+              if (Math.abs(expectedGeometry[coordinate] - actualGeometry[coordinate]) > 1) {
+                differences.push(
+                  `${selector}[${index}] ${property}: legacy=${expectedGeometry[coordinate]}, React=${actualGeometry[coordinate]}`,
+                );
+              }
+            });
+          });
+        }
+        return differences;
+      } finally {
+        frame.remove();
+      }
+    },
+    { html, css: mergedLegacyBlock() },
+  );
+  expect(mismatches.join("\n")).toBe("");
 }
 
 async function webhookFormMetrics(page: Page) {

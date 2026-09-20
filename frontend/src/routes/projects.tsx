@@ -7,7 +7,7 @@ import { restFetch } from "../api/rest-client";
 import type { ListProjectsResponse, YoramRecord } from "../api/types";
 import legacySpriteUrl from "../assets/legacy/sprite.png";
 import "../yobicon-font.css";
-import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
+import { formatLegacyTimestamp, LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
@@ -25,10 +25,9 @@ const LEGACY_PROJECTS_LINK_SEARCH = {
 };
 
 type ProjectDirectoryItem = YoramRecord & {
-  createdLabel?: string;
-  createdTitle?: string;
+  createdAt?: string;
   isForked?: boolean;
-  lastPushedLabel?: string;
+  lastPushedAt?: string;
   logoUrl?: string;
   memberCount?: number;
   members?: YoramRecord[];
@@ -428,9 +427,8 @@ function ProjectListItem({
   const ownerName = stringField(project, "ownerName", "");
   const projectName = stringField(project, "projectName", "");
   const logoUrl = stringField(project, "logoUrl", "");
-  const createdLabel = stringField(project, "createdLabel", "");
-  const createdTitle = stringField(project, "createdTitle", createdLabel);
-  const lastPushedLabel = stringField(project, "lastPushedLabel", "");
+  const created = formatLegacyTimestamp(stringField(project, "createdAt", ""), t);
+  const lastPushed = formatLegacyTimestamp(stringField(project, "lastPushedAt", ""), t);
   const isForked = project.isForked === true;
   const originOwnerName = stringField(project, "originOwnerName", "");
   const originProjectName = stringField(project, "originProjectName", "");
@@ -555,15 +553,15 @@ function ProjectListItem({
               {ownerName}
             </Link>
             {" at "}
-            <strong title={createdTitle}>{createdLabel}</strong>{" "}
+            <strong title={created.title}>{created.label}</strong>{" "}
             <span
               className="projects-directory-code-update"
               data-owner="projects-directory-code-update"
             >
-              {lastPushedLabel ? (
+              {lastPushed.label ? (
                 <>
                   {`, ${t("project.codeUpdate")} `}
-                  <strong>{lastPushedLabel}</strong>
+                  <strong>{lastPushed.label}</strong>
                 </>
               ) : null}
             </span>

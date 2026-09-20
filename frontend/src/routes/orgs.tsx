@@ -6,7 +6,7 @@ import { restFetch } from "../api/rest-client";
 import type { ListOrganizationsResponse, YoramRecord } from "../api/types";
 import legacySpriteUrl from "../assets/legacy/sprite.png";
 import "../yobicon-font.css";
-import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
+import { formatLegacyTimestamp, LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
@@ -27,8 +27,7 @@ const LEGACY_PROJECTS_LINK_SEARCH = {
 } as const;
 
 type OrganizationDirectoryItem = YoramRecord & {
-  createdLabel?: string;
-  createdTitle?: string;
+  createdAt?: string;
   descr?: string;
   description?: string;
   logoUrl?: string;
@@ -77,8 +76,11 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     <>
       <title>{t("title.projectList")}</title>
       <SiteLayoutShell activeMenu="projects" runtimeConfig={runtimeConfig}>
-        <div data-owner="organization-directory-breadcrumb-outer">
-          <div data-owner="organization-directory-breadcrumb-inner">
+        <div className="site-breadcrumb-outer" data-owner="organization-directory-breadcrumb-outer">
+          <div
+            className="site-breadcrumb-inner"
+            data-owner="organization-directory-breadcrumb-inner"
+          >
             <div className="title_area" data-owner="organization-directory-title-area">
               <ul className={"nav nav-tabs"} data-owner="organization-directory-tabs-list">
                 <li data-owner="organization-directory-tabs-item">
@@ -113,8 +115,9 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             </div>
           </div>
         </div>
-        <div data-owner="organization-directory-page-wrap">
+        <div className="page-wrap-outer" data-owner="organization-directory-page-wrap">
           <div
+            className="project-page-wrap"
             data-owner="organization-directory-page"
             data-page-shell="organization-directory-page-shell"
           >
@@ -150,7 +153,7 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               </div>
             </div>
             {organizations.length === 0 ? (
-              <div data-owner="organization-directory-empty">
+              <div className="error-wrap" data-owner="organization-directory-empty">
                 <i className={"ico ico-err1"} data-owner="organization-directory-empty-icon"></i>
                 <p data-owner="organization-directory-empty-message">
                   {t("organization.is.empty")}
@@ -192,7 +195,7 @@ function OrganizationsPagination({
 }) {
   const { t } = useLegacyMessages();
   const router = useRouter();
-  if (totalPages <= 1) {
+  if (totalPages <= 0) {
     return <div id="pagination"></div>;
   }
 
@@ -305,6 +308,7 @@ function OrganizationListItem({
   basePath: string;
   organization: OrganizationDirectoryItem;
 }) {
+  const { t } = useLegacyMessages();
   const organizationName = organizationDisplayName(organization);
   if (!organizationIsReadable(organization)) {
     return (
@@ -331,8 +335,7 @@ function OrganizationListItem({
   }
 
   const logoUrl = stringField(organization, "logoUrl", "");
-  const createdLabel = stringField(organization, "createdLabel", "");
-  const createdTitle = stringField(organization, "createdTitle", createdLabel);
+  const created = formatLegacyTimestamp(stringField(organization, "createdAt", ""), t);
 
   return (
     <li className={"project"} data-owner="organization-directory-row">
@@ -367,7 +370,7 @@ function OrganizationListItem({
           </div>
           <div className={"desc"}>{organizationDescription(organization)}</div>
           <p className={"name-tag"}>
-            created <strong title={createdTitle}>{createdLabel}</strong>
+            created <strong title={created.title}>{created.label}</strong>
           </p>
         </div>
       </div>
@@ -422,7 +425,7 @@ function organizationTotalPages(payload: unknown): number {
   if (totalCount > 0 && pageSize > 0) {
     return Math.ceil(totalCount / pageSize);
   }
-  return 1;
+  return organizationItems(payload).length > 0 ? 1 : 0;
 }
 
 function stringField(record: YoramRecord, key: string, fallback: string): string {

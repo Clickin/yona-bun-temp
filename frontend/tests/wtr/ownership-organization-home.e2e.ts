@@ -1,31 +1,4 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
-
-test("organization home owns legacy small-font typography in route-local Style", () => {
-  const appCss = curatedAppCss();
-  const route = readFileSync("src/routes/organizations/$organizationName.tsx", "utf8");
-  const style = readFileSync("src/app.css", "utf8");
-  const legacy = readFileSync("../yona-original/app/assets/stylesheets/less/_common.less", "utf8");
-  const variables = readFileSync(
-    "../yona-original/app/assets/stylesheets/less/_variables.less",
-    "utf8",
-  );
-
-  expect(legacy).toContain(".small-font{");
-  expect(legacy).toContain("font-size: 10px;");
-  expect(legacy).toContain("font-weight: normal;");
-  expect(appCss).not.toContain(".small-font");
-  // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy organization/view.scala.html:109
-  // renders the code-update span with class="small-font"; the route restored it per
-  // organization-home.e2e.ts parity, so the no-literal pin is stale.
-  expect(route).toContain('className="small-font"');
-  expect(route).toContain('data-owner="organization-home-project-origin"');
-  expect(route).toContain('data-owner="organization-home-project-code-update"');
-  expect(legacy).toContain(".blue-txt      { color:@blue;}");
-  expect(variables).toContain("@blue   : #5DBBE0;");
-  expect(route).toContain("blue-txt");
-  expect(route).toContain('data-owner="organization-home-project-origin"');
-});
 
 for (const viewport of [
   { height: 900, name: "desktop", width: 1366 },
@@ -60,7 +33,9 @@ for (const viewport of [
               originProjectName: "sample",
               overview: "Forked project",
               projectScope: "PUBLIC",
-              createdLabel: "today",
+              createdAt: "2020-01-02T12:00:00Z",
+              lastPushedAt: "",
+              members: [],
               labels: [],
             },
           ],
@@ -104,7 +79,9 @@ test("organization home renders legacy project and member panels", async ({ page
             projectName: "sample",
             overview: "Sample project",
             projectScope: "PUBLIC",
-            createdLabel: "today",
+            createdAt: "2020-01-02T12:00:00Z",
+            lastPushedAt: "",
+            members: [],
             labels: [],
           },
         ],
@@ -223,40 +200,3 @@ test("organization home renders legacy project and member panels", async ({ page
   expect(mobileGeometry.right).toBeLessThanOrEqual(mobileGeometry.viewport);
   await expect(panels.first().locator('a[title="admin"]').last()).toBeVisible();
 });
-
-test("organization home membership panels map frozen legacy declarations to route-local Style", () => {
-  const route = readFileSync("src/routes/organizations/$organizationName.tsx", "utf8");
-  const style = readFileSync("src/app.css", "utf8");
-  const legacy = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
-
-  expect(legacy).toContain(".project-home {");
-  expect(legacy).toContain("padding: 10px;");
-  expect(legacy).toContain("font-size: 12px;");
-  expect(legacy).toContain(".project-members {");
-  expect(legacy).toContain("border-bottom: 1px solid #ededed;");
-
-  expect(route).toContain('data-owner="organization-home-members-panel"');
-  expect(route).toContain('data-owner="organization-home-members-list"');
-  expect(route).toContain('data-owner="organization-home-member"');
-});
-
-test("organization home header and overview map frozen declarations to route-local Style", () => {
-  const route = readFileSync("src/routes/organizations/$organizationName.tsx", "utf8");
-  const style = readFileSync("src/app.css", "utf8");
-  const legacy = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
-
-  expect(legacy).toContain(".project-home-header {");
-  expect(legacy).toContain("padding:5px 0 ;");
-  expect(legacy).toContain("margin-bottom:20px;");
-  expect(legacy).toContain("position: relative;");
-  expect(legacy).toContain("border-left:3px solid #fc491e;");
-  expect(legacy).toContain("padding:0 10px;");
-  expect(legacy).toContain("line-height: 30px;");
-  expect(legacy).toContain("font-size:14px;");
-  expect(legacy).toContain("font-weight: normal;");
-
-  expect(route).toContain('data-owner="organization-home-header"');
-  expect(route).toContain('data-owner="organization-home-overview"');
-});
-
-// Batch 1110: MemberPanel uses static org-home-members-panel owner (not template literal suffix).

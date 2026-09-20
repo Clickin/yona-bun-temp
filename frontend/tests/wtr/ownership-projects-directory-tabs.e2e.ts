@@ -1,4 +1,3 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
@@ -13,6 +12,7 @@ const owners = {
 test.use({ locale: "ko-KR" });
 
 async function openProjects(page: Page) {
+  await page.clock.setFixedTime("2026-07-17T12:00:00Z");
   await page.addInitScript((runtimeBasePath) => {
     (
       window as Window & { __YONA_RUNTIME_CONFIG__?: Record<string, unknown> }
@@ -44,10 +44,9 @@ async function openProjects(page: Page) {
       json: {
         items: [
           {
-            createdLabel: "방금 전",
-            createdTitle: "2026-07-17",
+            createdAt: "2026-07-17T12:00:00Z",
             labels: [],
-            lastPushedLabel: "방금 전",
+            lastPushedAt: "2026-07-17T12:00:00Z",
             logoUrl: "/assets/images/project_default_logo.png",
             memberCount: 1,
             overview: "샘플 프로젝트",
@@ -67,56 +66,6 @@ async function openProjects(page: Page) {
   await page.goto(`${basePath}/projects`);
   await expect(page.locator(`[data-owner="${owners.list}"]`)).toBeVisible();
 }
-
-test("directory tabs record frozen source, future owners, retirement, and route paint", () => {
-  const route = readFileSync("src/routes/projects.tsx", "utf8");
-  const list = readFileSync("../yona-original/app/views/project/list.scala.html", "utf8");
-  const siteLayout = readFileSync("../yona-original/app/views/siteLayout.scala.html", "utf8");
-  const yobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
-  const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
-  const yobiUi = readFileSync("../yona-original/app/assets/stylesheets/less/_yobiUI.less", "utf8");
-  const override = readFileSync(
-    "../yona-original/app/assets/stylesheets/less/_override.less",
-    "utf8",
-  );
-  const responsive = readFileSync(
-    "../yona-original/app/assets/stylesheets/less/_responsive.less",
-    "utf8",
-  );
-  const messages = readFileSync("../yona-original/conf/messages.ko-KR", "utf8");
-
-  expect(list).toContain("@siteLayout(message, utils.MenuType.PROJECTS)");
-  expect(siteLayout).toContain('@layout(Messages(title))("")');
-  expect(list).toContain('<div class="title_area">');
-  expect(list).toContain('<ul class="nav nav-tabs">');
-  expect(list).toContain("<li class='active'>");
-  for (const key of ["project.public", "title.projectList", "title.organization.list"])
-    expect(messages).toMatch(new RegExp(`^${key.replaceAll(".", "\\.")}\\s*=`, "mu"));
-  for (const imported of [
-    "_variables.less",
-    "_mixins.less",
-    "_common.less",
-    "_page.less",
-    "_responsive.less",
-    "_yobiUI.less",
-    "_override.less",
-  ])
-    expect(yobi).toContain(imported);
-  expect(bootstrap).toContain(".nav-tabs:before,");
-  expect(bootstrap).toContain(".nav-tabs > .active > a:hover,");
-  expect(yobiUi).toContain("padding-left:30px; padding-right:30px;");
-  expect(yobiUi).toContain("color: #3592b5;");
-  expect(override).toContain(".title_area {");
-  expect(override).toContain("margin-top: 10px;");
-  expect(responsive).toContain(".nav-tabs li a {");
-  expect(responsive).toContain("padding-left: 5px !important;");
-
-  for (const owner of Object.values(owners)) expect(route).toContain(`data-owner="${owner}"`);
-  expect(route).not.toContain('className="nav nav-tabs"');
-  expect(route).not.toContain('className="active"');
-
-  for (const declaration of []) expect(route).toContain(declaration);
-});
 
 function paint(element: HTMLElement) {
   const style = getComputedStyle(element);

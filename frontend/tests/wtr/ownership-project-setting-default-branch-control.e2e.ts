@@ -1,44 +1,8 @@
-import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
-
-const routeSource = new URL("../src/routes/$ownerName/$projectName/setting.tsx", import.meta.url);
-const styleSource = new URL("../src/app.css", import.meta.url);
-const legacyViewSource = new URL(
-  "../../yona-original/app/views/project/setting.scala.html",
-  import.meta.url,
-);
-const legacySelect2Source = new URL(
-  "../../yona-original/public/javascripts/lib/select2/select2.css",
-  import.meta.url,
-);
-const legacyOverrideSource = new URL(
-  "../../yona-original/app/assets/stylesheets/less/_override.less",
-  import.meta.url,
-);
 
 test("project setting default branch Select2 closed/open state owns frozen geometry with Style", async ({
   page,
 }) => {
-  const [route, style, view, select2, override] = await Promise.all([
-    readFile(routeSource, "utf8"),
-    Promise.resolve(curatedAppCss()),
-    readFile(legacyViewSource, "utf8"),
-    readFile(legacySelect2Source, "utf8"),
-    readFile(legacyOverrideSource, "utf8"),
-  ]);
-
-  expect(view).toContain('id="defaultBranceSettingPanel"');
-  expect(view).toContain('id="project-default-branch"');
-  expect(view).toContain('data-toggle="select2"');
-  expect(select2).toContain(".select2-container .select2-choice");
-  expect(select2).toContain(".select2-container .select2-choice .select2-arrow");
-  expect(select2).toContain(".select2-results .select2-result-label");
-  expect(override).toContain(".select2-drop.branches");
-  expect(override).toContain(".select2-chosen .branch-label");
-
-  expect(route).toContain('data-owner="project-setting-default-branch-container"');
-  expect(route).not.toContain('data-toggle="select2"');
-
   await mockProjectSettings(page);
   await page.setViewportSize({ width: 1366, height: 900 });
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";

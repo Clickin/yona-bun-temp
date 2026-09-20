@@ -315,7 +315,7 @@ function issueFixture(overrides: {
     authorAvatarUrl: "https://www.gravatar.com/avatar/default?s=16",
     commentCount: 5,
     createdLabel: "1 day ago",
-    createdTitle: "2026-06-29 13:00",
+    createdTitle: "2026-06-29T13:00:00Z",
     labels: [],
     milestoneTitle: "",
     projectLogoUrl: "/assets/images/default-project-logo.png",

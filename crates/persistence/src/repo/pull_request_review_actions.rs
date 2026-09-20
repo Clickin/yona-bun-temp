@@ -139,10 +139,10 @@ impl AppRepositoryImpl<'_> {
                 path: Set(path),
                 start_side: Set(start_side),
                 start_line: Set(input.start_line),
-                start_column: Set(None),
+                start_column: Set(input.start_column),
                 end_side: Set(end_side),
                 end_line: Set(input.end_line),
-                end_column: Set(None),
+                end_column: Set(input.end_column),
             }
             .insert(&self.db)
             .await?

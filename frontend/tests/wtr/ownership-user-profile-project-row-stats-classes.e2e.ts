@@ -1,4 +1,3 @@
-import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdir only feeds page.screenshot paths (no-op).
@@ -13,7 +12,8 @@ const projects = [
     logoUrl: "",
     overview: "Private project overview",
     memberCount: 3,
-    createdLabel: "today",
+    createdAt: "2020-01-02T12:00:00Z",
+    lastPushedAt: "",
     viewerCanWatch: false,
     isWatching: false,
     watchCount: 2,
@@ -28,7 +28,8 @@ const projects = [
     logoUrl: "",
     overview: "Forked project overview",
     memberCount: 2,
-    createdLabel: "yesterday",
+    createdAt: "2020-01-01T12:00:00Z",
+    lastPushedAt: "",
     originOwnerName: "origin-owner",
     originProjectName: "origin-project",
     viewerCanWatch: true,
@@ -45,7 +46,8 @@ const projects = [
     logoUrl: "",
     overview: "Public project overview",
     memberCount: 1,
-    createdLabel: "Monday",
+    createdAt: "2019-12-30T12:00:00Z",
+    lastPushedAt: "",
     viewerCanWatch: true,
     isWatching: false,
     watchCount: 1,
@@ -92,49 +94,6 @@ test("Projects rows retire only project and stats literals under fallback-off", 
   page,
 }) => {
   test.setTimeout(60_000);
-
-  const [route, styles, view, partial, fallback, focusedTest] = await Promise.all([
-    readFile("../src/routes/$user.tsx"),
-    curatedAppCss(),
-    readFile(
-      new URL("../../yona-original/app/views/user/view.scala.html", import.meta.url),
-      "utf8",
-    ),
-    readFile(
-      new URL("../../yona-original/app/views/user/partial_projectlist.scala.html", import.meta.url),
-      "utf8",
-    ),
-    mergedLegacyBlock(),
-    readFile(new URL(import.meta.url), "utf8"),
-  ]);
-
-  expect(view).toContain('<ul class="user-streams all-projects">');
-  expect(view).toContain("@partial_projectlist(project, user)");
-  expect(partial).toContain('<li class="project">');
-  expect(partial).toContain('<div class="stats-wrap pull-right">');
-  expect(partial).toContain('<div class="stats">');
-  expect(fallback).toContain(
-    ".all-projects .project {\n  padding: 15px 0 10px 0;\n  overflow: hidden;\n  border-bottom: 1px solid #DCDCDC;\n}",
-  );
-  expect(fallback).toContain(
-    ".all-projects.user-streams .project:first-of-type {\n  padding-top: 5px;\n}",
-  );
-  expect(fallback).not.toMatch(/(?:^|[}\n])\s*\.stats\s*\{/u);
-  expect(focusedTest).not.toContain(["page", "addStyleTag"].join("."));
-
-  const projectRowSource = route.slice(
-    route.indexOf("function ProfileProjectRow("),
-    route.indexOf("function ShowSubtasksCheckbox("),
-  );
-  expect(projectRowSource).toContain('data-owner="user-profile-project-row"');
-  expect(projectRowSource).toContain('data-owner="user-profile-project-stats"');
-  // Wave-33: app retains legacy classes (667398a04 legacy-parity restore).
-
-  expect(projectRowSource).toContain('className="stats"');
-  expect(projectRowSource).toContain("yobicon-lock");
-  expect(projectRowSource).toContain("yobicon-split yobicon-white");
-  expect(projectRowSource).toContain("nbtn black medium last leaveProject");
-  expect(projectRowSource).toMatch(/\byobicon-(?:friends|eye-open|eye-close|middle|trash)\b/u);
 
   const output = "output/playwright/style-user-profile-project-row-stats-classes";
   await mkdir(output, { recursive: true });

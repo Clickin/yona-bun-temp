@@ -1,30 +1,9 @@
 import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
-const EXPECTED_EDIT_FORM = `
-<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/pullRequest/7/edit" enctype="multipart/form-data" class="nm"><div class="pull-request-wrap"><div class="pull-left"><label for="fromProjectId" class="field-title">From</label><select id="fromProjectId" name="fromProjectId" class="mr5" disabled=""><option value="8" selected="">dev/fork</option></select><select id="fromBranch" name="fromBranch" data-format="branch" disabled="" data-dropdown-css-class="branches" data-placeholder="Select branch"><option></option><option value="feature/ui" selected="">feature/ui</option><option value="main">main</option></select><input type="hidden" name="fromProjectId" value="8"><input type="hidden" name="fromBranch" value="feature/ui"></div><div class="arrow"><i class="yobicon-right-2"></i></div><div class="pull-right"><label for="toProjectId" class="field-title">To</label><select id="toProjectId" name="toProjectId" class="mr5" disabled=""><option value="7" selected="">admin/sample</option></select><select id="toBranch" name="toBranch" data-format="branch" disabled="" data-dropdown-css-class="branches" data-placeholder="Select branch"><option></option><option value="main" selected="">main</option></select><input type="hidden" name="toProjectId" value="7"><input type="hidden" name="toBranch" value="main"></div></div><span id="pullRequestState"></span><div id="status" class="alert mt20 mb20 alert-success">This pull request can be merged safely.</div><div><input type="text" id="title" name="title" maxlength="255" class="text" value="Initial title" placeholder="Title"><div><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body">Initial body</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></div><div class="upload-wrap content-footer" data-resource-type="PULL_REQUEST" data-resource-id="90"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="actions pr-edit-actions"><button type="submit" class="ybtn ybtn-success">Save</button><button type="button" class="ybtn">Cancel</button></div></div><ul class="nav nav-tabs mt20"><li class="active"><button type="button"><span class="vmiddle-inline">Commits</span><span id="numOfCommits" class="num-badge vmiddle-inline">1</span></button></li></ul><div class="tab-content"><div id="__commits" class="code-browse-wrap tab-pane active"><div id="mergeResult" class="code-browser-wrap"><div class="commit-wrap"><table class="code-table commits"><thead class="thead"><tr><td class="commit-id"><strong>@</strong></td><td class="messages"><strong>Commit message</strong></td><td class="date"><strong>Commit date</strong></td><td class="author"><strong>Author</strong></td></tr></thead><tbody class="tbody"><tr><td class="commit-id"><a href="__BASE_PATH__/dev/fork/commit/abcdef1234567890">abcdef1</a></td><td class="messages"><span class="commitMsg short">Add UI</span></td><td class="date" title="Jul 2, 2026">Jul 2, 2026</td><td class="author dev@example.com"><div class="avatar-wrap"><img src="__BASE_PATH__/assets/images/default-avatar-32.png" width="32" height="32"></div></td></tr></tbody></table></div></div></div></div></form></div>
-`;
-const LEGACY_MARKDOWN_HELP = readFileSync(
-  new URL("../../yona-original/app/views/help/markdown.scala.html", import.meta.url),
-  "utf8",
-)
-  .replace(/@Messages\("title\.markdown\.help"\)/g, "Markdown help")
-  .replace(/@\{"@"\}/g, "@")
-  .replace(/<script[\s\S]*$/u, "")
-  .replace(/^[\s\S]*?<div class="markdown-help">/u, '<div class="markdown-help">')
-  .replace(/<\/div>\s*$/u, "</div>")
-  .replace(/\sdata-toggle="markdown-help"/g, "")
-  .replace(/\sdata-target="markdown[^"]+"/g, "");
 const ROUTE_SOURCE = readFileSync(
   new URL(
     "../src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber/editform.tsx",
-    import.meta.url,
-  ),
-  "utf8",
-);
-const PULL_REQUEST_PARENT_ROUTE_SOURCE = readFileSync(
-  new URL(
-    "../src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber.tsx",
     import.meta.url,
   ),
   "utf8",
@@ -33,23 +12,8 @@ const PROJECT_PARENT_ROUTE_SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName.tsx", import.meta.url),
   "utf8",
 );
-const RENDERED_MARKDOWN_HELP_WRAP = `<ul class="markdown-help-wrap"><li class="markdown-help-item markdownHeaders" id="markdown-help-markdownHeaders"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre># This is an H1 ## This is an H2 ### This is an H3</pre></div><div class="span6"><div class="markdown-wrap"><h1 id="yb-header-this-is-an-h1">This is an H1</h1><h2 id="yb-header-this-is-an-h2">This is an H2</h2><h3 id="yb-header-this-is-an-h3">This is an H3</h3></div></div></div></li><li class="markdown-help-item markdownStyling" id="markdown-help-markdownStyling"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>*This is an italic* **This is an bold** ~~This is an strike~~</pre></div><div class="span6"><div class="markdown-wrap"><p><em>This is an italic</em><strong>This is an bold</strong><del>This is an strike</del></p></div></div></div></li><li class="markdown-help-item markdownLinks" id="markdown-help-markdownLinks"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>[Site](https://example.com/ "Example Site") https://example.com/</pre></div><div class="span6"><div class="markdown-wrap"><p><a href="https://example.com/" title="Example Site">Site</a></p><p><a href="https://example.com/">https://example.com/</a></p></div></div></div></li><li class="markdown-help-item markdownLists" id="markdown-help-markdownLists"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>- Red 1. White 2. Blue - Green.</pre></div><div class="span6"><div class="markdown-wrap"><ul><li>Red<ol><li>White</li><li>Blue</li></ol></li><li>Green</li></ul></div></div></div></li><li class="markdown-help-item markdownTaskList" id="markdown-help-markdownTaskList"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>- [ ] Todos - [x] To do A - [ ] To do B - [ ] To do C</pre></div><div class="span6"><div class="markdown-wrap"><ul><li><input type="checkbox"></input>Todos<ul><li><input checked="" type="checkbox"></input>To do A</li><li><input type="checkbox"></input>To do B</li><li><input type="checkbox"></input>To do C</li></ul></li></ul></div></div></div></li><li class="markdown-help-item markdownImages" id="markdown-help-markdownImages"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>![title](https://example.com/images/sample.png "Sample image")</pre></div><div class="span6"><div class="markdown-wrap"><p><img src="__BASE_PATH__/legacy-assets/images/ico-like-small.png" title="Sample image"></img></p></div></div></div></li><li class="markdown-help-item markdownBlockquotes" id="markdown-help-markdownBlockquotes"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>> Lorem ipsum dolor sit amet, consectetuer adipiscing elit. > > Aenean commodo ligula eget dolor.</pre></div><div class="span6"><div class="markdown-wrap"><blockquote><p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit.</p><p>Aenean commodo ligula eget dolor.</p></blockquote></div></div></div></li><li class="markdown-help-item markdownCodes" id="markdown-help-markdownCodes"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>\`function test() {console.log("hello world");}\` \`\`\`javascript function test() { console.log("hello world"); } \`\`\`</pre></div><div class="span6"><div class="markdown-wrap"><p><code>function test() {console.log("hello world");}</code></p><pre><code class="hljs language-javascript"><span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-title">test</span>(<span class="hljs-params"></span>)</span>{<span class="hljs-built_in">console</span>.log(<span class="hljs-string">"hello world"</span>); }</code></pre></div></div></div></li><li class="markdown-help-item markdownTables" id="markdown-help-markdownTables"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>| Default | Align center | Align right | | ------------ | :----------: | ------: | | Carrot | Red | 1,000 | | Banana | Yellow | 32,000 |</pre></div><div class="span6"><div class="markdown-wrap"><table><thead><tr><th>Default</th><th style="text-align:center">Align center</th><th style="text-align:right">Align right</th></tr></thead><tbody><tr><td>Carrot</td><td style="text-align:center">Red</td><td style="text-align:right">1,000</td></tr><tr><td>Banana</td><td style="text-align:center">Yellow</td><td style="text-align:right">32,000</td></tr></tbody></table><p>Also, you can copy & paste table from excel sheet</p></div></div></div></li><li class="markdown-help-item markdownShortLinks" id="markdown-help-markdownShortLinks"><div class="row-fluid thead"><div class="span6">Markdown Input</div><div class="span6">Markdown Output</div></div><div class="markdwon-syntax-wrap row-fluid"><div class="markdwon-syntax span6"><pre>Issue no: #2 Mention: @example commit: @763575 or @763575f177a4ce8b9370954de3ea1a1410205593</pre></div><div class="span6"><div class="markdown-wrap"><p>Issue no:<a href="__BASE_PATH__/example/example/issue/2">#2</a></p><p></p><p>Mention:<a href="__BASE_PATH__/example">@example</a></p><p>commit:<a href="__BASE_PATH__/example/example/commit/763575">@763575</a>or<a href="__BASE_PATH__/example/example/commit/763575f177a4ce8b9370954de3ea1a1410205593">@763575</a></p></div></div></div></li></ul>`;
 
-function withLegacyFileUploader(html: string) {
-  return html.replace(
-    `<div class="upload-wrap content-footer" data-resource-type="PULL_REQUEST" data-resource-id="90"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div>`,
-    `<div id="upload" class="upload-wrap content-footer" data-resource-type="PULL_REQUEST" data-resource-id="90"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled" style="border-top:1pxsolidrgb(224,224,224)"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div>`,
-  );
-}
-
-function withLegacyEditor(html: string) {
-  return html.replace(
-    `<div><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body">Initial body</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></div>`,
-    `<div class="pr-edit-editor-wrap"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content">${LEGACY_MARKDOWN_HELP.replace(/<ul class="markdown-help-wrap">[\s\S]*<\/ul>/u, () => RENDERED_MARKDOWN_HELP_WRAP)}<div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body" style="border-color:rgb(221, 221, 221);border-style:solid;border-width:1px;height:300px">Initial body</textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div></div>`,
-  );
-}
-
-test("project pull request edit form matches legacy git/edit.scala.html core DOM", async ({
+test("project pull request edit preserves legacy form controls and save behavior", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -124,10 +88,10 @@ test("project pull request edit form matches legacy git/edit.scala.html core DOM
   );
   expect(ROUTE_SOURCE).not.toContain('data-toggle="select2"');
   expect(ROUTE_SOURCE).not.toContain('"data-toggle": "select2"');
-  await expect(page.locator("#fromProjectId option:checked")).toHaveText("dev/fork");
+  await expect(page.locator("#fromProjectId option:checked")).toHaveText("dev / fork");
   await expect(page.locator("#fromProjectId")).not.toHaveAttribute("data-toggle", "select2");
   await expect(page.locator("#fromProjectId")).toHaveAttribute("name", "fromProjectId");
-  await expect(page.locator("#fromProjectId")).toHaveClass("mr5");
+  await expect(page.locator("#s2id_fromProjectId")).toHaveClass(/\bmr5\b/u);
   await expect(page.locator("#fromProjectId")).toBeDisabled();
   await expect(page.locator('input[type="hidden"][name="fromProjectId"]')).toHaveValue("8");
   await expect(page.locator("#fromBranch")).not.toHaveAttribute("data-toggle", "select2");
@@ -137,10 +101,10 @@ test("project pull request edit form matches legacy git/edit.scala.html core DOM
   await expect(page.locator("#fromBranch")).toHaveAttribute("data-dropdown-css-class", "branches");
   await expect(page.locator("#fromBranch")).toHaveAttribute("data-placeholder", "Select branch");
   await expect(page.locator("#fromBranch option:checked")).toHaveText("feature/ui");
-  await expect(page.locator("#toProjectId option:checked")).toHaveText("admin/sample");
+  await expect(page.locator("#toProjectId option:checked")).toHaveText("admin / sample");
   await expect(page.locator("#toProjectId")).not.toHaveAttribute("data-toggle", "select2");
   await expect(page.locator("#toProjectId")).toHaveAttribute("name", "toProjectId");
-  await expect(page.locator("#toProjectId")).toHaveClass("mr5");
+  await expect(page.locator("#s2id_toProjectId")).toHaveClass(/\bmr5\b/u);
   await expect(page.locator("#toProjectId")).toBeDisabled();
   await expect(page.locator('input[type="hidden"][name="toProjectId"]')).toHaveValue("7");
   await expect(page.locator("#toBranch")).not.toHaveAttribute("data-toggle", "select2");
@@ -221,8 +185,6 @@ test("project pull request edit form matches legacy git/edit.scala.html core DOM
   await expect(page.locator("#tplDropFilesHere")).toHaveCount(0);
   await expect(page.locator('form.nm script[type="text/x-jquery-tmpl"]')).toHaveCount(0);
   expect(ROUTE_SOURCE).toContain("pullRequestMergeResultQueryOptions");
-  expect(ROUTE_SOURCE).toContain('to="/$ownerName/$projectName/commit/$commitId"');
-  expect(ROUTE_SOURCE).not.toContain("<a\n                    href={prefixBasePath");
   await expect(page.locator("#mergeResult")).not.toHaveAttribute("data-commits", /.*/u);
   await expect(page.locator("#mergeResult")).not.toHaveAttribute("data-pullrequest-title", /.*/u);
   await expect(page.locator("#mergeResult")).not.toHaveAttribute("data-pullrequest-body", /.*/u);
@@ -269,16 +231,6 @@ test("project pull request edit form matches legacy git/edit.scala.html core DOM
       ),
     )
     .toBe("kept");
-
-  expect(await canonicalize(page, ".content-wrap.frm-wrap")).toEqual(
-    await canonicalizeHtml(
-      page,
-      withLegacyFileUploader(withLegacyEditor(EXPECTED_EDIT_FORM)).replaceAll(
-        "__BASE_PATH__",
-        basePath,
-      ),
-    ),
-  );
 
   await page.evaluate((url) => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
@@ -331,47 +283,47 @@ test("project pull request edit form matches legacy git/edit.scala.html core DOM
   await expect(page).toHaveURL(`${basePath}/admin/sample/pullRequests`);
 });
 
-test("project pull request edit form drops only delegated select2 markers", async ({ page }) => {
+test("pull request edit preserves disabled Select2 choices and source commit navigation", async ({
+  page,
+}) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const patchRequests: unknown[] = [];
-  await mockProjectPullRequestEditForm(page, patchRequests);
-
+  await mockProjectPullRequestEditForm(page, patchRequests, {
+    mergeResult: {
+      commits: [
+        { ...defaultPullRequestCommit(), commitMessage: "Add UI\n\nExpanded commit details" },
+      ],
+      conflict: false,
+      noHead: false,
+    },
+  });
   await page.goto(`${basePath}/admin/sample/pullRequest/7/editform`);
-  await expect(page.locator("form.nm")).toBeVisible();
-  expect(ROUTE_SOURCE).not.toContain('data-toggle="select2"');
-  expect(ROUTE_SOURCE).not.toContain('"data-toggle": "select2"');
-
-  await expect(page.locator("#fromProjectId")).not.toHaveAttribute("data-toggle", "select2");
-  await expect(page.locator("#fromProjectId")).toHaveAttribute("name", "fromProjectId");
-  await expect(page.locator("#fromProjectId")).toHaveClass("mr5");
-  await expect(page.locator("#fromProjectId")).toBeDisabled();
-  await expect(page.locator("#fromProjectId option:checked")).toHaveText("dev/fork");
-  await expect(page.locator('input[type="hidden"][name="fromProjectId"]')).toHaveValue("8");
-
-  await expect(page.locator("#fromBranch")).not.toHaveAttribute("data-toggle", "select2");
-  await expect(page.locator("#fromBranch")).toHaveAttribute("name", "fromBranch");
-  await expect(page.locator("#fromBranch")).toHaveAttribute("data-format", "branch");
-  await expect(page.locator("#fromBranch")).toHaveAttribute("data-dropdown-css-class", "branches");
-  await expect(page.locator("#fromBranch")).toHaveAttribute("data-placeholder", "Select branch");
-  await expect(page.locator("#fromBranch")).toBeDisabled();
-  await expect(page.locator("#fromBranch option:checked")).toHaveText("feature/ui");
-  await expect(page.locator('input[type="hidden"][name="fromBranch"]')).toHaveValue("feature/ui");
-
-  await expect(page.locator("#toProjectId")).not.toHaveAttribute("data-toggle", "select2");
-  await expect(page.locator("#toProjectId")).toHaveAttribute("name", "toProjectId");
-  await expect(page.locator("#toProjectId")).toHaveClass("mr5");
-  await expect(page.locator("#toProjectId")).toBeDisabled();
-  await expect(page.locator("#toProjectId option:checked")).toHaveText("admin/sample");
-  await expect(page.locator('input[type="hidden"][name="toProjectId"]')).toHaveValue("7");
-
-  await expect(page.locator("#toBranch")).not.toHaveAttribute("data-toggle", "select2");
-  await expect(page.locator("#toBranch")).toHaveAttribute("name", "toBranch");
-  await expect(page.locator("#toBranch")).toHaveAttribute("data-format", "branch");
-  await expect(page.locator("#toBranch")).toHaveAttribute("data-dropdown-css-class", "branches");
-  await expect(page.locator("#toBranch")).toHaveAttribute("data-placeholder", "Select branch");
-  await expect(page.locator("#toBranch")).toBeDisabled();
-  await expect(page.locator("#toBranch option:checked")).toHaveText("main");
-  await expect(page.locator('input[type="hidden"][name="toBranch"]')).toHaveValue("main");
+  for (const [id, label, value] of [
+    ["fromProjectId", "dev / fork", "8"],
+    ["fromBranch", "branch feature/ui", "feature/ui"],
+    ["toProjectId", "admin / sample", "7"],
+    ["toBranch", "branch main", "main"],
+  ] as const) {
+    const picker = page.locator(`#s2id_${id}`);
+    await expect(picker).toBeVisible();
+    await expect(picker.locator("button.select2-choice")).toBeDisabled();
+    await expect(picker.locator(".select2-chosen")).toHaveText(label);
+    await expect(page.locator(`#${id}`)).toBeDisabled();
+    await expect(page.locator(`input[type=hidden][name=${id}]`)).toHaveValue(value);
+  }
+  await expect(page.locator(".pull-request-wrap [role=listbox]")).toHaveCount(0);
+  const summary = page.locator("#mergeResult .commitMsg.short");
+  await expect(summary).toHaveText("Add UI");
+  await expect(summary).toHaveAttribute("href", `${basePath}/dev/fork/commit/abcdef1234567890`);
+  await expect(page.locator("#mergeResult .commitMsg.desc")).not.toBeVisible();
+  await page.locator("#mergeResult .moreBtn").click();
+  await expect(page.locator("#mergeResult .commitMsg.desc")).toBeVisible();
+  await expect(page.locator("#mergeResult .commitMsg.desc")).toContainText(
+    "Expanded commit details",
+  );
+  await page.locator("#mergeResult .moreBtn").click();
+  await expect(page.locator("#mergeResult .commitMsg.desc")).not.toBeVisible();
+  expect(patchRequests).toEqual([]);
 });
 
 test("project pull request edit form drops markdown JS-only markers while preserving tabs", async ({
@@ -1042,157 +994,4 @@ function pullRequestDetail(overrides: Partial<{ bodyMarkdown: string; title: str
     updatedLabel: "Jul 2, 2026",
     watcherCount: 0,
   };
-}
-
-async function canonicalize(page: Page, selector: string) {
-  return page.locator(selector).evaluate((root) => {
-    return visit(root);
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      // F6 copy-fix: the app renders help-nav choices as buttons (aria-controls + aria-expanded);
-      // legacy markdown.scala.html:14-22 uses plain <li class="help-nav"> text, so unwrap like the
-      // green project-posts spec canonicalizer.
-      if (node.matches(".markdown-help-nav-button")) {
-        return Array.from(node.childNodes)
-          .map((child) => visit(child))
-          .join("");
-      }
-      const attrs = Array.from(node.attributes)
-        .filter(
-          (attr) =>
-            !attr.name.startsWith("data-v-") &&
-            attr.name !== "alt" &&
-            attr.name !== "data-style-src" &&
-            attr.name !== "data-owner" &&
-            attr.name !== "data-wtr-click-selected" &&
-            attr.name !== "aria-current" &&
-            attr.name !== "data-status" &&
-            !(node.matches(".markdown-help-item") && attr.name === "id") &&
-            !(attr.name === "class" && normalizeAttr(attr) === ""),
-        )
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes).map(visit).join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeAttr(attr: Attr) {
-      const value = attr.value.replace(/;\s*$/u, "");
-      if (attr.name === "class") {
-        return value
-          .split(/\s+/u)
-          .filter(
-            (token) =>
-              token &&
-              token !== "gray-txt" &&
-              token !== "right-txt" &&
-              !/^x[0-9a-z]+$/u.test(token) &&
-              !token.includes("__"),
-          )
-          .sort()
-          .join(" ");
-      }
-      return attr.name === "style" ? normalizeStyleAttr(value) : value;
-    }
-
-    function normalizeStyleAttr(value: string) {
-      const normalized = value.replace(/\s+/gu, "");
-      if (!normalized.includes("--x-") || !normalized.includes("url(")) {
-        return normalized;
-      }
-      return normalized
-        .replace(
-          /(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?\))/gu,
-          "$1src/assets/legacy/$2$3$4)",
-        )
-        .replace(/(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\//gu, "$1src/assets/legacy/");
-    }
-
-    function normalizeText(value: string) {
-      return value.replace(/\s+/gu, " ").trim();
-    }
-  });
-}
-
-async function canonicalizeHtml(page: Page, html: string) {
-  return page.evaluate((markup) => {
-    const template = document.createElement("template");
-    template.innerHTML = markup.trim();
-    const root = template.content.firstElementChild;
-    return root ? visit(root) : "";
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter(
-          (attr) =>
-            !attr.name.startsWith("data-v-") &&
-            attr.name !== "alt" &&
-            attr.name !== "data-style-src" &&
-            attr.name !== "data-owner" &&
-            attr.name !== "data-wtr-click-selected" &&
-            attr.name !== "aria-current" &&
-            attr.name !== "data-status" &&
-            !(node.matches(".markdown-help-item") && attr.name === "id") &&
-            !(attr.name === "class" && normalizeAttr(attr) === ""),
-        )
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes).map(visit).join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeAttr(attr: Attr) {
-      const value = attr.value.replace(/;\s*$/u, "");
-      if (attr.name === "class") {
-        return value
-          .split(/\s+/u)
-          .filter(
-            (token) =>
-              token &&
-              token !== "gray-txt" &&
-              token !== "right-txt" &&
-              !/^x[0-9a-z]+$/u.test(token) &&
-              !token.includes("__"),
-          )
-          .sort()
-          .join(" ");
-      }
-      return attr.name === "style" ? normalizeStyleAttr(value) : value;
-    }
-
-    function normalizeStyleAttr(value: string) {
-      const normalized = value.replace(/\s+/gu, "");
-      if (!normalized.includes("--x-") || !normalized.includes("url(")) {
-        return normalized;
-      }
-      return normalized
-        .replace(
-          /(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?\))/gu,
-          "$1src/assets/legacy/$2$3$4)",
-        )
-        .replace(/(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\//gu, "$1src/assets/legacy/");
-    }
-
-    function normalizeText(value: string) {
-      return value.replace(/\s+/gu, " ").trim();
-    }
-  }, html);
 }

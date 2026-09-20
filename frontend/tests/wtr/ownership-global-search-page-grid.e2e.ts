@@ -1,39 +1,4 @@
-import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
-
-test("global search page grid retains legacy source and route-local owners", async () => {
-  const route = await readFile("src/routes/search.tsx", "utf8");
-  const style = await Promise.resolve(curatedAppCss());
-  const resultTemplate = await readFile(
-    "../yona-original/app/views/search/result.scala.html",
-    "utf8",
-  );
-  const partial = await readFile(
-    "../yona-original/app/views/search/partial_search.scala.html",
-    "utf8",
-  );
-  const bootstrap = await readFile("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
-  const responsive = await readFile(
-    "../yona-original/public/bootstrap/css/bootstrap-responsive.css",
-    "utf8",
-  );
-
-  expect(resultTemplate).toContain("partial_search");
-  expect(partial).toContain('<div class="row-fluid">');
-  expect(partial).toContain('<div class="span2">');
-  expect(partial).toContain('<div class="span10">');
-  expect(bootstrap).toContain(".row-fluid .span2");
-  expect(bootstrap).toContain(".row-fluid .span10");
-  expect(responsive).toContain('.row-fluid [class*="span"]');
-
-  for (const owner of [
-    "global-search-grid-row",
-    "global-search-category",
-    "global-search-results-column",
-  ]) {
-    expect(route).toContain(`data-owner="${owner}"`);
-  }
-});
 
 test("global search page grid stays bounded at desktop and mobile widths", async ({ page }) => {
   const session = {
@@ -103,11 +68,19 @@ test("global search page grid stays bounded at desktop and mobile widths", async
       const row = document.querySelector('[data-owner="global-search-grid-row"]');
       const category = document.querySelector('[data-owner="global-search-category"]');
       const results = document.querySelector('[data-owner="global-search-results-column"]');
-      if (!row || !category || !results) return null;
+      const form = document.querySelector("#searchInnerForm");
+      const input = document.querySelector("#searchKeyword");
+      const submit = form?.querySelector('button[type="submit"]');
+      const breadcrumb = document.querySelector(".site-breadcrumb-outer");
+      if (!row || !category || !results || !form || !input || !submit || !breadcrumb) return null;
       const rowRect = row.getBoundingClientRect();
       const categoryRect = category.getBoundingClientRect();
       const resultsRect = results.getBoundingClientRect();
+      const formRect = form.getBoundingClientRect();
+      const inputRect = input.getBoundingClientRect();
+      const submitRect = submit.getBoundingClientRect();
       return {
+        breadcrumbHeight: breadcrumb.getBoundingClientRect().height,
         categoryHeight: categoryRect.height,
         categoryLeft: categoryRect.left,
         categoryRight: categoryRect.right,
@@ -115,12 +88,26 @@ test("global search page grid stays bounded at desktop and mobile widths", async
         resultsRight: resultsRect.right,
         rowLeft: rowRect.left,
         rowRight: rowRect.right,
+        formDisplay: getComputedStyle(form).display,
+        formLeft: formRect.left,
+        formWidth: formRect.width,
+        inputBorder: getComputedStyle(input).border,
+        inputDisplay: getComputedStyle(input).display,
+        inputHeight: inputRect.height,
+        inputLeft: inputRect.left,
+        inputRight: inputRect.right,
+        inputTop: inputRect.top,
+        inputWidth: inputRect.width,
+        submitLeft: submitRect.left,
+        submitMarginLeft: getComputedStyle(submit).marginLeft,
+        submitTop: submitRect.top,
         scrollWidth: document.documentElement.scrollWidth,
         viewportWidth: window.innerWidth,
       };
     });
 
     expect(geometry).not.toBeNull();
+    expect(geometry!.breadcrumbHeight).toBe(45);
     expect(geometry!.categoryHeight).toBeGreaterThan(0);
     expect(geometry!.rowRight).toBeLessThanOrEqual(geometry!.viewportWidth + 1);
     expect(geometry!.resultsRight).toBeLessThanOrEqual(geometry!.viewportWidth + 1);
@@ -130,6 +117,20 @@ test("global search page grid stays bounded at desktop and mobile widths", async
       expect(geometry!.resultsLeft).toBeCloseTo(geometry!.rowLeft, 0);
     } else {
       expect(geometry!.categoryRight).toBeLessThan(geometry!.resultsLeft);
+      // Live legacy capture: 1014.242px input in a 1108.594px form at 1366px.
+      // Preserve its inline bordered field and whitespace-separated submit, not flex sizing.
+      expect(geometry!.formDisplay).toBe("block");
+      expect(geometry!.inputDisplay).toBe("inline-block");
+      expect(geometry!.inputBorder).toBe("1px solid rgb(204, 204, 204)");
+      expect(geometry!.inputHeight).toBe(30);
+      expect(geometry!.inputLeft).toBeCloseTo(geometry!.formLeft, 1);
+      expect(
+        Math.abs(geometry!.inputWidth - geometry!.formWidth * (1014.2421875 / 1108.59375)),
+      ).toBeLessThanOrEqual(1);
+      expect(geometry!.submitTop).toBeCloseTo(geometry!.inputTop, 1);
+      expect(geometry!.submitMarginLeft).toBe("4.2px");
+      expect(geometry!.submitLeft - geometry!.inputRight).toBeGreaterThan(0);
+      expect(geometry!.submitLeft - geometry!.inputRight).toBeLessThanOrEqual(12);
     }
   }
 });

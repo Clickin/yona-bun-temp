@@ -78,15 +78,15 @@ function UserSettingsNestedLayout({
   return (
     <>
       <UserProfileSettingsTitle loginId={loginId} />
-      <div className="" data-owner="user-settings-breadcrumb-outer">
-        <div className="" data-owner="user-settings-breadcrumb-inner">
+      <div className="site-breadcrumb-outer" data-owner="user-settings-breadcrumb-outer">
+        <div className="site-breadcrumb-inner" data-owner="user-settings-breadcrumb-inner">
           <h3 data-owner="user-settings-breadcrumb-heading">
             {t(activeTab === "token" ? "userinfo.token" : "userinfo.accountSetting")}
           </h3>
         </div>
       </div>
-      <div className="" data-owner="user-settings-page-wrap-outer">
-        <div className="" data-owner="user-settings-page-wrap">
+      <div className="page-wrap-outer" data-owner="user-settings-page-wrap-outer">
+        <div className="page-wrap" data-owner="user-settings-page-wrap">
           <EditTabMenu active={activeTab} />
           {activeTab === "profile" ? (
             <UserProfileSettingsScreen runtimeConfig={runtimeConfig} />
@@ -201,6 +201,7 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
   return (
     <>
       <form
+        className="pull-left"
         id="frmBasic"
         method="post"
         action={prefixBasePath(runtimeConfig.basePath, "/user/edit")}
@@ -262,6 +263,7 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
       </form>
 
       <form
+        className="pull-left"
         id="frmAvatar"
         method="post"
         action={prefixBasePath(runtimeConfig.basePath, "/user/edit")}
@@ -290,7 +292,7 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
               data-owner="user-settings-avatar-progress-bar"
             ></div>
           </div>
-          <div className="btn-wrap" data-owner="user-settings-avatar-upload-wrap">
+          <div className="btn-wrap mt10 center-txt" data-owner="user-settings-avatar-upload-wrap">
             <div
               className="ybtn ybtn-small fake-file-wrap btnUploadAvatar"
               data-owner="user-settings-avatar-upload"
@@ -384,14 +386,14 @@ function EditTabMenu({ active }: { active: string }) {
   ] as const;
 
   return (
-    <ul className="" data-owner="user-settings-edit-tabs">
+    <ul className="nav nav-tabs mt20" data-owner="user-settings-edit-tabs">
       {tabs.map((tab) => {
         const selected = active === tab.key;
         return (
           <li
             key={tab.key}
             data-selected={selected}
-            className=""
+            className={selected ? "active" : undefined}
             data-owner="user-settings-edit-tab-item"
           >
             <Link

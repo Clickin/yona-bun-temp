@@ -281,6 +281,68 @@ impl AppRepositoryImpl<'_> {
         self.app_user_record_from_model(updated).await
     }
 
+    /// Revoke only the deterministic passwords issued by the old OAuth callback.
+    /// Run before accepting requests; errors must abort startup. Each completed
+    /// update is durable so a failed startup can safely resume on the next run.
+    pub async fn revoke_predictable_oauth_passwords(&self) -> Result<u64, DbErr> {
+        let mut cursor = None;
+        let mut revoked = 0;
+        loop {
+            let mut query = linked_account::Entity::find()
+                .select_only()
+                .column(linked_account::Column::Id)
+                .column(linked_account::Column::ProviderKey)
+                .column(linked_account::Column::ProviderUserId)
+                .column(n4user::Column::Id)
+                .column(n4user::Column::Password)
+                .join(
+                    JoinType::InnerJoin,
+                    linked_account::Relation::UserCredential.def(),
+                )
+                .join(JoinType::InnerJoin, user_credential::Relation::N4user.def())
+                .filter(linked_account::Column::ProviderKey.is_not_null())
+                .filter(linked_account::Column::ProviderUserId.is_not_null())
+                .filter(n4user::Column::Password.is_not_null())
+                .order_by_asc(linked_account::Column::Id)
+                .limit(128);
+            if let Some(cursor) = cursor {
+                query = query.filter(linked_account::Column::Id.gt(cursor));
+            }
+            let accounts = query
+                .into_tuple::<(i64, String, String, i64, String)>()
+                .all(&self.db)
+                .await?;
+            if accounts.is_empty() {
+                return Ok(revoked);
+            }
+            for (account_id, provider, provider_user_id, user_id, password_hash) in accounts {
+                cursor = Some(account_id);
+                // Legacy SHA256 and user-chosen passwords must remain intact.
+                if !password_hash.starts_with("$2") {
+                    continue;
+                }
+                let predictable = format!("{provider}:{provider_user_id}:oauth");
+                let matches = bcrypt::verify(predictable, &password_hash).map_err(|_| {
+                    DbErr::Custom(format!(
+                        "OAuth password remediation could not verify bcrypt for user {user_id}"
+                    ))
+                })?;
+                if matches {
+                    // Compare-and-clear preserves a password changed after our read.
+                    // NULL plus no legacy salt disables every local password consumer.
+                    revoked += n4user::Entity::update_many()
+                        .col_expr(n4user::Column::Password, Expr::value(None::<String>))
+                        .col_expr(n4user::Column::PasswordSalt, Expr::value(None::<String>))
+                        .filter(n4user::Column::Id.eq(user_id))
+                        .filter(n4user::Column::Password.eq(password_hash))
+                        .exec(&self.db)
+                        .await?
+                        .rows_affected;
+                }
+            }
+        }
+    }
+
     pub async fn link_or_create_oauth_user(
         &self,
         input: OAuthUserInput,

@@ -1,8 +1,4 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
-import { expect, test, type Page, readFile } from "../wtr-compat.ts";
-
-const routeSource = new URL("../src/routes/lostPassword.tsx", import.meta.url);
-const themeSource = new URL("../src/app.css", import.meta.url);
+import { expect, test, type Page } from "../wtr-compat.ts";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const desktop = { height: 900, width: 1366 };
 const mobile = { height: 844, width: 390 };
@@ -34,22 +30,6 @@ async function openAnonymousLostPassword(page: Page) {
 }
 
 test.describe("Style anonymous lost-password form", () => {
-  test("declares route-themed ownership for every lost-password state", async () => {
-    const [route, theme, legacyFallback] = await Promise.all([
-      readFile(routeSource, "utf8"),
-      readFile(themeSource, "utf8"),
-      Promise.resolve(mergedLegacyBlock()),
-    ]);
-
-    expect(route).toMatch(/data-owner=\{\s*anonymousBaseline\s*\?\s*"lost-password-form"/u);
-    expect(route).toContain('"lost-password-login-id"');
-    expect(route).toContain('"lost-password-submit"');
-
-    expect(theme).not.toMatch(/^\s+lostPassword[A-Z]/m);
-    expect(legacyFallback).toContain(".login-form-wrap .text");
-    expect(legacyFallback).toContain(".login-form-wrap {\n    width: 95% !important;");
-  });
-
   test("keeps legacy form order and sends the anonymous request through the SPA boundary", async ({
     page,
   }) => {
@@ -85,7 +65,6 @@ test.describe("Style anonymous lost-password form", () => {
     await expect(owner.locator('[data-part="lost-password-copy"]')).toHaveText(
       "Web-based platform for collaborative software development",
     );
-    await expect(owner.locator("input.text")).toHaveCount(0);
     await expect(owner.locator('[data-part="lost-password-login-id"]')).toHaveAttribute(
       "placeholder",
       "Login ID",
@@ -193,11 +172,6 @@ test.describe("Style anonymous lost-password form", () => {
     await expect(
       success.locator('[data-part="lost-password-success-alert-dismiss"]'),
     ).toBeVisible();
-    await expect(
-      page.locator(
-        ".page.full > .login-form-wrap .alert-success, .page.full > .login-form-wrap input.text",
-      ),
-    ).toHaveCount(0);
     await expect(success).toHaveCSS("background-color", "rgb(223, 240, 216)");
     await expect(page.locator("#loginId")).toHaveCSS("width", "386px");
 
@@ -208,11 +182,6 @@ test.describe("Style anonymous lost-password form", () => {
       "Failed to send mail.",
     );
     await expect(error.locator('[data-part="lost-password-error-alert-dismiss"]')).toBeVisible();
-    await expect(
-      page.locator(
-        ".page.full > .login-form-wrap .alert-error, .page.full > .login-form-wrap input.text",
-      ),
-    ).toHaveCount(0);
     await expect(error).toHaveCSS("background-color", "rgb(242, 222, 222)");
 
     await page.unroute("**/api/v1/session");
@@ -234,7 +203,6 @@ test.describe("Style anonymous lost-password form", () => {
     await expect(
       authenticated.locator('[data-part="lost-password-authenticated-prefill-email"]'),
     ).toBeVisible();
-    await expect(page.locator(".page.full > .login-form-wrap input.text")).toHaveCount(0);
     await expect(page.locator("#loginId")).toHaveValue("door");
     await expect(page.locator("#emailAddress")).toHaveValue("door@example.com");
   });

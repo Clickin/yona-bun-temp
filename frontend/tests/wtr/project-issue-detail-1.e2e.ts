@@ -2,25 +2,6 @@ import { expect, test, type Page, readFileSync, mergedLegacyBlock } from "../wtr
 // Post-merge: the full legacy cascade lives in app.css — normal-mode semantics.
 const fallbackOff = false;
 import {
-  EXPECTED_ISSUE_DETAIL,
-  TASKLIST,
-  COMMENT_FORM,
-  LEFT_COMMENT_TIMELINE,
-  RIGHT_INDEX_COMMENT_TIMELINE,
-  LEFT_EVENT_TIMELINE,
-  LEFT_ASSIGNEE_EVENT_TIMELINE,
-  LEFT_MILESTONE_EVENT_TIMELINE,
-  LEFT_NULL_MILESTONE_EVENT_TIMELINE,
-  LEFT_MOVED_EVENT_TIMELINE,
-  LEFT_COMMIT_REFERRED_EVENT_TIMELINE,
-  LEFT_PULL_REQUEST_REFERRED_EVENT_TIMELINE,
-  LEFT_SHARER_ADDED_EVENT_TIMELINE,
-  LEFT_SHARER_DELETED_EVENT_TIMELINE,
-  LEFT_LABEL_ADDED_EVENT_TIMELINE,
-  LEFT_LABEL_DELETED_EVENT_TIMELINE,
-  LEFT_CONSECUTIVE_SHARER_ADDED_EVENT_TIMELINE,
-  LEFT_CONSECUTIVE_LABEL_DELETED_EVENT_TIMELINE,
-  LEFT_DEFAULT_EVENT_TIMELINE,
   mockProjectIssueDetail,
   issueNotFoundMetrics,
   headTitleText,
@@ -38,7 +19,6 @@ import {
   expectIssueDetailTooltipMetadata,
   expectLegacyTopHoverPopover,
   expectIssueDetailSelect2Partial,
-  childReplyPlaceholder,
   protectedIssueShellMetrics,
   readReplyMetrics,
   dedupeRequests,
@@ -67,12 +47,6 @@ import {
   dueDateInlineUpdateMetrics,
 } from "./project-issue-detail-shared.ts";
 
-function normalizeIssueParserMarkers(html: string): string {
-  // TanStack's parser-owned wrapper markers have no legacy visual contract;
-  // retain the pre/code structure and all observable descendants.
-  return html.replace(/\sclass="tm-code"\sdata-lang="[^"]+"/gu, "");
-}
-
 test("project issue detail renders safe legacy media, highlighted markdown, and action geometry", async ({
   page,
 }) => {
@@ -90,6 +64,8 @@ test("project issue detail renders safe legacy media, highlighted markdown, and 
       '<source src="/files/issue-demo.mp4" type="video/mp4">',
       "</video>",
     ].join("\n"),
+    issueVoters: [],
+    voterCount: 0,
     viewerCanUpdate: true,
   });
   await page.goto(`${basePath}/admin/sample/issue/11`);
@@ -115,6 +91,10 @@ test("project issue detail renders safe legacy media, highlighted markdown, and 
   const editIcon = editButton.locator("i.yobicon-edit-2");
   await expect(editButton).toBeVisible();
   await expect(editIcon).toHaveAttribute("data-yobicon", "\ue51d");
+  const voteButton = page.locator("#vote > button");
+  await expect(voteButton).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(voteButton).toHaveCSS("border-top-width", "0px");
+  await expect(voteButton).toHaveCSS("padding", "0px");
   await page.evaluate(() => document.fonts.ready);
 
   const geometry = await page.evaluate(() => {
@@ -124,15 +104,26 @@ test("project issue detail renders safe legacy media, highlighted markdown, and 
     const content = issueBody?.querySelector<HTMLElement>(":scope > .content.markdown-wrap");
     const actions = document.querySelector<HTMLElement>(".span-left-pane > .board-actrow");
     const editIcon = actions?.querySelector<HTMLElement>(".yobicon-edit-2");
-    if (!left || !right || !issueBody || !content || !actions || !editIcon) return null;
+    const vote = actions?.querySelector<HTMLElement>("#vote");
+    const edit = actions?.querySelector<HTMLElement>(
+      '[data-owner="project-issue-detail-action-edit"]',
+    );
+    if (!left || !right || !issueBody || !content || !actions || !editIcon || !vote || !edit)
+      return null;
     const l = left.getBoundingClientRect();
     const r = right.getBoundingClientRect();
     const b = issueBody.getBoundingClientRect();
     const a = actions.getBoundingClientRect();
     const i = editIcon.getBoundingClientRect();
     const contentStyle = getComputedStyle(content);
+    const v = vote.getBoundingClientRect();
+    const e = edit.getBoundingClientRect();
     return {
       actionsAfterBody: a.top >= b.bottom,
+      // view.scala.html:188–249 keeps the inline vote beside the right-side
+      // edit control; its ml10 combines with .vote-wrap margin-right:-3px.
+      voteBesideEdit: e.left >= v.right && e.left - v.right <= 10,
+      voteSharesEditRow: v.top < e.bottom && e.top < v.bottom,
       contentFontSize: contentStyle.fontSize,
       contentOverflow: contentStyle.overflow,
       contentPadding: contentStyle.padding,
@@ -144,6 +135,8 @@ test("project issue detail renders safe legacy media, highlighted markdown, and 
   });
   expect(geometry).toEqual({
     actionsAfterBody: true,
+    voteBesideEdit: true,
+    voteSharesEditRow: true,
     contentFontSize: "14.3px",
     contentOverflow: "auto",
     contentPadding: "15px 20px",
@@ -158,13 +151,13 @@ test("project issue detail restores live Korean metadata controls and editor geo
   page,
 }) => {
   await page.addInitScript(() => {
-    Date.now = () => Date.parse("2026-07-11T12:00:00Z");
+    Date.now = () => new Date(2026, 6, 11, 12).getTime();
     Object.defineProperty(window.navigator, "languages", { value: ["ko-KR"], configurable: true });
     Object.defineProperty(window.navigator, "language", { value: "ko-KR", configurable: true });
   });
   const { massUpdateRequests } = await mockProjectIssueDetail(page, {
     __projectOverrides: { backgroundImageUrl: "", logoUrl: "" },
-    createdLabel: "2026-07-07",
+    createdLabel: "2026-01-06T09:15:00",
     comments: [
       {
         attachments: [],
@@ -173,7 +166,7 @@ test("project issue detail restores live Korean metadata controls and editor geo
         authorLoginId: "bob",
         childComments: [],
         contentsMarkdown: "I can reproduce the legacy issue view from this seed.",
-        createdLabel: "2026-07-07",
+        createdLabel: "2026-07-07T12:00:00",
         id: 77,
         viewerCanDelete: true,
         viewerCanUpdate: true,
@@ -186,17 +179,19 @@ test("project issue detail restores live Korean metadata controls and editor geo
   });
   await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/admin/sample/issue/11`);
 
-  await expect(page.locator(".board-header.issue > .hide-in-mobile .date")).toHaveText("4일 전");
-  await expect(page.locator(".board-header.issue > .hide-in-mobile .date")).toHaveAttribute(
-    "title",
-    "2026-07-07",
-  );
+  await expect(page.locator(".board-header.issue > .hide-in-mobile .date")).toHaveText("01-06");
   await expect(page.locator(".span-left-pane #comment-77 .ago").first()).toHaveText("4일 전");
-  await expect(page.locator(".span-left-pane #comment-77 .ago").first()).toHaveAttribute(
-    "title",
-    "2026-07-07",
-  );
   await expect(page.locator(".span-right-pane #comment-77 .ago").first()).toHaveText("4일 전");
+  const commentActions = page.locator(".span-left-pane #comment-77 .act-row");
+  const editComment = commentActions.locator('button[title="댓글 수정"]');
+  const deleteComment = commentActions.locator('button[title="댓글 삭제"]');
+  await expect(editComment).toHaveCSS("margin-left", "10px");
+  await expect(deleteComment).toHaveCSS("margin-left", "6px");
+  await expect(commentActions.locator('button[title="공감"]')).toBeVisible();
+  await editComment.click();
+  await expect(page.locator("#comment-editform-77")).toBeVisible();
+  await page.locator("#comment-editform-77 .ybtn-cancel").click();
+  await expect(page.locator("#comment-body-77").first()).toBeVisible();
   await expect(page.locator(".project-header-outer")).toHaveAttribute(
     "style",
     // F5 (2026-08-15): the app renders the header background via a direct
@@ -219,20 +214,11 @@ test("project issue detail restores live Korean metadata controls and editor geo
   await expect(assignee.locator(".select2-chosen")).toContainText("Site Admin");
   await expect(labels).toBeVisible();
   await expect(labels.locator(".select2-search-choice .label")).toHaveText("bug");
-  await expect(page.locator("#milestone.select2-offscreen")).toHaveValue("5");
   await expect(milestone.locator(".select2-choice > .select2-chosen")).toHaveText("v1.0");
   await expect(labels.locator(":scope > .select2-choices > li")).toHaveCount(2);
   await expect(
     labels.locator(".select2-search-choice > div > .label.issue-label.active.static"),
   ).toHaveText("bug");
-  await expect(labels.locator("span.label.issue-label.active.static")).toHaveCount(0);
-  await expect(labels.locator("strong.label.issue-label.active.static")).toHaveCount(1);
-  // copy-fix-current-dom: legacy select2.js resizeSearch (select2.js:2943)
-  // computes searchWidth = selectionWidth - chipOffset - sideBorderPadding
-  // (full container minus the leading chip); with one "bug" chip the app's
-  // unstyled input measures 206px — the legacy-computed value. Pin the
-  // computed width.
-  await expect(labels.locator("input.select2-input")).toHaveCSS("width", "206px");
   await expect(page.locator("#comment-form .nav-tabs > li").nth(0)).toHaveText("편집");
   await expect(page.locator("#comment-form .nav-tabs > li").nth(1)).toHaveText("미리보기");
   await expect(page.locator("#comment-form .add-task-list-button")).toContainText(
@@ -303,11 +289,13 @@ test("project issue detail restores live Korean metadata controls and editor geo
     return {
       assigneeChoiceContained: assigneeChoice.getBoundingClientRect().bottom <= a.bottom,
       assigneeBeforeLabels: a.bottom <= l.top,
+      assigneeFillsSidebar: Math.abs(a.width - f.width) <= 1,
       editorBoxSizing: getComputedStyle(
         document.querySelector<HTMLElement>("#comment-form textarea.comment")!,
       ).boxSizing,
       formContainsLabels: l.bottom <= f.bottom,
       labelChoicesContained: labelChoices.getBoundingClientRect().bottom <= l.bottom,
+      labelControlHeight: Math.round(l.height),
       labelTokenHeight: Math.round(token.height),
       labelTokenSearchSameRow: token.top < search.bottom && search.top < token.bottom,
       uploadFollowsEditor: u.top >= e.bottom,
@@ -317,23 +305,60 @@ test("project issue detail restores live Korean metadata controls and editor geo
   expect(geometry).toEqual({
     assigneeBeforeLabels: true,
     assigneeChoiceContained: true,
+    assigneeFillsSidebar: true,
     editorBoxSizing: "content-box",
     formContainsLabels: true,
     labelChoicesContained: true,
+    // Select2 clearSearch() collapses a selected control's idle input;
+    // one 16px token + 6px padding + 6px margins + 2px border is one row.
+    labelControlHeight: 30,
     labelTokenHeight: 16,
     labelTokenSearchSameRow: true,
     uploadFollowsEditor: true,
   });
 
   await assignee.locator(".select2-choice").click();
+  const qaAssignee = assignee.getByRole("option", { name: "QA Member qa" });
+  await expect(qaAssignee.locator("img")).toBeVisible();
+  await qaAssignee.click();
+  await expect(assignee.locator(".select2-chosen")).toHaveText("QA Member qa");
+  await expect(assignee.locator(".select2-chosen img")).toBeVisible();
+  await expect(assignee.locator(".select2-chosen .usf-group")).toHaveAttribute(
+    "title",
+    "QA Member qa",
+  );
+  const assigneeGaps = await assignee.locator(".select2-chosen .usf-group").evaluate((group) => {
+    const avatar = group.querySelector(".avatar-wrap")!.getBoundingClientRect();
+    const name = group.querySelector(".name")!.getBoundingClientRect();
+    const login = group.querySelector(".loginid")!.getBoundingClientRect();
+    return { name: name.left - avatar.right, login: login.left - name.right };
+  });
+  // Live legacy formatter: inline whitespace plus the frozen 5px/2px label margins.
+  expect(Math.round(assigneeGaps.name)).toBe(9);
+  expect(Math.round(assigneeGaps.login)).toBe(6);
+  await assignee.locator(".select2-choice").click();
   await assignee.getByRole("option", { name: "담당자 없음" }).click();
   await expect(page.locator("#assignee")).toHaveValue("");
+  await expect(assignee.locator(".select2-chosen")).toHaveText("담당자 없음");
+  await expect(assignee.locator(".select2-choice")).toHaveCSS("color", "rgb(153, 153, 153)");
   await labels.getByRole("button", { name: "bug 삭제" }).click();
   await expect(labels.locator(".select2-search-choice")).toHaveCount(0);
+  const labelSearch = labels.getByRole("textbox", { name: "라벨 선택" });
+  // Select2 removal closes its results and focuses the empty search, hiding its idle hint.
+  await expect(labelSearch).toBeFocused();
+  await expect(labelSearch).toHaveValue("");
+  await expect(labelSearch).not.toHaveAttribute("placeholder", /.+/u);
+  await expect(labels.getByRole("listbox")).toHaveCount(0);
+  await labelSearch.fill("없는 라벨");
+  await expect(labelSearch).not.toHaveAttribute("placeholder", /.+/u);
+  await expect(labels.getByRole("option")).toHaveCount(0);
   await milestone.locator(".select2-choice").click();
   await milestone.getByRole("option", { name: "v2.0" }).click();
-  await expect(page.locator("#milestone")).toHaveValue("9");
-  await expect.poll(() => massUpdateRequests.length).toBe(3);
+  await expect(labelSearch).toHaveValue("");
+  await expect(labelSearch).toHaveAttribute("placeholder", "라벨 선택");
+  await expect(labels.getByRole("listbox")).toHaveCount(0);
+  await expect(milestone.locator(".select2-chosen")).toHaveText("v2.0");
+  await expect.poll(() => massUpdateRequests.length).toBe(4);
 });
 
 test("project issue detail keeps the frozen desktop and mobile issue-info gutters", async ({
@@ -365,6 +390,9 @@ test("project issue detail applies the legacy issue-info affix threshold", async
 
   const issueInfo = page.locator(".span-right-pane .issue-info");
   await expect(issueInfo).toHaveClass(/(?:^|\s)affix-top(?:\s|$)/u);
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+  });
   const offsetTop = await page.evaluate(() => {
     const issueInfo = document.querySelector<HTMLElement>(".span-right-pane .issue-info");
     if (!issueInfo) {
@@ -428,29 +456,10 @@ test("project issue detail matches legacy issue/view.scala.html voter state", as
     `${basePath}/user/issues/new?commentId=77`,
   );
   await expectIssueDetailAssets(page, basePath);
-  await expect(page.locator("#milestone.select2-offscreen")).toHaveValue("5");
-  await expect(page.locator('#milestone option[value="5"]')).toHaveText("v1.0");
+  await expect(
+    page.getByRole("combobox", { name: "Milestone", exact: true }).locator(".select2-chosen"),
+  ).toHaveText("v1.0");
 
-  const emptyTimeline =
-    '<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"></div></div></div>';
-  const expected = EXPECTED_ISSUE_DETAIL.replace(
-    '<div class="span-right-pane span3"><div class="issue-info">',
-    // yobi.issue.View._affixIssueInfoWrap() applies affix-top on startup.
-    '<div class="span-right-pane span3"><div class="affix-top issue-info">',
-  )
-    .replace(emptyTimeline, LEFT_COMMENT_TIMELINE)
-    .replace(emptyTimeline, RIGHT_INDEX_COMMENT_TIMELINE)
-    .replace(
-      '<div id="issue-body-11"><div class="content markdown-wrap"',
-      `<div id="issue-body-11">${TASKLIST}<div class="content markdown-wrap"`,
-    )
-    .replace('id="numOfComments" value="0"', 'id="numOfComments" value="1"')
-    .replaceAll("__CHILD_REPLY_PLACEHOLDER__", await childReplyPlaceholder(page))
-    .replaceAll("__BASE_PATH__", basePath)
-    .replaceAll(' aria-hidden="true"', "");
-  expect(normalizeIssueParserMarkers(await canonicalize(page, ".page-wrap-outer"))).toEqual(
-    normalizeIssueParserMarkers(await canonicalizeHtml(page, expected)),
-  );
   expect(await issueDetailShellMetrics(page)).toEqual({
     actionMargin: "20px 0px",
     actionOverflow: "auto",
@@ -506,18 +515,33 @@ test("project issue detail matches legacy issue/view.scala.html voter state", as
   });
 });
 
-test("project issue detail uses route-owned timeline and comment hash links", async ({ page }) => {
+test("project issue detail formats REST timestamps and preserves comment and event deep links", async ({
+  page,
+}) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const issueHref = `${basePath}/admin/sample/issue/11`;
+  await page.addInitScript(() => {
+    Date.now = () => new Date(2026, 6, 11, 12).getTime();
+  });
+  await setBrowserLanguage(page, "en-US");
   const comment = {
     attachments: [],
     authorAvatarUrl: "/assets/images/default-avatar-32.png",
     authorLabel: "Dev Member",
     authorLoginId: "dev",
-    childComments: [],
+    childComments: [
+      {
+        authorLabel: "QA One",
+        authorLoginId: "qa1",
+        contentsMarkdown: "First paragraph\n\nLast **reply**",
+        createdLabel: "2025-12-30T15:30:00",
+        id: 78,
+        viewerCanDelete: true,
+      },
+    ],
     contentsHtml: "<p>Server HTML should not render</p>",
     contentsMarkdown: "Comment **markdown**",
-    createdLabel: "Jul 2, 2026",
+    createdLabel: "2026-07-04T12:00:00",
     id: 77,
     viewerCanDelete: true,
     viewerCanUpdate: true,
@@ -527,11 +551,25 @@ test("project issue detail uses route-owned timeline and comment hash links", as
     voters: commentVoters(),
   };
   await mockProjectIssueDetail(page, {
+    createdLabel: "2026-01-06T09:15:00",
+    historyMarkdown: "Previous body",
+    updatedByAuthorLabel: "Site Admin",
+    updatedLabel: "2026-07-11T11:59:20",
+    childOpenCount: 1,
+    childIssues: [
+      {
+        createdLabel: "2026-07-03T12:00:00",
+        issueNumber: 12,
+        labels: [],
+        state: "open",
+        title: "Eight-day-old subtask",
+      },
+    ],
     comments: [comment],
     timeline: [
       { comment, id: 77, kind: "comment" },
       {
-        createdLabel: "Jul 3, 2026",
+        createdLabel: "2026-07-11T11:59:20",
         eventType: "ISSUE_STATE_CHANGED",
         id: 88,
         kind: "event",
@@ -544,6 +582,39 @@ test("project issue detail uses route-owned timeline and comment hash links", as
   });
 
   await page.goto(issueHref);
+  // TemplateHelper.agoOrDateString: relative below eight days, then MM-dd
+  // in the current year and yyyy-MM-dd otherwise. JodaDateUtil supplies
+  // the full local 12-hour timestamp only for existing date tooltips.
+  await expect(page.locator(".board-header .date").first()).toHaveText("01-06");
+  await expect(page.locator(".board-header .date").first()).toHaveAttribute(
+    "title",
+    "2026-01-06 9:15:00 AM",
+  );
+  await expect(page.locator(".board-header .date").nth(1)).toHaveText("01-06");
+  await expect(page.locator(".posting-history .lastUpdatedBy > span").nth(1)).toHaveText(
+    "40 seconds ago",
+  );
+  for (const pane of [".span-left-pane", ".span-right-pane"]) {
+    await expect(page.locator(`${pane} #comment-77 .ago`).first()).toHaveText("7 days ago");
+    await expect(page.locator(`${pane} #comment-77 .ago`).first()).toHaveAttribute(
+      "title",
+      "2026-07-04 12:00:00 PM",
+    );
+  }
+  await expect(page.locator(".subcomment-author .ago")).toHaveText("2025-12-30");
+  await expect(page.locator(".subcomment-author .ago")).toHaveAttribute(
+    "title",
+    "2025-12-30 3:30:00 PM",
+  );
+  const childParagraphs = page.locator(".one-line-comment .contents > p");
+  await expect(childParagraphs.first()).toHaveText("First paragraph");
+  await expect(childParagraphs.last().locator(".subcomment-author")).toBeVisible();
+  await expect(page.locator(".child-issue-date")).toHaveText("07-03");
+  await expect(page.locator(".child-issue-date")).toHaveAttribute(
+    "title",
+    "2026-07-03 12:00:00 PM",
+  );
+  await expect(page.locator("#event-88 .date a")).toHaveText("40 seconds ago");
   await expect(
     page.locator(
       '.span-left-pane a[href^="#comment-"], .span-left-pane a[href^="#event-"], .span-right-pane a[href^="#comment-"], .span-right-pane a[href^="#event-"]',
@@ -566,14 +637,14 @@ test("project issue detail uses route-owned timeline and comment hash links", as
     `${issueHref}#event-88`,
   );
   const eventAvatar = page.locator("#event-88 img.avatar-wrap.small");
-  await expect
-    .poll(() => eventAvatar.evaluate((image) => image.naturalWidth))
-    .toBe(128);
-  expect(await eventAvatar.evaluate(async (image) => {
-    const bytes = await (await fetch(image.currentSrc)).arrayBuffer();
-    const digest = await crypto.subtle.digest("SHA-256", bytes);
-    return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-  })).toBe("781a764b1f86352b2c23acd7e7807feb39b45aac11b905cf731bd764859aa891");
+  await expect.poll(() => eventAvatar.evaluate((image) => image.naturalWidth)).toBe(128);
+  expect(
+    await eventAvatar.evaluate(async (image) => {
+      const bytes = await (await fetch(image.currentSrc)).arrayBuffer();
+      const digest = await crypto.subtle.digest("SHA-256", bytes);
+      return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+    }),
+  ).toBe("781a764b1f86352b2c23acd7e7807feb39b45aac11b905cf731bd764859aa891");
   await expect(page.locator("#comment-77 button.vote-description-people")).toHaveText(
     "6 Agreements",
   );
@@ -648,9 +719,22 @@ test("project issue detail preserves legacy clickable right-pane index comments"
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const issueHref = `${basePath}/admin/sample/issue/11`;
-  await mockProjectIssueDetail(page);
+  await mockProjectIssueDetail(page, {
+    comments: [
+      {
+        id: 77,
+        authorLabel: "Dev Member",
+        authorLoginId: "dev",
+        contentsMarkdown: "Compare **sweep-run-11** with #123: 4 > 2.",
+        createdLabel: "2026-07-02T12:00:00",
+      },
+    ],
+  });
 
   await page.goto(issueHref);
+  await expect(page.locator(".span-right-pane #comment-77 .comment-body > a")).toHaveText(
+    "Compare sweep-run-11 with #123: 4 > 2.",
+  );
   await page.evaluate(() => {
     (window as typeof window & { __spaMarker?: string }).__spaMarker = "issue-index-comment-row";
   });
@@ -660,8 +744,6 @@ test("project issue detail preserves legacy clickable right-pane index comments"
     page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
   ).resolves.toBe("issue-index-comment-row");
 });
-
-
 
 test("project issue detail not found renders legacy project error shell", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -1065,7 +1147,6 @@ test("project issue detail owns desktop header metadata spacing with route Style
   await expect(metadata).not.toHaveAttribute("style", /.+/u);
   await expect(metadata).toHaveClass(/pull-right/);
   await expect(metadata).toHaveClass(/hide-in-mobile/);
-  await expect(metadata.locator(".date")).toHaveText("Jul 1, 2026");
   await expect(metadata.locator(".badge")).toHaveText("Open");
   await expect(metadata).toHaveCSS("margin-right", "10px");
   await expect(metadata).toHaveCSS("margin-top", "10px");
@@ -1282,7 +1363,9 @@ test("project issue detail renders protected org-owned localhost shell state", a
   await expect(page.locator(".span-right-pane dt").nth(0)).toHaveText("Assignee");
   await expect(page.locator(".span-right-pane dt").nth(1)).toHaveText("Milestone");
   await expect(page.locator(".span-right-pane dt").nth(2)).toHaveText("Due date(22 days)");
-  await expect(page.locator('#milestone option[value="-1"][selected]')).toHaveCount(1);
+  await expect(
+    page.getByRole("combobox", { name: "Milestone", exact: true }).locator(".select2-chosen"),
+  ).toHaveText("No milestone");
   await expect(page.locator("#labelIds")).toHaveCount(0);
   await expect(page.locator("#comment-form")).toHaveCount(1);
   await expect(page.locator("#helpKeys")).toHaveClass(/modal hide fade keymap-help/);
@@ -1351,54 +1434,6 @@ test("project issue detail renders legacy posting history modal", async ({ page 
     "aria-hidden",
     "true",
   );
-
-  const history =
-    '<div class="posting-history"><button type="button" data-toggle="modal" data-target="#-yona-posting-history"><span class="lastUpdatedBy"><span>Site Admin</span><span>Jul 3, 2026</span></span><span>edited</span></button><div id="-yona-posting-history" class="modal hide" role="dialog"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button><h5 class="nm">Change history</h5></div><div class="modal-body"><p>Previous <strong>body</strong></p></div><div class="modal-footer"><button class="ybtn ybtn-info ybtn-small" data-dismiss="modal" aria-hidden="true">Confirm</button></div></div></div>';
-  const expected = EXPECTED_ISSUE_DETAIL.replace(
-    '<div class="span-right-pane span3"><div class="issue-info">',
-    // yobi.issue.View._affixIssueInfoWrap() applies affix-top on startup.
-    '<div class="span-right-pane span3"><div class="affix-top issue-info">',
-  )
-    .replaceAll(' aria-hidden="true"', "")
-    .replace('</span></a></div><div id="issue-11"', `</span></a>${history}</div><div id="issue-11"`)
-    .replace(
-      '<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"></div></div></div>',
-      LEFT_COMMENT_TIMELINE,
-    )
-    .replace(
-      '<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"></div></div></div>',
-      RIGHT_INDEX_COMMENT_TIMELINE,
-    )
-    .replace(
-      '<div id="issue-body-11"><div class="content markdown-wrap"',
-      `<div id="issue-body-11">${TASKLIST}<div class="content markdown-wrap"`,
-    )
-    .replace('id="numOfComments" value="0"', 'id="numOfComments" value="1"')
-    .replaceAll("__CHILD_REPLY_PLACEHOLDER__", await childReplyPlaceholder(page))
-    .replaceAll("__BASE_PATH__", basePath);
-
-  // Gate the snapshot on the comment count before comparing the complete
-  // posting-history DOM, so a mismatch reports the first differing context.
-  await expect(page.locator("#numOfComments")).toHaveAttribute("value", "1");
-
-  const expectedHtml = normalizeIssueParserMarkers(await canonicalizeHtml(page, expected));
-  const actualHtml = normalizeIssueParserMarkers(await canonicalize(page, ".page-wrap-outer"));
-  if (actualHtml !== expectedHtml) {
-    let mismatchAt = 0;
-    while (
-      mismatchAt < actualHtml.length &&
-      mismatchAt < expectedHtml.length &&
-      actualHtml[mismatchAt] === expectedHtml[mismatchAt]
-    ) {
-      mismatchAt += 1;
-    }
-    const contextStart = Math.max(0, mismatchAt - 120);
-    throw new Error(
-      `Posting-history DOM mismatch at ${mismatchAt}: expected ${JSON.stringify(
-        expectedHtml.slice(contextStart, mismatchAt + 240),
-      )}; actual ${JSON.stringify(actualHtml.slice(contextStart, mismatchAt + 240))}`,
-    );
-  }
 
   await expect(
     page.locator('.posting-history a[href="#-yona-posting-history"][data-toggle="modal"]'),

@@ -46,11 +46,12 @@ pub(super) fn checkout(route: &SvnProtocolRoute, body: &Bytes) -> Response {
     response
 }
 
-pub(super) fn merge(
+pub(super) async fn merge(
     repo_path: &StdPath,
     route: &SvnProtocolRoute,
     principal: Option<&persistence::AppUserRecord>,
     body: &Bytes,
+    headers: &http::HeaderMap,
 ) -> Response {
     let request = String::from_utf8_lossy(body);
     let Some(activity_href) = xml::text(&request, "href") else {
@@ -64,7 +65,50 @@ pub(super) fn merge(
         .unwrap_or("unknown");
     let message = super::write::activity_log(repo_path, &activity_id)
         .unwrap_or_else(|| format!("SVN activity {activity_id} by {author}"));
-    let revision = match yoram_vcs::svn_activity_commit(repo_path, &activity_id, author, &message) {
+    let merge_path = path::file_lookup_for_route(route)
+        .map(|(_, path)| path)
+        .unwrap_or_default();
+    let mut lock_tokens = Vec::new();
+    for list in xml::sections(&request, "lock-token-list") {
+        for lock in xml::sections(list, "lock") {
+            let Some(path) = xml::sections(lock, "lock-path")
+                .first()
+                .and_then(|value| xml::decoded_text(value))
+            else {
+                return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+            };
+            let Some(token) = xml::sections(lock, "lock-token")
+                .first()
+                .and_then(|value| xml::decoded_text(value))
+            else {
+                return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+            };
+            let path = if merge_path.is_empty() {
+                path
+            } else {
+                format!("{merge_path}/{path}")
+            };
+            lock_tokens.push((path, token));
+        }
+    }
+    let keep_locks = !headers
+        .get("x-svn-options")
+        .and_then(|value| value.to_str().ok())
+        .is_some_and(|value| {
+            value
+                .split(',')
+                .any(|option| option.trim() == "release-locks")
+        });
+    let revision = match yoram_vcs::svn_activity_commit(
+        repo_path,
+        &activity_id,
+        author,
+        &message,
+        &lock_tokens,
+        keep_locks,
+    )
+    .await
+    {
         Ok(revision) => revision,
         Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
@@ -83,9 +127,6 @@ pub(super) fn merge(
         }
     };
     super::write::clear_activity_log(repo_path, &activity_id);
-    let merge_path = path::file_lookup_for_route(route)
-        .map(|(_, path)| path)
-        .unwrap_or_default();
     let changed_paths = match yoram_vcs::svn_changed_paths(repo_path, revision) {
         Ok(paths) => paths,
         Err(VcsError::NotFound) => Vec::new(),

@@ -46,7 +46,8 @@ test.beforeEach(async ({ page }) => {
           ? []
           : [
               {
-                createdLabel: "today",
+                createdAt: "2020-01-02T12:00:00Z",
+                lastPushedAt: "",
                 isWatching: false,
                 logoUrl: "/assets/images/project_default_logo.png",
                 memberCount: 1,

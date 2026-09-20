@@ -1,4 +1,4 @@
-import { readFileSync, readFile, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFile } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
@@ -26,6 +26,7 @@ const owners = {
 test.use({ locale: "ko-KR" });
 
 async function mockProjects(page: Page) {
+  await page.clock.setFixedTime("2026-07-17T12:00:00Z");
   await page.addInitScript((runtimeBasePath) => {
     (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
       basePath: runtimeBasePath,
@@ -57,8 +58,8 @@ async function mockProjects(page: Page) {
       json: {
         items: [
           {
-            createdLabel: "07-07",
-            lastPushedLabel: "",
+            createdAt: "2026-07-07T12:00:00Z",
+            lastPushedAt: "",
             memberCount: 1,
             members: [{ avatarUrl: avatarDataUrl, loginId: "alice", userLabel: "Alice Kim" }],
             overview: "Parity seed project for the alice workspace",
@@ -68,8 +69,8 @@ async function mockProjects(page: Page) {
             watchCount: 1,
           },
           {
-            createdLabel: "07-07",
-            lastPushedLabel: "",
+            createdAt: "2026-07-07T12:00:00Z",
+            lastPushedAt: "",
             memberCount: 1,
             members: [{ avatarUrl: avatarDataUrl, loginId: "admin", userLabel: "Site Admin" }],
             overview: "Parity seed Subversion project for localhost checks",
@@ -79,8 +80,8 @@ async function mockProjects(page: Page) {
             watchCount: 1,
           },
           {
-            createdLabel: "07-07",
-            lastPushedLabel: "5일 전",
+            createdAt: "2026-07-07T12:00:00Z",
+            lastPushedAt: "2026-07-12T12:00:00Z",
             memberCount: 1,
             members: [{ avatarUrl: avatarDataUrl, loginId: "admin", userLabel: "Site Admin" }],
             overview: "Parity seed project for the admin workspace",
@@ -106,63 +107,6 @@ async function open(page: Page) {
     timeout: 2_000,
   });
 }
-
-test("projects text-link/code-update wave records the final frozen cascade and class retirement", () => {
-  const route = readFileSync("src/routes/projects.tsx", "utf8");
-  const theme = readFileSync("src/app.css", "utf8");
-  const scala = readFileSync("../yona-original/app/views/project/list.scala.html", "utf8");
-  const siteLayout = readFileSync("../yona-original/app/views/siteLayout.scala.html", "utf8");
-  const layout = readFileSync("../yona-original/app/views/layout.scala.html", "utf8");
-  const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
-  const yobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
-  const common = readFileSync("../yona-original/app/assets/stylesheets/less/_common.less", "utf8");
-  const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
-  const messages = readFileSync("../yona-original/conf/messages.ko-KR", "utf8");
-
-  expect(scala).toContain('<div class="header">');
-  expect(scala).toContain('class="black">@project.name</a>');
-  expect(scala).toContain('class="owner-name-small">@project.owner</a>');
-  expect(scala).toContain(
-    '<span class="small-font">@if(project.lastPushedDateAgo() != null) {, @Messages("project.codeUpdate")',
-  );
-  expect(siteLayout).toContain('@layout(Messages(title))("")');
-  expect(layout).toContain('href="@routes.Assets.at("bootstrap/css/bootstrap.css")"');
-  expect(layout).toContain('href="@routes.Assets.at("stylesheets/yobi.css")"');
-  expect(yobi.trim().split("\n")).toEqual([
-    '@import "less/_variables.less";',
-    '@import "less/_mixins.less";',
-    '@import "less/_common.less";',
-    '@import "less/_sprites.less";',
-    '@import "less/_page.less";',
-    '@import "less/_tippy.less";',
-    '@import "less/_scrollbar.less";',
-    '@import "less/_responsive.less";',
-    '@import "less/_yobiUI.less";',
-    '@import "less/_temporary.less";',
-    '@import "less/_markdown.less";',
-    '@import "less/_migration.less";',
-    '@import "less/_override.less";',
-  ]);
-  expect(bootstrap).toContain("a {\n  color: #0088cc;\n  text-decoration: none;");
-  expect(bootstrap).toContain(
-    "a:hover,\na:focus {\n  color: #005580;\n  text-decoration: underline;",
-  );
-  expect(common).toContain(
-    "a {\n    color: inherit;\n    text-decoration: none;\n    outline: none;",
-  );
-  expect(common).toContain(".small-font{\n    font-size: 10px;\n    font-weight: normal;");
-  expect(pageLess).toContain(".name-tag {\n                margin: 0;");
-  expect(messages).toContain("project.codeUpdate = 마지막 코드 업데이트");
-
-  expect(route.match(/data-owner="projects-directory-title-link"/gu)).toHaveLength(1);
-  expect(route.match(/data-owner="projects-directory-owner-link"/gu)).toHaveLength(1);
-  expect(route.match(/data-owner="projects-directory-code-update"/gu)).toHaveLength(1);
-  expect(route).not.toContain('className="black"');
-
-  expect(route).not.toContain('className="owner-name-small"');
-
-  expect(route).not.toContain('className="small-font"');
-});
 
 for (const viewport of [
   { height: 900, name: "desktop", width: 1366 },

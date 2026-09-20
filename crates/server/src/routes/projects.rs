@@ -365,6 +365,14 @@ pub(crate) async fn project_list(
         let mut items = Vec::with_capacity(records.len());
         for item in records {
             items.push(ProjectListItem {
+                created_at: item
+                    .created_date
+                    .map(|value| value.and_utc().to_rfc3339())
+                    .unwrap_or_default(),
+                last_pushed_at: item
+                    .last_pushed_date
+                    .map(|value| value.and_utc().to_rfc3339())
+                    .unwrap_or_default(),
                 logo_url: project_logo_url(repository, &service.base_path, item.id).await?,
                 owner_name: item.owner_name,
                 project_name: item.project_name,
@@ -1081,9 +1089,10 @@ async fn direct_project_mention_list(
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RestProjectDirectoryItem {
-    created_label: String,
+    created_at: String,
     is_forked: bool,
-    last_pushed_label: String,
+    labels: Vec<RestProjectDirectoryLabel>,
+    last_pushed_at: String,
     logo_url: String,
     member_count: u32,
     members: Vec<ProjectMemberSummary>,
@@ -1097,9 +1106,20 @@ struct RestProjectDirectoryItem {
 }
 
 #[derive(Serialize)]
+struct RestProjectDirectoryLabel {
+    category: String,
+    id: i64,
+    name: String,
+}
+
+#[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RestProjectDirectoryResponse {
     items: Vec<RestProjectDirectoryItem>,
+    page_num: u32,
+    page_size: u32,
+    total_count: u32,
+    total_pages: u32,
 }
 
 #[derive(Deserialize)]
@@ -1407,17 +1427,59 @@ fn project_settings_container_json(
 
 pub(crate) async fn rest_list_projects(
     headers: HeaderMap,
+    query: Vec<(String, String)>,
     service: PilotServiceImpl,
 ) -> Result<Response, RestRouteError> {
     rest_reject_legacy_guest_prohibited_user(&headers, &service).await?;
+    let filter = query
+        .iter()
+        .find(|(key, _)| key == "filter")
+        .map(|(_, value)| value.as_str())
+        .unwrap_or_default();
+    let page_num = query
+        .iter()
+        .find(|(key, _)| key == "pageNum")
+        .map(|(_, value)| value.parse::<u32>())
+        .transpose()
+        .map_err(|_| RestRouteError::from_connect_error(ConnectError::not_found("page not found")))?
+        .unwrap_or(1);
+    if page_num == 0 {
+        return Err(RestRouteError::from_connect_error(ConnectError::not_found(
+            "page not found",
+        )));
+    }
+    let label_ids = query
+        .iter()
+        .filter(|(key, _)| key == "labelIds")
+        .flat_map(|(_, value)| value.split(','))
+        .filter(|value| !value.is_empty())
+        .map(str::parse::<i64>)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|_| {
+            RestRouteError::from_connect_error(ConnectError::invalid_argument("invalid label ID"))
+        })?;
     if let PilotBackend::Repository(repository) = &service.backend {
-        let records = repository
-            .list_projects()
+        let actor_id = service
+            .session_manager
+            .read_session_from_headers(&headers)
+            .and_then(|session| session.user_id);
+        let include_private = if let Some(user_id) = actor_id {
+            repository
+                .find_user_by_id(user_id)
+                .await
+                .map_err(internal_error)
+                .map_err(RestRouteError::from_connect_error)?
+                .is_some_and(|user| user.is_site_admin)
+        } else {
+            false
+        };
+        let directory = repository
+            .list_project_directory(filter, &label_ids, page_num, include_private)
             .await
             .map_err(internal_error)
             .map_err(RestRouteError::from_connect_error)?;
-        let mut items = Vec::with_capacity(records.len());
-        for project in records {
+        let mut items = Vec::with_capacity(directory.projects.len());
+        for project in directory.projects {
             let is_forked = project.original_project_id.is_some();
             let (origin_owner_name, origin_project_name) =
                 resolve_project_origin(repository, &project)
@@ -1433,9 +1495,28 @@ pub(crate) async fn rest_list_projects(
                 .map(project_member_summary_from_record)
                 .collect::<Vec<_>>();
             items.push(RestProjectDirectoryItem {
-                created_label: format_project_date_label(project.created_date),
+                created_at: project
+                    .created_date
+                    .map(|value| value.and_utc().to_rfc3339())
+                    .unwrap_or_default(),
                 is_forked,
-                last_pushed_label: format_project_date_label(project.last_pushed_date),
+                labels: repository
+                    .list_legacy_project_labels(&project.owner_name, &project.project_name)
+                    .await
+                    .map_err(internal_error)
+                    .map_err(RestRouteError::from_connect_error)?
+                    .unwrap_or_default()
+                    .into_iter()
+                    .map(|label| RestProjectDirectoryLabel {
+                        category: label.category,
+                        id: label.id,
+                        name: label.name,
+                    })
+                    .collect(),
+                last_pushed_at: project
+                    .last_pushed_date
+                    .map(|value| value.and_utc().to_rfc3339())
+                    .unwrap_or_default(),
                 logo_url: project_logo_url(repository, &service.base_path, project.id)
                     .await
                     .map_err(RestRouteError::from_connect_error)?,
@@ -1455,7 +1536,13 @@ pub(crate) async fn rest_list_projects(
             });
         }
         return Ok(rest_json_response(
-            RestProjectDirectoryResponse { items },
+            RestProjectDirectoryResponse {
+                items,
+                page_num: directory.page,
+                page_size: directory.page_size,
+                total_count: directory.total,
+                total_pages: directory.total_pages,
+            },
             Context::new(headers),
         ));
     }
@@ -2252,9 +2339,9 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
             "/projects",
             get({
                 let service = service.clone();
-                move |headers: HeaderMap| {
+                move |headers: HeaderMap, Query(query): Query<Vec<(String, String)>>| {
                     let service = service.clone();
-                    async move { rest_list_projects(headers, service).await }
+                    async move { rest_list_projects(headers, query, service).await }
                 }
             }),
         )

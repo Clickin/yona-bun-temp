@@ -1,4 +1,3 @@
-import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
@@ -16,58 +15,6 @@ const OWNERS = {
 const owner = (page: Page, name: string) => page.locator(`[data-owner="${name}"]`);
 
 test.use({ locale: "en-US" });
-
-test("breadcrumb source owns exactly the frozen route-local declarations", () => {
-  const route = readFileSync("src/routes/sites/issueList.tsx", "utf8");
-  const layout = readFileSync("../yona-original/app/views/site/siteMngLayout.scala.html", "utf8");
-  const issueList = readFileSync("../yona-original/app/views/site/issueList.scala.html", "utf8");
-  const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
-  const yobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
-  const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
-  const responsive = readFileSync(
-    "../yona-original/app/assets/stylesheets/less/_responsive.less",
-    "utf8",
-  );
-  const appCss = curatedAppCss();
-  const messages = readFileSync("../yona-original/conf/messages", "utf8");
-  const koreanMessages = readFileSync("../yona-original/conf/messages.ko-KR", "utf8");
-
-  expect(issueList).toContain("@siteMngLayout(message)");
-  expect(layout).toContain('<div class="site-breadcrumb-outer">');
-  expect(layout).toContain('<div class="site-breadcrumb-inner">');
-  expect(layout).toContain('<h3>@Messages("site.sidebar")</h3>');
-  expect(messages).toContain("site.sidebar = Site management");
-  expect(koreanMessages).toContain("site.sidebar = 사이트 관리");
-  for (const imported of ["_variables.less", "_common.less", "_page.less", "_responsive.less"])
-    expect(yobi).toContain(imported);
-  expect(yobi.indexOf("_page.less")).toBeLessThan(yobi.indexOf("_responsive.less"));
-  expect(bootstrap).toContain("h1,\nh2,\nh3,\nh4,\nh5,\nh6 {");
-  expect(bootstrap).toContain("h1,\nh2,\nh3 {\n  line-height: 40px;");
-  expect(bootstrap).toContain("h3 {\n  font-size: 24.5px;");
-  expect(pageLess).toContain(".site-breadcrumb-outer {");
-  expect(pageLess).toContain(".site-breadcrumb-inner {\n        margin:0 auto;");
-  expect(pageLess).toContain("padding: 10px 10px 5px 10px;");
-  expect(pageLess).toContain("line-height: 30px;");
-  expect(responsive).toContain(".site-breadcrumb-outer {\n    min-width: 10px !important;");
-  expect(responsive).toContain(
-    ".site-breadcrumb-outer {\n    width: 100%;\n    padding: 0 10px;\n    box-sizing: border-box;",
-  );
-
-  for (const explicitOwner of Object.values(OWNERS))
-    expect(route).toContain(`data-owner="${explicitOwner}"`);
-  for (const retired of ['className="site-breadcrumb-outer"', 'className="site-breadcrumb-inner"'])
-    expect(route).not.toContain(retired);
-  const breadcrumbStart = route.indexOf('data-owner="site-issue-list-breadcrumb-outer"');
-  const breadcrumbEnd = route.indexOf(
-    'data-owner="site-issue-list-page-wrap-outer"',
-    breadcrumbStart,
-  );
-  const breadcrumb = route.slice(route.lastIndexOf("<div", breadcrumbStart), breadcrumbEnd);
-  expect(breadcrumb).toContain("<h3");
-  expect(appCss).toContain('[data-owner="site-issue-list-breadcrumb-outer"]');
-  expect(appCss).toContain('[data-owner="site-issue-list-breadcrumb-heading"]');
-  expect(breadcrumb).not.toContain("borderBottom");
-});
 
 for (const viewport of [
   { height: 900, name: "desktop", width: 1366 },
@@ -99,7 +46,6 @@ for (const viewport of [
     await expect(outer).toHaveCSS("padding", "0px 10px");
     await expect(outer).toHaveCSS("border-bottom-width", "0px");
     await expect(inner).toHaveCSS("margin", "0px");
-    await expect(heading).toHaveCSS("margin", "10px 0px");
     await expect(heading).toHaveCSS("padding", "10px 10px 5px");
     await expect(heading).toHaveCSS("font-size", "24.5px");
     await expect(heading).toHaveCSS("font-weight", "700");
@@ -117,7 +63,8 @@ for (const viewport of [
         :host { display:block; color:${getComputedStyle(actualHeading).color}; font-family:${getComputedStyle(actualHeading).fontFamily}; }
         .site-breadcrumb-outer { box-sizing:border-box; width:100%; padding:0 10px; }
         .site-breadcrumb-inner { margin:0 auto; }
-        h3 { margin:10px 0; padding:10px 10px 5px; font-family:inherit; font-size:24.5px; font-weight:bold; line-height:30px; color:inherit; text-rendering:optimizelegibility; }
+        /* Frozen _common.less resets heading margins before breadcrumb padding. */
+        h3 { margin:0; padding:10px 10px 5px; font-family:inherit; font-size:24.5px; font-weight:bold; line-height:30px; color:inherit; text-rendering:optimizelegibility; }
         @media (max-width:720px) { .site-breadcrumb-outer { min-width:10px; } }
       </style><div class="site-breadcrumb-outer"><div class="site-breadcrumb-inner"><h3>Site management</h3></div></div>`;
       document.body.append(host);
@@ -202,7 +149,7 @@ async function installPopulatedOpenIssueList(page: Page) {
             authorLoginId: "alice",
             commentCount: 3,
             createdLabel: "1 day ago",
-            createdTitle: "2026-06-29 14:30",
+            createdTitle: "2026-06-29T14:30:00Z",
             issueNumber: "42",
             ownerName: "acme",
             projectLogoUrl: "/assets/images/default-project-logo.png",

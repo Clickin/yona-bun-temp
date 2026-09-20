@@ -13,8 +13,8 @@ const projects = [
     logoUrl: "/assets/images/project_default_logo.png",
     overview: "Private project",
     memberCount: 3,
-    createdLabel: "today",
-    lastPushedLabel: "an hour ago",
+    createdAt: "2020-01-02T12:00:00Z",
+    lastPushedAt: "2020-01-03T12:00:00Z",
     viewerCanWatch: false,
     isWatching: false,
     watchCount: 2,
@@ -29,7 +29,8 @@ const projects = [
     logoUrl: "/assets/images/project_default_logo.png",
     overview: "Forked project",
     memberCount: 2,
-    createdLabel: "yesterday",
+    createdAt: "2020-01-01T12:00:00Z",
+    lastPushedAt: "",
     originOwnerName: "origin-owner",
     originProjectName: "origin-project",
     viewerCanWatch: true,
@@ -46,7 +47,8 @@ const projects = [
     logoUrl: "/assets/images/project_default_logo.png",
     overview: "Public project",
     memberCount: 1,
-    createdLabel: "Monday",
+    createdAt: "2019-12-30T12:00:00Z",
+    lastPushedAt: "",
     viewerCanWatch: true,
     isWatching: false,
     watchCount: 1,
@@ -296,7 +298,7 @@ test("profile Projects pane retires only project link leaf classes", async ({ pa
         ),
       ).toHaveCount(1);
       await expect(row.locator('[data-owner="user-profile-project-name-tag"]')).toContainText(
-        `${project.memberCount} ${project.ownerName} ${project.createdLabel}`,
+        `${project.memberCount} ${project.ownerName}`,
       );
     }
 

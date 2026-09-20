@@ -40,7 +40,7 @@ const parityFoundationUsers = [
     email: "carol@example.com",
     loginId: "carol",
     name: "Carol Lee",
-    password: "carol",
+    password: "carolcarol",
   },
 ];
 const parityFoundationOrganizations = [
@@ -112,7 +112,7 @@ const parityContentUsers = [
     email: "bob@example.com",
     loginId: "bob",
     name: "Bob Park",
-    password: "bob",
+    password: "bobbob",
   },
 ];
 const parityContentLabels = [
@@ -159,7 +159,7 @@ const parityContentIssueComment = {
   issueOwner: defaultAdminLoginId,
   issueProjectName: "sample",
   loginId: "bob",
-  password: "bob",
+  password: "bobbob",
 };
 const parityContentPost = {
   body: "This board post exists to seed the legacy board list and detail flows.",
@@ -189,7 +189,7 @@ const parityContentProjectWatchers = [
     displayName: "Carol Lee",
     loginId: "carol",
     owner: "weblabs",
-    password: "carol",
+    password: "carolcarol",
     projectName: "portal",
   },
 ];
@@ -280,7 +280,10 @@ export function resolveLegacyJacocoConfig(env = process.env) {
   }
 
   const configuredAgent = env.YONA_LEGACY_JACOCO_AGENT;
-  if (configuredAgent !== undefined && (typeof configuredAgent !== "string" || configuredAgent.trim() === "")) {
+  if (
+    configuredAgent !== undefined &&
+    (typeof configuredAgent !== "string" || configuredAgent.trim() === "")
+  ) {
     throw new Error(
       "YONA_LEGACY_JACOCO_AGENT must name an existing JaCoCo agent JAR when YONA_LEGACY_JACOCO=1.",
     );
@@ -300,12 +303,16 @@ export function resolveLegacyJacocoConfig(env = process.env) {
   }
   let manifest;
   try {
-    manifest = execFileSync("unzip", ["-p", agentPath, "META-INF/MANIFEST.MF"], { encoding: "utf8" });
+    manifest = execFileSync("unzip", ["-p", agentPath, "META-INF/MANIFEST.MF"], {
+      encoding: "utf8",
+    });
   } catch {
     manifest = "";
   }
   if (!/^Premain-Class:\s*\S+/mu.test(manifest)) {
-    throw new Error(`Configured JaCoCo agent is not an executable javaagent JAR: ${agentPath}. Missing Premain-Class manifest attribute.`);
+    throw new Error(
+      `Configured JaCoCo agent is not an executable javaagent JAR: ${agentPath}. Missing Premain-Class manifest attribute.`,
+    );
   }
 
   const configuredDestfile = env.YONA_LEGACY_JACOCO_DESTFILE;
@@ -325,9 +332,8 @@ export function resolveLegacyJacocoConfig(env = process.env) {
   ) {
     throw new Error("YONA_LEGACY_JACOCO_CLASSDUMP_DIR must name a non-empty output directory.");
   }
-  const classdumpdir = configuredClassdumpdir === undefined
-    ? null
-    : resolve(configuredClassdumpdir);
+  const classdumpdir =
+    configuredClassdumpdir === undefined ? null : resolve(configuredClassdumpdir);
 
   return {
     agentPath,
@@ -525,23 +531,25 @@ async function start(layout, options) {
   }
   mkdirSync(layout.runDir, { recursive: true });
   const logFd = openSync(layout.logFile, "a");
-  const args = ["-java-home", javaHome, `-Dhttp.address=${layout.host}`, `-Dhttp.port=${layout.port}`];
+  const args = [
+    "-java-home",
+    javaHome,
+    `-Dhttp.address=${layout.host}`,
+    `-Dhttp.port=${layout.port}`,
+    "-Dh2.bindAddress=127.0.0.1",
+  ];
   if (jacoco) {
     args.push(buildLegacyJacocoLauncherArg(jacoco));
   }
   if (process.env.YONA_LEGACY_EMAIL_VERIFICATION === "true") {
     args.push("-Dapplication.use.email.verification=true");
   }
-  const child = spawn(
-    resolve(layout.installDir, "bin/yona"),
-    args,
-    {
-      cwd: layout.installDir,
-      detached: true,
-      env,
-      stdio: ["ignore", logFd, logFd],
-    },
-  );
+  const child = spawn(resolve(layout.installDir, "bin/yona"), args, {
+    cwd: layout.installDir,
+    detached: true,
+    env,
+    stdio: ["ignore", logFd, logFd],
+  });
   child.unref();
   writeFileSync(layout.pidFile, `${child.pid}\n`, "utf8");
   await waitForHttp(`http://${layout.host}:${layout.port}/users/loginform`, 30_000);
@@ -1819,26 +1827,26 @@ async function loginWithPassword(page, baseUrl, loginId, password) {
   }
   await page.fill("#loginIdOrEmailD", loginId);
   await page.fill("#password", password);
-  await submitFormAndWaitForNavigation(
-    page,
-    ".login-form-wrap form",
-    (url) => !url.pathname.endsWith("/users/loginform"),
-  );
+  // A rejected login is expected when the fixture account still needs signup.
+  await submitFormAndWaitForNavigation(page, ".login-form-wrap form");
   return (await page.locator("#loginIdOrEmailD").count()) === 0;
 }
 
 async function submitFormAndWaitForNavigation(page, formSelector, predicate) {
-  const waitForNavigation = page
-    .waitForNavigation({ timeout: 15_000, url: predicate })
-    .catch(() => null);
-  await page.locator(formSelector).evaluate((form) => {
-    if (!(form instanceof HTMLFormElement)) {
-      throw new Error("Expected a form element");
-    }
-    form.submit();
-  });
-  await waitForNavigation;
-  await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => null);
+  await Promise.all([
+    page.waitForNavigation({ timeout: 15_000, waitUntil: "domcontentloaded" }),
+    page.locator(formSelector).evaluate((form) => {
+      if (!(form instanceof HTMLFormElement)) {
+        throw new Error("Expected a form element");
+      }
+      // Native submit() bypasses the legacy submit handler, leaving the
+      // issue/board dirty-page guard active and cancelling navigation.
+      form.requestSubmit();
+    }),
+  ]);
+  if (predicate && !predicate(new URL(page.url()))) {
+    throw new Error(`Unexpected destination after submitting ${formSelector}: ${page.url()}`);
+  }
 }
 
 async function requireLocator(page, selector, pathLabel) {

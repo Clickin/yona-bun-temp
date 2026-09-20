@@ -1,13 +1,12 @@
 pub(crate) fn committed_date(svnlook_date: &str) -> String {
-    let mut parts = svnlook_date.split_whitespace();
-    let Some(date) = parts.next() else {
-        return svnlook_date.trim().to_string();
-    };
-    let Some(time) = parts.next() else {
-        return svnlook_date.trim().to_string();
-    };
-    let time = time.split_once('.').map(|(head, _)| head).unwrap_or(time);
-    format!("{date}T{time}.000000Z")
+    let raw = svnlook_date.trim();
+    let date = raw.split_once(" (").map_or(raw, |(date, _)| date);
+    chrono::DateTime::parse_from_str(date, "%Y-%m-%d %H:%M:%S%.f %z")
+        .map(|date| {
+            date.with_timezone(&chrono::Utc)
+                .to_rfc3339_opts(chrono::SecondsFormat::Micros, true)
+        })
+        .unwrap_or_else(|_| raw.to_string())
 }
 
 pub(crate) fn http_date(svnlook_date: &str) -> String {

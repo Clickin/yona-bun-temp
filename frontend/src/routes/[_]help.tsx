@@ -282,7 +282,11 @@ function HelpFaqRow({
             {question}
           </button>
         </span>
-        <i aria-hidden="true" data-owner="help-faq-toggle-icon" />
+        <i
+          aria-hidden="true"
+          data-owner="help-faq-toggle-icon"
+          style={{ "--help-faq-sprite": `url(${legacySpriteUrl})` } as React.CSSProperties}
+        />
       </div>
       <div data-state={isOpen ? "open" : "closed"} data-owner="help-faq-answer-wrap">
         <i data-owner="help-faq-answer-icon" />

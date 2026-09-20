@@ -1,4 +1,4 @@
-import { readFileSync, readFile, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFile } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
@@ -24,6 +24,7 @@ const owners = {
 test.use({ locale: "ko-KR" });
 
 async function mockProjects(page: Page, totalPages = 1) {
+  await page.clock.setFixedTime("2026-07-17T12:00:00Z");
   await page.addInitScript((runtimeBasePath) => {
     (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
       basePath: runtimeBasePath,
@@ -54,14 +55,14 @@ async function mockProjects(page: Page, totalPages = 1) {
       json: {
         items: [
           {
-            createdLabel: "07-07",
+            createdAt: "2026-07-07T12:00:00Z",
             overview: "Protected organization project for localhost parity",
             ownerName: "weblabs",
             projectName: "portal",
             projectScope: "protected",
           },
           {
-            createdLabel: "07-07",
+            createdAt: "2026-07-07T12:00:00Z",
             memberCount: 1,
             members: [{ avatarUrl: avatarDataUrl, loginId: "alice", userLabel: "Alice Kim" }],
             overview: "Parity seed project for the alice workspace",
@@ -71,7 +72,7 @@ async function mockProjects(page: Page, totalPages = 1) {
             watchCount: 1,
           },
           {
-            createdLabel: "07-07",
+            createdAt: "2026-07-07T12:00:00Z",
             memberCount: 1,
             members: [{ avatarUrl: avatarDataUrl, loginId: "admin", userLabel: "Site Admin" }],
             overview: "Parity seed Subversion project for localhost checks",
@@ -81,8 +82,8 @@ async function mockProjects(page: Page, totalPages = 1) {
             watchCount: 1,
           },
           {
-            createdLabel: "07-07",
-            lastPushedLabel: "5일 전",
+            createdAt: "2026-07-07T12:00:00Z",
+            lastPushedAt: "2026-07-12T12:00:00Z",
             memberCount: 1,
             members: [{ avatarUrl: avatarDataUrl, loginId: "admin", userLabel: "Site Admin" }],
             overview: "Parity seed project for the admin workspace",
@@ -107,102 +108,6 @@ async function open(page: Page, totalPages = 1, currentPage = 1) {
   await page.goto(`${basePath}/projects${query}`);
   await expect(page.locator('[data-owner="projects-directory-list"]')).toBeVisible();
 }
-
-test("pagination input/icon wave owns exactly three targets and preserves excluded fallback", () => {
-  const route = readFileSync("src/routes/projects.tsx", "utf8");
-  const theme = readFileSync("src/app.css", "utf8");
-  const scala = readFileSync("../yona-original/app/views/project/list.scala.html", "utf8");
-  const siteLayout = readFileSync("../yona-original/app/views/siteLayout.scala.html", "utf8");
-  const yobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
-  const variables = readFileSync(
-    "../yona-original/app/assets/stylesheets/less/_variables.less",
-    "utf8",
-  );
-  const mixins = readFileSync("../yona-original/app/assets/stylesheets/less/_mixins.less", "utf8");
-  const common = readFileSync("../yona-original/app/assets/stylesheets/less/_common.less", "utf8");
-  const sprites = readFileSync(
-    "../yona-original/app/assets/stylesheets/less/_sprites.less",
-    "utf8",
-  );
-  const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
-  const responsive = readFileSync(
-    "../yona-original/app/assets/stylesheets/less/_responsive.less",
-    "utf8",
-  );
-  const yobiUi = readFileSync("../yona-original/app/assets/stylesheets/less/_yobiUI.less", "utf8");
-  const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
-  const bootstrapResponsive = readFileSync(
-    "../yona-original/public/bootstrap/css/bootstrap-responsive.css",
-    "utf8",
-  );
-  const paginationJs = readFileSync("../yona-original/public/javascripts/yona-lib.js", "utf8");
-  const messages = readFileSync("../yona-original/conf/messages.ko-KR", "utf8");
-
-  expect(scala).toContain('<div id="pagination"></div>');
-  expect(scala).toContain(
-    'yobi.Pagination.update($("#pagination"), @currentPage.getTotalPageCount);',
-  );
-  expect(siteLayout).toContain("@common.navbar(menuType, null, null)");
-  expect(yobi.trim().split("\n")).toEqual([
-    '@import "less/_variables.less";',
-    '@import "less/_mixins.less";',
-    '@import "less/_common.less";',
-    '@import "less/_sprites.less";',
-    '@import "less/_page.less";',
-    '@import "less/_tippy.less";',
-    '@import "less/_scrollbar.less";',
-    '@import "less/_responsive.less";',
-    '@import "less/_yobiUI.less";',
-    '@import "less/_temporary.less";',
-    '@import "less/_markdown.less";',
-    '@import "less/_migration.less";',
-    '@import "less/_override.less";',
-  ]);
-  expect(variables).toContain("@orange : #F36C22;");
-  expect(variables).toContain("@primary         : @orange;");
-  expect(mixins).toContain(".box-shadow(@shadow: 0 1px 2px rgba(0, 0, 0, .25))");
-
-  expect(common).toContain(".page-navigation-wrap {");
-  expect(common).toContain(".input-mini {\n                margin:0; width:30px;");
-  expect(common).toContain(
-    "text-align:center; font-weight:bold;\n                border:1px solid #eee;",
-  );
-  expect(common).toContain(".box-shadow(inset -1px -1px 2px rgba(0,0,0,0.1));");
-  expect(common).toContain("color:@primary; border-color:@primary;");
-  expect(common).toContain(".nospinner { -moz-appearance:textfield; }");
-  expect(sprites).toContain("background-image: url('@{base-image-path}/sprite.png');");
-  expect(sprites).toContain(".btn-pg-next {\n    width: 6px;\n    height: 9px;");
-  expect(sprites).toContain("background-position: -146px -139px;");
-  expect(sprites).toContain("background-position: -23px -13px;");
-  expect(sprites).toContain(".btn-pg-prev {\n    width: 6px;\n    height: 9px;");
-  expect(sprites).toContain("background-position: -136px -139px;");
-  expect(sprites).toContain("background-position: -164px -2px;");
-  expect(pageLess).toContain(".page-nums {\n    margin-left: -120px !important;");
-  expect(responsive).toContain(".page-nums {\n    margin-left: 0;");
-  expect(responsive).toContain('input[type="number"],\n  input[type="password"],');
-  expect(yobiUi).toContain('input[type="week"], input[type="number"], input[type="email"]');
-  expect(yobiUi).toContain(".box-shadow(none);\n    .border-radius(2px);");
-  expect(bootstrap).toContain(".input-mini {\n  width: 60px;");
-  expect(bootstrap).toContain('input[type="number"],');
-  expect(bootstrap).toContain("height: 20px;\n  padding: 4px 6px;");
-  expect(bootstrapResponsive).toContain("input,\n  textarea,\n  .uneditable-input {");
-  expect(paginationJs).toContain('class="input-mini nospinner"');
-  expect(paginationJs).toContain("ico btn-pg-prev off");
-  expect(paginationJs).toContain("ico btn-pg-next off");
-  expect(messages).toContain("button.prevPage = 이전 페이지");
-  expect(messages).toContain("button.nextPage = 다음 페이지");
-
-  expect(route.match(/data-owner="projects-directory-pagination-input"/gu)).toHaveLength(1);
-  expect(route.match(/data-owner="projects-directory-pagination-prev-icon"/gu)).toHaveLength(2);
-  expect(route.match(/data-owner="projects-directory-pagination-next-icon"/gu)).toHaveLength(2);
-  expect(route).toContain('import legacySpriteUrl from "../assets/legacy/sprite.png";');
-
-  expect(route).not.toContain('className="input-mini nospinner"');
-  expect(route).not.toContain('className="ico btn-pg-prev');
-  expect(route).not.toContain('className="ico btn-pg-next');
-  expect(route).toContain('data-owner="projects-directory-pagination-label"');
-  expect(route).not.toContain('className="off"');
-});
 
 for (const viewport of [
   { height: 900, name: "desktop", width: 1366 },

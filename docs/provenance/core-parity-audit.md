@@ -7,6 +7,75 @@
 > `AGENTS.md` and `SPEC.md`; ordinary accepted observable divergences are not
 > final approval.
 
+- Current replacement execution evidence (2026-09-18):
+  `docs/plans/2026-09-18-yona-replacement-execution.md`. Organization nonmember
+  GUEST authorization now follows `OrganizationUser.roleTypeOf`, rather than the
+  global guest-account flag; the focused organization/REST contracts pass.
+  Project navigation counts use legacy OPEN PRs and OPEN review threads,
+  including commit-only threads; the mixed-state REST regression passes.
+- The `sweep-mu7ca28i` seed issue-state mismatch was harness contamination:
+  I4 called legacy's mutating `nextstate` GET against seed #1 while treating
+  canonical SPA fallback HTTP 200 as a mutation. Dedicated issue lifecycle and
+  independent persisted-state readback now replace that probe. Live H2 readback
+  uses the existing auto-server connection, not an unsafe stale `FILE_LOCK=NO`
+  reader. The new sweep remains separate from the diagnostic evidence.
+- Retained repository loss was traced to legacy's test-only `/_init` GET:
+  `Application.init` invokes `makeTestRepository`, and repository creation deletes
+  the existing repository first. The differential action now preserves the
+  repository root across that request and restores it even if capture throws;
+  filesystem regressions cover both paths. No product endpoint or broad DOM
+  exemption was added.
+- Integrated fixes preserve raw timestamps through the API and legacy display
+  formatter, project issue/post number high-water marks after deletion/import,
+  PR-specific review linkage, milestone bulk options, and committer-ordered PR
+  source branches. The existing Rust workspace passed in 366.6 seconds
+  (`cargo-test-2026-09-18T214953-137Z.log`); differential/launcher regressions
+  passed 203/203. Interrupted or pre-fix browser sweeps remain diagnostic
+  evidence, not final parity approval.
+- The prior pre-follow-up candidate passed frontend type checking, Vitest 191 files /
+  265 tests, and affected WTR 125 files / 787 passed / 0 failed / 8 skipped.
+  The eight unavailable live-mirror cases are not pass evidence. Its embedded
+  binary `b722810bad918e50dc7b208193a5ddfcee21926629f8dffb5563054cff7b018c`
+  also preserved native Git/SVN authorization and writes, restored password
+  login, issue/comment edits, attachment bytes, and PR review content.
+  `.agent/replacement-execution/final-gates-evidence.json` links the actual logs
+  and screenshots. The full legacy differential verdict remains separate.
+- Golden migration acceptance is scoped to the user-approved `admin/WYVE_OCS`
+  repository (project id `1`) only. Its native `git fsck --full --no-dangling`
+  passes with 43,737 commits, 496 packs, 623,380 packed objects, and zero
+  garbage objects; evidence: `.agent/replacement-execution/golden-wyve-ocs-integrity.json`.
+  `admin/WYVE_MIS` (project id `3`) is explicitly excluded and is not read,
+  validated, transferred, or used as a gate input. The prior corrupt-pack
+  artifact remains historical: `.agent/replacement-execution/golden-source-pack-integrity.json`.
+- The completed `sweep-mu7nd2qf` (`corrected-final/report.json`) exercised
+  all 117 scenarios with zero unaccepted step errors after fixing I18 import
+  ID-collision handling and PR merge metadata. Its 55 DOM `UNVERIFIED` findings
+  still block A4. It precedes the subsequent shared header/toast/search and
+  seeded-date alignment changes; see the execution plan for candidate-specific
+  gates and distinct-origin browser evidence.
+- Subsequent distinct-origin Chrome measurements match legacy desktop/mobile
+  anonymous hero geometry, milestone dropdown/search geometry, visible assignee
+  children, and code-file/issue tooltip boxes. These focused proofs do not close
+  the remaining differential findings. The 135-file WTR run failed (801 passed,
+  14 failed, eight unavailable live-mirror cases); follow-up product corrections
+  and remaining hover/notification diagnostics require a new integrated gate.
+- Latest completed `sweep-mu7qjzz2` still has 55 DOM findings despite 117/117
+  scenarios without unaccepted step errors. The later full WTR run failed:
+  660 files, 2,760 passed, 38 failed, eight unavailable live-mirror cases.
+  The repaired 39-file follow-up timed out; isolated successes do not supersede
+  that result. Candidate-specific evidence remains in the execution plan.
+- Paired settings/webhook controls now follow original whitespace and frozen
+  radio/input CSS rather than Tailwind's conflicting `inline` utility. API
+  user/project timestamps now include UTC offsets; the explicit-offset
+  regression failed before the fix and all 48 site-admin contracts passed.
+  The actual Asia/Seoul user age now matches the exported UTC instant.
+  Original Nashorn `moment` handling of boxed Java Long was separately
+  reproduced as a legacy date-calculation bug, not an accepted new divergence.
+- Actual issue input focus does not yet open the original-shaped calendar,
+  and code branch search + ArrowDown + Enter does not select. These are
+  observed interaction gaps undergoing React-owned repairs, not plugin-only
+  DOM differences that can be exempted.
+
 - 2026-08-01 workspace profile query-parity note: the legacy public profile and
   member-project projection remain grounded in `yona-original/app/views/user/view.scala.html`
   and its `user/partial_*.scala.html` streams. Yoram keeps the legacy project
@@ -40,7 +109,7 @@
 ## Interpretation After Rust Pivot
 
 - The `Current route/contract` column below is a historical label. Legacy parity evidence must come from `yona-original/`; `reference/mixed-code/**` paths are obsolete pre-Rust residuals and are not reference material.
-- The canonical implementation path is [repo root](/G:/programming/yona).
+- The canonical implementation path is [repo root](../../).
 - Project-member avatars follow `User.avatarUrl` and `GravatarUtil`: email hashing remains normalized, but a missing Gravatar uses Yona's fixed gray default image rather than an identicon. Focused guards: `frontend/tests/project-members-svn.e2e.ts` and the server `gravatar_uses_the_legacy_yona_default_avatar` contract.
 - PR detail empty-event rendering follows `git/view.scala.html`: keep `.board-comment-wrap`, omit `ul#comments`, and do not add placeholder text.
 - PR detail event rendering follows `git/partial_pull_request_event.scala.html`: conflict/resolved `PULL_REQUEST_STATE_CHANGED` rows keep the legacy state classes/copy and senderless message shape. Focused guard: `frontend/tests/project-pullrequest-overview.e2e.ts`.
@@ -2717,3 +2786,11 @@ StyleX dynamic-style build note: the production verifier permits the compiler-ge
   branch deletion, `U24` covers dual signup verification links, and `U26`
   covers offline avatar capture/restore. The report covers 315/315 behaviors
   with `needs-review=0`; the differential unit suite passes 67/67.
+
+## 2026-09-20 Replacement Execution Continuation
+
+- Legacy-rooted React route repairs restored visible class/cascade contracts for issue comments/forms, milestone/board/post/search screens, pull-request/code rows and forms, site-admin screens, user settings/signup, and site-list pagination. Frozen legacy Scala templates and LESS/CSS were read for each owned route; generated Select2/markdown backing nodes were not used as blanket DOM exemptions.
+- Same-candidate focused Chrome batch: 11 files, 59 passed, 0 failed. Frontend unit/DOM lane: 190 files, 263 tests passed. TypeScript check and production build pass. Full Rust workspace and Node differential/harness contracts pass.
+- Same-candidate differential `sweep-mu96rjmw` attempted 117/117 scenarios with zero infrastructure and step errors; `.agent/replacement-execution/final-source2/report.json` records 48 UNVERIFIED, 8 IMPLEMENTATION_DIFFERENCE, and 5 LEGACY_BUG_NOT_REPRODUCED findings. A4 remains open; this artifact is current evidence, not closure.
+- Full Chrome WTR ran 661 files and ended 2,520 passed / 155 failed / 8 skipped. It is recorded as a failed full gate; the focused 59/59 batch is the bounded repaired-scope evidence. Native measured evidence remains in `.agent/replacement-execution/{site-list-native-comparison,footer-pager-header-comparison}.json`.
+- Fresh impacted-scenario differential `sweep-mu9b11wr` ran 18 scenarios / 68 behaviors with zero infrastructure and step errors. It records 25 UNVERIFIED DOM findings and 2 existing implementation differences, with zero `REAL_OBSERVABLE_MISMATCH` findings in the selected slice; the artifact is `.agent/replacement-execution/sweep-2026-09-20-current/report.json`. Focused route contracts remain the accepted bounded evidence, and the full A4 closure gate is still open.

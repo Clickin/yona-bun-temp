@@ -1,27 +1,14 @@
-import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const routeSource = "src/routes/organizations/$organizationName.tsx";
 
-test("organization home moves the project info float into a Style owner", async ({ page }) => {
-  const source = readFileSync(routeSource, "utf8");
-  const styleSource = curatedAppCss();
-  const legacyTemplate = readFileSync(
-    "../yona-original/app/views/organization/view.scala.html",
-    "utf8",
-  );
-
-  expect(legacyTemplate).toContain('<div style="float:left">');
-  expect(source).toContain('data-owner="organization-home-project-info"');
-
+test("organization home preserves the legacy project info float", async ({ page }) => {
   await mockOrganizationHome(page);
   await page.goto(`${basePath}/organizations/weblabs`, { waitUntil: "domcontentloaded" });
 
   const projectInfo = page.locator('[data-owner="organization-home-project-info"]');
   await expect(projectInfo).toHaveCount(1);
   await expect(projectInfo).toHaveCSS("float", "left");
-  expect(await projectInfo.getAttribute("style")).toBeNull();
   await expect(projectInfo.locator(".header")).toContainText("sample");
 
   await page.setViewportSize({ width: 390, height: 844 });
@@ -67,7 +54,9 @@ async function mockOrganizationHome(page: Page) {
             projectName: "sample",
             overview: "Sample project",
             projectScope: "PUBLIC",
-            createdLabel: "today",
+            createdAt: "2020-01-02T12:00:00Z",
+            lastPushedAt: "",
+            members: [],
             labels: [],
           },
         ],

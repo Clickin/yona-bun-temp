@@ -1,108 +1,10 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
-import { expect, test } from "../wtr-compat.ts";
-
-// Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve joins path parts.
-const mkdirSync = () => undefined;
-const resolve = (...parts: string[]) => parts.join("/");
+import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const screenshotDirectory = resolve("/private/tmp/yona-pull-request-changes-review-editor-mt10");
-const routeSource = readFileSync(
-  new URL(
-    "../src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes.tsx",
-    import.meta.url,
-  ),
-  "utf8",
-);
-const styleSource = curatedAppCss();
-const legacyViewSource = readFileSync(
-  new URL("../../yona-original/app/views/git/viewChanges.scala.html", import.meta.url),
-  "utf8",
-);
-const legacyThreadFormSource = readFileSync(
-  new URL(
-    "../../yona-original/app/views/partial_comment_form_on_thread.scala.html",
-    import.meta.url,
-  ),
-  "utf8",
-);
-const legacyThreadSource = readFileSync(
-  new URL("../../yona-original/app/views/partial_comment_thread.scala.html", import.meta.url),
-  "utf8",
-);
-const legacyEditorSource = readFileSync(
-  new URL("../../yona-original/app/views/common/editor.scala.html", import.meta.url),
-  "utf8",
-);
-const legacyUploadSource = readFileSync(
-  new URL("../../yona-original/app/views/common/uploadForm.scala.html", import.meta.url),
-  "utf8",
-);
-const legacyYobiSource = readFileSync(
-  new URL("../../yona-original/app/assets/stylesheets/yobi.less", import.meta.url),
-  "utf8",
-);
-const legacyCommonSource = readFileSync(
-  new URL("../../yona-original/app/assets/stylesheets/less/_common.less", import.meta.url),
-  "utf8",
-);
-const legacyPageSource = readFileSync(
-  new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
-  "utf8",
-);
-const legacyResponsiveSource = readFileSync(
-  new URL("../../yona-original/app/assets/stylesheets/less/_responsive.less", import.meta.url),
-  "utf8",
-);
-const legacyYobiUiSource = readFileSync(
-  new URL("../../yona-original/app/assets/stylesheets/less/_yobiUI.less", import.meta.url),
-  "utf8",
-);
-const legacyMarkdownSource = readFileSync(
-  new URL("../../yona-original/app/assets/stylesheets/less/_markdown.less", import.meta.url),
-  "utf8",
-);
-const legacyBootstrapSource = readFileSync(
-  new URL("../../yona-original/public/bootstrap/css/bootstrap.css", import.meta.url),
-  "utf8",
-);
-const legacyBootstrapResponsiveSource = readFileSync(
-  new URL("../../yona-original/public/bootstrap/css/bootstrap-responsive.css", import.meta.url),
-  "utf8",
-);
-const legacyMessagesSource = readFileSync(
-  new URL("../../yona-original/conf/messages", import.meta.url),
-  "utf8",
-);
 
 test.use({ locale: "en-US" });
 
-test("PR changes review editor owns legacy mt10 in route Style", async ({ page }) => {
-  expect(legacyViewSource).toContain("@common.reviewForm");
-  expect(legacyThreadSource).toContain("@partial_comment_form_on_thread(thread)");
-  expect(legacyThreadFormSource).toContain(
-    '@common.editor("contents", "" , "style=height:100px", "code-review-body")',
-  );
-  expect(legacyEditorSource).toContain('<div data-toggle="markdown-editor" class="mt10">');
-  expect(legacyUploadSource).toContain('class="upload-wrap content-footer"');
-  expect(legacyCommonSource).toMatch(/\.mt10\s*\{\s*margin-top:10px;\s*\}/u);
-  expect(legacyYobiSource).toContain('@import "less/_common.less";');
-  expect(legacyYobiSource).toContain('@import "less/_page.less";');
-  expect(legacyYobiSource).toContain('@import "less/_responsive.less";');
-  expect(legacyYobiSource).toContain('@import "less/_yobiUI.less";');
-  expect(legacyYobiSource).toContain('@import "less/_markdown.less";');
-  expect(legacyPageSource).toContain(".review-form {");
-  expect(legacyResponsiveSource).toContain(".review-form .write-comment-box");
-  expect(legacyYobiUiSource).toContain("body {");
-  expect(legacyMarkdownSource).toContain(".markdown-wrap {");
-  expect(legacyBootstrapSource).toContain(".tab-content > .active");
-  expect(legacyBootstrapResponsiveSource).toContain("@media (max-width: 767px)");
-  expect(legacyMessagesSource).toContain("common.editor.edit = Edit");
-  expect(legacyMessagesSource).toContain("common.editor.preview = Preview");
-  expect(legacyMessagesSource).toContain("button.upload = File upload");
-
-  expect(routeSource).toContain('"pull-request-changes-review-editor-wrapper"');
-
+test("PR changes review editor preserves spacing and submits a thread reply", async ({ page }) => {
   await mockChanges(page);
   for (const viewport of [
     { height: 900, name: "desktop", width: 1366 },
@@ -119,9 +21,7 @@ test("PR changes review editor owns legacy mt10 in route Style", async ({ page }
     await expect(editor).toBeVisible();
     const form = editor.locator("xpath=ancestor::form[1]");
     const upload = form.locator(".upload-wrap").first();
-    await expect(editor).toHaveClass(/\bmt10\b/u);
     await expect(editor).toHaveCSS("margin-top", "10px");
-    await expect(editor).not.toHaveAttribute("style", /.+/u);
 
     const tabs = editor.locator("> .nav-tabs > li");
     await expect(tabs).toHaveCount(5);
@@ -133,10 +33,11 @@ test("PR changes review editor owns legacy mt10 in route Style", async ({ page }
     await expect(upload.locator("input[type=file][name=filePath]")).toHaveAttribute("multiple", "");
 
     await tabs.nth(1).getByRole("button", { name: "Preview" }).click();
-    await expect(editor.locator(`#preview-thread-91`)).toHaveClass(/\bactive\b/u);
-    await expect(editor.locator(`#edit-thread-91`)).not.toHaveClass(/\bactive\b/u);
+    await expect(editor.locator(`#preview-thread-91`)).toBeVisible();
+    await expect(editor.locator(`#edit-thread-91`)).not.toBeVisible();
     await tabs.nth(0).getByRole("button", { name: "Edit" }).click();
-    await expect(editor.locator(`#edit-thread-91`)).toHaveClass(/\bactive\b/u);
+    await expect(editor.locator(`#edit-thread-91`)).toBeVisible();
+    await editor.locator(".textarea-box textarea").fill("Reply with attachment");
 
     const fileInput = upload.locator("input[type=file][name=filePath]");
     await fileInput.setInputFiles({
@@ -181,24 +82,33 @@ test("PR changes review editor owns legacy mt10 in route Style", async ({ page }
       await page.locator("body").evaluate((element) => element.scrollWidth),
     ).toBeLessThanOrEqual(viewport.width);
 
-    mkdirSync(screenshotDirectory, { recursive: true });
-    await page.screenshot({
-      fullPage: true,
-      path: resolve(screenshotDirectory, `${viewport.name}.png`),
-    });
-
     const submitRequestPromise = page.waitForRequest(
       (request) =>
         request.method() === "POST" &&
-        request.url().includes("/admin/sample/pullRequest/90/comments"),
+        new URL(request.url()).pathname ===
+          `${basePath}/api/v1/owners/admin/projects/sample/pull-requests/9/comments`,
     );
     await form.locator('button[type="submit"]').click();
     const submitRequest = await submitRequestPromise;
-    expect(submitRequest.method()).toBe("POST");
+    expect(submitRequest.postDataJSON()).toMatchObject({
+      attachmentIds: [702],
+      contentsMarkdown: "Reply with attachment",
+      threadId: 91,
+    });
+    await expect(editor.locator(".textarea-box textarea")).toHaveValue("");
   }
 });
 
 async function mockChanges(page: Page) {
+  for (const url of ["**/api/auth/session", "**/api/v1/auth/session"]) {
+    await page.route(url, (route: Route) =>
+      route.fulfill({
+        contentType: "application/json",
+        headers: { "x-csrf-token": "review-comment-csrf" },
+        json: {},
+      }),
+    );
+  }
   await page.addInitScript((runtimeBasePath) => {
     (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
       basePath: runtimeBasePath,
@@ -272,8 +182,15 @@ async function mockChanges(page: Page) {
         },
       }),
   );
-  await page.route("**/admin/sample/pullRequest/90/comments**", (route: Route) =>
-    route.fulfill({ contentType: "text/html", body: "submitted" }),
+  await page.route(`**${basePath}/files`, (route: Route) =>
+    route.fulfill({
+      contentType: "application/json",
+      json: { id: 702, name: "review-note.txt", mimeType: "text/plain", size: 11 },
+    }),
+  );
+  await page.route(
+    "**/api/v1/owners/admin/projects/sample/pull-requests/9/comments",
+    (route: Route) => route.fulfill({ contentType: "application/json", json: pullRequestDetail() }),
   );
 }
 

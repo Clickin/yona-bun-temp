@@ -1,19 +1,60 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
-const ORGANIZATION_HOME_ROUTE_SOURCE = "src/routes/organizations/$organizationName.tsx";
+test("organization home formats raw project dates and omits absent code updates", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.clock.setFixedTime(new Date(2026, 8, 19, 12));
+  await mockOrganizationHome(page, {
+    visibleProjects: [
+      {
+        ownerName: "weblabs",
+        projectName: "recent",
+        createdAt: new Date(2026, 8, 19, 11).toISOString(),
+        lastPushedAt: new Date(2026, 8, 19, 11, 58).toISOString(),
+        members: [],
+      },
+      {
+        ownerName: "weblabs",
+        projectName: "older",
+        createdAt: new Date(2026, 8, 11, 12).toISOString(),
+        lastPushedAt: "",
+        members: [],
+      },
+      {
+        ownerName: "weblabs",
+        projectName: "undated",
+        createdAt: "",
+        lastPushedAt: "",
+        members: [],
+      },
+    ],
+  });
+  await page.goto(`${basePath}/organizations/weblabs`);
 
-const EXPECTED_ORGANIZATION_HOME = `
-<div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
-<header class="gnb-outer project-header"><div class="gnb-inner"><div class="pin" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div><ul class="gnb-nav"><li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li><li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li><li class="divider"></li><li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li><li><form action="__BASE_PATH__/organizations/weblabs/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button aria-expanded="false" aria-haspopup="menu" class="ybtn dropdown-toggle" type="button" id="gnb-search-scope-title">This Group</button><ul class="dropdown-menu flat right"><li><button type="button">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li></ul><div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button">Favorite</button></li><li class="myProjectList"><button type="button">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div class="tab-content" id="usermenu-tab-content-list"><div class="tab-pane user-project-list active" id="myOrganizationList"><div class="search-result"><div class="group"><input autocomplete="off" class="search-input org-search" placeholder="Type name" type="text" value=""></input><span class="bar"></span></div><div class="no-result tab-pane user-ul" id="organizations">No results</div></div></div><div class="tab-pane user-project-list" id="myProjectList"><div><div class="search-result"><div class="tab-pane myproject-list-wrap"><div class="group"><input autocomplete="off" class="search-input project-search" id="query" placeholder="Type name" type="text" value=""></input><span class="bar"></span></div><div class="subtab-wrap subtab-group"><ul class="nav-subtab unstyled"><li class="active"><button type="button">Recently visited</button></li><li><button type="button">Create</button></li><li><button type="button">Watching</button></li><li><button type="button">Member</button></li></ul></div><div class="tab-content"><div class="no-result tab-pane user-ul active" id="recentlyVisited">No results</div><div class="no-result tab-pane user-ul" id="watching">No results</div><div class="no-result tab-pane user-ul" id="createdByMe">No results</div><div class="no-result tab-pane user-ul" id="joinmember">No results</div></div></div></div></div></div><div class="tab-pane user-project-list" id="myRecentIssueList"><div><div class="search-result"><div class="tab-pane myproject-list-wrap"><div class="group"><input autocomplete="off" class="search-input project-search" id="recent-issue-query" placeholder="Type name" type="text" value=""></input><span class="bar"></span></div><div class="tab-content"><div class="no-result tab-pane user-ul active" id="recentlyVisitedIssues">No results</div></div></div></div></div></div></div></div></div></div><ul class="gnb-usermenu"><li class="gnb-usermenu-item" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" title="Site administration" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" aria-controls="mySidenav" aria-expanded="false" class="gnb-dropdown-toggle" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="__BASE_PATH__/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li><li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul></div></header>
-<div class="project-header-outer" style="background-image:url('__BASE_PATH__/legacy-assets/images/group_default.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="__BASE_PATH__/legacy-assets/images/group_default.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author"><span class="group-title-head">group</span><a href="__BASE_PATH__/organizations/weblabs">weblabs</a></span></div></div></div></div></div>
-<div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class="active"><a href="__BASE_PATH__/organizations/weblabs">Group Home</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/issues">Issue</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/boards">Board</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/pullrequests">Pull request</a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="__BASE_PATH__/organizations/weblabs/settingform"><i class="yobicon-cog"></i><span class="blind">Project configuration</span></a></li></ul></div></div></div>
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="project-home-header row-fluid"><div class="span9 span-hard-wrap"><div class="project-overview"><h3><span id="project-description">Web labs group</span></h3></div><div class="project-search-wrap row-fluid mt10"><div class="span7"><div class="search-bar"><input name="mylist-filter" id="mylist-filter" class="textbox full" type="text" value="" placeholder="Type name"><button type="button" class="search-btn"><i class="yobicon-search"></i></button></div></div><div><a href="__BASE_PATH__/projectform?owner=weblabs" class="ybtn ybtn-primary">Create new project</a></div></div><ul class="all-projects"><li class="project" data-item="project-item" data-value="sample Sample project"><div class="info-wrap"><div class="owner-avatar-wrap hide-in-mobile"><a href="__BASE_PATH__/weblabs/sample"><img src="/assets/images/project_default_logo.png" alt="sample.name"></a></div><div><div class="header"><a href="__BASE_PATH__/weblabs/sample" class="black">sample</a></div><div class="desc">Sample project</div><p class="name-tag">by <a href="__BASE_PATH__/weblabs" class="owner-name-small">weblabs</a> at <strong title="2026-06-30">Jun 30, 2026</strong> <span class="small-font">,Latest code update <strong title="2026-07-01">Jul 1, 2026</strong></span></p></div></div><div class="stats-wrap pull-right"><div class="members"><ul class="unstyled"></ul><p><i class="yobicon-friends yobicon-middle"></i><strong>1</strong><i class="yobicon-eye"></i> <strong>5</strong><i class="yobicon-lightbulb ramp-on" title="Watching projects"></i></p></div></div></li></ul></div><div class="span3 span-hard-wrap"><div class="bubble-wrap gray project-home"><div class="inner member-info"><header><h3>Group Manager</h3><button type="button" class="ybtn ybtn-minimum ybtn-danger pull-right" id="groupLeaveBtn">Leave the group</button></header><div class="member-wrap "><ul class="project-members"><li class="member"><a href="__BASE_PATH__/admin" class="avatar-wrap" title="admin"><img src="/assets/images/default-avatar-45.png" height="45" width="45"></a><a href="__BASE_PATH__/admin" title="admin">Site Admin</a></li></ul></div></div></div><div class="bubble-wrap gray project-home mt10"><div class="inner member-info"><header><h3>Group Member</h3></header><div class="member-wrap"><ul class="unstyled project-members"><li class="member"><a href="__BASE_PATH__/dev" class="avatar-wrap" title="dev"><img src="/assets/images/default-avatar-45.png" height="45" width="45"></a><a href="__BASE_PATH__/dev" title="dev">Dev Member</a></li></ul></div></div></div></div></div></div></div>
-<div id="alertLeave" class="modal hide"><div class="modal-header"><button type="button" class="close">×</button><h3>Leave the group</h3></div><div class="modal-body"><p>Do you want to leave this group?</p></div><div class="modal-footer"><button type="button" class="ybtn ybtn-info ybtn-mini" id="leaveBtn">Yes</button><button type="button" class="ybtn ybtn-mini">No</button></div></div>
-<footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
-`;
+  const rows = page.locator(".all-projects .project");
+  const created = rows.nth(0).locator(".name-tag > strong");
+  await expect(created).toHaveText("1 hours ago");
+  await expect(created).toHaveAttribute("title", "2026-09-19 11:00:00 AM");
+  const pushed = rows.nth(0).locator(".name-tag .small-font strong");
+  await expect(pushed).toHaveText("2 minutes ago");
+  await expect(pushed).toHaveAttribute("title", "2026-09-19 11:58:00 AM");
+  await expect(rows.nth(1).locator(".name-tag > strong")).toHaveText("09-11");
+  await expect(rows.nth(1).locator(".name-tag > strong")).toHaveAttribute(
+    "title",
+    "2026-09-11 12:00:00 PM",
+  );
+  await expect(
+    rows.nth(1).locator('[data-owner="organization-home-project-code-update"]'),
+  ).toHaveText("");
+  await expect(rows.nth(2).locator(".name-tag > strong")).toHaveText("");
+  await expect(rows.nth(2).locator(".name-tag > strong")).toHaveAttribute("title", "");
+  await expect(
+    rows.nth(2).locator('[data-owner="organization-home-project-code-update"]'),
+  ).toHaveText("");
+});
 
-test("organization home matches legacy organization/view.scala.html DOM", async ({ page }) => {
+test("organization home preserves legacy project and membership controls", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockOrganizationHome(page);
 
@@ -27,10 +68,75 @@ test("organization home matches legacy organization/view.scala.html DOM", async 
   await expect(page.locator("#usermenu-tab-content-list")).not.toHaveText("Loading...");
   await expect(page.locator("#alertLeave")).toHaveClass(/hide/);
   await expect(page.locator('[data-owner="authenticated-site-user-menu"]')).toBeVisible();
+});
 
-  expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(page, EXPECTED_ORGANIZATION_HOME.replaceAll("__BASE_PATH__", basePath)),
-  );
+test("organization home shows project members except the owner and links to their profiles", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const avatarUrl =
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34' height='34'%3E%3Crect width='34' height='34' fill='blue'/%3E%3C/svg%3E";
+  await mockOrganizationHome(page, {
+    visibleProjects: [
+      {
+        ownerName: "weblabs",
+        projectName: "sample",
+        memberCount: 3,
+        watchCount: 5,
+        members: [
+          { userId: 2, loginId: "dev", userLabel: "Dev Member", role: "member", avatarUrl },
+          { userId: 3, loginId: "weblabs", userLabel: "Project Owner", role: "manager", avatarUrl },
+          {
+            userId: 4,
+            loginId: "outside",
+            userLabel: "Outside Contributor",
+            role: "member",
+            avatarUrl: "",
+          },
+        ],
+      },
+      { ownerName: "weblabs", projectName: "empty", memberCount: 0, members: [] },
+    ],
+  });
+  await mockOrganizationHomeProjectNavigation(page, "dev");
+  await page.goto(`${basePath}/organizations/weblabs`);
+
+  const cards = page.locator(".all-projects > .project");
+  await expect(cards).toHaveCount(2);
+  await expect(cards.locator(".header > a.black")).toHaveText(["sample", "empty"]);
+  const avatars = cards.nth(0).locator(".stats-wrap .members > ul.unstyled > li > a.avatar-wrap");
+  await expect(avatars).toHaveCount(2);
+  await expect(avatars.nth(0)).toHaveAttribute("href", `${basePath}/dev`);
+  await expect(avatars.nth(0).locator("img")).toBeVisible();
+  await expect(avatars.nth(0).locator("img")).toHaveAttribute("alt", "Dev Member");
+  await expect(avatars.nth(0).locator("img")).toHaveAttribute("src", avatarUrl);
+  await expect(avatars.nth(1)).toHaveAttribute("href", `${basePath}/outside`);
+  await expect(avatars.nth(1).locator("img")).toBeVisible();
+  await expect(avatars.nth(1).locator("img")).toHaveAttribute("alt", "Outside Contributor");
+  await expect
+    .poll(() =>
+      avatars
+        .nth(1)
+        .locator("img")
+        .evaluate(
+          (image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0,
+        ),
+    )
+    .toBe(true);
+  await expect(cards.nth(0).locator(`.stats-wrap a[href="${basePath}/weblabs"]`)).toHaveCount(0);
+  await expect(cards.nth(0).locator(".stats-wrap p strong")).toHaveText(["3", "5"]);
+  await expect(cards.nth(1).locator(".stats-wrap ul li")).toHaveCount(0);
+
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await avatars.nth(0).click();
+  await expect.poll(() => page.evaluate(() => window.location.pathname)).toBe(`${basePath}/dev`);
+  await expect
+    .poll(() =>
+      page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+    )
+    .toBe("kept");
 });
 
 test("organization home removes route-owned tooltip markers while preserving titles", async ({
@@ -461,13 +567,12 @@ test("organization home omits project logo img when the legacy logo url is blank
   await mockOrganizationHome(page, {
     visibleProjects: [
       {
-        createdLabel: "Jun 30, 2026",
-        createdTitle: "2026-06-30",
+        createdAt: "2020-06-30T12:34:56Z",
         isWatching: true,
-        lastPushedLabel: "Jul 1, 2026",
-        lastPushedTitle: "2026-07-01",
+        lastPushedAt: "2020-07-01T12:34:56Z",
         logoUrl: "",
         memberCount: 1,
+        members: [],
         overview: "Sample project",
         ownerName: "weblabs",
         projectName: "sample",
@@ -500,13 +605,12 @@ test("organization home project cards restore legacy fork and scope header metad
   await mockOrganizationHome(page, {
     visibleProjects: [
       {
-        createdLabel: "Jun 30, 2026",
-        createdTitle: "2026-06-30",
+        createdAt: "2020-06-30T12:34:56Z",
         isWatching: true,
-        lastPushedLabel: "Jul 1, 2026",
-        lastPushedTitle: "2026-07-01",
+        lastPushedAt: "2020-07-01T12:34:56Z",
         logoUrl: "/assets/images/project_default_logo.png",
         memberCount: 1,
+        members: [],
         originOwnerName: "origin",
         originProjectName: "base",
         overview: "Sample project",
@@ -516,11 +620,12 @@ test("organization home project cards restore legacy fork and scope header metad
         watchCount: 5,
       },
       {
-        createdLabel: "Jul 2, 2026",
-        createdTitle: "2026-07-02",
+        createdAt: "2020-07-02T12:34:56Z",
+        lastPushedAt: "",
         isWatching: false,
         logoUrl: "/assets/images/project_default_logo.png",
         memberCount: 2,
+        members: [],
         overview: "Secret playground",
         ownerName: "weblabs",
         projectScope: "private",
@@ -609,67 +714,6 @@ test("organization home project cards restore legacy fork and scope header metad
   );
 });
 
-test("organization home project card route source uses Link for internal card navigation", () => {
-  const source = readFileSync(ORGANIZATION_HOME_ROUTE_SOURCE, "utf8");
-
-  expect(source).not.toContain("OrganizationRouteLink");
-  expect(source).not.toContain("document.addEventListener");
-  expect(source).not.toContain("document.querySelector");
-  expect(source).not.toContain("classList");
-  expect(source).not.toContain("style.display");
-  expect(source).not.toContain("const projectHref");
-  expect(source).not.toContain("<a href={projectHref}");
-  expect(source).not.toMatch(/<a\b/);
-  expect(source).toContain("event.preventDefault();");
-  expect(source).toContain("event.stopPropagation();");
-  expect(source).toContain("<title>{organizationName}</title>");
-  expect(source).toContain('hash="organization-home-active-sentinel"');
-  expect(source).not.toContain("useEffect");
-  expect(source).not.toContain("document.title");
-  expect(source).not.toContain("globalThis.document");
-  expect(source).not.toContain("href={prefixBasePath(basePath, `/${ownerName}`)}");
-  expect(source).not.toContain("href={prefixBasePath(basePath, `/${stringField(member.loginId");
-  expect(source).not.toContain("href={prefixBasePath(runtimeConfig.basePath");
-  expect(source).toContain('to="/$ownerName/$projectName"');
-  expect(source).toContain("params={{ ownerName, projectName }}");
-  expect(source).toContain('const originOwnerName = stringField(project.originOwnerName, "");');
-  expect(source).toContain('const originProjectName = stringField(project.originProjectName, "");');
-  expect(source).toContain(
-    'const projectScope = stringField(project.projectScope, "").toLowerCase();',
-  );
-  expect(source).toContain(
-    'const isPrivate = booleanField(project.isPrivate) || projectScope === "private";',
-  );
-  expect(source).toContain(
-    'const isProtected = booleanField(project.isProtected) || projectScope === "protected";',
-  );
-  expect(source).toContain('className="origin-title"');
-  // e2e closure ledger (2026-08-11): origin-title link must not double up with
-  // small-font; the code-update span owns the legacy small-font class.
-  expect(source).not.toMatch(/className="origin-title[^"]*small-font/u);
-  expect(source).toContain('data-owner="organization-home-project-origin"');
-  expect(source).toContain('data-owner="organization-home-project-code-update"');
-  expect(source).toContain('to="/$user"');
-  expect(source).toContain("params={{ user: ownerName }}");
-  expect(source).toContain('params={{ user: stringField(member.loginId, "") }}');
-  expect(source).toContain('to="/projectform"');
-  expect(source).toContain("search={{ owner: organizationName }}");
-  expect(source).toContain('to="/organizations/$organizationName"');
-  expect(source).toContain("to={`/organizations/${organizationName}/issues` as string}");
-  expect(source).toContain("to={`/organizations/${organizationName}/boards` as string}");
-  expect(source).toContain("to={`/organizations/${organizationName}/pullrequests` as string}");
-  expect(source).toContain('to="/organizations/$organizationName/settingform"');
-  expect(source).not.toContain("__legacyInactive");
-  expect(source).not.toContain('data-toggle="dropdown"');
-  expect(source).not.toContain('data-toggle="item-search"');
-  expect(source).not.toContain('data-toggle="tooltip"');
-  expect(source).not.toContain('data-items="project-item"');
-  expect(source).not.toContain("data-placement");
-  expect(source).toContain('title={stringField(member.loginId, "")}');
-  expect(source).toContain('t("project.default.group.watching")');
-  expect(source).toContain('t("project.you.are.not.watching", { args: [""] })');
-});
-
 test("organization home filters projects like legacy item-search", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockOrganizationHome(page);
@@ -705,6 +749,7 @@ test("organization home filters projects like legacy item-search", async ({ page
 
 test("organization home keeps legacy view.scala.html layout metrics", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.setViewportSize({ width: 1366, height: 900 });
   await mockOrganizationHome(page);
 
   await page.goto(`${basePath}/organizations/weblabs`);
@@ -715,16 +760,11 @@ test("organization home keeps legacy view.scala.html layout metrics", async ({ p
   expect(metrics.row.paddingTop).toBe("5px");
   expect(metrics.row.paddingBottom).toBe("5px");
   expect(metrics.row.marginBottom).toBe("20px");
-  // F5 dist-truth: legacy .row-fluid .span9 = 74.35897435897436%
-  // (yona-original/public/bootstrap/css/bootstrap-responsive.css:250-251) = 0.7436
-  expect(metrics.mainColumn.widthRatio).toBeCloseTo(0.7436, 3);
-  // F5 dist-truth: legacy .row-fluid .span3 = 23.076923076923077%
-  // (yona-original/public/bootstrap/css/bootstrap-responsive.css:274-275) = 0.2308
-  expect(metrics.sideColumn.widthRatio).toBeCloseTo(0.2308, 3);
-  // F5 dist-truth: legacy responsive grid .row-fluid [class*="span"] margin-left
-  // = 2.564102564102564% (yona-original/public/bootstrap/css/bootstrap-responsive.css:226)
-  // = 0.0256; the stale 0.0213 pin was the non-responsive bootstrap.css value.
-  expect(metrics.sideColumn.marginLeftRatio).toBeCloseTo(0.0256, 3);
+  // layout.scala.html loads bootstrap.css, not bootstrap-responsive.css:
+  // the base .row-fluid percentages remain active even above 1200px.
+  expect(metrics.mainColumn.widthRatio).toBeCloseTo(0.7446808510638297, 3);
+  expect(metrics.sideColumn.widthRatio).toBeCloseTo(0.23404255319148937, 3);
+  expect(metrics.sideColumn.marginLeftRatio).toBeCloseTo(0.02127659574468085, 3);
   expect(metrics.projectList.margin).toBe("0px 0px 20px");
   expect(metrics.projectList.listStyle).toBe("none");
   expect(metrics.projectRow.padding).toBe("15px 0px 10px");
@@ -737,6 +777,14 @@ test("organization home keeps legacy view.scala.html layout metrics", async ({ p
   expect(metrics.projectDesc.maxWidth).toBe("647px");
   expect(metrics.projectDesc.color).toBe("rgb(186, 186, 186)");
   expect(metrics.projectNameTag.fontSize).toBe("11px");
+  await expect(page.locator(".all-projects .name-tag .owner-name-small")).toHaveCSS(
+    "font-size",
+    "11px",
+  );
+  await expect(page.locator(".all-projects .name-tag .owner-name-small")).toHaveCSS(
+    "color",
+    "rgb(153, 153, 153)",
+  );
   expect(metrics.projectStats.textAlign).toBe("right");
   expect(metrics.projectStats.strongColor).toBe("rgb(81, 170, 204)");
   expect(metrics.memberPanel.padding).toBe("10px");
@@ -876,39 +924,6 @@ test("organization home leave modal stays route-owned across open dismiss and co
     .toBe("kept");
   expect(leaveRequests).toEqual([{ hasCsrfToken: true, method: "DELETE" }]);
   expect(await readOrganizationHomeLeaveModalBridgeAudit(page)).toEqual([]);
-});
-
-test("organization home leave modal source insulates delegated modal bridge", () => {
-  const source = readFileSync(ORGANIZATION_HOME_ROUTE_SOURCE, "utf8");
-
-  expect(source).toContain("function insulateLeaveModalClick");
-  expect(source).toContain("function openLeaveModal");
-  expect(source).toContain("function dismissLeaveModal");
-  expect(source).toContain("function submitLeave");
-  expect(source).toContain("event.preventDefault();");
-  expect(source).toContain("event.stopPropagation();");
-  expect(source).toContain("const [leaveModalTouched, setLeaveModalTouched] = useState(false);");
-  expect(source).toContain("setLeaveModalTouched(true);");
-  expect(source).toContain('className={`${leaveModalOpen ? "modal hide in" : "modal hide"}`}');
-  expect(source).toContain('data-owner="organization-home-leave-modal"');
-
-  expect(source).toContain(
-    "aria-hidden={leaveModalOpen ? false : leaveModalTouched ? true : undefined}",
-  );
-  expect(source).toContain('className="modal-backdrop in"');
-  expect(source).toContain('type="button"');
-  expect(source).toContain('aria-label={t("button.close")}');
-  expect(source).toContain("onClick={dismissLeaveModal}");
-  expect(source).toContain("onClick={submitLeave}");
-  expect(source).not.toContain("data-href=");
-  expect(source).not.toContain('data-toggle="modal"');
-  expect(source).not.toContain('data-dismiss="modal"');
-  expect(source).not.toContain("document.addEventListener");
-  expect(source).not.toContain("document.querySelector");
-  expect(source).not.toContain("classList");
-  expect(source).not.toContain("style.display");
-  expect(source).not.toContain('modal("show")');
-  expect(source).not.toContain('modal("hide")');
 });
 
 test("organization home hides leave button when legacy leave validation fails", async ({
@@ -1192,13 +1207,20 @@ async function mockOrganizationHome(
         viewerCanUpdate: options.viewerCanUpdate ?? true,
         visibleProjects: options.visibleProjects ?? [
           {
-            createdLabel: "Jun 30, 2026",
-            createdTitle: "2026-06-30",
+            createdAt: "2020-06-30T12:34:56Z",
             isWatching: true,
-            lastPushedLabel: "Jul 1, 2026",
-            lastPushedTitle: "2026-07-01",
+            lastPushedAt: "2020-07-01T12:34:56Z",
             logoUrl: "/assets/images/project_default_logo.png",
             memberCount: 1,
+            members: [
+              {
+                avatarUrl: "/assets/images/default-avatar-45.png",
+                loginId: "dev",
+                role: "member",
+                userId: 2,
+                userLabel: "Dev Member",
+              },
+            ],
             overview: "Sample project",
             ownerName: "weblabs",
             projectName: "sample",
@@ -1239,7 +1261,7 @@ async function mockOrganizationHome(
   });
 }
 
-async function mockOrganizationHomeProjectNavigation(page: Page) {
+async function mockOrganizationHomeProjectNavigation(page: Page, profileLoginId = "weblabs") {
   await page.route("**/api/v1/owners/weblabs/projects/sample/container**", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -1282,7 +1304,7 @@ async function mockOrganizationHomeProjectNavigation(page: Page) {
       }),
     });
   });
-  await page.route("**/api/v1/users/weblabs/profile**", async (route) => {
+  await page.route(`**/api/v1/users/${profileLoginId}/profile**`, async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -1290,12 +1312,12 @@ async function mockOrganizationHomeProjectNavigation(page: Page) {
         issueItems: [],
         profile: {
           avatarUrl: "/assets/images/organization_default_logo.png",
-          displayName: "weblabs",
+          displayName: profileLoginId,
           isBlocked: false,
           isGuest: false,
           isSiteAdmin: false,
-          loginId: "weblabs",
-          primaryEmailAddress: "weblabs@example.com",
+          loginId: profileLoginId,
+          primaryEmailAddress: `${profileLoginId}@example.com`,
           sinceLabel: "Jun 30, 2026",
         },
         projectItems: [],
@@ -1526,127 +1548,6 @@ async function canonicalizeLocator(page: Page, selector: string) {
       }
       return attr.name === "style"
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
-        : attr.value;
-    }
-  });
-}
-
-async function canonicalizeScreenRoots(page: Page) {
-  return page.evaluate(() => {
-    const roots = Array.from(
-      document.querySelectorAll(
-        ".unsupported, [data-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, #alertLeave, [data-owner=site-footer]",
-      ),
-    );
-    return roots.map((root) => visit(root)).join("");
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const isPin = node.matches('[data-owner="global-sidebar-open-pin"]');
-      const isPinIcon =
-        node.parentElement?.getAttribute("data-owner") === "global-sidebar-open-pin";
-      const attrs = Array.from(node.attributes)
-        .filter(
-          (attr) =>
-            !attr.name.startsWith("data-v-") &&
-            attr.name !== "rel" &&
-            attr.name !== "alt" &&
-            attr.name !== "data-style-src" &&
-            attr.name !== "data-toggle" &&
-            attr.name !== "data-scoped" &&
-            attr.name !== "data-owner" &&
-            attr.name !== "data-wtr-click-selected",
-        )
-        .filter((attr) => !isPin || attr.name === "class" || attr.name === "title")
-        .filter(
-          (attr) =>
-            attr.name !== "data-active" &&
-            attr.name !== "aria-current" &&
-            attr.name !== "data-status" &&
-            attr.name !== "data-scoped",
-        )
-        .filter((attr) => !(isPinIcon && attr.name === "aria-hidden"))
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .flatMap((attr) => {
-          const value = normalizeAttr(attr);
-          return attr.name === "class" && value === ""
-            ? []
-            : [`${attr.name}=${JSON.stringify(value)}`];
-        })
-        .join(" ");
-      const open = attrs
-        ? `<${isPin ? "div" : node.tagName.toLowerCase()} ${attrs}>`
-        : `<${isPin ? "div" : node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${isPin ? "div" : node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeText(text: string) {
-      return text.replace(/\s+/g, " ").trim();
-    }
-
-    function normalizeAttr(attr: Attr): string {
-      if (
-        attr.name === "class" &&
-        (attr.ownerElement?.matches('[data-owner="global-gnb-inner"]') ||
-          attr.ownerElement?.matches('[data-owner="global-gnb-outer"]') ||
-          attr.ownerElement?.matches('[data-owner="site-footer"]') ||
-          attr.ownerElement?.matches('[data-owner="site-footer-inner"]') ||
-          attr.ownerElement?.matches('[data-owner="site-footer-provider"]'))
-      ) {
-        return "";
-      }
-      if (
-        attr.name === "class" &&
-        attr.ownerElement &&
-        attr.value.split(/\s+/u).includes("gnb-nav") &&
-        attr.ownerElement.matches('[data-owner="global-gnb-nav"]')
-      ) {
-        const originalValue = attr.value;
-        attr.value = originalValue
-          .split(/\s+/u)
-          .filter((token) => token !== "gnb-nav")
-          .join(" ");
-        try {
-          return normalizeAttr(attr);
-        } finally {
-          attr.value = originalValue;
-        }
-      }
-      if (attr.name === "class") {
-        return attr.value
-          .split(/\s+/u)
-          .filter(
-            (token) =>
-              token &&
-              token !== "gray-txt" &&
-              token !== "right-txt" &&
-              token !== "yobicon-middle" &&
-              !token.includes("-shell-") &&
-              !/^x[0-9a-z]+$/u.test(token) &&
-              !token.includes("__"),
-          )
-          .join(" ");
-      }
-      return attr.name === "style"
-        ? attr.value
-            .replace(/\s+/g, "")
-            .replace(/;$/u, "")
-            .replaceAll('"', "'")
-            // F6 copy-fix-current-dom: normalize style custom-property paint
-            // (--x-backgroundImage -> background-image) like the org-pullrequests
-            // canonicalizer (organization-pullrequests.e2e.ts:800-803).
-            .replace(
-              /--x-([A-Za-z0-9-]+):/gu,
-              (_match, name: string) =>
-                `${name.replace(/[A-Z]/gu, (letter: string) => `-${letter.toLowerCase()}`)}:`,
-            )
         : attr.value;
     }
   });

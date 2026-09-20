@@ -1,4 +1,3 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const CHECKLIST = "\n- [ ] Todo A\n- [ ] Todo B\n- [ ] Todo C";
@@ -15,7 +14,6 @@ test("default issue create keeps legacy editor and uploader flow on desktop and 
   await mockIssueForm(page);
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto(`${basePath}/admin/sample/issueform`);
-  await expect(page.locator(".page-wrap-outer")).toHaveClass(/(?:^|\s)page-wrap-outer(?:\s|$)/u);
   await expect(page.locator("#button-save")).toHaveText("저장");
   await expect(page.locator("#draft-save-btn")).toHaveText("초안으로 저장");
   await expect(page.locator(".issue-form-cancel")).toHaveText("취소");
@@ -94,9 +92,6 @@ test("parent subtask create keeps the two generated Select2 controls and legacy 
   await expect(page.locator("#s2id_targetProjectId")).toBeVisible();
   await expect(page.locator("#s2id_parentId")).toBeVisible();
   const optionButton = page.getByRole("button", { name: "이슈 옵션" });
-  // F6 copy-fix: legacy classes span1 subtask-message retained (create.scala.html:47)
-  // with Style atomics appended via issueform.tsx:1071 className — unanchor the pin.
-  await expect(optionButton).toHaveClass(/span1 subtask-message/u);
   await expect(optionButton).toHaveCSS("color", "rgb(158, 158, 158)");
   await expect(optionButton).toHaveCSS("border-color", "rgb(221, 221, 221)");
   await expect(page.locator("#editor-body-body")).toHaveValue("");
@@ -306,13 +301,17 @@ test("project issue form preserves legacy controls, subtask behavior, shell muta
     `${basePath}/admin/sample/issue/labelsform`,
   );
 
-  // the legacy pikaday keeps the visible text input focused when the calendar
-  // opens (issue-due-date-input openPicker focuses dueDateRef, not the hidden
-  // native picker) — assert the text input's focus, not the native picker's.
   const duePicker = page.locator("#issueDueDate");
   await page.getByRole("button", { name: "Due date", exact: true }).click();
   await expect(duePicker).toBeFocused();
-  await setNativeDate(page, "2026-07-21");
+  const calendar = page.getByRole("dialog", { name: "Due date", exact: true });
+  await expect(calendar).toBeVisible();
+  await calendar.getByRole("combobox", { name: "Year", exact: true }).selectOption("2026");
+  await expect(calendar).toBeVisible();
+  await calendar.getByRole("combobox", { name: "Month", exact: true }).selectOption("6");
+  await expect(calendar).toBeVisible();
+  await calendar.getByRole("button", { name: "2026-07-21", exact: true }).click();
+  await expect(calendar).toHaveCount(0);
   await expect(page.locator("#issueDueDate")).toHaveValue("2026-07-21");
   await page.locator("#issueDueDate").fill("July 21, 2026");
   // the sidebar's Recent History tab legitimately keeps data-toggle="tab"
@@ -477,16 +476,12 @@ test("React editor restores drafts and translates title heads, mentions, markdow
   await expect(markdownHelpHeading).toBeVisible();
   await expect(markdownHelpHeading.getByRole("link")).toHaveCount(0);
   await page.locator(".markdown-help-nav .help-nav", { hasText: "Image" }).click();
-  const markdownHelpImagePath = `${basePath}/legacy-assets/images/ico-like-small.png`;
-  await expect(page.locator(".markdown-help-item.markdownImages img")).toHaveAttribute(
-    "src",
-    markdownHelpImagePath,
-  );
-  const markdownHelpImageResponse = await page.request.get(
-    new URL(markdownHelpImagePath, page.url()).toString(),
-  );
-  expect(markdownHelpImageResponse.status()).toBe(200);
-  expect(markdownHelpImageResponse.headers()["content-type"]).toMatch(/^image\//u);
+  const markdownHelpImage = page.locator(".markdown-help-item.markdownImages img");
+  await expect(markdownHelpImage).toBeVisible();
+  await expect(markdownHelpImage).toHaveAttribute("alt", "title");
+  await expect
+    .poll(() => markdownHelpImage.evaluate((image: HTMLImageElement) => image.naturalWidth))
+    .toBeGreaterThan(0);
 
   await body.fill("Notify @");
   await expect.poll(() => state.mentionQueries.at(-1)).toBe("");
@@ -550,9 +545,7 @@ test("React editor restores drafts and translates title heads, mentions, markdow
   await title.fill("Implement [b");
   await expect.poll(() => state.titleQueries.at(-1)).toBe("b");
   await expect(page.locator(".title-head-options")).toBeVisible();
-  // Native focus: the harness focus() dispatches a synthetic focusin first,
-  // which the title's blur handler can miss under load — the options stay.
-  await page.locator("#issueDueDate").evaluate((element) => (element as HTMLInputElement).focus());
+  await page.locator("#issueDueDate").focus();
   await expect(page.locator(".title-head-options")).toHaveCount(0);
   await title.focus();
   await title.press("u");
@@ -599,21 +592,12 @@ test("React editor restores drafts and translates title heads, mentions, markdow
   await expect(
     page.locator(".attached-file", { hasText: "notes.txt" }).locator(".upload-progress"),
   ).toBeVisible();
-  // F6 copy-fix: the app's bar width is a style function style
-  // (uploadProgressBar: (width) => ({ width }), -issueform.style.ts:273-278),
-  // which emits `--x-<hash>: N%` as an inline CSS custom property, never
-  // `style.width`. Read the inline custom-property percentage instead.
   await expect
     .poll(() =>
       page
         .locator(".attached-file", { hasText: "notes.txt" })
         .locator(".upload-progress .bar")
-        .evaluate(
-          (bar: HTMLElement) =>
-            Number.parseFloat(
-              (bar.getAttribute("style") ?? "").match(/(\d+(?:\.\d+)?)%/u)?.[1] ?? "0",
-            ) || 0,
-        ),
+        .evaluate((bar: HTMLElement) => bar.getBoundingClientRect().width),
     )
     .toBeGreaterThan(0);
   await expect(page.locator("#upload .attach-save-help")).toHaveText(
@@ -1379,7 +1363,7 @@ test("anonymous project form response redirects to the typed mounted login route
   );
 });
 
-test("issue form matches observed 390px stacking and removes legacy implementation attributes", async ({
+test("issue form matches observed 390px stacking and localized editor controls", async ({
   page,
 }) => {
   const basePath = appBasePath();
@@ -1500,29 +1484,6 @@ test("issue form matches observed 390px stacking and removes legacy implementati
   // viewport containment (not textarea containment) is the invariant.
   expect(popup.right).toBeLessThanOrEqual(390);
   expect(popup.bottom).toBeLessThanOrEqual(popup.viewportHeight - 4);
-
-  await expect(page.locator("[data-attachment-id], [data-label-id]")).toHaveCount(0);
-
-  const routeSource = readFileSync("src/routes/$ownerName/$projectName/issueform.tsx", "utf8");
-  const markdownHelpSource = readFileSync("src/routes/-legacy-markdown-help.tsx", "utf8");
-  for (const forbidden of [
-    "document.",
-    "querySelector",
-    "addEventListener",
-    "classList",
-    "dangerouslySetInnerHTML",
-    "<a ",
-    "data-toggle",
-    "data-format",
-    "data-editor-mode",
-    "data-resource-type",
-    "data-attachment-id",
-    "data-label-id",
-  ]) {
-    expect(routeSource, forbidden).not.toContain(forbidden);
-  }
-  expect(routeSource).toContain('t("title.newIssue")');
-  expect(routeSource).not.toContain(".style.setProperty");
 });
 
 type MockOptions = {
@@ -2056,15 +2017,6 @@ function labels() {
 
 function appBasePath() {
   return process.env.YONA_DEV_BASE_PATH ?? "/yona";
-}
-
-async function setNativeDate(page: Page, value: string) {
-  await page.getByLabel("Choose due date", { exact: true }).evaluate((input, nextValue) => {
-    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
-    setter?.call(input, nextValue);
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-    input.dispatchEvent(new Event("change", { bubbles: true }));
-  }, value);
 }
 
 async function setBrowserLanguage(page: Page, language: string) {

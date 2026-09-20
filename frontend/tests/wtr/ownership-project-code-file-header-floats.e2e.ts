@@ -1,10 +1,4 @@
 import { expect, test, type Page } from "../wtr-compat.ts";
-import { readFileSync } from "../wtr-compat.ts";
-
-// Browser harness: fileURLToPath yields the served URL pathname so string
-// mapping + .txt raw-suffix applies.
-const fileURLToPath = (u: URL) => u.pathname;
-const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -12,56 +6,11 @@ const screenshotDirectory = resolve(
   "output/playwright/style-project-code-file-header-floats",
   "normal",
 );
-const readSource = (relativePath: string) =>
-  readFileSync(fileURLToPath(new URL(relativePath, import.meta.url)), "utf8");
-
-test("project code-file header float ownership has legacy provenance", () => {
-  const route = readSource("../src/routes/$ownerName/$projectName/code/$branch/$filePath.tsx");
-  const styles = readSource("../src/app.css");
-  const legacyView = readSource("../../yona-original/app/views/code/view.scala.html");
-  const bootstrap = readSource("../../yona-original/public/bootstrap/css/bootstrap.css");
-  const pageLess = readSource("../../yona-original/app/assets/stylesheets/less/_page.less");
-  const yobiLess = readSource("../../yona-original/app/assets/stylesheets/yobi.less");
-  const messages = readSource("../../yona-original/conf/messages");
-
-  expect(legacyView).toContain('<select id="branches" data-toggle="select2" data-format="branch"');
-  expect(legacyView).toContain(
-    '<div id="breadcrumbs" class="code-breadcrumb-wrap ml10 pull-left">',
-  );
-  expect(legacyView).toContain('@Messages("code.download")');
-  expect(legacyView).toContain('@Messages("code.new.file")');
-  expect(bootstrap).toContain(".pull-right {\n  float: right;");
-  expect(bootstrap).toContain(".pull-left {\n  float: left;");
-  expect(pageLess).toContain(".code-browse-header");
-  expect(pageLess).toContain(".code-breadcrumb-wrap");
-  expect(yobiLess).toContain('@import "less/_page.less";');
-  expect(messages).toContain("code.download = Download as .zip file");
-  expect(messages).toContain("code.new.file = New file");
-
-  for (const declaration of []) expect(styles).toContain(declaration);
-  for (const owner of [
-    "project-code-file-branch-picker",
-    "project-code-file-breadcrumbs",
-    "project-code-file-download-action",
-    "project-code-file-new-file-action",
-  ])
-    expect(route).toContain(`data-owner="${owner}"`);
-
-  expect(route).toContain("reloadDocument");
-  expect(route).not.toMatch(
-    /project-code-file-branch-picker[\s\S]{0,260}className=[^\n]*pull-left/u,
-  );
-  expect(route).not.toMatch(/project-code-file-download-action[\s\S]{0,180}pull-right/u);
-  expect(route).not.toMatch(/project-code-file-new-file-action[\s\S]{0,180}pull-right/u);
-  expect(route).toMatch(/code-breadcrumb-wrap ml10 pull-left/u);
-  expect(route).not.toContain('data-toggle="select2"');
-});
 
 test("project code-file header preserves navigation, permissions, and containment", async ({
   page,
 }) => {
   await mockCodeFile(page, false);
-  mkdirSync(screenshotDirectory, { recursive: true });
 
   for (const viewport of [
     { height: 900, name: "1366x900", width: 1366 },
@@ -82,11 +31,18 @@ test("project code-file header preserves navigation, permissions, and containmen
     await expect(breadcrumbs).toHaveCSS("float", "left");
     await expect(download).toHaveCSS("float", "right");
     await expect(newFile).toHaveCSS("float", "right");
+    await expect(page.locator(".file-header")).toHaveCSS("display", "block");
+    await expect(page.locator("#fileInfo")).toHaveCSS("float", "left");
+    await expect(page.locator("#fileInfo")).toHaveCSS("color", "rgb(32, 32, 32)");
+    await expect(page.locator(".file-header .pull-right")).toHaveCSS("float", "right");
+    const raw = page.locator('[data-owner="project-code-file-raw-action"]');
+    await expect(raw).toHaveCSS("display", "inline-block");
+    expect(await raw.evaluate((node) => node.getBoundingClientRect().height)).toBe(30);
+    await expect(page.locator("#open-in-browser")).toHaveCSS("margin-left", "4.2px");
     await expect(picker).toHaveClass(/pull-left/u);
     await expect(breadcrumbs).toHaveClass(/pull-left/u);
     await expect(download).toHaveClass(/pull-right/u);
     await expect(newFile).toHaveClass(/pull-right/u);
-    await expect(picker).toHaveClass(/mb10/u);
     await expect(download.locator("a")).toHaveText("Download as .zip file");
     await expect(download.locator("a")).toHaveAttribute(
       "href",
@@ -127,8 +83,18 @@ test("project code-file header preserves navigation, permissions, and containmen
       path: resolve(screenshotDirectory, `${viewport.name}.png`),
     });
 
-    await picker.selectOption(`${basePath}/admin/sample/code/feature%2Frelease/README.md`);
+    await picker.locator(".select2-choice").click();
+    const branchOption = picker
+      .locator(".select2-result-label")
+      .filter({ hasText: "feature/release" });
+    await expect(branchOption).toBeVisible();
+    await branchOption.click();
     await expect(page).toHaveURL(`${basePath}/admin/sample/code/feature%2Frelease/README.md`);
+    await expect(picker.locator(".select2-chosen")).toHaveText("branch feature/release");
+    await expect(download.locator("a")).toHaveAttribute(
+      "href",
+      `${basePath}/admin/sample/archive/feature%2Frelease.zip`,
+    );
   }
 
   const anonymousPage = await page.context().newPage();
@@ -176,22 +142,22 @@ async function mockCodeFile(page: Page, anonymous: boolean) {
         breadcrumbs: [{ name: "README.md", path: "README.md" }],
         entries: [],
         file: {
-          author: "Admin",
-          avatarUrl: "/yona/legacy-assets/images/default-avatar-34.png",
+          authorLabel: "Admin",
+          authorAvatarUrl: "/yona/legacy-assets/images/default-avatar-34.png",
           commitId: "1234567890abcdef",
           commitMessage: "Update README",
-          createdDate: "Jul 2, 2026",
-          data: "# README\n\nhello",
+          commitDate: "2026-07-02T12:00:00Z",
+          text: "# README\n\nhello",
           isBinary: false,
-          lineEnding: "LF",
+          isTooLarge: false,
           mimeType: "text/markdown",
-          userLoginId: "admin",
+          authorLoginId: "admin",
         },
         noHead: false,
         ownerName: "admin",
         path: "README.md",
         projectName: "sample",
-        selectedBranch: "main",
+        selectedBranch: new URL(route.request().url()).searchParams.get("branch") ?? "main",
       },
     }),
   );

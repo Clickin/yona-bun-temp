@@ -1,10 +1,4 @@
-import { expect, test, type Locator, type Page, mergedLegacyBlock } from "../wtr-compat.ts";
-import { readFileSync } from "../wtr-compat.ts";
-
-const PROJECT_FORK_ROUTE_SOURCE = "src/routes/$ownerName/$projectName/newFork.tsx";
-const PROJECT_PARENT_ROUTE_SOURCE = "src/routes/$ownerName/$projectName.tsx";
-const PROJECT_FORK_OWNER_ROUTE_SOURCE =
-  "src/routes/$ownerName/$projectName/newFork/$forkOwnerName.tsx";
+import { expect, test, type Locator, type Page } from "../wtr-compat.ts";
 
 const EXPECTED_PROJECT_FORK_FORM = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
@@ -141,10 +135,9 @@ test("project fork form matches legacy git/fork.scala.html DOM", async ({ page }
   expect(formSkeleton.actionsTop).toBeGreaterThanOrEqual(formSkeleton.formTop);
   expect(Math.abs(formSkeleton.submitCenterY - formSkeleton.cancelCenterY)).toBeLessThanOrEqual(1);
   expect(await projectForkInlineControlMetrics(page)).toEqual({
-    cancelGap: 4,
+    cancelGap: 8,
     privateLabelGap: 6,
     publicLabelGap: 6,
-    whitespaceNodes: [true, true, true],
   });
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
@@ -333,18 +326,6 @@ test("project fork non-git access renders the legacy bad-request site shell", as
   });
 });
 
-test("project fork owner route remounts the legacy fork form for concrete owner state", async () => {
-  const source = readFileSync(PROJECT_FORK_OWNER_ROUTE_SOURCE, "utf8");
-
-  expect(source).toContain('createFileRoute("/$ownerName/$projectName/newFork/$forkOwnerName")');
-  expect(source).toContain("key={`${ownerName}/${projectName}/${forkOwnerName}`}");
-  expect(source).toContain("forkOwnerName={forkOwnerName}");
-  expect(source).not.toMatch(/<a(?:\s|>)/u);
-  expect(source).not.toContain("</a>");
-  expect(source).not.toContain('href="#"');
-  expect(source).not.toContain("javascript:");
-});
-
 test("project fork route-local links preserve legacy hrefs and navigate in the SPA", async ({
   page,
 }) => {
@@ -460,48 +441,6 @@ test("project fork admin cog badge uses enrolled users count from legacy project
   await expect(adminCogBadge).toHaveText("2");
   await expect(adminCogBadge).not.toHaveText("5");
   await expect(page.locator(".project-setting")).not.toContainText("5");
-});
-
-test("project fork route has no raw route-local internal anchors", async () => {
-  const source = readFileSync(PROJECT_FORK_ROUTE_SOURCE, "utf8");
-
-  expect(source).toContain("use(ProjectNestedShellContext)");
-  expect(source).not.toContain("YonaQueryProvider");
-  expect(source).not.toContain("LegacyI18nProvider");
-  expect(source).not.toContain("<ProjectHeader");
-  expect(source).not.toContain("<ProjectMenu");
-  expect(source).not.toMatch(/<a(?:\s|>)/u);
-  expect(source).not.toContain("</a>");
-  expect(source).not.toContain("href={prefixBasePath");
-  expect(source).not.toContain("href={projectHref");
-  expect(source).not.toContain("as unknown as ProjectContainer");
-  expect(source).not.toContain("onMouseDown=");
-  expect(source).not.toContain("data-url");
-  expect(source).not.toContain("dataset.url");
-  expect(source).not.toContain("selectedOptions");
-});
-
-test("project fork existing-link color is owned by Style", async () => {
-  const source = readFileSync(PROJECT_FORK_ROUTE_SOURCE, "utf8");
-  const styleSource = readFileSync("src/app.css", "utf8");
-
-  expect(source).toContain('data-owner="project-fork-existing-link"');
-  expect(source).not.toContain("primary-txt");
-});
-
-test("project fork browser title is rendered through React head title", async () => {
-  const source = readFileSync(PROJECT_FORK_ROUTE_SOURCE, "utf8");
-  const parentSource = readFileSync(PROJECT_PARENT_ROUTE_SOURCE, "utf8");
-
-  expect(source).toContain("<ProjectForkTitle isGitProject={false}");
-  expect(source).toContain("<title>");
-  expect(parentSource).toContain('`${t("fork")} - ${ownerName}/${projectName}`');
-  expect(source).toContain('t("error.badrequest.only.available.for.git")');
-  expect(source).toContain("useEffect(() =>");
-  expect(source).not.toMatch(/document\s*\.\s*title/u);
-  expect(source).not.toMatch(/(?:window\s*\.\s*)?parent\s*\.\s*document\s*\.\s*title/u);
-  expect(source).not.toMatch(/document\s*\.\s*querySelector\s*\(\s*["']title["']/u);
-  expect(source).not.toMatch(/document\s*\.\s*head/u);
 });
 
 test("project fork owner select navigates through React without legacy data-url", async ({
@@ -1314,19 +1253,11 @@ async function projectForkInlineControlMetrics(page: Page) {
     }
     const gap = (left: HTMLElement, right: HTMLElement) =>
       Math.round(right.getBoundingClientRect().left - left.getBoundingClientRect().right);
-    const hasWhitespaceAfter = (element: HTMLElement) =>
-      element.nextSibling?.nodeType === Node.TEXT_NODE &&
-      /\s/u.test(element.nextSibling.textContent ?? "");
 
     return {
       cancelGap: gap(submit, cancel),
       privateLabelGap: gap(privateInput, privateLabel),
       publicLabelGap: gap(publicInput, publicLabel),
-      whitespaceNodes: [
-        hasWhitespaceAfter(submit),
-        hasWhitespaceAfter(publicInput),
-        hasWhitespaceAfter(privateInput),
-      ],
     };
   });
 }

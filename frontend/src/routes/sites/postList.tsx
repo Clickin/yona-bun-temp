@@ -4,8 +4,9 @@ import { SiteAdminSidebar } from "../../components/site-admin-sidebar";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import type { CSSProperties } from "react";
 import legacySpriteUrl from "../../assets/legacy/sprite.png";
+import legacyProjectLogoUrl from "../../assets/legacy/project_default_logo.png";
 import { sitePostsQueryOptions, siteUpdateQueryOptions, type SitePost } from "../../api/site-admin";
-import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
+import { formatLegacyTimestamp, LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import type { RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
@@ -106,8 +107,8 @@ function SitePostListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
               />
             </div>
             <div className="span10" data-owner="site-post-list-setting-content-column">
-              <div data-owner="site-post-list-title-strip">
-                <h2 data-owner="site-post-list-title-heading">
+              <div className="title_area" data-owner="site-post-list-title-strip">
+                <h2 className="pull-left" data-owner="site-post-list-title-heading">
                   <LegacyMessage messageKey="site.sidebar.postList" />
                 </h2>
               </div>
@@ -151,9 +152,13 @@ function PostListPagination({
   const hasNext = currentPage < totalPages;
 
   return (
-    <div data-owner="site-post-list-pagination" id="pagination">
-      <ul data-owner="site-post-list-pagination-list">
-        <li data-pagination-variant="icon" data-owner="site-post-list-pagination-item">
+    <div className="page-navigation-wrap" data-owner="site-post-list-pagination" id="pagination">
+      <ul className="page-nums" data-owner="site-post-list-pagination-list">
+        <li
+          className="page-num ikon"
+          data-pagination-variant="icon"
+          data-owner="site-post-list-pagination-item"
+        >
           {hasPrev ? (
             <Link
               {...legacyPaginationLinkProps}
@@ -187,7 +192,7 @@ function PostListPagination({
             </>
           )}
         </li>
-        <li data-owner="site-post-list-pagination-item">
+        <li className="page-num" data-owner="site-post-list-pagination-item">
           <input
             data-owner="site-post-list-pagination-input"
             key={`${currentPage}-${totalPages}`}
@@ -219,11 +224,21 @@ function PostListPagination({
             defaultValue={currentPage}
           />
         </li>
-        <li data-pagination-variant="delimiter" data-owner="site-post-list-pagination-item">
+        <li
+          className="page-num delimiter"
+          data-pagination-variant="delimiter"
+          data-owner="site-post-list-pagination-item"
+        >
           /
         </li>
-        <li data-owner="site-post-list-pagination-item">{totalPages}</li>
-        <li data-pagination-variant="icon" data-owner="site-post-list-pagination-item">
+        <li className="page-num" data-owner="site-post-list-pagination-item">
+          {totalPages}
+        </li>
+        <li
+          className="page-num ikon"
+          data-pagination-variant="icon"
+          data-owner="site-post-list-pagination-item"
+        >
           {hasNext ? (
             <Link
               {...legacyPaginationLinkProps}
@@ -263,8 +278,8 @@ function PostListPagination({
 }
 
 function PostListItem({ even, post }: { even: boolean; post: SitePost }) {
-  const projectLogoUrl = legacyProjectLogoUrl(post.projectLogoUrl);
-  const createdTitle = post.createdTitle ?? post.createdLabel;
+  const { t } = useLegacyMessages();
+  const created = post.createdTitle ? formatLegacyTimestamp(post.createdTitle, t) : null;
 
   return (
     <li className="row-fluid listitem" data-owner="site-post-list-row">
@@ -276,21 +291,21 @@ function PostListItem({ even, post }: { even: boolean; post: SitePost }) {
       >
         <img
           data-owner="site-post-list-project-avatar-image"
-          src={projectLogoUrl}
+          src={post.projectLogoUrl.trim() || legacyProjectLogoUrl}
           alt={post.projectName}
         />
       </Link>
-      <div data-owner="site-post-list-info">
+      <div className="post-info-wrap" data-owner="site-post-list-info">
         <Link
-          data-owner="site-post-list-project-link"
+          className="post-project"
           params={{ ownerName: post.ownerName, projectName: post.projectName }}
           to="/$ownerName/$projectName"
         >
           {post.ownerName}/{post.projectName}
-        </Link>
-        <span data-owner="site-post-list-separator">·</span>
+        </Link>{" "}
+        <span className="post-info-separator" data-owner="site-post-list-separator">·</span>{" "}
         <Link
-          data-owner="site-post-list-title-link"
+          className="post-title"
           params={{
             ownerName: post.ownerName,
             postNumber: post.postNumber,
@@ -301,8 +316,9 @@ function PostListItem({ even, post }: { even: boolean; post: SitePost }) {
           {post.title}
         </Link>
       </div>
-      <div data-owner="site-post-list-metadata">
+      <div className="post-meta-wrap" data-owner="site-post-list-metadata">
         <Link
+          className="avatar-wrap"
           data-owner="site-post-list-author-avatar"
           params={{ user: post.authorLoginId }}
           search={legacyUserLinkSearch}
@@ -320,19 +336,25 @@ function PostListItem({ even, post }: { even: boolean; post: SitePost }) {
               height="16"
             />
           )}
-        </Link>
+        </Link>{" "}
         <Link
+          className="post-meta-item"
           data-owner="site-post-list-metadata-item"
           params={{ user: post.authorLoginId }}
           search={legacyUserLinkSearch}
           to="/$user"
         >
-          {post.authorLabel}
-        </Link>
-        <span data-owner="site-post-list-metadata-item" title={createdTitle}>
-          {post.createdLabel}
-        </span>
-        <span data-owner="site-post-list-metadata-item">
+          {" "}
+          {post.authorLabel}{" "}
+        </Link>{" "}
+        <span
+          data-owner="site-post-list-metadata-item"
+          title={created?.title ?? post.createdTitle ?? post.createdLabel}
+        >
+          {" "}
+          {created?.label ?? post.createdLabel}{" "}
+        </span>{" "}
+        <span className="post-comments post-meta-item" data-owner="site-post-list-metadata-item">
           <Link
             hash="comments"
             params={{
@@ -342,17 +364,12 @@ function PostListItem({ even, post }: { even: boolean; post: SitePost }) {
             }}
             to="/$ownerName/$projectName/post/$postNumber"
           >
-            <i data-owner="site-post-list-comments-icon"></i>
-            {post.commentCount}
+            <i data-owner="site-post-list-comments-icon"></i> {post.commentCount}
           </Link>
         </span>
       </div>
     </li>
   );
-}
-
-function legacyProjectLogoUrl(projectLogoUrl: string) {
-  return projectLogoUrl.trim() || "/assets/images/project_default_logo.png";
 }
 
 function isDefaultAuthorAvatar(avatarUrl: string) {

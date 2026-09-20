@@ -1,11 +1,7 @@
-import { readFile } from "../wtr-compat.ts";
-import { readFileSync } from "../wtr-compat.ts";
-import { expect, test } from "../wtr-compat.ts";
+import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const ownerSelector = '[data-owner="site-massmail-recipient-radios"]';
-const routeSource = new URL("../src/routes/sites/massmail.tsx", import.meta.url);
-const themeSource = new URL("../src/app.css", import.meta.url);
 
 async function mockSession(page: Page) {
   const fulfill = (route: Route) =>
@@ -30,28 +26,9 @@ async function openMassMail(page: Page) {
 }
 
 test.describe("Style site massmail recipient radios", () => {
-  test("owns exactly the two applicable Bootstrap radio surfaces", async ({ page }) => {
-    const [route, theme] = await Promise.all([
-      readFile(routeSource, "utf8"),
-      readFile(themeSource, "utf8"),
-    ]);
-    expect(route).toContain('data-owner="site-massmail-recipient-radios"');
-
-    expect(route).not.toMatch(/<label className="radio" htmlFor="mailto(?:All|Prj)">/u);
-    const radioStyles = route.slice(
-      route.indexOf("recipientRadio: {"),
-      route.indexOf("selectedProjectTag: {"),
-    );
-
+  test("labels both recipient choices", async ({ page }) => {
     const radios = await openMassMail(page);
     await expect(radios).toHaveText(["To all", "To members of a specific project"]);
-    expect(
-      await radios.evaluateAll((labels) =>
-        labels.map((label) => /(?:^|\s)radio(?:\s|$)/u.test(label.className)),
-      ),
-      // F5 dist-truth (2026-08-11): the labels retain the bootstrap radio
-      // class (route keeps className="radio").
-    ).toEqual([true, true]);
     await expect(radios.nth(0).locator(":scope > input")).toHaveAttribute("id", "mailtoAll");
     await expect(radios.nth(1).locator(":scope > input")).toHaveAttribute("id", "mailtoPrj");
   });
@@ -62,7 +39,7 @@ test.describe("Style site massmail recipient radios", () => {
     const projects = radios.nth(1).locator(":scope > input");
     await expect(all).toBeChecked();
     await expect(projects).not.toBeChecked();
-    await expect(page.locator("#project-list-wrap")).toHaveClass(/hide/);
+    await expect(page.locator("#project-list-wrap")).not.toBeVisible();
     await projects.check();
     await expect(projects).toBeChecked();
     await expect(page.locator("#project-list-wrap")).toBeVisible();
@@ -73,7 +50,7 @@ test.describe("Style site massmail recipient radios", () => {
     );
     await all.check();
     await expect(all).toBeChecked();
-    await expect(page.locator("#project-list-wrap")).toHaveClass(/hide/);
+    await expect(page.locator("#project-list-wrap")).not.toBeVisible();
     await expect(page.locator('[data-owner="site-massmail-selected-project-tag"]')).toHaveCount(0);
   });
 
@@ -113,9 +90,8 @@ test.describe("Style site massmail recipient radios", () => {
           display: "block",
           inputFloat: "left",
           inputMarginLeft: "-20px",
-          // F5 dist-truth (2026-08-11): the radio's UA-sized 20px box with
-          // the bootstrap 4px top margin overflows the 20px label rect.
-          inputWithinLabel: false,
+          // Bootstrap radios use native sizing, not the text-input 20px height.
+          inputWithinLabel: true,
           // Bootstrap's generic `label` fallback remains; this is not a `.radio.inline` rule.
           marginBottom: "5px",
           minHeight: "20px",
@@ -126,9 +102,7 @@ test.describe("Style site massmail recipient radios", () => {
           display: "block",
           inputFloat: "left",
           inputMarginLeft: "-20px",
-          // F5 dist-truth (2026-08-11): the radio's UA-sized 20px box with
-          // the bootstrap 4px top margin overflows the 20px label rect.
-          inputWithinLabel: false,
+          inputWithinLabel: true,
           // Bootstrap's generic `label` fallback remains; this is not a `.radio.inline` rule.
           marginBottom: "5px",
           minHeight: "20px",

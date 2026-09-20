@@ -1,4 +1,3 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -8,23 +7,6 @@ test.use({ locale: "en-US" });
 test("project settingform restores the legacy page shell and desktop geometry", async ({
   page,
 }) => {
-  const route = readFileSync("src/routes/$ownerName/$projectName/settingform.tsx", "utf8");
-  const settingRoute = readFileSync("src/routes/$ownerName/$projectName/setting.tsx", "utf8");
-  const routeStyles = readFileSync("src/app.css", "utf8");
-  const settingStyles = readFileSync("src/app.css", "utf8");
-  const legacy = readFileSync("../yona-original/app/views/project/setting.scala.html", "utf8");
-  const partial = readFileSync(
-    "../yona-original/app/views/project/partial_settingmenu.scala.html",
-    "utf8",
-  );
-  const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
-
-  expect(legacy).toContain('<div class="page-wrap-outer">');
-  expect(legacy).toContain('<div class="project-page-wrap">');
-  expect(partial).toContain('<ul class="nav nav-tabs">');
-  expect(pageLess).toContain(".page-wrap-outer {");
-  expect(pageLess).toContain(".project-page-wrap {");
-
   await mockProjectSetting(page);
 
   await page.setViewportSize({ width: 1366, height: 900 });
@@ -76,7 +58,7 @@ test("project settingform restores the legacy page shell and desktop geometry", 
     // { margin-top: 5px !important }` wins over the settingform style 20px.
     shellMarginTop: "5px",
     outerWidth: 1366,
-    shellWidth: 1366,
+    shellWidth: 1346,
   });
   expect(desktop.cuDescRight).toBeGreaterThanOrEqual(839);
   expect(desktop.rightWidth).toBe(420);

@@ -52,7 +52,7 @@ test("SVN issues keeps the canonical desktop shell and React-owned list interact
   await page.locator('input[name="filter"]').fill("svn");
   await page.locator('button[data-submit="submit"]').click();
   await expect(page).toHaveURL(/filter=svn/u);
-  await page.getByRole("link", { name: /닫힘/u }).click();
+  await page.getByRole("button", { name: /닫힘/u }).click();
   await expect(page).toHaveURL(/state=closed/u);
 });
 

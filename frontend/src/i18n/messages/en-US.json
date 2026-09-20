@@ -1091,5 +1091,8 @@
   "viaEmail.help.intro": "We provide the guide on how to send an email to {0}. I hope this will help you.",
   "viaEmail.help.title": "How to use {0} by Email",
   "watchers": "People watching this article",
-  "watchers.more": "and {0} others"
+  "watchers.more": "and {0} others",
+  "select2.noMatches": "No matches found",
+  "common.time.am": "AM",
+  "common.time.pm": "PM"
 }

@@ -685,10 +685,16 @@ async fn user_search_matches_legacy_login_id_and_name_lookup() {
 }
 
 #[tokio::test]
-async fn issue_search_ranks_title_matches_before_newer_body_only_matches() {
+async fn issue_search_preserves_newer_body_match_before_older_title_match() {
     let data_dir = tempdir().expect("yona data tempdir");
     let (app, repo, db) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_cookie, owner_id) = seed_search_rows(app.clone(), &repo, &db).await;
+    db.execute(Statement::from_string(
+        db.get_database_backend(),
+        "UPDATE issue SET created_date = '2020-01-01 00:00:00'".to_string(),
+    ))
+    .await
+    .unwrap();
 
     repo.create_issue(CreateIssueInput {
         actor_display_name: "owner".to_string(),
@@ -723,8 +729,8 @@ async fn issue_search_ranks_title_matches_before_newer_body_only_matches() {
     )
     .await;
 
-    assert_eq!(payload["items"][0]["title"], "Needle issue title");
-    assert_eq!(payload["items"][1]["title"], "Recent unrelated issue");
+    assert_eq!(payload["items"][0]["title"], "Recent unrelated issue");
+    assert_eq!(payload["items"][1]["title"], "Needle issue title");
 }
 
 #[tokio::test]
@@ -1077,10 +1083,16 @@ async fn project_issue_search_matches_legacy_project_scope_visibility() {
 }
 
 #[tokio::test]
-async fn post_search_ranks_title_matches_before_newer_body_only_matches() {
+async fn post_search_preserves_newer_body_match_before_older_title_match() {
     let data_dir = tempdir().expect("yona data tempdir");
     let (app, repo, db) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (owner_cookie, owner_id) = seed_search_rows(app.clone(), &repo, &db).await;
+    db.execute(Statement::from_string(
+        db.get_database_backend(),
+        "UPDATE posting SET created_date = '2020-01-01 00:00:00'".to_string(),
+    ))
+    .await
+    .unwrap();
 
     repo.create_posting(CreatePostingInput {
         actor_display_name: "owner".to_string(),
@@ -1111,8 +1123,8 @@ async fn post_search_ranks_title_matches_before_newer_body_only_matches() {
     )
     .await;
 
-    assert_eq!(payload["items"][0]["title"], "Needle post title");
-    assert_eq!(payload["items"][1]["title"], "Recent unrelated post");
+    assert_eq!(payload["items"][0]["title"], "Recent unrelated post");
+    assert_eq!(payload["items"][1]["title"], "Needle post title");
 }
 
 #[tokio::test]
@@ -3690,4 +3702,29 @@ async fn scoped_search_rejects_invalid_project_type_and_returns_review_links() {
     )
     .await;
     assert_eq!(missing_keyword.status(), StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn review_search_does_not_match_pull_request_title_without_matching_contents() {
+    let data_dir = tempdir().expect("yona data tempdir");
+    let (app, repo, db) = build_app_with_repository_in_data_root(data_dir.path()).await;
+    let (owner_cookie, _) = seed_search_rows(app.clone(), &repo, &db).await;
+    db.execute(Statement::from_string(
+        db.get_database_backend(),
+        "UPDATE review_comment SET contents = 'unrelated review contents'".to_string(),
+    ))
+    .await
+    .unwrap();
+    let payload = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/search?keyword=Needle&searchType=review&pageNum=1",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(payload["counts"]["reviews"], 0);
+    assert_eq!(payload["totalCount"], 0);
+    assert!(payload["items"].as_array().unwrap().is_empty());
 }

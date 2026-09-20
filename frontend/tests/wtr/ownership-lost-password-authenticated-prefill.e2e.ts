@@ -1,6 +1,4 @@
-import { expect, test, type Page, readFile, mergedLegacyBlock } from "../wtr-compat.ts";
-const routeSource = new URL("../src/routes/lostPassword.tsx", import.meta.url);
-const themeSource = new URL("../src/app.css", import.meta.url);
+import { expect, test, type Page } from "../wtr-compat.ts";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const desktop = { height: 900, width: 1366 };
 const mobile = { height: 844, width: 390 };
@@ -32,21 +30,6 @@ async function openAuthenticatedPrefill(page: Page) {
 }
 
 test.describe("Style authenticated lost-password prefill", () => {
-  test("reuses globally themed form values while retaining fallback alert states", async () => {
-    const [route, theme, legacyFallback] = await Promise.all([
-      readFile(routeSource, "utf8"),
-      readFile(themeSource, "utf8"),
-      Promise.resolve(mergedLegacyBlock()),
-    ]);
-
-    expect(route).toContain('"lost-password-authenticated-prefill"');
-    expect(route).toContain("authenticatedNoAlert");
-
-    expect(theme).not.toMatch(/^\s+lostPassword[A-Z]/m);
-    expect(legacyFallback).toContain(".login-form-wrap .text");
-    expect(legacyFallback).toContain(".login-form-wrap {\n    width: 95% !important;");
-  });
-
   test("preserves prefilled values, order, and the password-reset mutation payload", async ({
     page,
   }) => {
@@ -68,11 +51,6 @@ test.describe("Style authenticated lost-password prefill", () => {
     });
 
     const owner = await openAuthenticatedPrefill(page);
-    const form = owner.locator('[data-part="lost-password-authenticated-prefill-form-wrap"] form');
-    await expect(form.locator("input.text")).toHaveCount(0);
-    expect(
-      await owner.locator(":scope > div").evaluateAll((nodes) => nodes.map((node) => node.tagName)),
-    ).toEqual(["DIV", "DIV"]);
     await expect(
       owner.locator('[data-part="lost-password-authenticated-prefill-login-id"]'),
     ).toHaveValue("door");
@@ -184,18 +162,15 @@ test.describe("Style authenticated lost-password prefill", () => {
       });
     });
     await page.goto(`${basePath}/lostPassword`);
-    await expect(page.locator('[data-owner="lost-password-authenticated-prefill"]')).toHaveCount(0);
     await expect(page.locator('[data-owner="lost-password-form"]')).toBeVisible();
 
     await page.unroute("**/api/v1/session");
     await mockAuthenticatedSession(page);
     await page.goto(`${basePath}/lostPassword?requested=1`);
-    await expect(page.locator('[data-owner="lost-password-authenticated-prefill"]')).toHaveCount(0);
     await expect(
       page.locator('[data-owner="lost-password-authenticated-success-alert"]'),
     ).toBeVisible();
     await page.goto(`${basePath}/lostPassword?error=invalid`);
-    await expect(page.locator('[data-owner="lost-password-authenticated-prefill"]')).toHaveCount(0);
     await expect(
       page.locator('[data-owner="lost-password-authenticated-error-alert"]'),
     ).toBeVisible();

@@ -393,6 +393,7 @@ impl AppRepositoryImpl<'_> {
             items.push(IssueChildRecord {
                 assignee_label,
                 comment_count: row.num_of_comments.unwrap_or_default().max(0) as u32,
+                created_at: row.created_date,
                 created_label: format_workspace_date_label(row.created_date),
                 id: row.id,
                 is_draft,
@@ -626,38 +627,6 @@ impl AppRepositoryImpl<'_> {
         Ok(threads)
     }
 
-    /// Lists review threads attached directly to the given commits (no pull
-    /// request link) in the project, matching legacy commit-discussion threads
-    /// shown on the pull request changes surface.
-    pub async fn list_project_commit_scoped_review_threads(
-        &self,
-        project_id: i64,
-        commit_ids: &[String],
-    ) -> Result<Vec<ReviewThreadRecord>, DbErr> {
-        if commit_ids.is_empty() {
-            return Ok(Vec::new());
-        }
-        let commit_ids = commit_ids
-            .iter()
-            .cloned()
-            .map(Some)
-            .collect::<Vec<Option<String>>>();
-        let rows = comment_thread::Entity::find()
-            .filter(comment_thread::Column::ProjectId.eq(Some(project_id)))
-            .filter(comment_thread::Column::PullRequestId.is_null())
-            .filter(comment_thread::Column::CommitId.is_in(commit_ids))
-            .order_by_asc(comment_thread::Column::CreatedDate)
-            .order_by_asc(comment_thread::Column::Id)
-            .all(&self.db)
-            .await?;
-        let mut threads = Vec::new();
-        for row in rows {
-            let comments = self.list_review_comments(row.id).await?;
-            threads.push(self.review_thread_record(row, comments).await?);
-        }
-        Ok(threads)
-    }
-
     pub(super) async fn list_review_comments(
         &self,
         thread_id: i64,
@@ -703,7 +672,7 @@ impl AppRepositoryImpl<'_> {
                 contents_markdown: self
                     .read_text_column("review_comment", "contents", row.id)
                     .await?,
-                created_label: format_workspace_date_label(row.created_date),
+                created_at: row.created_date,
                 id: row.id,
                 thread_id,
                 via_email,
@@ -737,13 +706,16 @@ impl AppRepositoryImpl<'_> {
             author_login_id,
             comments,
             commit_id: row.commit_id.unwrap_or_default(),
+            created_at: row.created_date,
             created_label: format_workspace_date_label(row.created_date),
+            end_column: row.end_column,
             end_line: row.end_line,
             end_side: row.end_side,
             id: row.id,
             path: row.path.unwrap_or_default(),
             prev_commit_id: row.prev_commit_id.unwrap_or_default(),
             pull_request_number,
+            start_column: row.start_column,
             start_line: row.start_line,
             start_side: row.start_side,
             state: review_thread_state(row.state.as_deref()),
@@ -904,6 +876,7 @@ impl AppRepositoryImpl<'_> {
             child_open_count,
             author_login_id,
             comment_count: model.num_of_comments.unwrap_or_default().max(0) as u32,
+            created_at: model.created_date,
             created_label: format_workspace_date_label(model.created_date),
             created_title: format_legacy_datetime_title(model.created_date),
             due_date_label: format_workspace_date_label(due_date),
@@ -1136,6 +1109,7 @@ impl AppRepositoryImpl<'_> {
                     )
                     .1,
                     comment_count: child.num_of_comments.unwrap_or_default().max(0) as u32,
+                    created_at: child.created_date,
                     created_label: format_workspace_date_label(child.created_date),
                     id: child.id,
                     is_draft: child_is_draft,
@@ -1174,6 +1148,7 @@ impl AppRepositoryImpl<'_> {
                 child_open_count,
                 author_login_id,
                 comment_count: row.num_of_comments.unwrap_or_default().max(0) as u32,
+                created_at: row.created_date,
                 created_label: format_workspace_date_label(row.created_date),
                 created_title: format_legacy_datetime_title(row.created_date),
                 due_date_label: format_workspace_date_label(due_date),

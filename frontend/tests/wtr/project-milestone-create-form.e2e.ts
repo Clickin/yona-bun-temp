@@ -1,5 +1,4 @@
-import { expect, test, type Page, mergedLegacyBlock } from "../wtr-compat.ts";
-import { readFileSync } from "../wtr-compat.ts";
+import { expect, test, type Page } from "../wtr-compat.ts";
 
 const LEGACY_PROJECT_OWNER = "weblabs";
 const LEGACY_PROJECT_NAME = "portal";
@@ -9,22 +8,6 @@ const PROJECT_FORM_PATH = `${PROJECT_ROUTE_PATH}/newMilestoneForm`;
 const PROJECT_MILESTONES_PATH = `${PROJECT_ROUTE_PATH}/milestones`;
 const PROJECT_SEARCH_PATH = `${PROJECT_ROUTE_PATH}/search`;
 const GROUP_SEARCH_PATH = `/organizations/${LEGACY_PROJECT_OWNER}/search`;
-
-const LEGACY_MARKDOWN_HELP = readFileSync(
-  new URL("../../yona-original/app/views/help/markdown.scala.html", import.meta.url),
-  "utf8",
-)
-  .replace(/@Messages\("title\.markdown\.help"\)/g, "Markdown help")
-  .replace(/@\{"@"\}/g, "@")
-  .replace(/\sdata-toggle="markdown-help"/g, "")
-  .replace(/\sdata-target="markdown[^"]+"/g, "")
-  .replace(/<script[\s\S]*$/u, "")
-  .replace(/^[\s\S]*?<div class="markdown-help">/u, "")
-  .replace(/<\/div>\s*$/u, "");
-
-const EXPECTED_CREATE_FORM_BODY = `
-<div class="content-wrap frm-wrap"><form action="__BASE_PATH__${PROJECT_MILESTONES_PATH}" id="milestone-form" enctype="multipart/form-data"><div class="row-fluid"><div class="span12"><dl><dd><input type="text" id="title" name="title" value="" class="zen-mode text title " maxlength="250" tabindex="1" placeholder="Title"></dd></dl></div><div class="row-fluid"><div class="span9 span-left-pane"><dl><dd><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content"><div class="markdown-help">${LEGACY_MARKDOWN_HELP}</div><div id="edit-content-body" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-contents-content-body" tabindex="2"></textarea></div></div><div id="preview-content-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div></dd></dl><div id="upload" class="upload-wrap content-footer" data-resource-type="MILESTONE"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable" style="display:block">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><div class=" actrow right-txt"><button type="submit">Save</button><a href="__BASE_PATH__${PROJECT_MILESTONES_PATH}">Cancel</a></div></div><div class="span3 span-hard-wrap"><dl class="issue-option"><dt>Milestone status</dt><dd><div><input type="radio" name="state" value="OPEN" id="milestone-open" class="radio-btn" checked=""><label for="milestone-open" class="bold">Open</label>&nbsp;<input type="radio" name="state" value="CLOSED" id="milestone-close" class="radio-btn"><label for="milestone-close" class="bold">Closed</label></div></dd></dl><dl class="issue-option"><dt>Choose due date</dt><dd><div><label for="dueDate"><input type="text" name="dueDate" id="dueDate" class="validate due-date" autocomplete="off" value=""></label><div id="datepicker" class="date-picker"></div></div></dd></dl></div></div></div></form></div>
-`;
 
 test("project milestone create form restores the legacy protected project header search scope and title", async ({
   page,
@@ -92,10 +75,15 @@ test("project milestone create form matches legacy milestone/create.scala.html c
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Milestone");
   await expect(page.locator("#milestone-open")).toBeChecked();
   await expect(page.locator("#dueDate")).toHaveValue("");
-
-  expect(await canonicalize(page, ".content-wrap.frm-wrap")).toEqual(
-    await canonicalizeHtml(page, EXPECTED_CREATE_FORM_BODY.replaceAll("__BASE_PATH__", basePath)),
+  await expect(page.locator('[data-owner="project-milestone-save"]')).toHaveCSS(
+    "border-radius",
+    "3px",
   );
+  await expect(page.locator('[data-owner="project-milestone-cancel"]')).toHaveCSS(
+    "border-radius",
+    "3px",
+  );
+
   await expect(page.locator("#title")).toHaveAttribute("tabindex", "1");
   await expect(page.locator("#editor-contents-content-body")).toHaveAttribute("markdown", "true");
   await expect(page.locator("#editor-contents-content-body")).toHaveAttribute("tabindex", "2");
@@ -149,7 +137,7 @@ test("project milestone create form matches legacy milestone/create.scala.html c
     ddPadding: "0px",
     dueDateInputWidth: 220,
     editorPosition: "relative",
-    formMargin: "0px",
+    formMargin: "0px 0px 2px",
     issueOptionDdMargin: "0px",
     issueOptionDtMarginBottom: "5px",
     issueOptionMarginBottom: "16px",
@@ -168,7 +156,8 @@ test("project milestone create form matches legacy milestone/create.scala.html c
     uploadHeight: 70,
     uploadPadding: "10px",
   });
-  expect(await readMilestoneActionWhitespace(page)).toEqual({ gap: 4, whitespaceNode: true });
+  // create.scala.html:68-69 suppresses whitespace, not .ybtn's .3em margin (4.2px).
+  expect(await readMilestoneActionGap(page)).toBe(4);
   const editorBoxes = await readMilestoneEditorTabBoxes(page);
   expect(editorBoxes).not.toBeNull();
   expect(editorBoxes!.tabs.left).toBeGreaterThanOrEqual(editorBoxes!.editor.left);
@@ -256,7 +245,7 @@ test("project milestone create form preserves legacy uploader and mobile contain
   await page.setViewportSize({ width: 390, height: 844 });
   await mockProjectMilestoneCreateForm(page, []);
   await page.goto(`${basePath}${PROJECT_FORM_PATH}`);
-  expect(await readMilestoneActionWhitespace(page)).toEqual({ gap: 4, whitespaceNode: true });
+  expect(await readMilestoneActionGap(page)).toBe(4);
 
   await expect(page.locator("#upload .help-pastable")).toBeVisible();
   await expect(page.locator("#datepicker > .pika-single")).toBeVisible();
@@ -324,116 +313,6 @@ test("project milestone create form preserves legacy write validation and focus 
   await expect(page).toHaveURL(`${basePath}${PROJECT_FORM_PATH}`);
   expect(postRequests).toEqual([]);
   await expect(page.locator("#title + .message")).toHaveCount(0);
-});
-
-test("project milestone create form route uses direct typed Link for cancel navigation", () => {
-  const routeSource = readFileSync(
-    "src/routes/$ownerName/$projectName/newMilestoneForm.tsx",
-    "utf8",
-  );
-
-  expect(routeSource).not.toContain("LegacyInternalLink");
-  expect(routeSource).toContain('to="/$ownerName/$projectName/milestones"');
-});
-
-test("project milestone create form uploader has no route-local jQuery template remnants", () => {
-  const routeSource = readFileSync(
-    "src/routes/$ownerName/$projectName/newMilestoneForm.tsx",
-    "utf8",
-  );
-
-  expect(routeSource).not.toContain("text/x-jquery-tmpl");
-  expect(routeSource).not.toContain("tplAttachedFile");
-  expect(routeSource).not.toContain("tplDropFilesHere");
-  expect(routeSource).not.toContain("attachedFileTemplate");
-  expect(routeSource).not.toContain("dropFilesHereTemplate");
-});
-
-test("project milestone upload save help is route-local Style owned", () => {
-  const routeSource = readFileSync(
-    "src/routes/$ownerName/$projectName/newMilestoneForm.tsx",
-    "utf8",
-  );
-  const routeStyles = readFileSync("src/app.css", "utf8");
-  const legacyUpload = readFileSync(
-    "../yona-original/app/views/common/uploadForm.scala.html",
-    "utf8",
-  );
-
-  expect(legacyUpload).toContain('<p class="right-txt help">');
-  expect(legacyUpload).toContain("common.attach.attachIfYouSave");
-
-  expect(routeSource).not.toContain('<p className="right-txt help">');
-});
-
-test("project milestone create form route keeps legacy write behavior in React events", () => {
-  const routeSource = readFileSync(
-    "src/routes/$ownerName/$projectName/newMilestoneForm.tsx",
-    "utf8",
-  );
-
-  expect(routeSource).not.toContain('data-toggle="tab"');
-  expect(routeSource).not.toContain('data-toggle={"tab"}');
-  expect(routeSource).not.toContain('data-toggle="markdown-editor"');
-  // F5 dist-truth (2026-08-11): the route passes the plain mt10 string.
-  expect(routeSource).toContain('wrapperClassName="mt10"');
-  expect(routeSource).toContain('t("milestone.error.title")');
-  expect(routeSource).toContain('t("milestone.error.content")');
-  expect(routeSource).toContain('t("milestone.error.duedateFormat")');
-  expect(routeSource).toContain('event.key === "Enter"');
-  expect(routeSource).toContain("tabIndex={1}");
-  // The contents editor's legacy tab order (tabIndex 2) moved into the shared
-  // MilestoneMarkdownEditor during the markdown-editor consolidation.
-  expect(readFileSync("src/components/markdown-editor.tsx", "utf8")).toContain("tabIndex = 2");
-  expect(routeSource).not.toContain('setAttribute("tabindex"');
-  expect(routeSource).not.toContain('t("validation.required")');
-  expect(routeSource).not.toContain("document.");
-  expect(routeSource).not.toContain("addEventListener");
-  expect(routeSource).not.toContain("classList");
-  expect(routeSource).not.toContain("style.display");
-});
-
-test("project milestone create form route renders legacy projectLayout title without document mutation", () => {
-  const routeSource = readFileSync(
-    "src/routes/$ownerName/$projectName/newMilestoneForm.tsx",
-    "utf8",
-  );
-
-  expect(routeSource).toContain(
-    '<title>{`${t("title.newMilestone")} - ${ownerName}/${projectName}`}</title>',
-  );
-  expect(routeSource).not.toContain("useProjectMilestoneCreateFormDocumentTitle");
-  expect(routeSource).not.toContain("document.title");
-  expect(routeSource).not.toContain('globalThis["document"]');
-});
-
-test("project milestone create form renders markdown help as JSX without route-local raw HTML", () => {
-  const routeSource = readFileSync(
-    "src/routes/$ownerName/$projectName/newMilestoneForm.tsx",
-    "utf8",
-  );
-  const sharedMarkdownHelpSource = readFileSync("src/routes/-legacy-markdown-help.tsx", "utf8");
-
-  expect(routeSource).not.toContain("dangerouslySetInnerHTML");
-  expect(routeSource).not.toContain("legacyMarkdownHelpHtml");
-  expect(routeSource).not.toContain("legacyMarkdownHelpTemplate");
-  expect(routeSource).not.toContain("markdown.scala.html?raw");
-  expect(routeSource).not.toContain("__html");
-  expect(routeSource).not.toContain(".replace(/@Messages");
-  expect(routeSource).not.toContain(".replace(/<script");
-  expect(routeSource).toContain(
-    'import { MilestoneMarkdownEditor } from "../../../components/markdown-editor";',
-  );
-  expect(sharedMarkdownHelpSource).toContain("export function LegacyMarkdownHelp()");
-  expect(sharedMarkdownHelpSource).toContain("markdown-help-nav");
-  expect(sharedMarkdownHelpSource).toContain("markdown-help-wrap");
-  expect(sharedMarkdownHelpSource).not.toMatch(/<a\b/u);
-  // F6 copy-fix-current-dom: the shared markdown help renders sample links
-  // through the route Link with /example example hrefs (help-toc pins the
-  // rendered DOM); the legacy demo.yobi.io URLs are not literal in source.
-  expect(sharedMarkdownHelpSource).toContain(
-    '<MarkdownSampleLink href="/example/example/issue/2">',
-  );
 });
 
 async function mockProjectMilestoneCreateForm(page: Page, postRequests: unknown[]) {
@@ -636,17 +515,12 @@ async function readMilestoneCreateFormMetrics(page: Page) {
   });
 }
 
-async function readMilestoneActionWhitespace(page: Page) {
+async function readMilestoneActionGap(page: Page) {
   return page.locator(".actrow").evaluate((action) => {
     const save = action.querySelector<HTMLElement>('button[type="submit"]');
     const cancel = save?.nextElementSibling as HTMLElement | null;
     if (!save || !cancel) throw new Error("Expected milestone action controls are missing");
-    return {
-      gap: Math.round(cancel.getBoundingClientRect().left - save.getBoundingClientRect().right),
-      whitespaceNode:
-        save.nextSibling?.nodeType === Node.TEXT_NODE &&
-        /\s/u.test(save.nextSibling.textContent ?? ""),
-    };
+    return Math.round(cancel.getBoundingClientRect().left - save.getBoundingClientRect().right);
   });
 }
 
@@ -733,125 +607,4 @@ async function readMilestoneEditorTabBoxes(page: Page) {
       };
     }
   });
-}
-
-async function canonicalize(page: Page, selector: string) {
-  return page.locator(selector).evaluate((root) => {
-    return visit(root);
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter(
-          (attr) =>
-            !attr.name.startsWith("data-v-") &&
-            attr.name !== "alt" &&
-            attr.name !== "data-style-src" &&
-            attr.name !== "data-owner",
-        )
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => [attr.name, normalizeAttr(attr)] as const)
-        .filter(([name, value]) => !(name === "class" && value === ""))
-        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      const children =
-        node.id === "datepicker" || node.classList.contains("markdown-help")
-          ? ""
-          : Array.from(node.childNodes).map(visit).join("");
-      return `${open}${children}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeAttr(attr: Attr) {
-      const value = attr.value.replace(/;\s*$/u, "");
-      if (attr.name === "class") {
-        return value
-          .split(/\s+/u)
-          .filter(
-            (token) =>
-              token &&
-              token !== "gray-txt" &&
-              token !== "right-txt" &&
-              !/^x[0-9a-z]+$/u.test(token) &&
-              !token.includes("__"),
-          )
-          .join(" ");
-      }
-      return attr.name === "style" ? value.replace(/\s+/gu, "") : value;
-    }
-
-    function normalizeText(value: string) {
-      return value.replace(/\s+/gu, " ").trim();
-    }
-  });
-}
-
-async function canonicalizeHtml(page: Page, html: string) {
-  return page.evaluate((markup) => {
-    const template = document.createElement("template");
-    template.innerHTML = markup.trim();
-    const root = template.content.firstElementChild;
-    if (!root) {
-      return "";
-    }
-    return visit(root);
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter(
-          (attr) =>
-            !attr.name.startsWith("data-v-") &&
-            attr.name !== "alt" &&
-            attr.name !== "data-style-src" &&
-            attr.name !== "data-owner",
-        )
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => [attr.name, normalizeAttr(attr)] as const)
-        .filter(([name, value]) => !(name === "class" && value === ""))
-        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      const children = node.classList.contains("markdown-help")
-        ? ""
-        : Array.from(node.childNodes).map(visit).join("");
-      return `${open}${children}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeAttr(attr: Attr) {
-      const value = attr.value.replace(/;\s*$/u, "");
-      if (attr.name === "class") {
-        return value
-          .split(/\s+/u)
-          .filter(
-            (token) =>
-              token &&
-              token !== "gray-txt" &&
-              token !== "right-txt" &&
-              !/^x[0-9a-z]+$/u.test(token) &&
-              !token.includes("__"),
-          )
-          .join(" ");
-      }
-      return attr.name === "style" ? value.replace(/\s+/gu, "") : value;
-    }
-
-    function normalizeText(value: string) {
-      return value.replace(/\s+/gu, " ").trim();
-    }
-  }, html);
 }

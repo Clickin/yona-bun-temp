@@ -15,6 +15,7 @@ cache-redis = ["redis"]
 
 [dependencies]
 async-trait.workspace = true
+bcrypt.workspace = true
 chrono.workspace = true
 moka.workspace = true
 rand.workspace = true

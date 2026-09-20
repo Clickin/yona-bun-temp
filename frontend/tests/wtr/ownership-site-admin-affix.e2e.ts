@@ -10,8 +10,6 @@ const OWNER = '[data-owner="site-admin-affix"]';
 
 test.use({ locale: "en-US" });
 
-
-
 for (const viewport of [
   { affix: { height: 43, width: 1366, x: 0, y: 0 }, headerY: 43, label: "desktop" },
   { affix: { height: 66, width: 390, x: 0, y: 0 }, headerY: 66, label: "mobile" },
@@ -76,6 +74,41 @@ for (const viewport of [
     await restoreClasses(owner);
   });
 }
+
+test("site-admin banner leaves and re-enters document flow at the legacy 30px scroll boundary", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 300, width: 1366 });
+  await installAuthenticatedHome(page, true);
+  await page.addInitScript(() => {
+    localStorage.setItem("shallWeOpenLeftNavigation", "false");
+    localStorage.setItem("yobi-intro", "true");
+  });
+  await page.goto(`${BASE_PATH}/`);
+  await page.evaluate(() => document.fonts.ready);
+
+  const banner = page.locator(OWNER);
+  const header = page.locator('[data-owner="global-gnb-outer"]');
+  await expect(banner).toBeVisible();
+  const bannerHeight = await banner.evaluate((element) => element.getBoundingClientRect().height);
+  const headerDocumentTop = () =>
+    header.evaluate((element) => element.getBoundingClientRect().top + window.scrollY);
+  const initialHeaderTop = await headerDocumentTop();
+
+  // layout.scala.html:57 and bootstrap.js:2220 keep scrollTop <= 30 in flow.
+  await page.evaluate(() => window.scrollTo(0, 30));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(30);
+  await expect(banner).toHaveCSS("position", "static");
+  expect(await headerDocumentTop()).toBeCloseTo(initialHeaderTop, 1);
+
+  await page.evaluate(() => window.scrollTo(0, 31));
+  await expect(banner).toHaveCSS("position", "fixed");
+  expect(await headerDocumentTop()).toBeCloseTo(initialHeaderTop - bannerHeight, 1);
+
+  await page.evaluate(() => window.scrollTo(0, 30));
+  await expect(banner).toHaveCSS("position", "static");
+  expect(await headerDocumentTop()).toBeCloseTo(initialHeaderTop, 1);
+});
 
 test("site-admin affix stays absent for a non-admin home session", async ({ page }) => {
   await installAuthenticatedHome(page, false);

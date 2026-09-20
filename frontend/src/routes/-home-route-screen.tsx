@@ -592,8 +592,6 @@ function HomeFlashToast({ message }: { message: string }) {
       return;
     }
     setRootToast({ key: `home-flash:${message}`, message });
-    const timeoutId = window.setTimeout(() => setRootToast(null), 5000);
-    return () => window.clearTimeout(timeoutId);
   }, [message, setRootToast]);
 
   return null;
@@ -651,9 +649,7 @@ function NotificationStreamItem({
   return (
     <li className="notification-stream" data-owner="authenticated-home-notification-row">
       <div
-        className={
-          isUpdated ? "stream-type updated" : `stream-type ${notification.typeIcon}`
-        }
+        className={isUpdated ? "stream-type updated" : `stream-type ${notification.typeIcon}`}
         data-owner="authenticated-home-notification-type"
       >
         {isUpdated ? (
@@ -666,8 +662,7 @@ function NotificationStreamItem({
               .join("")}`}
           />
         )}
-      </div>
-      {" "}
+      </div>{" "}
       {/* oxlint-disable jsx-a11y/click-events-have-key-events -- legacy partial_notifications.scala.html uses a clickable plain div here. */}
       {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- legacy partial_notifications.scala.html uses a clickable plain div here. */}
       <div
@@ -808,6 +803,18 @@ export function SiteLayoutShell({
     : false;
   const isSiteAdmin = session ? booleanField(session, "isSiteAdmin", false) : false;
   const shouldRenderSiteAdminAffix = session?.isAnonymous === false && isSiteAdmin;
+  const [isSiteAdminAffixed, setIsSiteAdminAffixed] = React.useState(false);
+  React.useEffect(() => {
+    if (!shouldRenderSiteAdminAffix) {
+      setIsSiteAdminAffixed(false);
+      return;
+    }
+    // layout.scala.html uses Bootstrap affix with data-offset-top="30".
+    const updateAffixState = () => setIsSiteAdminAffixed(window.scrollY > 30);
+    updateAffixState();
+    window.addEventListener("scroll", updateAffixState, { passive: true });
+    return () => window.removeEventListener("scroll", updateAffixState);
+  }, [shouldRenderSiteAdminAffix]);
   const projectSearchAction =
     projectSearchScope?.ownerName && projectSearchScope.projectName
       ? prefixBasePath(
@@ -937,9 +944,9 @@ export function SiteLayoutShell({
     void queryClient.invalidateQueries({ queryKey: ["workspace", "overview", "sidebar"] });
   };
   const sharedSiteFooterWithStyleProps = (
-    <footer data-owner="site-footer">
-      <div data-owner="site-footer-inner">
-        <span data-owner="site-footer-provider">
+    <footer className="page-footer-outer" data-owner="site-footer">
+      <div className="page-footer" data-owner="site-footer-inner">
+        <span className="provider" data-owner="site-footer-provider">
           Copyright{" "}
           <Link
             className="yona-author"
@@ -1008,7 +1015,10 @@ export function SiteLayoutShell({
           </div>
         </div>
         {shouldRenderSiteAdminAffix ? (
-          <div className="site-admin-affix-surface" data-owner="site-admin-affix">
+          <div
+            className={`site-admin-affix-surface${isSiteAdminAffixed ? " affix" : ""}`}
+            data-owner="site-admin-affix"
+          >
             {t("user.siteAdminLoggedInAffix")} <span>{t("user.siteAdminLoggedInAffix.maxim")}</span>
           </div>
         ) : null}

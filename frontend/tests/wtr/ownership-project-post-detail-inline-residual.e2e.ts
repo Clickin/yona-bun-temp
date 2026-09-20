@@ -266,7 +266,7 @@ async function mockPost(page: Page) {
         authorLabel: "admin",
         authorLoginId: "admin",
         authorAvatarUrl: "",
-        createdLabel: "Jul 1, 2026",
+        createdAt: "2026-07-01T00:00:00+09:00",
         attachments: [],
         comments: [
           {
@@ -275,7 +275,7 @@ async function mockPost(page: Page) {
             authorLoginId: "reviewer",
             contentsMarkdown: "Visible comment\n\n---Original message---\nHidden comment",
             viaEmail: true,
-            createdLabel: "Jul 2, 2026",
+            createdAt: "2026-07-02T00:00:00+09:00",
             attachments: [],
             parentCommentId: "",
           },

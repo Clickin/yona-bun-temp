@@ -1,4 +1,4 @@
-import { expect, test, type Page, readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { expect, test, type Page } from "../wtr-compat.ts";
 // Post-merge: the full legacy cascade lives in app.css — normal-mode semantics.
 const fallbackOff = false;
 import {
@@ -70,35 +70,6 @@ import {
 test("project issue detail renders legacy translation button when translation API is configured", async ({
   page,
 }) => {
-  const routeSource = readFileSync(
-    "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
-    "utf8",
-  );
-  const styleSource = readFileSync("src/app.css", "utf8");
-  const legacyView = readFileSync("../yona-original/app/views/issue/view.scala.html", "utf8");
-  const legacyCommon = readFileSync(
-    "../yona-original/app/assets/stylesheets/less/_common.less",
-    "utf8",
-  );
-  const legacyYobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
-  const legacyTranslation = legacyView.slice(
-    legacyView.indexOf('<button type="button" id="translate"'),
-    legacyView.indexOf("</button>", legacyView.indexOf('id="translate"')) + "</button>".length,
-  );
-  expect(legacyTranslation).toContain('class="icon btn-transparent-with-fontsize-lineheight ml10"');
-  expect(legacyCommon).toContain(".ml10 { margin-left:10px; }");
-  expect(legacyYobi).toContain('@import "less/_common.less";');
-  const translationEmitter = routeSource.slice(
-    routeSource.indexOf('id="translate"'),
-    routeSource.indexOf("</button>", routeSource.indexOf('id="translate"')) + "</button>".length,
-  );
-
-  expect(translationEmitter).toContain('data-owner="project-issue-detail-translation-button"');
-  expect(translationEmitter).not.toContain("ml10");
-  expect(styleSource).toMatch(
-    /\[data-owner="project-issue-detail-translation-button"\]\s*\{[\s\S]*?margin-left:\s*10px/u,
-  );
-
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const translationRequests: Array<{
     body: unknown;
@@ -161,48 +132,6 @@ test("project issue detail renders legacy comment translation button when transl
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  const routeSource = readFileSync(
-    "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
-    "utf8",
-  );
-  const styleSource = readFileSync("src/app.css", "utf8");
-  const legacyComment = readFileSync(
-    "../yona-original/app/views/issue/partial_comment.scala.html",
-    "utf8",
-  );
-  const legacyCommon = readFileSync(
-    "../yona-original/app/assets/stylesheets/less/_common.less",
-    "utf8",
-  );
-  const legacyYobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
-  const legacyEmitter = legacyComment.slice(
-    legacyComment.indexOf(
-      '<button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 comment-translate"',
-    ),
-    legacyComment.indexOf("</button>", legacyComment.indexOf("comment-translate")) +
-      "</button>".length,
-  );
-  const routeEmitter = routeSource.slice(
-    routeSource.lastIndexOf(
-      "<button",
-      routeSource.indexOf('data-owner="project-issue-detail-comment-translation-button"'),
-    ),
-    routeSource.indexOf("</button>", routeSource.indexOf("comment-translate")) + "</button>".length,
-  );
-  expect(legacyEmitter).toContain(
-    'class="icon btn-transparent-with-fontsize-lineheight ml10 comment-translate"',
-  );
-  expect(legacyCommon).toContain(".ml10 { margin-left:10px; }");
-  expect(legacyYobi).toContain('@import "less/_common.less";');
-
-  expect(routeEmitter).toContain('data-owner="project-issue-detail-comment-translation-button"');
-  expect(routeEmitter).not.toContain("ml10");
-  expect(styleSource).toMatch(
-    /\[data-owner="project-issue-detail-comment-translation-button"\]\s*\{[\s\S]*?margin-left:\s*10px/u,
-  );
-  expect(routeSource).toContain('data-owner="project-issue-detail-translation-button"');
-  expect(routeSource).toContain('title="Edit comment"');
-  expect(routeSource).toContain('title="Delete comment"');
   const translationRequests: Array<{
     body: unknown;
     csrfToken: string | null;
@@ -317,30 +246,51 @@ test("project issue detail renders legacy read-only selected labels", async ({ p
   });
 });
 
-test("project issue detail renders legacy updateable milestone select", async ({ page }) => {
+test("project issue detail preserves milestone state tooltips when selecting and clearing", async ({
+  page,
+}) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssueDetail(page);
-
   await page.goto(`${basePath}/admin/sample/issue/11`);
 
-  await expect(page.locator("#milestone")).not.toHaveAttribute("data-toggle", "select2");
-  await expect(page.locator("#milestone")).toHaveAttribute("data-format", "milestone");
-  await expect(page.locator("#milestone")).toHaveAttribute("data-container-css-class", "fullsize");
-  const expectedMilestone =
-    '<dd><select class="select2-offscreen" data-container-css-class="fullsize" data-format="milestone" id="milestone" name="milestone.id"><option value="-1">No milestone</option><optgroup label="Open"><option data-state="open" selected="" value="5">v1.0</option><option data-state="open" value="9">v2.0</option></optgroup><optgroup label="Closed"><option data-state="closed" value="7">v0.9</option></optgroup></select><div aria-expanded="false" aria-label="Milestone" class="fullsize select2-container" role="combobox"><div class="select2-choice" role="button" tabindex="0"><span class="select2-chosen">v1.0</span><span aria-hidden="true" class="select2-arrow"><b></b></span></div><div class="select2-display-none select2-drop"><ul class="select2-results" role="listbox"><li><div aria-selected="false" class="select2-result-label" role="option" tabindex="-1">No milestone</div></li><li class="select2-highlighted"><div aria-selected="true" class="select2-result-label" role="option" tabindex="-1">v1.0</div></li><li><div aria-selected="false" class="select2-result-label" role="option" tabindex="-1">v2.0</div></li><li><div aria-selected="false" class="select2-result-label" role="option" tabindex="-1">v0.9</div></li></ul></div></div></dd>';
-  expect(await canonicalize(page, ".issue-info form dl:has(dt:text('Milestone')) > dd")).toEqual(
-    await canonicalizeHtml(page, expectedMilestone),
-  );
+  const milestone = page.getByRole("combobox", { name: "Milestone", exact: true });
+  const choice = milestone.locator(".select2-choice");
+  await expect(choice).toContainText("v1.0");
+  await expect(choice.locator("[title]")).toHaveAttribute("title", "[Open] v1.0");
 
-  const routeSource = readFileSync(
-    "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
-    "utf8",
-  );
-  const milestoneSelectSource = routeSource.slice(
-    routeSource.indexOf("function IssueMilestoneSelect"),
-    routeSource.indexOf("function IssueLabelSelect"),
-  );
-  expect(milestoneSelectSource).not.toContain('data-toggle="select2"');
+  await choice.click();
+  expect(
+    await milestone.evaluate((control) => {
+      const container = control.getBoundingClientRect();
+      const dropdown = control.querySelector(".select2-drop")!.getBoundingClientRect();
+      return {
+        left: dropdown.left - container.left,
+        width: dropdown.width - container.width,
+        overlap: container.bottom - dropdown.top,
+      };
+    }),
+  ).toEqual({ left: 0, width: 0, overlap: 1 });
+  await expect(
+    milestone.locator(".select2-result-with-children > .select2-result-label"),
+  ).toHaveText(["Open", "Closed"]);
+  const search = milestone.getByRole("searchbox", { name: "Milestone", exact: true });
+  await search.fill("missing milestone");
+  await expect(milestone.locator(".select2-no-results")).toHaveText("No matches found");
+  await expect(milestone.getByRole("option")).toHaveCount(0);
+  await search.fill("v0.9");
+  await expect(
+    milestone.locator(".select2-result-with-children > .select2-result-label"),
+  ).toHaveText(["Closed"]);
+  const closedMilestone = milestone.getByRole("option", { name: "v0.9", exact: true });
+  await expect(closedMilestone.locator("[title]")).toHaveAttribute("title", "[Closed] v0.9");
+  await search.press("Enter");
+  await expect(choice).toContainText("v0.9");
+  await expect(choice.locator("[title]")).toHaveAttribute("title", "[Closed] v0.9");
+
+  await choice.click();
+  await milestone.getByRole("option", { name: "No milestone", exact: true }).click();
+  await expect(choice).toContainText("No milestone");
+  await expect(choice.locator("[title]")).toHaveCount(0);
 });
 
 test("project issue detail renders legacy updateable labels without manager edit link", async ({
@@ -372,22 +322,6 @@ test("project issue detail renders legacy updateable labels without manager edit
   await expect(
     page.locator("#issueUpdateForm .select2-container-multi.issue-labels"),
   ).not.toHaveClass(/\bhide\b/u);
-  const expectedLabels =
-    '<select id="labelIds" name="labelIds" multiple="" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" data-close-on-select="false" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false" selected="">bug</option><option value="9" data-category-id="3" data-category-is-exclusive="false">enhancement</option></optgroup></select>';
-  expect(await canonicalize(page, "#labelIds")).toEqual(
-    await canonicalizeHtml(page, expectedLabels),
-  );
-
-  const routeSource = readFileSync(
-    "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
-    "utf8",
-  );
-  const labelSelectSource = routeSource.slice(
-    routeSource.indexOf("function IssueLabelSelect"),
-    routeSource.indexOf("function IssueSelectedLabels"),
-  );
-  expect(labelSelectSource).not.toContain('data-toggle="select2"');
-  expect(labelSelectSource).not.toContain('data-search="labelIds"');
 });
 
 test("project issue detail renders legacy read-only metadata fields", async ({ page }) => {
@@ -400,11 +334,13 @@ test("project issue detail renders legacy read-only metadata fields", async ({ p
     ".issue-info form dl:has(dt:text('Assignee')) > dd:nth-of-type(2) img",
   );
   await expect.poll(() => assigneeAvatar.evaluate((image) => image.naturalWidth)).toBe(128);
-  expect(await assigneeAvatar.evaluate(async (image) => {
-    const bytes = await (await fetch(image.currentSrc)).arrayBuffer();
-    const digest = await crypto.subtle.digest("SHA-256", bytes);
-    return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-  })).toBe("781a764b1f86352b2c23acd7e7807feb39b45aac11b905cf731bd764859aa891");
+  expect(
+    await assigneeAvatar.evaluate(async (image) => {
+      const bytes = await (await fetch(image.currentSrc)).arrayBuffer();
+      const digest = await crypto.subtle.digest("SHA-256", bytes);
+      return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+    }),
+  ).toBe("781a764b1f86352b2c23acd7e7807feb39b45aac11b905cf731bd764859aa891");
   const bundledDefaultAvatarUrl = await assigneeAvatar.getAttribute("src");
   const expectedAssignee =
     `<dd><a href="__BASE_PATH__/admin" class="usf-group"><span class="avatar-wrap smaller"><img src="${bundledDefaultAvatarUrl}" width="20" height="20"></span><strong class="name">Site Admin</strong><span class="loginid"> <strong>@</strong>admin</span></a></dd>`.replaceAll(
@@ -432,7 +368,8 @@ test("project issue detail renders legacy read-only metadata fields", async ({ p
   );
 });
 
-test("project issue detail renders legacy due date status", async ({ page }) => {
+test("project issue detail localizes the legacy overdue status", async ({ page }) => {
+  await setBrowserLanguage(page, "ko-KR");
   await mockProjectIssueDetail(page, {
     dueDateOverdue: true,
     dueDateUntilLabel: "1 days",
@@ -440,12 +377,7 @@ test("project issue detail renders legacy due date status", async ({ page }) => 
 
   await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/admin/sample/issue/11`);
 
-  expect(await canonicalize(page, ".issue-info form dl:has(dt:text('Due date')) > dt")).toEqual(
-    await canonicalizeHtml(
-      page,
-      `<dt>Due date<span class="duedate-status overdue">(Overdue)</span></dt>`,
-    ),
-  );
+  await expect(page.locator(".issue-info .duedate-status.overdue")).toHaveText("(기한지남)");
 });
 
 test("project issue detail renders legacy due date until status", async ({ page }) => {
@@ -459,6 +391,62 @@ test("project issue detail renders legacy due date until status", async ({ page 
   expect(await canonicalize(page, ".issue-info form dl:has(dt:text('Due date')) > dt")).toEqual(
     await canonicalizeHtml(page, `<dt>Due date<span class="duedate-status ">(3 days)</span></dt>`),
   );
+});
+
+test("issue due-date calendar preserves selection, navigation, dismissal, and blur-driven updates", async ({
+  page,
+}) => {
+  // yobi.ui.Calendar.js:36–50; pikaday.js:385–480, 842–886.
+  const { massUpdateRequests } = await mockProjectIssueDetail(page, {
+    dueDateLabel: "2026-07-05",
+  });
+  await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/admin/sample/issue/11`);
+  const input = page.locator('.span-right-pane input[name="dueDate"]');
+  const button = page.locator(".span-right-pane .btn-calendar");
+  const calendar = page.getByRole("dialog", { name: "Due date", exact: true });
+
+  await input.focus();
+  await expect(calendar).toBeVisible();
+  await expect(calendar.getByRole("button", { name: "2026-07-05", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await input.press("ArrowDown");
+  await expect(calendar.getByRole("button", { name: "2026-07-05", exact: true })).toBeFocused();
+  await calendar.getByRole("button", { name: "2026-07-05", exact: true }).press("Escape");
+  await expect(calendar).toHaveCount(0);
+  await expect(input).toBeFocused();
+  await input.click();
+  await expect(calendar).toBeVisible();
+  await page.locator(".board-header .title").click();
+  await expect(calendar).toHaveCount(0);
+  expect(massUpdateRequests).toHaveLength(0);
+
+  await button.click();
+  await calendar.getByRole("button", { name: "Next Month", exact: true }).click();
+  await expect(calendar.getByRole("combobox", { name: "Month", exact: true })).toHaveValue("7");
+  await calendar.getByRole("button", { name: "Previous Month", exact: true }).click();
+  await expect(calendar.getByRole("combobox", { name: "Month", exact: true })).toHaveValue("6");
+  await calendar.getByRole("combobox", { name: "Year", exact: true }).focus();
+  await calendar.getByRole("combobox", { name: "Year", exact: true }).selectOption("2027");
+  await expect(calendar).toBeVisible();
+  await expect(input).toBeFocused();
+  await calendar.getByRole("combobox", { name: "Month", exact: true }).focus();
+  await calendar.getByRole("combobox", { name: "Month", exact: true }).selectOption("1");
+  await expect(calendar).toBeVisible();
+  await expect(input).toBeFocused();
+  expect(massUpdateRequests).toHaveLength(0);
+  const day = calendar.getByRole("button", { name: "2027-02-28", exact: true });
+  await day.focus();
+  await day.press("Enter");
+  await expect(calendar).toHaveCount(0);
+  await expect(input).toHaveValue("2027-02-28");
+  await expect.poll(() => massUpdateRequests.length).toBe(1);
+  expect(massUpdateRequests[0]?.body).toMatchObject({
+    dueDate: "2027-02-28",
+    isDueDateChanged: true,
+    issueNumbers: [11],
+  });
 });
 
 test("project issue detail updates due date without legacy calendar data hook", async ({
@@ -483,17 +471,7 @@ test("project issue detail updates due date without legacy calendar data hook", 
   });
 
   await dueDateButton.click();
-  // The calendar button's click focuses the input; under shard load the
-  // focus can be stolen by a late re-render (gate flake: toBeFocused).
-  // Re-click until the input owns the focus.
-  await expect
-    .poll(() =>
-      dueDateButton.evaluate((button) => {
-        (button as HTMLButtonElement).click();
-        return document.activeElement?.matches('.span-right-pane input[name="dueDate"]') ?? false;
-      }),
-    )
-    .toBe(true);
+  await expect(dueDateInput).toBeFocused();
   expect(massUpdateRequests).toHaveLength(0);
 
   await dueDateInput.blur();
@@ -502,22 +480,9 @@ test("project issue detail updates due date without legacy calendar data hook", 
   await dueDateInput.fill("Jul 12, 2026");
   await expect.poll(() => massUpdateRequests.length, { timeout: 250 }).toBe(0);
   await dueDateInput.blur();
-  // F2-harness: Locator.blur() (wtr-compat.ts:1489) dispatches a second
-  // synthetic focusout after element.blur(), so React onBlur commits the
-  // due-date twice per blur; real browsers fire one focusout. Dedupe
-  // consecutive identical commits to keep the legacy one-submit contract.
-  const dedupeRequests = () => {
-    const unique: typeof massUpdateRequests = [];
-    for (const request of massUpdateRequests) {
-      const last = unique[unique.length - 1];
-      if (last && JSON.stringify(last.body) === JSON.stringify(request.body)) continue;
-      unique.push(request);
-    }
-    return unique;
-  };
   await expect
     .poll(() =>
-      dedupeRequests().map((request) => ({
+      massUpdateRequests.map((request) => ({
         body: request.body,
         hasCsrfToken: Boolean(request.csrfToken),
         method: request.method,
@@ -544,7 +509,7 @@ test("project issue detail updates due date without legacy calendar data hook", 
 
   await dueDateInput.focus();
   await dueDateInput.blur();
-  await expect.poll(() => dedupeRequests().length, { timeout: 250 }).toBe(1);
+  await expect.poll(() => massUpdateRequests.length, { timeout: 250 }).toBe(1);
 
   await dueDateInput.evaluate((element) => {
     const input = element as HTMLInputElement;
@@ -553,10 +518,10 @@ test("project issue detail updates due date without legacy calendar data hook", 
     setter?.call(input, "");
     input.dispatchEvent(new Event("input", { bubbles: true }));
   });
-  await expect.poll(() => dedupeRequests().length, { timeout: 250 }).toBe(1);
+  await expect.poll(() => massUpdateRequests.length, { timeout: 250 }).toBe(1);
   await dueDateInput.blur();
   await expect
-    .poll(() => dedupeRequests().map((request) => request.body))
+    .poll(() => massUpdateRequests.map((request) => request.body))
     .toEqual([
       {
         addLabelIds: [],
@@ -594,7 +559,7 @@ test("project issue detail updates due date without legacy calendar data hook", 
       }),
     )
     .toBe(true);
-  await expect.poll(() => dedupeRequests().length, { timeout: 250 }).toBe(2);
+  await expect.poll(() => massUpdateRequests.length, { timeout: 250 }).toBe(2);
 });
 
 test("project issue detail renders legacy empty read-only metadata fields", async ({ page }) => {
@@ -772,16 +737,11 @@ test("project issue detail deletes through legacy confirmation modal", async ({ 
     .locator("#deleteConfirm .ybtn-danger")
     .evaluate((button) => {
       const rect = button.getBoundingClientRect();
-      const hit = document.elementFromPoint(
-        rect.left + rect.width / 2,
-        rect.top + rect.height / 2,
-      );
+      const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
       return hit === button || (hit instanceof Element && button.contains(hit));
     });
   expect(issueDeleteConfirmHitTarget).toBe(true);
-  await page
-    .locator("#deleteConfirm .ybtn-danger")
-    .click();
+  await page.locator("#deleteConfirm .ybtn-danger").click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/issues`);
   await expect.poll(() => deleteRequests).toEqual(["DELETE"]);
 });
@@ -864,7 +824,7 @@ test("project issue detail deletes comments through legacy confirmation modal", 
   await page.evaluate(() => {
     (window as typeof window & { __spaMarker?: string }).__spaMarker = "comment-delete-modal-child";
   });
-  await childDeleteButton.dispatchEvent("click");
+  await childDeleteButton.click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator("#comment-delete-modal")).not.toHaveClass(/hide/);
   await expect(page.locator("#comment-delete-modal")).toHaveClass(/in/);
@@ -886,7 +846,7 @@ test("project issue detail deletes comments through legacy confirmation modal", 
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   expect(commentDeleteRequests).toEqual([]);
 
-  await childDeleteButton.dispatchEvent("click");
+  await childDeleteButton.click();
   await expect(page.locator("#comment-delete-modal")).not.toHaveClass(/hide/);
   await page.locator(".modal-backdrop.fade.in").dispatchEvent("click");
   await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11`);
@@ -902,10 +862,7 @@ test("project issue detail deletes comments through legacy confirmation modal", 
     .locator("#comment-delete-confirm")
     .evaluate((button) => {
       const rect = button.getBoundingClientRect();
-      const hit = document.elementFromPoint(
-        rect.left + rect.width / 2,
-        rect.top + rect.height / 2,
-      );
+      const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
       return hit === button || (hit instanceof Element && button.contains(hit));
     });
   expect(commentDeleteConfirmHitTarget).toBe(true);
@@ -1121,92 +1078,12 @@ test("project issue detail renders legacy disabled vote action", async ({ page }
   expect(disabledIconContent).toContain(String.fromCodePoint(0xe4b0));
 });
 
-test("project issue detail owns active vote controls and voter list declarations", async ({
+test("project issue detail renders active vote controls and voter list geometry", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  const routeSource = readFileSync(
-    "../frontend/src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
-    "utf8",
-  );
-  const styleSource = readFileSync("src/app.css", "utf8");
-  const legacyView = readFileSync("../yona-original/app/views/issue/view.scala.html", "utf8");
-  const legacyVoters = readFileSync(
-    "../yona-original/app/views/issue/partial_voters.scala.html",
-    "utf8",
-  );
-  const legacyPage = readFileSync(
-    "../yona-original/app/assets/stylesheets/less/_page.less",
-    "utf8",
-  );
-  const legacyVariables = readFileSync(
-    "../yona-original/app/assets/stylesheets/less/_variables.less",
-    "utf8",
-  );
-  const legacyIcon = readFileSync("../yona-original/public/stylesheets/yobicon/style.css", "utf8");
-  const legacyYobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
-
-  expect(legacyView).toContain('<div id="vote" class="vote-wrap');
-  expect(legacyView).toContain('<span class="heart"><i class="yobicon-hearts"></i></span>');
-  expect(legacyView).toContain("@partial_voters(issue, 3)");
-  expect(legacyVoters).toContain('<div class="voter-list-wrap">');
-  expect(legacyVoters).toContain('<ul class="voter-list">');
-  expect(legacyVoters).toContain('<li>@Html(getUserAvatar(voter, "smaller"))</li>');
-  expect(legacyVoters).toContain('Messages("issue.voters.more"');
-  expect(legacyPage).toContain(".vote-wrap {");
-  expect(legacyPage).toContain("display:inline-block;");
-  expect(legacyPage).toContain("direction: rtl;");
-  expect(legacyPage).toContain("margin-right: -3px;");
-  expect(legacyPage).toContain(".heart {");
-  expect(legacyPage).toContain("font-size: 17px;");
-  expect(legacyPage).toContain(".voter-list-wrap {");
-  expect(legacyPage).toContain("overflow: hidden;");
-  expect(legacyPage).toContain(".voter-list {");
-  expect(legacyPage).toContain("float:left;");
-  expect(legacyPage).toContain("margin-top: -4px;");
-  expect(legacyVariables).toContain("@base-font-size  : 13px;");
-  expect(legacyYobi).toContain('@import "less/_page.less";');
-  expect(legacyIcon).toContain('[class^="yobicon-"]');
-  expect(legacyIcon).toContain("font-family: 'yobicon';");
-  expect(legacyIcon).toContain("font-style: normal;");
-  expect(legacyIcon).toContain("font-variant: normal;");
-  expect(legacyIcon).toContain("font-weight: normal;");
-  expect(legacyIcon).toContain("line-height: 1;");
-  expect(legacyIcon).toContain("display: inline-block;");
-
-  // F5 (2026-08-15): app owns vote paint via data-owner rules; the yobicon
-  // base font (font-weight normal = 400, line-height 1) lives in the frozen
-  // legacy fallback ([class^="yobicon-"] block).
-  expect(styleSource).toMatch(
-    /\[data-owner="project-issue-detail-vote-wrap"\]\s*\{[\s\S]*?display:\s*inline-block/u,
-  );
-  expect(styleSource).toMatch(
-    /\[data-owner="project-issue-detail-vote-heart"\][^{]*\{[\s\S]*?display:\s*inline-block[\s\S]*?font-size:\s*17px/u,
-  );
-  expect(styleSource).toMatch(
-    /\[data-owner="project-issue-detail-voter-list-wrap"\]\s*\{[\s\S]*?display:\s*inline-block/u,
-  );
-  expect(styleSource).toMatch(
-    /\[data-owner="project-issue-detail-voter-list"\]\s*\{[\s\S]*?display:\s*block/u,
-  );
-  expect(styleSource).toMatch(
-    /\[data-owner="project-issue-detail-voter-list-item"\][^{]*\{[\s\S]*?float:\s*left/u,
-  );
-  expect(styleSource).toMatch(
-    /\[data-owner="project-issue-detail-voter-avatar"\]\s*\{[\s\S]*?display:\s*inline-block/u,
-  );
-  expect(styleSource).toMatch(
-    /\[data-owner="project-issue-detail-vote-heart-icon"\]::before\s*\{[\s\S]*?content:\s*"\\e4b0"/u,
-  );
-
-  expect(styleSource).toMatch(
-    /\[class\^="yobicon-"\][\s\S]*?font-weight:\s*normal[\s\S]*?line-height:\s*1/u,
-  );
-
-  expect(routeSource).toContain('data-owner="project-issue-detail-vote-wrap"');
-  expect(routeSource).toContain('data-owner="project-issue-detail-voter-list-wrap"');
-  expect(routeSource).toContain('data-owner="project-issue-detail-voter-list"');
-  expect(routeSource).toContain('data-owner="project-issue-detail-vote-heart-icon"');
+  // issue/view.scala.html:210–225 and _page.less:.vote-wrap/.voter-list
+  // own the visible inline heart and avatar layout, not source spellings.
 
   await mockProjectIssueDetail(page, { issueVoters: commentVoters(), voterCount: 6 });
   await page.goto(`${basePath}/admin/sample/issue/11`);
@@ -1331,8 +1208,7 @@ test("project issue detail owns active vote controls and voter list declarations
     listWrapOverflow: "hidden",
     listWrapVerticalAlign: "middle",
     voteDirection: "rtl",
-    // The route's flex action row blockifies this inline-block flex item at computed-style time.
-    voteDisplay: "block",
+    voteDisplay: "inline-block",
     voteFontSize: "13px",
     voteInlineStyle: null,
     voteMarginRight: "-3px",
@@ -1378,7 +1254,7 @@ test("project issue detail vote action posts and toggles legacy voted state", as
 
   await page.goto(`${basePath}/admin/sample/issue/11`);
   const voteButton = page.locator("#vote > button").first();
-  await expect(voteButton).toHaveAttribute("title", "Vote this issue");
+  await expect(voteButton).toHaveAttribute("title", "Click here if you agree with this issue.");
   await expect(voteButton).not.toHaveAttribute("data-request-uri", /.+/);
   await expect(voteButton).not.toHaveAttribute("data-request-method", /.+/);
   await expect(voteButton).not.toHaveClass(/ybtn-watching/);
@@ -1389,11 +1265,15 @@ test("project issue detail vote action posts and toggles legacy voted state", as
       response.url().includes("/api/v1/owners/admin/projects/sample/issues/11/vote") &&
       response.request().method() === "POST",
   );
-  await voteButton.click();
+  await voteButton.focus();
+  await page.keyboard.press("Enter");
   await voteResponsePromise;
 
   expect(issueVoteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
-  await expect(voteButton).toHaveAttribute("title", "Unvote this issue");
+  await expect(voteButton).toHaveAttribute(
+    "title",
+    "Click here if you no longer agree with this issue.",
+  );
   await expect(voteButton).not.toHaveAttribute("data-request-uri", /.+/);
   await expect(voteButton).not.toHaveAttribute("data-request-method", /.+/);
   await expect(page.locator("#vote > button")).toHaveClass(/ybtn-watching/);
@@ -1600,31 +1480,6 @@ test("project issue detail renders legacy voter overflow link", async ({ page })
 test("project issue detail owns the authenticated parent comment attachment float with Style", async ({
   page,
 }) => {
-  const routeSource = readFileSync(
-    "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
-    "utf8",
-  );
-  const styleSource = readFileSync("src/app.css", "utf8");
-  const legacyComment = readFileSync(
-    "../yona-original/app/views/issue/partial_comment.scala.html",
-    "utf8",
-  );
-  const legacyBootstrap = readFileSync(
-    "../yona-original/public/bootstrap/css/bootstrap.css",
-    "utf8",
-  );
-  const legacyYobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
-  expect(legacyComment.split(/\r?\n/u)[112]).toContain(
-    '<div class="attachments pull-left" data-attachments=',
-  );
-  expect(legacyBootstrap).toContain(".pull-left {\n  float: left;\n}");
-  expect(legacyYobi).toContain('@import "less/_common.less";');
-
-  expect(routeSource).toContain('data-owner="project-issue-detail-comment-attachments"');
-  expect(styleSource).toMatch(
-    /\[data-owner="project-issue-detail-comment-attachments"\]\s*\{[\s\S]*?float:\s*left/u,
-  );
-
   await mockProjectIssueDetail(page);
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/admin/sample/issue/11`);

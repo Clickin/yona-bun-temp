@@ -262,6 +262,7 @@ pub(super) async fn legacy_external_update_board_posting_content(
             owner_name: owner,
             post_number: number,
             project_name,
+            send_notification: true,
             values: persistence::PostingMutationInput {
                 attachment_ids: access
                     .posting

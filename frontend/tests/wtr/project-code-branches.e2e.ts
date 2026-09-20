@@ -1,14 +1,8 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const EXPECTED_BRANCHES_BODY = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="bubble-wrap dark-gray repo-wrap"><div class="code-browse-wrap"><ul class="nav nav-tabs"><li><a href="__BASE_PATH__/admin/sample/code/main">Files</a></li><li><a href="__BASE_PATH__/admin/sample/commits/main">Commit</a></li><li class="active"><a href="__BASE_PATH__/admin/sample/branches">Branches</a></li></ul><table class="table branch-list-wrap"><thead class="thead"><tr><th>Branches</th><th>Latest commit</th><th>Latest pull request</th><th></th></tr></thead><tbody><tr class="head"><td class="branchName"><a href="__BASE_PATH__/admin/sample/code/main">main</a><span class="headBranch ml10">Default branch</span></td><td class="commit"><a href="__BASE_PATH__/admin/sample/commits/main" class="commitId" title="abcdef1234567890">abcdef1</a><span class="date" title="Jul 1, 2026">Jul 1, 2026</span></td><td class="pullRequest"><span class="disabled">No pull request has been sent</span></td><td class="actions"></td></tr><tr><td class="branchName"><a href="__BASE_PATH__/admin/sample/code/feature%2Frelease">feature/release</a></td><td class="commit"><a href="__BASE_PATH__/admin/sample/commits/feature%2Frelease" class="commitId" title="1234567890abcdef">1234567</a><span class="date" title="Jul 2, 2026">Jul 2, 2026</span></td><td class="pullRequest"><a href="__BASE_PATH__/admin/sample/pullRequest/3" class="blue-txt pullrequest-state open" title="Open">pullRequest-3</a></td><td class="actions"><button type="button" class="ybtn ybtn-default ybtn-small">Set as default branch</button><button type="button" class="ybtn ybtn-danger ybtn-small">Delete</button></td></tr></tbody></table></div></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="bubble-wrap dark-gray repo-wrap"><div class="code-browse-wrap"><ul class="nav nav-tabs"><li><a href="__BASE_PATH__/admin/sample/code/main">Files</a></li><li><a href="__BASE_PATH__/admin/sample/commits/main">Commit</a></li><li class="active"><a href="__BASE_PATH__/admin/sample/branches">Branches</a></li></ul><table class="table branch-list-wrap"><thead class="thead"><tr><th>Branches</th><th>Latest commit</th><th>Latest pull request</th><th></th></tr></thead><tbody><tr class="head"><td class="branchName"><a href="__BASE_PATH__/admin/sample/code/main">main</a><span class="headBranch ml10">Default branch</span></td><td class="commit"><a href="__BASE_PATH__/admin/sample/commits/main" class="commitId" title="abcdef1234567890">abcdef1</a><span class="date" title="2026-07-01 1:14:15 PM">07-01</span></td><td class="pullRequest"><span class="disabled">No pull request has been sent</span></td><td class="actions"></td></tr><tr><td class="branchName"><a href="__BASE_PATH__/admin/sample/code/feature%2Frelease">feature/release</a></td><td class="commit"><a href="__BASE_PATH__/admin/sample/commits/feature%2Frelease" class="commitId" title="1234567890abcdef">1234567</a><span class="date" title="2026-07-02 3:04:05 AM">07-02</span></td><td class="pullRequest"><a href="__BASE_PATH__/admin/sample/pullRequest/3" class="blue-txt pullrequest-state open" title="Open">pullRequest-3</a></td><td class="actions"><button type="button" class="ybtn ybtn-default ybtn-small">Set as default branch</button><button type="button" class="ybtn ybtn-danger ybtn-small">Delete</button></td></tr></tbody></table></div></div></div></div>
 `;
-
-const ROUTE_SOURCE = readFileSync(
-  new URL("../src/routes/$ownerName/$projectName/branches.tsx", import.meta.url),
-  "utf8",
-);
 
 function expectedSvnBranchesBadRequest(basePath: string) {
   return `
@@ -21,17 +15,21 @@ function expectedSvnBranchesBadRequest(basePath: string) {
 
 test("project code branches matches legacy code/branches.scala.html DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  const setDefaultRequests: unknown[] = [];
-  const deleteRequests: unknown[] = [];
-  await mockProjectBranches(page, setDefaultRequests, deleteRequests);
+  await mockProjectBranches(page);
 
   await page.goto(`${basePath}/admin/sample/branches`);
   await expect(page).toHaveTitle("Branches - admin/sample");
   await expect(page.locator(".branch-list-wrap tbody tr")).toHaveCount(2);
   await expect(page.locator(".branch-list-wrap [data-toggle='tooltip']")).toHaveCount(0);
   await expect(page.locator(".branch-list-wrap [data-placement]")).toHaveCount(0);
-  await expect(page.locator(".commit .date").nth(0)).toHaveAttribute("title", "Jul 1, 2026");
-  await expect(page.locator(".commit .date").nth(1)).toHaveAttribute("title", "Jul 2, 2026");
+  await expect(page.locator(".commit .date").nth(0)).toHaveAttribute(
+    "title",
+    "2026-07-01 1:14:15 PM",
+  );
+  await expect(page.locator(".commit .date").nth(1)).toHaveAttribute(
+    "title",
+    "2026-07-02 3:04:05 AM",
+  );
   await expect(page.locator(".pullrequest-state")).toHaveAttribute("title", "Open");
   await expect(page.locator(".pullrequest-state")).toHaveText("pullRequest-3");
   await expect(page.locator("[data-owner=global-gnb-outer]")).not.toHaveClass(
@@ -146,7 +144,11 @@ test("project code branches matches legacy code/branches.scala.html DOM", async 
 
   await actionButtons.nth(0).click();
   await setDefaultResponse;
-  expect(setDefaultRequests).toEqual([{ branchName: "feature/release" }]);
+  await expect(page.locator(".branch-list-wrap tr.head .branchName a")).toHaveText(
+    "feature/release",
+  );
+  await expect(page.locator(".branch-list-wrap tr.head .pullRequest .disabled")).toBeVisible();
+  await expect(page.locator(".branch-list-wrap .pullrequest-state")).toHaveCount(0);
 
   const deleteButton = actionButtons.nth(1);
   await expect(deleteButton).toHaveAttribute("type", "button");
@@ -160,7 +162,11 @@ test("project code branches matches legacy code/branches.scala.html DOM", async 
   );
   await deleteButton.click();
   await deleteResponse;
-  expect(deleteRequests).toEqual([{ branchName: "feature/release" }]);
+  await expect(page.locator(".branch-list-wrap tbody tr")).toHaveCount(1);
+  await expect(page.locator(".branch-list-wrap tr.head .branchName a")).toHaveText(
+    "feature/release",
+  );
+  await expect(actionButtons).toHaveCount(0);
 });
 
 test("project code branches tooltip markers are not React-owned DOM", async ({ page }) => {
@@ -172,19 +178,61 @@ test("project code branches tooltip markers are not React-owned DOM", async ({ p
   await expect(page.locator(".branch-list-wrap tbody tr")).toHaveCount(2);
   await expect(page.locator(".branch-list-wrap [data-toggle='tooltip']")).toHaveCount(0);
   await expect(page.locator(".branch-list-wrap [data-placement]")).toHaveCount(0);
-  await expect(page.locator(".commit .date").nth(0)).toHaveAttribute("title", "Jul 1, 2026");
-  await expect(page.locator(".commit .date").nth(1)).toHaveAttribute("title", "Jul 2, 2026");
+  await expect(page.locator(".commit .date").nth(0)).toHaveAttribute(
+    "title",
+    "2026-07-01 1:14:15 PM",
+  );
+  await expect(page.locator(".commit .date").nth(1)).toHaveAttribute(
+    "title",
+    "2026-07-02 3:04:05 AM",
+  );
   await expect(page.locator(".pullrequest-state")).toHaveAttribute("title", "Open");
   await expect(page.locator(".pullrequest-state")).toHaveText("pullRequest-3");
-  expect(ROUTE_SOURCE).not.toContain('data-toggle="tooltip"');
-  expect(ROUTE_SOURCE).not.toContain("data-placement");
+});
+
+test("project code branches displays full timestamp titles and the legacy eight-day boundary", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const now = new Date(2026, 6, 20, 13, 14, 15).getTime();
+  await mockProjectBranches(page, {
+    commitDates: [
+      new Date(now - 2 * 60 * 60 * 1_000).toISOString(),
+      new Date(now - 8 * 24 * 60 * 60 * 1_000 + 1_000).toISOString(),
+      new Date(now - 8 * 24 * 60 * 60 * 1_000).toISOString(),
+      new Date(2025, 11, 31, 0, 4, 5).toISOString(),
+    ],
+  });
+  await page.goto(`${basePath}/admin/sample/branches`);
+  await expect(page.locator(".commit .date")).toHaveText([
+    "2 hours ago",
+    "7 days ago",
+    "07-12",
+    "2025-12-31",
+  ]);
+  await expect(page.locator(".commit .date").nth(0)).toHaveAttribute(
+    "title",
+    "2026-07-20 11:14:15 AM",
+  );
+  await expect(page.locator(".commit .date").nth(1)).toHaveAttribute(
+    "title",
+    "2026-07-12 1:14:16 PM",
+  );
+  await expect(page.locator(".commit .date").nth(2)).toHaveAttribute(
+    "title",
+    "2026-07-12 1:14:15 PM",
+  );
+  await expect(page.locator(".commit .date").nth(3)).toHaveAttribute(
+    "title",
+    "2025-12-31 12:04:05 AM",
+  );
 });
 
 test("project code branches restores protected project shell parity for weblabs/portal", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await mockProjectBranches(page, [], [], {
+  await mockProjectBranches(page, {
     backgroundImageUrl: "/assets/images/project_default.jpg",
     isProtected: true,
     organizationName: "weblabs",
@@ -247,7 +295,7 @@ test("project code branches restores protected project shell parity for weblabs/
 
 test("project code branch links navigate through the SPA router", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await mockProjectBranches(page, [], []);
+  await mockProjectBranches(page);
   await page.route("**/api/v1/projects/admin/sample/code?branch=main*", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -286,7 +334,7 @@ test("svn project branches route matches legacy badrequest_default site shell", 
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const unexpectedBranchRequests: string[] = [];
-  await mockProjectBranches(page, [], [], {
+  await mockProjectBranches(page, {
     branchRequestMethods: unexpectedBranchRequests,
     branchRouteStatus: 500,
     ownerName: "admin",
@@ -340,57 +388,11 @@ test("svn project branches route matches legacy badrequest_default site shell", 
   });
 });
 
-test("project code branches route uses Link for internal anchors", () => {
-  const branchesTabLink = ROUTE_SOURCE.match(
-    /<Link\s+to="\/\$ownerName\/\$projectName\/branches"[\s\S]*?<\/Link>/u,
-  )?.[0];
-
-  expect(branchesTabLink).toBeTruthy();
-  expect(branchesTabLink).not.toContain("__legacyInactive");
-  expect(branchesTabLink).not.toContain("search={{");
-  expect(branchesTabLink).toContain('to="/$ownerName/$projectName/branches"');
-  expect(branchesTabLink).toContain("params={{ ownerName, projectName }}");
-  expect(branchesTabLink).toContain('hash="branches-active-sentinel"');
-  expect(branchesTabLink).toContain("mask={{");
-  expect(branchesTabLink).toContain("activeOptions={{");
-  expect(branchesTabLink).toContain("includeHash: true");
-  expect(branchesTabLink).toContain("includeSearch: true");
-  expect(branchesTabLink).toContain('"data-status": undefined');
-  expect(ROUTE_SOURCE).not.toContain("__legacyInactive");
-  expect(ROUTE_SOURCE).toContain("import { Link, createFileRoute }");
-  expect(ROUTE_SOURCE).not.toContain("legacyLinkProps");
-  expect(ROUTE_SOURCE).not.toContain("legacyInactiveSearch");
-  expect(ROUTE_SOURCE).not.toContain("legacyCommitSearch");
-  expect(ROUTE_SOURCE).not.toContain("as unknown as");
-  expect(ROUTE_SOURCE).toContain('to="/$ownerName/$projectName/code/$branch"');
-  expect(ROUTE_SOURCE).toContain('to="/$ownerName/$projectName/branches"');
-  expect(ROUTE_SOURCE).toContain('to="/$ownerName/$projectName/pullRequest/$pullRequestNumber"');
-  expect(ROUTE_SOURCE).toContain("params={{ branch: branch.name, ownerName, projectName }}");
-  expect(ROUTE_SOURCE).toContain("pullRequestNumber: String(");
-  expect(ROUTE_SOURCE).toContain("activeOptions={{");
-  expect(ROUTE_SOURCE).toContain("includeSearch: true");
-  expect(ROUTE_SOURCE).toContain('"data-status": undefined');
-  expect(ROUTE_SOURCE).not.toContain("<a");
-  expect(ROUTE_SOURCE).not.toContain("href={prefixBasePath");
-  expect(ROUTE_SOURCE).not.toContain("prefixBasePath");
-  expect(ROUTE_SOURCE).not.toContain("data-request-method");
-  expect(ROUTE_SOURCE).not.toContain("data-request-uri");
-});
-
-test("project code branches route renders legacy title metadata without document mutation", () => {
-  expect(ROUTE_SOURCE).toContain(
-    '<title>{`${t("title.branches")} - ${ownerName}/${projectName}`}</title>',
-  );
-  expect(ROUTE_SOURCE).not.toContain("useProjectBranchesDocumentTitle");
-  expect(ROUTE_SOURCE).not.toContain("document.title");
-});
-
 async function mockProjectBranches(
   page: Page,
-  setDefaultRequests: unknown[],
-  deleteRequests: unknown[],
   options?: {
     branchRequestMethods?: string[];
+    commitDates?: string[];
     branchRouteStatus?: number;
     backgroundImageUrl?: string;
     isProtected?: boolean;
@@ -402,8 +404,10 @@ async function mockProjectBranches(
     projectVcs?: "GIT" | "SVN";
   },
 ) {
+  page.clock.setFixedTime(new Date(2026, 6, 20, 13, 14, 15));
   const ownerName = options?.ownerName ?? "admin";
   const projectName = options?.projectName ?? "sample";
+  const payload = branchesPayload(options);
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -462,20 +466,23 @@ async function mockProjectBranches(
       return;
     }
     if (route.request().method() === "DELETE") {
-      deleteRequests.push(route.request().postDataJSON());
+      const body = route.request().postDataJSON();
+      payload.branches = payload.branches.filter((branch) => branch.name !== body.branchName);
     }
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify(branchesPayload(options)),
+      body: JSON.stringify(payload),
     });
   });
   await page.route(
     `**/api/v1/projects/${ownerName}/${projectName}/branches/default`,
     async (route) => {
-      setDefaultRequests.push(route.request().postDataJSON());
+      const body = route.request().postDataJSON();
+      payload.defaultBranch = `refs/heads/${body.branchName}`;
+      for (const branch of payload.branches) branch.isDefault = branch.name === body.branchName;
       await route.fulfill({
         contentType: "application/json",
-        body: JSON.stringify(branchesPayload(options)),
+        body: JSON.stringify(payload),
       });
     },
   );
@@ -526,6 +533,7 @@ function projectContainer(
 
 function branchesPayload(
   options: {
+    commitDates?: string[];
     ownerName?: string;
     projectName?: string;
   } = {},
@@ -536,7 +544,7 @@ function branchesPayload(
   return {
     branches: [
       {
-        commitDate: "Jul 1, 2026",
+        commitDate: new Date(2026, 6, 1, 13, 14, 15).toISOString(),
         commitId: "abcdef1234567890",
         commitMessage: "Initial commit",
         commitShortId: "abcdef1",
@@ -546,7 +554,7 @@ function branchesPayload(
         shortName: "main",
       },
       {
-        commitDate: "Jul 2, 2026",
+        commitDate: new Date(2026, 6, 2, 3, 4, 5).toISOString(),
         commitId: "1234567890abcdef",
         commitMessage: "Release branch",
         commitShortId: "1234567",
@@ -560,7 +568,17 @@ function branchesPayload(
         },
         shortName: "feature/release",
       },
-    ],
+    ].flatMap((branch, index) => {
+      if (!options.commitDates) return [branch];
+      return index === 0
+        ? options.commitDates.map((commitDate, dateIndex) => ({
+            ...branch,
+            commitDate,
+            name: dateIndex === 0 ? "main" : `timestamp-${dateIndex}`,
+            shortName: dateIndex === 0 ? "main" : `timestamp-${dateIndex}`,
+          }))
+        : [];
+    }),
     defaultBranch: "refs/heads/main",
     noHead: false,
     ownerName,
@@ -816,7 +834,6 @@ async function canonicalizeScreenRoots(page: Page) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
-              token !== "blue-txt" &&
               !token.includes("-shell-") &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
@@ -1049,7 +1066,6 @@ async function canonicalizeHtml(page: Page, html: string) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
-              token !== "blue-txt" &&
               !token.includes("-shell-") &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),

@@ -36,7 +36,7 @@ export type BoardPostComment = {
   authorLoginId: string;
   contentsHtml: string;
   contentsMarkdown: string;
-  createdLabel: string;
+  createdAt: string;
   commitReferences?: CommitReferenceMetadata[];
   id: string;
   issueReferences?: IssueReferenceMetadata[];
@@ -50,7 +50,7 @@ export type BoardPostListItem = {
   authorLabel: string;
   authorLoginId: string;
   commentCount: number;
-  createdLabel: string;
+  createdAt: string;
   labels: BoardLabel[];
   notice: boolean;
   ownerName: string;
@@ -186,6 +186,7 @@ export type BoardPostMutationInput = {
 };
 
 export type BoardPostUpdateInput = BoardPostMutationInput & {
+  notificationMail: boolean;
   postNumber: number | string;
 };
 
@@ -314,7 +315,7 @@ function normalizePostListItem(item: Partial<BoardPostListItem>): BoardPostListI
     authorLabel: item.authorLabel ?? "",
     authorLoginId: item.authorLoginId ?? "",
     commentCount: item.commentCount ?? 0,
-    createdLabel: item.createdLabel ?? "",
+    createdAt: item.createdAt ?? "",
     labels: normalizeLabels(item.labels),
     notice: item.notice ?? false,
     ownerName: item.ownerName ?? "",
@@ -371,7 +372,7 @@ function normalizePostDetail(response: Partial<BoardPostDetail>): BoardPostDetai
       authorLoginId: comment.authorLoginId ?? "",
       contentsHtml: comment.contentsHtml ?? "",
       contentsMarkdown: comment.contentsMarkdown ?? "",
-      createdLabel: comment.createdLabel ?? "",
+      createdAt: comment.createdAt ?? "",
       commitReferences: normalizeCommitReferences(comment.commitReferences),
       id: comment.id ?? "",
       issueReferences: normalizeIssueReferences(comment.issueReferences),
@@ -619,7 +620,7 @@ export function updateProjectPostRest(
     runtimeConfig,
     projectPostPath(input.ownerName, input.projectName, input.postNumber),
     {
-      body: postMutationBody(input),
+      body: { ...postMutationBody(input), notificationMail: input.notificationMail },
       csrfToken,
       fetchImpl,
       method: "PATCH",

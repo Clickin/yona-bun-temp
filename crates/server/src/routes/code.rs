@@ -93,6 +93,30 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
             }),
         )
         .route(
+            "/projects/{owner_name}/{project_name}/commit/{commit_id}/watch",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, commit_id)): Path<(String, String, String)>,
+                      Query(query): Query<RestCodeCommitDetailQuery>| {
+                    let service = service.clone();
+                    async move {
+                        rest_set_commit_watch(headers, owner_name, project_name, commit_id, query, true, service).await
+                    }
+                }
+            }).delete({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, commit_id)): Path<(String, String, String)>,
+                      Query(query): Query<RestCodeCommitDetailQuery>| {
+                    let service = service.clone();
+                    async move {
+                        rest_set_commit_watch(headers, owner_name, project_name, commit_id, query, false, service).await
+                    }
+                }
+            }),
+        )
+        .route(
             "/projects/{owner_name}/{project_name}/commit/{commit_id}/files/{*filepath}",
             get({
                 let service = service.clone();
@@ -758,9 +782,14 @@ pub(crate) struct RestCommitCommentBody {
     #[serde(default)]
     attachment_ids: Vec<i64>,
     contents_markdown: String,
+    end_column: Option<i32>,
     end_line: Option<i32>,
+    end_side: Option<String>,
     path: Option<String>,
+    prev_commit_id: Option<String>,
+    start_column: Option<i32>,
     start_line: Option<i32>,
+    start_side: Option<String>,
     thread_id: Option<i64>,
 }
 
@@ -841,11 +870,14 @@ struct RestCodeCommitDetailResponse {
     branches: Vec<RestCodeBranch>,
     breadcrumbs: Vec<RestCodeBreadcrumb>,
     commit: Option<RestCodeCommit>,
+    #[serde(skip)]
+    commit_author_id: Option<i64>,
     files: Vec<RestCodeCommitFileDiff>,
     files_changed: u32,
     insertions: u32,
     deletions: u32,
     issue_references: Vec<RestIssueReferenceMetadata>,
+    is_watching: bool,
     no_head: bool,
     owner_name: String,
     parent_commit: Option<RestCodeCommitParent>,
@@ -1994,6 +2026,55 @@ async fn rest_read_code_commit_detail(
     ))
 }
 
+async fn rest_set_commit_watch(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    commit_id: String,
+    query: RestCodeCommitDetailQuery,
+    watching: bool,
+    service: PilotServiceImpl,
+) -> Result<Json<RestCodeCommitDetailResponse>, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&service)?;
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization =
+        rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
+            .await?;
+    let mut detail = rest_code_commit_detail_response(
+        repository,
+        &authorization,
+        Some(actor.id),
+        &commit_id,
+        &query,
+        &service,
+    )
+    .await?;
+    let commit = detail
+        .commit
+        .as_ref()
+        .ok_or_else(|| RestRouteError::not_found("commit not found"))?;
+    let resource_id = format!("{}:{}", authorization.project.id, commit.commit_id);
+    if watching {
+        repository
+            .watch_notification_resource(actor.id, "COMMIT", &resource_id)
+            .await
+    } else {
+        repository
+            .unwatch_notification_resource(actor.id, "COMMIT", &resource_id)
+            .await
+    }
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
+    detail.is_watching = watching;
+    Ok(Json(detail))
+}
+
 async fn rest_code_commit_detail_response(
     repository: &PilotRepository,
     authorization: &persistence::ProjectAuthorizationRecord,
@@ -2028,14 +2109,60 @@ async fn rest_code_commit_detail_response(
     }
     .map_err(code_browser_error)
     .map_err(RestRouteError::from_connect_error)?;
+    let resolved_commit_id = snapshot
+        .commit
+        .as_ref()
+        .map(|commit| commit.commit_id.as_str())
+        .unwrap_or(commit_id);
     let threads = repository
-        .list_commit_discussion_threads(authorization.project.id, commit_id)
+        .list_commit_discussion_threads(authorization.project.id, resolved_commit_id)
         .await
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
     if let Some(commit) = snapshot.commit.as_mut() {
         commit.comment_count = threads.len() as u32;
     }
+    let author_identifier = snapshot
+        .commit
+        .as_ref()
+        .map(|commit| {
+            if authorization.project.vcs == "Subversion" {
+                commit.author_name.as_str()
+            } else {
+                commit.author_email.as_str()
+            }
+        })
+        .filter(|identifier| !identifier.is_empty());
+    let author = match author_identifier {
+        Some(identifier) => repository
+            .find_user_by_identifier(identifier)
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?,
+        None => None,
+    };
+    let is_watching = match (actor_id, snapshot.commit.as_ref()) {
+        (Some(actor_id), Some(commit)) => {
+            let implicit_watcher = author.as_ref().is_some_and(|author| author.id == actor_id)
+                || threads.iter().any(|thread| {
+                    thread
+                        .comments
+                        .iter()
+                        .any(|comment| comment.author_id == Some(actor_id))
+                });
+            repository
+                .is_commit_watched_by(
+                    authorization.project.id,
+                    &commit.commit_id,
+                    actor_id,
+                    implicit_watcher,
+                )
+                .await
+                .map_err(internal_error)
+                .map_err(RestRouteError::from_connect_error)?
+        }
+        _ => false,
+    };
     let mut markdowns = Vec::new();
     for thread in &threads {
         markdowns.extend(
@@ -2053,7 +2180,7 @@ async fn rest_code_commit_detail_response(
         .await
         .map_err(RestRouteError::from_connect_error)?;
 
-    Ok(code_commit_detail_response_from_snapshot(
+    let mut response = code_commit_detail_response_from_snapshot(
         authorization,
         actor_id,
         snapshot,
@@ -2061,7 +2188,22 @@ async fn rest_code_commit_detail_response(
         &service.base_path,
         &issue_references,
         &mention_references,
-    ))
+    );
+    response.is_watching = is_watching;
+    if let (Some(commit), Some(author)) = (response.commit.as_mut(), author) {
+        response.commit_author_id = Some(author.id);
+        commit.author_login_id = author.login_id;
+        commit.author_name = author.display_name;
+        commit.author_avatar_url = workspace_avatar_url(
+            repository,
+            author.id,
+            &author.email_address,
+            &service.base_path,
+        )
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    }
+    Ok(response)
 }
 
 fn direct_commit_comment_body(form: &HashMap<String, String>) -> RestCommitCommentBody {
@@ -2073,10 +2215,32 @@ fn direct_commit_comment_body(form: &HashMap<String, String>) -> RestCommitComme
         contents_markdown: form_value(form, &["contents", "contentsMarkdown"])
             .trim()
             .to_string(),
+        end_column: form_value(form, &["endColumn", "end_column"]).parse().ok(),
         end_line: form_value(form, &["endLine", "end_line"]).parse().ok(),
+        end_side: Some(
+            form_value(form, &["endSide", "end_side"])
+                .trim()
+                .to_string(),
+        )
+        .filter(|value| !value.is_empty()),
         path: Some(form_value(form, &["path"]).trim().to_string())
             .filter(|value| !value.is_empty()),
+        prev_commit_id: Some(
+            form_value(form, &["prevCommitId", "prev_commit_id"])
+                .trim()
+                .to_string(),
+        )
+        .filter(|value| !value.is_empty()),
+        start_column: form_value(form, &["startColumn", "start_column"])
+            .parse()
+            .ok(),
         start_line: form_value(form, &["startLine", "start_line"]).parse().ok(),
+        start_side: Some(
+            form_value(form, &["startSide", "start_side"])
+                .trim()
+                .to_string(),
+        )
+        .filter(|value| !value.is_empty()),
         thread_id: form_value(form, &["thread.id", "threadId", "thread_id"])
             .parse()
             .ok(),
@@ -2182,6 +2346,12 @@ async fn rest_create_commit_discussion_comment(
         &service,
     )
     .await?;
+    let commit_id = current
+        .commit
+        .as_ref()
+        .ok_or_else(|| RestRouteError::not_found("commit not found"))?
+        .commit_id
+        .clone();
     if !current.permissions.can_comment {
         return Err(RestRouteError::from_connect_error(
             ConnectError::permission_denied("commit comment is not allowed"),
@@ -2193,13 +2363,19 @@ async fn rest_create_commit_discussion_comment(
             actor_id: actor.id,
             actor_login_id: actor.login_id.clone(),
             attachment_ids: body.attachment_ids,
+            commit_author_id: current.commit_author_id,
             commit_id: commit_id.clone(),
             contents_markdown: body.contents_markdown,
+            end_column: body.end_column,
             end_line: body.end_line,
+            end_side: body.end_side,
             owner_name: owner_name.clone(),
             path: body.path,
+            prev_commit_id: body.prev_commit_id,
             project_name: project_name.clone(),
+            start_column: body.start_column,
             start_line: body.start_line,
+            start_side: body.start_side,
             thread_id: body.thread_id,
         })
         .await
@@ -2249,6 +2425,12 @@ pub(crate) async fn rest_update_commit_discussion_thread_state(
         &service,
     )
     .await?;
+    let commit_id = current
+        .commit
+        .as_ref()
+        .ok_or_else(|| RestRouteError::not_found("commit not found"))?
+        .commit_id
+        .clone();
     let thread = current
         .threads
         .iter()
@@ -2270,6 +2452,7 @@ pub(crate) async fn rest_update_commit_discussion_thread_state(
         .update_commit_discussion_thread_state(persistence::CommitDiscussionThreadStateInput {
             actor_id: actor.id,
             actor_login_id: actor.login_id.clone(),
+            commit_author_id: current.commit_author_id,
             commit_id,
             owner_name: owner_name.clone(),
             project_name: project_name.clone(),
@@ -2320,6 +2503,12 @@ async fn rest_update_commit_discussion_comment(
         &service,
     )
     .await?;
+    let commit_id = current
+        .commit
+        .as_ref()
+        .ok_or_else(|| RestRouteError::not_found("commit not found"))?
+        .commit_id
+        .clone();
     let comment = current
         .threads
         .iter()
@@ -2393,6 +2582,12 @@ async fn rest_delete_commit_discussion_comment(
         &service,
     )
     .await?;
+    let commit_id = current
+        .commit
+        .as_ref()
+        .ok_or_else(|| RestRouteError::not_found("commit not found"))?
+        .commit_id
+        .clone();
     let can_moderate = project_update_allowed(&authorization).unwrap_or(false);
     let comment = current
         .threads
@@ -2892,7 +3087,7 @@ fn code_browser_rest_response_from_snapshot(
         entries: snapshot
             .entries
             .into_iter()
-            .map(code_entry_to_rest)
+            .map(|entry| code_entry_to_rest(entry, base_path))
             .collect(),
         file: snapshot.file.map(|file| {
             code_file_to_rest(file, base_path, owner_name, project_name, &selected_branch)
@@ -2905,9 +3100,10 @@ fn code_browser_rest_response_from_snapshot(
     }
 }
 
-fn code_entry_to_rest(entry: CodeEntryRecord) -> RestCodeEntry {
+fn code_entry_to_rest(entry: CodeEntryRecord, base_path: &str) -> RestCodeEntry {
     RestCodeEntry {
-        author_avatar_url: String::new(),
+        // Legacy renders the anonymous user's avatar when the commit email has no account.
+        author_avatar_url: base_path_href(base_path, super::utils::LEGACY_DEFAULT_AVATAR_URL),
         author_email: entry.author_email,
         author_label: entry.author_label,
         author_login_id: String::new(),
@@ -3011,6 +3207,7 @@ fn code_commit_detail_response_from_snapshot(
     let can_moderate = actor_id.is_some() && project_update_allowed(authorization).unwrap_or(false);
     let diff_stat = yoram_vcs::compute_diff_stat_from_files(&snapshot.files);
     RestCodeCommitDetailResponse {
+        commit_author_id: None,
         branches: snapshot
             .branches
             .into_iter()
@@ -3033,6 +3230,7 @@ fn code_commit_detail_response_from_snapshot(
         files_changed: diff_stat.files_changed,
         insertions: diff_stat.insertions,
         deletions: diff_stat.deletions,
+        is_watching: false,
         issue_references: issue_references
             .iter()
             .map(rest_issue_reference_metadata_from_resolved)

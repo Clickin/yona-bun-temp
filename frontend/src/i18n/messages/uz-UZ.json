@@ -1007,5 +1007,7 @@
   "viaEmail.help.intro": "{0}ga elektron pochta yuborish uchun qo`llanmasini beradi. Men bu sizga yordam beradi deb umid qilaman.",
   "viaEmail.help.title": "Elektron pochta orqali {0}ni foydalanish uchun qo`llanma",
   "watchers": "Shu yozuvni ko`rayotgan insonlar",
-  "watchers.more": "{0} va boshqalar"
+  "watchers.more": "{0} va boshqalar",
+  "common.time.am": "AM",
+  "common.time.pm": "PM"
 }

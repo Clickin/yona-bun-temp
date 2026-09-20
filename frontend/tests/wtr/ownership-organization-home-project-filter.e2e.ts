@@ -1,168 +1,4 @@
-import { readFile } from "../wtr-compat.ts";
-import { expect, test } from "../wtr-compat.ts";
-
-// wave-9 boards precedent: URL fixtures must arrive as string paths so the
-// .ts/.tsx .txt-suffix mapping serves them RAW (URL objects bypass the suffix
-// and get esbuild-transformed, which drops trailing commas in source pins).
-const fileURLToPath = (u: URL) => u.pathname;
-
-const routeSource = new URL("../src/routes/organizations/$organizationName.tsx", import.meta.url);
-const styleSource = new URL("../src/app.css", import.meta.url);
-const legacySource = new URL(
-  "../../yona-original/app/views/organization/view.scala.html",
-  import.meta.url,
-);
-const pageLessSource = new URL(
-  "../../yona-original/app/assets/stylesheets/less/_page.less",
-  import.meta.url,
-);
-const commonLessSource = new URL(
-  "../../yona-original/app/assets/stylesheets/less/_common.less",
-  import.meta.url,
-);
-const yobiUiSource = new URL(
-  "../../yona-original/app/assets/stylesheets/less/_yobiUI.less",
-  import.meta.url,
-);
-const variablesSource = new URL(
-  "../../yona-original/app/assets/stylesheets/less/_variables.less",
-  import.meta.url,
-);
-const bootstrapSource = new URL(
-  "../../yona-original/public/bootstrap/css/bootstrap.css",
-  import.meta.url,
-);
-const responsiveSource = new URL(
-  "../../yona-original/app/assets/stylesheets/less/_responsive.less",
-  import.meta.url,
-);
-const bootstrapResponsiveSource = new URL(
-  "../../yona-original/public/bootstrap/css/bootstrap-responsive.css",
-  import.meta.url,
-);
-
-test("organization home project filter uses conditional Style visibility", async () => {
-  const [
-    route,
-    style,
-    legacy,
-    pageLess,
-    commonLess,
-    yobiUi,
-    variables,
-    bootstrap,
-    responsive,
-    bootstrapResponsive,
-  ] = await Promise.all([
-    readFile(fileURLToPath(routeSource), "utf8"),
-    readFile(fileURLToPath(styleSource), "utf8"),
-    readFile(fileURLToPath(legacySource), "utf8"),
-    readFile(fileURLToPath(pageLessSource), "utf8"),
-    readFile(fileURLToPath(commonLessSource), "utf8"),
-    readFile(fileURLToPath(yobiUiSource), "utf8"),
-    readFile(fileURLToPath(variablesSource), "utf8"),
-    readFile(fileURLToPath(bootstrapSource), "utf8"),
-    readFile(fileURLToPath(responsiveSource), "utf8"),
-    readFile(fileURLToPath(bootstrapResponsiveSource), "utf8"),
-  ]);
-  expect(legacy).toContain("project");
-  expect(legacy).toContain('<div class="page-wrap-outer">');
-  expect(pageLess).toContain(
-    ".page-wrap-outer {\n    min-height: 450px;\n    margin-top: 10px;\n}",
-  );
-  expect(yobiUi).toContain(".search-bar {");
-  expect(legacy).toContain('<div class="project-search-wrap row-fluid mt10">');
-  expect(commonLess).toContain(".mt10 { margin-top:10px; }");
-  expect(route).toContain('data-owner="organization-home-search"');
-
-  expect(legacy).toContain('<div class="span7">');
-  expect(legacy).toContain('<div class="span9 span-hard-wrap">');
-  expect(legacy).toContain('<div class="span3 span-hard-wrap">');
-  expect(bootstrapResponsive).toContain(
-    '  .row-fluid [class*="span"] {\n    display: block;\n    float: left;\n    width: 100%;\n    min-height: 30px;\n    margin-left: 2.564102564102564%;',
-  );
-  expect(bootstrapResponsive).toContain(
-    '  .row-fluid [class*="span"]:first-child {\n    margin-left: 0;\n  }',
-  );
-  expect(bootstrapResponsive).toContain("  .row-fluid .span7 {\n    width: 57.26495726495726%;");
-  expect(bootstrapResponsive).toContain("  .row-fluid .span9 {\n    width: 74.35897435897436%;");
-  expect(bootstrapResponsive).toContain("  .row-fluid .span3 {\n    width: 23.076923076923077%;");
-  expect(bootstrapResponsive).toContain(
-    '  [class*="span"],\n  .uneditable-input[class*="span"],\n  .row-fluid [class*="span"] {\n    display: block;\n    float: none;\n    width: 100%;\n    margin-left: 0;',
-  );
-  expect(responsive).toContain("  .span-hard-wrap {\n    min-width: 95%;\n    width: 100vw;\n  }");
-  expect(route).toContain('data-owner="organization-home-main-column"');
-
-  expect(route).toContain('data-owner="organization-home-members"');
-  expect(route).toContain('data-owner="organization-home-search-column"');
-  expect(responsive).toContain(
-    "  .page-wrap-outer {\n    min-width: 10px !important;\n    padding: 0 !important;\n  }",
-  );
-  expect(responsive).toContain(
-    "  .page-wrap-outer {\n    padding: 0 10px;\n    width: 100%;\n    box-sizing: border-box;\n  }",
-  );
-  expect(route).toContain('data-owner="organization-home-page"');
-  expect(route).toContain('data-owner="organization-home-project-filter-item"');
-  expect(route).toContain("projectHidden");
-
-  expect(route).toContain('data-owner="organization-home-project-card-owner-avatar"');
-  expect(route).toContain('data-owner="organization-home-project-card-header"');
-  expect(route).toContain('data-owner="organization-home-project-card-description"');
-  expect(route).toContain('data-owner="organization-home-project-card-name-tag"');
-  expect(route).toContain('data-owner="organization-home-project-card-stats"');
-  expect(style).toContain('data-owner="organization-home-project-card-owner-avatar"');
-
-  expect(style).toContain('data-owner="organization-home-project-card-header"');
-
-  expect(style).toContain('data-owner="organization-home-project-card-description"');
-
-  expect(style).toContain('data-owner="organization-home-project-card-name-tag"');
-
-  expect(legacy).toContain('<div class="stats-wrap pull-right">');
-  expect(bootstrap).toContain(".pull-right {\n  float: right;\n}");
-
-  expect(route).toContain('data-owner="organization-home-project-card-stats"');
-  expect(pageLess).toContain("padding: 15px 0 10px 0;");
-  expect(pageLess).toContain("overflow: hidden;");
-  expect(pageLess).toContain("border-bottom: 1px solid #DCDCDC;");
-  expect(pageLess).toContain(".members {");
-  expect(pageLess).toContain("width:100%;");
-  expect(pageLess).toContain("display:inline-block;");
-  expect(pageLess).toContain("padding-left: 50px;");
-  expect(pageLess).toContain("strong { color:@secondary; }");
-  expect(variables).toContain("@blue2  : #51AACC;");
-  expect(variables).toContain("@secondary       : @blue2;");
-
-  expect(route).toContain('data-owner="organization-home-project-card-members"');
-  expect(route).toContain('data-owner="organization-home-project-card-members-list"');
-  expect(route).toContain('data-owner="organization-home-project-card-count"');
-  expect(route).toContain('data-owner="organization-home-search-bar"');
-  expect(route).toContain('data-owner="organization-home-search-input"');
-  expect(route).toContain('data-owner="organization-home-search-button"');
-  expect(style).toContain('data-owner="organization-home-search-bar"');
-
-  expect(style).toContain('data-owner="organization-home-search-input"');
-
-  expect(style).toContain('data-owner="organization-home-search-button"');
-
-  expect(yobiUi).toContain(".search-bar {");
-  expect(yobiUi).toContain("border:1px solid #ccc;");
-  expect(yobiUi).toContain("padding:4px 25px 4px 5px;");
-  expect(yobiUi).toContain(".textbox {");
-  expect(yobiUi).toContain(".search-btn {");
-  expect(legacy).toContain('<ul class="all-projects">');
-  expect(pageLess).toContain(".all-projects {");
-  expect(pageLess).toContain("margin: 0 0 20px;");
-  expect(pageLess).toContain("list-style: none;");
-  expect(pageLess).toContain("clear:both;");
-
-  expect(route).toContain('data-owner="organization-home-projects"');
-  expect(legacy).toContain('<div class="pull-right">');
-  expect(bootstrap).toContain(".pull-right {");
-  expect(bootstrap).toContain("float: right;");
-
-  expect(route).toContain('data-owner="organization-home-create-project-wrapper"');
-});
+import { expect, test, type Page } from "../wtr-compat.ts";
 
 async function mockOrganizationHome(page: Page) {
   await page.route("**/api/v1/session", (route) =>
@@ -188,8 +24,10 @@ async function mockOrganizationHome(page: Page) {
             projectName: "sample",
             overview: "Sample project",
             projectScope: "PUBLIC",
-            createdLabel: "today",
+            createdAt: "2020-01-02T12:00:00Z",
+            lastPushedAt: "",
             memberCount: 3,
+            members: [],
             watchCount: 4,
             isWatching: true,
             labels: [],
@@ -199,8 +37,10 @@ async function mockOrganizationHome(page: Page) {
             projectName: "other",
             overview: "Other project",
             projectScope: "PUBLIC",
-            createdLabel: "yesterday",
+            createdAt: "2020-01-01T12:00:00Z",
+            lastPushedAt: "",
             memberCount: 1,
+            members: [],
             watchCount: 2,
             isWatching: false,
             labels: [],
@@ -320,24 +160,19 @@ for (const viewport of [
       expect(column.left).toBeGreaterThanOrEqual(pageWrapMetrics.left - 1);
       expect(column.right).toBeLessThanOrEqual(pageWrapMetrics.right + 1);
       expect(column.width).toBeGreaterThan(0);
+      expect(column.float).toBe("left");
       if (viewport.name === "mobile") {
-        expect(column.float).toBe("none");
-        expect(column.marginLeft).toBe("0px");
-        expect(column.styleWidth).toBe(`${viewport.width}px`);
-        expect(column.width).toBe(viewport.width);
-        expect(column.widthRatio).toBeCloseTo(1, 5);
+        // .row-fluid .span* keeps its percentage width; .span-hard-wrap's
+        // min-width:95% expands it, while its less-specific 100vw does not win.
+        expect(column.widthRatio).toBeCloseTo(0.95, 4);
         expect(column.minWidth).toBe("95%");
-      } else {
-        expect(column.float).toBe("left");
       }
     }
     expect(columnMetrics[0]?.marginLeft).toBe("0px");
-    if (viewport.name === "mobile") {
-      expect(columnMetrics[1]?.marginLeft).toBe("0px");
-    } else {
-      expect(columnMetrics[0]?.widthRatio).toBeCloseTo(0.7435897435897436, 4);
-      expect(columnMetrics[1]?.widthRatio).toBeCloseTo(0.23076923076923077, 4);
-      expect(columnMetrics[1]?.marginLeft).not.toBe("0px");
+    expect(columnMetrics[1]?.marginLeft).not.toBe("0px");
+    if (viewport.name === "desktop") {
+      expect(columnMetrics[0]?.widthRatio).toBeCloseTo(0.7446808510638297, 4);
+      expect(columnMetrics[1]?.widthRatio).toBeCloseTo(0.23404255319148937, 4);
     }
     const searchWrapMetrics = await searchWrap.evaluate((node) => {
       const style = getComputedStyle(node);
@@ -374,30 +209,16 @@ for (const viewport of [
         widthRatio: parentBox && parentBox.width > 0 ? box.width / parentBox.width : 0,
       };
     });
-    expect(searchColumnMetrics).toMatchObject(
-      viewport.name === "mobile"
-        ? {
-            boxSizing: "border-box",
-            display: "block",
-            float: "none",
-            marginLeft: "0px",
-            minHeight: "30px",
-          }
-        : {
-            boxSizing: "border-box",
-            display: "block",
-            float: "left",
-            marginLeft: "0px",
-            minHeight: "30px",
-          },
-    );
+    expect(searchColumnMetrics).toMatchObject({
+      boxSizing: "border-box",
+      display: "block",
+      float: "left",
+      marginLeft: "0px",
+      minHeight: "30px",
+    });
     expect(searchColumnMetrics.left).toBeGreaterThanOrEqual(searchColumnMetrics.parentLeft);
     expect(searchColumnMetrics.right).toBeLessThanOrEqual(searchColumnMetrics.parentRight);
-    if (viewport.name === "mobile") {
-      expect(searchColumnMetrics.widthRatio).toBeCloseTo(1, 5);
-    } else {
-      expect(searchColumnMetrics.widthRatio).toBeCloseTo(0.5726495726495726, 4);
-    }
+    expect(searchColumnMetrics.widthRatio).toBeCloseTo(0.5744680851063829, 4);
     const createProjectMetrics = await createProjectWrapper.evaluate((node) => {
       const style = getComputedStyle(node);
       const wrapperBox = node.getBoundingClientRect();

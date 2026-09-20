@@ -30,6 +30,9 @@ export type CodeBrowserBreadcrumb = {
 };
 
 export type CodeBrowserEntry = {
+  authorAvatarUrl: string;
+  authorLabel: string;
+  authorLoginId: string;
   commitDate: string;
   commitMessage: string;
   commitShortId: string;
@@ -59,6 +62,9 @@ function normalizeBreadcrumb(breadcrumb: Partial<CodeBrowserBreadcrumb>): CodeBr
 
 function normalizeEntry(entry: Partial<CodeBrowserEntry>): CodeBrowserEntry {
   return {
+    authorAvatarUrl: entry.authorAvatarUrl ?? "",
+    authorLabel: entry.authorLabel ?? "",
+    authorLoginId: entry.authorLoginId ?? "",
     commitDate: entry.commitDate ?? "",
     commitMessage: entry.commitMessage ?? "",
     commitShortId: entry.commitShortId ?? "",

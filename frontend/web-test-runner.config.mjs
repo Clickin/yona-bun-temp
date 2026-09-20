@@ -557,7 +557,10 @@ const timeoutMetricFields = [
 function timeoutSummary(records) {
   return Object.fromEntries(
     timeoutMetricFields
-      .map(([kind, field]) => [kind, records.reduce((total, record) => total + (record[field] ?? 0), 0)])
+      .map(([kind, field]) => [
+        kind,
+        records.reduce((total, record) => total + (record[field] ?? 0), 0),
+      ])
       .filter(([, count]) => count > 0),
   );
 }
@@ -683,6 +686,8 @@ class RealMouseLauncher extends ChromeLauncher {
     sessionTimings.set(sessionId, { start: Date.now() });
     await super.startSession(sessionId, url);
     const page = this.activePages.get(sessionId).puppeteerPage;
+    // Modifier-click popups can leave a reused test page hidden and suspend its rAF.
+    await page.bringToFront();
     try {
       await page.exposeFunction("__wtrRealMouse", async (op, x, y) => {
         if (op === "move") await page.mouse.move(x, y);
@@ -698,6 +703,7 @@ class RealMouseLauncher extends ChromeLauncher {
         // the iframe (fixed at 0,0 with the same size) fills it exactly and
         // real-mouse coords map 1:1 (the WTR default 800x600 page clips moves).
         if (op === "setViewport") {
+          await page.bringToFront();
           await page.setViewport({ width: x, height: y });
         }
       });

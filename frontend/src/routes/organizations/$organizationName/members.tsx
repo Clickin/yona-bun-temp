@@ -17,7 +17,7 @@ import {
   updateOrganizationMemberRoleRest,
 } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
-import type { OrganizationAdminView, YoramRecord, YoramUserItem } from "../../../api/types";
+import type { OrganizationAdminView, YoramUserItem } from "../../../api/types";
 import { RestApiError } from "../../../api/rest-client";
 import { EnrollmentRequest } from "../../../components/enrollment-request";
 import { readSessionBootstrap, searchLegacyMemberUsers } from "../../../auth-workspace-client";
@@ -244,7 +244,6 @@ function OrganizationMembersBody({
             organizationName={organizationName}
           />
 
-          {/* Legacy class contract: className={`inner-bubble${showTypeaheadSuggestions ? " open" : ""}`} */}
           <div
             className={`inner-bubble${showTypeaheadSuggestions ? " open" : ""}`}
             data-owner="organization-members-header"
@@ -464,7 +463,7 @@ function OrganizationMember({
               onToggleRoleDropdown(loginId);
             }}
           >
-            <span className="d-label">{roleLabel(organization, role)}</span>
+            <span className="d-label">{t(`user.role.${role}`)}</span>
             <span className="d-caret">
               <span className="caret"></span>
             </span>
@@ -490,13 +489,13 @@ function OrganizationMember({
                       onRole(userId, roleName);
                     }}
                   >
-                    {roleLabel(organization, roleName)}
+                    {t(`user.role.${roleName}`)}
                   </button>
                 </li>
               );
             })}
           </ul>
-        </div>
+        </div>{" "}
         <button
           type="button"
           className="ybtn ybtn-danger ybtn-small"
@@ -586,13 +585,6 @@ function OrganizationSettingMenu({
       </li>
     </ul>
   );
-}
-
-function roleLabel(organization: OrganizationAdminView, role: string) {
-  const option = organization.roleOptions.find(
-    (roleOption: YoramRecord) => stringField(roleOption.role, "") === role,
-  );
-  return stringField(option?.label, role);
 }
 
 function organizationMemberDeleteErrorMessage(t: (key: string) => string, error: unknown) {

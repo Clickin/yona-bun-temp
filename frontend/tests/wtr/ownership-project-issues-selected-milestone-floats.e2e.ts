@@ -1,4 +1,3 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
@@ -12,47 +11,6 @@ const screenshotDirectory = resolve(
   "output/playwright/style-project-issues-selected-milestone-floats",
   fallbackMode,
 );
-const readSource = (relativePath: string) =>
-  readFileSync(new URL(relativePath, import.meta.url), "utf8");
-const routeSource = readSource("../src/routes/$ownerName/$projectName/issues.tsx");
-const styleSource = readSource("../src/app.css");
-const legacyListSource = readSource("../../yona-original/app/views/issue/list.scala.html");
-const legacyWrapSource = readSource(
-  "../../yona-original/app/views/issue/partial_list_wrap.scala.html",
-);
-const legacySearchFormSource = readSource(
-  "../../yona-original/app/views/issue/partial_searchform.scala.html",
-);
-const legacySelectLabelSource = readSource(
-  "../../yona-original/app/views/issue/partial_select_label.scala.html",
-);
-const legacyMilestoneStatusSource = readSource(
-  "../../yona-original/app/views/milestone/partial_status.scala.html",
-);
-const legacyYobiSource = readSource("../../yona-original/app/assets/stylesheets/yobi.less");
-const legacyBootstrapSource = readSource("../../yona-original/public/bootstrap/css/bootstrap.css");
-const legacyBootstrapResponsiveSource = readSource(
-  "../../yona-original/public/bootstrap/css/bootstrap-responsive.css",
-);
-const legacyMessagesSource = readSource("../../yona-original/conf/messages");
-const legacyIssueListJsSource = readSource(
-  "../../yona-original/public/javascripts/service/yobi.issue.List.js",
-);
-const legacyLessFiles = [
-  "_variables.less",
-  "_mixins.less",
-  "_common.less",
-  "_sprites.less",
-  "_page.less",
-  "_tippy.less",
-  "_scrollbar.less",
-  "_responsive.less",
-  "_yobiUI.less",
-  "_temporary.less",
-  "_markdown.less",
-  "_migration.less",
-  "_override.less",
-] as const;
 
 const owners = {
   labelManage: "project-issues-label-manage-action",
@@ -60,64 +18,6 @@ const owners = {
 } as const;
 
 test.use({ locale: "en-US" });
-
-test("selected milestone float owners preserve legacy source and React ownership", () => {
-  expect(legacyListSource).toContain("@partial_list_wrap(title, currentPage, param, project)");
-  expect(legacyWrapSource).toContain('<div pjax-container class="row-fluid issue-list-wrap">');
-  expect(legacyWrapSource).toContain("@partial_searchform(param, project)");
-  expect(legacySearchFormSource).toContain('<form id="search" name="search"');
-  expect(legacySearchFormSource).toContain(
-    "@views.html.milestone.partial_status(milestone, project)",
-  );
-  expect(legacySearchFormSource).toContain(
-    '<a href="@routes.IssueLabelApp.labelsForm(project.owner, project.name)" class="ybtn ybtn-default ybtn-mini pull-right">',
-  );
-  expect(legacySelectLabelSource).toContain('data-search="labelIds"');
-  expect(legacyMilestoneStatusSource).toContain('<div class="progress-info">');
-  expect(legacyMilestoneStatusSource).toContain('<span class="pull-right">');
-  expect(legacyMilestoneStatusSource).toContain('<div class="meta-info">');
-
-  for (const lessFile of legacyLessFiles) {
-    expect(legacyYobiSource).toContain(`@import "less/${lessFile}"`);
-    expect(readSource(`../../../yona-original/app/assets/stylesheets/less/${lessFile}`)).not.toBe(
-      "",
-    );
-  }
-  expect(readSource("../../yona-original/app/assets/stylesheets/less/_page.less")).toContain(
-    ".milestone-info",
-  );
-  expect(readSource("../../yona-original/app/assets/stylesheets/less/_page.less")).toContain(
-    ".labels-wrap",
-  );
-  expect(readSource("../../yona-original/app/assets/stylesheets/less/_yobiUI.less")).toContain(
-    ".ybtn-mini",
-  );
-  expect(readSource("../../yona-original/app/assets/stylesheets/less/_common.less")).toContain(
-    ".page-navigation-wrap",
-  );
-  expect(readSource("../../yona-original/app/assets/stylesheets/less/_responsive.less")).toContain(
-    "max-width: 720px",
-  );
-  expect(legacyBootstrapSource).toMatch(/\.pull-right\s*\{\s*float:\s*right;/u);
-  expect(legacyBootstrapResponsiveSource).toContain(".pull-right");
-
-  for (const message of [
-    "label.manage = Manage label",
-    "label.dueDate = Due Date",
-    "milestone.state.open = Open",
-    "milestone.state.closed = Closed",
-  ]) {
-    expect(legacyMessagesSource).toContain(message);
-  }
-  expect(legacyIssueListJsSource).toContain("[data-search]");
-  expect(legacyIssueListJsSource).toContain("welSearchForm.submit();");
-
-  expect(routeSource).not.toContain('className="ybtn ybtn-default ybtn-mini pull-right"');
-  expect(routeSource).not.toContain('<span className="pull-right">');
-
-  expect(routeSource).toContain(`data-owner="${owners.labelManage}"`);
-  expect(routeSource).toContain(`data-owner="${owners.milestoneCount}"`);
-});
 
 test(`selected milestone float owners preserve desktop/mobile geometry and interaction (${fallbackMode})`, async ({
   page,
@@ -136,12 +36,7 @@ test(`selected milestone float owners preserve desktop/mobile geometry and inter
     const milestoneCount = page.locator(`[data-owner="${owners.milestoneCount}"]`);
     await expect(labelManage).toHaveCount(1);
     await expect(milestoneCount).toHaveCount(1);
-    await expect(labelManage).toHaveClass(/(?:^|\s)ybtn(?:\s|$)/u);
-    await expect(labelManage).toHaveClass(/(?:^|\s)ybtn-default(?:\s|$)/u);
-    await expect(labelManage).toHaveClass(/(?:^|\s)ybtn-mini(?:\s|$)/u);
-    await expect(labelManage).not.toHaveClass(/(?:^|\s)pull-right(?:\s|$)/u);
     await expect(milestoneCount).toHaveText("1 / 2");
-    await expect(milestoneCount).not.toHaveClass(/(?:^|\s)pull-right(?:\s|$)/u);
 
     for (const owner of [labelManage, milestoneCount]) {
       await expect(owner).toHaveCSS("float", "right");

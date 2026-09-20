@@ -1,4 +1,3 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 // Post-merge: the full legacy cascade lives in app.css — normal-mode semantics.
 const fallbackOff = false;
 import { expect, test, type Page } from "../wtr-compat.ts";
@@ -13,170 +12,7 @@ const screenshotDirectory = resolve(
   "normal",
 );
 
-const routeSource = readFileSync("src/routes/organizations/$organizationName.tsx", "utf8");
-const styleSource = readFileSync("src/app.css", "utf8");
-const legacyViewSource = readFileSync(
-  "../yona-original/app/views/organization/view.scala.html",
-  "utf8",
-);
-const legacyYobiSource = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
-const legacyPageSource = readFileSync(
-  "../yona-original/app/assets/stylesheets/less/_page.less",
-  "utf8",
-);
-const legacyCommonSource = readFileSync(
-  "../yona-original/app/assets/stylesheets/less/_common.less",
-  "utf8",
-);
-const legacyResponsiveSource = readFileSync(
-  "../yona-original/app/assets/stylesheets/less/_responsive.less",
-  "utf8",
-);
-const legacyYobiUiSource = readFileSync(
-  "../yona-original/app/assets/stylesheets/less/_yobiUI.less",
-  "utf8",
-);
-const legacyVariablesSource = readFileSync(
-  "../yona-original/app/assets/stylesheets/less/_variables.less",
-  "utf8",
-);
-const bootstrapSource = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
-const bootstrapResponsiveSource = readFileSync(
-  "../yona-original/public/bootstrap/css/bootstrap-responsive.css",
-  "utf8",
-);
-const messagesSource = readFileSync("../yona-original/conf/messages", "utf8");
-
-const yobiImports = [
-  "_variables.less",
-  "_mixins.less",
-  "_common.less",
-  "_sprites.less",
-  "_page.less",
-  "_tippy.less",
-  "_scrollbar.less",
-  "_responsive.less",
-  "_yobiUI.less",
-  "_temporary.less",
-  "_markdown.less",
-  "_migration.less",
-  "_override.less",
-];
-
 test.use({ locale: "en-US" });
-
-function sourceWindow(source: string, owner: string) {
-  const marker = `data-owner="${owner}"`;
-  const index = source.indexOf(marker);
-  expect(index, `missing source owner ${owner}`).toBeGreaterThanOrEqual(0);
-  return source.slice(Math.max(0, index - 240), index + 240);
-}
-
-test("organization home action floats preserve exact legacy provenance", () => {
-  const legacyLines = legacyViewSource.split(/\r?\n/u);
-  const leaveFactory = legacyLines.slice(27, 31).join("\n");
-  const createProject = legacyLines.slice(70, 75).join("\n");
-  const stats = legacyLines.slice(112, 136).join("\n");
-  const memberPanels = legacyLines.slice(145, 176).join("\n");
-
-  expect(leaveFactory).toContain(
-    '<button type="button" class="ybtn ybtn-minimum ybtn-danger pull-right" id="groupLeaveBtn"',
-  );
-  expect(leaveFactory).toContain('Messages("organization.member.leave")');
-  expect(createProject).toContain('<div class="pull-right">');
-  expect(createProject).toContain('Messages("button.newProject")');
-  expect(stats).toContain('<div class="stats-wrap pull-right">');
-  expect(stats).toContain('Messages("project.onmember"');
-  expect(stats).toContain('Messages("project.onwatching"');
-  expect(stats).toContain('class="yobicon-lightbulb ramp-on"');
-  expect(stats).toContain('class="yobicon-lightbulb ramp-off"');
-  expect(memberPanels).toContain('<h3>@Messages("user.role.org_admin")</h3>');
-  expect(memberPanels).toContain('<h3>@Messages("user.role.org_member")</h3>');
-  expect(memberPanels).toContain(
-    "@makeLeaveBtn(org, OrganizationUser.isAdmin(org.id, UserApp.currentUser().id))",
-  );
-  expect(memberPanels).toContain(
-    "@makeLeaveBtn(org, OrganizationUser.isMember(org.id, UserApp.currentUser().id))",
-  );
-  expect(memberPanels).toContain('<div class="member-wrap ">');
-  expect(memberPanels).toContain('<div class="member-wrap">');
-  expect(memberPanels).toContain('<ul class="project-members">');
-  expect(memberPanels).toContain('<ul class="unstyled project-members">');
-
-  expect(legacyViewSource).toContain('<div class="project-search-wrap row-fluid mt10">');
-  expect(legacyViewSource).toContain('<div class="span9 span-hard-wrap">');
-  expect(legacyViewSource).toContain('<div class="span3 span-hard-wrap">');
-  expect(legacyCommonSource).toContain(".mt10 { margin-top:10px; }");
-  expect(legacyPageSource).toMatch(
-    /\.stats-wrap\s*\{[\s\S]*?margin-top: 0px;[\s\S]*?text-align: right;/u,
-  );
-  expect(legacyPageSource).toContain(".all-projects {");
-  expect(legacyPageSource).toContain(".members {");
-  expect(legacyPageSource).toContain("width:100%;");
-  expect(legacyPageSource).toContain("display:inline-block;");
-  expect(legacyPageSource).toContain("padding-left: 50px;");
-  expect(legacyPageSource).toContain("strong { color:@secondary; }");
-  expect(legacyPageSource).toMatch(
-    /\.stats-wrap\s*\{[\s\S]*?\.yobicon-lightbulb[\s\S]*?&\.ramp-on\s*\{[\s\S]*?color: #B6DA54;[\s\S]*?&\.ramp-off\s*\{[\s\S]*?color: #DADADA;/u,
-  );
-  expect(legacyYobiUiSource).toContain(".ybtn");
-  expect(legacyYobiUiSource).toContain("&.ybtn-danger");
-  expect(legacyVariablesSource).toContain("@secondary       : @blue2;");
-  expect(bootstrapSource).toMatch(/\.pull-right\s*\{\s*float:\s*right;\s*\}/u);
-  expect(bootstrapResponsiveSource).toContain("@media (max-width: 767px)");
-  expect(bootstrapResponsiveSource).toContain('.row-fluid [class*="span"]');
-  expect(bootstrapResponsiveSource).toContain(".row-fluid .span3 {");
-  expect(bootstrapResponsiveSource).toContain(".row-fluid .span9 {");
-  expect(legacyResponsiveSource).toContain(".span-hard-wrap {");
-  expect(legacyResponsiveSource).toContain("min-width: 95%;");
-  expect(legacyResponsiveSource).toContain("width: 100vw;");
-
-  expect(legacyYobiSource.trim().split(/\r?\n/u)).toEqual(
-    yobiImports.map((file) => `@import "less/${file}";`),
-  );
-  for (const imported of yobiImports) {
-    const importedSource = readFileSync(
-      `../yona-original/app/assets/stylesheets/less/${imported}`,
-      "utf8",
-    );
-    expect(importedSource).not.toMatch(/^\s*@import\b/mu);
-  }
-
-  for (const message of [
-    "button.newProject = Create new project",
-    "button.yes = Yes",
-    "button.no = No",
-    "organization.member.leave = Leave the group",
-    "organization.member.leaveConfirm = Do you want to leave this group?",
-    "project.onmember =",
-    "project.onwatching =",
-    "project.default.group.watching = Watching projects",
-    "project.you.are.not.watching = You are not watching the {0} project.",
-    "user.role.org_admin = Group Manager",
-    "user.role.org_member = Group Member",
-  ]) {
-    expect(messagesSource).toContain(message);
-  }
-
-  for (const owner of [
-    "organization-home-create-project-wrapper",
-    "organization-home-project-card-stats",
-    "organization-home-group-leave-button",
-  ]) {
-    expect(routeSource).toContain(`data-owner="${owner}"`);
-  }
-
-  expect(routeSource).toContain("showLeave={showLeaveButton && viewerCanUpdate}");
-  expect(routeSource).toContain("showLeave={showLeaveButton && !viewerCanUpdate}");
-
-  const leaveButtonSource = sourceWindow(routeSource, "organization-home-group-leave-button");
-  expect(leaveButtonSource).toContain("ybtn ybtn-minimum ybtn-danger");
-  expect(leaveButtonSource).toContain('id="groupLeaveBtn"');
-  expect(leaveButtonSource).not.toMatch(/data-(?:href|toggle|dismiss)=/u);
-  expect(routeSource).not.toContain("document.addEventListener");
-  expect(routeSource).not.toContain("classList");
-  expect(routeSource).not.toContain("dangerouslySetInnerHTML");
-});
 
 async function mockOrganizationHome(page: Page) {
   await page.addInitScript((runtimeBasePath) => {
@@ -219,10 +55,12 @@ async function mockOrganizationHome(page: Page) {
         viewerCanUpdate: true,
         visibleProjects: [
           {
-            createdLabel: "today",
+            createdAt: "2020-01-02T12:00:00Z",
+            lastPushedAt: "",
             isWatching: true,
             labels: [],
             memberCount: 3,
+            members: [],
             originOwnerName: "",
             originProjectName: "",
             overview: "Sample project",
@@ -232,10 +70,12 @@ async function mockOrganizationHome(page: Page) {
             watchCount: 4,
           },
           {
-            createdLabel: "yesterday",
+            createdAt: "2020-01-01T12:00:00Z",
+            lastPushedAt: "",
             isWatching: false,
             labels: [],
             memberCount: 1,
+            members: [],
             originOwnerName: "",
             originProjectName: "",
             overview: "Other project",

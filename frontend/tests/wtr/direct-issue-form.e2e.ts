@@ -1,7 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
-
-const DIRECT_ISSUE_FORM_SOURCE = "src/routes/user/issues/-direct-issue-form-screen.tsx";
 
 test("direct issue create route renders the legacy New issue title for the selected project", async ({
   page,
@@ -249,31 +246,96 @@ test("direct issue create migrates the fallback-off project header geometry from
   );
 });
 
-test("direct issue title implementation follows legacy IssueApp.create title path without DOM mutation", () => {
-  const routeSource = readFileSync(DIRECT_ISSUE_FORM_SOURCE, "utf8");
-  const legacyRoutes = readFileSync("../yona-original/conf/routes", "utf8");
-  const legacyIssueApp = readFileSync("../yona-original/app/controllers/IssueApp.java", "utf8");
-  const legacyCreate = readFileSync("../yona-original/app/views/issue/create.scala.html", "utf8");
-  const legacyMessages = readFileSync("../yona-original/conf/messages", "utf8");
+for (const routePath of ["/user/issues/new", "/user/issues/new/mine"]) {
+  test(`${routePath} renders the legacy home warning when no project is selected`, async ({
+    page,
+  }) => {
+    const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+    await mockDirectIssueForm(page, { ownerName: "", projectName: "" });
+    await page.route("**/api/v1/notifications?*", (route) =>
+      route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({ hasMore: false, items: [], total: 0 }),
+      }),
+    );
 
-  expect(legacyRoutes).toContain("GET            /user/issues/new");
-  expect(legacyRoutes).toContain("GET            /user/issues/new/mine");
-  expect(legacyIssueApp).toContain("return newIssueForm(project.owner, project.name);");
-  expect(legacyIssueApp).toContain('create.render("title.newIssue"');
-  expect(legacyCreate).toContain("@projectLayout(Messages(title), project, utils.MenuType.ISSUE)");
-  expect(legacyMessages).toContain("title.newIssue = New issue");
-  expect(legacyMessages).toContain("issue.menu.new = New issue");
+    await page.goto(`${basePath}${routePath}`);
 
-  expect(routeSource).toContain(
-    '<title>{`${t("title.newIssue")} - ${selectedProject.ownerName}/${selectedProject.projectName}`}</title>',
+    await expect(page.locator('#yobiToasts [data-part="toast-message"]')).toHaveText(
+      "Project is non existent",
+    );
+    await expect(page.locator(".main-stream .notification-wrap")).toBeVisible();
+    await expect(page.locator(".welcome-table a[href$='/projects']")).toBeVisible();
+    await expect(page.locator("#setDefaultLoginPage")).toBeVisible();
+    await expect(page.locator("header[data-owner=global-gnb-outer]")).toHaveCount(1);
+    await expect(page.locator("#issue-form")).toHaveCount(0);
+    await expect(page).toHaveURL(`${basePath}${routePath}`);
+  });
+}
+
+test("direct issue form handles the canonical no-project error as the legacy home warning", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockDirectIssueForm(page, { ownerName: "", projectName: "" });
+  await page.route("**/api/v1/user/issues/new-options**", (route) =>
+    route.fulfill({
+      status: 404,
+      contentType: "application/json",
+      body: JSON.stringify({
+        error: { code: "not_found", message: "project.is.empty", status: 404 },
+      }),
+    }),
   );
-  expect(routeSource).toContain("projectSearchScope={selectedProject}");
-  expect(routeSource).not.toContain("document.title");
-  expect(routeSource).not.toContain("globalThis.document");
-  expect(routeSource).not.toContain("window.document");
-  expect(routeSource).not.toContain("useEffect");
-  expect(routeSource).not.toContain("dangerouslySetInnerHTML");
-  expect(routeSource).not.toMatch(/<a\b/u);
+  await page.route("**/api/v1/notifications?*", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ hasMore: false, items: [], total: 0 }),
+    }),
+  );
+
+  await page.goto(`${basePath}/user/issues/new`);
+
+  await expect(page.locator('#yobiToasts [data-part="toast-message"]')).toHaveText(
+    "Project is non existent",
+  );
+  await expect(page.locator(".main-stream .notification-wrap")).toBeVisible();
+  await expect(page.locator("#setDefaultLoginPage")).toBeVisible();
+  await expect(page.locator("#issue-form")).toHaveCount(0);
+});
+
+test("direct issue form shows loading in the site shell and then the actual API error", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockDirectIssueForm(page, { ownerName: "admin", projectName: "sample" });
+  let releaseResponse = () => {};
+  const responseReady = new Promise<void>((resolve) => {
+    releaseResponse = resolve;
+  });
+  await page.route("**/api/v1/user/issues/new-options**", async (route) => {
+    await responseReady;
+    await route.fulfill({
+      status: 403,
+      contentType: "application/json",
+      body: JSON.stringify({
+        error: { code: "permission_denied", message: "Issue creation is forbidden", status: 403 },
+      }),
+    });
+  });
+
+  try {
+    await page.goto(`${basePath}/user/issues/new`);
+    await expect(page.locator(".issue-form-loading[role=status]")).toBeVisible();
+    await expect(page.locator("header[data-owner=global-gnb-outer]")).toHaveCount(1);
+  } finally {
+    releaseResponse();
+  }
+  await expect(page.locator(".issue-form-load-error[role=alert]")).toHaveText(
+    "Issue creation is forbidden",
+  );
+  await expect(page.locator(".issue-form-loading")).toHaveCount(0);
+  await expect(page.locator("#issue-form")).toHaveCount(0);
 });
 
 async function mockDirectIssueForm(

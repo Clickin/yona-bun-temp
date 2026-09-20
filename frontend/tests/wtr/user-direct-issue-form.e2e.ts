@@ -1,4 +1,3 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 test("user direct issue form keeps /user/issues/new while rendering the selected project shell", async ({
@@ -267,50 +266,113 @@ test("user direct mine issue form preserves legacy utility and editor geometry",
   expect(metrics.watchActionPadding).toBe("4px 10px");
 });
 
-test("user direct issue routes are declared as route files and keep the shared wrapper route-local", () => {
-  const newRouteSource = readFileSync(
-    new URL("../src/routes/user/issues_/new.tsx", import.meta.url),
-    "utf8",
+test("direct issue creation submits the chosen project and comment prefill then opens the created issue", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const referencedBody = "Comment **markdown**\n\n_Originally posted by @dev_";
+  await mockDirectIssueForm(page, {
+    directOptionRequests: [],
+    directOptions: {
+      bodyMarkdown: referencedBody,
+      referCommentId: "77",
+      selectedProject: { ownerName: "admin", projectName: "sample" },
+    },
+  });
+  const createdBodies: unknown[] = [];
+  await page.route("**/api/auth/session", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "direct-issue-csrf" },
+      body: JSON.stringify({ session: null, user: null }),
+    }),
   );
-  const mineRouteSource = readFileSync(
-    new URL("../src/routes/user/issues_/new/mine.tsx", import.meta.url),
-    "utf8",
-  );
-  const indexRouteSource = readFileSync(
-    new URL("../src/routes/user/issues_/new/index.tsx", import.meta.url),
-    "utf8",
-  );
-  const helperSource = readFileSync(
-    new URL("../src/routes/user/issues/-direct-issue-form-screen.tsx", import.meta.url),
-    "utf8",
-  );
-  const issueFormSource = readFileSync(
-    new URL("../src/routes/$ownerName/$projectName/issueform.tsx", import.meta.url),
-    "utf8",
-  );
-  const projectRouteSource = readFileSync(
-    new URL("../src/routes/$ownerName/$projectName.tsx", import.meta.url),
-    "utf8",
-  );
+  await page.route("**/api/v1/projects/admin/sample/issues", async (route) => {
+    createdBodies.push(route.request().postDataJSON());
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ issueNumber: 91, ownerName: "dev", projectName: "inbox" }),
+    });
+  });
 
-  expect(newRouteSource).toContain('createFileRoute("/user/issues_/new")');
-  expect(newRouteSource).toContain("component: Outlet");
-  expect(newRouteSource).not.toContain("DirectIssueFormRouteScreen");
-  expect(indexRouteSource).toContain('createFileRoute("/user/issues_/new/")');
-  expect(indexRouteSource).toContain("DirectIssueFormRouteScreen");
-  expect(mineRouteSource).toContain('createFileRoute("/user/issues_/new/mine")');
-  expect(mineRouteSource).toContain("mine={true}");
-  expect(helperSource).toContain("readDirectIssueFormOptions");
-  expect(helperSource).toContain("ProjectIssueFormProjectScreen");
-  expect(helperSource).toContain("projectSearchScope={selectedProject}");
-  expect(helperSource).toContain("projectHeaderRuntimeConfig={runtimeConfig}");
-  expect(issueFormSource).toContain("projectHeaderRuntimeConfig?: RuntimeConfig;");
-  expect(issueFormSource).toContain("runtimeConfig={projectHeaderRuntimeConfig}");
-  expect(projectRouteSource).toContain("runtimeConfig?: RuntimeConfig;");
-  expect(projectRouteSource).toContain("function ProjectHeaderRouteContext");
-  expect(helperSource).not.toContain("window.location");
-  expect(helperSource).not.toContain("document.");
-  expect(helperSource).not.toMatch(/<a\b/u);
+  await page.goto(`${basePath}/user/issues/new?commentId=77`);
+  await expect(page.locator("#editor-body-body")).toHaveValue(referencedBody);
+  await page.locator("#title").fill("Follow up on this comment");
+  await page.locator("#s2id_parentId [role=combobox]").click();
+  const parentSearch = page.locator("#parentId-options .select2-input");
+  await parentSearch.fill("missing parent");
+  await expect(page.locator("#parentId-options [role=option]")).toHaveCount(0);
+  await expect(page.locator("#parentId-options .select2-no-results")).toHaveText(
+    "No matches found",
+  );
+  await parentSearch.fill("EXISTING");
+  await expect(page.locator("#parentId-options [role=option]")).toHaveText("#11. Existing parent");
+  await page.locator("#parentId-options [role=option]").click();
+  await expect(page.locator("#parentId")).toHaveValue("42");
+  await page.locator("#s2id_targetProjectId [role=combobox]").click();
+  const projectSearch = page.locator("#targetProjectId-options .select2-input");
+  await projectSearch.fill("missing project");
+  await expect(page.locator("#targetProjectId-options [role=option]")).toHaveCount(0);
+  await expect(page.locator("#targetProjectId-options .select2-no-results")).toHaveText(
+    "No matches found",
+  );
+  await projectSearch.fill("DEV");
+  await expect(page.locator("#targetProjectId-options [role=option]")).toHaveText("dev / inbox");
+  await page.locator("#targetProjectId-options [role=option]").click();
+  await expect(page.locator("#targetProjectId")).toHaveValue("9");
+  await expect(page.locator("#parentId")).toBeDisabled();
+  await expect(page.locator(".subtask-parent-control")).toBeHidden();
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+
+  await expect.poll(() => createdBodies.length).toBe(1);
+  expect(createdBodies[0]).toMatchObject({
+    bodyMarkdown: referencedBody,
+    referCommentId: "77",
+    targetProjectId: 9,
+    title: "Follow up on this comment",
+  });
+  expect(createdBodies[0]).not.toHaveProperty("parentIssueId");
+  await expect(page).toHaveURL(`${basePath}/dev/inbox/issue/91`);
+});
+
+test("direct mine creation saves to the real selected personal project", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockDirectIssueForm(page, {
+    directOptionRequests: [],
+    directOptions: {
+      bodyMarkdown: "",
+      referCommentId: "",
+      selectedProject: { ownerName: "dev", projectName: "inbox" },
+    },
+  });
+  const createdBodies: unknown[] = [];
+  await page.route("**/api/auth/session", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "direct-issue-csrf" },
+      body: JSON.stringify({ session: null, user: null }),
+    }),
+  );
+  await page.route("**/api/v1/projects/dev/inbox/issues", async (route) => {
+    createdBodies.push(route.request().postDataJSON());
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ issueNumber: 92, ownerName: "dev", projectName: "inbox" }),
+    });
+  });
+
+  await page.goto(`${basePath}/user/issues/new/mine`);
+  await page.locator("#title").fill("Personal task");
+  await page.locator("#editor-body-body").fill("Keep in my inbox");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+
+  await expect.poll(() => createdBodies.length).toBe(1);
+  expect(createdBodies[0]).toMatchObject({
+    bodyMarkdown: "Keep in my inbox",
+    targetProjectId: 9,
+    title: "Personal task",
+  });
+  await expect(page).toHaveURL(`${basePath}/dev/inbox/issue/92`);
 });
 
 type DirectIssueFormOptions = {
@@ -390,7 +452,10 @@ async function mockDirectIssueForm(
           projectName,
         },
         issueTemplateMarkdown: "",
-        movableIssueProjects: [],
+        movableIssueProjects:
+          ownerName === "dev"
+            ? []
+            : [{ logoUrl: project.logoUrl, ownerName: "dev", projectId: 9, projectName: "inbox" }],
       }),
     });
   });

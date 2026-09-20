@@ -243,6 +243,7 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                   name="loginId"
                   required
                   placeholder={t("user.loginId")}
+                  className="text"
                   data-owner="lost-password-login-id"
                   data-part={
                     anonymousBaseline
@@ -261,6 +262,7 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                   name="emailAddress"
                   required
                   placeholder={t("user.email")}
+                  className="text"
                   data-owner="lost-password-email"
                   data-part={
                     anonymousBaseline

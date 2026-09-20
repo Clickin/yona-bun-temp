@@ -78,6 +78,7 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
   return (
     <>
       <form
+        className="form-inline inner-bubble"
         action={prefixBasePath(runtimeConfig.basePath, "/user/email")}
         method="post"
         data-owner="user-email-add-form"
@@ -89,12 +90,13 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
         }}
       >
         <input
+          className="text uname"
           type="text"
           placeholder={t("user.email.new")}
           name="email"
           data-owner="user-email-add-input"
         />{" "}
-        <button type="submit" data-owner="user-email-add-action">
+        <button type="submit" className="ybtn ybtn-success" data-owner="user-email-add-action">
           {t("button.add")}
         </button>
       </form>
@@ -107,7 +109,7 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
         {t("emails.sub.email.descr")}
       </p>
 
-      <table data-owner="user-email-table">
+      <table className="table mt20" data-owner="user-email-table">
         <tbody>
           <tr>
             <td data-owner="user-email-table-identity-cell">

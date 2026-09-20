@@ -212,6 +212,49 @@ test("authenticated Home default-login mutation removes the action and popover",
   expect(requests).toEqual([`${BASE_PATH}/user/defultLoginPage?path=%2Fnotifications`]);
 });
 
+for (const routePath of ["/user/issues/new", "/user/issues/new/mine"]) {
+  test(`no-project home at ${routePath} retains its warning and default-page action`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ height: 900, width: 1366 });
+    await installAuthenticatedHome(page, "/notifications");
+    await page.route("**/api/v1/user/issues/new-options**", (route) =>
+      route.fulfill({
+        status: 404,
+        contentType: "application/json",
+        json: { error: { code: "not_found", message: "project.is.empty", status: 404 } },
+      }),
+    );
+    const savedPaths: Array<string | null> = [];
+    await page.route("**/user/defultLoginPage?**", (route) => {
+      savedPaths.push(new URL(route.request().url()).searchParams.get("path"));
+      return route.fulfill({
+        contentType: "application/json",
+        json: { defaultLoginPage: routePath.slice(1) },
+      });
+    });
+    await page.goto(`${BASE_PATH}${routePath}`);
+
+    await expect(page.locator('#yobiToasts [data-part="toast-message"]')).toHaveText(
+      "프로젝트가 존재하지 않습니다.",
+    );
+    await expect(page.locator('[data-owner="authenticated-home-page-wrap"]')).toBeVisible();
+    await expect(page.locator("#issue-form")).toHaveCount(0);
+    await expect(page).toHaveURL(`${BASE_PATH}${routePath}`);
+    const button = page.locator(BUTTON);
+    await expect(button).toBeVisible();
+    // A later notification must retain its own lifetime, not the home flash's.
+    await page.clock.runFor(4000);
+    await button.click();
+    await expect(button).toBeHidden();
+    expect(savedPaths).toEqual([routePath]);
+    await expect(page).toHaveURL(`${BASE_PATH}${routePath}`);
+    await page.clock.runFor(1100);
+    await expect(page.locator('#yobiToasts [data-part="toast-message"]')).toHaveText(
+      `Set to default: ${routePath.slice(1)}`,
+    );
+  });
+}
 async function assertPopover(popover: ReturnType<Page["locator"]>) {
   await expect(popover).toBeVisible();
   await expect(popover).toHaveAttribute("role", "tooltip");
@@ -343,7 +386,7 @@ async function readPopover(page: Page) {
   );
 }
 
-async function installAuthenticatedHome(page: Page) {
+async function installAuthenticatedHome(page: Page, defaultLandingPath = "/") {
   await page.addInitScript((basePath) => {
     localStorage.setItem("shallWeOpenLeftNavigation", "false");
     localStorage.setItem("yobi-intro", "false");
@@ -362,7 +405,7 @@ async function installAuthenticatedHome(page: Page) {
       contentType: "application/json",
       json: {
         actorId: 1,
-        defaultLandingPath: "/",
+        defaultLandingPath,
         emailAddress: "admin@example.com",
         isAnonymous: false,
         isConfirmed: true,

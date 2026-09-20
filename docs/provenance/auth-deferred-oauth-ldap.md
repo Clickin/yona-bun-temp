@@ -5,6 +5,14 @@
 > User-visible legacy behavior remains final scope; ordinary observable
 > differences cannot be approved as accepted divergence.
 
+> **2026-09-18 security correction:** The historical assertion below that a
+> start-issued OAuth state prevents arbitrary-account authentication is false.
+> State binds a callback to a browser; it does not authenticate query-supplied
+> provider IDs or email addresses. The approved replacement plan A1 requires
+> provider code exchange only, unpredictable initial passwords, and remediation
+> of existing deterministic-password accounts. Historical bounded tests are not
+> evidence that these security defects are closed.
+
 ## Status
 
 - `partial-2nd-priority`: OAuth social login now has a bounded P2-A/P2-B app-runtime slice for configured GitHub/Google authorization start, deterministic callback identity handling, real provider token/userinfo HTTP exchange, local-user link/create, session creation, denied/unsupported redirects, connected-provider profile projection, and legacy local logout behavior. The earlier provider-specific external logout follow-up is retired as not applicable: legacy evidence only performs local PlayAuthenticate/session logout plus Referer redirect.

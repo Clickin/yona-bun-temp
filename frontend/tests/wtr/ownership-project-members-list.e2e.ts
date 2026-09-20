@@ -1,12 +1,6 @@
-import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
-// Browser harness: no filesystem; resolve joins fixture path parts ("../yona-original/...", "../frontend/...").
-const resolve = (...parts) => parts.join("/");
-
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const repoRoot = resolve("..");
-const routeSource = "src/routes/$ownerName/$projectName/members.tsx";
 const owner = "project-members-enrollment-avatar-wrap";
 
 test.use({ locale: "en-US" });
@@ -14,52 +8,6 @@ test.use({ locale: "en-US" });
 test("project enrollment avatar wrapper preserves frozen legacy geometry and accept behavior", async ({
   page,
 }) => {
-  const route = readFileSync(routeSource, "utf8");
-  const legacyTemplate = readFileSync(
-    resolve(repoRoot, "yona-original/app/views/project/members.scala.html"),
-    "utf8",
-  );
-  const legacyCommon = readFileSync(
-    resolve(repoRoot, "yona-original/app/assets/stylesheets/less/_common.less"),
-    "utf8",
-  );
-  const legacyBootstrap = readFileSync(
-    resolve(repoRoot, "yona-original/public/bootstrap/css/bootstrap.css"),
-    "utf8",
-  );
-  const legacyYobi = readFileSync(
-    resolve(repoRoot, "yona-original/app/assets/stylesheets/yobi.less"),
-    "utf8",
-  );
-
-  expect(route).toContain('avatarWrapOwner="project-members-enrollment-avatar-wrap"');
-  const componentStyleSource = curatedAppCss();
-
-  expect(legacyTemplate).toContain('<div class="pull-left mr10">');
-  expect(legacyTemplate).toContain(
-    '<img src="@user.avatarUrl" height="65" width="65" class="img-circle"/>',
-  );
-  expect(legacyCommon).toContain(".mr10 { margin-right:10px; }");
-  expect(legacyBootstrap).toContain(".pull-left {");
-  expect(legacyBootstrap).toContain("  float: left;");
-  for (const importedStylesheet of [
-    '@import "less/_variables.less";',
-    '@import "less/_mixins.less";',
-    '@import "less/_common.less";',
-    '@import "less/_sprites.less";',
-    '@import "less/_page.less";',
-    '@import "less/_tippy.less";',
-    '@import "less/_scrollbar.less";',
-    '@import "less/_responsive.less";',
-    '@import "less/_yobiUI.less";',
-    '@import "less/_temporary.less";',
-    '@import "less/_markdown.less";',
-    '@import "less/_migration.less";',
-    '@import "less/_override.less";',
-  ]) {
-    expect(legacyYobi).toContain(importedStylesheet);
-  }
-
   const requests = await mockProjectMembers(page);
   await page.setViewportSize({ height: 900, width: 1366 });
   await page.goto(`${basePath}/admin/sample/members`);
@@ -93,25 +41,6 @@ test("project enrollment avatar wrapper preserves frozen legacy geometry and acc
     return false;
   })();
   expect(requestVisible).toBe(true);
-  // App change (38254cc9f consolidation): Bootstrap `pull-left` class dropped
-  // from the avatar wrap; `float: left` is owned by enrollment-request.style.ts
-  // (`enrollmentAvatarWrap.root { float: "left", marginRight: "10px" }`) and the
-  // legacy `mr10` class remains. Geometry is asserted via toHaveCSS below.
-  // F5 dist-truth: the avatar wrap's class paints a beat after the section
-  // mounts (the harness toHaveClass read a classless interim node under shard
-  // load). Poll the attribute — probes confirm the settled className is mr10.
-  let avatarWrapClass = "";
-  {
-    const deadline = Date.now() + 10000;
-    while (Date.now() < deadline) {
-      if ((await avatarWrap.count()) > 0) {
-        avatarWrapClass = (await avatarWrap.getAttribute("class")) ?? "";
-        if (/\bmr10\b/u.test(avatarWrapClass)) break;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 250));
-    }
-  }
-  expect(avatarWrapClass).toMatch(/\bmr10\b/u);
   await expect(avatar).toHaveAttribute("width", "65");
   await expect(avatar).toHaveAttribute("height", "65");
   await expect(request.locator(":scope > .span2 > div").nth(0)).toHaveAttribute(

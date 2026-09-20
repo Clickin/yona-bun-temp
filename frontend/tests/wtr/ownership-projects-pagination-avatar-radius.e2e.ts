@@ -1,4 +1,4 @@
-import { readFileSync, readFile, curatedAppCss } from "../wtr-compat.ts";
+import { readFile } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
@@ -25,6 +25,7 @@ const owners = {
 test.use({ locale: "ko-KR" });
 
 async function mockProjects(page: Page) {
+  await page.clock.setFixedTime("2026-07-17T12:00:00Z");
   await page.addInitScript((runtimeBasePath) => {
     (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
       basePath: runtimeBasePath,
@@ -55,7 +56,7 @@ async function mockProjects(page: Page) {
       contentType: "application/json",
       json: {
         items: ["sample", "svnplayground", "portal"].map((projectName) => ({
-          createdLabel: "07-07",
+          createdAt: "2026-07-07T12:00:00Z",
           memberCount: 1,
           members: [
             {
@@ -89,79 +90,6 @@ async function open(page: Page) {
     timeout: 2_000,
   });
 }
-
-test("projects pagination/avatar residual wave records frozen cascade and retires last classes", () => {
-  const route = readFileSync("src/routes/projects.tsx", "utf8");
-  const scala = readFileSync("../yona-original/app/views/project/list.scala.html", "utf8");
-  const yobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
-  const common = readFileSync("../yona-original/app/assets/stylesheets/less/_common.less", "utf8");
-  const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
-  const responsive = readFileSync(
-    "../yona-original/app/assets/stylesheets/less/_responsive.less",
-    "utf8",
-  );
-  const yobiUi = readFileSync("../yona-original/app/assets/stylesheets/less/_yobiUI.less", "utf8");
-  const paginationJs = readFileSync(
-    "../yona-original/public/javascripts/common/yobi.Pagination.js",
-    "utf8",
-  );
-  const appCss = curatedAppCss();
-
-  expect(scala).toContain(
-    'class="avatar-wrap">\n                                    <img src="@member.avatarUrl" alt="@member.name">',
-  );
-  expect(scala).toContain('<div id="pagination"></div>');
-  expect(scala).toContain(
-    'yobi.Pagination.update($("#pagination"), @currentPage.getTotalPageCount);',
-  );
-  expect(yobi.trim().split("\n")).toEqual([
-    '@import "less/_variables.less";',
-    '@import "less/_mixins.less";',
-    '@import "less/_common.less";',
-    '@import "less/_sprites.less";',
-    '@import "less/_page.less";',
-    '@import "less/_tippy.less";',
-    '@import "less/_scrollbar.less";',
-    '@import "less/_responsive.less";',
-    '@import "less/_yobiUI.less";',
-    '@import "less/_temporary.less";',
-    '@import "less/_markdown.less";',
-    '@import "less/_migration.less";',
-    '@import "less/_override.less";',
-  ]);
-  expect(common).toContain(".page-nums {\n        margin: 0;");
-  expect(common).toContain(".avatar-wrap {\n    width:32px; height:32px;");
-  expect(pageLess).toContain(".page-nums {\n    margin-left: -120px !important;");
-  expect(pageLess).toContain(".avatar-wrap { margin-right:3px; margin-bottom:3px; }");
-  expect(responsive).toContain(".page-nums {\n    margin-left: 0;");
-  expect(yobiUi).toContain("background:#ddd;\n    .border-radius(3px) !important;");
-  expect(paginationJs).toContain("var welPageList = $('<ul class=\"page-nums\">');");
-
-  const paginationListStyle = route.slice(
-    route.indexOf("directoryPaginationList: {"),
-    route.indexOf("directoryPaginationItem: {"),
-  );
-  const memberAvatarStyle = route.slice(
-    route.indexOf("directoryMemberAvatar: {"),
-    route.indexOf("directoryStatsIcon: {"),
-  );
-
-  expect(route.match(/data-owner="projects-directory-pagination-list"/gu)).toHaveLength(1);
-  expect(route.match(/data-owner="projects-directory-member-avatar"/gu)).toHaveLength(1);
-  expect(route).not.toContain(
-    "className={`page-nums ${directoryPaginationListStyleProps.className",
-  );
-  expect(route).not.toContain(
-    "className={`avatar-wrap ${directoryMemberAvatarStyleProps.className",
-  );
-  expect(route).not.toContain(
-    "className: `avatar-wrap ${directoryMemberAvatarStyleProps.className",
-  );
-  // app.css never kept a standalone `.page-nums` rule after the pagination
-  // fallback bridge was retired (route-local Style now owns the list); the
-  // appCss pin is retired as stale, mirroring the empty-state precedent.
-  expect(appCss).toContain(".avatar-wrap {");
-});
 
 for (const viewport of [
   { height: 900, name: "desktop", width: 1366 },

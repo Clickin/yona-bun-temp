@@ -80,7 +80,7 @@ async function openIssues(page: Page) {
             authorLoginId: "alice",
             commentCount: 5,
             createdLabel: "1 day ago",
-            createdTitle: "2026-06-29 13:00",
+            createdTitle: "2026-06-29T13:00:00Z",
             issueNumber: "42",
             labels: [],
             milestoneTitle: "",

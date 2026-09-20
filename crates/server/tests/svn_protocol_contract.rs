@@ -5457,14 +5457,15 @@ async fn svn_protocol_external_client_can_lock_and_unlock_file() {
         vec![
             "checkout".to_string(),
             "--non-interactive".to_string(),
-            svn_url,
+            format!("{svn_url}/trunk"),
             checkout_dir.path().to_string_lossy().to_string(),
         ],
         None,
     )
     .await;
 
-    let readme = checkout_dir.path().join("trunk").join("README.md");
+    let readme = checkout_dir.path().join("README.md");
+    let lock_started = chrono::Utc::now().timestamp();
     run_svn_blocking(
         vec![
             "lock".to_string(),
@@ -5474,7 +5475,7 @@ async fn svn_protocol_external_client_can_lock_and_unlock_file() {
             "--password".to_string(),
             "doorpass1".to_string(),
             "-m".to_string(),
-            "external svn lock smoke".to_string(),
+            "external svn lock smoke\nOwner: not-the-lock-owner".to_string(),
             readme.to_string_lossy().to_string(),
         ],
         None,
@@ -5484,6 +5485,137 @@ async fn svn_protocol_external_client_can_lock_and_unlock_file() {
         .expect("read lock")
         .expect("external svn lock should persist lock metadata");
     assert_eq!(lock.owner, "owner");
+    assert_eq!(
+        lock.comment,
+        "external svn lock smoke\nOwner: not-the-lock-owner"
+    );
+    for target in [
+        readme.to_string_lossy().into_owned(),
+        format!("{base_url}/yona/svn/owner/projectYobi/trunk/README.md"),
+    ] {
+        let info =
+            tokio::task::spawn_blocking(move || run_svn_capture(&["info", "--xml", &target], None))
+                .await
+                .expect("read native SVN lock information");
+        assert!(
+            info.status.success(),
+            "{}",
+            String::from_utf8_lossy(&info.stderr)
+        );
+        let info = String::from_utf8(info.stdout).expect("SVN info XML");
+        assert!(info.contains("<owner>owner</owner>"), "{info}");
+        assert!(
+            info.contains("<comment>external svn lock smoke\nOwner: not-the-lock-owner</comment>"),
+            "{info}"
+        );
+        let created = info
+            .split_once("<created>")
+            .and_then(|(_, rest)| rest.split_once("</created>"))
+            .map(|(created, _)| created)
+            .expect("native client receives a lock creation date");
+        let created = chrono::DateTime::parse_from_rfc3339(created)
+            .expect("native client receives an ISO lock creation date")
+            .timestamp();
+        assert!(
+            created >= lock_started && created <= chrono::Utc::now().timestamp(),
+            "{info}"
+        );
+    }
+
+    let unowned_checkout = tempdir().expect("tokenless checkout");
+    run_svn_blocking(
+        vec![
+            "checkout".into(),
+            "--non-interactive".into(),
+            format!("{svn_url}/trunk"),
+            unowned_checkout.path().to_string_lossy().into_owned(),
+        ],
+        None,
+    )
+    .await;
+    let unowned_file = unowned_checkout.path().join("README.md");
+    std::fs::write(&unowned_file, "must not bypass the existing lock\n").unwrap();
+    let revision_before = yoram_vcs::svn_youngest_revision(&repo_path).unwrap();
+    let denied = tokio::task::spawn_blocking(move || {
+        run_svn_capture(
+            &[
+                "commit",
+                "--non-interactive",
+                "--username",
+                "owner",
+                "--password",
+                "doorpass1",
+                "-m",
+                "missing token",
+                &unowned_file.to_string_lossy(),
+            ],
+            None,
+        )
+    })
+    .await
+    .unwrap();
+    assert!(
+        !denied.status.success(),
+        "tokenless working copy must not commit"
+    );
+    assert_eq!(
+        yoram_vcs::svn_youngest_revision(&repo_path).unwrap(),
+        revision_before
+    );
+    assert_eq!(
+        yoram_vcs::svn_lock(&repo_path, "trunk/README.md")
+            .unwrap()
+            .unwrap()
+            .token,
+        lock.token
+    );
+
+    for (keep, contents) in [
+        (true, "keep the exact lock\n"),
+        (false, "release after commit\n"),
+    ] {
+        std::fs::write(&readme, contents).unwrap();
+        let mut args = vec![
+            "commit".into(),
+            "--non-interactive".into(),
+            "--username".into(),
+            "owner".into(),
+            "--password".into(),
+            "doorpass1".into(),
+            "-m".into(),
+            "locked commit".into(),
+            readme.to_string_lossy().into_owned(),
+        ];
+        if keep {
+            args.push("--no-unlock".into());
+        }
+        run_svn_blocking(args, None).await;
+        assert_eq!(
+            yoram_vcs::svn_cat_file(&repo_path, None, "trunk/README.md").unwrap(),
+            contents.as_bytes()
+        );
+        let remaining = yoram_vcs::svn_lock(&repo_path, "trunk/README.md").unwrap();
+        if keep {
+            assert_eq!(remaining.unwrap().token, lock.token);
+        } else {
+            assert!(remaining.is_none(), "default commit releases the lock");
+        }
+    }
+    run_svn_blocking(
+        vec![
+            "lock".into(),
+            "--non-interactive".into(),
+            "--username".into(),
+            "owner".into(),
+            "--password".into(),
+            "doorpass1".into(),
+            "-m".into(),
+            "explicit unlock".into(),
+            readme.to_string_lossy().into_owned(),
+        ],
+        None,
+    )
+    .await;
 
     run_svn_blocking(
         vec![

@@ -1,4 +1,3 @@
-import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdir only feeds page.screenshot paths (no-op).
@@ -13,7 +12,8 @@ const projects = [
     logoUrl: "/assets/images/project_default_logo.png",
     overview: "Forked project",
     memberCount: 3,
-    createdLabel: "today",
+    createdAt: "2020-01-02T12:00:00Z",
+    lastPushedAt: "",
     viewerCanWatch: true,
     isWatching: true,
     watchCount: 4,
@@ -30,7 +30,8 @@ const projects = [
     logoUrl: "/assets/images/project_default_logo.png",
     overview: "Plain project",
     memberCount: 2,
-    createdLabel: "yesterday",
+    createdAt: "2020-01-01T12:00:00Z",
+    lastPushedAt: "",
     viewerCanWatch: true,
     isWatching: false,
     watchCount: 2,
@@ -73,177 +74,9 @@ test.beforeEach(async ({ page }) => {
   );
 });
 
-test("profile project origin and watch controls own their exact final frozen cascade", async ({
+test("profile project origin links and watch controls preserve frozen geometry", async ({
   page,
 }) => {
-  const [
-    routeSource,
-    styleSource,
-    view,
-    partial,
-    yobi,
-    variables,
-    mixins,
-    common,
-    pageLess,
-    responsive,
-    yobiUi,
-    temporary,
-    override,
-    bootstrap,
-    bootstrapResponsive,
-    appCss,
-    legacyViewJs,
-    defaultMessages,
-    messages,
-  ] = await Promise.all([
-    readFile("../src/routes/$user.tsx"),
-    curatedAppCss(),
-    readFile(
-      new URL("../../yona-original/app/views/user/view.scala.html", import.meta.url),
-      "utf8",
-    ),
-    readFile(
-      new URL("../../yona-original/app/views/user/partial_projectlist.scala.html", import.meta.url),
-      "utf8",
-    ),
-    readFile(
-      new URL("../../yona-original/app/assets/stylesheets/yobi.less", import.meta.url),
-      "utf8",
-    ),
-    readFile(
-      new URL("../../yona-original/app/assets/stylesheets/less/_variables.less", import.meta.url),
-      "utf8",
-    ),
-    readFile(
-      new URL("../../yona-original/app/assets/stylesheets/less/_mixins.less", import.meta.url),
-      "utf8",
-    ),
-    readFile(
-      new URL("../../yona-original/app/assets/stylesheets/less/_common.less", import.meta.url),
-      "utf8",
-    ),
-    readFile(
-      new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
-      "utf8",
-    ),
-    readFile(
-      new URL("../../yona-original/app/assets/stylesheets/less/_responsive.less", import.meta.url),
-      "utf8",
-    ),
-    readFile(
-      new URL("../../yona-original/app/assets/stylesheets/less/_yobiUI.less", import.meta.url),
-      "utf8",
-    ),
-    readFile(
-      new URL("../../yona-original/app/assets/stylesheets/less/_temporary.less", import.meta.url),
-      "utf8",
-    ),
-    readFile(
-      new URL("../../yona-original/app/assets/stylesheets/less/_override.less", import.meta.url),
-      "utf8",
-    ),
-    readFile(
-      new URL("../../yona-original/public/bootstrap/css/bootstrap.css", import.meta.url),
-      "utf8",
-    ),
-    readFile(
-      new URL("../../yona-original/public/bootstrap/css/bootstrap-responsive.css", import.meta.url),
-      "utf8",
-    ),
-    readFile("../src/app.css"),
-    readFile(
-      new URL("../../yona-original/public/javascripts/service/yobi.user.View.js", import.meta.url),
-      "utf8",
-    ),
-    readFile(new URL("../../yona-original/conf/messages", import.meta.url), "utf8"),
-    readFile(new URL("../../yona-original/conf/messages.ko-KR", import.meta.url), "utf8"),
-  ]);
-
-  expect(view).toContain("@partial_projectlist(project, user)");
-  expect(partial).toContain(
-    '<span> <a href="@routes.ProjectApp.project(project.originalProject.owner, project.originalProject.name)">@project.originalProject.owner/@project.originalProject.name</a></span>',
-  );
-  expect(partial).toContain('class="ybtn watchBtn"');
-  expect(partial).toContain("yobicon-eye-open yobicon-middle yobicon-white");
-  expect(partial).toContain("yobicon-eye-close yobicon-middle yobicon-white");
-  expect(partial).toContain('<span class="num-badge">@project.getWatchingCount</span>');
-  expect(partial.indexOf("yobicon-eye-open")).toBeLessThan(
-    partial.indexOf('@Messages("notification.unwatch")'),
-  );
-  expect(partial.indexOf('@Messages("notification.unwatch")')).toBeLessThan(
-    partial.indexOf('<span class="num-badge">'),
-  );
-
-  const imports = [
-    "less/_variables.less",
-    "less/_mixins.less",
-    "less/_common.less",
-    "less/_sprites.less",
-    "less/_page.less",
-    "less/_tippy.less",
-    "less/_scrollbar.less",
-    "less/_responsive.less",
-    "less/_yobiUI.less",
-    "less/_temporary.less",
-    "less/_markdown.less",
-    "less/_migration.less",
-    "less/_override.less",
-  ];
-  for (const [index, imported] of imports.entries()) {
-    expect(yobi).toContain(`@import "${imported}";`);
-    if (index > 0) {
-      expect(yobi.indexOf(imports[index - 1])).toBeLessThan(yobi.indexOf(imported));
-    }
-  }
-  expect(variables).toContain("@base-font-family:");
-  expect(variables).toContain("@yobi-btn-default : @yobi-white;");
-  expect(mixins).toContain(".border-radius");
-  expect(common).toContain(
-    "a {\n    color: inherit;\n    text-decoration: none;\n    outline: none;",
-  );
-  expect(common).toContain(
-    ".yobicon-middle{\n    vertical-align: bottom;\n    margin-bottom: 3px;\n}",
-  );
-  expect(pageLess).toContain(".stats-wrap {");
-  expect(pageLess).toContain("margin-top: 0px;");
-  expect(responsive).toContain("@media all and (max-width: 720px)");
-  expect(yobiUi).toContain(".num-badge {");
-  expect(yobiUi).toContain(".num-badge { background-color:#fff; color:@blue2; }");
-  expect(yobiUi).toContain(".ybtn, .flat > li > .ybtn");
-  expect(yobiUi).toContain("i { line-height:20px;}");
-  expect(temporary).toContain(".lst-stacked");
-  expect(temporary).toContain(".num-badge { padding:0 2px; }");
-  expect(override).toContain("/** override bootstrap.css **/");
-  expect(bootstrap).toContain(
-    "a:hover,\na:focus {\n  color: #005580;\n  text-decoration: underline;\n}",
-  );
-  expect(bootstrapResponsive).toContain("@media (max-width: 767px)");
-  expect(bootstrap).not.toMatch(/\.num-badge(?:[\s,{:.]|$)/u);
-  expect(bootstrapResponsive).not.toMatch(/\.num-badge(?:[\s,{:.]|$)/u);
-  expect(appCss).toContain(".lst-stacked li .num-badge {");
-  expect(appCss).toContain(".lst-stacked li.active .num-badge {");
-  expect(appCss).toContain(".ybtn {");
-  expect(appCss).toContain(".keymap-help .ybtn {");
-  expect(appCss).toContain("#searchInnerForm .ybtn {");
-  expect(legacyViewJs).toContain('htElement.waBtnWatch   = $(".watchBtn");');
-  expect(legacyViewJs).toContain('htElement.waBtnWatch.on("click",_onClickBtnWatch);');
-  expect(defaultMessages).toContain("notification.unwatch = Unwatch");
-  expect(defaultMessages).toContain("notification.watch = Watch");
-  expect(messages).toContain("notification.unwatch = 그만 지켜보기");
-  expect(messages).toContain("notification.watch = 지켜보기");
-
-  for (const owner of [
-    "user-profile-project-origin-link",
-    "user-profile-project-watch-button",
-    "user-profile-project-watch-icon",
-    "user-profile-project-watch-badge",
-  ]) {
-    expect(routeSource).toContain(`data-owner="${owner}"`);
-  }
-  expect(routeSource).toContain('data-owner="user-profile-project-leave-link"');
-  // Wave-33: app retains legacy classes (667398a04 legacy-parity restore).
-
   const forbiddenAttributes = [
     "style",
     "data-toggle",

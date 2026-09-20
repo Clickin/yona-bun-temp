@@ -1,3 +1,68 @@
+pub(crate) fn decoded_text(raw: &str) -> Option<String> {
+    let mut decoded = String::with_capacity(raw.len());
+    let mut rest = raw;
+    while let Some((prefix, entity)) = rest.split_once('&') {
+        if prefix.contains('<') {
+            return None;
+        }
+        decoded.push_str(prefix);
+        let (entity, suffix) = entity.split_once(';')?;
+        let character = match entity {
+            "amp" => '&',
+            "lt" => '<',
+            "gt" => '>',
+            "quot" => '"',
+            "apos" => '\'',
+            _ => {
+                let value = if let Some(hex) = entity.strip_prefix("#x") {
+                    if !hex.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+                        return None;
+                    }
+                    u32::from_str_radix(hex, 16).ok()?
+                } else {
+                    let decimal = entity.strip_prefix('#')?;
+                    if !decimal.bytes().all(|byte| byte.is_ascii_digit()) {
+                        return None;
+                    }
+                    decimal.parse().ok()?
+                };
+                char::from_u32(value)?
+            }
+        };
+        decoded.push(character);
+        rest = suffix;
+    }
+    if rest.contains('<') {
+        return None;
+    }
+    decoded.push_str(rest);
+    decoded.chars().all(|character| matches!(character as u32, 9 | 10 | 13 | 0x20..=0xd7ff | 0xe000..=0xfffd | 0x10000..=0x10ffff)).then_some(decoded)
+}
+
+#[test]
+fn lock_paths_decode_xml_without_trimming_or_recursive_expansion() {
+    assert_eq!(
+        decoded_text(" a&amp;b&#32;&#x1F600; ").as_deref(),
+        Some(" a&b 😀 ")
+    );
+    assert_eq!(
+        decoded_text("&lt;&gt;&quot;&apos;&amp;lt;").as_deref(),
+        Some("<>\"'&lt;")
+    );
+    for invalid in [
+        "&unknown;",
+        "&amp",
+        "&#xD800;",
+        "&#0;",
+        "&#x+20;",
+        "&#+32;",
+        "\0",
+        "<nested/>",
+    ] {
+        assert_eq!(decoded_text(invalid), None, "{invalid:?}");
+    }
+}
+
 pub(crate) fn i64(xml: &str, tag: &str) -> Option<i64> {
     text(xml, tag)?.parse::<i64>().ok()
 }

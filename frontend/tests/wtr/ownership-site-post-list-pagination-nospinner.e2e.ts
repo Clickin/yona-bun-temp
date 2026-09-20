@@ -1,39 +1,6 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
-// Browser harness: node:fs/promises readFile has no browser equivalent; the
-// compat readFileSync is a sync XHR over the same middleware. Promise-wrap it
-// so the spec's await/Promise.all call sites keep their shape.
-const readFile = (path: string | URL, encoding?: string | null): Promise<string> =>
-  Promise.resolve(readFileSync(path, encoding ?? "utf8"));
-
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const routeSource = new URL("../src/routes/sites/postList.tsx", import.meta.url);
-const legacyTemplateSource = new URL(
-  "../../yona-original/app/views/site/postList.scala.html",
-  import.meta.url,
-);
-const legacyCommonLessSource = new URL(
-  "../../yona-original/app/assets/stylesheets/less/_common.less",
-  import.meta.url,
-);
-
-test("source retires only the pagination input nospinner residual", async () => {
-  const [route, template, commonLess] = await Promise.all([
-    readFile(routeSource, "utf8"),
-    readFile(legacyTemplateSource, "utf8"),
-    readFile(legacyCommonLessSource, "utf8"),
-  ]);
-
-  expect(template).toContain('<div id="pagination"></div>');
-  expect(template).toContain("yobi.Pagination.update");
-  expect(commonLess).toContain(".nospinner { -moz-appearance:textfield; }");
-  expect(route).toContain('data-owner="site-post-list-pagination-input"');
-  expect(route).not.toContain("className={`nospinner");
-  expect(route).not.toContain("className={`ico btn-pg-prev");
-  expect(route).not.toContain("className={`ico btn-pg-next");
-  expect(route).not.toContain("className={`yobicon-comments");
-});
 
 test("keeps the populated pagination input semantics without the presentation class", async ({
   page,
@@ -88,7 +55,7 @@ async function installPopulatedPostList(page: Page) {
             authorLoginId: "admin",
             commentCount: 1,
             createdLabel: "1 day ago",
-            createdTitle: "2026-07-15 12:00",
+            createdTitle: new Date(Date.now() - 26 * 60 * 60 * 1_000).toISOString(),
             ownerName: "admin",
             postNumber: String(page),
             projectLogoUrl: "/assets/images/default-project-logo.png",

@@ -1,38 +1,40 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
-import { expect, test, type Page } from "../wtr-compat.ts";
+import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 test.use({ locale: "ko-KR" });
 
-test("organization issue search moves the static project selector width into Style", async ({
+test("organization issue project selection preserves filters and legacy selector geometry", async ({
   page,
 }) => {
-  const route = readFileSync("src/routes/organizations/$organizationName/issues.tsx", "utf8");
-  const styleSource = readFileSync("src/app.css", "utf8");
-  const template = readFileSync(
-    "../yona-original/app/views/organization/group_issue_search_partial.scala.html",
-    "utf8",
-  );
-  const commonTemplate = readFileSync(
-    "../yona-original/app/views/common/twoColumnModeCheckboxArea.scala.html",
-    "utf8",
-  );
-  expect(template).toContain('id="projects"');
-  expect(template).toContain('name="projectNames[]"');
-  expect(route).toContain('data-owner="organization-issues-project-select"');
-
-  expect(commonTemplate).toContain('class="two-column-icon mr10 hide-in-mobile"');
-  expect(route).toContain('data-owner="organization-issues-two-column-popover"');
-
   await mockIssues(page);
-  await page.goto(`${basePath}/organizations/weblabs/issues?projectNames%5B%5D=sample`, {
-    waitUntil: "domcontentloaded",
-  });
+  await page.goto(
+    `${basePath}/organizations/weblabs/issues?projectNames%5B%5D=sample&projectNames%5B%5D=docs&filter=release&state=closed`,
+    { waitUntil: "domcontentloaded" },
+  );
 
-  const projectSelect = page.locator('[data-owner="organization-issues-project-select"]');
+  const projectSelect = page.locator('[data-owner="organization-project-picker"]');
   await expect(projectSelect).toHaveCount(1);
-  await expect(projectSelect.locator("option:checked")).toHaveText("sample");
+  await expect(projectSelect.locator(".select2-search-choice > div")).toHaveText([
+    "sample",
+    "docs",
+  ]);
+  await projectSelect.getByRole("button", { name: "삭제: sample", exact: true }).click();
+  await expect
+    .poll(() => new URL(page.url()).searchParams.getAll("projectNames[]"))
+    .toEqual(["docs"]);
+  await expect(projectSelect.locator(".select2-search-choice > div")).toHaveText(["docs"]);
+  await projectSelect.getByRole("combobox").fill("sample");
+  await projectSelect.getByRole("option", { name: "sample", exact: true }).click();
+  await expect
+    .poll(() => new URL(page.url()).searchParams.getAll("projectNames[]"))
+    .toEqual(["docs", "sample"]);
+  await expect(projectSelect.locator(".select2-search-choice > div")).toHaveText([
+    "docs",
+    "sample",
+  ]);
+  expect(new URL(page.url()).searchParams.get("filter")).toBe("release");
+  expect(new URL(page.url()).searchParams.get("state")).toBe("closed");
   expect(await projectSelect.getAttribute("style")).toBeNull();
   const widths = await projectSelect.evaluate((element) => {
     const select = element.getBoundingClientRect();
@@ -95,7 +97,10 @@ async function mockIssues(page: Page) {
         totalCount: 0,
         openIssueCount: 0,
         closedIssueCount: 0,
-        visibleProjects: [{ projectName: "sample", ownerName: "admin" }],
+        visibleProjects: [
+          { projectName: "sample", ownerName: "admin" },
+          { projectName: "docs", ownerName: "admin" },
+        ],
         filter: "",
         orderBy: "createdDate",
         orderDir: "desc",

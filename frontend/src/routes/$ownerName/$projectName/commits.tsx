@@ -1,10 +1,10 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter } from "@tanstack/react-router";
 import { codeHistoryQueryOptions, type CodeHistoryResponse } from "../../../api/code-commits";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
-import { useLegacyMessages } from "../../../i18n";
+import { formatLegacyTimestamp, useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { useRootToast } from "../../__root";
 
@@ -157,25 +157,60 @@ export function ProjectCodeHistoryBody({
   const isGit = project.vcs === "GIT";
   const selectedBranch = history.selectedBranch;
   const displayedBranch =
-    history.branches.find((item) => item.name === selectedBranch)?.name ??
+    (requestedBranch
+      ? history.branches.find((item) => item.name === selectedBranch)?.name
+      : undefined) ??
     history.branches[0]?.name ??
     selectedBranch;
   const [branchMenuOpen, setBranchMenuOpen] = useState(false);
   const [branchFilter, setBranchFilter] = useState("");
+  const [highlightedBranch, setHighlightedBranch] = useState(0);
+  const branchTriggerRef = useRef<HTMLButtonElement>(null);
+  const branchSearchRef = useRef<HTMLInputElement>(null);
+  const highlightedBranchRef = useRef<HTMLLIElement>(null);
   const normalizedBranchFilter = branchFilter.toLowerCase();
   const visibleBranches = history.branches.filter((item) =>
     item.name.toLowerCase().includes(normalizedBranchFilter),
   );
-  const selectedBranchHref = selectedBranch
+  const selectedBranchHref = displayedBranch
     ? projectHref(
         runtimeConfig.basePath,
         ownerName,
         projectName,
         "commits",
-        encodeBranch(selectedBranch),
+        encodeBranch(displayedBranch),
       )
     : undefined;
   const selectedBranchValue = selectedBranchHref ? `${selectedBranchHref}/` : "";
+
+  useEffect(() => {
+    if (branchMenuOpen) branchSearchRef.current?.focus();
+  }, [branchMenuOpen]);
+
+  useEffect(() => {
+    if (branchMenuOpen) highlightedBranchRef.current?.scrollIntoView({ block: "nearest" });
+  }, [branchMenuOpen, branchFilter, highlightedBranch]);
+
+  const openBranchMenu = (search = "") => {
+    setBranchFilter(search);
+    setHighlightedBranch(
+      search
+        ? 0
+        : Math.max(
+            0,
+            history.branches.findIndex((item) => item.name === displayedBranch),
+          ),
+    );
+    setBranchMenuOpen(true);
+  };
+  const selectBranch = (name: string) => {
+    setBranchMenuOpen(false);
+    branchTriggerRef.current?.focus();
+    if (name === displayedBranch) return;
+    router.history.push(
+      `${projectHref(runtimeConfig.basePath, ownerName, projectName, "commits", encodeBranch(name))}/`,
+    );
+  };
 
   const copyCommitId = async (commitId: string) => {
     copyToastCounterRef.current += 1;
@@ -204,24 +239,75 @@ export function ProjectCodeHistoryBody({
         <div className="bubble-wrap dark-gray repo-wrap" data-owner="project-commits-shell">
           <div className="code-browse-wrap">
             <div
-              className={`select2-container${branchMenuOpen ? " select2-dropdown-open select2-container-active" : ""}`}
+              className={`select2-container pull-right${branchMenuOpen ? " select2-dropdown-open select2-container-active" : ""}`}
+              style={{ width: "220px" }}
               data-owner="project-commits-branch-picker"
+              onBlur={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget)) {
+                  setBranchMenuOpen(false);
+                }
+              }}
+              onKeyDown={(event) => {
+                if (event.nativeEvent.isComposing) return;
+                if (!branchMenuOpen) {
+                  if (["ArrowDown", "ArrowUp", "Enter", " "].includes(event.key)) {
+                    event.preventDefault();
+                    openBranchMenu();
+                  } else if (
+                    event.key.length === 1 &&
+                    !event.ctrlKey &&
+                    !event.metaKey &&
+                    !event.altKey
+                  ) {
+                    event.preventDefault();
+                    openBranchMenu(event.key);
+                  }
+                } else if (event.key === "Escape") {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setBranchMenuOpen(false);
+                  branchTriggerRef.current?.focus();
+                } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                  event.preventDefault();
+                  setHighlightedBranch((index) =>
+                    Math.max(
+                      0,
+                      Math.min(
+                        visibleBranches.length - 1,
+                        index + (event.key === "ArrowDown" ? 1 : -1),
+                      ),
+                    ),
+                  );
+                } else if (event.key === "Enter") {
+                  event.preventDefault();
+                  const item = visibleBranches[highlightedBranch];
+                  if (item) selectBranch(item.name);
+                }
+              }}
             >
               <button
+                ref={branchTriggerRef}
                 type="button"
-                className="project-commits-branch-button select2-choice"
+                className="select2-choice"
+                data-owner="project-commits-branch-choice"
                 aria-expanded={branchMenuOpen}
+                aria-haspopup="listbox"
+                aria-controls="commits-branch-options"
                 onClick={() => {
-                  setBranchMenuOpen((open) => !open);
-                  if (branchMenuOpen) {
-                    setBranchFilter("");
-                  }
+                  if (branchMenuOpen) setBranchMenuOpen(false);
+                  else openBranchMenu();
                 }}
               >
                 <span className="select2-chosen">
-                  {isGit ? <strong className="branch-label branch">branch</strong> : null}
+                  {isGit ? (
+                    <strong
+                      className={`branch-label ${displayedBranch.startsWith("refs/tags/") ? "tag" : "branch"}`}
+                    >
+                      {displayedBranch.startsWith("refs/tags/") ? "tag" : "branch"}
+                    </strong>
+                  ) : null}
                   {isGit ? " " : null}
-                  {displayedBranch}
+                  {branchItemName(displayedBranch)}
                 </span>
                 <span className="select2-arrow" aria-hidden="true">
                   <b></b>
@@ -231,6 +317,7 @@ export function ProjectCodeHistoryBody({
                 className="select2-focusser select2-offscreen"
                 type="text"
                 disabled={branchMenuOpen}
+                tabIndex={-1}
                 aria-label={t("title.branches")}
               />
               <div
@@ -238,50 +325,71 @@ export function ProjectCodeHistoryBody({
               >
                 <div className="select2-search">
                   <input
+                    ref={branchSearchRef}
+                    role="combobox"
+                    aria-expanded={branchMenuOpen}
+                    aria-controls="commits-branch-options"
+                    aria-autocomplete="list"
+                    aria-activedescendant={
+                      branchMenuOpen && visibleBranches[highlightedBranch]
+                        ? `commits-branch-option-${highlightedBranch}`
+                        : undefined
+                    }
                     type="text"
                     className={`select2-input${branchMenuOpen ? " select2-focused" : ""}`}
                     aria-label={t("title.branches")}
                     value={branchFilter}
-                    onChange={(event) => setBranchFilter(event.currentTarget.value)}
+                    onChange={(event) => {
+                      setBranchFilter(event.currentTarget.value);
+                      setHighlightedBranch(0);
+                    }}
                   />
                 </div>
-                <ul className="select2-results">
-                  {visibleBranches.map((item) => (
+                <ul
+                  className="select2-results"
+                  id="commits-branch-options"
+                  role="listbox"
+                  aria-label={t("title.branches")}
+                >
+                  {visibleBranches.map((item, index) => (
                     <li
                       key={item.name}
-                      className={`select2-results-dept-0 select2-result select2-result-selectable${item.name === displayedBranch ? " select2-selected" : ""}`}
+                      ref={index === highlightedBranch ? highlightedBranchRef : undefined}
+                      id={`commits-branch-option-${index}`}
+                      role="option"
+                      aria-selected={item.name === displayedBranch}
+                      className={`select2-results-dept-0 select2-result select2-result-selectable${index === highlightedBranch ? " select2-highlighted" : ""}`}
+                      onMouseMove={() => setHighlightedBranch(index)}
                     >
                       <button
                         type="button"
-                        className="project-commits-branch-button select2-result-label"
-                        onClick={() => {
-                          setBranchMenuOpen(false);
-                          setBranchFilter("");
-                          router.history.push(
-                            `${projectHref(
-                              runtimeConfig.basePath,
-                              ownerName,
-                              projectName,
-                              "commits",
-                              encodeBranch(item.name),
-                            )}/`,
-                          );
-                        }}
+                        className="select2-result-label"
+                        tabIndex={-1}
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => selectBranch(item.name)}
                       >
-                        {isGit ? <strong className="branch-label branch">branch</strong> : null}
+                        {isGit ? (
+                          <strong
+                            className={`branch-label ${item.name.startsWith("refs/tags/") ? "tag" : "branch"}`}
+                          >
+                            {item.name.startsWith("refs/tags/") ? "tag" : "branch"}
+                          </strong>
+                        ) : null}
                         {isGit ? " " : null}
-                        {item.name}
+                        {branchItemName(item.name)}
                       </button>
                     </li>
                   ))}
+                  {branchMenuOpen && visibleBranches.length === 0 ? (
+                    <li className="select2-no-results">{t("title.no.results")}</li>
+                  ) : null}
                 </ul>
               </div>
             </div>
             <select
               id="branches"
-              data-format="branch"
-              data-dropdown-css-class="branches"
-              className="pull-right select2-offscreen"
+              className="select2-offscreen"
+              tabIndex={-1}
               value={selectedBranchValue}
               onChange={(event) => {
                 router.history.push(event.currentTarget.value);
@@ -432,7 +540,7 @@ export function ProjectCodeHistoryBody({
                             />
                           </td>
                           <td className="date" data-owner="project-commits-date">
-                            {commit.authorDate}
+                            {formatLegacyTimestamp(commit.authorDate, t).label}
                           </td>
                           <td className="author" data-owner="project-commits-author">
                             <CommitAuthor basePath={runtimeConfig.basePath} commit={commit} />
@@ -613,4 +721,8 @@ function projectRoutePath(ownerName: string, projectName: string, ...parts: stri
 
 function encodeBranch(branch: string) {
   return encodeURIComponent(branch);
+}
+
+function branchItemName(branch: string) {
+  return branch.startsWith("refs/") ? branch.slice(branch.indexOf("/", 5) + 1) : branch;
 }

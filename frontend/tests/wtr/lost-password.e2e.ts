@@ -42,7 +42,7 @@ test("lost-password preserves the legacy visible form and desktop/mobile geometr
   );
 
   const form = routeRoot.locator(".login-form-wrap form");
-  await expect(form.locator("input.text")).toHaveCount(0);
+  await expect(form.locator("input.text")).toHaveCount(2);
   await expect(form).toHaveAttribute("method", "post");
   await expect(form).toHaveAttribute("action", appPath("/lostPassword"));
   expect(await form.evaluate((element) => new URL(element.action).pathname)).toBe(
@@ -68,7 +68,7 @@ test("lost-password preserves the legacy visible form and desktop/mobile geometr
     ),
   ).toEqual([
     {
-      className: "",
+      className: "text",
       id: "loginId",
       name: "loginId",
       placeholder: "Login ID",
@@ -77,7 +77,7 @@ test("lost-password preserves the legacy visible form and desktop/mobile geometr
       valueAttribute: null,
     },
     {
-      className: "",
+      className: "text",
       id: "emailAddress",
       name: "emailAddress",
       placeholder: "Email address",

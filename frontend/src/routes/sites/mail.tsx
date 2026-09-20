@@ -200,6 +200,7 @@ function MailBody({
       ) : null}
       {response ? (
         <form
+          className="form-horizontal"
           key={`${response.sender}:${formResetKey}`}
           id="mailForm"
           method="post"
@@ -216,15 +217,17 @@ function MailBody({
             });
           }}
         >
-          <div data-owner="site-mail-form-group">
+          <div className="control-group" data-owner="site-mail-form-group">
             <label
+              className="control-label span3"
               {...({ name: "from" } as unknown as React.LabelHTMLAttributes<HTMLLabelElement>)}
               data-owner="site-mail-form-label"
             >
               {t("site.mail.from")}
             </label>
-            <div data-owner="site-mail-form-controls">
+            <div className="controls" data-owner="site-mail-form-controls">
               <input
+                className="span4"
                 data-owner="site-mail-form-field"
                 type="text"
                 name="from"
@@ -235,15 +238,17 @@ function MailBody({
             </div>
           </div>
 
-          <div data-owner="site-mail-form-group">
+          <div className="control-group" data-owner="site-mail-form-group">
             <label
+              className="control-label"
               {...({ name: "to" } as unknown as React.LabelHTMLAttributes<HTMLLabelElement>)}
               data-owner="site-mail-form-label"
             >
               {t("site.mail.to")}
             </label>
-            <div data-owner="site-mail-form-controls">
+            <div className="controls" data-owner="site-mail-form-controls">
               <input
+                className="span4"
                 data-owner="site-mail-form-field"
                 type="text"
                 name="to"
@@ -253,27 +258,40 @@ function MailBody({
             </div>
           </div>
 
-          <div data-owner="site-mail-form-group" data-variant="wide">
+          <div className="control-group mr10" data-owner="site-mail-form-group" data-variant="wide">
             <label
+              className="control-label"
               {...({ name: "subject" } as unknown as React.LabelHTMLAttributes<HTMLLabelElement>)}
               data-owner="site-mail-form-label"
             >
               {t("site.mail.subject")}
             </label>
-            <div data-owner="site-mail-form-controls">
-              <input data-owner="site-mail-form-field" type="text" name="subject" />
+            <div className="controls" data-owner="site-mail-form-controls">
+              <input
+                className="span12"
+                data-owner="site-mail-form-field"
+                type="text"
+                name="subject"
+              />
             </div>
           </div>
 
-          <div data-owner="site-mail-form-group" data-variant="wide">
+          <div className="control-group mr10" data-owner="site-mail-form-group" data-variant="wide">
             <label
+              className="control-label"
               {...({ name: "body" } as unknown as React.LabelHTMLAttributes<HTMLLabelElement>)}
               data-owner="site-mail-form-label"
             >
               {t("site.mail.body")}
             </label>
-            <div data-owner="site-mail-form-controls">
-              <textarea data-owner="site-mail-form-field" id="body" name="body" rows={16} />
+            <div className="controls" data-owner="site-mail-form-controls">
+              <textarea
+                className="span12 input-xlarge textbody"
+                data-owner="site-mail-form-field"
+                id="body"
+                name="body"
+                rows={16}
+              />
             </div>
           </div>
 

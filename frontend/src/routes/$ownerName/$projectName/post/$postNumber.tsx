@@ -100,7 +100,7 @@ import { apiQueryKeys } from "../../../../api/query-keys";
 import type { ProjectContainer } from "../../../../api/types";
 import { readSessionBootstrap } from "../../../../auth-workspace-client";
 import type { CommitReferenceMetadata } from "../../../../api/issue-meta";
-import { useLegacyMessages } from "../../../../i18n";
+import { formatLegacyTimestamp, useLegacyMessages } from "../../../../i18n";
 import { useWireframeContentProgress } from "../../../../components/route-fetch-lock";
 import { MarkdownCodeBlock } from "../../../../components/markdown-code-block";
 import { MarkdownEditor, type MarkdownEditorProps } from "../../../../components/markdown-editor";
@@ -337,7 +337,8 @@ function ProjectPostDetailBody({
   project: ProjectContainer;
   runtimeConfig: RuntimeConfig;
 }) {
-  const { language, t } = useLegacyMessages();
+  const { t } = useLegacyMessages();
+  const created = formatLegacyTimestamp(post.createdAt, t);
   const router = useRouter();
   const queryClient = useQueryClient();
   const [openPostModal, setOpenPostModal] = useState<PostDetailModalId | null>(null);
@@ -512,8 +513,8 @@ function ProjectPostDetailBody({
       <div className="project-page-wrap board-view" data-owner="post-detail-shell">
         <div className="board-header issue" data-owner="post-detail-header">
           <div data-owner="post-detail-desktop-metadata">
-            <div className="date" data-owner="post-detail-date" title={post.createdLabel}>
-              {legacyRelativeDateLabel(post.createdLabel, language)}
+            <div className="date" data-owner="post-detail-date" title={created.title}>
+              {created.label}
             </div>
           </div>
           <div className="title" data-owner="post-detail-title">
@@ -522,8 +523,8 @@ function ProjectPostDetailBody({
             </strong>{" "}
             {post.title}
             <div data-owner="post-detail-mobile-metadata">
-              <span className="date" data-owner="post-detail-date" title={post.createdLabel}>
-                {legacyRelativeDateLabel(post.createdLabel, language)}
+              <span className="date" data-owner="post-detail-date" title={created.title}>
+                {created.label}
               </span>
             </div>
           </div>
@@ -617,7 +618,7 @@ function ProjectPostDetailBody({
             >
               <AttachedFiles attachments={post.attachments} />
             </div>
-            <div className="board-actrow" data-owner="post-detail-actions">
+            <div className="board-actrow right-txt" data-owner="post-detail-actions">
               <div data-owner="post-detail-watch-wrapper">
                 <div>
                   {canWatch ? (
@@ -981,16 +982,6 @@ function PostEditableLabels({
         </Link>
       </dt>
       <dd>
-        <div
-          id="s2id_labelIds"
-          className="select2-container select2-container-multi issue-labels bordered fullsize"
-        >
-          <ul className="select2-choices">
-            <li className="select2-search-field">
-              <input type="text" placeholder={t("label.select")} readOnly />
-            </li>
-          </ul>
-        </div>
         <select
           id="labelIds"
           name="labelIds"
@@ -1430,7 +1421,8 @@ function PostCommentRow({
   postNumber: string;
   projectName: string;
 }) {
-  const { language, t } = useLegacyMessages();
+  const { t } = useLegacyMessages();
+  const created = formatLegacyTimestamp(comment.createdAt, t);
   const commentId = stringField(comment.id);
   const hash = useRouterState({ select: (state) => state.location.hash });
   const commentRef = useRef<HTMLLIElement>(null);
@@ -1533,9 +1525,9 @@ function PostCommentRow({
               activeProps={legacyRouteLocalActiveProps}
               className="ago"
               data-owner="post-detail-comment-ago"
-              title={comment.createdLabel}
+              title={created.title}
             >
-              {legacyRelativeDateLabel(comment.createdLabel, language)}
+              {created.label}
             </Link>
             <Link
               to="."
@@ -2180,6 +2172,7 @@ function PostChildComment({
   onCommentDeleteRequest: (commentId: string) => void;
 }) {
   const { t } = useLegacyMessages();
+  const created = formatLegacyTimestamp(comment.createdAt, t);
   const commentId = stringField(comment.id);
   const authorLoginId = stringField(comment.authorLoginId);
   const authorLabel = stringField(comment.authorLabel, authorLoginId);
@@ -2193,7 +2186,7 @@ function PostChildComment({
   );
   const metadata = (
     <>
-      -{" "}
+      {" - "}
       <Link
         to="/$user"
         params={{ user: authorLoginId }}
@@ -2212,9 +2205,9 @@ function PostChildComment({
         activeProps={legacyRouteLocalActiveProps}
         className="ago"
         data-owner="post-detail-child-comment-ago-link"
-        title={comment.createdLabel}
+        title={created.title}
       >
-        {comment.createdLabel}
+        {created.label}
       </Link>
       {canDelete ? (
         <button
@@ -2801,19 +2794,6 @@ function restApiErrorStatus(error: unknown) {
 
   const status = (error as { status?: unknown }).status;
   return typeof status === "number" ? status : undefined;
-}
-
-function legacyRelativeDateLabel(rawLabel: string, language: string, now = Date.now()) {
-  if (language !== "ko-KR" || rawLabel === "") return rawLabel;
-  const timestamp = Date.parse(rawLabel);
-  if (Number.isNaN(timestamp)) return rawLabel;
-  const elapsedSeconds = Math.floor((now - timestamp) / 1000);
-  if (elapsedSeconds < 0) return rawLabel;
-  if (elapsedSeconds < 60) return "방금 전";
-  if (elapsedSeconds < 3600) return `${Math.floor(elapsedSeconds / 60)}분 전`;
-  if (elapsedSeconds < 86400) return `${Math.floor(elapsedSeconds / 3600)}시간 전`;
-  if (elapsedSeconds < 2592000) return `${Math.floor(elapsedSeconds / 86400)}일 전`;
-  return rawLabel;
 }
 
 function stringField(value: unknown, fallback = "") {

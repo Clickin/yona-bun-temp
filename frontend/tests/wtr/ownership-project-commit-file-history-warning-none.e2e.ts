@@ -1,126 +1,7 @@
-import {
-  expect,
-  test,
-  type Page,
-  type Route,
-  mergedLegacyBlock,
-  curatedAppCss,
-} from "../wtr-compat.ts";
-import { readFileSync } from "../wtr-compat.ts";
-
-// Browser harness: fileURLToPath yields the served URL pathname so string
-// mapping + .txt raw-suffix applies.
-const fileURLToPath = (u: URL) => u.pathname;
+import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const routeSource = readFileSync(
-  fileURLToPath(
-    new URL("../src/routes/$ownerName/$projectName/commits/$branch/$filePath.tsx", import.meta.url),
-  ),
-  "utf8",
-);
-const styleSource = curatedAppCss() + mergedLegacyBlock();
-const legacyHistorySource = readFileSync(
-  fileURLToPath(new URL("../../yona-original/app/views/code/history.scala.html", import.meta.url)),
-  "utf8",
-);
-const legacyCommitMessageSource = readFileSync(
-  fileURLToPath(
-    new URL("../../yona-original/app/views/common/commitMsg.scala.html", import.meta.url),
-  ),
-  "utf8",
-);
-const legacyCommonSource = readFileSync(
-  fileURLToPath(
-    new URL("../../yona-original/app/assets/stylesheets/less/_common.less", import.meta.url),
-  ),
-  "utf8",
-);
-const legacyPageSource = readFileSync(
-  fileURLToPath(
-    new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
-  ),
-  "utf8",
-);
-const legacyYobiSource = readFileSync(
-  fileURLToPath(new URL("../../yona-original/app/assets/stylesheets/yobi.less", import.meta.url)),
-  "utf8",
-);
-const bootstrapSource = readFileSync(
-  fileURLToPath(new URL("../../yona-original/public/bootstrap/css/bootstrap.css", import.meta.url)),
-  "utf8",
-);
-const bootstrapResponsiveSource = readFileSync(
-  fileURLToPath(
-    new URL("../../yona-original/public/bootstrap/css/bootstrap-responsive.css", import.meta.url),
-  ),
-  "utf8",
-);
-const messagesSource = readFileSync(
-  fileURLToPath(new URL("../../yona-original/conf/messages", import.meta.url)),
-  "utf8",
-);
-const appCssSource = readFileSync(
-  fileURLToPath(new URL("../src/app.css", import.meta.url)),
-  "utf8",
-);
-const homeRouteSource = readFileSync(
-  fileURLToPath(new URL("../src/routes/-home-route-screen.tsx", import.meta.url)),
-  "utf8",
-);
-
-// RED -> GREEN intent: before the route-local Style owner exists, these source and browser
-// assertions must fail; after the bounded migration they pin the legacy empty-cell output.
-test("nested file history owns the legacy warning-none empty cell with Style", async ({ page }) => {
-  expect(legacyHistorySource).toContain('<div id="history" class="commit-wrap">');
-  expect(legacyHistorySource).toContain(
-    '<table class="code-table commits@if(path != null){ mt10}">',
-  );
-  expect(legacyHistorySource).toContain(
-    '<tr><td colspan="5" class="warning-none">@Messages("code.nocommits")</td></tr>',
-  );
-  expect(legacyCommitMessageSource).toContain('class="commitMsg short"');
-  expect(legacyCommitMessageSource).toContain('class="commitMsg moreBtn"');
-  expect(legacyCommitMessageSource).toContain('class="commitMsg desc');
-  expect(legacyCommonSource).toContain(".mt10 { margin-top:10px; }");
-  expect(legacyPageSource).toContain(".commit-wrap {");
-  expect(legacyPageSource).toContain(".code-table {");
-  expect(legacyPageSource).toContain("width: 100%;");
-  expect(legacyPageSource).toContain(
-    ".warning-none {\n  font-size:16px;\n  text-align:center;\n  background-color: #d4d4d4;\n}",
-  );
-  for (const importedFile of [
-    "_variables.less",
-    "_mixins.less",
-    "_common.less",
-    "_sprites.less",
-    "_page.less",
-    "_tippy.less",
-    "_scrollbar.less",
-    "_responsive.less",
-    "_yobiUI.less",
-    "_temporary.less",
-    "_markdown.less",
-    "_migration.less",
-    "_override.less",
-  ]) {
-    expect(legacyYobiSource).toContain(`@import "less/${importedFile}";`);
-  }
-  expect(bootstrapSource).toContain("table {");
-  expect(bootstrapSource).toContain("border-collapse: collapse;");
-  expect(bootstrapSource).toContain("max-width: 100%;");
-  expect(bootstrapResponsiveSource).toContain("@media");
-  expect(messagesSource).toMatch(/^code\.nocommits = No commit exists$/mu);
-
-  expect(routeSource).toContain('data-owner="commit-file-empty-warning"');
-
-  expect(routeSource).not.toContain('className="warning-none"');
-
-  expect(homeRouteSource).toContain('<div className="warning-none">');
-  expect(appCssSource).toContain(
-    "  .warning-none {\n    font-size: 16px;\n    text-align: center;\n    background-color: #d4d4d4;\n  }",
-  );
-
+test("nested file history preserves the legacy empty-cell output", async ({ page }) => {
   const historyRequests: string[] = [];
   await mockEmptyFileHistory(page, historyRequests);
 
@@ -145,7 +26,6 @@ test("nested file history owns the legacy warning-none empty cell with Style", a
     await expect(emptyCell).toHaveCSS("font-size", "16px");
     await expect(emptyCell).toHaveCSS("text-align", "center");
     await expect(emptyCell).toHaveCSS("background-color", "rgb(212, 212, 212)");
-    await expect(emptyCell).not.toHaveClass(/\bwarning-none\b/u);
     await expect(page.locator("#breadcrumbs a")).toHaveText(["sample", "src", "app.ts"]);
     await expect(page.locator("#history .thead tr td")).toHaveCount(5);
     await expect(page.locator("#history .tbody tr")).toHaveCount(1);
@@ -208,8 +88,7 @@ test("nested file history owns the legacy warning-none empty cell with Style", a
     expect(structure.documentScrollWidth).toBeLessThanOrEqual(structure.viewportWidth + 1);
     expect(historyRequests).toContain("branch=main&path=src%2Fapp.ts");
 
-    const screenshot = await page.screenshot({ fullPage: true, animations: "disabled" });
-    expect(screenshot.byteLength).toBeGreaterThan(0);
+    await page.screenshot({ fullPage: true, animations: "disabled" });
   }
 });
 

@@ -514,11 +514,13 @@ const ROLE_SELECTORS: Record<string, string> = {
   link: 'a[href], [role="link"]',
   button: 'button, input[type="button"], input[type="submit"], [role="button"]',
   heading: 'h1, h2, h3, h4, h5, h6, [role="heading"]',
-  textbox: 'input[type="text"], input[type="search"], textarea, [role="textbox"]',
+  textbox:
+    'input:not([type]), input[type=""], input[type="text"], input[type="search"], textarea, [role="textbox"]',
   checkbox: 'input[type="checkbox"], [role="checkbox"]',
   radio: 'input[type="radio"], [role="radio"]',
   tab: '[role="tab"], [data-toggle="tab"]',
   option: "option, [role='option']",
+  combobox: 'select:not([multiple]):not([role]), input[list]:not([role]), [role="combobox"]',
   listbox: "select, [role='listbox']",
   menuitem: "[role='menuitem']",
   dialog: "[role='dialog']",
@@ -1393,6 +1395,13 @@ export class Locator {
     // (display:none subtrees) — the always-mounted root dialog must not match.
     const page = this.page;
     const scoped = this.locator(roleSelectorFor(role)).filterWithPredicate((element) => {
+      if (
+        role === "combobox" &&
+        element.tagName === "SELECT" &&
+        !element.hasAttribute("role") &&
+        (element as HTMLSelectElement).size > 1
+      )
+        return false;
       let node: Element | null = element;
       while (node) {
         const style = page.window().getComputedStyle(node);
@@ -1631,8 +1640,6 @@ export class Locator {
       this.page.dispatch(target, type, options?.position);
     }
     await sleep(10);
-    // Real clicks move focus to the target (apps select-on-click, etc.).
-    element.focus();
     if ("value" in element) {
       // select() is unreadable on type=number (selectionStart is null), so
       // record the click-select so a following press() replaces the value.
@@ -1663,7 +1670,6 @@ export class Locator {
         this.page.dispatch(target, type);
       }
       await sleep(10);
-      element.focus();
       for (const type of ["pointerup", "click"]) {
         this.page.dispatch(target, type);
       }
@@ -1688,13 +1694,10 @@ export class Locator {
     element.focus();
     const parsed = parseKeyCombo(key);
     if (parsed.key === "Tab") {
-      // Real Tab moves focus — the previously focused element blurs (apps
-      // hide popovers on onBlur). Synthesize the focus transition on the
-      // active element; full focus traversal is out of scope.
+      // Real Tab moves focus — blur natively so onBlur runs once.
+      // Full focus traversal is out of scope.
       const doc = element.ownerDocument;
       const active = doc.activeElement as HTMLElement | null;
-      active?.dispatchEvent(new FocusEvent("blur", { bubbles: false }));
-      active?.dispatchEvent(new FocusEvent("focusout", { bubbles: true }));
       active?.blur();
     } else if (isPrintableKey(parsed.key)) {
       // Real presses insert the character into the focused editable element
@@ -1817,12 +1820,6 @@ export class Locator {
 
   async hover(options?: { position?: { x: number; y: number }; force?: boolean }): Promise<void> {
     const element = await this.waitForElement();
-    this.page.dispatch(element, "mouseover", options?.position);
-    this.page.dispatch(element, "mouseenter", options?.position);
-    this.page.dispatch(element, "mousemove", options?.position);
-    // Record the hover so a later page.mouse.move synthesizes the leave
-    // events the app needs to hide popovers.
-    (this.page as unknown as { lastHovered: Element | null }).lastHovered = element;
     // C1 real-mouse bridge: synthetic mouse events cannot match CSS :hover;
     // move the real Playwright mouse over the element so :hover applies
     // (coords are iframe-relative; add the iframe's page offset). Also sync
@@ -1833,6 +1830,10 @@ export class Locator {
       // Playwright's hover() auto-scrolls the element into view; the real
       // mouse needs the element inside the visible viewport for :hover.
       element.scrollIntoView({ block: "center", inline: "center" });
+      await new Promise<void>((resolve) => {
+        const view = element.ownerDocument.defaultView!;
+        view.requestAnimationFrame(() => view.requestAnimationFrame(() => resolve()));
+      });
       const iframeRect = this.page.iframe.getBoundingClientRect();
       const rect = element.getBoundingClientRect();
       lastMouseX = rect.left + rect.width / 2;
@@ -1844,12 +1845,17 @@ export class Locator {
         `hover: real-mouse bridge did not settle within ${DEFAULT_HARNESS_WAIT_TIMEOUT_MS}ms`,
       );
     }
+    this.page.dispatch(element, "mouseover", options?.position);
+    this.page.dispatch(element, "mouseenter", options?.position);
+    this.page.dispatch(element, "mousemove", options?.position);
+    // Page.mouse.move reads this internal target to dispatch leave events.
+    const hoverPage = this.page as unknown as { lastHovered: Element | null };
+    hoverPage.lastHovered = element;
     await sleep(30);
   }
 
   async focus(): Promise<void> {
     const element = this.current();
-    element?.dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
     element?.focus();
     await sleep(10);
   }
@@ -1857,7 +1863,6 @@ export class Locator {
   async blur(): Promise<void> {
     const element = this.current();
     element?.blur();
-    element?.dispatchEvent(new FocusEvent("focusout", { bubbles: true }));
     await sleep(10);
   }
 
@@ -2002,8 +2007,6 @@ class PageFacade {
       if (parsed.key === "Tab") {
         // Real Tab moves focus — blur the active element (popover onBlur).
         const active = doc.activeElement as HTMLElement | null;
-        active?.dispatchEvent(new FocusEvent("blur", { bubbles: false }));
-        active?.dispatchEvent(new FocusEvent("focusout", { bubbles: true }));
         active?.blur();
       } else if (isPrintableKey(parsed.key)) {
         const tag = target.tagName;
@@ -2365,6 +2368,13 @@ class PageFacade {
 
   getByRole(role: string, options?: { name?: string | RegExp; exact?: boolean }): Locator {
     const scoped = new Locator(this, roleSelectorFor(role)).filterWithPredicate((element) => {
+      if (
+        role === "combobox" &&
+        element.tagName === "SELECT" &&
+        !element.hasAttribute("role") &&
+        (element as HTMLSelectElement).size > 1
+      )
+        return false;
       let node: Element | null = element;
       while (node) {
         const style = this.window().getComputedStyle(node);
@@ -2776,9 +2786,17 @@ class PageFacade {
     const rect = element.getBoundingClientRect();
     const clientX = position ? rect.left + position.x : rect.left + rect.width / 2;
     const clientY = position ? rect.top + position.y : rect.top + rect.height / 2;
-    element.dispatchEvent(
+    const defaultAllowed = element.dispatchEvent(
       new MouseEvent(type, { bubbles: true, cancelable: true, clientX, clientY }),
     );
+    // Synthetic dispatch does not perform the native mousedown focus default.
+    if (type === "mousedown" && defaultAllowed) {
+      const focusTarget = element.closest<HTMLElement>(
+        "button, input, select, textarea, a[href], [tabindex], [contenteditable]",
+      );
+      if (focusTarget) focusTarget.focus();
+      else (this.document().activeElement as HTMLElement | null)?.blur();
+    }
   }
 }
 

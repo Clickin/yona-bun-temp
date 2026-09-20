@@ -1142,28 +1142,6 @@ fn oauth_provider_configured<'a>(
     Some(config)
 }
 
-/// Test/dev callback shortcut: a callback carrying explicit identity query
-/// params skips the token exchange (used by contract tests).
-fn oauth_callback_identity(query: &HashMap<String, String>) -> Option<(String, String, String)> {
-    let provider_user_id = query
-        .get("providerUserId")
-        .or_else(|| query.get("provider_user_id"))
-        .or_else(|| query.get("id"))
-        .map(|value| value.trim().to_string())
-        .filter(|value| !value.is_empty())?;
-    let email = query
-        .get("email")
-        .map(|value| value.trim().to_ascii_lowercase())
-        .filter(|value| !value.is_empty())?;
-    let name = query
-        .get("name")
-        .or_else(|| query.get("displayName"))
-        .map(|value| value.trim().to_string())
-        .filter(|value| !value.is_empty())
-        .unwrap_or_else(|| email.clone());
-    Some((provider_user_id, email, name))
-}
-
 async fn fetch_oauth_provider_identity(
     kind: crate::oauth::OAuthProviderKind,
     config: &crate::OAuthProviderRuntimeConfig,
@@ -1355,9 +1333,8 @@ pub(crate) async fn direct_authenticate_provider(
         return direct_unsupported_authenticate_provider(provider, service).await;
     };
 
-    let is_callback = query.contains_key("code")
-        || query.contains_key("error")
-        || oauth_callback_identity(&query).is_some();
+    let is_callback =
+        query.contains_key("code") || query.contains_key("error") || query.contains_key("state");
     if is_callback {
         let state_cookie = headers
             .get(axum::http::header::COOKIE)
@@ -1398,36 +1375,42 @@ pub(crate) async fn direct_authenticate_provider(
         return direct_authenticate_provider_callback_denied(provider, service).await;
     }
 
-    let (provider_user_id, email, name) = if let Some(identity) = oauth_callback_identity(&query) {
-        identity
-    } else {
-        let Some(code) = query
-            .get("code")
-            .map(|value| value.trim())
-            .filter(|value| !value.is_empty())
-        else {
-            return configured_oauth_start_redirect(&provider, &config, &service);
+    let Some(code) = query
+        .get("code")
+        .map(|value| value.trim())
+        .filter(|value| !value.is_empty())
+    else {
+        return if is_callback {
+            direct_authenticate_provider_callback_denied(provider, service).await
+        } else {
+            configured_oauth_start_redirect(&provider, &config, &service)
         };
-        let redirect_uri = format!(
-            "{}{}",
-            service.public_origin,
-            base_path_href(&service.base_path, &format!("/authenticate/{provider}"))
-        );
-        let Some(kind) = crate::oauth::OAuthProviderKind::from_str(&provider) else {
-            return direct_unsupported_authenticate_provider(provider, service).await;
-        };
-        let state = query
-            .get("state")
-            .map(|value| value.trim().to_string())
-            .filter(|value| !value.is_empty());
-        match fetch_oauth_provider_identity(kind, &config, code, &redirect_uri, state.as_deref())
-            .await
-        {
-            Ok(identity) => (identity.provider_user_id, identity.email, identity.name),
-            Err(error) => {
-                tracing::warn!(provider = %provider, error = %error, "OAuth provider callback exchange failed");
-                return direct_authenticate_provider_callback_denied(provider, service).await;
-            }
+    };
+    let redirect_uri = format!(
+        "{}{}",
+        service.public_origin,
+        base_path_href(&service.base_path, &format!("/authenticate/{provider}"))
+    );
+    let Some(kind) = crate::oauth::OAuthProviderKind::from_str(&provider) else {
+        return direct_unsupported_authenticate_provider(provider, service).await;
+    };
+    let state = query
+        .get("state")
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty());
+    let (provider_user_id, email, name) = match fetch_oauth_provider_identity(
+        kind,
+        &config,
+        code,
+        &redirect_uri,
+        state.as_deref(),
+    )
+    .await
+    {
+        Ok(identity) => (identity.provider_user_id, identity.email, identity.name),
+        Err(error) => {
+            tracing::warn!(provider = %provider, error = %error, "OAuth provider callback exchange failed");
+            return direct_authenticate_provider_callback_denied(provider, service).await;
         }
     };
 
@@ -1435,7 +1418,7 @@ pub(crate) async fn direct_authenticate_provider(
         return direct_unsupported_authenticate_provider(provider, service).await;
     };
     let session = service.session_manager.ensure_anonymous_session(&headers);
-    let password_hash = match hash(format!("{provider}:{provider_user_id}:oauth"), DEFAULT_COST) {
+    let password_hash = match hash(random_storage_token(), DEFAULT_COST) {
         Ok(password_hash) => password_hash,
         Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
     };

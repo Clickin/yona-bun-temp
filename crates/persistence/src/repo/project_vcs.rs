@@ -115,7 +115,7 @@ impl AppRepositoryImpl<'_> {
         }
 
         let receivers = self
-            .commit_notification_receiver_ids(project_id, actor_id, "NEW_COMMIT")
+            .commit_notification_receiver_ids(project_id, actor_id, "NEW_COMMIT", None)
             .await?;
         self.create_notification_event_for_receivers(
             actor_id,

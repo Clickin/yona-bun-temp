@@ -1,7 +1,6 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
-  type ChangeEvent,
   type FormEvent,
   type HTMLAttributes,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -20,6 +19,7 @@ import { apiQueryKeys } from "../../../api/query-keys";
 import { IssueLabel } from "../../../components/issue-label";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
+import { OrganizationProjectPicker } from "../-project-picker";
 
 type OrganizationIssuesSearch = {
   assigneeId: string;
@@ -151,7 +151,7 @@ function OrganizationIssuesBody({
     event.preventDefault();
     void navigate({ to: organizationIssuesRoutePath(organizationName, nextSearch) });
   };
-  const submitSearchForm = (form: HTMLFormElement) => {
+  const submitSearchForm = (form: HTMLFormElement, projectNames?: string[]) => {
     const formData = new FormData(form);
     void navigate({
       to: organizationIssuesRoutePath(organizationName, {
@@ -163,9 +163,11 @@ function OrganizationIssuesBody({
         orderBy: stringFormValue(formData, "orderBy", "createdDate"),
         orderDir: stringFormValue(formData, "orderDir", "desc"),
         pageNum: 1,
-        projectNames: formData
-          .getAll("projectNames[]")
-          .filter((value): value is string => typeof value === "string"),
+        projectNames:
+          projectNames ??
+          formData
+            .getAll("projectNames[]")
+            .filter((value): value is string => typeof value === "string"),
         state: stringFormValue(formData, "state") === "closed" ? "closed" : "open",
       }),
     });
@@ -173,11 +175,6 @@ function OrganizationIssuesBody({
   const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     submitSearchForm(event.currentTarget);
-  };
-  const handleProjectsChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    if (event.currentTarget.form) {
-      submitSearchForm(event.currentTarget.form);
-    }
   };
   const handleQuickSearch = (
     event: MouseEvent<HTMLButtonElement>,
@@ -244,22 +241,11 @@ function OrganizationIssuesBody({
                   method="get"
                   onSubmit={handleSearchSubmit}
                 >
-                  <select
-                    id="projects"
-                    name="projectNames[]"
-                    multiple
-                    data-owner="organization-issues-project-select"
-                    data-placeholder={t("organization.choose.projects")}
-                    data-container-css-class="fullsize"
-                    defaultValue={search.projectNames}
-                    onChange={handleProjectsChange}
-                  >
-                    {issues.visibleProjects.map((project) => (
-                      <option value={project.projectName} key={project.projectName}>
-                        {project.projectName}
-                      </option>
-                    ))}
-                  </select>
+                  <OrganizationProjectPicker
+                    projects={issues.visibleProjects}
+                    value={search.projectNames}
+                    onChange={(projectNames, form) => submitSearchForm(form, projectNames)}
+                  />
                   <hr />
                   <input type="hidden" name="orderBy" value={search.orderBy} />
                   <input type="hidden" name="orderDir" value={search.orderDir} />
@@ -1074,9 +1060,9 @@ function organizationIssuesSearchFromString(searchString: string) {
     orderDir: stringSearch(search.get("orderDir"), "desc"),
     pageNum: Number(search.get("pageNum")) || 1,
     preservedParams: preservedSearchEntries(search),
-    projectNames: [...search.getAll("projectNames"), ...search.getAll("projectNames[]")].filter(
-      (projectName) => projectName !== "[]",
-    ),
+    projectNames: [
+      ...new Set([...search.getAll("projectNames"), ...search.getAll("projectNames[]")]),
+    ].filter((projectName) => projectName !== "[]"),
     state: stringSearch(search.get("state"), "open") === "closed" ? "closed" : "open",
   } satisfies OrganizationIssuesSearch;
 }

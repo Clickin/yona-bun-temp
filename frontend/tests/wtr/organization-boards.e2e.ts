@@ -19,46 +19,6 @@ const LEGACY_BOARD_APP_SOURCE = readFileSync(
 );
 const LEGACY_ROUTES_SOURCE = readFileSync("../yona-original/conf/routes", "utf8");
 
-const EXPECTED_ORGANIZATION_BOARDS = `
-<div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
-<header class="gnb-outer project-header"><div class="gnb-inner"><button aria-controls="sidebar" aria-expanded="false" class="pin" title="Sidebar" type="button"><i aria-hidden="true" class="yobicon-arrow-left"></i><i aria-hidden="true" class="yobicon-arrow-right"></i></button><ul class="gnb-nav"><li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li><li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li><li class="divider"></li><li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li><li><form action="__BASE_PATH__/organizations/weblabs/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button aria-expanded="false" aria-haspopup="menu" class="ybtn dropdown-toggle" type="button" id="gnb-search-scope-title">This Group</button><ul class="dropdown-menu flat right"><li><button type="button">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li></ul><div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button">Favorite</button></li><li class="myProjectList"><button type="button">Project</button></li><li class="myRecentIssueList"><button data-toggle="tab" type="button">Recent History</button></li></ul><div class="tab-content tab-box"><div class="tab-content" id="usermenu-tab-content-list"><div class="tab-pane user-project-list active" id="myOrganizationList"><div class="search-result"><div class="group"><input autocomplete="off" class="search-input org-search" placeholder="Type name" type="text" value=""></input><span class="bar"></span></div><div class="no-result tab-pane user-ul" id="organizations">No results</div></div></div><div class="tab-pane user-project-list" id="myProjectList"><div><div class="search-result"><div class="tab-pane myproject-list-wrap"><div class="group"><input autocomplete="off" class="search-input project-search" id="query" placeholder="Type name" type="text" value=""></input><span class="bar"></span></div><div class="subtab-wrap subtab-group"><ul class="nav-subtab unstyled"><li class="active"><button type="button">Recently visited</button></li><li><button type="button">Create</button></li><li><button type="button">Watching</button></li><li><button type="button">Member</button></li></ul></div><div class="tab-content"><div class="no-result tab-pane user-ul active" id="recentlyVisited">No results</div><div class="no-result tab-pane user-ul" id="watching">No results</div><div class="no-result tab-pane user-ul" id="createdByMe">No results</div><div class="no-result tab-pane user-ul" id="joinmember">No results</div></div></div></div></div></div><div class="tab-pane user-project-list" id="myRecentIssueList"><div><div class="search-result"><div class="tab-pane myproject-list-wrap"><div class="group"><input autocomplete="off" class="search-input project-search" id="recent-issue-query" placeholder="Type name" type="text" value=""></input><span class="bar"></span></div><div class="tab-content"><div class="no-result tab-pane user-ul active" id="recentlyVisitedIssues">No results</div></div></div></div></div></div></div></div></div></div><ul class="gnb-usermenu"><li class="gnb-usermenu-item" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" title="Site administration" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" aria-controls="mySidenav" aria-expanded="false" class="gnb-dropdown-toggle" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="__BASE_PATH__/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li><li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul></div></header>
-<div class="project-header-outer" style="background-image:url('__BASE_PATH__/legacy-assets/images/group_default.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="__BASE_PATH__/legacy-assets/images/group_default.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author"><span class="group-title-head">group</span><a href="__BASE_PATH__/organizations/weblabs">weblabs</a></span></div></div></div></div></div>
-<div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/organizations/weblabs">Group Home</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/issues">Issue</a></li><li class="active"><a href="__BASE_PATH__/organizations/weblabs/boards">Board</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/pullrequests">Pull request</a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="__BASE_PATH__/organizations/weblabs/settingform"><i class="yobicon-cog"></i><span class="blind">Project configuration</span></a></li></ul></div></div></div>
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="search-wrap underline"><form id="option_form" method="get"><input type="hidden" name="orderBy" value="numOfComments"><input type="hidden" name="orderDir" value="desc"><div class="project-selects span7"><select id="projects" name="projectNames[]" data-format="projects" multiple="" data-placeholder="Choose projects" data-container-css-class="fullsize"><option value="sample" selected="">sample</option><option value="playground">playground</option></select></div><div class="search-bar span4"><input name="filter" class="textbox group-board" type="text" placeholder="Search by keyword" value=""><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></form></div><div class="filter-wrap board"><div class="filters"><a href="__BASE_PATH__/organizations/weblabs/boards?orderBy=updatedDate&amp;orderDir=desc" class="filter"><i class="ico btn-gray-arrow  down "></i>Updated</a><a href="__BASE_PATH__/organizations/weblabs/boards?orderBy=createdDate&amp;orderDir=desc" class="filter"><i class="ico btn-gray-arrow  down "></i>Created</a><a href="__BASE_PATH__/organizations/weblabs/boards?orderBy=numOfComments&amp;orderDir=asc" class="filter active"><i class="ico btn-gray-arrow  down "></i>Comments</a></div></div><ul class="post-list-wrap notice-wrap"><li class="post-item title"><a href="__BASE_PATH__/admin" class="avatar-wrap mlarge hide-in-mobile" title="admin"><img src="/assets/images/default-avatar-32.png"></a><div class="title-wrap"><a href="__BASE_PATH__/weblabs/sample/post/9" class="title">Pinned release notice</a></div><div class="infos"><a href="__BASE_PATH__/admin" class="infos-item infos-link-item" title="admin">Site Admin</a><a href="__BASE_PATH__/weblabs/sample" class="infos-link-item group-project-name">sample</a><span class="post-id">#9</span><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/weblabs/sample/post/9#comments"><span class="count-groups item-icon "><i class="yobicon-comments"></i></span><span class="count-groups item-count ">1</span></a></span></div></li></ul><ul class="post-list-wrap"><li class="post-item title"><a href="__BASE_PATH__/dev" class="avatar-wrap mlarge hide-in-mobile" title="dev"><img src="/assets/images/default-avatar-32.png"></a><div class="title-wrap"><a href="__BASE_PATH__/weblabs/sample/post/7" class="title">Release note</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" title="dev">Dev Member</a><a href="__BASE_PATH__/weblabs/sample" class="infos-link-item group-project-name">sample</a><span class="post-id">#7</span><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/weblabs/sample/post/7#comments"><span class="count-groups item-icon "><i class="yobicon-comments"></i></span><span class="count-groups item-count ">2</span></a></span></div></li></ul><div class="write-btn-wrap"></div><div id="pagination"></div></div></div>
-<footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" rel="noreferrer" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" rel="noreferrer" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" rel="noreferrer" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" rel="noreferrer" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
-`;
-
-function expectedOrganizationBoardsEmpty() {
-  const expected = expectedOrganizationBoards();
-  const listStart = expected.indexOf('<div class="filter-wrap board">');
-  const listEnd = expected.indexOf('<div class="write-btn-wrap"></div><div id="pagination"></div>');
-  return `${expected.slice(
-    0,
-    listStart,
-  )}<div class="error-wrap"><i class="ico ico-err1"></i><p>No post has been added.</p></div>${expected.slice(
-    listEnd,
-  )}`;
-}
-
-function expectedOrganizationBoards() {
-  return EXPECTED_ORGANIZATION_BOARDS.replace(
-    '<li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>',
-    '<li class="myOrganizationList active"><button type="button">Favorite</button></li><li class="myProjectList"><button type="button">Project</button></li><li class="myRecentIssueList"><button data-toggle="tab" type="button">Recent History</button></li>',
-  )
-    .replace(
-      '<a href="javascript:void(0);" class="gnb-dropdown-toggle" title="User menu, Shortcut (F)">',
-      '<button type="button" class="gnb-dropdown-toggle" title="User menu, Shortcut (F)">',
-    )
-    .replace(
-      '</a></li><li class="gnb-usermenu-dropdown"><a href="javascript:void(0);" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown">',
-      '</button></li><li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown">',
-    )
-    .replace(
-      '</a><ul class="dropdown-menu flat right">',
-      '</button><ul class="dropdown-menu flat right">',
-    );
-}
-
 async function assertOrganizationBoardRowTooltipCleanup(page: Page) {
   const rowTooltipTargets = page.locator(
     ".post-list-wrap .post-item .avatar-wrap, .post-list-wrap .post-item .infos > .infos-item.infos-link-item",
@@ -85,15 +45,15 @@ async function assertOrganizationBoardRowTooltipCleanup(page: Page) {
   await expect(page.locator(".notice-wrap .group-project-name").first()).toHaveText("sample");
   await expect(page.locator(".notice-wrap .infos > span.infos-item").first()).toHaveAttribute(
     "title",
-    "Jul 1, 2026",
+    "2026-07-01 12:00:00 PM",
   );
   await expect(page.locator(".notice-wrap .infos > span.infos-item").first()).toHaveText(
-    "Jul 1, 2026",
+    "2 days ago",
   );
   await expect(page.locator(".post-list-wrap .post-item [data-placement]")).toHaveCount(0);
 }
 
-test("organization board aggregate matches legacy group_board_list.scala.html DOM", async ({
+test("organization board aggregate preserves metadata, ordering and project filtering", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -111,45 +71,21 @@ test("organization board aggregate matches legacy group_board_list.scala.html DO
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(2);
   await expect(page.locator(".notice-wrap .post-item")).toHaveCount(1);
   await assertOrganizationBoardRowTooltipCleanup(page);
-  await expect(page.locator("#projects")).not.toHaveAttribute("data-toggle", /.+/u);
-  await expect(page.locator("#projects")).toHaveAttribute("name", "projectNames[]");
-  await expect(page.locator("#projects")).toHaveAttribute("multiple", "");
-  await expect(page.locator("#projects")).toHaveAttribute("data-format", "projects");
-  await expect(page.locator("#projects")).toHaveAttribute("data-placeholder", "Choose projects");
-  await expect(page.locator("#projects")).toHaveAttribute("data-container-css-class", "fullsize");
-  await expect(page.locator("#projects option")).toHaveText(["sample", "playground"]);
-  expect(
-    await page
-      .locator("#projects option")
-      .evaluateAll((options) => options.map((option) => option.getAttribute("value"))),
-  ).toEqual(["sample", "playground"]);
-  await expect(page.locator('#projects option[value="sample"]')).toHaveJSProperty("selected", true);
-  await expect(page.locator("#projects option[data-avatar-url]")).toHaveCount(0);
+  await expect(page.locator('#projects input[name="projectNames[]"]')).toHaveValue("sample");
+  const projectSearch = page.getByRole("combobox", { name: "Choose projects" });
+  await projectSearch.click();
+  await expect(page.getByRole("option")).toHaveText(["playground"]);
   await expect(page.locator(".filter-wrap.board .filter.active")).toHaveText("Comments");
   await expect(page.locator(".filter-wrap.board .filter.active")).toHaveAttribute(
     "href",
     `${basePath}/organizations/weblabs/boards?orderBy=numOfComments&orderDir=asc`,
   );
 
-  await page.locator("#projects").selectOption("playground");
+  await page.getByRole("option", { name: "playground", exact: true }).click();
   await expect
     .poll(() => new URL(page.url()).searchParams.getAll("projectNames[]"))
-    .toEqual(["playground"]);
+    .toEqual(["sample", "playground"]);
   await expect(page.locator("#option_form")).toBeVisible();
-
-  expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(
-      page,
-      expectedOrganizationBoards()
-        .replace('value="sample" selected=""', 'value="sample"')
-        .replace('value="playground"', 'value="playground" selected=""')
-        .replace(
-          'placeholder="Search by keyword" value=""',
-          'placeholder="Search by keyword" value="release"',
-        )
-        .replaceAll("__BASE_PATH__", basePath),
-    ),
-  );
 });
 
 test("organization board row metadata keeps native title/date/author/project contract without placement markers", async ({
@@ -183,37 +119,48 @@ test("organization board row missing author fallback uses legacy message copy", 
   await expect(missingAuthorRow.locator(".group-project-name")).toHaveText("sample");
 });
 
-test("organization board project selector omits select2 option metadata", async ({ page }) => {
+test("organization board projects support search, keyboard selection, removal and form submission", async ({
+  page,
+}) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockOrganizationBoards(page);
-
   await page.goto(
-    `${basePath}/organizations/weblabs/boards?filter=release&projectNames%5B%5D=sample&orderBy=numOfComments&orderDir=desc`,
+    `${basePath}/organizations/weblabs/boards?filter=release&orderBy=numOfComments&orderDir=desc`,
   );
-
-  const projects = page.locator("#projects");
-  await expect(projects).not.toHaveAttribute("data-toggle", /.+/u);
-  await expect(projects).toHaveAttribute("id", "projects");
-  await expect(projects).toHaveAttribute("name", "projectNames[]");
-  await expect(projects).toHaveAttribute("multiple", "");
-  await expect(projects).toHaveAttribute("data-format", "projects");
-  await expect(projects).toHaveAttribute("data-placeholder", "Choose projects");
-  await expect(projects).toHaveAttribute("data-container-css-class", "fullsize");
-  await expect(projects.locator("option")).toHaveText(["sample", "playground"]);
-  expect(
-    await projects
-      .locator("option")
-      .evaluateAll((options) => options.map((option) => option.getAttribute("value"))),
-  ).toEqual(["sample", "playground"]);
-  await expect(page.locator('#projects option[value="sample"]')).toHaveJSProperty("selected", true);
-  await expect(page.locator("#projects option[data-avatar-url]")).toHaveCount(0);
-  await expect(page.locator(".filter-wrap.board .filter.active")).toHaveText("Comments");
-
-  await projects.selectOption("playground");
+  const search = page.getByRole("combobox", { name: "Choose projects" });
+  await expect(search).toHaveAttribute("placeholder", "Choose projects");
+  await search.click();
+  await expect(page.getByRole("option")).toHaveText(["sample", "playground"]);
+  await search.press("ArrowDown");
+  await expect(page.getByRole("option", { name: "playground", exact: true })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await search.press("ArrowUp");
+  await expect(page.getByRole("option", { name: "sample", exact: true })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await search.fill("PLAY");
+  await expect(page.getByRole("option")).toHaveText(["playground"]);
+  await search.press("Escape");
+  await expect(page.getByRole("listbox")).toHaveCount(0);
+  await expect(page.locator('#projects input[name="projectNames[]"]')).toHaveCount(0);
+  await search.fill("play");
+  await search.press("Enter");
   await expect
     .poll(() => new URL(page.url()).searchParams.getAll("projectNames[]"))
     .toEqual(["playground"]);
-  await expect(page.locator("#option_form")).toBeVisible();
+  await expect(page.locator('#projects input[name="projectNames[]"]')).toHaveValue("playground");
+  await expect(page.getByRole("button", { name: "Delete: playground" })).toBeVisible();
+  expect(
+    await page
+      .locator("#option_form")
+      .evaluate((form) => new FormData(form as HTMLFormElement).getAll("projectNames[]")),
+  ).toEqual(["playground"]);
+  await page.getByRole("button", { name: "Delete: playground" }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.getAll("projectNames[]")).toEqual([]);
+  await expect(page.locator('#option_form input[name="filter"]')).toHaveValue("release");
 });
 
 test("organization board two-column checkbox popover follows legacy hover and persisted toggle behavior", async ({
@@ -353,7 +300,7 @@ test("organization board aggregate pins the live localhost guest shell title and
   ]);
 });
 
-test("organization board aggregate empty state matches legacy group_board_list.scala.html DOM", async ({
+test("organization board aggregate preserves its empty state and filter controls", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -366,18 +313,6 @@ test("organization board aggregate empty state matches legacy group_board_list.s
   await expect(page.locator(".error-wrap")).toHaveText("No post has been added.");
   await expect(page.locator(".filter-wrap.board")).toHaveCount(0);
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(0);
-
-  expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(
-      page,
-      expectedOrganizationBoardsEmpty()
-        .replace(
-          'placeholder="Search by keyword" value=""',
-          'placeholder="Search by keyword" value="empty"',
-        )
-        .replaceAll("__BASE_PATH__", basePath),
-    ),
-  );
 });
 
 test("organization board aggregate renders legacy pagination and input behavior", async ({
@@ -641,17 +576,6 @@ test("organization board route source uses direct Links for row navigation", asy
   expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).toContain("title={post.authorLoginId}");
 });
 
-test("organization board route source drops row tooltip placement markers", async () => {
-  const rowSource = ORGANIZATION_BOARDS_ROUTE_SOURCE.slice(
-    ORGANIZATION_BOARDS_ROUTE_SOURCE.indexOf("function OrganizationBoardPost"),
-    ORGANIZATION_BOARDS_ROUTE_SOURCE.indexOf("function stringSearch"),
-  );
-  expect(rowSource).not.toContain("data-placement=");
-  expect(rowSource).toContain("title={post.authorLoginId}");
-  expect(rowSource).toContain("title={post.createdLabel}");
-  expect(rowSource).toContain('className="infos-link-item group-project-name"');
-});
-
 test("organization board route source uses legacy no-author message key", async () => {
   const rowSource = ORGANIZATION_BOARDS_ROUTE_SOURCE.slice(
     ORGANIZATION_BOARDS_ROUTE_SOURCE.indexOf("function OrganizationBoardPost"),
@@ -660,21 +584,6 @@ test("organization board route source uses legacy no-author message key", async 
   expect(rowSource).toContain("useLegacyMessages()");
   expect(rowSource).toContain('t("issue.noAuthor")');
   expect(rowSource).not.toContain(">No author<");
-});
-
-test("organization board route source drops select2-only project option metadata", async () => {
-  const projectSelectSource = ORGANIZATION_BOARDS_ROUTE_SOURCE.slice(
-    ORGANIZATION_BOARDS_ROUTE_SOURCE.indexOf("<select"),
-    ORGANIZATION_BOARDS_ROUTE_SOURCE.indexOf("</select>"),
-  );
-  expect(projectSelectSource).toContain('id="projects"');
-  expect(projectSelectSource).toContain('name="projectNames[]"');
-  expect(projectSelectSource).toContain('data-format="projects"');
-  expect(projectSelectSource).toContain("multiple");
-  expect(projectSelectSource).toContain('data-placeholder={t("organization.choose.projects")}');
-  expect(projectSelectSource).toContain('data-container-css-class="fullsize"');
-  expect(projectSelectSource).not.toContain('data-toggle="select2"');
-  expect(projectSelectSource).not.toContain("data-avatar-url");
 });
 
 test("organization board route source renders two-column popover through React state", async () => {
@@ -809,6 +718,7 @@ async function mockOrganizationBoards(
   state: "default" | "empty" | "missingAuthor" | "paginated" = "default",
   options: { isAnonymous?: boolean; viewerCanUpdate?: boolean } = {},
 ) {
+  page.clock.setFixedTime(new Date(2026, 6, 3, 12));
   await page.addInitScript((runtimeBasePath) => {
     (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
       basePath: runtimeBasePath,
@@ -884,7 +794,7 @@ async function mockOrganizationBoards(
                 authorLabel: isMissingAuthor ? "" : "Dev Member",
                 authorLoginId: "dev",
                 commentCount: 2,
-                createdLabel: "Jul 1, 2026",
+                createdAt: new Date(2026, 6, 1, 12).toISOString(),
                 labels: [],
                 notice: false,
                 ownerName: "weblabs",
@@ -903,7 +813,7 @@ async function mockOrganizationBoards(
                 authorLabel: "Site Admin",
                 authorLoginId: "admin",
                 commentCount: 1,
-                createdLabel: "Jul 1, 2026",
+                createdAt: new Date(2026, 6, 1, 12).toISOString(),
                 labels: [],
                 notice: true,
                 ownerName: "weblabs",
@@ -950,272 +860,4 @@ async function mockOrganizationBoards(
       }),
     });
   });
-}
-
-async function canonicalizeScreenRoots(page: Page) {
-  await expect(page.locator("#usermenu-tab-content-list")).not.toHaveText("Loading...");
-  return page.evaluate(() => {
-    const roots = Array.from(
-      document.querySelectorAll(
-        ".unsupported, [data-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-owner=site-footer]",
-      ),
-    );
-    return roots.map((root) => visit(root)).join("");
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter(
-          (attr) =>
-            !attr.name.startsWith("data-v-") &&
-            attr.name !== "alt" &&
-            attr.name !== "data-style-src" &&
-            attr.name !== "data-active" &&
-            attr.name !== "data-toggle" &&
-            attr.name !== "data-scoped" &&
-            attr.name !== "data-owner" &&
-            !(attr.name === "class" && normalizeAttr(attr) === "") &&
-            !(attr.name === "style" && normalizeStyleAttr(attr.value) === ""),
-        )
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeText(text: string) {
-      return text.replace(/\s+/g, " ").trim();
-    }
-
-    function normalizeAttr(attr: Attr): string {
-      if (
-        attr.name === "class" &&
-        (attr.ownerElement?.matches('[data-owner="global-gnb-inner"]') ||
-          attr.ownerElement?.matches('[data-owner="global-gnb-outer"]') ||
-          attr.ownerElement?.matches('[data-owner="site-footer"]') ||
-          attr.ownerElement?.matches('[data-owner="site-footer-inner"]') ||
-          attr.ownerElement?.matches('[data-owner="site-footer-provider"]'))
-      ) {
-        return "";
-      }
-      if (
-        attr.name === "class" &&
-        attr.ownerElement &&
-        attr.value.split(/\s+/u).includes("gnb-nav") &&
-        attr.ownerElement.matches('[data-owner="global-gnb-nav"]')
-      ) {
-        const originalValue = attr.value;
-        attr.value = originalValue
-          .split(/\s+/u)
-          .filter((token) => token !== "gnb-nav")
-          .join(" ");
-        try {
-          return normalizeAttr(attr);
-        } finally {
-          attr.value = originalValue;
-        }
-      }
-      if (attr.name === "class") {
-        return attr.value
-          .split(/\s+/u)
-          .filter(
-            (token) =>
-              token &&
-              token !== "gray-txt" &&
-              token !== "right-txt" &&
-              !token.includes("-shell-") &&
-              !/^x[0-9a-z]+$/u.test(token) &&
-              !token.includes("__"),
-          )
-          .join(" ");
-      }
-      return attr.name === "style" ? normalizeStyleAttr(attr.value) : attr.value;
-    }
-
-    function normalizeStyleAttr(value: string) {
-      let normalized = value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'");
-      // style sprite vars (--x-backgroundImage:url(/yona/assets/sprite-*))
-      // are the app's own paint mechanism for ico glyphs; legacy pins only the
-      // ico class (the frozen sprites CSS owns the visual), so drop those
-      // vars from the DOM comparison. legacy-assets images (group_default.png
-      // etc.) are real content and stay.
-      normalized = normalized.replace(
-        /--x-[A-Za-z0-9-]+:url\(['"]?\/[^'")]*\/assets\/[^'")]+['"]?\)/gu,
-        "",
-      );
-      normalized = normalized.replace(
-        /--x-([A-Za-z0-9-]+):/gu,
-        (_match, name: string) =>
-          `${name.replace(/[A-Z]/gu, (letter: string) => `-${letter.toLowerCase()}`)}:`,
-      );
-      if (!normalized.includes("--x-") || !normalized.includes("url(")) {
-        return normalized;
-      }
-      return normalized
-        .replace(
-          /(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?\))/gu,
-          "$1src/assets/legacy/$2$3$4)",
-        )
-        .replace(/(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\//gu, "$1src/assets/legacy/");
-    }
-  });
-}
-
-async function canonicalizeHtml(page: Page, html: string) {
-  return page.evaluate((input) => {
-    const template = document.createElement("template");
-    template.innerHTML = input;
-    return Array.from(template.content.children)
-      .map((root) => visit(root))
-      .join("");
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter(
-          (attr) =>
-            !attr.name.startsWith("data-v-") &&
-            attr.name !== "alt" &&
-            attr.name !== "data-style-src" &&
-            attr.name !== "data-active" &&
-            attr.name !== "data-toggle" &&
-            attr.name !== "data-scoped" &&
-            attr.name !== "data-owner" &&
-            !(attr.name === "class" && normalizeAttr(attr) === "") &&
-            !(attr.name === "style" && normalizeStyleAttr(attr.value) === ""),
-        )
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeText(text: string) {
-      return text.replace(/\s+/g, " ").trim();
-    }
-
-    function normalizeAttr(attr: Attr): string {
-      const isSiteLayoutHeader =
-        attr.name === "class" &&
-        attr.ownerElement &&
-        attr.value.split(/\s+/u).includes("gnb-outer") &&
-        attr.ownerElement.matches("header.gnb-outer") &&
-        attr.ownerElement.querySelector(':scope > div.gnb-inner form[name="gnb-search-form"]') !==
-          null;
-      const isSiteLayoutFooterOuter =
-        attr.name === "class" &&
-        attr.ownerElement &&
-        attr.value.split(/\s+/u).includes("page-footer-outer") &&
-        attr.ownerElement.matches("footer.page-footer-outer") &&
-        attr.ownerElement.querySelector(":scope > div.page-footer > span.provider") !== null;
-      const isSiteLayoutFooterInner =
-        attr.name === "class" &&
-        attr.ownerElement &&
-        attr.value.split(/\s+/u).includes("page-footer") &&
-        attr.ownerElement.matches("footer.page-footer-outer > div.page-footer") &&
-        attr.ownerElement.querySelector(":scope > span.provider") !== null;
-      const isSiteLayoutFooterProvider =
-        attr.name === "class" &&
-        attr.ownerElement &&
-        attr.value.split(/\s+/u).includes("provider") &&
-        attr.ownerElement.matches("footer.page-footer-outer > div.page-footer > span.provider");
-      const retiredToken = isSiteLayoutFooterOuter
-        ? "page-footer-outer"
-        : isSiteLayoutFooterInner
-          ? "page-footer"
-          : isSiteLayoutFooterProvider
-            ? "provider"
-            : isSiteLayoutHeader && attr.value.split(/\s+/u).includes("project-header")
-              ? "project-header"
-              : isSiteLayoutHeader
-                ? "gnb-outer"
-                : attr.name === "class" &&
-                    attr.ownerElement &&
-                    attr.value.split(/\s+/u).includes("gnb-inner") &&
-                    attr.ownerElement.matches("header.gnb-outer > div.gnb-inner") &&
-                    attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
-                  ? "gnb-inner"
-                  : attr.name === "class" &&
-                      attr.ownerElement &&
-                      attr.value.split(/\s+/u).includes("gnb-nav") &&
-                      attr.ownerElement.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
-                      attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
-                    ? "gnb-nav"
-                    : null;
-      if (retiredToken) {
-        const originalValue = attr.value;
-        attr.value = originalValue
-          .split(/\s+/u)
-          .filter((token) => token !== retiredToken)
-          .join(" ");
-        try {
-          return normalizeAttr(attr);
-        } finally {
-          attr.value = originalValue;
-        }
-      }
-      if (attr.name === "class") {
-        return attr.value
-          .split(/\s+/u)
-          .filter(
-            (token) =>
-              token &&
-              token !== "gray-txt" &&
-              token !== "right-txt" &&
-              !token.includes("-shell-") &&
-              !/^x[0-9a-z]+$/u.test(token) &&
-              !token.includes("__"),
-          )
-          .join(" ");
-      }
-      return attr.name === "style" ? normalizeStyleAttr(attr.value) : attr.value;
-    }
-
-    function normalizeStyleAttr(value: string) {
-      let normalized = value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'");
-      // style sprite vars (--x-backgroundImage:url(/yona/assets/sprite-*))
-      // are the app's own paint mechanism for ico glyphs; legacy pins only the
-      // ico class (the frozen sprites CSS owns the visual), so drop those
-      // vars from the DOM comparison. legacy-assets images (group_default.png
-      // etc.) are real content and stay.
-      normalized = normalized.replace(
-        /--x-[A-Za-z0-9-]+:url\(['"]?\/[^'")]*\/assets\/[^'")]+['"]?\)/gu,
-        "",
-      );
-      normalized = normalized.replace(
-        /--x-([A-Za-z0-9-]+):/gu,
-        (_match, name: string) =>
-          `${name.replace(/[A-Z]/gu, (letter: string) => `-${letter.toLowerCase()}`)}:`,
-      );
-      if (!normalized.includes("--x-") || !normalized.includes("url(")) {
-        return normalized;
-      }
-      return normalized
-        .replace(
-          /(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?\))/gu,
-          "$1src/assets/legacy/$2$3$4)",
-        )
-        .replace(/(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\//gu, "$1src/assets/legacy/");
-    }
-  }, html);
 }

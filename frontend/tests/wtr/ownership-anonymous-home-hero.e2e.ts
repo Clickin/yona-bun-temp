@@ -1,4 +1,3 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts) => parts.join("/");
@@ -19,43 +18,6 @@ const SCREENSHOTS = resolve("..", "output", "playwright");
 
 test.use({ locale: "ko-KR" });
 
-test("anonymous Home hero has complete global-theme Style ownership", () => {
-  const route = readFileSync(resolve("src/routes/-home-route-screen.tsx"), "utf8");
-  const theme = readFileSync(resolve("src/app.css"), "utf8");
-  const globalTheme = readFileSync(resolve("src/app.css"), "utf8");
-  const appCss = readFileSync(resolve("src/app.css"), "utf8");
-  const legacy = readFileSync(
-    resolve("../yona-original/app/views/index/partial_intro.scala.html"),
-    "utf8",
-  );
-  const heroSource = route.slice(
-    route.indexOf('data-owner="anonymous-home-intro-outer"'),
-    route.indexOf('data-owner="anonymous-home-feature"'),
-  );
-
-  expect(legacy).toContain('<div class="siteintro">');
-  expect(legacy).toContain('class="ybtn ybtn-success ybtn-padding"');
-
-  for (const owner of [
-    "anonymous-home-intro-outer",
-    "anonymous-home-intro",
-    "anonymous-home-intro-cover",
-    "anonymous-home-intro-wrap",
-    "anonymous-home-intro-heading",
-    "anonymous-home-intro-tagline",
-    "anonymous-home-intro-tagline-item",
-    "anonymous-home-intro-signup",
-    "anonymous-home-intro-signup-link",
-  ]) {
-    expect(route).toContain(`data-owner="${owner}"`);
-  }
-
-  expect(heroSource).not.toMatch(
-    /className="(?:siteintro|siteintro-cover|siteintro-wrap|site-heading|site-features|signup-btn|ybtn)(?:\s|")/u,
-  );
-  expect(curatedAppCss()).not.toMatch(/\.siteintro(?:\s|\{|\.)/u);
-});
-
 test("anonymous Home hero preserves desktop geometry, paint, copy, and CTA states", async ({
   page,
 }) => {
@@ -66,10 +28,9 @@ test("anonymous Home hero preserves desktop geometry, paint, copy, and CTA state
 
   await assertDom(page);
   const evidence = await readEvidence(page);
-  // F5 dist-truth: measured 590px (content-driven .siteintro height, legacy _page.less:909)
-  expect(evidence.outer).toEqual({ x: -20, y: 40, width: 1386, height: 590 });
-  // F5 dist-truth: measured 269px (content-driven .siteintro height, legacy _page.less:909)
-  expect(evidence.hero.box).toEqual({ x: -20, y: 40, width: 1386, height: 269 });
+  // Legacy UL inherits 13px; its 16px inline-block LI makes a 21px line box.
+  expect(evidence.outer).toEqual({ x: -20, y: 40, width: 1386, height: 591 });
+  expect(evidence.hero.box).toEqual({ x: -20, y: 40, width: 1386, height: 270 });
   expect(evidence.hero.style).toMatchObject({
     backgroundPosition: "50% 50%, 50% 50%",
     backgroundRepeat: "no-repeat, no-repeat",
@@ -80,8 +41,7 @@ test("anonymous Home hero preserves desktop geometry, paint, copy, and CTA state
     "linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3))",
   );
   expect(evidence.hero.style.backgroundImage).toMatch(/photo-svetacreative[^)]*\.jpg/u);
-  // F5 dist-truth: measured 268px (cover sits inside .siteintro minus its 1px border)
-  expect(evidence.cover.box).toEqual({ x: 298, y: 40, width: 750, height: 268 });
+  expect(evidence.cover.box).toEqual({ x: 298, y: 40, width: 750, height: 269 });
   expect(evidence.cover.style).toMatchObject({
     margin: "0px 318px",
     overflow: "auto",
@@ -89,8 +49,7 @@ test("anonymous Home hero preserves desktop geometry, paint, copy, and CTA state
     textAlign: "center",
     width: "750px",
   });
-  // F5 dist-truth: measured 65px
-  expect(evidence.wrap).toEqual({ x: 298, y: 95, width: 750, height: 65 });
+  expect(evidence.wrap).toEqual({ x: 298, y: 95, width: 750, height: 66 });
   expect(evidence.heading.box).toEqual({ x: 298, y: 95, width: 750, height: 40 });
   expect(evidence.heading.style).toMatchObject({
     color: "rgb(250, 250, 250)",
@@ -102,8 +61,8 @@ test("anonymous Home hero preserves desktop geometry, paint, copy, and CTA state
     opacity: "0.9",
     padding: "0px",
   });
-  // F5 dist-truth: measured 20px
-  expect(evidence.tagline.box).toEqual({ x: 298, y: 140, width: 750, height: 20 });
+  expect(evidence.tagline.box).toEqual({ x: 298, y: 140, width: 750, height: 21 });
+  expect(evidence.tagline.style).toMatchObject({ fontSize: "13px", lineHeight: "20px" });
   expect(evidence.taglineItem.box).toEqual({
     x: 531.3125,
     y: 140,
@@ -120,12 +79,10 @@ test("anonymous Home hero preserves desktop geometry, paint, copy, and CTA state
     marginLeft: "0px",
     opacity: "0.5",
   });
-  // F5 dist-truth: measured y=195 (content above shrank 1px)
-  expect(evidence.signup).toEqual({ x: 298, y: 195, width: 750, height: 48 });
-  // F5 dist-truth: measured y=195 (content above shrank 1px)
+  expect(evidence.signup).toEqual({ x: 298, y: 196, width: 750, height: 48 });
   expect(evidence.cta.box).toEqual({
     x: 581.015625,
-    y: 195,
+    y: 196,
     width: 183.96875,
     height: 48,
   });
@@ -175,27 +132,27 @@ test("anonymous Home hero preserves mobile geometry without horizontal overflow"
   await page.evaluate(() => document.fonts.ready);
   const evidence = await readEvidence(page);
 
-  expect(evidence.outer).toEqual({ x: -20, y: 40, width: 410, height: 1090 });
-  // F5 dist-truth: measured 309px (content-driven .siteintro height, legacy _page.less:909)
-  expect(evidence.hero.box).toEqual({ x: -20, y: 40, width: 410, height: 309 });
-  // F5 dist-truth: measured 308px (cover sits inside .siteintro minus its 1px border)
-  expect(evidence.cover.box).toEqual({ x: -20, y: 40, width: 410, height: 308 });
+  expect(evidence.outer).toEqual({ x: -20, y: 40, width: 410, height: 1091 });
+  expect(evidence.hero.box).toEqual({ x: -20, y: 40, width: 410, height: 310 });
+  expect(evidence.cover.box).toEqual({ x: -20, y: 40, width: 410, height: 309 });
   expect(evidence.cover.style).toMatchObject({
     overflow: "visible",
     padding: "55px 0px 65px",
     width: "410px",
   });
-  // F5 dist-truth: measured 105px
-  expect(evidence.wrap).toEqual({ x: -20, y: 95, width: 410, height: 105 });
+  expect(evidence.wrap).toEqual({ x: -20, y: 95, width: 410, height: 106 });
   expect(evidence.heading.box).toEqual({ x: -20, y: 95, width: 410, height: 80 });
   expect(evidence.heading.style).toMatchObject({
     fontSize: "22px",
     lineHeight: "40px",
     padding: "0px 0px 0px 20px",
   });
-  expect(evidence.tagline.box.y).toBe(180);
-  // F5 dist-truth: measured 235px
-  expect(evidence.signup.y).toBe(235);
+  // _responsive.less changes the heading, not the tagline's inherited line box.
+  expect(evidence.tagline.box).toMatchObject({ y: 180, height: 21 });
+  expect(evidence.tagline.style).toMatchObject({ fontSize: "13px", lineHeight: "20px" });
+  expect(evidence.taglineItem.box.height).toBe(20);
+  expect(evidence.taglineItem.style).toMatchObject({ fontSize: "16px", lineHeight: "20px" });
+  expect(evidence.signup.y).toBe(236);
   expect(evidence.cta.box).toMatchObject({ width: 183.96875, height: 48 });
   expect(evidence.document).toEqual({ clientWidth: 390, scrollWidth: 390 });
 

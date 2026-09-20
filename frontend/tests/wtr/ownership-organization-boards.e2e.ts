@@ -1,48 +1,4 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
-const fileURLToPath = (u) => u.pathname;
-
-const routeSource = readFileSync(
-  fileURLToPath(
-    new URL("../src/routes/organizations/$organizationName/boards.tsx", import.meta.url),
-  ),
-  "utf8",
-);
-const twoColumnComponentSource = readFileSync(
-  fileURLToPath(new URL("../src/components/two-column-mode-checkbox.tsx", import.meta.url)),
-  "utf8",
-);
-const styleSource = curatedAppCss() + mergedLegacyBlock();
-const owners = [
-  "organization-boards-search",
-  "organization-boards-page",
-  "organization-boards-shell",
-  "organization-boards-search-input",
-  "organization-boards-filters",
-  "organization-boards-notice-list",
-  "organization-boards-list",
-  "organization-boards-row",
-  "organization-boards-row-avatar",
-  "organization-boards-row-title-wrap",
-  "organization-boards-row-post-id",
-  "organization-boards-title",
-  "organization-boards-pagination",
-  "organization-boards-empty",
-  "organization-boards-empty-icon",
-  "organization-boards-empty-message",
-] as const;
-
-test("organization boards exposes direct Style owners for search, filters, and rows", () => {
-  expect(new Set(owners).size).toBe(owners.length);
-  for (const owner of owners) {
-    expect(routeSource).toContain(`data-owner="${owner}"`);
-  }
-});
-
-test("organization boards keeps search geometry in the route and empty-state geometry in its owner", () => {
-  expect(routeSource).toContain("pageSearch");
-  expect(routeSource).toContain("requestSubmit");
-});
 
 test("organization boards empty state preserves legacy image, position, size, and message on desktop and mobile", async ({
   page,
@@ -121,14 +77,6 @@ test("organization boards empty state preserves legacy image, position, size, an
   }
 });
 
-test("organization boards translates legacy filters and two-column controls to React", () => {
-  expect(routeSource).toContain("BoardFilters");
-  expect(twoColumnComponentSource).toContain("function TwoColumnModeCheckbox");
-  expect(routeSource).not.toContain("document.querySelector");
-  expect(routeSource).not.toContain("addEventListener");
-  expect(routeSource).not.toContain("dangerouslySetInnerHTML");
-});
-
 test("organization boards keeps the visible shell within a mobile viewport", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.route("**/api/v1/organizations/weblabs/container", (route) =>
@@ -183,7 +131,7 @@ test("organization boards renders populated post and submits filter through rout
             authorLoginId: "alice",
             authorAvatarUrl: "/assets/images/default-avatar-32.png",
             commentCount: 2,
-            createdLabel: "Today",
+            createdAt: "2026-07-02T12:00:00Z",
             ownerName: "admin",
             postNumber: 4,
             projectName: "sample",
@@ -196,7 +144,7 @@ test("organization boards renders populated post and submits filter through rout
             authorLoginId: "alice",
             authorAvatarUrl: "/assets/images/default-avatar-32.png",
             commentCount: 0,
-            createdLabel: "Yesterday",
+            createdAt: "2026-07-01T12:00:00Z",
             ownerName: "admin",
             postNumber: 3,
             projectName: "sample",

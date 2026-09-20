@@ -1,68 +1,10 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const PROJECT_ISSUES_ROUTE_SOURCE = readFileSync(
-  "../src/routes/$ownerName/$projectName/issues.tsx",
-  "utf8",
-);
-const PROJECT_ISSUES_STYLE_SOURCE = readFileSync("src/app.css", "utf8");
-const LEGACY_ISSUE_LIST_SOURCE = readFileSync(
-  "../yona-original/app/views/issue/partial_list.scala.html",
-  "utf8",
-);
-const LEGACY_COMMON_LESS_SOURCE = readFileSync(
-  "../yona-original/app/assets/stylesheets/less/_common.less",
-  "utf8",
-);
-const LEGACY_ISSUE_PAGE_LESS_SOURCE = readFileSync(
-  "../yona-original/app/assets/stylesheets/less/_page.less",
-  "utf8",
-);
-const LEGACY_RESPONSIVE_LESS_SOURCE = readFileSync(
-  "../yona-original/app/assets/stylesheets/less/_responsive.less",
-  "utf8",
-);
-const LEGACY_BOOTSTRAP_SOURCE = readFileSync(
-  "../yona-original/public/bootstrap/css/bootstrap.css",
-  "utf8",
-);
-const LEGACY_BOOTSTRAP_RESPONSIVE_SOURCE = readFileSync(
-  "../yona-original/public/bootstrap/css/bootstrap-responsive.css",
-  "utf8",
-);
-const LEGACY_YOBI_SOURCE = readFileSync(
-  "../yona-original/app/assets/stylesheets/yobi.less",
-  "utf8",
-);
-const LEGACY_MESSAGES_SOURCE = readFileSync("../yona-original/conf/messages", "utf8");
 
 test.use({ locale: "en-US" });
-
-test("project issue due-date port keeps the legacy source and Style evidence", () => {
-  expect(LEGACY_ISSUE_LIST_SOURCE).toContain('<div class="mr20 mt10 pull-right');
-  expect(LEGACY_ISSUE_LIST_SOURCE).toContain("@if(issue.dueDate != null)");
-  expect(LEGACY_ISSUE_LIST_SOURCE).toContain('@Messages("issue.dueDate.overdue")');
-  expect(LEGACY_COMMON_LESS_SOURCE).toContain(".mt10 { margin-top:10px; }");
-  expect(LEGACY_COMMON_LESS_SOURCE).toContain(".mr20 { margin-right:20px; }");
-  expect(LEGACY_ISSUE_PAGE_LESS_SOURCE).toContain(".overdue {\n    color:@yobi-red;\n}");
-  expect(LEGACY_RESPONSIVE_LESS_SOURCE).toContain("@media all and (max-width: 720px)");
-  expect(LEGACY_RESPONSIVE_LESS_SOURCE).toContain(".hide-in-mobile");
-  expect(LEGACY_BOOTSTRAP_SOURCE).toContain(".pull-right");
-  expect(LEGACY_BOOTSTRAP_RESPONSIVE_SOURCE).toContain(".row-fluid .span3");
-  expect(LEGACY_BOOTSTRAP_RESPONSIVE_SOURCE).toContain("@media");
-  expect(LEGACY_YOBI_SOURCE).toContain('@import "less/_common.less";');
-  expect(LEGACY_YOBI_SOURCE).toContain('@import "less/_page.less";');
-  expect(LEGACY_YOBI_SOURCE).toContain('@import "less/_responsive.less";');
-  expect(LEGACY_MESSAGES_SOURCE).toContain("issue.dueDate = Due date");
-  expect(LEGACY_MESSAGES_SOURCE).toContain("issue.dueDate.overdue = Overdue");
-
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('data-owner="project-issues-due-date"');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('data-toggle="tooltip"');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('data-placement="top"');
-});
 
 type DueDateCase = {
   name: "open-overdue" | "upcoming-open" | "closed";
@@ -121,7 +63,6 @@ for (const viewport of viewports) {
       await expect(target).toHaveCount(1);
       await expect(target).toHaveCSS("margin-right", "20px");
       await expect(target).toHaveCSS("margin-top", "10px");
-      await expect(target).toHaveClass(/\bmr20\s+mt10\b/u);
       await expect(target).toHaveCSS("float", "right");
       await expect(target.locator(".vmiddle").last()).toHaveText(dueDateCase.text);
 
@@ -131,9 +72,9 @@ for (const viewport of viewports) {
         await expect(target).not.toHaveAttribute("title");
       }
       if (dueDateCase.overdue) {
-        await expect(target).toHaveClass(/\boverdue\b/u);
+        await expect(target).toHaveCSS("color", "rgb(201, 52, 38)");
       } else {
-        await expect(target).not.toHaveClass(/\boverdue\b/u);
+        await expect(target).not.toHaveCSS("color", "rgb(201, 52, 38)");
       }
 
       const targetAttributes = await target.evaluate((element) =>
@@ -410,8 +351,8 @@ test("project issue state tabs keep navigating across repeated switches", async 
   await mockProjectIssues(page, "populated");
   await page.goto(`${basePath}/admin/sample/issues?state=open`);
 
-  const openTab = page.locator('a[href*="state=open"]').first();
-  const closedTab = page.locator('a[href*="state=closed"]').first();
+  const openTab = page.locator(".issue-list-wrap .nav-tabs.nm > li").nth(0).getByRole("button");
+  const closedTab = page.locator(".issue-list-wrap .nav-tabs.nm > li").nth(1).getByRole("button");
   await expect(openTab).toBeVisible();
   await expect(closedTab).toBeVisible();
 

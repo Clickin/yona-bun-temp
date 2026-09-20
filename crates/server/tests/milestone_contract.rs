@@ -139,6 +139,24 @@ async fn milestone_rpc_manages_crud_state_sorting_and_linked_issues() {
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
     let _ = register_user(app.clone(), "guest").await;
     create_public_project(app.clone(), &cookie, &csrf).await;
+    let label = response_json(
+        rpc(
+            app.clone(),
+            "CreateProjectLabel",
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "labelName": "Bug",
+                "labelColor": "f44336",
+                "categoryName": "Type",
+                "categoryIsExclusive": true
+            }),
+        )
+        .await,
+    )
+    .await;
 
     let created = response_json(
         rpc(
@@ -308,6 +326,29 @@ async fn milestone_rpc_manages_crud_state_sorting_and_linked_issues() {
     );
     assert_eq!(detail["milestone"]["openIssues"][0]["issueNumber"], 1);
     assert_eq!(detail["milestone"]["closedIssues"][0]["issueNumber"], 2);
+    assert_eq!(
+        detail["milestone"]["projectLabels"],
+        json!([label["label"]])
+    );
+    assert_eq!(
+        detail["milestone"]["openMilestones"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|milestone| milestone["id"].as_i64().unwrap())
+            .collect::<Vec<_>>(),
+        vec![milestone_id]
+    );
+    let assignable_users = detail["milestone"]["assignableUsers"].as_array().unwrap();
+    assert_eq!(assignable_users.len(), 1, "nonmembers are not assignable");
+    assert_eq!(assignable_users[0]["loginId"], "owner");
+    assert!(assignable_users[0]["userId"].as_i64().unwrap() > 0);
+    let milestone_issue_created = chrono::DateTime::parse_from_rfc3339(
+        detail["milestone"]["openIssues"][0]["createdLabel"]
+            .as_str()
+            .unwrap(),
+    )
+    .expect("milestone issue dates must retain the complete creation timestamp");
 
     let updated = response_json(
         rpc(
@@ -417,6 +458,11 @@ async fn milestone_rpc_manages_crud_state_sorting_and_linked_issues() {
     .await;
     assert_eq!(issue_after_close["state"], "open");
     assert_eq!(issue_after_close["milestoneTitle"], "v1.0 patched");
+    assert_eq!(
+        milestone_issue_created,
+        chrono::DateTime::parse_from_rfc3339(issue_after_close["createdLabel"].as_str().unwrap())
+            .unwrap()
+    );
 
     let deleted = response_json(
         rpc(
@@ -455,6 +501,106 @@ async fn milestone_rpc_manages_crud_state_sorting_and_linked_issues() {
         issue_after_delete["milestoneTitle"].is_null()
             || issue_after_delete["milestoneTitle"] == ""
     );
+}
+
+#[tokio::test]
+async fn milestone_dashboard_selects_the_earliest_open_deadline_and_clears_when_closed() {
+    let (app, _) = build_app_with_repository().await;
+    let (csrf, cookie) = register_user(app.clone(), "owner").await;
+    create_public_project(app.clone(), &cookie, &csrf).await;
+    let mut milestone_ids = Vec::new();
+    for (title, due_date, state) in [
+        ("Earliest open", "2026-05-09", "open"),
+        ("Later open", "2026-05-10", "open"),
+        ("Latest id closed", "2026-05-08", "closed"),
+    ] {
+        let created = response_json(
+            rpc(
+                app.clone(),
+                "CreateProjectMilestone",
+                Some(&cookie),
+                Some(&csrf),
+                json!({
+                    "ownerName": "owner",
+                    "projectName": "projectYobi",
+                    "title": title,
+                    "dueDate": due_date,
+                    "state": state
+                }),
+            )
+            .await,
+        )
+        .await;
+        milestone_ids.push(created["milestone"]["id"].as_i64().unwrap());
+    }
+
+    for id in &milestone_ids[..2] {
+        let detail = response_json(
+            rpc(
+                app.clone(),
+                "ReadProjectMilestone",
+                None,
+                None,
+                json!({
+                    "ownerName": "owner",
+                    "projectName": "projectYobi",
+                    "milestoneId": id
+                }),
+            )
+            .await,
+        )
+        .await;
+        assert!(detail["milestone"]["openMilestones"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|milestone| milestone["id"] != milestone_ids[2]));
+        let container = response_json(
+            app.clone()
+                .oneshot(
+                    Request::builder()
+                        .uri("/yona/api/v1/owners/owner/projects/projectYobi/container?tabId=dashboard")
+                        .body(Body::empty())
+                        .unwrap(),
+                )
+                .await
+                .unwrap(),
+        )
+        .await;
+        assert_eq!(container["currentMilestone"]["id"], *id);
+        assert_eq!(container["currentMilestone"]["dueDateOverdue"], true);
+        assert_eq!(
+            container["currentMilestone"]["untilLabel"],
+            detail["milestone"]["untilLabel"]
+        );
+        response_json(
+            rpc(
+                app.clone(),
+                "CloseProjectMilestone",
+                Some(&cookie),
+                Some(&csrf),
+                json!({
+                    "ownerName": "owner",
+                    "projectName": "projectYobi",
+                    "milestoneId": id
+                }),
+            )
+            .await,
+        )
+        .await;
+    }
+    let container = response_json(
+        app.oneshot(
+            Request::builder()
+                .uri("/yona/api/v1/owners/owner/projects/projectYobi/container?tabId=dashboard")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap(),
+    )
+    .await;
+    assert!(container["currentMilestone"].is_null());
 }
 
 #[tokio::test]
@@ -574,6 +720,8 @@ async fn milestone_read_preserves_the_legacy_global_id_projection() {
     assert_eq!(projected["milestone"]["title"], "Global legacy milestone");
     assert_eq!(projected["milestone"]["openIssueCount"], 0);
     assert_eq!(projected["milestone"]["closedIssueCount"], 0);
+    assert_eq!(projected["milestone"]["projectLabels"], json!([]));
+    assert_eq!(projected["milestone"]["openMilestones"], json!([]));
     assert_eq!(
         projected["milestone"]["openIssues"]
             .as_array()

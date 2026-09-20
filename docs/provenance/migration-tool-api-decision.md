@@ -1,9 +1,37 @@
 # Migration Tool API Decision
 
-Status: canonical decision
-Date: 2026-06-13
+Status: canonical decision updated 2026-09-18; the 2026-06-13 decision below is superseded historical evidence.
+Date: 2026-09-18
+Original decision date: 2026-06-13
 
-## Decision
+## Current decision
+
+- Large legacy installations use the separate `yona-migrate --from-db-url`
+  direct-database path into an empty, separate target database and data root.
+  Golden-fixture-scale API migrations have timed out in actual use; API
+  extraction is not the default for this workload.
+- The implemented MariaDB/MySQL path reads a consistent, read-only source
+  snapshot, preserves application IDs and relationships, and verifies copied
+  database rows, attachment bytes, and Git/SVN repository integrity. It does
+  not modify the source or make a partial target safe to boot.
+- Small SI projects retain a separate API-based workflow for bringing their
+  work into an existing internal project. Identity mapping, collision policy,
+  merge scope, and retry behavior remain explicit Track B decisions, not an
+  already-implemented merge guarantee.
+- Compatibility with legacy external APIs belongs in the migration CLI.
+  Neither broad legacy runtime endpoints nor Yoram-to-Yoram migration are
+  replacement requirements.
+- The small direct-migration fixture passed import and application mutation
+  checks. The large fixture remains blocked: both the supplied source and its
+  original archive contain the same corrupt Git pack. Exact row/file copies
+  into a quarantined target do not constitute a successful migration; a
+  healthy source backup is required.
+
+The current execution contract and evidence are in `SPEC.md` section 5.4 and
+`docs/plans/2026-09-18-yona-replacement-execution.md`. Everything below is
+preserved historical rationale, not the current migration default.
+
+## Historical decision (2026-06-13; superseded)
 
 Use a separate migration tool with adapters:
 

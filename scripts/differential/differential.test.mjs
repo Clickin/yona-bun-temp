@@ -46,7 +46,11 @@ const inventoryBehaviors = [
   { id: "B-0100", route: "POST /users/login", action: "UserApp.login" },
   { id: "B-0200", route: "POST /:user/:project/issues/latest", action: "IssueApp.newIssue" },
   { id: "B-0201", route: "GET /:user/:project/issues", action: "IssueApp.issues" },
-  { id: "B-0300", route: "POST /:user/:project/issue/$number/comments", action: "IssueApp.newComment" },
+  {
+    id: "B-0300",
+    route: "POST /:user/:project/issue/$number/comments",
+    action: "IssueApp.newComment",
+  },
   { id: "B-0400", route: "GET /:user/:project/labels", action: "ProjectApp.labels" },
 ];
 
@@ -81,14 +85,23 @@ test("buildCoverage emits scenarioId back-fill data without mutating inventory",
 // --- adapter translation ----------------------------------------------------
 
 test("legacy translation uses direct form POST endpoints", () => {
-  assert.deepEqual(translateLegacy({ actor: "a", action: "login", params: { loginId: "admin", password: "admin" } }), {
-    method: "POST",
-    path: "/users/login",
-    form: { loginId: "admin", password: "admin" },
-  });
+  assert.deepEqual(
+    translateLegacy({
+      actor: "a",
+      action: "login",
+      params: { loginId: "admin", password: "admin" },
+    }),
+    {
+      method: "POST",
+      path: "/users/login",
+      form: { loginId: "admin", password: "admin" },
+    },
+  );
   assert.equal(
-    translateLegacy({ actor: "a", action: "create-issue", params: { owner: "admin", project: "sample" } }, { title: "t", body: "b" })
-      .path,
+    translateLegacy(
+      { actor: "a", action: "create-issue", params: { owner: "admin", project: "sample" } },
+      { title: "t", body: "b" },
+    ).path,
     "/admin/sample/issues/latest",
   );
   assert.equal(
@@ -98,15 +111,29 @@ test("legacy translation uses direct form POST endpoints", () => {
     ).path,
     "/admin/sample/issue/7/comments",
   );
-  assert.equal(translateLegacy({ actor: "a", action: "list-labels", params: { owner: "admin", project: "sample" } }).path, "/admin/sample/labels");
+  assert.equal(
+    translateLegacy({
+      actor: "a",
+      action: "list-labels",
+      params: { owner: "admin", project: "sample" },
+    }).path,
+    "/admin/sample/labels",
+  );
 });
 
 test("yoram translation uses REST endpoints and direct legacy label API", () => {
-  const create = translateYoram({ actor: "a", action: "create-issue", params: { owner: "admin", project: "sample" } }, { title: "t", body: "b" });
+  const create = translateYoram(
+    { actor: "a", action: "create-issue", params: { owner: "admin", project: "sample" } },
+    { title: "t", body: "b" },
+  );
   assert.equal(create.path, "/api/v1/projects/admin/sample/issues");
   assert.equal(create.json.title, "t");
   assert.equal(create.json.bodyMarkdown, "b");
-  const labels = translateYoram({ actor: "a", action: "list-labels", params: { owner: "admin", project: "sample" } });
+  const labels = translateYoram({
+    actor: "a",
+    action: "list-labels",
+    params: { owner: "admin", project: "sample" },
+  });
   assert.equal(labels.path, "/admin/sample/labels");
   assert.throws(() => translateLegacy({ actor: "a", action: "warp", params: {} }));
 });
@@ -137,9 +164,13 @@ test("yoram session attaches csrf header after login", async () => {
 
 test("legacy session exposes parsed JSON responses alongside raw bodies", async () => {
   const originalFetch = globalThis.fetch;
-  globalThis.fetch = async () => new Response(JSON.stringify({ users: [{ loginId: "admin" }] }), { status: 200 });
+  globalThis.fetch = async () =>
+    new Response(JSON.stringify({ users: [{ loginId: "admin" }] }), { status: 200 });
   try {
-    const result = await new LegacySession("http://x").request({ method: "GET", path: "/sites/noAvatarUsers" });
+    const result = await new LegacySession("http://x").request({
+      method: "GET",
+      path: "/sites/noAvatarUsers",
+    });
     assert.deepEqual(result.json, { users: [{ loginId: "admin" }] });
     assert.equal(result.body, '{"users":[{"loginId":"admin"}]}');
   } finally {
@@ -150,7 +181,13 @@ test("legacy session exposes parsed JSON responses alongside raw bodies", async 
 // --- diff layer -------------------------------------------------------------
 
 test("normalizeApiValue masks volatile fields and sorts keys", () => {
-  const normalized = normalizeApiValue({ number: 3, title: "  a   b ", createdAt: "x", id: 1, owner: "admin" });
+  const normalized = normalizeApiValue({
+    number: 3,
+    title: "  a   b ",
+    createdAt: "x",
+    id: 1,
+    owner: "admin",
+  });
   assert.equal(normalized.number, "<volatile>");
   assert.equal(normalized.id, "<volatile>");
   assert.equal(normalized.createdAt, "<volatile>");
@@ -162,8 +199,12 @@ test("diffSkeletons reports only real differences", () => {
   assert.deepEqual(diffSkeletons(["div.a:x", "span.b:y"], ["span.b:y", "div.a:x"]), []);
   const diffs = diffSkeletons(["div.a:x", "div.only-legacy:q"], ["div.a:x", "div.only-yoram:z"]);
   assert.equal(diffs.length, 2);
-  assert.ok(diffs.some((entry) => entry.side === "legacy-only" && entry.expected === "div.only-legacy:q"));
-  assert.ok(diffs.some((entry) => entry.side === "yoram-only" && entry.actual === "div.only-yoram:z"));
+  assert.ok(
+    diffs.some((entry) => entry.side === "legacy-only" && entry.expected === "div.only-legacy:q"),
+  );
+  assert.ok(
+    diffs.some((entry) => entry.side === "yoram-only" && entry.actual === "div.only-yoram:z"),
+  );
 });
 
 test("DOM comparison keeps the full normalized diff separate from its preview", () => {
@@ -185,7 +226,9 @@ test("DOM comparison keeps the full normalized diff separate from its preview", 
 });
 
 test("normalizeSkeletonEntries collapses whitespace and drops empties", () => {
-  assert.deepEqual(normalizeSkeletonEntries(["div.a:  hello    world  ", "   "]), ["div.a: hello world"]);
+  assert.deepEqual(normalizeSkeletonEntries(["div.a:  hello    world  ", "   "]), [
+    "div.a: hello world",
+  ]);
 });
 
 test("DOM normalization canonicalizes only approved rebrand identity tokens", () => {
@@ -281,7 +324,6 @@ test("DOM rebrand normalization preserves structure and non-brand visible change
 test("sideEffectAnchorTag decides side-effect anchors from href semantics and legacy behavior attrs", () => {
   // non-navigating hrefs are side-effect anchors
   assert.equal(sideEffectAnchorTag("a", { href: "#" }), "a#");
-  assert.equal(sideEffectAnchorTag("a", { href: "#helpMessage" }), "a#");
   assert.equal(sideEffectAnchorTag("a", { href: "JavaScript:void(0)" }), "a#");
   assert.equal(sideEffectAnchorTag("a", { href: "  " }), "a#");
   assert.equal(sideEffectAnchorTag("a", {}), "a#");
@@ -292,6 +334,7 @@ test("sideEffectAnchorTag decides side-effect anchors from href semantics and le
   assert.equal(sideEffectAnchorTag("a", { href: "#helpMessage", dataToggle: "modal" }), "a#");
   assert.equal(sideEffectAnchorTag("a", { href: "#", dataToggle: "filter" }), "a#");
   // navigational anchors stay anchors — presentational toggles do not count
+  assert.equal(sideEffectAnchorTag("a", { href: "#helpMessage" }), "a");
   assert.equal(sideEffectAnchorTag("a", { href: "/users/admin" }), "a");
   assert.equal(sideEffectAnchorTag("a", { href: "/users/admin", dataToggle: "tooltip" }), "a");
   assert.equal(sideEffectAnchorTag("a", { href: "/users/admin", dataToggle: "popover" }), "a");
@@ -336,7 +379,9 @@ test("sanctioned anchor-to-button translation holds only with equal class list a
 test("visible-loss strictness is unchanged by anchor normalization", () => {
   // a translated (button) control gone missing is a visible loss
   assert.equal(
-    domVisibleLoss({ actual: { fullDiffs: [{ side: "legacy-only", expected: "button.ybtn:닫기" }] } }),
+    domVisibleLoss({
+      actual: { fullDiffs: [{ side: "legacy-only", expected: "button.ybtn:닫기" }] },
+    }),
     true,
   );
   // so is a missing navigational anchor with text
@@ -361,7 +406,9 @@ test("visible-loss strictness is unchanged by anchor normalization", () => {
 
 test("visible-loss detection fails closed for preview-only DOM details", () => {
   assert.equal(
-    domVisibleLoss({ actual: { firstDiffs: [{ side: "legacy-only", expected: "button.ybtn:닫기" }] } }),
+    domVisibleLoss({
+      actual: { firstDiffs: [{ side: "legacy-only", expected: "button.ybtn:닫기" }] },
+    }),
     false,
   );
 });
@@ -389,7 +436,10 @@ test("db projections map legacy and yoram column spellings", () => {
   assert.deepEqual(labels[0], { name: "bug", category: "type", color: "#f44336" });
   assert.deepEqual(diffProjections([labels[0]], [labels[1]]), []);
 
-  const comments = projectCommentRows([{ authorLoginId: "bob", contents: "hi  there" }, { author_login_id: "bob", body: "hi there" }]);
+  const comments = projectCommentRows([
+    { authorLoginId: "bob", contents: "hi  there" },
+    { author_login_id: "bob", body: "hi there" },
+  ]);
   assert.deepEqual(diffProjections([comments[0]], [comments[1]]), []);
 
   const diff = diffProjections([legacy[0]], []);
@@ -412,7 +462,9 @@ test("issue state encodings normalize legacy H2 and yoram sqlite to identical ro
 });
 
 test("parseH2ShellOutput parses Shell table output", () => {
-  const rows = parseH2ShellOutput("TITLE | AUTHORLOGINID\n-------\na | admin\nb | bob\n(2 rows, 1 ms)");
+  const rows = parseH2ShellOutput(
+    "TITLE | AUTHORLOGINID\n-------\na | admin\nb | bob\n(2 rows, 1 ms)",
+  );
   assert.deepEqual(rows, [
     { TITLE: "a", AUTHORLOGINID: "admin" },
     { TITLE: "b", AUTHORLOGINID: "bob" },
@@ -436,7 +488,10 @@ test("filterRowsByTag keeps only rows tagged for the current run", () => {
     { title: "Differential sweep issue sweep-now-2" },
     { title: "seeded bug" },
   ];
-  assert.deepEqual(filterRowsByTag(rows, "sweep-now").map((row) => row.title), ["Differential sweep issue sweep-now-2"]);
+  assert.deepEqual(
+    filterRowsByTag(rows, "sweep-now").map((row) => row.title),
+    ["Differential sweep issue sweep-now-2"],
+  );
   // null/empty tag = unfiltered (labels stay whole).
   assert.equal(filterRowsByTag(rows, null).length, 3);
 });
@@ -446,7 +501,11 @@ test("session adapters send json/form bodies without reference errors", async ()
   const seen = [];
   globalThis.fetch = async (_url, init) => {
     seen.push({ contentType: init.headers["content-type"], body: init.body });
-    return { status: 200, headers: { getSetCookie: () => [], get: () => null }, text: async () => "" };
+    return {
+      status: 200,
+      headers: { getSetCookie: () => [], get: () => null },
+      text: async () => "",
+    };
   };
   try {
     const legacy = new LegacySession("http://legacy.test");
@@ -476,9 +535,17 @@ test("session adapters support explicit status-only requests without consuming a
   });
   try {
     const legacy = new LegacySession("http://legacy.test");
-    const legacyResult = await legacy.request({ method: "GET", path: "/sites/export", readBody: false });
+    const legacyResult = await legacy.request({
+      method: "GET",
+      path: "/sites/export",
+      readBody: false,
+    });
     const yoram = new YoramSession("http://yoram.test");
-    const yoramResult = await yoram.request({ method: "GET", path: "/sites/export", readBody: false });
+    const yoramResult = await yoram.request({
+      method: "GET",
+      path: "/sites/export",
+      readBody: false,
+    });
     assert.equal(legacyResult.status, 200);
     assert.equal(yoramResult.status, 200);
     assert.equal(legacyResult.body, "");
@@ -492,7 +559,10 @@ test("session adapters support explicit status-only requests without consuming a
 // --- typed classification model ----------------------------------------------
 
 test("classify keeps unknown DOM and visible loss blocking", () => {
-  assert.equal(classifyViolation("api", "/x", { expected: 1, actual: 2 }).classification, "UNVERIFIED");
+  assert.equal(
+    classifyViolation("api", "/x", { expected: 1, actual: 2 }).classification,
+    "UNVERIFIED",
+  );
   assert.equal(
     classifyViolation("api", "/admin/sample/parity-missing-page", {
       expected: { status: 404 },
@@ -528,7 +598,10 @@ test("classify keeps unknown DOM and visible loss blocking", () => {
 });
 
 function siteAdminFingerprintDetail(fingerprint, overrides = {}) {
-  const actualCount = overrides.normalizedSkeletonEntries ?? overrides.skeletonEntries ?? fingerprint.actualSkeletonEntries;
+  const actualCount =
+    overrides.normalizedSkeletonEntries ??
+    overrides.skeletonEntries ??
+    fingerprint.actualSkeletonEntries;
   const fullDiffs = overrides.fullDiffs ?? overrides.firstDiffs ?? fingerprint.fullDiffs;
   return {
     expected: {
@@ -553,7 +626,9 @@ function firstVisibleFingerprintDiffIndex(firstDiffs) {
     [diff.expected, diff.actual].some((entry) => {
       const value = String(entry ?? "");
       const separator = value.indexOf(":");
-      const tag = (separator === -1 ? value : value.slice(0, separator)).split(".")[0].toLowerCase();
+      const tag = (separator === -1 ? value : value.slice(0, separator))
+        .split(".")[0]
+        .toLowerCase();
       const text = separator === -1 ? "" : value.slice(separator + 1).trim();
       return text.length > 0 || visibleTags.has(tag);
     }),
@@ -592,8 +667,14 @@ test("site-admin DOM fingerprints cite the exact WTR contract and classify only 
       fingerprintContext(fingerprint),
     );
     assert.equal(result.classification, "IMPLEMENTATION_DIFFERENCE", fingerprint.route);
-    assert.match(result.rationale, new RegExp(fingerprint.wtrTest.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u"));
-    assert.match(result.rationale, new RegExp(fingerprint.wtrSource.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u"));
+    assert.match(
+      result.rationale,
+      new RegExp(fingerprint.wtrTest.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u"),
+    );
+    assert.match(
+      result.rationale,
+      new RegExp(fingerprint.wtrSource.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u"),
+    );
   }
 });
 
@@ -620,7 +701,9 @@ test("site-admin DOM fingerprint near misses keep visible changes blocking", () 
       `${fingerprint.route}: changed reviewed diff must remain blocking`,
     );
 
-    const removedVisibleDiffs = fingerprint.firstDiffs.filter((_diff, index) => index !== changedIndex);
+    const removedVisibleDiffs = fingerprint.firstDiffs.filter(
+      (_diff, index) => index !== changedIndex,
+    );
     assert.equal(
       classifyViolation(
         "dom",
@@ -658,23 +741,43 @@ test("DOM fingerprints reject every canonical tuple near miss", () => {
     const route = fingerprintRoute(fingerprint);
     const context = fingerprintContext(fingerprint);
     const cases = [
-      ["count", siteAdminFingerprintDetail(fingerprint, {
-        skeletonEntries: fingerprint.actualSkeletonEntries + 1,
-      }), route, context],
+      [
+        "count",
+        siteAdminFingerprintDetail(fingerprint, {
+          skeletonEntries: fingerprint.actualSkeletonEntries + 1,
+        }),
+        route,
+        context,
+      ],
       ["route", siteAdminFingerprintDetail(fingerprint), `${route}/near-miss`, context],
-      ["scenario", siteAdminFingerprintDetail(fingerprint), route, {
-        ...context,
-        scenarioId: `${context.scenarioId ?? "unknown"}-near-miss`,
-      }],
-      ["action", siteAdminFingerprintDetail(fingerprint), route, {
-        ...context,
-        scenarioActions: ["near-miss-action"],
-      }],
-      ["tuple", siteAdminFingerprintDetail(fingerprint, {
-        firstDiffs: fingerprint.firstDiffs.map((diff, index) =>
-          index === 0 ? { ...diff, expected: `${diff.expected} changed` } : diff,
-        ),
-      }), route, context],
+      [
+        "scenario",
+        siteAdminFingerprintDetail(fingerprint),
+        route,
+        {
+          ...context,
+          scenarioId: `${context.scenarioId ?? "unknown"}-near-miss`,
+        },
+      ],
+      [
+        "action",
+        siteAdminFingerprintDetail(fingerprint),
+        route,
+        {
+          ...context,
+          scenarioActions: ["near-miss-action"],
+        },
+      ],
+      [
+        "tuple",
+        siteAdminFingerprintDetail(fingerprint, {
+          firstDiffs: fingerprint.firstDiffs.map((diff, index) =>
+            index === 0 ? { ...diff, expected: `${diff.expected} changed` } : diff,
+          ),
+        }),
+        route,
+        context,
+      ],
     ];
     for (const [dimension, detail, candidateRoute, candidateContext] of cases) {
       assert.equal(
@@ -690,12 +793,8 @@ test("DOM fingerprints reject a visible or structural 21st difference", () => {
   const fingerprint = SITE_ADMIN_DOM_IMPLEMENTATION_FINGERPRINTS[0];
   const exact = siteAdminFingerprintDetail(fingerprint);
   assert.equal(
-    classifyViolation(
-      "dom",
-      fingerprint.route,
-      exact,
-      fingerprintContext(fingerprint),
-    ).classification,
+    classifyViolation("dom", fingerprint.route, exact, fingerprintContext(fingerprint))
+      .classification,
     "IMPLEMENTATION_DIFFERENCE",
   );
 
@@ -704,10 +803,7 @@ test("DOM fingerprints reject a visible or structural 21st difference", () => {
     expected: "button.parity-regression:Missing control",
     actual: "<absent>",
   };
-  const visibleLoss = [
-    ...fingerprint.fullDiffs,
-    missingVisibleControl,
-  ];
+  const visibleLoss = [...fingerprint.fullDiffs, missingVisibleControl];
   assert.equal(
     classifyViolation(
       "dom",
@@ -748,7 +844,11 @@ test("project issue-detail DOM fingerprints keep label/avatar control loss block
         /(?:label-edit|avatar-wrap|usf-group|select2-)/u.test(String(entry)),
       ),
     );
-    assert.notEqual(controlIndex, -1, `${fingerprint.route}: fingerprint must contain a reviewed control`);
+    assert.notEqual(
+      controlIndex,
+      -1,
+      `${fingerprint.route}: fingerprint must contain a reviewed control`,
+    );
     const missingControl = fingerprint.firstDiffs.filter((_diff, index) => index !== controlIndex);
     assert.equal(
       classifyViolation(
@@ -787,25 +887,27 @@ test("project labelsform rebrand fingerprint keeps form/button/label near-misses
       expectedSkeletonEntries,
       actualSkeletonEntries,
     ]),
-    [[75, 75], [62, 62]],
+    [
+      [75, 75],
+      [62, 62],
+    ],
   );
 
   for (const fingerprint of fingerprints) {
     const context = fingerprintContext(fingerprint);
     assert.equal(
-      classifyViolation(
-        "dom",
-        fingerprint.route,
-        siteAdminFingerprintDetail(fingerprint),
-        context,
-      ).classification,
+      classifyViolation("dom", fingerprint.route, siteAdminFingerprintDetail(fingerprint), context)
+        .classification,
       "IMPLEMENTATION_DIFFERENCE",
     );
 
     const nearMisses = [
       fingerprint.firstDiffs.map((diff, index) =>
         index === 0
-          ? { ...diff, actual: String(diff.actual).replace("<product>/<product>", "Changed/Changed") }
+          ? {
+              ...diff,
+              actual: String(diff.actual).replace("<product>/<product>", "Changed/Changed"),
+            }
           : diff,
       ),
       [
@@ -814,11 +916,19 @@ test("project labelsform rebrand fingerprint keeps form/button/label near-misses
       ],
       [
         ...fingerprint.firstDiffs,
-        { side: "legacy-only", expected: "button.ybtn.ybtn-primary.btn-submit:라벨 추가", actual: "button:라벨 수정" },
+        {
+          side: "legacy-only",
+          expected: "button.ybtn.ybtn-primary.btn-submit:라벨 추가",
+          actual: "button:라벨 수정",
+        },
       ],
       [
         ...fingerprint.firstDiffs,
-        { side: "legacy-only", expected: "span.issue-label.active:bug", actual: "span.category-name:bug" },
+        {
+          side: "legacy-only",
+          expected: "span.issue-label.active:bug",
+          actual: "span.category-name:bug",
+        },
       ],
     ];
     for (const [index, firstDiffs] of nearMisses.entries()) {
@@ -847,12 +957,10 @@ test("project labelsform rebrand fingerprint keeps form/button/label near-misses
       "changed skeleton count must remain blocking",
     );
     assert.equal(
-      classifyViolation(
-        "dom",
-        fingerprint.route,
-        siteAdminFingerprintDetail(fingerprint),
-        { scenarioId: fingerprint.scenarioId, scenarioActions: ["view-issue-label-category"] },
-      ).classification,
+      classifyViolation("dom", fingerprint.route, siteAdminFingerprintDetail(fingerprint), {
+        scenarioId: fingerprint.scenarioId,
+        scenarioActions: ["view-issue-label-category"],
+      }).classification,
       "UNVERIFIED",
       "wrong labels state must remain blocking",
     );
@@ -863,7 +971,9 @@ test("project issue-detail fingerprints normalize mutable comment time and sweep
   const fingerprint = PROJECT_ISSUE_DOM_IMPLEMENTATION_FINGERPRINTS.find(
     (candidate) =>
       candidate.normalizeIssueDiffs &&
-      candidate.firstDiffs.some((diff) => String(diff.actual).includes("Differential sweep issue body")),
+      candidate.firstDiffs.some((diff) =>
+        String(diff.actual).includes("Differential sweep issue body"),
+      ),
   );
   assert.ok(fingerprint);
   const variedTimes = ["a.ago:2시간 전", "a.ago:3일 전"];
@@ -900,9 +1010,9 @@ test("project issue-detail fingerprints normalize mutable comment time and sweep
       "/admin/sample/issue/999",
       siteAdminFingerprintDetail(fingerprint, { firstDiffs: compactSweepDiffs }),
       fingerprintContext(fingerprint),
-      ).classification,
-      "IMPLEMENTATION_DIFFERENCE",
-    );
+    ).classification,
+    "IMPLEMENTATION_DIFFERENCE",
+  );
 
   const changedControl = fingerprint.firstDiffs.map((diff) =>
     String(diff.expected).includes("label-edit")
@@ -940,7 +1050,11 @@ test("project pull-request DOM fingerprints keep missing button, text, and count
     const buttonIndex = fingerprint.firstDiffs.findIndex((diff) =>
       [diff.expected, diff.actual].some((entry) => /^button(?:\.|:)/u.test(String(entry))),
     );
-    assert.notEqual(buttonIndex, -1, `${fingerprint.route}: fingerprint must contain a button entry`);
+    assert.notEqual(
+      buttonIndex,
+      -1,
+      `${fingerprint.route}: fingerprint must contain a button entry`,
+    );
     const missingButton = fingerprint.firstDiffs.filter((_diff, index) => index !== buttonIndex);
     assert.equal(
       classifyViolation(
@@ -956,7 +1070,9 @@ test("project pull-request DOM fingerprints keep missing button, text, and count
     );
 
     const textIndex = fingerprint.firstDiffs.findIndex((diff) =>
-      [diff.expected, diff.actual].some((entry) => String(entry).includes(":") && String(entry).split(":").slice(1).join(":")),
+      [diff.expected, diff.actual].some(
+        (entry) => String(entry).includes(":") && String(entry).split(":").slice(1).join(":"),
+      ),
     );
     assert.notEqual(textIndex, -1, `${fingerprint.route}: fingerprint must contain text`);
     const missingText = fingerprint.firstDiffs.filter((_diff, index) => index !== textIndex);
@@ -1038,19 +1154,72 @@ test("malformed residual findings require their exact step behavior id", () => {
     },
   };
   const cases = [
-    ["B-0185", "/user/sidebar", { expected: { status: 500 }, actual: { status: 200 } }, "LEGACY_BUG_NOT_REPRODUCED"],
-    ["B-0267", "/admin/parity-setting/setting", { expected: { status: 500 }, actual: { status: 200 } }, "LEGACY_BUG_NOT_REPRODUCED"],
-    ["B-0221", "/user/editform/defultLoginPage", { expected: "2xx", actual: "4xx" }, "LEGACY_BUG_NOT_REPRODUCED"],
-    ["B-0286", "/sites/import", { expected: "legacy HTTP 303", actual: "yoram HTTP 400" }, "IMPLEMENTATION_DIFFERENCE"],
-    ["B-0014", "/comments/issue/9", { expected: { status: "<400" }, actual: { legacyStatus: 500, yoramStatus: 400 } }, "LEGACY_BUG_NOT_REPRODUCED"],
-    ["B-0212", "/-_-api/v1/owners/admin/projects/sample/issues/7/share", shareProbe, "LEGACY_BUG_NOT_REPRODUCED"],
-    ["B-0212", "/-_-api/v1/owners/admin/projects/sample/issues/7/share", shareRemoveProbe, "LEGACY_BUG_NOT_REPRODUCED"],
-    ["B-0214", "/-_-api/v1/owners/admin/projects/sample/issues/imports", issueImportProbe, "IMPLEMENTATION_DIFFERENCE"],
-    ["B-0287", "/sites/mail", { expected: "legacy HTTP 500", actual: "yoram HTTP 400" }, "LEGACY_BUG_NOT_REPRODUCED"],
+    [
+      "B-0185",
+      "/user/sidebar",
+      { expected: { status: 500 }, actual: { status: 200 } },
+      "LEGACY_BUG_NOT_REPRODUCED",
+    ],
+    [
+      "B-0267",
+      "/admin/parity-setting/setting",
+      { expected: { status: 500 }, actual: { status: 200 } },
+      "LEGACY_BUG_NOT_REPRODUCED",
+    ],
+    [
+      "B-0221",
+      "/user/editform/defultLoginPage",
+      { expected: "2xx", actual: "4xx" },
+      "LEGACY_BUG_NOT_REPRODUCED",
+    ],
+    [
+      "B-0286",
+      "/sites/import",
+      { expected: "legacy HTTP 303", actual: "yoram HTTP 400" },
+      "IMPLEMENTATION_DIFFERENCE",
+    ],
+    [
+      "B-0014",
+      "/comments/issue/9",
+      { expected: { status: "<400" }, actual: { legacyStatus: 500, yoramStatus: 400 } },
+      "LEGACY_BUG_NOT_REPRODUCED",
+    ],
+    [
+      "B-0212",
+      "/-_-api/v1/owners/admin/projects/sample/issues/7/share",
+      shareProbe,
+      "LEGACY_BUG_NOT_REPRODUCED",
+    ],
+    [
+      "B-0212",
+      "/-_-api/v1/owners/admin/projects/sample/issues/7/share",
+      shareRemoveProbe,
+      "LEGACY_BUG_NOT_REPRODUCED",
+    ],
+    [
+      "B-0214",
+      "/-_-api/v1/owners/admin/projects/sample/issues/imports",
+      issueImportProbe,
+      "IMPLEMENTATION_DIFFERENCE",
+    ],
+    [
+      "B-0287",
+      "/sites/mail",
+      { expected: "legacy HTTP 500", actual: "yoram HTTP 400" },
+      "LEGACY_BUG_NOT_REPRODUCED",
+    ],
   ];
   for (const [behaviorId, route, detail, classification] of cases) {
-    assert.equal(classifyViolation("api", route, detail, { behaviorId }).classification, classification, behaviorId);
-    assert.equal(classifyViolation("api", route, detail).classification, "UNVERIFIED", `${behaviorId} must be attributed`);
+    assert.equal(
+      classifyViolation("api", route, detail, { behaviorId }).classification,
+      classification,
+      behaviorId,
+    );
+    assert.equal(
+      classifyViolation("api", route, detail).classification,
+      "UNVERIFIED",
+      `${behaviorId} must be attributed`,
+    );
   }
   const exactTuples = [
     {
@@ -1069,7 +1238,12 @@ test("malformed residual findings require their exact step behavior id", () => {
       detail: { expected: "legacy HTTP 200", actual: "yoram HTTP 404" },
       context: {
         scenarioId: "U22-user-profile-edit-revert",
-        scenarioActions: ["login", "edit-user-profile", "save-user-editform-tab", "save-user-editform-tab"],
+        scenarioActions: [
+          "login",
+          "edit-user-profile",
+          "save-user-editform-tab",
+          "save-user-editform-tab",
+        ],
       },
       classification: "IMPLEMENTATION_DIFFERENCE",
     },
@@ -1134,7 +1308,9 @@ test("malformed residual findings require their exact step behavior id", () => {
       { action: "other-action" },
       { action: "other-action" },
     ],
-    violations: scenarioReclassification.violations.map(({ classification, reason, rationale, ...finding }) => finding),
+    violations: scenarioReclassification.violations.map(
+      ({ classification, reason, rationale, ...finding }) => finding,
+    ),
   };
   reclassifyScenarioViolations(wrongScenario);
   assert.equal(wrongScenario.violations[0].classification, "UNVERIFIED");
@@ -1161,7 +1337,8 @@ test("malformed residual findings require their exact step behavior id", () => {
     },
   ]) {
     assert.equal(
-      classifyViolation("api", nearMiss.route, nearMiss.detail, { behaviorId: nearMiss.behaviorId }).classification,
+      classifyViolation("api", nearMiss.route, nearMiss.detail, { behaviorId: nearMiss.behaviorId })
+        .classification,
       "UNVERIFIED",
       `near miss must remain blocking: ${nearMiss.behaviorId} ${nearMiss.route}`,
     );
@@ -1249,7 +1426,8 @@ test("PR merge-bug DOM rule requires exact state and same-scenario B-0227 eviden
     route: "/admin/sample/pullRequest/2/accept",
     expected: { status: 500 },
     actual: { status: 200 },
-    reason: "Legacy PullRequest.Merger.Success dereferences a null reusable merge tree during accept.",
+    reason:
+      "Legacy PullRequest.Merger.Success dereferences a null reusable merge tree during accept.",
   };
   const firstDiffs = [
     ...PULL_REQUEST_MERGE_PENDING_SIGNATURE.map((expected, index) => ({
@@ -1260,7 +1438,11 @@ test("PR merge-bug DOM rule requires exact state and same-scenario B-0227 eviden
     // The success signature is represented by `actual` entries in the
     // comparator; include the finite, reviewed structural companions only.
     { side: "yoram-only", expected: "<absent>", actual: PULL_REQUEST_MERGE_SUCCESS_SIGNATURE[0] },
-    { side: "legacy-only", expected: PULL_REQUEST_MERGE_PENDING_SIGNATURE[1], actual: PULL_REQUEST_MERGE_SUCCESS_SIGNATURE[1] },
+    {
+      side: "legacy-only",
+      expected: PULL_REQUEST_MERGE_PENDING_SIGNATURE[1],
+      actual: PULL_REQUEST_MERGE_SUCCESS_SIGNATURE[1],
+    },
     { side: "yoram-only", expected: "<absent>", actual: "div.attachments:" },
     { side: "yoram-only", expected: "<absent>", actual: "i.yobicon-right-2.ml10:" },
     { side: "yoram-only", expected: "<absent>", actual: "i.yobicon-check-circle-alt.mr5:" },
@@ -1289,7 +1471,8 @@ test("PR merge-bug DOM rule leaves unrelated comments/list and near-miss text bl
     route: "/admin/sample/pullRequest/2/accept",
     expected: { status: 500 },
     actual: { status: 200 },
-    reason: "Legacy PullRequest.Merger.Success dereferences a null reusable merge tree during accept.",
+    reason:
+      "Legacy PullRequest.Merger.Success dereferences a null reusable merge tree during accept.",
   };
   const exact = PULL_REQUEST_MERGE_PENDING_SIGNATURE.map((expected, index) => ({
     side: "legacy-only",
@@ -1345,16 +1528,34 @@ test("every IMPLEMENTATION_DIFFERENCE rule carries a rationale reference", () =>
   // report.mjs validates its own rule table at import; this asserts the enum
   // contract stays closed against banned legacy terms.
   for (const c of CLASSIFICATIONS) {
-    assert.match(c, /^(PASS|REAL_OBSERVABLE_MISMATCH|IMPLEMENTATION_DIFFERENCE|LEGACY_BUG_NOT_REPRODUCED|HARNESS_ERROR|INFRA_ERROR|UNVERIFIED)$/u);
+    assert.match(
+      c,
+      /^(PASS|REAL_OBSERVABLE_MISMATCH|IMPLEMENTATION_DIFFERENCE|LEGACY_BUG_NOT_REPRODUCED|HARNESS_ERROR|INFRA_ERROR|UNVERIFIED)$/u,
+    );
   }
 });
 
 test("violation() rejects an IMPLEMENTATION_DIFFERENCE without rationale", () => {
   assert.throws(
-    () => violation({ route: "/x", kind: "divergence", classification: "IMPLEMENTATION_DIFFERENCE", expected: 1, actual: 2 }),
+    () =>
+      violation({
+        route: "/x",
+        kind: "divergence",
+        classification: "IMPLEMENTATION_DIFFERENCE",
+        expected: 1,
+        actual: 2,
+      }),
     /rationale/u,
   );
-  const ok = violation({ route: "/x", kind: "divergence", classification: "IMPLEMENTATION_DIFFERENCE", reason: "r", rationale: "docs/x.md", expected: 1, actual: 2 });
+  const ok = violation({
+    route: "/x",
+    kind: "divergence",
+    classification: "IMPLEMENTATION_DIFFERENCE",
+    reason: "r",
+    rationale: "docs/x.md",
+    expected: 1,
+    actual: 2,
+  });
   assert.equal(ok.classification, "IMPLEMENTATION_DIFFERENCE");
   assert.equal(ok.rationale, "docs/x.md");
 });
@@ -1373,7 +1574,14 @@ function guardedActionCtx(action, state) {
 }
 
 test("id-dependent mutations throw HarnessError instead of issuing /issue/null/*", async () => {
-  for (const action of ["edit-issue", "patch-issue-content", "update-issue-assignees", "delete-issue", "vote-issue", "unvote-issue"]) {
+  for (const action of [
+    "edit-issue",
+    "patch-issue-content",
+    "update-issue-assignees",
+    "delete-issue",
+    "vote-issue",
+    "unvote-issue",
+  ]) {
     const ctx = guardedActionCtx(action, { issueNumberLegacy: null, issueNumberYoram: 7 });
     await assert.rejects(() => ACTION_DEFINITIONS[action].handler(ctx), HarnessError);
     assert.equal(ctx.entry.violations.length, 0);
@@ -1382,7 +1590,10 @@ test("id-dependent mutations throw HarnessError instead of issuing /issue/null/*
 
 test("create-issue-comment throws before requesting when the issue id is unresolved", async () => {
   let requested = false;
-  const ctx = guardedActionCtx("create-issue-comment", { issueNumberLegacy: null, issueNumberYoram: null });
+  const ctx = guardedActionCtx("create-issue-comment", {
+    issueNumberLegacy: null,
+    issueNumberYoram: null,
+  });
   ctx.helpers.requestBoth = async () => {
     requested = true;
     return { legacyResult: {}, yoramResult: {} };

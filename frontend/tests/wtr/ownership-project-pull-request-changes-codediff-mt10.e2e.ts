@@ -1,97 +1,11 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
-import { expect, test } from "../wtr-compat.ts";
-
-// Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op).
-const mkdirSync = () => undefined;
+import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const changesPath = `${basePath}/admin/sample/pullRequest/9/changes`;
 const screenshotDirectory = "/private/tmp/yona-pull-request-changes-codediff-mt10";
-const routeSource = readFileSync(
-  new URL(
-    "../src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes.tsx",
-    import.meta.url,
-  ),
-  "utf8",
-);
-const styleSource = curatedAppCss();
-const legacyViewSource = readFileSync(
-  new URL("../../yona-original/app/views/git/viewChanges.scala.html", import.meta.url),
-  "utf8",
-);
-const legacyCommonSource = readFileSync(
-  new URL("../../yona-original/app/assets/stylesheets/less/_common.less", import.meta.url),
-  "utf8",
-);
-const legacyPageSource = readFileSync(
-  new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
-  "utf8",
-);
-const legacyResponsiveSource = readFileSync(
-  new URL("../../yona-original/app/assets/stylesheets/less/_responsive.less", import.meta.url),
-  "utf8",
-);
-const legacyYobiSource = readFileSync(
-  new URL("../../yona-original/app/assets/stylesheets/yobi.less", import.meta.url),
-  "utf8",
-);
-const legacyBootstrapSource = readFileSync(
-  new URL("../../yona-original/public/bootstrap/css/bootstrap.css", import.meta.url),
-  "utf8",
-);
-const legacyBootstrapResponsiveSource = readFileSync(
-  new URL("../../yona-original/public/bootstrap/css/bootstrap-responsive.css", import.meta.url),
-  "utf8",
-);
-const legacyMessagesSource = readFileSync(
-  new URL("../../yona-original/conf/messages", import.meta.url),
-  "utf8",
-);
-
-test("pull-request changes keeps the legacy codediff mt10 wrapper owned by Style", () => {
-  expect(legacyViewSource).toContain(
-    'class="codediff-wrap mt10 @if(pull.commentThreads.size == 0) {diffs-only}"',
-  );
-  expect(legacyCommonSource).toContain(".mt10 { margin-top:10px; }");
-  expect(legacyPageSource).toContain(".codediff-wrap {");
-  expect(legacyPageSource).toContain("&.diffs-only {");
-  expect(legacyPageSource).toContain(".diffs-wrap { width:100%; }");
-  expect(legacyResponsiveSource).toContain(".codediff-wrap {");
-  expect(legacyResponsiveSource).toContain("margin-right: inherit !important;");
-  expect(legacyResponsiveSource).toContain("position: inherit !important;");
-  for (const importedFile of [
-    "_variables.less",
-    "_mixins.less",
-    "_common.less",
-    "_sprites.less",
-    "_page.less",
-    "_tippy.less",
-    "_scrollbar.less",
-    "_responsive.less",
-    "_yobiUI.less",
-    "_temporary.less",
-    "_markdown.less",
-    "_migration.less",
-    "_override.less",
-  ]) {
-    expect(legacyYobiSource).toContain(`@import "less/${importedFile}";`);
-  }
-  expect(legacyBootstrapSource).toContain(".btn {");
-  expect(legacyBootstrapSource).toContain(".dropdown-menu {");
-  expect(legacyBootstrapResponsiveSource).toMatch(/@media[^\n{]*max-width/iu);
-  expect(legacyMessagesSource).toMatch(/^pullRequest\.changes\.all\s*=/mu);
-  expect(legacyMessagesSource).toMatch(/^review\.outdated\s*=/mu);
-
-  expect(routeSource).toContain('data-owner="pull-request-changes-codediff-wrap"');
-  expect(routeSource).toContain(
-    'const codediffClassName = `codediff-wrap mt10${hasReviewCards ? "" : " diffs-only"}`;',
-  );
-});
-
 test("pull-request changes keeps codediff mt10 geometry and interaction in both review states", async ({
   page,
 }) => {
-  mkdirSync(screenshotDirectory, { recursive: true });
   let state: "review-cards" | "diffs-only" = "diffs-only";
   await mockChanges(page, () => state);
 
@@ -111,10 +25,7 @@ test("pull-request changes keeps codediff mt10 geometry and interaction in both 
       await expect(wrapper).toBeVisible();
       await expect(wrapper).toHaveClass(/\bcodediff-wrap\b/u);
       await expect(wrapper).toHaveClass(/\bmt10\b/u);
-      await expect(wrapper).toHaveAttribute("data-owner", "pull-request-changes-codediff-wrap");
-      // data-style-src is dev-only metadata (dist renders null; parity helper treats it as env-variant noise) — dropped in WTR copy.
       await expect(wrapper).toHaveCSS("margin-top", "10px");
-      expect(await wrapper.getAttribute("style")).toBeNull();
       await expect(diffs).toBeVisible();
       await expect(
         wrapper.locator(

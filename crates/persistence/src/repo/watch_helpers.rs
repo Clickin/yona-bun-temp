@@ -97,6 +97,38 @@ impl AppRepositoryImpl<'_> {
             .is_none())
     }
 
+    pub async fn is_commit_watched_by(
+        &self,
+        project_id: i64,
+        commit_id: &str,
+        user_id: i64,
+        implicit_watcher: bool,
+    ) -> Result<bool, DbErr> {
+        let resource_id = format!("{project_id}:{commit_id}");
+        if unwatch::Entity::find()
+            .filter(unwatch::Column::UserId.eq(Some(user_id)))
+            .filter(unwatch::Column::ResourceType.eq(Some("COMMIT".to_string())))
+            .filter(unwatch::Column::ResourceId.eq(Some(resource_id.clone())))
+            .one(&self.db)
+            .await?
+            .is_some()
+        {
+            return Ok(false);
+        }
+        if implicit_watcher
+            || watch::Entity::find()
+                .filter(watch::Column::UserId.eq(Some(user_id)))
+                .filter(watch::Column::ResourceType.eq(Some("COMMIT".to_string())))
+                .filter(watch::Column::ResourceId.eq(Some(resource_id)))
+                .one(&self.db)
+                .await?
+                .is_some()
+        {
+            return Ok(true);
+        }
+        self.is_watching_project(user_id, project_id).await
+    }
+
     pub(super) async fn is_pull_request_watched_by(
         &self,
         project: &ProjectRecord,
@@ -462,51 +494,31 @@ impl AppRepositoryImpl<'_> {
     ) -> Result<Vec<i64>, DbErr> {
         let mut user_ids = Vec::new();
         let mut seen = HashSet::new();
-        self.push_readable_pull_request_watcher_id(
-            project,
-            &mut user_ids,
-            &mut seen,
-            contributor_id,
-        )
-        .await?;
+        self.push_readable_project_watcher_id(project, &mut user_ids, &mut seen, contributor_id)
+            .await?;
 
         for user_id in self
             .active_watch_user_ids("PULL_REQUEST", &pull_request_id.to_string())
             .await?
         {
-            self.push_readable_pull_request_watcher_id(
-                project,
-                &mut user_ids,
-                &mut seen,
-                Some(user_id),
-            )
-            .await?;
+            self.push_readable_project_watcher_id(project, &mut user_ids, &mut seen, Some(user_id))
+                .await?;
         }
 
         for user_id in self
             .active_watch_user_ids("PROJECT", &project.id.to_string())
             .await?
         {
-            self.push_readable_pull_request_watcher_id(
-                project,
-                &mut user_ids,
-                &mut seen,
-                Some(user_id),
-            )
-            .await?;
+            self.push_readable_project_watcher_id(project, &mut user_ids, &mut seen, Some(user_id))
+                .await?;
         }
 
         for user_id in self
             .pull_request_review_comment_author_ids(pull_request_id)
             .await?
         {
-            self.push_readable_pull_request_watcher_id(
-                project,
-                &mut user_ids,
-                &mut seen,
-                Some(user_id),
-            )
-            .await?;
+            self.push_readable_project_watcher_id(project, &mut user_ids, &mut seen, Some(user_id))
+                .await?;
         }
 
         let pull_request_unwatchers = self
@@ -539,7 +551,7 @@ impl AppRepositoryImpl<'_> {
         Ok(rows.into_iter().filter_map(|row| row.author_id).collect())
     }
 
-    pub(super) async fn push_readable_pull_request_watcher_id(
+    pub(super) async fn push_readable_project_watcher_id(
         &self,
         project: &ProjectRecord,
         user_ids: &mut Vec<i64>,

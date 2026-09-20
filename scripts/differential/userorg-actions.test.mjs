@@ -51,7 +51,14 @@ test("favorite list matching accepts legacy ids and canonical resource entries",
     true,
   );
   assert.equal(
-    favoriteListContains({ organizations: [{ organizationName: "weblabs" }] }, "organization", 99, "admin", "sample", "weblabs"),
+    favoriteListContains(
+      { organizations: [{ organizationName: "weblabs" }] },
+      "organization",
+      99,
+      "admin",
+      "sample",
+      "weblabs",
+    ),
     true,
   );
 });
@@ -92,11 +99,14 @@ test("favorite toggle clears a persisted legacy baseline before paired transitio
   });
   assert.deepEqual(entry.errors, []);
   assert.deepEqual(entry.violations, []);
-  assert.deepEqual(calls.legacy.map((call) => call.path), [
-    "/-_-api/v1/favoriteProjects",
-    "/-_-api/v1/favoriteProjects/7",
-  ]);
-  assert.deepEqual(calls.yoram.map((call) => call.path), ["/api/v1/user/favorites/projects"]);
+  assert.deepEqual(
+    calls.legacy.map((call) => call.path),
+    ["/-_-api/v1/favoriteProjects", "/-_-api/v1/favoriteProjects/7"],
+  );
+  assert.deepEqual(
+    calls.yoram.map((call) => call.path),
+    ["/api/v1/user/favorites/projects"],
+  );
   assert.equal(calls.pair, 2);
 });
 
@@ -105,7 +115,11 @@ test("every referenced action exists in merged ACTION_DEFINITIONS with both tran
     for (const step of scenario.actions) {
       const definition = ACTION_DEFINITIONS[step.action];
       assert.ok(definition, `${scenario.id}: missing definition for ${step.action}`);
-      assert.equal(typeof definition.translateLegacy, "function", `${step.action}: translateLegacy`);
+      assert.equal(
+        typeof definition.translateLegacy,
+        "function",
+        `${step.action}: translateLegacy`,
+      );
       assert.equal(typeof definition.translateYoram, "function", `${step.action}: translateYoram`);
       assert.equal(typeof definition.handler, "function", `${step.action}: handler`);
     }
@@ -129,7 +143,10 @@ test("translators produce expected method/path literals", () => {
   const yoram = (action, params = {}) => actionDefinitions[action].translateYoram({ params });
 
   // view-user-issues: tab query on both sides; yoram API + pagePath
-  assert.deepEqual(legacy("view-user-issues", { tab: "assigned" }), { method: "GET", path: "/user/issues?tab=assigned" });
+  assert.deepEqual(legacy("view-user-issues", { tab: "assigned" }), {
+    method: "GET",
+    path: "/user/issues?tab=assigned",
+  });
   assert.deepEqual(yoram("view-user-issues", { tab: "assigned" }), {
     method: "GET",
     path: "/api/v1/user/issues/search?tab=assigned",
@@ -137,31 +154,52 @@ test("translators produce expected method/path literals", () => {
   });
   assert.deepEqual(legacy("view-user-issues"), { method: "GET", path: "/user/issues" });
 
-  assert.deepEqual(legacy("get-user-issues-compat"), { method: "GET", path: "/-_-api/v1/user/issues" });
-  assert.deepEqual(yoram("get-user-issues-compat"), { method: "GET", path: "/api/v1/user/issues/search" });
+  assert.deepEqual(legacy("get-user-issues-compat"), {
+    method: "GET",
+    path: "/-_-api/v1/user/issues",
+  });
+  assert.deepEqual(yoram("get-user-issues-compat"), {
+    method: "GET",
+    path: "/api/v1/user/issues/search",
+  });
 
   assert.deepEqual(legacy("view-notifications"), { method: "GET", path: "/notifications" });
-  assert.deepEqual(legacy("view-notifications", { path: "/notification" }), { method: "GET", path: "/notification?from=0&limit=10" });
+  assert.deepEqual(legacy("view-notifications", { path: "/notification" }), {
+    method: "GET",
+    path: "/notification?from=0&limit=10",
+  });
   assert.deepEqual(yoram("view-notifications"), {
     method: "GET",
     path: "/api/v1/notifications",
     pagePath: "/notifications",
   });
 
-  assert.deepEqual(legacy("view-global-search", { query: "a b" }), { method: "GET", path: "/search?keyword=a%20b&searchType=issue" });
-  assert.deepEqual(yoram("view-global-search", { query: "sample" }).path, "/api/v1/search?keyword=sample&searchType=issue");
+  assert.deepEqual(legacy("view-global-search", { query: "a b" }), {
+    method: "GET",
+    path: "/search?keyword=a%20b&searchType=issue",
+  });
+  assert.deepEqual(
+    yoram("view-global-search", { query: "sample" }).path,
+    "/api/v1/search?keyword=sample&searchType=issue",
+  );
 
   assert.deepEqual(legacy("view-orgs-list"), { method: "GET", path: "/orgs" });
   assert.deepEqual(yoram("view-orgs-list").path, "/api/v1/organizations");
 
-  assert.deepEqual(legacy("view-org-home", { organization: "weblabs" }), { method: "GET", path: "/organizations/weblabs" });
+  assert.deepEqual(legacy("view-org-home", { organization: "weblabs" }), {
+    method: "GET",
+    path: "/organizations/weblabs",
+  });
   assert.deepEqual(yoram("view-org-home", { organization: "weblabs" }), {
     method: "GET",
     path: "/api/v1/organizations/weblabs",
     pagePath: "/organizations/weblabs",
   });
 
-  assert.deepEqual(legacy("view-user-profile", { user: "admin" }), { method: "GET", path: "/admin" });
+  assert.deepEqual(legacy("view-user-profile", { user: "admin" }), {
+    method: "GET",
+    path: "/admin",
+  });
   assert.deepEqual(yoram("view-user-profile", { user: "admin" }), {
     method: "GET",
     path: "/api/v1/users/admin/profile",
@@ -171,42 +209,85 @@ test("translators produce expected method/path literals", () => {
   assert.deepEqual(legacy("view-user-files"), { method: "GET", path: "/user/files" });
   assert.deepEqual(yoram("view-user-files"), { method: "GET", path: "/user/files" });
 
-  assert.deepEqual(legacy("view-new-direct-issue-form"), { method: "GET", path: "/user/issues/new" });
-  assert.deepEqual(legacy("view-new-direct-issue-form", { mine: true }), { method: "GET", path: "/user/issues/new/mine" });
-  assert.deepEqual(yoram("view-new-direct-issue-form", { mine: true }), { method: "GET", path: "/user/issues/new/mine" });
+  assert.deepEqual(legacy("view-new-direct-issue-form"), {
+    method: "GET",
+    path: "/user/issues/new",
+  });
+  assert.deepEqual(legacy("view-new-direct-issue-form", { mine: true }), {
+    method: "GET",
+    path: "/user/issues/new/mine",
+  });
+  assert.deepEqual(yoram("view-new-direct-issue-form", { mine: true }), {
+    method: "GET",
+    path: "/user/issues/new/mine",
+  });
 
-  assert.deepEqual(legacy("get-user-statistics", { user: "admin" }), { method: "GET", path: "/-_-api/v1/users/admin/statistics" });
-  assert.deepEqual(yoram("get-user-statistics", { user: "admin" }), { method: "GET", path: "/api/v1/users/admin/statistics/summary" });
+  assert.deepEqual(legacy("get-user-statistics", { user: "admin" }), {
+    method: "GET",
+    path: "/-_-api/v1/users/admin/statistics",
+  });
+  assert.deepEqual(yoram("get-user-statistics", { user: "admin" }), {
+    method: "GET",
+    path: "/api/v1/users/admin/statistics/summary",
+  });
 
   // --- org screens -----------------------------------------------------------
   assert.deepEqual(legacy("view-org-subpage", { organization: "weblabs", page: "boards" }), {
     method: "GET",
     path: "/organizations/weblabs/boards",
   });
-  assert.deepEqual(yoram("view-org-subpage", { organization: "weblabs", page: "pullrequests" }).path,
-    "/api/v1/organizations/weblabs/pull-requests");
-  assert.deepEqual(yoram("view-org-subpage", { organization: "weblabs", page: "closedPullrequests" }).path,
-    "/organizations/weblabs/closedPullrequests");
-  assert.deepEqual(yoram("view-org-subpage", { organization: "weblabs", page: "members" }).path,
-    "/api/v1/organizations/weblabs/members");
+  assert.deepEqual(
+    yoram("view-org-subpage", { organization: "weblabs", page: "pullrequests" }).path,
+    "/api/v1/organizations/weblabs/pull-requests",
+  );
+  assert.deepEqual(
+    yoram("view-org-subpage", { organization: "weblabs", page: "closedPullrequests" }).path,
+    "/organizations/weblabs/closedPullrequests",
+  );
+  assert.deepEqual(
+    yoram("view-org-subpage", { organization: "weblabs", page: "members" }).path,
+    "/api/v1/organizations/weblabs/members",
+  );
   // SPA-shell fallback pages translate to the same legacy direct route.
-  assert.deepEqual(yoram("view-org-subpage", { organization: "weblabs", page: "deleteForm" }).path,
-    "/organizations/weblabs/deleteForm");
-  assert.deepEqual(yoram("view-org-subpage", { organization: "weblabs", page: "settingform" }).pagePath,
-    "/organizations/weblabs/settingform");
+  assert.deepEqual(
+    yoram("view-org-subpage", { organization: "weblabs", page: "deleteForm" }).path,
+    "/organizations/weblabs/deleteForm",
+  );
+  assert.deepEqual(
+    yoram("view-org-subpage", { organization: "weblabs", page: "settingform" }).pagePath,
+    "/organizations/weblabs/settingform",
+  );
   assert.deepEqual(legacy("view-new-org-form"), { method: "GET", path: "/organizations/new" });
 
   // --- profile edit forms ----------------------------------------------------
   assert.deepEqual(legacy("view-user-editform"), { method: "GET", path: "/user/editform" });
-  assert.deepEqual(legacy("view-user-editform", { tab: "emails" }), { method: "GET", path: "/user/editform/emails" });
-  assert.deepEqual(yoram("view-user-editform", { tab: "token" }), { method: "GET", path: "/user/editform/token" });
+  assert.deepEqual(legacy("view-user-editform", { tab: "emails" }), {
+    method: "GET",
+    path: "/user/editform/emails",
+  });
+  assert.deepEqual(yoram("view-user-editform", { tab: "token" }), {
+    method: "GET",
+    path: "/user/editform/token",
+  });
 
   // --- site-admin screens and files -----------------------------------------
-  assert.deepEqual(legacy("view-site-screen", { screen: "userList" }), { method: "GET", path: "/sites/userList" });
-  assert.deepEqual(yoram("view-site-screen", { screen: "projectList" }), { method: "GET", path: "/sites/projectList" });
+  assert.deepEqual(legacy("view-site-screen", { screen: "userList" }), {
+    method: "GET",
+    path: "/sites/userList",
+  });
+  assert.deepEqual(yoram("view-site-screen", { screen: "projectList" }), {
+    method: "GET",
+    path: "/sites/projectList",
+  });
   assert.deepEqual(legacy("view-files-list"), { method: "GET", path: "/files" });
-  assert.deepEqual(yoram("get-users-directory"), { method: "GET", path: "/api/v1/users/directory" });
-  assert.deepEqual(legacy("check-email-exists", { email: "a@b.co" }), { method: "GET", path: "/user/isEmailExist?email=a%40b.co" });
+  assert.deepEqual(yoram("get-users-directory"), {
+    method: "GET",
+    path: "/api/v1/users/directory",
+  });
+  assert.deepEqual(legacy("check-email-exists", { email: "a@b.co" }), {
+    method: "GET",
+    path: "/user/isEmailExist?email=a%40b.co",
+  });
   assert.equal(
     actionDefinitions["view-files-list"].handler,
     actionDefinitions["get-users-directory"].handler,
@@ -219,8 +300,14 @@ test("translators produce expected method/path literals", () => {
   );
 
   // --- mutations ---------------------------------------------------------------
-  assert.deepEqual(legacy("toggle-favorite", { target: "issue" }), { method: "POST", path: "/-_-api/v1/favoriteIssues/1" });
-  assert.deepEqual(legacy("toggle-favorite", { target: "organization" }), { method: "POST", path: "/-_-api/v1/favoriteOrganizations/1" });
+  assert.deepEqual(legacy("toggle-favorite", { target: "issue" }), {
+    method: "POST",
+    path: "/-_-api/v1/favoriteIssues/1",
+  });
+  assert.deepEqual(legacy("toggle-favorite", { target: "organization" }), {
+    method: "POST",
+    path: "/-_-api/v1/favoriteOrganizations/1",
+  });
   assert.deepEqual(yoram("toggle-favorite", { target: "organization" }), {
     method: "POST",
     path: "/api/v1/organizations/weblabs/favorite",
@@ -229,11 +316,27 @@ test("translators produce expected method/path literals", () => {
     method: "POST",
     path: "/api/v1/owners/admin/projects/sample/issues/3/favorite",
   });
-  assert.deepEqual(legacy("toggle-noti-watch", { notiType: "NEW_ISSUE" }), { method: "POST", path: "/noti/toggle/1/NEW_ISSUE" });
-  assert.deepEqual(legacy("add-email", { email: "x@y.z" }), { method: "POST", path: "/user/email", form: { email: "x@y.z" } });
-  assert.deepEqual(legacy("set-as-main-email", { emailId: 7 }), { method: "PUT", path: "/user/email/setAsMain/7" });
-  assert.deepEqual(yoram("delete-email", { emailId: 9 }), { method: "DELETE", path: "/user/email/delete/9" });
-  assert.deepEqual(legacy("reset-visited-list"), { method: "POST", path: "/user/resetVisitedList" });
+  assert.deepEqual(legacy("toggle-noti-watch", { notiType: "NEW_ISSUE" }), {
+    method: "POST",
+    path: "/noti/toggle/1/NEW_ISSUE",
+  });
+  assert.deepEqual(legacy("add-email", { email: "x@y.z" }), {
+    method: "POST",
+    path: "/user/email",
+    form: { email: "x@y.z" },
+  });
+  assert.deepEqual(legacy("set-as-main-email", { emailId: 7 }), {
+    method: "PUT",
+    path: "/user/email/setAsMain/7",
+  });
+  assert.deepEqual(yoram("delete-email", { emailId: 9 }), {
+    method: "DELETE",
+    path: "/user/email/delete/9",
+  });
+  assert.deepEqual(legacy("reset-visited-list"), {
+    method: "POST",
+    path: "/user/resetVisitedList",
+  });
   assert.deepEqual(yoram("reset-visited-list"), { method: "POST", path: "/user/resetVisitedList" });
   // --- throwaway-entity lifecycle wave (U20-U23) ------------------------------
   assert.deepEqual(legacy("create-organization", { name: "o1" }), {
@@ -256,7 +359,10 @@ test("translators produce expected method/path literals", () => {
     path: "/api/v1/organizations/o1/members/1",
     json: { role: "org_admin" },
   });
-  assert.equal(legacy("enroll-organization", { organization: "o1" }).path, "/organizations/o1/enroll");
+  assert.equal(
+    legacy("enroll-organization", { organization: "o1" }).path,
+    "/organizations/o1/enroll",
+  );
   assert.deepEqual(legacy("cancel-organization-enroll", { organization: "o1" }), {
     method: "POST",
     path: "/organizations/o1/cancel/enroll",
@@ -372,7 +478,9 @@ test("site-admin DOM probes exclude the shared shell and target each route body 
     await ACTION_DEFINITIONS["view-site-screen"].handler(ctx);
   }
   assert.equal(calls.length, Object.keys(SITE_ADMIN_BODY_SELECTORS).length);
-  for (const [index, [screen, yoramSelector]] of Object.entries(SITE_ADMIN_BODY_SELECTORS).entries()) {
+  for (const [index, [screen, yoramSelector]] of Object.entries(
+    SITE_ADMIN_BODY_SELECTORS,
+  ).entries()) {
     assert.deepEqual(calls[index], {
       legacy: `http://legacy.test/sites/${screen}`,
       yoram: `http://yoram.test/sites/${screen}`,
@@ -421,8 +529,14 @@ test("shared user and organization page roots are explicit while unmatched route
     [{ action: "view-notifications", params: { path: "/notification" } }, undefined],
     [{ action: "view-global-search", params: { query: "sample" } }, ".project-page-wrap"],
     [{ action: "view-org-home", params: { organization: "weblabs" } }, ".project-page-wrap"],
-    [{ action: "view-org-subpage", params: { organization: "weblabs", page: "issues" } }, ".page-wrap"],
-    [{ action: "view-org-subpage", params: { organization: "weblabs", page: "members" } }, ".project-page-wrap"],
+    [
+      { action: "view-org-subpage", params: { organization: "weblabs", page: "issues" } },
+      ".page-wrap",
+    ],
+    [
+      { action: "view-org-subpage", params: { organization: "weblabs", page: "members" } },
+      ".project-page-wrap",
+    ],
     [{ action: "view-user-profile", params: { user: "admin" } }, ".page-wrap"],
     [{ action: "view-user-files", params: {} }, ".page-wrap"],
     [{ action: "view-new-direct-issue-form", params: {} }, undefined],
@@ -441,9 +555,14 @@ test("shared user and organization page roots are explicit while unmatched route
 });
 
 test("user and organization route-body control loss remains blocking", () => {
-  const detail = { actual: { fullDiffs: [{ side: "legacy-only", expected: "button.ybtn.ybtn-primary:Create" }] } };
+  const detail = {
+    actual: { fullDiffs: [{ side: "legacy-only", expected: "button.ybtn.ybtn-primary:Create" }] },
+  };
   assert.equal(domVisibleLoss(detail), true);
-  assert.equal(classifyViolation("dom", "/organizations/weblabs/members", detail).classification, "UNVERIFIED");
+  assert.equal(
+    classifyViolation("dom", "/organizations/weblabs/members", detail).classification,
+    "UNVERIFIED",
+  );
 });
 
 test("site export status probe opts out of streaming body reads", () => {
@@ -461,8 +580,7 @@ test("site export status probe opts out of streaming body reads", () => {
 
 test("self-cleanup contract: every mutating scenario ends with revert/cleanup steps", () => {
   const cleanupByScenario = {
-    "U12-favorite-toggles": (actions) =>
-      actions.some((step) => step.action === "toggle-favorite"),
+    "U12-favorite-toggles": (actions) => actions.some((step) => step.action === "toggle-favorite"),
     "U14-noti-watch-toggle": (actions) => {
       const watchIndex = actions.findIndex((step) => step.action === "watch-project");
       const toggleIndex = actions.findIndex((step) => step.action === "toggle-noti-watch");
@@ -478,8 +596,8 @@ test("self-cleanup contract: every mutating scenario ends with revert/cleanup st
       actions.some((step) => step.action === "leave-organization"),
     "U21-throwaway-user-site-toggles": (actions) =>
       actions.at(-1).action === "delete-site-user" &&
-      ["toggle-account-lock", "toggle-guest-mode", "toggle-site-admin-role"].every((action) =>
-        actions.filter((step) => step.action === action).length === 1,
+      ["toggle-account-lock", "toggle-guest-mode", "toggle-site-admin-role"].every(
+        (action) => actions.filter((step) => step.action === action).length === 1,
       ),
     "U22-user-profile-edit-revert": (actions) =>
       actions.some((step) => step.action === "edit-user-profile"),
@@ -499,4 +617,135 @@ test("self-cleanup contract: every mutating scenario ends with revert/cleanup st
   assert.deepEqual(targets, ["issue", "organization", "project"]);
 });
 
+test("organization enrollment requires persisted request and cancellation state, not just HTTP success", async () => {
+  let requested = false;
+  let persistMutation = false;
+  const entry = { errors: [], violations: [] };
+  const ctx = {
+    state: { orgName: "temporary" },
+    entry,
+    step: { action: "enroll-organization", params: {} },
+    legacySession: {
+      async request() {
+        return {
+          status: 200,
+          body: `<a id="enrollBtn" href="/organizations/temporary/${requested ? "cancel/enroll" : "enroll"}">Enrollment</a>`,
+        };
+      },
+    },
+    yoramSession: {
+      async request() {
+        return { status: 200, json: { enrollmentRequested: requested } };
+      },
+    },
+    helpers: {
+      async requestBoth() {
+        if (persistMutation) requested = ctx.step.action === "enroll-organization";
+        return { legacyResult: { status: 202 }, yoramResult: { status: 200 } };
+      },
+    },
+  };
+  await actionDefinitions["enroll-organization"].handler(ctx);
+  assert.equal(
+    entry.errors.length,
+    2,
+    "a successful HTTP response without enrollment must fail on both sides",
+  );
+  entry.errors.length = 0;
+  persistMutation = true;
+  await actionDefinitions["enroll-organization"].handler(ctx);
+  assert.deepEqual(entry.errors, []);
+  ctx.step.action = "cancel-organization-enroll";
+  persistMutation = false;
+  await actionDefinitions["cancel-organization-enroll"].handler(ctx);
+  assert.equal(
+    entry.errors.length,
+    2,
+    "a successful HTTP response retaining enrollment must fail on both sides",
+  );
+  entry.errors.length = 0;
+  persistMutation = true;
+  await actionDefinitions["cancel-organization-enroll"].handler(ctx);
+  assert.deepEqual(entry.errors, []);
+});
 
+test("signup verification selects the current recipient and exact origin rather than another mailbox or same-port host", async () => {
+  const sent = [];
+  const entry = { errors: [], violations: [], behaviorIds: ["B-0192"] };
+  await actionDefinitions["open-verify-link"].handler({
+    entry,
+    state: { throwawayLoginId: "parity", throwawayEmail: "parity@example.com", mailCountBefore: 1 },
+    options: { legacyUrl: "http://127.0.0.1:9012" },
+    yoramBaseUrl: "http://127.0.0.1:19095",
+    helpers: {
+      readMails: () => [
+        "To: other@example.com\n\nhttp://127.0.0.1:9012/verify/parity/wrong-recipient",
+        "To: parity@example.com\n\nhttp://other-host:9012/verify/parity/wrong-origin",
+        "To: Parity User\n <PARITY@example.com>\n\nhttp://127.0.0.1:9012/verify/parity/legacy-current",
+        "To: parity@example.com\n\nhttp://127.0.0.1:19095/verify/parity/yoram-current",
+        "To: parity@example.com\n\nhttp://127.0.0.1:9012/verify/parity/old-mail",
+      ],
+      extractMailLinks: (raw) => raw.match(/http:\/\/\S+/gu) ?? [],
+      async sendRaw(_ctx, side, request) {
+        sent.push({ side, ...request });
+        return { status: 200 };
+      },
+    },
+  });
+  assert.deepEqual(entry.errors, []);
+  assert.deepEqual(sent, [
+    { side: "legacy", method: "GET", path: "/verify/parity/legacy-current" },
+    { side: "yoram", method: "GET", path: "/verify/parity/yoram-current" },
+    {
+      side: "yoram",
+      method: "POST",
+      path: "/api/v1/auth/verify",
+      json: { loginId: "parity", verificationCode: "yoram-current" },
+    },
+  ]);
+});
+
+test("signup verification reports a delivered legacy mail with a misconfigured public origin without following it", async (t) => {
+  let clock = 0;
+  t.mock.method(Date, "now", () => clock);
+  t.mock.method(globalThis, "setTimeout", (callback) => {
+    clock += 30_001;
+    queueMicrotask(callback);
+  });
+  const sent = [];
+  const entry = { errors: [], violations: [], behaviorIds: ["B-0192"] };
+  const state = {
+    throwawayLoginId: "parity",
+    throwawayEmail: "parity@example.com",
+    mailCountBefore: 0,
+  };
+  await actionDefinitions["open-verify-link"].handler({
+    entry,
+    state,
+    options: { legacyUrl: "http://127.0.0.1:9012" },
+    yoramBaseUrl: "http://127.0.0.1:19095",
+    helpers: {
+      readMails: () => [
+        "To: Parity <parity@example.com>\n\nhttp://localhost:9000/verify/parity/secret-code",
+      ],
+      extractMailLinks: (raw) => raw.match(/http:\/\/\S+/gu) ?? [],
+      async sendRaw(_ctx, side, request) {
+        sent.push({ side, ...request });
+        return { status: 200 };
+      },
+    },
+  });
+  assert.deepEqual(sent, []);
+  assert.deepEqual(state.verifyLinks, {});
+  assert.equal(entry.behaviorIds.includes("B-0192"), false);
+  assert.ok(
+    entry.errors.some(
+      (error) =>
+        error.includes("legacy") &&
+        error.includes("http://localhost:9000") &&
+        error.includes("application.hostname/application.port"),
+    ),
+  );
+  assert.ok(entry.errors.some((error) => error.includes("no yoram verify mail")));
+  assert.ok(entry.errors.every((error) => !error.includes("secret-code")));
+});

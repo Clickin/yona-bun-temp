@@ -145,6 +145,7 @@ export type ReviewThread = {
   comments: ReviewComment[];
   commitId: string;
   createdLabel: string;
+  endColumn?: number;
   endLine?: number;
   endSide?: string;
   id: number;
@@ -152,14 +153,18 @@ export type ReviewThread = {
   path: string;
   prevCommitId: string;
   pullRequestNumber?: number;
+  startColumn?: number;
   startLine?: number;
   startSide?: string;
   state: string;
 };
 
 export type PullRequestCommit = {
+  authorAvatarUrl: string;
   authorDateLabel: string;
   authorEmail: string;
+  authorLoginId: string;
+  authorName: string;
   commitId: string;
   commitMessage: string;
   commitShortId: string;
@@ -275,10 +280,12 @@ export type PullRequestCommentInput = PullRequestScopeInput & {
   attachmentIds?: number[];
   commitId?: string;
   contentsMarkdown: string;
+  endColumn?: number;
   endLine?: number;
   endSide?: string;
   path?: string;
   prevCommitId?: string;
+  startColumn?: number;
   startLine?: number;
   startSide?: string;
   threadId?: number;
@@ -471,6 +478,7 @@ function normalizeThread(thread: Partial<ReviewThread>): ReviewThread {
     })),
     commitId: thread.commitId ?? "",
     createdLabel: thread.createdLabel ?? "",
+    endColumn: thread.endColumn,
     endLine: thread.endLine,
     endSide: thread.endSide,
     id: thread.id ?? 0,
@@ -478,6 +486,7 @@ function normalizeThread(thread: Partial<ReviewThread>): ReviewThread {
     path: thread.path ?? "",
     prevCommitId: thread.prevCommitId ?? "",
     pullRequestNumber: thread.pullRequestNumber ? Number(thread.pullRequestNumber) : undefined,
+    startColumn: thread.startColumn,
     startLine: thread.startLine,
     startSide: thread.startSide,
     state: thread.state ?? "open",
@@ -486,8 +495,11 @@ function normalizeThread(thread: Partial<ReviewThread>): ReviewThread {
 
 function normalizeCommit(commit: Partial<PullRequestCommit>): PullRequestCommit {
   return {
+    authorAvatarUrl: commit.authorAvatarUrl ?? "",
     authorDateLabel: commit.authorDateLabel ?? "",
     authorEmail: commit.authorEmail ?? "",
+    authorLoginId: commit.authorLoginId ?? "",
+    authorName: commit.authorName ?? "",
     commitId: commit.commitId ?? "",
     commitMessage: commit.commitMessage ?? "",
     commitShortId: commit.commitShortId ?? "",
@@ -681,10 +693,12 @@ function commentPullRequestBody(input: PullRequestCommentInput) {
     attachmentIds: input.attachmentIds ?? [],
     commitId: input.commitId,
     contentsMarkdown: input.contentsMarkdown,
+    endColumn: input.endColumn,
     endLine: input.endLine,
     endSide: input.endSide,
     path: input.path,
     prevCommitId: input.prevCommitId,
+    startColumn: input.startColumn,
     startLine: input.startLine,
     startSide: input.startSide,
     threadId: input.threadId,
@@ -790,7 +804,7 @@ export async function readPullRequestChanges(
   );
   return {
     cardThreads: (payload.cardThreads ?? payload.threads ?? []).map(normalizeThread),
-    commits: payload.commits ?? [],
+    commits: (payload.commits ?? []).map(normalizeCommit),
     files: payload.files ?? [],
     inlineThreads: (payload.inlineThreads ?? payload.threads ?? []).map(normalizeThread),
     nonRangedThreads: (payload.nonRangedThreads ?? []).map(normalizeThread),

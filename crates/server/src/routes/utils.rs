@@ -1472,18 +1472,44 @@ pub(crate) fn project_member_summary_from_record(
         avatar_url: gravatar_url(&record.email_address),
         login_id: record.login_id.clone(),
         role: record.role.clone(),
+        user_id: record.user_id,
         user_label: record.user_label.clone(),
         ..Default::default()
     }
 }
 
+pub(crate) fn project_milestone_due_date_projection(due_date: Option<DateTime>) -> (bool, String) {
+    project_milestone_due_date_projection_at(due_date, chrono::Local::now())
+}
+
+fn project_milestone_due_date_projection_at<Tz: chrono::TimeZone>(
+    due_date: Option<DateTime>,
+    now: chrono::DateTime<Tz>,
+) -> (bool, String) {
+    let Some(due_date) = due_date else {
+        return (false, String::new());
+    };
+    // Milestone.until / JodaDateUtil.localDaysBetween use the server's local calendar.
+    let now = now.naive_local();
+    let days = due_date.date().signed_duration_since(now.date()).num_days();
+    let until_label = match days.cmp(&0) {
+        std::cmp::Ordering::Less => format!("{} days past", days.abs()),
+        std::cmp::Ordering::Equal => "Today".to_string(),
+        std::cmp::Ordering::Greater => format!("{days} days left"),
+    };
+    (due_date < now, until_label)
+}
+
 pub(crate) fn project_milestone_summary_from_record(
     record: &persistence::ProjectMilestoneSummaryRecord,
 ) -> ProjectMilestoneSummary {
+    let (due_date_overdue, until_label) = project_milestone_due_date_projection(record.due_date);
     ProjectMilestoneSummary {
         closed_issue_count: record.closed_issue_count,
         completion_percent: record.completion_percent,
         due_date_label: record.due_date_label.clone(),
+        due_date_overdue,
+        until_label,
         id: record.id,
         open_issue_count: record.open_issue_count,
         state: record.state.clone(),
@@ -1554,7 +1580,9 @@ pub(crate) async fn build_organization_container_response(
     let viewer_can_leave = actor_id.is_some()
         && (authorization.viewer.is_organization_member
             || authorization.viewer.is_organization_admin)
-        && (!authorization.viewer.is_organization_admin || admin_count > 1);
+        && (authorization.viewer.is_site_admin
+            || !authorization.viewer.is_organization_admin
+            || admin_count > 1);
 
     let projects = repository
         .list_projects_for_organization(authorization.organization.id)
@@ -1582,18 +1610,33 @@ pub(crate) async fn build_organization_container_response(
         } else {
             false
         };
+        let project_directory = repository
+            .read_project_members(
+                &project_authorization.project.owner_name,
+                &project_authorization.project.project_name,
+            )
+            .await
+            .map_err(internal_error)?;
         visible_projects.push(OrganizationProjectCard {
-            created_label: format_project_date_label(project_authorization.project.created_date),
+            created_at: project_authorization
+                .project
+                .created_date
+                .map(|value| value.and_utc().to_rfc3339())
+                .unwrap_or_default(),
             is_watching,
-            last_pushed_label: format_project_date_label(
-                project_authorization.project.last_pushed_date,
-            ),
+            last_pushed_at: project_authorization
+                .project
+                .last_pushed_date
+                .map(|value| value.and_utc().to_rfc3339())
+                .unwrap_or_default(),
             logo_url: project_logo_url(repository, base_path, project_authorization.project.id)
                 .await?,
-            member_count: repository
-                .count_project_members(project_authorization.project.id)
-                .await
-                .map_err(internal_error)?,
+            member_count: project_directory.members.len() as u32,
+            members: project_directory
+                .members
+                .iter()
+                .map(project_member_summary_from_record)
+                .collect(),
             origin_owner_name,
             origin_project_name,
             overview: project_authorization
@@ -2746,6 +2789,44 @@ pub(crate) fn accepts_legacy_json(headers: &HeaderMap) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn milestone_due_dates_use_the_server_local_calendar_and_deadline() {
+        let due = parse_milestone_due_date("2026-07-31").unwrap();
+        let now = chrono::DateTime::parse_from_rfc3339("2026-09-19T00:30:00+09:00").unwrap();
+        assert_eq!(
+            project_milestone_due_date_projection_at(due, now),
+            (true, "50 days past".to_string())
+        );
+        assert_eq!(
+            project_milestone_due_date_projection_at(due, now.with_timezone(&chrono::Utc)),
+            (true, "49 days past".to_string())
+        );
+        let before_deadline =
+            chrono::DateTime::parse_from_rfc3339("2026-07-31T12:00:00+09:00").unwrap();
+        assert_eq!(
+            project_milestone_due_date_projection_at(due, before_deadline),
+            (false, "Today".to_string())
+        );
+        let noon = DateTime::parse_from_str("2026-07-31 12:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let after_deadline =
+            chrono::DateTime::parse_from_rfc3339("2026-07-31T12:00:01+09:00").unwrap();
+        assert_eq!(
+            project_milestone_due_date_projection_at(Some(noon), after_deadline),
+            (true, "Today".to_string())
+        );
+        assert_eq!(
+            project_milestone_due_date_projection_at(
+                due,
+                before_deadline - chrono::Duration::days(1)
+            ),
+            (false, "1 days left".to_string())
+        );
+        assert_eq!(
+            project_milestone_due_date_projection_at(None, now),
+            (false, String::new())
+        );
+    }
 
     #[test]
     fn gravatar_uses_the_legacy_yona_default_avatar() {

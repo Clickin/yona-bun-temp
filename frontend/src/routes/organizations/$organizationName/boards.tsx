@@ -17,8 +17,9 @@ import { readOrganizationContainerRest } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
 import type { OrganizationContainer } from "../../../api/types";
 import { TwoColumnModeCheckbox } from "../../../components/two-column-mode-checkbox";
-import { useLegacyMessages } from "../../../i18n";
+import { formatLegacyTimestamp, useLegacyMessages } from "../../../i18n";
 import { type RuntimeConfig } from "../../../runtime-config";
+import { OrganizationProjectPicker } from "../-project-picker";
 
 type OrganizationBoardsSearch = {
   filter: string;
@@ -158,6 +159,13 @@ function OrganizationBoardsBody({
   search: OrganizationBoardsSearch;
 }) {
   const { t } = useLegacyMessages();
+  const router = useRouter();
+  const projectLogos = new Map(
+    (organization.visibleProjects ?? []).map((project) => [
+      project.projectName,
+      stringField(project.logoUrl, ""),
+    ]),
+  );
   const organizationName = stringField(organization.organizationName, boards.organizationName);
   const hasNotices = boards.notices.length > 0 && search.pageNum === 1;
   const hasPosts = hasNotices || boards.items.length > 0;
@@ -168,31 +176,30 @@ function OrganizationBoardsBody({
       <div className="page-wrap-outer" data-owner="organization-boards-page">
         <div className="project-page-wrap" data-owner="organization-boards-shell">
           <div className="search-wrap underline" data-owner="organization-boards-search">
-            <form id="option_form" method="get" data-owner="organization-boards-search-form">
+            <form id="option_form" className="pull-left" method="get" data-owner="organization-boards-search-form">
               <input type="hidden" name="orderBy" value={search.orderBy} />
               <input type="hidden" name="orderDir" value={search.orderDir} />
               <div className="project-selects span7">
-                <select
-                  id="projects"
-                  name="projectNames[]"
-                  data-format="projects"
-                  multiple
-                  data-placeholder={t("organization.choose.projects")}
-                  data-container-css-class="fullsize"
-                  defaultValue={search.projectNames}
-                  onChange={(event) => {
-                    event.currentTarget.form?.requestSubmit();
+                <OrganizationProjectPicker
+                  projects={boards.visibleProjects.map((project) => ({
+                    projectName: project.projectName,
+                    logoUrl: projectLogos.get(project.projectName),
+                  }))}
+                  value={search.projectNames}
+                  variant="projects"
+                  onChange={(projectNames, form) => {
+                    const params = new URLSearchParams({
+                      orderBy: search.orderBy,
+                      orderDir: search.orderDir,
+                      filter: String(new FormData(form).get("filter") ?? ""),
+                    });
+                    for (const projectName of projectNames)
+                      params.append("projectNames[]", projectName);
+                    void router.navigate({
+                      to: `/organizations/${encodeURIComponent(organizationName)}/boards?${params.toString()}`,
+                    });
                   }}
-                >
-                  {boards.visibleProjects.map((project) => {
-                    const projectName = project.projectName;
-                    return (
-                      <option value={projectName} key={projectName}>
-                        {projectName}
-                      </option>
-                    );
-                  })}
-                </select>
+                />
               </div>
               <div className="search-bar span4">
                 <input
@@ -456,6 +463,7 @@ function BoardPagination({
 
 function OrganizationBoardPost({ post }: { post: BoardPostListItem }) {
   const { t } = useLegacyMessages();
+  const created = formatLegacyTimestamp(post.createdAt, t);
   return (
     <li className="post-item title" data-owner="organization-boards-row">
       <Link
@@ -504,8 +512,8 @@ function OrganizationBoardPost({ post }: { post: BoardPostListItem }) {
         <span className="post-id" data-owner="organization-boards-row-post-id">
           #{post.postNumber}
         </span>
-        <span className="infos-item" title={post.createdLabel}>
-          {post.createdLabel}
+        <span className="infos-item" title={created.title}>
+          {created.label}
         </span>
         {post.commentCount > 0 ? (
           <span className="infos-item item-count-groups">

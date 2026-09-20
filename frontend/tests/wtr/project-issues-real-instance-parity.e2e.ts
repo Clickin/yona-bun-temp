@@ -226,7 +226,7 @@ test("switching issue state preserves the fixed shell and replaces only the resu
     if (!request.url().includes(issueListApiPath) || request.method() !== "GET") return false;
     return new URL(request.url()).searchParams.get("state") === "closed";
   });
-  await page.locator("#span10 > .nav-tabs > li").nth(1).locator("a").click();
+  await page.locator("#span10 > .nav-tabs > li").nth(1).getByRole("button").click();
   const request = await closedIssuesRequest;
   expect(request.method()).toBe("GET");
 
@@ -316,42 +316,43 @@ test("advanced filters, search, and label controls retain state through same-ori
   for (const id of ["authorId", "assigneeId"] as const) {
     await openClosedList(page);
     await expect.poll(() => page.locator(`#${id} option`).count()).toBeGreaterThan(2);
-    await page.locator(`#s2id_${id}`).click();
-    await expect(page.locator(`#${id}`)).toBeFocused();
+    await page.locator(`#s2id_${id} .select2-choice`).click();
+    await expect(page.locator(`#${id}-options`)).toBeVisible();
     const value = await page.locator(`#${id} option`).nth(2).getAttribute("value");
     expect(value).not.toBeNull();
     const request = waitForIssueListRequest(page, { [id]: value!, state: "closed" });
-    await page.locator(`#${id}`).selectOption(value!);
+    await page.locator(`#${id}-options [role="option"]`).nth(2).click();
     expect(new URL((await request).url()).searchParams.get(id)).toBe(value);
     await expect.poll(() => new URL(page.url()).searchParams.get(id)).toBe(value);
     await expect(page.locator(resultSelector)).toHaveCount(1);
   }
 
   await openClosedList(page);
-  await page.locator("#s2id_milestoneId").click();
-  await expect(page.locator("#milestoneId")).toBeFocused();
+  await page.locator("#s2id_milestoneId .select2-choice").click();
+  await expect(page.locator("#milestoneId-options")).toBeVisible();
   const milestoneRequest = waitForIssueListRequest(page, {
     milestoneId: "-1",
     state: "closed",
   });
-  await page.locator("#milestoneId").selectOption("-1");
+  await page.locator("#milestoneId-options [role=option]").nth(1).click();
   await milestoneRequest;
   await expect.poll(() => new URL(page.url()).searchParams.get("milestoneId")).toBe("-1");
   await expect(page.locator(resultSelector)).toHaveCount(1);
 
   await openClosedList(page);
-  const dueDatePicker = page.locator('[data-owner="project-issue-list-due-date-native-picker"]');
+  const calendar = page.getByRole("dialog", { name: "Due date", exact: true });
   await page.locator('[data-owner="project-issue-list-due-date-calendar"]').click();
-  await expect(dueDatePicker).toBeFocused();
+  await expect(calendar).toBeVisible();
   const dueDate = page.locator("#issueDueDate");
-  await dueDate.focus();
   await expect(dueDate).toBeFocused();
+  await calendar.getByRole("combobox", { name: "Year", exact: true }).selectOption("2024");
+  await calendar.getByRole("combobox", { name: "Month", exact: true }).selectOption("0");
   const dueDateRequest = waitForIssueListRequest(page, {
     dueDate: "2024-01-01",
     state: "closed",
   });
-  await dueDate.fill("2024-01-01");
-  await dueDate.press("Tab");
+  await calendar.getByRole("button", { name: "2024-01-01", exact: true }).click();
+  await expect(calendar).toHaveCount(0);
   await dueDateRequest;
   await expect.poll(() => new URL(page.url()).searchParams.get("dueDate")).toBe("2024-01-01");
   await expect(page.locator(resultSelector)).toHaveCount(1);

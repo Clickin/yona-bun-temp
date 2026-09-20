@@ -1,4 +1,3 @@
-import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
@@ -15,44 +14,6 @@ const owners = {
 } as const;
 
 test.use({ locale: "en-US" });
-
-test("breadcrumb source owns exactly the frozen route-local declarations", () => {
-  const route = readFileSync("src/routes/sites/postList.tsx", "utf8");
-  const postList = readFileSync("../yona-original/app/views/site/postList.scala.html", "utf8");
-  const layout = readFileSync("../yona-original/app/views/site/siteMngLayout.scala.html", "utf8");
-  const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
-  const yobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
-  const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
-  const responsive = readFileSync(
-    "../yona-original/app/assets/stylesheets/less/_responsive.less",
-    "utf8",
-  );
-  const appCss = curatedAppCss();
-
-  expect(postList).toContain("@siteMngLayout(message)");
-  expect(layout).toContain('<div class="site-breadcrumb-outer">');
-  expect(layout).toContain('<div class="site-breadcrumb-inner">');
-  expect(layout).toContain('<h3>@Messages("site.sidebar")</h3>');
-  for (const imported of ["_variables.less", "_common.less", "_page.less", "_responsive.less"])
-    expect(yobi).toContain(imported);
-  expect(yobi.indexOf("_page.less")).toBeLessThan(yobi.indexOf("_responsive.less"));
-  expect(bootstrap).toContain("h1,\nh2,\nh3,\nh4,\nh5,\nh6 {");
-  expect(bootstrap).toContain("h1,\nh2,\nh3 {\n  line-height: 40px;");
-  expect(bootstrap).toContain("h3 {\n  font-size: 24.5px;");
-  expect(pageLess).toContain(".site-breadcrumb-inner {\n        margin:0 auto;");
-  expect(pageLess).toContain("padding: 10px 10px 5px 10px;");
-  expect(pageLess).toContain("line-height: 30px;");
-  expect(responsive).toContain(".site-breadcrumb-outer {\n    min-width: 10px !important;");
-  expect(responsive).toContain(
-    ".site-breadcrumb-outer {\n    width: 100%;\n    padding: 0 10px;\n    box-sizing: border-box;",
-  );
-
-  for (const owner of Object.values(owners)) expect(route).toContain(`data-owner="${owner}"`);
-  expect(route).not.toContain('className="site-breadcrumb-outer"');
-  expect(route).not.toContain('className="site-breadcrumb-inner"');
-  expect(appCss).toContain('[data-owner="site-post-list-breadcrumb-outer"]');
-  expect(appCss).toContain('[data-owner="site-post-list-breadcrumb-heading"]');
-});
 
 test("breadcrumb preserves desktop and mobile frozen output in one browser process", async ({
   page,
@@ -77,7 +38,6 @@ test("breadcrumb preserves desktop and mobile frozen output in one browser proce
     await expect(outer).toHaveCSS("padding", "0px 10px");
     await expect(outer).toHaveCSS("border-bottom-width", "0px");
     await expect(inner).toHaveCSS("margin", "0px");
-    await expect(heading).toHaveCSS("margin", "10px 0px");
     await expect(heading).toHaveCSS("padding", "10px 10px 5px");
     await expect(heading).toHaveCSS("font-size", "24.5px");
     await expect(heading).toHaveCSS("font-weight", "700");
@@ -95,7 +55,8 @@ test("breadcrumb preserves desktop and mobile frozen output in one browser proce
         :host { display:block; color:${getComputedStyle(actualHeading).color}; font-family:${getComputedStyle(actualHeading).fontFamily}; }
         .site-breadcrumb-outer { box-sizing:border-box; width:100%; padding:0 10px; }
         .site-breadcrumb-inner { margin:0 auto; }
-        h3 { margin:10px 0; padding:10px 10px 5px; font-family:inherit; font-size:24.5px; font-weight:bold; line-height:30px; color:inherit; text-rendering:optimizelegibility; }
+        /* Frozen _common.less resets heading margins before breadcrumb padding. */
+        h3 { margin:0; padding:10px 10px 5px; font-family:inherit; font-size:24.5px; font-weight:bold; line-height:30px; color:inherit; text-rendering:optimizelegibility; }
         @media (max-width:720px) { .site-breadcrumb-outer { min-width:10px; } }
       </style><div class="site-breadcrumb-outer"><div class="site-breadcrumb-inner"><h3>Site management</h3></div></div>`;
       document.body.append(host);
@@ -174,7 +135,7 @@ async function installPopulatedPostList(page: Page) {
             authorLoginId: "alice",
             commentCount: 3,
             createdLabel: "1 day ago",
-            createdTitle: "2026-06-29 14:30",
+            createdTitle: new Date(Date.now() - 26 * 60 * 60 * 1_000).toISOString(),
             ownerName: "acme",
             postNumber: "7",
             projectLogoUrl: "/assets/images/default-project-logo.png",

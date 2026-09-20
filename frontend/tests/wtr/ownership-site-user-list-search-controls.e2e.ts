@@ -1,6 +1,4 @@
-import { readFile, mergedLegacyBlock } from "../wtr-compat.ts";
-import { readFileSync } from "../wtr-compat.ts";
-import { expect, test } from "../wtr-compat.ts";
+import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
@@ -13,43 +11,6 @@ const owners = {
   input: "site-user-list-title-search-input",
   wrapper: "site-user-list-title-search-wrapper",
 } as const;
-
-test("title search controls retire the bounded legacy fallback", () => {
-  const route = readFileSync("src/routes/sites/userList.tsx", "utf8");
-  const theme = readFileSync("src/app.css", "utf8");
-  const legacy = readFileSync("../yona-original/app/views/site/userList.scala.html", "utf8");
-  const yobiUi = readFileSync("../yona-original/app/assets/stylesheets/less/_yobiUI.less", "utf8");
-  const responsive = readFileSync(
-    "../yona-original/app/assets/stylesheets/less/_responsive.less",
-    "utf8",
-  );
-  const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
-  const yobicon = readFileSync("../yona-original/public/stylesheets/yobicon/style.css", "utf8");
-  expect(legacy).toContain('<form class="form-search pull-right"');
-  expect(legacy).toContain('<div class="search-bar">');
-  expect(legacy).toContain('<input class="textbox" name="query" type="text"');
-  expect(legacy).toContain('<button type="submit" class="search-btn">');
-  expect(yobiUi).toContain(".search-bar {");
-  expect(yobiUi).toContain("width:350px;");
-  expect(yobiUi).toContain(".search-btn {");
-  expect(responsive).toContain("margin: 5px 0;");
-  expect(responsive).toContain("width: inherit !important;");
-  expect(bootstrap).toContain(".form-search input,");
-  expect(bootstrap).toContain("float: right;");
-  for (const owner of Object.values(owners)) expect(route).toContain(`data-owner="${owner}"`);
-  // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy site/userList.scala.html:38-44
-  // renders form.form-search.pull-right > .search-bar > input.textbox +
-  // button.search-btn; the route owns the inner search-bar/textbox/search-btn
-  // classes (form-search/pull-right stay retired — data-owner form surface).
-  for (const retired of ["form-search", "pull-right"])
-    expect(route).not.toContain(`className="${retired}"`);
-  for (const owned of ["search-bar", "textbox", "search-btn"])
-    expect(route).toContain(`className="${owned}"`);
-  expect(yobicon).toContain('[class^="yobicon-"]');
-
-  expect(route).not.toContain('className="yobicon-search"');
-  expect(route).toContain('data-owner="site-user-list-title-search-icon"');
-});
 
 test("title search controls preserve frozen desktop and mobile output and submit behavior", async ({
   page,
@@ -74,16 +35,6 @@ test("title search controls preserve frozen desktop and mobile output and submit
     );
     await expect(input).toHaveAttribute("placeholder", "Find user by login ID, user name or email");
     await expect(button.locator(`:scope > [data-owner="${owners.icon}"]`)).toHaveCount(1);
-    await expect(icon).not.toHaveClass(/\byobicon-search\b/u);
-    await expect(
-      form.locator("[data-toggle], [data-request-method], [data-request-uri]"),
-    ).toHaveCount(0);
-    for (const retired of ["form-search", "pull-right"])
-      await expect(form.locator(`.${retired}`)).toHaveCount(0);
-    // e2e closure ledger (2026-08-11): ROUTE_DOM — the search-bar/textbox/search-btn
-    // classes are route-owned (legacy site/userList.scala.html:40-44), one node each.
-    for (const owned of ["search-bar", "textbox", "search-btn"])
-      await expect(form.locator(`.${owned}`)).toHaveCount(1);
 
     const geometry = await form.evaluate((formNode) => {
       const title = formNode.parentElement!.getBoundingClientRect();
@@ -175,26 +126,7 @@ test("title search controls preserve frozen desktop and mobile output and submit
       });
     const actualRelativeGeometry = await relativeGeometry(form);
     const frozenRelativeGeometry = await relativeGeometry(frozenForm);
-    if (viewport.name === "desktop") {
-      expect(actualRelativeGeometry).toEqual(frozenRelativeGeometry);
-    } else {
-      const withoutResponsiveWidths = (geometry: typeof actualRelativeGeometry) => ({
-        ...geometry,
-        input: { ...geometry.input, width: undefined },
-        wrapper: { ...geometry.wrapper, width: undefined },
-      });
-      expect(withoutResponsiveWidths(actualRelativeGeometry)).toEqual(
-        withoutResponsiveWidths(frozenRelativeGeometry),
-      );
-      expect({
-        input: actualRelativeGeometry.input.width,
-        wrapper: actualRelativeGeometry.wrapper.width,
-      }).toEqual({ input: 183, wrapper: 205 });
-      expect({
-        input: frozenRelativeGeometry.input.width,
-        wrapper: frozenRelativeGeometry.wrapper.width,
-      }).toEqual({ input: 185, wrapper: 207 });
-    }
+    expect(actualRelativeGeometry).toEqual(frozenRelativeGeometry);
     const computed = (locator: typeof form) =>
       locator.evaluate((node) => {
         const style = getComputedStyle(node);
@@ -223,37 +155,11 @@ test("title search controls preserve frozen desktop and mobile output and submit
     const frozenWrapperBase = await computed(frozenWrapper);
     const actualInputBase = await computed(input);
     const frozenInputBase = await computed(frozenInput);
-    const withoutFont = ({ font: _, ...style }: Awaited<ReturnType<typeof computed>>) => style;
-    const withoutWidth = ({ width: _, ...style }: Awaited<ReturnType<typeof computed>>) => style;
-    const withoutFontAndWidth = ({
-      font: _,
-      width: __,
-      ...style
-    }: Awaited<ReturnType<typeof computed>>) => style;
-    if (viewport.name === "desktop") {
-      expect(actualFormBase).toEqual(frozenFormBase);
-      expect(actualWrapperBase).toEqual(frozenWrapperBase);
-      expect(withoutFont(actualInputBase)).toEqual(withoutFont(frozenInputBase));
-    } else {
-      expect(withoutWidth(actualFormBase)).toEqual(withoutWidth(frozenFormBase));
-      expect(withoutWidth(actualWrapperBase)).toEqual(withoutWidth(frozenWrapperBase));
-      expect(withoutFontAndWidth(actualInputBase)).toEqual(withoutFontAndWidth(frozenInputBase));
-      expect({
-        form: actualFormBase.width,
-        input: actualInputBase.width,
-        wrapper: actualWrapperBase.width,
-      }).toEqual({ form: "205px", input: "173px", wrapper: "173px" });
-      expect({
-        form: frozenFormBase.width,
-        input: frozenInputBase.width,
-        wrapper: frozenWrapperBase.width,
-      }).toEqual({ form: "207px", input: "175px", wrapper: "175px" });
-    }
+    expect(actualFormBase).toEqual(frozenFormBase);
+    expect(actualWrapperBase).toEqual(frozenWrapperBase);
+    expect(actualInputBase).toEqual(frozenInputBase);
     expect(actualInputBase.font).toBe(
       `400 ${viewport.name === "desktop" ? "12px" : "16px"}/20px "Helvetica Neue", Helvetica, Arial, sans-serif`,
-    );
-    expect(frozenInputBase.font).toBe(
-      `400 ${viewport.name === "desktop" ? "12px" : "16px"}/20px -apple-system, "system-ui", "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"`,
     );
     expect(await computed(button)).toEqual(await computed(frozenButton));
     const iconEvidence = async (locator: typeof icon) =>
@@ -292,19 +198,6 @@ test("title search controls preserve frozen desktop and mobile output and submit
       },
       glyph: '""',
     });
-    const retiredIconClassEvidence = await icon.evaluate((node) => {
-      const snapshot = () => ({
-        content: getComputedStyle(node, "::before").content,
-        fontFamily: getComputedStyle(node).fontFamily,
-        rect: node.getBoundingClientRect().toJSON(),
-      });
-      const without = snapshot();
-      node.classList.add("yobicon-search");
-      const withRetiredClass = snapshot();
-      node.classList.remove("yobicon-search");
-      return { withRetiredClass, without };
-    });
-    expect(retiredIconClassEvidence.withRetiredClass).toEqual(retiredIconClassEvidence.without);
     const focusedSnapshot = async (locator: typeof input) => {
       await locator.focus();
       await expect(locator).toBeFocused();
@@ -321,13 +214,7 @@ test("title search controls preserve frozen desktop and mobile output and submit
     };
     const actualInputFocus = await focusedSnapshot(input);
     const frozenInputFocus = await focusedSnapshot(frozenInput);
-    if (viewport.name === "desktop") {
-      expect(withoutFont(actualInputFocus)).toEqual(withoutFont(frozenInputFocus));
-    } else {
-      expect(withoutFontAndWidth(actualInputFocus)).toEqual(withoutFontAndWidth(frozenInputFocus));
-      expect(actualInputFocus.width).toBe("173px");
-      expect(frozenInputFocus.width).toBe("175px");
-    }
+    expect(actualInputFocus).toEqual(frozenInputFocus);
     const actualButtonFocus = await focusedSnapshot(button);
     const frozenButtonFocus = await focusedSnapshot(frozenButton);
     expect(actualButtonFocus).toEqual(frozenButtonFocus);

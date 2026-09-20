@@ -119,7 +119,7 @@ impl AppRepositoryImpl<'_> {
     ) -> Result<u32, DbErr> {
         Ok(pull_request::Entity::find()
             .filter(pull_request::Column::ToProjectId.eq(Some(project_id)))
-            .filter(pull_request::Column::State.eq(Some(0)))
+            .filter(pull_request_open_condition())
             .count(&self.db)
             .await? as u32)
     }
@@ -127,7 +127,7 @@ impl AppRepositoryImpl<'_> {
     pub async fn count_project_reviews(&self, project_id: i64) -> Result<u32, DbErr> {
         Ok(comment_thread::Entity::find()
             .filter(comment_thread::Column::ProjectId.eq(Some(project_id)))
-            .filter(comment_thread::Column::PullRequestId.is_not_null())
+            .filter(review_thread_open_condition())
             .count(&self.db)
             .await? as u32)
     }
@@ -145,7 +145,12 @@ impl AppRepositoryImpl<'_> {
     ) -> Result<Option<ProjectMilestoneSummaryRecord>, DbErr> {
         let Some(row) = milestone::Entity::find()
             .filter(milestone::Column::ProjectId.eq(Some(project_id)))
-            .order_by_desc(milestone::Column::Id)
+            .filter(milestone::Column::State.eq(Some(issue_state_to_raw(
+                self.db.get_database_backend(),
+                "open",
+            ))))
+            .order_by_asc(milestone::Column::DueDate)
+            .order_by_asc(milestone::Column::Id)
             .one(&self.db)
             .await?
         else {
@@ -162,9 +167,9 @@ impl AppRepositoryImpl<'_> {
             .await? as u32;
         let closed_issue_count = issue::Entity::find()
             .filter(issue::Column::MilestoneId.eq(Some(row.id)))
-            .filter(issue::Column::State.ne(Some(issue_state_to_raw(
+            .filter(issue::Column::State.eq(Some(issue_state_to_raw(
                 self.db.get_database_backend(),
-                "open",
+                "closed",
             ))))
             .count(&self.db)
             .await? as u32;
@@ -178,14 +183,11 @@ impl AppRepositoryImpl<'_> {
         Ok(Some(ProjectMilestoneSummaryRecord {
             closed_issue_count,
             completion_percent,
+            due_date: row.due_date,
             due_date_label: format_workspace_date_label(row.due_date),
             id: row.id,
             open_issue_count,
-            state: if row.state == Some(1) {
-                "closed".to_string()
-            } else {
-                "open".to_string()
-            },
+            state: issue_state_from_raw(self.db.get_database_backend(), row.state),
             title: row.title.unwrap_or_default(),
         }))
     }
@@ -818,8 +820,8 @@ impl AppRepositoryImpl<'_> {
                     .unwrap_or_default();
 
                 projects.push(WorkspaceMemberProjectRecord {
-                    created_label: format_workspace_date_label(project_model.created_date),
-                    last_pushed_label: format_workspace_date_label(project_model.last_pushed_date),
+                    created_at: project_model.created_date,
+                    last_pushed_at: project_model.last_pushed_date,
                     member_count: member_counts
                         .get(&project_model.id)
                         .copied()

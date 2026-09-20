@@ -28,10 +28,12 @@ pub(super) struct RestPullRequestCommentBody {
     attachment_ids: Vec<i64>,
     commit_id: Option<String>,
     contents_markdown: String,
+    end_column: Option<i32>,
     end_line: Option<i32>,
     end_side: Option<String>,
     path: Option<String>,
     prev_commit_id: Option<String>,
+    start_column: Option<i32>,
     start_line: Option<i32>,
     start_side: Option<String>,
     thread_id: Option<i64>,
@@ -52,6 +54,7 @@ fn direct_pull_request_comment_body(form: &HashMap<String, String>) -> RestPullR
         contents_markdown: form_value(form, &["contents", "contentsMarkdown"])
             .trim()
             .to_string(),
+        end_column: form_value(form, &["endColumn", "end_column"]).parse().ok(),
         end_line: form_value(form, &["endLine", "end_line"]).parse().ok(),
         end_side: Some(
             form_value(form, &["endSide", "end_side"])
@@ -67,6 +70,9 @@ fn direct_pull_request_comment_body(form: &HashMap<String, String>) -> RestPullR
                 .to_string(),
         )
         .filter(|value| !value.is_empty()),
+        start_column: form_value(form, &["startColumn", "start_column"])
+            .parse()
+            .ok(),
         start_line: form_value(form, &["startLine", "start_line"]).parse().ok(),
         start_side: Some(
             form_value(form, &["startSide", "start_side"])
@@ -213,6 +219,7 @@ pub(super) async fn rest_create_pull_request_comment(
             attachment_ids: body.attachment_ids,
             commit_id: body.commit_id,
             contents_markdown: body.contents_markdown,
+            end_column: body.end_column,
             end_line: body.end_line,
             end_side: body.end_side,
             owner_name,
@@ -220,6 +227,7 @@ pub(super) async fn rest_create_pull_request_comment(
             prev_commit_id: body.prev_commit_id,
             project_name,
             pull_request_number,
+            start_column: body.start_column,
             start_line: body.start_line,
             start_side: body.start_side,
             thread_id: body.thread_id,

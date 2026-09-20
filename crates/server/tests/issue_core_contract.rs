@@ -367,8 +367,7 @@ async fn issue_core_contract_enqueues_legacy_body_changed_webhook_payload() {
 
     let (app, repository) = build_app_with_repository_in_data_root(data_dir.path()).await;
     let (csrf, cookie, _) = register_user(app.clone(), "owner").await;
-    let (editor_csrf, editor_cookie, editor_id) =
-        register_user(app.clone(), "assigned").await;
+    let (editor_csrf, editor_cookie, editor_id) = register_user(app.clone(), "assigned").await;
     response_json(
         rpc(
             app.clone(),
@@ -749,7 +748,11 @@ async fn issue_draft_publish_dispatches_one_new_issue_webhook_and_notification()
     assert_eq!(draft["isDraft"], true);
     let draft_number = draft["issueNumber"]
         .as_i64()
-        .or_else(|| draft["issueNumber"].as_str().and_then(|value| value.parse().ok()))
+        .or_else(|| {
+            draft["issueNumber"]
+                .as_str()
+                .and_then(|value| value.parse().ok())
+        })
         .expect("draft issue number");
     assert!(snapshot_test_webhook_outbox().is_empty());
     clear_test_webhook_outbox();
@@ -758,9 +761,7 @@ async fn issue_draft_publish_dispatches_one_new_issue_webhook_and_notification()
         rest(
             app.clone(),
             Method::PUT,
-            &format!(
-                "/yona/api/v1/projects/owner/projectYobi/issues/{draft_number}"
-            ),
+            &format!("/yona/api/v1/projects/owner/projectYobi/issues/{draft_number}"),
             Some(&cookie),
             Some(&csrf),
             Some(json!({

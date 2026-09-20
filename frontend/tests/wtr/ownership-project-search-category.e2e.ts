@@ -42,8 +42,7 @@ test("project search category wrapper stays contained at desktop and mobile widt
       .evaluate((list) => {
         const box = list.getBoundingClientRect();
         const item = list.querySelector('[data-owner="project-search-category-item"]');
-        const action = item?.querySelector("a");
-        if (!item || !action) return null;
+        const action = item?.querySelector("button");
         const itemBox = item.getBoundingClientRect();
         const actionBox = action.getBoundingClientRect();
         return {
@@ -58,8 +57,8 @@ test("project search category wrapper stays contained at desktop and mobile widt
     expect(metrics!.item.left).toBeGreaterThanOrEqual(metrics!.box.left);
     expect(metrics!.item.right).toBeLessThanOrEqual(metrics!.box.right + 1);
     expect(metrics!.action.left).toBeGreaterThanOrEqual(metrics!.item.left);
-    // Legacy anchors use width:100% with horizontal padding, so their border box
-    // may extend past the li/list content box; it must remain inside the viewport.
+    // React-owned buttons keep the same width and horizontal padding as the
+    // legacy search-category anchors while avoiding plugin-only href="#" markup.
     expect(metrics!.action.right).toBeLessThanOrEqual(metrics!.viewportWidth + 1);
   }
 });

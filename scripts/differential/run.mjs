@@ -1,6 +1,6 @@
 // Differential parity sweep orchestrator.
 //
-// Boots the legacy yona-h2 parity instance (scripts/legacy-localhost.mjs) and a
+// Boots a fresh legacy yona-h2 differential instance (scripts/legacy-localhost.mjs) and a
 // Yoram instance side by side, runs the smoke scenario DSL through dual
 // adapters, compares API responses / rendered DOM skeletons / SQL semantic
 // projections, and writes .agent/differential/report.json plus a stdout summary.
@@ -8,14 +8,27 @@
 // Usage: node scripts/differential/run.mjs [--legacy-url URL] [--yoram-port N] [--scenario ID ...]
 
 import { spawn, spawnSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, openSync, readdirSync, readFileSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  openSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  statSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { isDeepStrictEqual } from "node:util";
-
 
 import { LegacySession, YoramSession } from "./adapters.mjs";
 import {
@@ -28,7 +41,14 @@ import {
   ISSUE_STATE_ENCODINGS,
   projectLabelRows,
 } from "./diff.mjs";
-import { dedupeH2RecoverSequences, dedupeRebuiltTableRows, h2JarPath, queryLegacyH2, queryYoramSqlite, replayH2Script } from "./db-projection.mjs";
+import {
+  dedupeH2RecoverSequences,
+  dedupeRebuiltTableRows,
+  h2JarPath,
+  queryLegacyH2,
+  queryYoramSqlite,
+  replayH2Script,
+} from "./db-projection.mjs";
 import {
   HarnessError,
   formatSummary,
@@ -51,24 +71,24 @@ import {
 } from "./dsl.mjs";
 import { ACTION_DEFINITIONS, scenarios } from "./scenarios/index.mjs";
 let yoramRuntimeDir = path.join(outputDir, "yoram");
+let legacyInstanceDir = path.join(repoRoot, ".agent/legacy-localhost/instances/differential");
+let legacyBaseUrl = "http://127.0.0.1:9011";
 
 const PARITY_USERS = [
-  { loginId: "admin", name: "Site Admin", email: "admin@example.com" },
-  { loginId: "alice", name: "Alice Kim", email: "alice@example.com" },
-  { loginId: "bob", name: "Bob Park", email: "bob@example.com" },
-  { loginId: "carol", name: "Carol Lee", email: "carol@example.com" },
+  { loginId: "admin", name: "Site Admin", email: "admin@example.com", password: "admin" },
+  { loginId: "alice", name: "Alice Kim", email: "alice@example.com", password: "alice" },
+  { loginId: "bob", name: "Bob Park", email: "bob@example.com", password: "bobbob" },
+  { loginId: "carol", name: "Carol Lee", email: "carol@example.com", password: "carolcarol" },
 ];
 
 // Keep the default-dev pull-request contract intact, but make the comparison
 // fixture deterministic on both database engines. R13 creates PR #2 after
 // this seed, so stale rows must not affect number allocation.
 export const PARITY_PULL_REQUEST = Object.freeze({
-  body: "",
-  fromBranch: "main",
-  number: 1,
-  state: 1,
-  title: "Add feature branch change",
-  toBranch: "feature/ui",
+  ...parityProjectSeed.pullRequest,
+  // Legacy GitRepository associates branch rows by the full ref, not its label.
+  fromBranch: `refs/heads/${parityProjectSeed.pullRequest.fromBranch}`,
+  toBranch: `refs/heads/${parityProjectSeed.pullRequest.toBranch}`,
 });
 export const PARITY_REVIEW = Object.freeze({
   contents: "Review the feature branch parity fixture.",
@@ -79,45 +99,108 @@ export function registrationStatusIsUsable(status) {
   return status === 200 || status === 409;
 }
 
-// Keep the public expression-list catalog stable even though old sweeps leave
-// behind projects with auto-generated names. These are the rows present in the
-// legacy parity fixture and therefore the only project rows Yoram needs.
+// Fresh legacy foundation seed creates these public projects. Historical
+// parity projects stay in the untouched parity instance, not the comparison.
 const PARITY_SHARABLE_PROJECTS = [
-  { id: 1, owner: "admin", name: "sample", vcs: "GIT" },
-  { id: 2, owner: "admin", name: "svnplayground", vcs: "Subversion" },
-  { id: 3, owner: "alice", name: "sample", vcs: "GIT" },
-  { id: 262, owner: "admin", name: "parity-git-wvamt5efl73", vcs: "GIT" },
-  { id: 267, owner: "admin", name: "parity-svn-wvbmt5esi2l", vcs: "Subversion" },
-  { id: 268, owner: "admin", name: "parity-svn-wvbmt5etjsa", vcs: "Subversion" },
+  {
+    id: 1,
+    owner: "admin",
+    name: "sample",
+    vcs: "GIT",
+    overview: "Parity seed project for the admin workspace",
+  },
+  {
+    id: 2,
+    owner: "admin",
+    name: "svnplayground",
+    vcs: "Subversion",
+    overview: "Parity seed Subversion project for localhost checks",
+  },
+  {
+    id: 3,
+    owner: "alice",
+    name: "sample",
+    vcs: "GIT",
+    overview: "Parity seed project for the alice workspace",
+  },
 ];
-
 
 export const SKELETON_EXTRACT = (selector) => {
   const root = selector ? document.querySelector(selector) : document.body;
   if (!root) throw new Error(`selector not found: ${selector}`);
-  const skip = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "SVG", "HEAD", "META", "LINK", "BR", "PATH", "TEMPLATE"]);
+  const skip = new Set([
+    "SCRIPT",
+    "STYLE",
+    "NOSCRIPT",
+    "SVG",
+    "HEAD",
+    "META",
+    "LINK",
+    "BR",
+    "PATH",
+    "TEMPLATE",
+  ]);
   const entries = [];
+  const hidesSubtree = (element) => {
+    const style = getComputedStyle(element);
+    if (style.display === "none" || style.contentVisibility === "hidden" || style.opacity === "0") {
+      return true;
+    }
+    const zeroAreaClip =
+      (["hidden", "clip"].includes(style.overflowY) && element.clientHeight === 0) ||
+      (["hidden", "clip"].includes(style.overflowX) && element.clientWidth === 0);
+    // Out-of-flow descendants can escape an ancestor's overflow clip.
+    // Keep those subtrees conservatively; ordinary scroll content stays intact.
+    if (
+      zeroAreaClip &&
+      ![...element.querySelectorAll("*")].some((child) =>
+        ["absolute", "fixed"].includes(getComputedStyle(child).position),
+      )
+    ) {
+      return true;
+    }
+    // Clipped plugin backing controls can still have layout boxes. Do not
+    // confuse these with ordinary content below the fold or in a scroller.
+    if (style.position === "absolute" || style.position === "fixed") {
+      const clip = /^rect\(([^)]+)\)$/u.exec(style.clip);
+      if (clip) {
+        const [top, right, bottom, left] = clip[1]
+          .trim()
+          .split(/[,\s]+/u)
+          .map(Number.parseFloat);
+        if (right <= left || bottom <= top) return true;
+      }
+    }
+    return false;
+  };
+  for (let ancestor = root.parentElement; ancestor; ancestor = ancestor.parentElement) {
+    if (hidesSubtree(ancestor)) return entries;
+  }
   const visit = (element) => {
     // Global overlays are owned by dedicated shell WTR lanes. Exclude only
     // these exact IDs from selector-less route captures; explicit shell
-    // selectors remain available to their dedicated comparisons. The shared
-    // confirmation shell is excluded only while closed and unrendered;
-    // an open or unexpectedly visible dialog remains a route finding.
+    // selectors remain available to their dedicated comparisons.
     if (
       !selector &&
-      (element.getAttribute("id") === "mySidenav" ||
-        element.getAttribute("id") === "loginDialog" ||
-        (element.getAttribute("id") === "yobiDialog" &&
-          element.getAttribute("aria-hidden") === "true" &&
-          element.getClientRects().length === 0))
+      (element.getAttribute("id") === "mySidenav" || element.getAttribute("id") === "loginDialog")
     ) {
       return;
     }
-    if (!skip.has(element.tagName)) {
+    if (hidesSubtree(element)) return;
+    // Visibility is per element: descendants can override visibility:hidden,
+    // and display:contents has no own box but can contain rendered children.
+    if (
+      !skip.has(element.tagName) &&
+      element.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
+    ) {
       const className = typeof element.className === "string" ? element.className.trim() : "";
       let text = "";
       for (const node of element.childNodes) {
         if (node.nodeType === 3) text += node.textContent;
+      }
+      // A collapsed native select paints its selected label, not option boxes.
+      if (element.tagName === "SELECT" && !element.multiple && element.size <= 1) {
+        text = element.selectedOptions[0]?.label ?? "";
       }
       text = text.replace(/\s+/gu, " ").trim();
       if (className || text) {
@@ -130,10 +213,15 @@ export const SKELETON_EXTRACT = (selector) => {
         // anchor-vs-button role drift visible.
         if (tag === "a") {
           const href = (element.getAttribute("href") ?? "").trim().toLowerCase();
-          const navigational = href !== "" && !href.startsWith("#") && !href.startsWith("javascript:");
+          const navigational = href !== "" && href !== "#" && !href.startsWith("javascript:");
           const dataToggle = element.getAttribute("data-toggle");
           const behavioralToggle = dataToggle !== null && !/^(tooltip|popover)$/iu.test(dataToggle);
-          if (!navigational || element.hasAttribute("data-request-method") || element.hasAttribute("data-request-uri") || behavioralToggle) {
+          if (
+            !navigational ||
+            element.hasAttribute("data-request-method") ||
+            element.hasAttribute("data-request-uri") ||
+            behavioralToggle
+          ) {
             tag = "a#";
           }
         }
@@ -152,7 +240,8 @@ const POPOVER_EXTRACT = () => {
   const entries = [];
   for (const el of document.querySelectorAll(".popover")) {
     if (el.getClientRects().length === 0) continue;
-    const text = (selector) => (el.querySelector(selector)?.textContent ?? "").replace(/\s+/gu, " ").trim();
+    const text = (selector) =>
+      (el.querySelector(selector)?.textContent ?? "").replace(/\s+/gu, " ").trim();
     entries.push(`div.popover:${text(".popover-title")}|${text(".popover-content")}`);
   }
   return entries;
@@ -165,13 +254,20 @@ function raceTimeout(promise, label) {
   return Promise.race([
     promise,
     new Promise((_, reject) => {
-      timer = setTimeout(() => reject(new Error(`${label} timed out after ${BROWSER_STEP_TIMEOUT_MS}ms`)), BROWSER_STEP_TIMEOUT_MS);
+      timer = setTimeout(
+        () => reject(new Error(`${label} timed out after ${BROWSER_STEP_TIMEOUT_MS}ms`)),
+        BROWSER_STEP_TIMEOUT_MS,
+      );
     }),
   ]).finally(() => clearTimeout(timer));
 }
 
 async function visiblePopoverCount(page) {
-  return page.evaluate(() => [...document.querySelectorAll(".popover")].filter((el) => el.getClientRects().length > 0).length);
+  return page.evaluate(
+    () =>
+      [...document.querySelectorAll(".popover")].filter((el) => el.getClientRects().length > 0)
+        .length,
+  );
 }
 
 async function pollPopover(page) {
@@ -213,13 +309,14 @@ async function hoverAnchor(page, selector) {
     el.dispatchEvent(new MouseEvent("mouseenter", { bubbles: false }));
   }, selector);
   const shown = await pollPopover(page);
-  if (!shown && process.env.DIFF_HOVER_DEBUG) console.error(`[hover-debug] ${selector}: no popover after both triggers`);
+  if (!shown && process.env.DIFF_HOVER_DEBUG)
+    console.error(`[hover-debug] ${selector}: no popover after both triggers`);
   return shown ? "synthetic" : "none";
 }
 
 export function parseArgs(argv) {
   const options = {
-    legacyUrl: process.env.YONA_LEGACY_URL ?? "http://127.0.0.1:9000",
+    legacyUrl: process.env.YONA_LEGACY_URL ?? "http://127.0.0.1:9011",
     yoramPort: null,
     scenarioIds: (process.env.YONA_DIFFERENTIAL_SCENARIO_IDS ?? "").split(",").filter(Boolean),
     partialReportPath: process.env.YONA_DIFFERENTIAL_PARTIAL_REPORT ?? null,
@@ -229,7 +326,8 @@ export function parseArgs(argv) {
     if (argv[i] === "--legacy-url") options.legacyUrl = argv[++i];
     else if (argv[i] === "--yoram-port") options.yoramPort = Number(argv[++i]);
     else if (argv[i] === "--scenario") options.scenarioIds.push(argv[++i]);
-    else if (argv[i] === "--scenarios") options.scenarioIds.push(...(argv[++i] ?? "").split(",").filter(Boolean));
+    else if (argv[i] === "--scenarios")
+      options.scenarioIds.push(...(argv[++i] ?? "").split(",").filter(Boolean));
     else if (argv[i] === "--partial-report") options.partialReportPath = argv[++i];
     else if (argv[i] === "--output-dir") options.outputDir = argv[++i];
   }
@@ -348,40 +446,61 @@ async function stopChild(child) {
 
 // --- instance boot ----------------------------------------------------------
 
-async function bootLegacy() {
-  const result = await new Promise((resolve) => {
-    const child = spawn("node", [path.join(repoRoot, "scripts/legacy-localhost.mjs"), "start"], {
-      cwd: repoRoot,
-      env: { ...process.env, YONA_LEGACY_EMAIL_VERIFICATION: "true" },
-      stdio: ["ignore", "pipe", "pipe"],
-    });
+async function runLegacyCommand(command, ...args) {
+  const url = new URL(legacyBaseUrl);
+  const result = await new Promise((resolve, reject) => {
+    const child = spawn(
+      "node",
+      [
+        path.join(repoRoot, "scripts/legacy-localhost.mjs"),
+        command,
+        "--instance",
+        path.basename(legacyInstanceDir),
+        "--host",
+        url.hostname,
+        "--port",
+        url.port || "80",
+        ...args,
+      ],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          YONA_LEGACY_EMAIL_VERIFICATION: "false",
+          YONA_LEGACY_ADMIN_LOGIN_ID: "admin",
+          YONA_LEGACY_ADMIN_NAME: "Site Admin",
+        },
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    );
     let output = "";
     child.stdout.on("data", (chunk) => (output += chunk));
     child.stderr.on("data", (chunk) => (output += chunk));
+    child.on("error", reject);
     child.on("exit", (code) => resolve({ code, output }));
   });
-  if (result.code !== 0) throw new Error(`legacy boot failed:\n${result.output.slice(-2_000)}`);
-  await waitForHttp(`${process.env.YONA_LEGACY_URL ?? "http://127.0.0.1:9000"}/users/loginform`);
+  if (result.code !== 0)
+    throw new Error(`legacy ${command} failed:\n${result.output.slice(-2_000)}`);
+}
+
+async function bootLegacy() {
+  await runLegacyCommand("start");
+  await waitForHttp(`${legacyBaseUrl}/users/loginform`);
 }
 
 async function stopLegacy() {
-  await new Promise((resolve) => {
-    const child = spawn("node", [path.join(repoRoot, "scripts/legacy-localhost.mjs"), "stop"], {
-      cwd: repoRoot,
-      stdio: "ignore",
-    });
-    child.on("exit", resolve);
-    setTimeout(resolve, 30_000).unref?.();
-  });
+  await runLegacyCommand("stop");
 }
 async function writeYoramConfig(databaseUrl, dataRoot, seedPilot, port, emailVerification = true) {
-  const authEmailVerification = emailVerification ? "email_verification = true" : "email_verification = false";
+  const authEmailVerification = emailVerification
+    ? "email_verification = true"
+    : "email_verification = false";
   const config = [
     `bind_addr = ${JSON.stringify(`127.0.0.1:${port}`)}`,
     `database_url = ${JSON.stringify(databaseUrl)}`,
     `data_root = ${JSON.stringify(dataRoot)}`,
     `public_origin = ${JSON.stringify(`http://127.0.0.1:${port}`)}`,
-    "asset_root = \"frontend/dist\"",
+    'asset_root = "frontend/dist"',
     `seed_pilot = ${seedPilot ? "true" : "false"}`,
     "use_embedded_assets = false",
     "",
@@ -389,7 +508,7 @@ async function writeYoramConfig(databaseUrl, dataRoot, seedPilot, port, emailVer
     authEmailVerification,
     "",
     "[smtp]",
-    "host = \"127.0.0.1\"",
+    'host = "127.0.0.1"',
     "port = 2525",
     "ssl = false",
   ].join("\n");
@@ -401,7 +520,8 @@ function startYoramProcess(port) {
   const binaryPath = existsSync(path.join(repoRoot, "target/debug", binaryName))
     ? path.join(repoRoot, "target/debug", binaryName)
     : path.join(repoRoot, "target/release", binaryName);
-  if (!existsSync(binaryPath)) throw new Error(`yoram binary not found (${binaryPath}); run cargo build -p yoram-server`);
+  if (!existsSync(binaryPath))
+    throw new Error(`yoram binary not found (${binaryPath}); run cargo build -p yoram-server`);
   const serverLog = path.join(yoramRuntimeDir, "server.log");
   const logOffset = existsSync(serverLog) ? statSync(serverLog).size : 0;
   const child = spawn(binaryPath, {
@@ -439,30 +559,39 @@ function startYoramProcess(port) {
 // Point the legacy parity instance's play2-mailplugin at the sweep SMTP
 // catch-box; the conf lives under .agent and is never committed.
 function patchLegacySmtpConf() {
-  const confPath = path.join(repoRoot, ".agent/legacy-localhost/instances/parity/data/conf/application.conf");
+  const confPath = path.join(legacyInstanceDir, "data/conf/application.conf");
   if (!existsSync(confPath)) return;
   const original = readFileSync(confPath, "utf8");
+  const publicUrl = new URL(legacyBaseUrl);
   const settings = [
     ["smtp.host", "127.0.0.1"],
     ["smtp.port", "2525"],
     ["smtp.ssl", "false"],
     ["smtp.mock", "false"],
     ["application.use.email.verification", "true"],
+    ["application.hostname", JSON.stringify(publicUrl.hostname)],
+    ["application.port", publicUrl.port || (publicUrl.protocol === "https:" ? "443" : "80")],
   ];
   let updated = original;
   for (const [key, value] of settings) {
     const pattern = new RegExp(`^${key.replaceAll(".", "\\.")}\\s*=.*$`, "mu");
-    updated = pattern.test(updated) ? updated.replace(pattern, `${key} = ${value}`) : `${updated.trimEnd()}\n${key} = ${value}\n`;
+    updated = pattern.test(updated)
+      ? updated.replace(pattern, `${key} = ${value}`)
+      : `${updated.trimEnd()}\n${key} = ${value}\n`;
   }
   if (updated !== original) writeFileSync(confPath, updated);
 }
 
 async function bootMailSink() {
-  const child = spawn(process.execPath, [path.join(repoRoot, "scripts/differential/mail-sink.mjs")], {
-    cwd: repoRoot,
-    env: { ...process.env, MAIL_SINK_DIR: path.join(outputDir, "mail-out") },
-    stdio: ["ignore", "pipe", "pipe"],
-  });
+  const child = spawn(
+    process.execPath,
+    [path.join(repoRoot, "scripts/differential/mail-sink.mjs")],
+    {
+      cwd: repoRoot,
+      env: { ...process.env, MAIL_SINK_DIR: path.join(outputDir, "mail-out") },
+      stdio: ["ignore", "pipe", "pipe"],
+    },
+  );
   await new Promise((resolve, reject) => {
     let ready = false;
     const timer = setTimeout(() => {
@@ -542,15 +671,7 @@ async function provisionYoramParityAccounts(baseUrl) {
   session.cookies = (primed.headers.getSetCookie?.() ?? [])
     .map((cookie) => cookie.split(";")[0])
     .join("; ");
-  const users = [
-    { loginId: "admin", password: "admin", name: "Site Admin", email: "admin@example.com" },
-    { loginId: "carol", password: "carolcarol", name: "Carol Lee", email: "carol@example.com" },
-    { loginId: "alice", password: "alice", name: "Alice Kim", email: "alice@example.com" },
-    // ponytail: Yoram REST enforces LEGACY_MIN_PASSWORD_LENGTH=4 while the
-    // legacy parity seed uses 3-char "bob"; bump until a bob actor scenario exists.
-    { loginId: "bob", password: "bobbob", name: "Bob Park", email: "bob@example.com" },
-  ];
-  for (const user of users) {
+  for (const user of PARITY_USERS) {
     const result = await session.request({
       method: "POST",
       path: "/api/v1/auth/register",
@@ -566,7 +687,9 @@ async function provisionYoramParityAccounts(baseUrl) {
     // idempotent parity registration runs. The subsequent admin login below
     // verifies that the existing account is the expected one.
     if (!registrationStatusIsUsable(result.status)) {
-      throw new Error(`yoram parity register ${user.loginId} failed: ${result.status} ${String(result.body).slice(0, 200)}`);
+      throw new Error(
+        `yoram parity register ${user.loginId} failed: ${result.status} ${String(result.body).slice(0, 200)}`,
+      );
     }
   }
   const login = await session.login({ loginId: "admin", password: "admin" });
@@ -574,100 +697,354 @@ async function provisionYoramParityAccounts(baseUrl) {
   const project = await session.request({
     method: "POST",
     path: "/api/v1/owners/admin/projects",
-    json: { projectName: "sample", overview: "Parity seed project for the admin workspace", projectScope: "PUBLIC" },
+    json: {
+      projectName: "sample",
+      overview: "Parity seed project for the admin workspace",
+      projectScope: "PUBLIC",
+    },
   });
   if (project.status !== 200 && project.status !== 409) {
-    throw new Error(`yoram parity sample project create failed: ${project.status} ${String(project.body).slice(0, 200)}`);
+    throw new Error(
+      `yoram parity sample project create failed: ${project.status} ${String(project.body).slice(0, 200)}`,
+    );
   }
 }
 
-function reconcileYoramFixturesPreboot(databasePath) {
+export function reconcileYoramFixturesPreboot(
+  databasePath,
+  legacyCreatedDates,
+  legacyProjectWatches,
+) {
+  const intendedProjects = [
+    ...PARITY_SHARABLE_PROJECTS,
+    { id: 4, owner: "weblabs", name: "portal" },
+  ];
+  const expectedKeys = [
+    ...PARITY_USERS.map((user) => `user:${user.loginId}`),
+    ...intendedProjects.map((project) => `project:${project.owner}/${project.name}`),
+    "organization:weblabs",
+  ];
+  const createdDates = new Map();
+  for (const [key, created] of legacyCreatedDates) {
+    if (!expectedKeys.includes(key) || createdDates.has(key)) {
+      throw new Error(`Unexpected or duplicate legacy parity creation fixture: ${key}`);
+    }
+    const timestamp = created?.trim();
+    if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$/u.test(timestamp)) {
+      throw new Error(`Invalid legacy parity creation timestamp: ${key}`);
+    }
+    createdDates.set(key, timestamp);
+  }
+  for (const key of expectedKeys) {
+    if (!createdDates.has(key)) {
+      throw new Error(`Missing legacy parity creation fixture: ${key}`);
+    }
+  }
   const database = new DatabaseSync(databasePath);
   try {
     database.exec("pragma busy_timeout = 5000");
+    const users = database
+      .prepare("select id, login_id from n4user where login_id in (?, ?, ?, ?)")
+      .all(...PARITY_USERS.map((user) => user.loginId));
+    for (const user of PARITY_USERS) {
+      const matches = users.filter((row) => row.login_id === user.loginId);
+      if (matches.length !== 1) {
+        throw new Error(
+          `Yoram parity user ${user.loginId} expected one row, found ${matches.length}`,
+        );
+      }
+    }
+    const projects = database.prepare("select id, owner, name, organization_id from project").all();
+    const conflictingOrganization = database
+      .prepare(
+        "select id from organization where (id = 1 and name <> 'weblabs') or (name = 'weblabs' and id <> 1) limit 1",
+      )
+      .get();
+    if (
+      conflictingOrganization ||
+      projects.some(
+        (project) =>
+          project.owner === "weblabs" &&
+          project.name === "portal" &&
+          project.organization_id !== null &&
+          project.organization_id !== 1,
+      )
+    ) {
+      throw new Error("Conflicting parity organization identity; use a fresh output directory");
+    }
+    const bootstrapProject = projects.find(
+      (project) => project.id === 1 && project.owner === "pilot" && project.name === "yona",
+    );
+    if (bootstrapProject) {
+      // Exact SQLite seed in crates/migration/src/lib.rs; any edits make it user data.
+      const seeds = [
+        [
+          "project",
+          {
+            id: 1,
+            name: "yona",
+            overview: "Yona project",
+            owner: "pilot",
+            vcs: null,
+            created_date: null,
+            last_issue_number: 1,
+            last_posting_number: 0,
+            original_project_id: null,
+            last_pushed_date: null,
+            default_reviewer_count: 1,
+            is_using_reviewer_count: 0,
+            organization_id: null,
+            project_scope: "public",
+            previous_owner_login_id: null,
+            previous_name: null,
+            previous_name_changed_time: null,
+            is_code_accessible_member_only: 0,
+          },
+        ],
+        [
+          "issue",
+          {
+            id: 1,
+            title: "Pilot issue",
+            body: null,
+            created_date: null,
+            updated_date: null,
+            author_id: null,
+            author_login_id: null,
+            author_name: null,
+            project_id: 1,
+            number: 1,
+            num_of_comments: 0,
+            state: 0,
+            due_date: null,
+            milestone_id: null,
+            assignee_id: null,
+            history: null,
+            parent_id: null,
+            weight: 0,
+            updated_by_author_id: null,
+            is_draft: 0,
+          },
+        ],
+      ];
+      for (const [table, expected] of seeds) {
+        const actual = database.prepare(`select * from ${table} where id = 1`).get();
+        if (
+          !actual ||
+          Object.entries(expected).some(([key, value]) => actual[key] !== value) ||
+          Object.entries(actual).some(([key, value]) => !(key in expected) && value !== null)
+        ) {
+          throw new Error("Modified canonical bootstrap data; use a fresh output directory");
+        }
+      }
+      if (
+        ["repo/1.git", "data/repo/git/pilot/yona.git", "data/repo/svn/pilot/yona"].some(
+          (repository) => existsSync(path.join(path.dirname(databasePath), repository)),
+        )
+      ) {
+        throw new Error("Canonical bootstrap has repository data; use a fresh output directory");
+      }
+    }
+    const alignment = intendedProjects.map((target) => {
+      const matches = projects.filter(
+        (project) => project.owner === target.owner && project.name === target.name,
+      );
+      if (matches.length > 1) {
+        throw new Error("Ambiguous parity project identities; use a fresh output directory");
+      }
+      return { sourceId: matches[0]?.id, targetId: target.id };
+    });
+    if (
+      projects.some(
+        (project) => project.owner === "admin" && /^sample-history-/u.test(project.name),
+      ) ||
+      projects.some(
+        (project) =>
+          intendedProjects.some((target) => target.id === project.id) &&
+          !alignment.some((entry) => entry.sourceId === project.id) &&
+          project !== bootstrapProject,
+      )
+    ) {
+      throw new Error(
+        "Stale or conflicting parity project identities; use a fresh output directory",
+      );
+    }
+    const moves = alignment.filter(({ sourceId, targetId }) => sourceId && sourceId !== targetId);
+    // Owner/name repositories keep their paths. An existing numeric repository
+    // cannot safely be reassigned by a database-only normalization.
+    if (
+      moves.some(({ sourceId, targetId }) =>
+        [sourceId, targetId].some((id) =>
+          existsSync(path.join(path.dirname(databasePath), "repo", `${id}.git`)),
+        ),
+      )
+    ) {
+      throw new Error("Existing numeric parity repositories require a fresh output directory");
+    }
+    const referenceUpdates = [];
+    for (const { name } of database
+      .prepare("select name from sqlite_master where type = 'table'")
+      .all()) {
+      const table = `"${name.replaceAll('"', '""')}"`;
+      const columns = database.prepare(`pragma table_info(${table})`).all();
+      const hasColumn = (column) => columns.some((entry) => entry.name === column);
+      const bootstrapReferences = [];
+      for (const column of [
+        "project_id",
+        "from_project_id",
+        "to_project_id",
+        "original_project_id",
+      ]) {
+        if (!hasColumn(column)) continue;
+        referenceUpdates.push(
+          database.prepare(`update ${table} set ${column} = ? where ${column} = ?`),
+        );
+        bootstrapReferences.push(`${column} = 1${name === "issue" ? " and id <> 1" : ""}`);
+      }
+      for (const { table: referencedTable, from } of database
+        .prepare(`pragma foreign_key_list(${table})`)
+        .all()) {
+        if (referencedTable === "issue" || referencedTable === "project") {
+          bootstrapReferences.push(
+            `"${from.replaceAll('"', '""')}" = 1${name === "issue" ? " and id <> 1" : ""}`,
+          );
+        }
+      }
+      if (hasColumn("issue_id")) bootstrapReferences.push("issue_id = 1");
+      if (name === "issue") bootstrapReferences.push("parent_id = 1");
+      for (const [typeColumn, idColumn] of [
+        ["resource_type", "resource_id"],
+        ["container_type", "container_id"],
+      ]) {
+        if (!hasColumn(typeColumn) || !hasColumn(idColumn)) continue;
+        referenceUpdates.push(
+          database.prepare(
+            `update ${table} set ${idColumn} = ? where ${typeColumn} = 'PROJECT' and ${idColumn} = ?`,
+          ),
+        );
+        bootstrapReferences.push(`${typeColumn} in ('PROJECT', 'ISSUE') and ${idColumn} = '1'`);
+      }
+      if (
+        bootstrapProject &&
+        bootstrapReferences.some((where) =>
+          database.prepare(`select 1 from ${table} where ${where} limit 1`).get(),
+        )
+      ) {
+        throw new Error("Canonical bootstrap has dependent data; use a fresh output directory");
+      }
+    }
     const updateUser = database.prepare(
-      "update n4user set name = ?, email = ?, state = 'active', english_name = ? where login_id = ?",
+      "update n4user set name = ?, email = ?, state = 'active', english_name = ?, lang = 'ko-KR', created_date = ? where login_id = ?",
     );
     for (const user of PARITY_USERS) {
-      updateUser.run(user.name, user.email, user.name, user.loginId);
+      updateUser.run(
+        user.name,
+        user.email,
+        user.name,
+        createdDates.get(`user:${user.loginId}`),
+        user.loginId,
+      );
     }
     database
-      .prepare("update n4user set state = 'deleted' where login_id not in (?, ?, ?, ?) and state <> 'deleted'")
+      .prepare(
+        "update n4user set state = 'deleted' where login_id not in (?, ?, ?, ?) and state <> 'deleted'",
+      )
       .run(...PARITY_USERS.map((user) => user.loginId));
     database
-      .prepare("delete from attachment where container_type = 'USER_AVATAR' and owner_login_id in (?, ?, ?, ?)")
+      .prepare(
+        "delete from attachment where container_type = 'USER_AVATAR' and owner_login_id in (?, ?, ?, ?)",
+      )
       .run(...PARITY_USERS.map((user) => user.loginId));
-  // Legacy parity foundation seeds the weblabs organization (id 1) with admin
-  // as org_admin and carol as org_member; U12's org-favorite toggle and the
-  // org screens need the org to exist on the Yoram side too. Role ids are not
-  // stable across Yoram DBs (the app authorizes by role NAME, see
-  // project_membership.rs), so resolve org_admin/org_member by name.
-  const userIdByLogin = (loginId) =>
-    Number(database.prepare("select id from n4user where login_id = ? limit 1").get(loginId)?.id ?? 0);
-  const hasWeblabs =
-    database.prepare("select count(*) as n from organization where id = 1 and name = 'weblabs'").get().n > 0;
-  if (!hasWeblabs) {
-    database
-      .prepare("insert into organization (id, name, created, descr) values (1, 'weblabs', ?, 'Parity seed organization for localhost legacy verification')")
-      .run(new Date().toISOString());
-  }
-  const ensureRole = (roleName) => {
-    const existing = database.prepare("select id from role where name = ? limit 1").get(roleName);
-    if (existing?.id) return Number(existing.id);
-    const nextRoleId = Number(database.prepare("select coalesce(max(id), 0) + 1 as id from role").get().id ?? 1);
-    database.prepare("insert into role (id, name, active) values (?, ?, 1)").run(nextRoleId, roleName);
-    return nextRoleId;
-  };
-  const orgAdminRoleId = ensureRole("org_admin");
-  const orgMemberRoleId = ensureRole("org_member");
-  for (const [loginId, orgRoleId] of [["admin", orgAdminRoleId], ["carol", orgMemberRoleId]]) {
-    const userId = userIdByLogin(loginId);
-    if (!userId) continue;
-    const hasMember =
+    // Legacy parity foundation seeds the weblabs organization (id 1) with admin
+    // as org_admin and carol as org_member; U12's org-favorite toggle and the
+    // org screens need the org to exist on the Yoram side too. Role ids are not
+    // stable across Yoram DBs (the app authorizes by role NAME, see
+    // project_membership.rs), so resolve org_admin/org_member by name.
+    const userIdByLogin = (loginId) =>
+      Number(
+        database.prepare("select id from n4user where login_id = ? limit 1").get(loginId)?.id ?? 0,
+      );
+    const hasWeblabs =
       database
-        .prepare("select count(*) as n from organization_user where organization_id = 1 and user_id = ?")
-        .get(userId).n > 0;
-    if (!hasMember) {
+        .prepare("select count(*) as n from organization where id = 1 and name = 'weblabs'")
+        .get().n > 0;
+    if (!hasWeblabs) {
       database
-        .prepare("insert into organization_user (user_id, organization_id, role_id) values (?, 1, ?)")
-        .run(userId, orgRoleId);
+        .prepare(
+          "insert into organization (id, name, created, descr) values (1, 'weblabs', ?, 'Parity seed organization for localhost legacy verification')",
+        )
+        .run(createdDates.get("organization:weblabs"));
     }
-  }
+    database
+      .prepare("update organization set created = ? where id = 1 and name = 'weblabs'")
+      .run(createdDates.get("organization:weblabs"));
+    const ensureRole = (roleName) => {
+      const existing = database.prepare("select id from role where name = ? limit 1").get(roleName);
+      if (existing?.id) return Number(existing.id);
+      const nextRoleId = Number(
+        database.prepare("select coalesce(max(id), 0) + 1 as id from role").get().id ?? 1,
+      );
+      database
+        .prepare("insert into role (id, name, active) values (?, ?, 1)")
+        .run(nextRoleId, roleName);
+      return nextRoleId;
+    };
+    const orgAdminRoleId = ensureRole("org_admin");
+    const orgMemberRoleId = ensureRole("org_member");
+    const managerRoleId = ensureRole("manager");
+    const memberRoleId = ensureRole("member");
+    const siteManagerRoleId = ensureRole("sitemanager");
+    for (const [loginId, orgRoleId] of [
+      ["admin", orgAdminRoleId],
+      ["carol", orgMemberRoleId],
+    ]) {
+      const userId = userIdByLogin(loginId);
+      if (!userId) continue;
+      const hasMember =
+        database
+          .prepare(
+            "select count(*) as n from organization_user where organization_id = 1 and user_id = ?",
+          )
+          .get(userId).n > 0;
+      database
+        .prepare(
+          "update organization_user set role_id = ? where organization_id = 1 and user_id = ?",
+        )
+        .run(orgRoleId, userId);
+      if (!hasMember) {
+        database
+          .prepare(
+            "insert into organization_user (user_id, organization_id, role_id) values (?, 1, ?)",
+          )
+          .run(userId, orgRoleId);
+      }
+    }
 
     database.exec("pragma foreign_keys = off; begin");
     try {
-      let movedSampleId = null;
-      // The old persisted Yoram fixture used id=2 for admin/sample. Move that
-      // history aside so the public expression-list IDs can match legacy's
-      // svnplayground/sample rows without deleting its issue or repository.
-      const oldSample = database
-        .prepare("select id from project where id = 2 and owner = 'admin' and name = 'sample' limit 1")
-        .get();
-      if (oldSample) {
-        const maxProjectId = Number(database.prepare("select coalesce(max(id), 0) as id from project").get().id ?? 0);
-        const replacementId = Math.max(maxProjectId + 1, 1000);
-        const tables = database
-          .prepare("select name from sqlite_master where type = 'table' order by name")
-          .all()
-          .map((row) => row.name)
-          .filter((tableName) => tableName !== "project");
-        for (const tableName of tables) {
-          const columns = database.prepare(`pragma table_info("${tableName.replaceAll('"', '""')}")`).all();
-          if (columns.some((column) => column.name === "project_id")) {
-            database
-              .prepare(`update "${tableName.replaceAll('"', '""')}" set project_id = ? where project_id = ?`)
-              .run(replacementId, 2);
-          }
+      if (bootstrapProject) {
+        database.prepare("delete from issue where id = 1").run();
+        // The disposable pilot must not shift the fresh legacy fixture's issue IDs.
+        // Keep the sequence untouched when any real issue remains.
+        if (!database.prepare("select id from issue limit 1").get()) {
+          database.prepare("delete from sqlite_sequence where name = 'issue'").run();
         }
-        database.prepare("update project set id = ?, project_scope = 'private' where id = 2").run(replacementId);
-        movedSampleId = replacementId;
+        database.prepare("delete from project where id = 1").run();
       }
-
-      // Keep old rows for archaeology, but make the public catalog deterministic.
-      const projectPlaceholders = PARITY_SHARABLE_PROJECTS.map(() => "?").join(", ");
-      database
-        .prepare(`update project set project_scope = 'private' where id not in (${projectPlaceholders})`)
-        .run(...PARITY_SHARABLE_PROJECTS.map((project) => project.id));
+      const moveProject = database.prepare("update project set id = ? where id = ?");
+      const temporaryBase = Math.max(4, ...projects.map((project) => Number(project.id))) + 1;
+      // Two passes preserve references and unique project/number pairs during swaps.
+      // node:sqlite binds Number as REAL; BigInt also matches TEXT IDs without a ".0" suffix.
+      for (const [index, { sourceId }] of moves.entries()) {
+        const temporaryId = temporaryBase + index;
+        for (const update of referenceUpdates) update.run(BigInt(temporaryId), BigInt(sourceId));
+        moveProject.run(temporaryId, sourceId);
+      }
+      for (const [index, { targetId }] of moves.entries()) {
+        const temporaryId = temporaryBase + index;
+        for (const update of referenceUpdates) update.run(BigInt(targetId), BigInt(temporaryId));
+        moveProject.run(targetId, temporaryId);
+      }
       const insertProject = database.prepare(
         `insert into project
           (id, name, overview, vcs, owner, created_date, last_issue_number,
@@ -679,15 +1056,54 @@ function reconcileYoramFixturesPreboot(databasePath) {
         "update project set name = ?, overview = ?, vcs = ?, owner = ?, project_scope = 'public' where id = ?",
       );
       for (const project of PARITY_SHARABLE_PROJECTS) {
-        const overview = `Differential parity fixture ${project.owner}/${project.name}`;
-        const result = updateProject.run(project.name, overview, project.vcs, project.owner, project.id);
+        const result = updateProject.run(
+          project.name,
+          project.overview,
+          project.vcs,
+          project.owner,
+          project.id,
+        );
         if (Number(result.changes ?? 0) === 0) {
-          insertProject.run(project.id, project.name, overview, project.vcs, project.owner, new Date().toISOString());
+          insertProject.run(
+            project.id,
+            project.name,
+            project.overview,
+            project.vcs,
+            project.owner,
+            createdDates.get(`project:${project.owner}/${project.name}`),
+          );
         }
+      }
+      if (!database.prepare("select id from project where id = 4").get()) {
+        insertProject.run(
+          4,
+          "portal",
+          "Protected organization project for localhost parity",
+          "GIT",
+          "weblabs",
+          createdDates.get("project:weblabs/portal"),
+        );
+      }
+      database
+        .prepare("update project set project_scope = 'protected', organization_id = 1 where id = 4")
+        .run();
+      const updateProjectCreated = database.prepare(
+        "update project set created_date = ? where id = ? and owner = ? and name = ?",
+      );
+      for (const project of intendedProjects) {
+        updateProjectCreated.run(
+          createdDates.get(`project:${project.owner}/${project.name}`),
+          project.id,
+          project.owner,
+          project.name,
+        );
       }
 
       const userId = (loginId) =>
-        Number(database.prepare("select id from n4user where login_id = ? limit 1").get(loginId)?.id ?? 0);
+        Number(
+          database.prepare("select id from n4user where login_id = ? limit 1").get(loginId)?.id ??
+            0,
+        );
       const replaceMembers = (projectId, members) => {
         database.prepare("delete from project_user where project_id = ?").run(projectId);
         const insertMember = database.prepare(
@@ -700,38 +1116,42 @@ function reconcileYoramFixturesPreboot(databasePath) {
       for (const project of PARITY_SHARABLE_PROJECTS) {
         replaceMembers(
           project.id,
-          project.id === 1
+          project.id === 3
             ? [
-                ["admin", 3],
-                ["admin", 1],
+                ["admin", siteManagerRoleId],
+                ["alice", managerRoleId],
               ]
-            : project.id === 3
-            ? [
-                ["admin", 3],
-                ["alice", 1],
-              ]
-            : [
-                ["admin", 3],
-                ["admin", 1],
-              ],
+            : [["admin", managerRoleId]],
         );
       }
-      if (!movedSampleId) {
-        const oldSample = database
-          .prepare("select id from project where owner = 'admin' and name = 'sample' and id <> 1 limit 1")
-        .get();
-        movedSampleId = oldSample?.id ? Number(oldSample.id) : null;
-      }
-      if (movedSampleId) {
-        database
-          .prepare("update project set owner = 'admin', name = ?, project_scope = 'private' where id = ?")
-          .run(`sample-history-${movedSampleId}`, movedSampleId);
-        replaceMembers(movedSampleId, [["admin", 3], ["admin", 1]]);
+      replaceMembers(4, [
+        ["admin", managerRoleId],
+        ["carol", memberRoleId],
+      ]);
+      database
+        .prepare(
+          "delete from watch where resource_type = 'PROJECT' " +
+            "and user_id in (?, ?, ?, ?) and resource_id in ('1', '2', '3', '4')",
+        )
+        .run(...PARITY_USERS.map((user) => userId(user.loginId)));
+      const insertWatch = database.prepare(
+        "insert into watch (user_id, resource_type, resource_id) values (?, 'PROJECT', ?)",
+      );
+      for (const [loginId, owner, name] of legacyProjectWatches) {
+        const project = intendedProjects.find(
+          (project) => project.owner === owner && project.name === name,
+        );
+        if (!project || !PARITY_USERS.some((user) => user.loginId === loginId)) {
+          throw new Error(`Unexpected legacy parity project watch: ${loginId}:${owner}/${name}`);
+        }
+        insertWatch.run(userId(loginId), String(project.id));
       }
       database.exec("commit; pragma foreign_keys = on");
     } catch (error) {
       database.exec("rollback; pragma foreign_keys = on");
-      throw new Error(`Yoram parity fixture reconciliation failed: ${error.message}`, { cause: error });
+      throw new Error(`Yoram parity fixture reconciliation failed: ${error.message}`, {
+        cause: error,
+      });
     }
   } finally {
     database.close();
@@ -762,7 +1182,9 @@ function hasYoramParityFoundation(databasePath) {
     database.exec("pragma busy_timeout = 5000");
     const tables = new Set(
       database
-        .prepare("select name from sqlite_master where type = 'table' and name in ('n4user', 'project')")
+        .prepare(
+          "select name from sqlite_master where type = 'table' and name in ('n4user', 'project')",
+        )
         .all()
         .map((row) => row.name),
     );
@@ -818,8 +1240,14 @@ async function bootYoram(port) {
     }
   }
 
-  reconcileYoramFixturesPreboot(databasePath);
-  const seedModule = await import(pathToFileURL(path.join(repoRoot, "scripts/run-dev-backend-once.mjs")).href);
+  reconcileYoramFixturesPreboot(
+    databasePath,
+    readLegacyFoundationCreatedDates(),
+    readLegacyFoundationProjectWatches(),
+  );
+  const seedModule = await import(
+    pathToFileURL(path.join(repoRoot, "scripts/run-dev-backend-once.mjs")).href
+  );
   seedModule.reconcileDefaultDevSiteAdmin(databasePath);
   seedModule.reconcileDefaultDevParitySeed(databasePath, yoramRuntimeDir);
   // The legacy parity database is the fixture authority for canonical
@@ -867,23 +1295,44 @@ async function launchBrowserHandle() {
 // is still fetching. Some routes do not render one, so readiness also checks
 // the shared loading semantics rather than requiring a route-specific marker.
 export const ROUTE_CONTENT_READY = (selector) => {
-  const routeRoot = selector ? document.querySelector(selector) : document.querySelector(".page-wrap-outer");
-  const root = routeRoot ?? document.body;
-  if (!root) return false;
+  const routeRoot = selector
+    ? document.querySelector(selector)
+    : (document.querySelector(".page-wrap-outer") ??
+      document.querySelector('[data-owner="framed-site-main"]') ??
+      document.getElementById("root"));
+  // A null-rendering route (for example the direct-issue options query) can
+  // leave only the global progress bar in body. That is not settled content.
+  if (!routeRoot) return false;
+  const contentRoots = routeRoot.matches('[data-owner="framed-site-main"], #root')
+    ? [...routeRoot.children].filter((child) => {
+        if (
+          child.matches(
+            'header, footer, title, script, style, #nprogress, .unsupported, [data-owner="site-admin-affix"]',
+          )
+        )
+          return false;
+        const rect = child.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+      })
+    : [routeRoot];
+  if (contentRoots.length === 0) return false;
+  // A lazy global user menu can retain Loading... after route content settles.
+  // Inspect the route children, not the framed header/footer.
   const loadingText = /loading|불러오는\s*중|読み込み中|загрузка|yukla(?:nmoqda|moqda)/iu;
-  const pending = [
+  const pending = contentRoots.flatMap((root) => [
     root,
-    ...root.querySelectorAll('[aria-busy], [data-wireframe], [aria-label], [role="status"], [aria-live]'),
-    ...(routeRoot ? [...root.querySelectorAll("*")].filter((element) => element.children.length === 0) : []),
-  ];
-  return !pending.some(
-    (element) => {
-      if (element.getAttribute("aria-busy") === "true" || element.hasAttribute("data-wireframe")) return true;
-      const label = element.getAttribute("aria-label") ?? "";
-      const text = element.children.length === 0 ? element.textContent?.trim() ?? "" : "";
-      return loadingText.test(label) || loadingText.test(text);
-    },
-  );
+    ...root.querySelectorAll(
+      '[aria-busy], [data-wireframe], [aria-label], [role="status"], [aria-live]',
+    ),
+    ...[...root.querySelectorAll("*")].filter((element) => element.children.length === 0),
+  ]);
+  return !pending.some((element) => {
+    if (element.getAttribute("aria-busy") === "true" || element.hasAttribute("data-wireframe"))
+      return true;
+    const label = element.getAttribute("aria-label") ?? "";
+    const text = element.children.length === 0 ? (element.textContent?.trim() ?? "") : "";
+    return loadingText.test(label) || loadingText.test(text);
+  });
 };
 
 // R16 creates a PR and immediately renders its detail page while the merge
@@ -899,9 +1348,18 @@ export const PULL_REQUEST_DETAIL_SETTLED = () => {
   return Boolean(root.querySelector("#comments"));
 };
 
+// yobi.git.Write fills the commit pane after load and marks its final outcome.
+export const PULL_REQUEST_FORM_SETTLED = () => {
+  const status = document.querySelector("#status");
+  return Boolean(
+    document.querySelector("#__commits") &&
+    (!status || status.matches(".alert-success, .alert-error, .alert-info")),
+  );
+};
+
 export async function renderSkeleton(page, url, { spa = false, selector, ready } = {}) {
   await page.goto(url, { waitUntil: "load", timeout: 30_000 });
-  if (spa) {
+  if (spa || ready) {
     await page.waitForNetworkIdle({ idleTime: 500, timeout: 15_000 }).catch(() => {});
     await page.waitForFunction(ready ?? ROUTE_CONTENT_READY, { timeout: 30_000 }, selector);
   }
@@ -949,7 +1407,7 @@ function readYoramParityLabelRows(databasePath) {
          FROM issue_label l
          JOIN issue_label_category cat ON cat.id = l.category_id
          JOIN project p ON p.id = l.project_id
-         WHERE p.name = 'sample'
+         WHERE p.owner = 'admin' AND p.name = 'sample'
          ORDER BY l.id`,
       )
       .all();
@@ -991,7 +1449,9 @@ export async function alignParityLabelSeeds(session, base, labels) {
   const rows = JSON.parse(readback.body || "[]");
   const missing = missingParityLabelSeeds(rows);
   if (missing.length > 0) {
-    throw new Error(`parity label readback missing: ${missing.map((seed) => seed.labelName).join(", ")}`);
+    throw new Error(
+      `parity label readback missing: ${missing.map((seed) => seed.labelName).join(", ")}`,
+    );
   }
   return rows;
 }
@@ -1053,7 +1513,9 @@ export async function alignParityBoardFixtures(yoramSession) {
     path: `${PARITY_PROJECT_PATH}/watch`,
   });
   if (!projectWatch || projectWatch.status >= 400) {
-    throw new Error(`yoram project watch alignment failed: HTTP ${projectWatch?.status ?? "unknown"}`);
+    throw new Error(
+      `yoram project watch alignment failed: HTTP ${projectWatch?.status ?? "unknown"}`,
+    );
   }
 
   if (!hasParityPostingComment(post.json)) {
@@ -1069,7 +1531,9 @@ export async function alignParityBoardFixtures(yoramSession) {
       },
     });
     if (!comment || comment.status >= 400) {
-      throw new Error(`yoram posting comment alignment failed: HTTP ${comment?.status ?? "unknown"}`);
+      throw new Error(
+        `yoram posting comment alignment failed: HTTP ${comment?.status ?? "unknown"}`,
+      );
     }
   }
 
@@ -1085,7 +1549,9 @@ export async function alignParityBoardFixtures(yoramSession) {
     projectReadback.status >= 400 ||
     projectReadback.json?.isWatching !== true
   ) {
-    throw new Error(`yoram project watch readback failed: HTTP ${projectReadback?.status ?? "unknown"}`);
+    throw new Error(
+      `yoram project watch readback failed: HTTP ${projectReadback?.status ?? "unknown"}`,
+    );
   }
   const postReadback = await yoramSession.request({ method: "GET", path: PARITY_POST_PATH });
   if (
@@ -1094,7 +1560,9 @@ export async function alignParityBoardFixtures(yoramSession) {
     !postReadback.json ||
     !hasParityPostingComment(postReadback.json)
   ) {
-    throw new Error(`yoram posting comment readback failed: HTTP ${postReadback?.status ?? "unknown"}`);
+    throw new Error(
+      `yoram posting comment readback failed: HTTP ${postReadback?.status ?? "unknown"}`,
+    );
   }
 }
 
@@ -1116,7 +1584,11 @@ export function ensureDiffableRepoBranches(repoPath) {
     GIT_COMMITTER_DATE: "2026-01-01T00:00:00Z",
   };
   const git = (args, input) => {
-    const result = spawnSync("git", ["--git-dir", repoPath, ...args], { encoding: "utf8", env, input });
+    const result = spawnSync("git", ["--git-dir", repoPath, ...args], {
+      encoding: "utf8",
+      env,
+      input,
+    });
     if (result.status !== 0) throw new Error(`git ${args[0]} failed: ${result.stderr}`);
     return (result.stdout ?? "").trim();
   };
@@ -1135,7 +1607,9 @@ export function ensureDiffableRepoBranches(repoPath) {
     }
     const entries = [
       ...[...filesByName.entries()].map(([name, blob]) => `100644 blob ${blob}\t${name}`),
-      ...[...directories.entries()].map(([name, childFiles]) => `040000 tree ${writeTree(childFiles)}\t${name}`),
+      ...[...directories.entries()].map(
+        ([name, childFiles]) => `040000 tree ${writeTree(childFiles)}\t${name}`,
+      ),
     ];
     return git(["mktree"], `${entries.sort().join("\n")}\n`);
   };
@@ -1143,9 +1617,10 @@ export function ensureDiffableRepoBranches(repoPath) {
   if (!mainSeed) throw new Error("admin/sample parity repository main seed is missing");
   const branchCommits = new Map();
   for (const branchSeed of PARITY_REPOSITORY_SEED.branches) {
-    const files = branchSeed.name === "main"
-      ? { ...mainSeed.files }
-      : { ...mainSeed.files, ...branchSeed.files };
+    const files =
+      branchSeed.name === "main"
+        ? { ...mainSeed.files }
+        : { ...mainSeed.files, ...branchSeed.files };
     const args = ["commit-tree", writeTree(files)];
     const parent = branchCommits.get("main");
     if (parent) args.push("-p", parent);
@@ -1154,19 +1629,35 @@ export function ensureDiffableRepoBranches(repoPath) {
     branchCommits.set(branchSeed.name, commit);
     git(["update-ref", `refs/heads/${branchSeed.name}`, commit]);
   }
+  // Lifecycle scenarios must not reuse the seeded PR's branch pair or merge
+  // each other's target; all pairs still use the canonical fixture commits.
+  for (const scenario of ["r13", "r16"]) {
+    for (const [suffix, source] of [
+      ["source", "feature/ui"],
+      ["target", "main"],
+    ]) {
+      const commit = branchCommits.get(source);
+      if (!commit) throw new Error(`parity repository ${source} seed is missing`);
+      const branch = `${scenario}-${suffix}`;
+      branchCommits.set(branch, commit);
+      git(["update-ref", `refs/heads/${branch}`, commit]);
+    }
+  }
   git(["symbolic-ref", "HEAD", "refs/heads/main"]);
-  for (const ref of git(["for-each-ref", "--format=%(refname)", "refs/heads", "refs/yobi"]).split("\n").filter(Boolean)) {
+  for (const ref of git(["for-each-ref", "--format=%(refname)", "refs/heads", "refs/yobi"])
+    .split("\n")
+    .filter(Boolean)) {
     if (!branchCommits.has(ref.slice("refs/heads/".length))) git(["update-ref", "-d", ref]);
   }
 }
 
 async function alignParityFixtures(options) {
   const repos = [
-    path.join(repoRoot, ".agent/legacy-localhost/instances/parity/data/repo/git/admin/sample.git"),
-    path.join(outputDir, "yoram/data/repo/git/admin/sample.git"),
-    path.join(outputDir, "yoram/data/repo/git/alice/sample.git"),
-    path.join(outputDir, "yoram/repo/1.git"),
-    path.join(outputDir, "yoram/repo/3.git"),
+    path.join(legacyInstanceDir, "data/repo/git/admin/sample.git"),
+    path.join(yoramRuntimeDir, "data/repo/git/admin/sample.git"),
+    path.join(yoramRuntimeDir, "data/repo/git/alice/sample.git"),
+    path.join(yoramRuntimeDir, "repo/1.git"),
+    path.join(yoramRuntimeDir, "repo/3.git"),
   ];
   for (const repo of repos) {
     if (existsSync(repo)) ensureDiffableRepoBranches(repo);
@@ -1174,7 +1665,7 @@ async function alignParityFixtures(options) {
   // Align only fixture-owned labels/categories on both sides, and clear
   // residue left behind by earlier sweeps' failed cleanups. Runtime-created
   // label CRUD rows remain untouched.
-  const legacySession = new LegacySession(options.legacyUrl ?? process.env.YONA_LEGACY_URL ?? "http://127.0.0.1:9000");
+  const legacySession = new LegacySession(legacyBaseUrl);
   await legacySession.login({ loginId: "admin", password: "admin" });
   const yoramSession = new YoramSession(options.yoramUrl ?? "http://127.0.0.1:3101");
   const yoramLogin = await yoramSession.login({ loginId: "admin", password: "admin" });
@@ -1188,10 +1679,18 @@ async function alignParityFixtures(options) {
     let labels = [];
     let categories = [];
     try {
-      const labelsResponse = await session.request({ method: "GET", path: `${base}/admin/sample/issue/labels` });
-      const categoriesResponse = await session.request({ method: "GET", path: `${base}/admin/sample/issue/label/categories` });
+      const labelsResponse = await session.request({
+        method: "GET",
+        path: `${base}/admin/sample/issue/labels`,
+      });
+      const categoriesResponse = await session.request({
+        method: "GET",
+        path: `${base}/admin/sample/issue/label/categories`,
+      });
       if (labelsResponse.status >= 400 || categoriesResponse.status >= 400) {
-        throw new Error(`parity fixture reads failed: HTTP ${labelsResponse.status}/${categoriesResponse.status}`);
+        throw new Error(
+          `parity fixture reads failed: HTTP ${labelsResponse.status}/${categoriesResponse.status}`,
+        );
       }
       labels = JSON.parse(labelsResponse.body || "[]");
       categories = JSON.parse(categoriesResponse.body || "[]");
@@ -1220,11 +1719,13 @@ async function alignParityFixtures(options) {
   // rows. Apply the same tuple to Yoram too; the old one-way mirror left a
   // legacy-only row when Yoram started empty.
   const labels = JSON.parse(
-    (await legacySession.request({ method: "GET", path: "/admin/sample/issue/labels" })).body || "[]",
+    (await legacySession.request({ method: "GET", path: "/admin/sample/issue/labels" })).body ||
+      "[]",
   );
   const legacyAlignedLabels = await alignParityLabelSeeds(legacySession, "", labels);
   const yoramLabels = JSON.parse(
-    (await yoramSession.request({ method: "GET", path: "/admin/sample/issue/labels" })).body || "[]",
+    (await yoramSession.request({ method: "GET", path: "/admin/sample/issue/labels" })).body ||
+      "[]",
   );
   const yoramAlignedLabels = await alignParityLabelSeeds(yoramSession, "", yoramLabels);
   // ProjectApp.labels reads the legacy `label`/`project_label` catalog, while
@@ -1282,7 +1783,9 @@ async function alignParityFixtures(options) {
     json: yoramSeedLabelIds,
   });
   if (!yoramIssueLabels || yoramIssueLabels.status >= 400) {
-    throw new Error(`yoram issue label association alignment failed: HTTP ${yoramIssueLabels?.status ?? "unknown"}`);
+    throw new Error(
+      `yoram issue label association alignment failed: HTTP ${yoramIssueLabels?.status ?? "unknown"}`,
+    );
   }
   const yoramIssueReadback = await yoramSession.request({
     method: "GET",
@@ -1292,66 +1795,30 @@ async function alignParityFixtures(options) {
     (yoramIssueReadback?.json?.labels ?? []).map((label) => String(label.id)),
   );
   const missingYoramLabelIds = yoramSeedLabelIds.filter((id) => !attachedYoramLabelIds.has(id));
-  if (
-    !yoramIssueReadback ||
-    yoramIssueReadback.status >= 400 ||
-    missingYoramLabelIds.length > 0
-  ) {
+  if (!yoramIssueReadback || yoramIssueReadback.status >= 400 || missingYoramLabelIds.length > 0) {
     throw new Error(
       `yoram issue label association readback missing: expected=${yoramSeedLabelIds.join(",")} actual=${[...attachedYoramLabelIds].join(",")}`,
     );
   }
   await alignParityBoardFixtures(yoramSession);
 
-  // Provision the legacy parity comparison users (alice/bob/carol) on yoram
-  // via REST signup so both sides' active-user sets match for the sweep
-  // project context. Registration is idempotent-tolerated (already-exists
-  // failures are ignored); legacy history rows are never deleted.
-  try {
-    const yoramUsers = new YoramSession(options.yoramUrl ?? "http://127.0.0.1:3101");
-    const primed = await fetch(`${options.yoramUrl ?? "http://127.0.0.1:3101"}/api/auth/session`);
-    yoramUsers.csrfToken = primed.headers.get("x-csrf-token") ?? "";
-    yoramUsers.cookies = (primed.headers.getSetCookie?.() ?? [])
-      .map((cookie) => cookie.split(";")[0])
-      .join("; ");
-    for (const user of [
-      { loginId: "alice", name: "Alice Kim", email: "alice@example.com", password: "alicealice" },
-      { loginId: "bob", name: "Bob Park", email: "bob@example.com", password: "bobbobbob" },
-      { loginId: "carol", name: "Carol Lee", email: "carol@example.com", password: "carolcarol" },
-    ]) {
-      try {
-        await yoramUsers.request({
-          method: "POST",
-          path: "/api/v1/auth/register",
-          json: {
-            emailAddress: user.email,
-            loginId: user.loginId,
-            name: user.name,
-            password: user.password,
-            retypedPassword: user.password,
-          },
-        });
-      } catch {
-        // already-exists / transient registration failure tolerated
-      }
-    }
-  } catch {
-    // best-effort alignment; candidate-set diffs surface as INFRA_ERROR with
-    // the fixture-asymmetry rationale instead of crashing the sweep.
-  }
-
   // SQL-level reconciliation: compare the exact projected label tuples of both
   // instances and create anything present on yoram but missing/divergent on
   // legacy (restricted to parity-seed names so sweep rows are never imported).
   try {
-    const legacyDb = path.join(repoRoot, ".agent/legacy-localhost/instances/parity/data/db/yona.h2.db");
-    const yoramDb = path.join(outputDir, "yoram", "yoram.db");
-    const lrows = projectLabelRows(await queryLegacyH2(repoRoot, legacyDb, "labels", "sample"), "legacy");
+    const legacyDb = path.join(legacyInstanceDir, "data/db/yona.h2.db");
+    const yoramDb = path.join(yoramRuntimeDir, "yoram.db");
+    const lrows = projectLabelRows(
+      await queryLegacyH2(repoRoot, legacyDb, "labels", "sample"),
+      "legacy",
+    );
     const yrows = projectLabelRows(await queryYoramSqlite(yoramDb, "labels", "sample"), "yoram");
     const tupleOf = (row) => `${row.name}|${row.category}|${row.color}`.toLowerCase();
     const legacyTuples = new Set(lrows.map(tupleOf));
     const seedNames = new Set(PARITY_LABEL_SEEDS.map((seed) => seed.labelName));
-    const missing = yrows.filter((row) => seedNames.has(row.name) && !legacyTuples.has(tupleOf(row)));
+    const missing = yrows.filter(
+      (row) => seedNames.has(row.name) && !legacyTuples.has(tupleOf(row)),
+    );
     for (const row of missing) {
       const stale = lrows.find((l) => l.name === row.name);
       if (stale?.id) {
@@ -1374,8 +1841,6 @@ async function alignParityFixtures(options) {
 }
 
 // --- pre-boot H2 fixture reconciliation --------------------------------------
-
-const LEGACY_H2_URL_BASE = ".agent/legacy-localhost/instances/parity/data/db/yona";
 
 // These are the sequence-backed Ebean entities in the legacy model. The list
 // is taken from the legacy parity export (application.2026-08-30.log), rather
@@ -1439,15 +1904,27 @@ export const LEGACY_ORPHAN_PROJECT_MEMBERSHIP_CLEANUP_SQL =
 export function legacyH2Url() {
   return (
     "jdbc:h2:" +
-    path.join(repoRoot, LEGACY_H2_URL_BASE) +
-    ";MODE=PostgreSQL;MV_STORE=FALSE;MVCC=FALSE;FILE_LOCK=NO;IFEXISTS=TRUE"
+    path.join(legacyInstanceDir, "data/db/yona") +
+    ";MODE=PostgreSQL;MV_STORE=FALSE;MVCC=FALSE;AUTO_SERVER=TRUE;IFEXISTS=TRUE"
   );
 }
 
 function legacyH2Shell(sql) {
   const result = spawnSync(
     "java",
-    ["-cp", h2JarPath(repoRoot), "org.h2.tools.Shell", "-url", legacyH2Url(), "-user", "sa", "-password", "", "-sql", sql],
+    [
+      "-cp",
+      h2JarPath(repoRoot),
+      "org.h2.tools.Shell",
+      "-url",
+      legacyH2Url(),
+      "-user",
+      "sa",
+      "-password",
+      "",
+      "-sql",
+      sql,
+    ],
     { encoding: "utf8" },
   );
   if (result.status !== 0) {
@@ -1467,23 +1944,72 @@ function encodedLegacyColumn(column) {
   );
 }
 
-function readSingleLegacyFixtureRow(sql, kind) {
-  const lines = legacyH2Shell(sql)
+export function legacyUtcTimestampColumn(column) {
+  // H2 TIMESTAMP is a JVM-local wall clock; format its instant in UTC before
+  // copying it into Yoram's UTC-naive columns, including historical DST.
+  return `FORMATDATETIME(${column}, 'yyyy-MM-dd HH:mm:ss.SSS', 'en', 'UTC')`;
+}
+
+function readLegacyFixtureRows(sql) {
+  return legacyH2Shell(sql)
     .split("\n")
     .slice(1)
-    .filter((line) => line && !/^\(\d+ rows?,/u.test(line));
+    .filter((line) => line && !/^\(\d+ rows?,/u.test(line))
+    .map((line) =>
+      line.split("|").map((value) => value.replaceAll("<NL>", "\n").replaceAll("<PIPE>", "|")),
+    );
+}
+
+function readSingleLegacyFixtureRow(sql, kind) {
+  const lines = readLegacyFixtureRows(sql);
   if (lines.length !== 1) {
     throw new Error(`legacy ${kind} parity fixture expected one row, found ${lines.length}`);
   }
-  return lines[0].split("|").map((value) => value.replaceAll("<NL>", "\n").replaceAll("<PIPE>", "|"));
+  return lines[0];
+}
+
+function readLegacyFoundationCreatedDates() {
+  const projects = [...PARITY_SHARABLE_PROJECTS, { owner: "weblabs", name: "portal" }];
+  // One H2 read keeps the actual seed instants, not the later Yoram bootstrap clock.
+  // UNION ALL deliberately retains duplicate identities for preboot validation.
+  return readLegacyFixtureRows(
+    `SELECT 'user:' || LOGIN_ID || '|' || COALESCE(${legacyUtcTimestampColumn("CREATED_DATE")}, '') AS DATA ` +
+      `FROM N4USER WHERE LOGIN_ID IN (${PARITY_USERS.map((user) => sqlQuote(user.loginId)).join(", ")}) ` +
+      `UNION ALL SELECT 'project:' || OWNER || '/' || NAME || '|' || ` +
+      `COALESCE(${legacyUtcTimestampColumn("CREATED_DATE")}, '') FROM PROJECT WHERE ` +
+      projects
+        .map(
+          (project) => `(OWNER = ${sqlQuote(project.owner)} AND NAME = ${sqlQuote(project.name)})`,
+        )
+        .join(" OR ") +
+      ` UNION ALL SELECT 'organization:' || NAME || '|' || ` +
+      `COALESCE(${legacyUtcTimestampColumn("CREATED")}, '') FROM ORGANIZATION WHERE NAME = 'weblabs'`,
+  );
+}
+
+function readLegacyFoundationProjectWatches() {
+  const projects = [...PARITY_SHARABLE_PROJECTS, { owner: "weblabs", name: "portal" }];
+  return readLegacyFixtureRows(
+    `SELECT u.LOGIN_ID || '|' || p.OWNER || '|' || p.NAME AS DATA FROM WATCH w ` +
+      `JOIN N4USER u ON u.ID = w.USER_ID JOIN PROJECT p ON CAST(p.ID AS VARCHAR) = w.RESOURCE_ID ` +
+      `WHERE w.RESOURCE_TYPE = 'PROJECT' ` +
+      `AND u.LOGIN_ID IN (${PARITY_USERS.map((user) => sqlQuote(user.loginId)).join(", ")}) AND (` +
+      projects
+        .map(
+          (project) =>
+            `(p.OWNER = ${sqlQuote(project.owner)} AND p.NAME = ${sqlQuote(project.name)})`,
+        )
+        .join(" OR ") +
+      `) ORDER BY w.ID`,
+  );
 }
 
 function readLegacyNotificationFixtureRows() {
   const sampleProjectId = `(SELECT ID FROM PROJECT WHERE OWNER = 'admin' AND NAME = 'sample' ORDER BY ID LIMIT 1)`;
   const issue = readSingleLegacyFixtureRow(
-    `SELECT 'issue|' || i.ID || '|' || ${encodedLegacyColumn("i.CREATED_DATE")} || '|' || ` +
-      `ic.ID || '|' || ${encodedLegacyColumn("ic.CREATED_DATE")} || '|' || ne.ID || '|' || ` +
-      `${encodedLegacyColumn("ne.CREATED")} || '|' || ${encodedLegacyColumn("ne.TITLE")} || '|' || ` +
+    `SELECT 'issue|' || i.ID || '|' || ${legacyUtcTimestampColumn("i.CREATED_DATE")} || '|' || ` +
+      `ic.ID || '|' || ${legacyUtcTimestampColumn("ic.CREATED_DATE")} || '|' || ne.ID || '|' || ` +
+      `${legacyUtcTimestampColumn("ne.CREATED")} || '|' || ${encodedLegacyColumn("ne.TITLE")} || '|' || ` +
       `${encodedLegacyColumn("ne.OLD_VALUE")} || '|' || ${encodedLegacyColumn("ne.NEW_VALUE")} AS DATA ` +
       `FROM ISSUE i ` +
       `JOIN ISSUE_COMMENT ic ON ic.ISSUE_ID = i.ID ` +
@@ -1499,9 +2025,9 @@ function readLegacyNotificationFixtureRows() {
     "issue notification",
   );
   const posting = readSingleLegacyFixtureRow(
-    `SELECT 'posting|' || p.ID || '|' || ${encodedLegacyColumn("p.CREATED_DATE")} || '|' || ` +
-      `pc.ID || '|' || ${encodedLegacyColumn("pc.CREATED_DATE")} || '|' || ne.ID || '|' || ` +
-      `${encodedLegacyColumn("ne.CREATED")} || '|' || ${encodedLegacyColumn("ne.TITLE")} || '|' || ` +
+    `SELECT 'posting|' || p.ID || '|' || ${legacyUtcTimestampColumn("p.CREATED_DATE")} || '|' || ` +
+      `pc.ID || '|' || ${legacyUtcTimestampColumn("pc.CREATED_DATE")} || '|' || ne.ID || '|' || ` +
+      `${legacyUtcTimestampColumn("ne.CREATED")} || '|' || ${encodedLegacyColumn("ne.TITLE")} || '|' || ` +
       `${encodedLegacyColumn("ne.OLD_VALUE")} || '|' || ${encodedLegacyColumn("ne.NEW_VALUE")} AS DATA ` +
       `FROM POSTING p ` +
       `JOIN POSTING_COMMENT pc ON pc.POSTING_ID = p.ID ` +
@@ -1527,7 +2053,12 @@ function readLegacyNotificationFixtureRows() {
     oldValue: row[8],
     newValue: row[9],
   });
-  if (issue.length !== 10 || issue[0] !== "issue" || posting.length !== 10 || posting[0] !== "posting") {
+  if (
+    issue.length !== 10 ||
+    issue[0] !== "issue" ||
+    posting.length !== 10 ||
+    posting[0] !== "posting"
+  ) {
     throw new Error("legacy parity notification fixture row shape is invalid");
   }
   return { issue: parse(issue), posting: parse(posting) };
@@ -1541,9 +2072,12 @@ function reconcileYoramNotificationFixtures(databasePath) {
     const sampleProject = database
       .prepare("select id from project where owner = 'admin' and name = 'sample' limit 1")
       .get();
-    if (!sampleProject?.id) throw new Error("Yoram parity notification fixture requires admin/sample");
+    if (!sampleProject?.id)
+      throw new Error("Yoram parity notification fixture requires admin/sample");
     const userId = (loginId) =>
-      Number(database.prepare("select id from n4user where login_id = ? limit 1").get(loginId)?.id ?? 0);
+      Number(
+        database.prepare("select id from n4user where login_id = ? limit 1").get(loginId)?.id ?? 0,
+      );
     const align = ({
       authorLoginId,
       commentTable,
@@ -1572,7 +2106,9 @@ function reconcileYoramNotificationFixtures(databasePath) {
         )
         .all(sampleProject.id, parentRow.id, authorLoginId, commentText);
       if (commentRows.length !== 1) {
-        throw new Error(`Yoram ${commentTable} parity notification fixture expected one row, found ${commentRows.length}`);
+        throw new Error(
+          `Yoram ${commentTable} parity notification fixture expected one row, found ${commentRows.length}`,
+        );
       }
       const commentId = Number(commentRows[0].id);
       const eventRows = database
@@ -1599,7 +2135,13 @@ function reconcileYoramNotificationFixtures(databasePath) {
               set title = ?, created = ?, old_value = ?, new_value = ?
             where id = ?`,
         )
-        .run(source.title, source.notificationCreated, source.oldValue, source.newValue, eventRows[0].id);
+        .run(
+          source.title,
+          source.notificationCreated,
+          source.oldValue,
+          source.newValue,
+          eventRows[0].id,
+        );
     };
     align({
       authorLoginId: "bob",
@@ -1622,7 +2164,9 @@ function reconcileYoramNotificationFixtures(databasePath) {
     database.exec("commit; pragma foreign_keys = on");
   } catch (error) {
     database.exec("rollback; pragma foreign_keys = on");
-    throw new Error(`Yoram notification fixture reconciliation failed: ${error.message}`, { cause: error });
+    throw new Error(`Yoram notification fixture reconciliation failed: ${error.message}`, {
+      cause: error,
+    });
   } finally {
     database.close();
   }
@@ -1642,19 +2186,33 @@ function featureCommitFor(repoPath) {
 function reconcileYoramPullRequestFixtures(databasePath) {
   const database = new DatabaseSync(databasePath);
   try {
+    // Yoram's branch-list snapshot and PR lookup use short names; legacy's use
+    // full refs. Persist the same branch identity in each native representation.
+    const fromBranch = PARITY_PULL_REQUEST.fromBranch.slice("refs/heads/".length);
+    const toBranch = PARITY_PULL_REQUEST.toBranch.slice("refs/heads/".length);
     database.exec("pragma foreign_keys = off; begin");
     const sample = database
       .prepare("select id from project where owner = 'admin' and name = 'sample' limit 1")
       .get();
     const admin = database.prepare("select id from n4user where login_id = 'admin' limit 1").get();
-    if (!sample?.id || !admin?.id) throw new Error("Yoram parity PR fixture requires admin/sample and admin");
-    const featureCommit = featureCommitFor(path.join(yoramRuntimeDir, "data/repo/git/admin/sample.git"));
+    if (!sample?.id || !admin?.id)
+      throw new Error("Yoram parity PR fixture requires admin/sample and admin");
+    const featureCommit = featureCommitFor(
+      path.join(yoramRuntimeDir, "data/repo/git/admin/sample.git"),
+    );
     const seed = database
-      .prepare("select id from pull_request where to_project_id = ? and number = 1 order by id limit 1")
+      .prepare(
+        "select id from pull_request where to_project_id = ? and number = 1 order by id limit 1",
+      )
       .get(sample.id);
-    const seedId = Number(seed?.id ?? database.prepare("select coalesce(max(id), 0) + 1 as id from pull_request").get().id);
+    const seedId = Number(
+      seed?.id ??
+        database.prepare("select coalesce(max(id), 0) + 1 as id from pull_request").get().id,
+    );
     const stale = database
-      .prepare("select id from pull_request where to_project_id = ? and id <> ? and title like 'Differential sweep PR %'")
+      .prepare(
+        "select id from pull_request where to_project_id = ? and id <> ? and title like 'Differential sweep PR %'",
+      )
       .all(sample.id, seedId)
       .map((row) => Number(row.id));
     const ids = stale.length > 0 ? stale.join(",") : "0";
@@ -1684,10 +2242,14 @@ function reconcileYoramPullRequestFixtures(databasePath) {
     );
     database.exec(`delete from pull_request where id in (${ids})`);
     const remainingSweepPullRequests = database
-      .prepare("select count(*) as count from pull_request where to_project_id = ? and id <> ? and title like 'Differential sweep PR %'")
+      .prepare(
+        "select count(*) as count from pull_request where to_project_id = ? and id <> ? and title like 'Differential sweep PR %'",
+      )
       .get(sample.id, seedId).count;
     if (Number(remainingSweepPullRequests) !== 0) {
-      throw new Error(`Yoram stale differential PR cleanup left ${remainingSweepPullRequests} rows`);
+      throw new Error(
+        `Yoram stale differential PR cleanup left ${remainingSweepPullRequests} rows`,
+      );
     }
     if (seed?.id) {
       database
@@ -1703,8 +2265,8 @@ function reconcileYoramPullRequestFixtures(databasePath) {
           PARITY_PULL_REQUEST.body,
           sample.id,
           sample.id,
-          PARITY_PULL_REQUEST.toBranch,
-          PARITY_PULL_REQUEST.fromBranch,
+          toBranch,
+          fromBranch,
           admin.id,
           admin.id,
           "2026-07-07 11:24:00.000",
@@ -1728,8 +2290,8 @@ function reconcileYoramPullRequestFixtures(databasePath) {
           PARITY_PULL_REQUEST.body,
           sample.id,
           sample.id,
-          PARITY_PULL_REQUEST.toBranch,
-          PARITY_PULL_REQUEST.fromBranch,
+          toBranch,
+          fromBranch,
           admin.id,
           admin.id,
           "2026-07-07 11:24:00.000",
@@ -1767,7 +2329,9 @@ function reconcileYoramPullRequestFixtures(databasePath) {
       .prepare("delete from watch where resource_type = 'PULL_REQUEST' and resource_id = ?")
       .run(String(seedId));
     database
-      .prepare("insert into watch (user_id, resource_type, resource_id) values (?, 'PULL_REQUEST', ?)")
+      .prepare(
+        "insert into watch (user_id, resource_type, resource_id) values (?, 'PULL_REQUEST', ?)",
+      )
       .run(admin.id, String(seedId));
     database.exec(
       `delete from review_comment where thread_id in
@@ -1782,15 +2346,11 @@ function reconcileYoramPullRequestFixtures(databasePath) {
            end_side, end_line, end_column)
          values ('ranged', ?, 'admin', 'Site Admin', 'OPEN', ?, null, ?, null, ?, ?, 'B', 1, 1, 'B', 1, 1)`,
       )
-      .run(
-        admin.id,
-        "2026-07-07 11:24:00.000",
-        sample.id,
-        featureCommit,
-        PARITY_REVIEW.path,
-      );
+      .run(admin.id, "2026-07-07 11:24:00.000", sample.id, featureCommit, PARITY_REVIEW.path);
     const reviewThreadId = Number(
-      database.prepare("select id from comment_thread where project_id = ? order by id desc limit 1").get(sample.id).id,
+      database
+        .prepare("select id from comment_thread where project_id = ? order by id desc limit 1")
+        .get(sample.id).id,
     );
     database
       .prepare(
@@ -1802,7 +2362,9 @@ function reconcileYoramPullRequestFixtures(databasePath) {
     database.exec("commit; pragma foreign_keys = on");
   } catch (error) {
     database.exec("rollback; pragma foreign_keys = on");
-    throw new Error(`Yoram pull-request fixture reconciliation failed: ${error.message}`, { cause: error });
+    throw new Error(`Yoram pull-request fixture reconciliation failed: ${error.message}`, {
+      cause: error,
+    });
   } finally {
     database.close();
   }
@@ -1817,17 +2379,21 @@ async function reconcileLegacyFixturesPreboot() {
   // The original file's credentials are unknown and AUTO_SERVER records go
   // stale, so operate on a Recover+RunScript rebuilt copy (same mechanism the
   // db projection uses) and persist it back BEFORE any JVM opens the file.
-  const dbFile = path.join(repoRoot, LEGACY_H2_URL_BASE + ".h2.db");
+  const dbFile = path.join(legacyInstanceDir, "data/db/yona.h2.db");
   const workDir = mkdtempSync(path.join(tmpdir(), "legacy-h2-reconcile-"));
   copyFileSync(dbFile, path.join(workDir, "yona.h2.db"));
   const javaBin = process.execPath === "java" ? "java" : "java";
   const runJava = (args) => {
     const result = spawnSync(javaBin, ["-cp", h2Jar, ...args], { encoding: "utf8" });
-    if (result.status !== 0) throw new Error(`${args[0]} failed: ${(result.stderr || result.stdout || "").slice(0, 300)}`);
+    if (result.status !== 0)
+      throw new Error(`${args[0]} failed: ${(result.stderr || result.stdout || "").slice(0, 300)}`);
   };
   runJava(["org.h2.tools.Recover", "-dir", workDir, "-db", "yona"]);
   const recoveredScriptPath = path.join(workDir, "yona.h2.sql");
-  writeFileSync(recoveredScriptPath, dedupeH2RecoverSequences(readFileSync(recoveredScriptPath, "utf8")));
+  writeFileSync(
+    recoveredScriptPath,
+    dedupeH2RecoverSequences(readFileSync(recoveredScriptPath, "utf8")),
+  );
   // Multi-head recover dumps repeat rows; replay tolerantly then strip the
   // duplicated rows (see db-projection.replayH2Script/dedupeRebuiltTableRows).
   const rebuiltUrl = `jdbc:h2:${path.join(workDir, "rebuilt")};MODE=PostgreSQL;MV_STORE=FALSE;MVCC=FALSE`;
@@ -1836,11 +2402,29 @@ async function reconcileLegacyFixturesPreboot() {
   const shellOnRebuilt = (sql) => {
     const result = spawnSync(
       "java",
-      ["-cp", h2Jar, "org.h2.tools.Shell", "-url", `jdbc:h2:${path.join(workDir, "rebuilt")};MODE=PostgreSQL;MV_STORE=FALSE;MVCC=FALSE;IFEXISTS=TRUE`, "-user", "sa", "-password", "", "-sql", sql],
+      [
+        "-cp",
+        h2Jar,
+        "org.h2.tools.Shell",
+        "-url",
+        `jdbc:h2:${path.join(workDir, "rebuilt")};MODE=PostgreSQL;MV_STORE=FALSE;MVCC=FALSE;IFEXISTS=TRUE`,
+        "-user",
+        "sa",
+        "-password",
+        "",
+        "-sql",
+        sql,
+      ],
       { encoding: "utf8" },
     );
-    if (result.status !== 0 || /Error:|Exception/.test(result.stderr ?? "") || /^Error:/m.test(result.stdout ?? "")) {
-      throw new Error(`h2 shell failed: ${((result.stderr || "") + (result.stdout || "")).slice(0, 300)}`);
+    if (
+      result.status !== 0 ||
+      /Error:|Exception/.test(result.stderr ?? "") ||
+      /^Error:/m.test(result.stdout ?? "")
+    ) {
+      throw new Error(
+        `h2 shell failed: ${((result.stderr || "") + (result.stdout || "")).slice(0, 300)}`,
+      );
     }
     return result.stdout ?? "";
   };
@@ -1860,7 +2444,9 @@ async function reconcileLegacyFixturesPreboot() {
       }
     }
 
-    const sequenceNames = LEGACY_MODEL_SEQUENCE_TABLES.map(([sequenceName]) => sqlQuote(sequenceName)).join(", ");
+    const sequenceNames = LEGACY_MODEL_SEQUENCE_TABLES.map(([sequenceName]) =>
+      sqlQuote(sequenceName),
+    ).join(", ");
     const present = scalar(
       `SELECT COUNT(*) FROM INFORMATION_SCHEMA.SEQUENCES ` +
         `WHERE SEQUENCE_SCHEMA = 'PUBLIC' AND SEQUENCE_NAME IN (${sequenceNames})`,
@@ -1877,34 +2463,22 @@ async function reconcileLegacyFixturesPreboot() {
       );
       const expected = maxIds.get(sequenceName);
       if (current !== expected) {
-        throw new Error(`self-check failed: ${sequenceName} current value ${current} != table max ${expected}`);
+        throw new Error(
+          `self-check failed: ${sequenceName} current value ${current} != table max ${expected}`,
+        );
       }
     }
   };
-  const parityUserValues = {
-    admin: ["Site Admin", "admin@example.com"],
-    alice: ["Alice Kim", "alice@example.com"],
-    bob: ["Bob Park", "bob@example.com"],
-    carol: ["Carol Lee", "carol@example.com"],
-  };
-  for (const [loginId, [name, email]] of Object.entries(parityUserValues)) {
+  for (const user of PARITY_USERS) {
+    const salt = `differential-${user.loginId}`;
+    let password = createHash("sha256").update(salt).update(user.password).digest();
+    for (let iteration = 1; iteration < 1024; iteration += 1) {
+      password = createHash("sha256").update(password).digest();
+    }
     shellOnRebuilt(
-      `UPDATE n4user SET name = '${name}', email = '${email}', english_name = NULL, ` +
-        "state = 'ACTIVE', avatar_url = NULL WHERE login_id = '" +
-        loginId +
-        "'",
-    );
-  }
-  if (scalar("SELECT COUNT(*) FROM n4user WHERE login_id = 'bob'") === 0) {
-    const nextUserId = scalar("SELECT COALESCE(MAX(id), 0) FROM n4user") + 1;
-    shellOnRebuilt(
-      `INSERT INTO n4user (id, name, login_id, password, password_salt, email, avatar_url, state, lang, is_guest, english_name) ` +
-        `VALUES (${nextUserId}, 'Bob Park', 'bob', '9fkLYYr+OyyyFsT+mv04SJH5kUw+BGdG5VsLJdpxBF4=', 'parity-bob-salt', 'bob@example.com', NULL, 'ACTIVE', 'ko-KR', 0, 'Bob Park')`,
-    );
-  } else {
-    shellOnRebuilt(
-      "UPDATE n4user SET password = '9fkLYYr+OyyyFsT+mv04SJH5kUw+BGdG5VsLJdpxBF4=', " +
-        "password_salt = 'parity-bob-salt', state = 'ACTIVE' WHERE login_id = 'bob'",
+      `UPDATE n4user SET name = ${sqlQuote(user.name)}, email = ${sqlQuote(user.email)}, english_name = NULL, ` +
+        `state = 'ACTIVE', lang = 'ko-KR', avatar_url = NULL, password_salt = ${sqlQuote(salt)}, ` +
+        `password = ${sqlQuote(password.toString("base64"))} WHERE login_id = ${sqlQuote(user.loginId)}`,
     );
   }
   shellOnRebuilt(
@@ -1917,7 +2491,7 @@ async function reconcileLegacyFixturesPreboot() {
   for (const project of PARITY_SHARABLE_PROJECTS) {
     shellOnRebuilt(
       `UPDATE project SET owner = '${project.owner}', name = '${project.name}', vcs = '${project.vcs}', ` +
-        "project_scope = 'PUBLIC' WHERE id = " +
+        `overview = ${sqlQuote(project.overview)}, project_scope = 'PUBLIC' WHERE id = ` +
         project.id,
     );
   }
@@ -1960,8 +2534,12 @@ async function reconcileLegacyFixturesPreboot() {
   shellOnRebuilt(
     "DELETE FROM issue_label WHERE category_id IN (SELECT id FROM issue_label_category WHERE name LIKE 'parity-cat-sweep-%')",
   );
-  shellOnRebuilt("DELETE FROM issue_label WHERE name = 'undefined' OR name LIKE 'parity-label-sweep-%'");
-  shellOnRebuilt("DELETE FROM issue_label_category WHERE name = 'undefined' OR name LIKE 'parity-cat-sweep-%'");
+  shellOnRebuilt(
+    "DELETE FROM issue_label WHERE name = 'undefined' OR name LIKE 'parity-label-sweep-%'",
+  );
+  shellOnRebuilt(
+    "DELETE FROM issue_label_category WHERE name = 'undefined' OR name LIKE 'parity-cat-sweep-%'",
+  );
 
   // Ensure category + label rows exist for each parity seed tuple. Legacy H2
   // has no identity columns here, so ids are allocated explicitly from the
@@ -1971,24 +2549,31 @@ async function reconcileLegacyFixturesPreboot() {
       scalar("SELECT COALESCE(MAX(id), 0) FROM issue_label_category"),
       scalar("SELECT COALESCE(MAX(id), 0) FROM issue_label"),
     ) + 1;
-  // Several 'sample' projects can exist across owners; the parity fixture is
-  // the lowest-id one, matching what the sweep scenarios address.
-  const sampleProjectId = scalar("SELECT id FROM project WHERE name = 'sample' ORDER BY id LIMIT 1");
+  // The same project name also exists under alice; scenarios target admin/sample.
+  const sampleProjectId = scalar(
+    "SELECT id FROM project WHERE owner = 'admin' AND name = 'sample' LIMIT 1",
+  );
   // Replayed legacy H2 keeps rows created by earlier sweeps. Keep the two
   // deterministic seed records and remove only their dependent rows; the
   // migration export must not compare old throwaway history against Yoram's
   // fresh parity fixture.
-  const staleIssueIds =
-    `(SELECT id FROM issue WHERE project_id = ${sampleProjectId} AND title <> 'Review rail parity check')`;
-  const staleIssueCommentIds =
-    `(SELECT id FROM issue_comment WHERE issue_id IN ${staleIssueIds})`;
-  const stalePostingIds =
-    `(SELECT id FROM posting WHERE project_id = ${sampleProjectId} AND title <> 'Seed notes' AND readme = 0)`;
+  const staleIssueIds = `(SELECT id FROM issue WHERE project_id = ${sampleProjectId} AND title <> 'Review rail parity check')`;
+  const staleIssueCommentIds = `(SELECT id FROM issue_comment WHERE issue_id IN ${staleIssueIds})`;
+  const stalePostingIds = `(SELECT id FROM posting WHERE project_id = ${sampleProjectId} AND title <> 'Seed notes' AND readme = 0)`;
   shellOnRebuilt("SET REFERENTIAL_INTEGRITY FALSE");
-  for (const table of ["issue_comment_voter", "issue_comment", "issue_event", "issue_issue_label", "issue_voter", "issue_sharer"]) {
+  for (const table of [
+    "issue_comment_voter",
+    "issue_comment",
+    "issue_event",
+    "issue_issue_label",
+    "issue_voter",
+    "issue_sharer",
+  ]) {
     shellOnRebuilt(
       `DELETE FROM ${table} WHERE ${
-        table === "issue_comment_voter" ? `issue_comment_id IN ${staleIssueCommentIds}` : `issue_id IN ${staleIssueIds}`
+        table === "issue_comment_voter"
+          ? `issue_comment_id IN ${staleIssueCommentIds}`
+          : `issue_id IN ${staleIssueIds}`
       }`,
     );
   }
@@ -2014,15 +2599,25 @@ async function reconcileLegacyFixturesPreboot() {
         `WHERE id = ${seedIssueId}`,
     );
   }
-  const legacyRepositoryPath = path.join(
-    repoRoot,
-    ".agent/legacy-localhost/instances/parity/data/repo/git/admin/sample.git",
-  );
+  const legacyRepositoryPath = path.join(legacyInstanceDir, "data/repo/git/admin/sample.git");
+  ensureDiffableRepoBranches(legacyRepositoryPath);
+  ensureDiffableRepoBranches(path.join(legacyInstanceDir, "data/repo/git/alice/sample.git"));
   const featureCommit = featureCommitFor(legacyRepositoryPath);
-  const seededPullRequestId = scalar(
+  if (!featureCommit) throw new Error("legacy parity feature commit is missing");
+  let seededPullRequestId = scalar(
     `SELECT id FROM pull_request WHERE to_project_id = ${sampleProjectId} AND number = 1 ORDER BY id LIMIT 1`,
   );
-  if (!featureCommit || !seededPullRequestId) throw new Error("legacy parity PR seed is missing");
+  if (!seededPullRequestId) {
+    seededPullRequestId = scalar("SELECT COALESCE(MAX(id), 0) FROM pull_request") + 1;
+    shellOnRebuilt(
+      `INSERT INTO pull_request (id, title, body, to_project_id, from_project_id, to_branch, from_branch, ` +
+        `contributor_id, created, updated, state, is_conflict, is_merging, number) VALUES (` +
+        `${seededPullRequestId}, ${sqlQuote(PARITY_PULL_REQUEST.title)}, '', ${sampleProjectId}, ${sampleProjectId}, ` +
+        `${sqlQuote(PARITY_PULL_REQUEST.toBranch)}, ${sqlQuote(PARITY_PULL_REQUEST.fromBranch)}, ` +
+        `(SELECT id FROM n4user WHERE login_id = 'admin'), '2026-07-07 11:24:00', ` +
+        `'2026-07-07 11:24:00', ${PARITY_PULL_REQUEST.state}, FALSE, FALSE, 1)`,
+    );
+  }
   const stalePullRequestIds = shellOnRebuilt(
     `SELECT id FROM pull_request WHERE to_project_id = ${sampleProjectId} AND id <> ${seededPullRequestId} ` +
       `AND title LIKE 'Differential sweep PR %'`,
@@ -2106,6 +2701,21 @@ async function reconcileLegacyFixturesPreboot() {
     `INSERT INTO watch (id, user_id, resource_type, resource_id) VALUES (` +
       `${scalar("SELECT COALESCE(MAX(id), 0) FROM watch") + 1}, ${adminId}, 'PROJECT', ${sqlQuote(sampleProjectId)})`,
   );
+  shellOnRebuilt(
+    `DELETE FROM unwatch WHERE resource_type = 'PROJECT' AND resource_id = ${sqlQuote(sampleProjectId)}`,
+  );
+  const seedPostId = scalar(
+    `SELECT id FROM posting WHERE project_id = ${sampleProjectId} AND number = 1`,
+  );
+  const parentPostCommentId = scalar(
+    `SELECT id FROM posting_comment WHERE posting_id = ${seedPostId} AND contents = ${sqlQuote(parityProjectSeed.post.commentBody)}`,
+  );
+  shellOnRebuilt(
+    `INSERT INTO posting_comment (id, posting_id, project_id, parent_comment_id, author_id, author_login_id, author_name, created_date, contents) ` +
+      `VALUES (${scalar("SELECT COALESCE(MAX(id), 0) FROM posting_comment") + 1}, ${seedPostId}, ${sampleProjectId}, ` +
+      `${parentPostCommentId}, ${adminId}, 'admin', 'Site Admin', CURRENT_TIMESTAMP(), ${sqlQuote(PARITY_POST_COMMENT)})`,
+  );
+  shellOnRebuilt(`UPDATE posting SET num_of_comments = 2 WHERE id = ${seedPostId}`);
   // Project reviews are a separate screen but share this project fixture. Reset
   // stale rows, then seed one commit discussion identically on both engines.
   shellOnRebuilt(
@@ -2156,19 +2766,22 @@ async function reconcileLegacyFixturesPreboot() {
       `SELECT id FROM issue_label WHERE name = '${labelName}' AND category_id IN ` +
         `(SELECT id FROM issue_label_category WHERE project_id = ${sampleProjectId}) LIMIT 1`,
     );
-  // Keep the seeded issue's label associations aligned with the content
-  // contract used by both migration export and issue-detail probes. The
-  // original H2 fixture can retain only the first association after repeated
-  // recover/replay cycles even though the page seed selected both labels.
+  // Both the project catalog and the category join must address these labels.
+  shellOnRebuilt(
+    `UPDATE issue_label SET project_id = ${sampleProjectId} WHERE category_id IN ` +
+      `(SELECT id FROM issue_label_category WHERE project_id = ${sampleProjectId})`,
+  );
+  // Keep the seeded issue's label associations aligned with the content contract.
   const sampleIssueId = scalar(
     `SELECT id FROM issue WHERE project_id = ${sampleProjectId} AND number = 1 LIMIT 1`,
   );
   if (sampleIssueId) {
     for (const seed of PARITY_LABEL_SEEDS) {
       const labelId = labelIdOf(seed.labelName);
-      const hasAssociation = scalar(
-        `SELECT COUNT(*) FROM issue_issue_label WHERE issue_id = ${sampleIssueId} AND issue_label_id = ${labelId}`,
-      ) > 0;
+      const hasAssociation =
+        scalar(
+          `SELECT COUNT(*) FROM issue_issue_label WHERE issue_id = ${sampleIssueId} AND issue_label_id = ${labelId}`,
+        ) > 0;
       if (!hasAssociation) {
         shellOnRebuilt(
           `INSERT INTO issue_issue_label (issue_id, issue_label_id) VALUES (${sampleIssueId}, ${labelId})`,
@@ -2185,7 +2798,9 @@ async function reconcileLegacyFixturesPreboot() {
   // Self-check gates the boot: fixture must be clean afterwards.
   const activeStaleUsers = Number(
     /\d+/.exec(
-      shellOnRebuilt("SELECT COUNT(*) FROM n4user WHERE login_id LIKE 'paritysweep%' AND state <> 'DELETED'"),
+      shellOnRebuilt(
+        "SELECT COUNT(*) FROM n4user WHERE login_id LIKE 'paritysweep%' AND state <> 'DELETED'",
+      ),
     )?.[0] ?? "0",
   );
   if (activeStaleUsers !== 0) {
@@ -2195,17 +2810,23 @@ async function reconcileLegacyFixturesPreboot() {
     "SELECT COUNT(*) FROM PROJECT_USER pu LEFT JOIN PROJECT p ON p.ID = pu.PROJECT_ID WHERE p.ID IS NULL",
   );
   if (orphanProjectMemberships !== 0) {
-    throw new Error(`self-check failed: ${orphanProjectMemberships} orphan project memberships remain`);
+    throw new Error(
+      `self-check failed: ${orphanProjectMemberships} orphan project memberships remain`,
+    );
   }
   const missingRoles = LEGACY_ROLE_SEEDS.filter(
     ([roleId]) => scalar(`SELECT COUNT(*) FROM role WHERE id = ${roleId}`) === 0,
   );
   if (missingRoles.length > 0) {
-    throw new Error(`self-check failed: legacy role rows missing: ${missingRoles.map(([id]) => id).join(", ")}`);
+    throw new Error(
+      `self-check failed: legacy role rows missing: ${missingRoles.map(([id]) => id).join(", ")}`,
+    );
   }
   const residueCategories = Number(
     /\d+/.exec(
-      shellOnRebuilt("SELECT COUNT(*) FROM issue_label_category WHERE name LIKE 'parity-cat-sweep-%'"),
+      shellOnRebuilt(
+        "SELECT COUNT(*) FROM issue_label_category WHERE name LIKE 'parity-cat-sweep-%'",
+      ),
     )?.[0] ?? "0",
   );
   if (residueCategories !== 0) {
@@ -2231,7 +2852,9 @@ async function reconcileLegacyFixturesPreboot() {
   ).sort();
   const actualTuples = [...new Set(tuples)].sort();
   if (wantedTuples.join("\n") !== actualTuples.join("\n")) {
-    throw new Error(`self-check failed: sample-project label tuples diverge from seeds (want: ${wantedTuples.join(", ")}, have: ${actualTuples.join(", ")})`);
+    throw new Error(
+      `self-check failed: sample-project label tuples diverge from seeds (want: ${wantedTuples.join(", ")}, have: ${actualTuples.join(", ")})`,
+    );
   }
 
   // Persist the reconciled pagestore back over the original fixture file,
@@ -2241,7 +2864,19 @@ async function reconcileLegacyFixturesPreboot() {
     new Promise((resolve, reject) => {
       const child = spawn(
         javaBin,
-        ["-cp", h2Jar, "org.h2.tools.Shell", "-url", `jdbc:h2:${path.join(workDir, "rebuilt")};MODE=PostgreSQL;MV_STORE=FALSE;MVCC=FALSE;IFEXISTS=TRUE`, "-user", "sa", "-password", "", "-sql", "SELECT COUNT(*) FROM N4USER"],
+        [
+          "-cp",
+          h2Jar,
+          "org.h2.tools.Shell",
+          "-url",
+          `jdbc:h2:${path.join(workDir, "rebuilt")};MODE=PostgreSQL;MV_STORE=FALSE;MVCC=FALSE;IFEXISTS=TRUE`,
+          "-user",
+          "sa",
+          "-password",
+          "",
+          "-sql",
+          "SELECT COUNT(*) FROM N4USER",
+        ],
         { stdio: ["ignore", "pipe", "pipe"] },
       );
       let out = "";
@@ -2269,7 +2904,13 @@ function issueNumberFromLocation(location) {
 
 function pushHelperViolation(ctx, route, expected, actual) {
   ctx.entry.violations.push(
-    violation({ route, behaviorId: ctx.entry.behaviorIds[0] ?? null, kind: "api", expected, actual }),
+    violation({
+      route,
+      behaviorId: ctx.entry.behaviorIds[0] ?? null,
+      kind: "api",
+      expected,
+      actual,
+    }),
   );
 }
 
@@ -2290,44 +2931,48 @@ function mergeCookieHeader(oldHeader, setCookies) {
 // Shared step utilities handed to domain handlers via ctx.helpers.
 export const stepHelpers = {
   async resolveLegacyPullRequest(ctx, number, title) {
-    // Play returns the redirect before Ebean's transaction is visible to the
-    // independent H2 shell used for DB identity resolution.
+    // Join the live H2 auto-server: bypassing its lock reads stale on-disk pages.
+    // LAST_COMMIT_ID only backs a deleted source branch, not an open PR's commits.
     const deadline = Date.now() + 3_000;
     while (Date.now() < deadline) {
       const output = legacyH2Shell(
-        `SELECT pr.ID || '|' || pr.NUMBER || '|' || COALESCE(pr.LAST_COMMIT_ID, '')
+        `SELECT pr.ID || '|' || pr.NUMBER || '|' ||
+                COALESCE((SELECT c.COMMIT_ID FROM PULL_REQUEST_COMMIT c
+                           WHERE c.PULL_REQUEST_ID = pr.ID AND c.STATE = 'CURRENT'
+                           ORDER BY c.ID DESC LIMIT 1), '') || '|' ||
+                pr.STATE || '|' || ${encodedLegacyColumn("pr.TITLE")} || '|' ||
+                ${encodedLegacyColumn("COALESCE(pr.BODY, '')")} || '|' || COALESCE(pr.IS_MERGING, FALSE) || '|' ||
+                CASE WHEN EXISTS (
+                  SELECT 1 FROM PULL_REQUEST_REVIEWERS r JOIN N4USER u ON u.ID = r.USER_ID
+                   WHERE r.PULL_REQUEST_ID = pr.ID AND u.LOGIN_ID = 'admin'
+                ) THEN 'TRUE' ELSE 'FALSE' END
            FROM PULL_REQUEST pr
           WHERE pr.NUMBER = ${Number(number)}
             AND pr.TITLE = ${sqlQuote(title)}
+            AND pr.TO_PROJECT_ID = (SELECT p.ID FROM PROJECT p
+                                    WHERE p.OWNER = ${sqlQuote(ctx.step.params.owner)}
+                                      AND p.NAME = ${sqlQuote(ctx.step.params.project)})
           ORDER BY pr.ID DESC LIMIT 1`,
       );
       const row = output
         .split("\n")
         .map((line) => line.trim())
         .find((line) => /^\d+\s*\|/u.test(line));
-      const [id, resolvedNumber, lastCommitId] = (row ?? "").split(/\s*\|\s*/u);
+      const [id, resolvedNumber, currentCommitId, state, resolvedTitle, body, isMerging, reviewed] =
+        (row ?? "").split(/\s*\|\s*/u);
       if (id) {
         return {
           id: Number(id) || null,
           number: Number(resolvedNumber) || null,
-          lastCommitId,
+          currentCommitId,
+          state: { 1: "open", 2: "closed", 6: "merged" }[state] ?? state,
+          title: resolvedTitle.replaceAll("<NL>", "\n").replaceAll("<PIPE>", "|"),
+          bodyMarkdown: body.replaceAll("<NL>", "\n").replaceAll("<PIPE>", "|"),
+          isMerging: isMerging === "TRUE",
+          reviewed: reviewed === "TRUE",
         };
       }
       await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-    const detail = await ctx.legacySession.request({
-      method: "GET",
-      path: `/${ctx.step.params.owner}/${ctx.step.params.project}/pullRequest/${Number(number)}`,
-    });
-    const body = detail.body ?? "";
-    const mentionUrl = /mentionListAtPullRequest[^"']*commitId=([^&"']*)[^"']*pullRequestId=(\d+)/u.exec(body);
-    const pullRequestId = Number(mentionUrl?.[2]) || null;
-    if (pullRequestId) {
-      return {
-        id: pullRequestId,
-        number: Number(number) || null,
-        lastCommitId: decodeURIComponent(mentionUrl?.[1] ?? ""),
-      };
     }
     throw new Error(`legacy PR DB id readiness timed out for display number ${number}`);
   },
@@ -2345,10 +2990,14 @@ export const stepHelpers = {
     const yoramFailed = yoramResult.status >= 400;
     const agreedFailure = legacyFailed && yoramFailed && legacyResult.status === yoramResult.status;
     if (legacyFailed && !agreedFailure) {
-      entry.errors.push(`legacy ${step.action} failed: HTTP ${legacyResult.status} @ ${legacyTranslation.path}`);
+      entry.errors.push(
+        `legacy ${step.action} failed: HTTP ${legacyResult.status} @ ${legacyTranslation.path}`,
+      );
     }
     if (yoramFailed && !agreedFailure) {
-      entry.errors.push(`yoram ${step.action} failed: HTTP ${yoramResult.status} @ ${yoramTranslation.path}`);
+      entry.errors.push(
+        `yoram ${step.action} failed: HTTP ${yoramResult.status} @ ${yoramTranslation.path}`,
+      );
     }
     return { legacyResult, yoramResult };
   },
@@ -2413,7 +3062,8 @@ export const stepHelpers = {
         // (IssueApp.newIssue), so legacy form POSTs default to multipart and
         // fetch owns the boundary content-type.
         const formData = new FormData();
-        for (const [key, value] of Object.entries(translation.form)) formData.append(key, String(value));
+        for (const [key, value] of Object.entries(translation.form))
+          formData.append(key, String(value));
         body = formData;
       } else {
         headers["content-type"] = "application/x-www-form-urlencoded";
@@ -2452,8 +3102,16 @@ export const stepHelpers = {
     const yoramFail = yoramResult.status >= 400;
     // Agreed outcomes are parity (even agreed errors); only disagreement in
     // success/failure — or in the failing status itself — is a violation.
-    if ((legacyFail !== yoramFail) || (legacyFail && yoramFail && legacyResult.status !== yoramResult.status)) {
-      pushHelperViolation(ctx, route, { status: legacyResult.status }, { status: yoramResult.status });
+    if (
+      legacyFail !== yoramFail ||
+      (legacyFail && yoramFail && legacyResult.status !== yoramResult.status)
+    ) {
+      pushHelperViolation(
+        ctx,
+        route,
+        { status: legacyResult.status },
+        { status: yoramResult.status },
+      );
     }
     return { legacyResult, yoramResult };
   },
@@ -2471,7 +3129,7 @@ export const stepHelpers = {
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
   },
-   issueNumberFromLocation,
+  issueNumberFromLocation,
   // Render both dom targets as skeletons and diff; any violation is a dom kind.
   async renderDomTarget(ctx, domTarget) {
     const { step, suffix, entry, legacySession, yoramSession, options } = ctx;
@@ -2489,25 +3147,34 @@ export const stepHelpers = {
       await setCookiesFromHeader(ctx.yoramPage, ctx.yoramBaseUrl, renderYoramSession.cookies);
       const legacySkeleton = await renderSkeleton(ctx.legacyPage, domTarget.legacy, {
         selector: domTarget.legacySelector ?? domTarget.selector,
+        ready: /^\/[^/]+\/[^/]+\/(?:newPullRequestForm|pullRequest\/\d+\/editform)$/u.test(
+          new URL(domTarget.legacy).pathname,
+        )
+          ? PULL_REQUEST_FORM_SETTLED
+          : undefined,
       });
       const yoramSkeleton = await renderSkeleton(ctx.yoramPage, domTarget.yoram, {
         spa: domTarget.spa,
         selector: domTarget.yoramSelector ?? domTarget.selector,
         ready:
           ctx.scenarioId === "R16-pr-review-points" &&
-          /^\/[^/]+\/[^/]+\/pullRequest\/\d+$/u.test(
-            new URL(domTarget.yoram).pathname,
-          )
+          /^\/[^/]+\/[^/]+\/pullRequest\/\d+$/u.test(new URL(domTarget.yoram).pathname)
             ? PULL_REQUEST_DETAIL_SETTLED
             : undefined,
       });
       if (domTarget.currentToken) {
-        for (const [page, side] of [[ctx.legacyPage, "legacy"], [ctx.yoramPage, "yoram"]]) {
+        for (const [page, side] of [
+          [ctx.legacyPage, "legacy"],
+          [ctx.yoramPage, "yoram"],
+        ]) {
           const hasToken = await page.evaluate(
             (token) => document.body?.innerText?.includes(token) ?? false,
             domTarget.currentToken,
           );
-          if (!hasToken) throw new Error(`${side} DOM missing current differential token "${domTarget.currentToken}"`);
+          if (!hasToken)
+            throw new Error(
+              `${side} DOM missing current differential token "${domTarget.currentToken}"`,
+            );
         }
       }
       return compareSkeletons(legacySkeleton, yoramSkeleton);
@@ -2532,7 +3199,12 @@ export const stepHelpers = {
         // CDP protocol timeouts ("Runtime.callFunctionOn timed out",
         // protocolTimeout) wedge the tab permanently and the error does not
         // say which side, so recreate both sweep pages once and retry.
-        if (!/Runtime\.callFunctionOn timed out|protocolTimeout|timed? ?out/i.test(error.message ?? "")) throw error;
+        if (
+          !/Runtime\.callFunctionOn timed out|protocolTimeout|timed? ?out/i.test(
+            error.message ?? "",
+          )
+        )
+          throw error;
         for (const key of ["legacyPage", "yoramPage"]) {
           await raceTimeout(ctx[key].close(), `close wedged page (${key})`).catch(() => {});
           // Write through the shared holder: later steps rebuild their ctx
@@ -2607,7 +3279,14 @@ function responseObservation(response) {
   };
 }
 
-function recordRequestObservation(observation, side, translation, response, error = null, request = requestObservation(translation)) {
+function recordRequestObservation(
+  observation,
+  side,
+  translation,
+  response,
+  error = null,
+  request = requestObservation(translation),
+) {
   observation.events.push({
     side,
     request,
@@ -2620,13 +3299,15 @@ function projectStateEvidence(state, expectedState) {
   if (expectedState === null) return null;
   if (!expectedState || typeof expectedState !== "object") return expectedState;
   const projected = {};
-  for (const key of Object.keys(expectedState)) projected[key] = cloneObservationValue(state?.[key]);
+  for (const key of Object.keys(expectedState))
+    projected[key] = cloneObservationValue(state?.[key]);
   return projected;
 }
 
 function runtimeDispositionSignature(context, observation, expectedRule) {
   const expectedSignature = expectedRule?.signature;
-  const expected = typeof expectedSignature === "function" ? expectedSignature(context) : expectedSignature;
+  const expected =
+    typeof expectedSignature === "function" ? expectedSignature(context) : expectedSignature;
   const actual = {
     scenarioId: context.scenarioId ?? null,
     action: context.step.action,
@@ -2641,19 +3322,24 @@ function runtimeDispositionSignature(context, observation, expectedRule) {
 
 function signatureSubsetMatches(expected, actual, key = "") {
   if (expected === actual) return true;
-  if (expected === null || actual === null || expected === undefined || actual === undefined) return false;
+  if (expected === null || actual === null || expected === undefined || actual === undefined)
+    return false;
   if (typeof expected !== "object" || typeof actual !== "object") return false;
   // Requests are the evidence boundary: allowing an object subset here would
   // let a new payload field hide behind an approved empty/form payload.
-  if (key === "request" || key === "result" || key === "state") return isDeepStrictEqual(expected, actual);
+  if (key === "request" || key === "result" || key === "state")
+    return isDeepStrictEqual(expected, actual);
   if (Array.isArray(expected)) {
-    return Array.isArray(actual) &&
+    return (
+      Array.isArray(actual) &&
       expected.length === actual.length &&
-      expected.every((value, index) => signatureSubsetMatches(value, actual[index], key));
+      expected.every((value, index) => signatureSubsetMatches(value, actual[index], key))
+    );
   }
   if (Array.isArray(actual)) return false;
-  return Object.entries(expected).every(([key, value]) =>
-    Object.hasOwn(actual, key) && signatureSubsetMatches(value, actual[key], key));
+  return Object.entries(expected).every(
+    ([key, value]) => Object.hasOwn(actual, key) && signatureSubsetMatches(value, actual[key], key),
+  );
 }
 
 function expectedErrorsOnly(errorMessages, action, events) {
@@ -2674,7 +3360,10 @@ function expectedErrorsOnly(errorMessages, action, events) {
 
 function installRequestObservers(context, observation) {
   const restores = [];
-  for (const [side, session] of [["legacy", context.legacySession], ["yoram", context.yoramSession]]) {
+  for (const [side, session] of [
+    ["legacy", context.legacySession],
+    ["yoram", context.yoramSession],
+  ]) {
     if (!session || typeof session.request !== "function") continue;
     const request = session.request;
     session.request = async function observedRequest(translation) {
@@ -2715,29 +3404,55 @@ export async function executeStep(context) {
   const restoreObservers = observation ? installRequestObservers(context, observation) : () => {};
   const helpers = observation
     ? {
-      ...stepHelpers,
-      async sendRaw(ctx, side, translation) {
-        const requestEvidence = requestObservation(translation);
-        try {
-          const response = await stepHelpers.sendRaw(ctx, side, translation);
-          recordRequestObservation(observation, side, translation, response, null, requestEvidence);
-          return response;
-        } catch (error) {
-          recordRequestObservation(observation, side, translation, null, error, requestEvidence);
-          throw error;
-        }
-      },
-      async pairLenient(ctx, legacyTranslation, yoramTranslation, route) {
-        const legacyRequest = requestObservation(legacyTranslation);
-        const yoramRequest = requestObservation(yoramTranslation);
-        const pair = await stepHelpers.pairLenient(ctx, legacyTranslation, yoramTranslation, route);
-        // pairLenient calls the original sendRaw method through its receiver,
-        // so the per-step wrapper above cannot see those two requests.
-        recordRequestObservation(observation, "legacy", legacyTranslation, pair.legacyResult, null, legacyRequest);
-        recordRequestObservation(observation, "yoram", yoramTranslation, pair.yoramResult, null, yoramRequest);
-        return pair;
-      },
-    }
+        ...stepHelpers,
+        async sendRaw(ctx, side, translation) {
+          const requestEvidence = requestObservation(translation);
+          try {
+            const response = await stepHelpers.sendRaw(ctx, side, translation);
+            recordRequestObservation(
+              observation,
+              side,
+              translation,
+              response,
+              null,
+              requestEvidence,
+            );
+            return response;
+          } catch (error) {
+            recordRequestObservation(observation, side, translation, null, error, requestEvidence);
+            throw error;
+          }
+        },
+        async pairLenient(ctx, legacyTranslation, yoramTranslation, route) {
+          const legacyRequest = requestObservation(legacyTranslation);
+          const yoramRequest = requestObservation(yoramTranslation);
+          const pair = await stepHelpers.pairLenient(
+            ctx,
+            legacyTranslation,
+            yoramTranslation,
+            route,
+          );
+          // pairLenient calls the original sendRaw method through its receiver,
+          // so the per-step wrapper above cannot see those two requests.
+          recordRequestObservation(
+            observation,
+            "legacy",
+            legacyTranslation,
+            pair.legacyResult,
+            null,
+            legacyRequest,
+          );
+          recordRequestObservation(
+            observation,
+            "yoram",
+            yoramTranslation,
+            pair.yoramResult,
+            null,
+            yoramRequest,
+          );
+          return pair;
+        },
+      }
     : stepHelpers;
   try {
     await definition.handler({ ...context, helpers });
@@ -2754,7 +3469,13 @@ export async function executeStep(context) {
         result.error = error.message;
         entry.harnessNoted = true;
         entry.violations.push(
-          violation({ route: step.action, behaviorId: entry.behaviorIds[0] ?? null, kind: "harness", expected: "resolvable entity id", actual: error.message }),
+          violation({
+            route: step.action,
+            behaviorId: entry.behaviorIds[0] ?? null,
+            kind: "harness",
+            expected: "resolvable entity id",
+            actual: error.message,
+          }),
         );
       } else {
         result.status = "SKIPPED";
@@ -2772,7 +3493,11 @@ export async function executeStep(context) {
   }
   if (observation?.events.length > 0) result.observation = observation;
 
-  if (step.expectedDisposition && result.status !== "SKIPPED" && !result.error?.startsWith("unknown action:")) {
+  if (
+    step.expectedDisposition &&
+    result.status !== "SKIPPED" &&
+    !result.error?.startsWith("unknown action:")
+  ) {
     let signature;
     try {
       signature = runtimeDispositionSignature(context, observation, step.expectedDisposition);
@@ -2817,15 +3542,45 @@ export function runtimeVerifiedBehaviorIds(scenarioEntries) {
 // --- sweep ------------------------------------------------------------------
 
 export async function runSweep(options = {}) {
-  outputDir = path.resolve(options.outputDir ?? process.env.YONA_DIFFERENTIAL_OUTPUT_DIR ?? defaultOutputDir);
-  yoramRuntimeDir = path.join(outputDir, "yoram");
+  outputDir = path.resolve(
+    options.outputDir ?? process.env.YONA_DIFFERENTIAL_OUTPUT_DIR ?? defaultOutputDir,
+  );
   const runId = `sweep-${Date.now().toString(36)}`;
+  legacyBaseUrl = options.legacyUrl ?? process.env.YONA_LEGACY_URL ?? "http://127.0.0.1:9011";
+  const legacyUrl = new URL(legacyBaseUrl);
+  if (
+    legacyUrl.protocol !== "http:" ||
+    !["127.0.0.1", "localhost"].includes(legacyUrl.hostname) ||
+    legacyUrl.pathname !== "/" ||
+    legacyUrl.search ||
+    legacyUrl.hash ||
+    legacyUrl.username ||
+    legacyUrl.password
+  ) {
+    throw new Error(
+      "--legacy-url must be a loopback HTTP origin for the disposable legacy instance",
+    );
+  }
+  await assertLoopbackPortAvailable(Number(legacyUrl.port || 80));
+  options = { ...options, legacyUrl: legacyBaseUrl };
+  const instancesDir = path.join(repoRoot, ".agent/legacy-localhost/instances");
+  mkdirSync(instancesDir, { recursive: true });
+  legacyInstanceDir = mkdtempSync(path.join(instancesDir, `differential-${runId}-`));
+  mkdirSync(outputDir, { recursive: true });
+  yoramRuntimeDir = path.join(outputDir, "yoram");
+  // Preserve earlier evidence; neither side inherits mutations from an old sweep.
+  if (existsSync(yoramRuntimeDir)) {
+    const archive = mkdtempSync(path.join(outputDir, `yoram-before-${runId}-`));
+    renameSync(yoramRuntimeDir, path.join(archive, "yoram"));
+  }
   const infraErrors = [];
   let yoramHandle = null;
   let browserHandle = null;
   const selectedScenarios = selectScenarios(options.scenarioIds);
 
-  const inventory = JSON.parse(readFileSync(path.join(repoRoot, "docs/provenance/behavior-inventory.json"), "utf8"));
+  const inventory = JSON.parse(
+    readFileSync(path.join(repoRoot, "docs/provenance/behavior-inventory.json"), "utf8"),
+  );
   const problems = validateScenarios(scenarios, Object.keys(ACTION_DEFINITIONS));
   if (problems.length > 0) throw new Error(`invalid scenarios: ${problems.join("; ")}`);
 
@@ -2833,6 +3588,8 @@ export async function runSweep(options = {}) {
     runId,
     version: 1,
     startedAt: new Date().toISOString(),
+    legacyInstanceDir,
+    legacyUrl: legacyBaseUrl,
     scenarios: [],
     behaviorsCovered: [],
     dbProjection: null,
@@ -2844,9 +3601,21 @@ export async function runSweep(options = {}) {
   try {
     mkdirSync(path.join(outputDir, "mail-out"), { recursive: true });
     clearMailOut();
-    // Pre-boot window: no JVM holds the H2 file yet. Reconciliation MUST
-    // apply — measuring against polluted fixtures is worse than not running,
-    // so any failure aborts the sweep loudly.
+    // Seed an isolated instance through the existing launcher. Never recover
+    // or rewrite the historical parity database.
+    await bootLegacy();
+    await runLegacyCommand(
+      "seed-admin",
+      "--name",
+      "Site Admin",
+      "--email",
+      "admin@example.com",
+      "--password",
+      "admin",
+      "--restart",
+    );
+    await runLegacyCommand("seed-parity-foundation", "--admin-password", "admin");
+    await runLegacyCommand("seed-parity-content", "--admin-password", "admin");
     await stopLegacy();
     await reconcileLegacyFixturesPreboot();
     patchLegacySmtpConf();
@@ -2870,7 +3639,14 @@ export async function runSweep(options = {}) {
       // Record the infra failure against every scenario so the report carries
       // a failure reason even when an instance never came up.
       for (const scenario of selectedScenarios) {
-        report.scenarios.push({ id: scenario.id, title: scenario.title, behaviorIds: [], violations: [], errors: [...infraErrors], stepResults: [] });
+        report.scenarios.push({
+          id: scenario.id,
+          title: scenario.title,
+          behaviorIds: [],
+          violations: [],
+          errors: [...infraErrors],
+          stepResults: [],
+        });
       }
       report.executionAccounting = summarizeExecution(report, selectedScenarios.length);
       report.dbProjection = { skipped: true, reason: [...infraErrors] };
@@ -2881,7 +3657,7 @@ export async function runSweep(options = {}) {
     // asymmetric label seeds poison the unfiltered label projection.
     try {
       const aligned = await alignParityFixtures({
-        legacyUrl: options.legacyUrl ?? process.env.YONA_LEGACY_URL ?? "http://127.0.0.1:9000",
+        legacyUrl: legacyBaseUrl,
         yoramUrl: yoramHandle.baseUrl,
       });
       const yoramDbPath = yoramHandle.databasePath;
@@ -2919,7 +3695,9 @@ export async function runSweep(options = {}) {
       const state = { issueNumberLegacy: null, issueNumberYoram: null };
       const suffix = `${runId}-${index + 1}`;
       if (report.labelLifecycle && scenario.id === "I21-issue-label-crud") {
-        report.labelLifecycle.beforeI21 = readYoramParityLabelRows(report.labelLifecycle.databasePath);
+        report.labelLifecycle.beforeI21 = readYoramParityLabelRows(
+          report.labelLifecycle.databasePath,
+        );
       }
       for (const step of scenario.actions) {
         const resolved = {
@@ -2943,6 +3721,7 @@ export async function runSweep(options = {}) {
             scenarioId: scenario.id,
             options,
             yoramBaseUrl: yoramHandle.baseUrl,
+            legacyRepositoryRoot: path.join(legacyInstanceDir, "data/repo"),
           });
         } catch (error) {
           const result = entry.stepResults.at(-1);
@@ -2962,10 +3741,14 @@ export async function runSweep(options = {}) {
           yoramLabelId: state.labelIdYoram ?? null,
           yoramCategoryId: state.categoryIdYoram ?? null,
         };
-        report.labelLifecycle.afterI21 = readYoramParityLabelRows(report.labelLifecycle.databasePath);
+        report.labelLifecycle.afterI21 = readYoramParityLabelRows(
+          report.labelLifecycle.databasePath,
+        );
       }
       if (report.labelLifecycle && scenario.id === "P1-issue-labels") {
-        report.labelLifecycle.afterP1 = readYoramParityLabelRows(report.labelLifecycle.databasePath);
+        report.labelLifecycle.afterP1 = readYoramParityLabelRows(
+          report.labelLifecycle.databasePath,
+        );
       }
       report.scenarios.push(entry);
       const partialPath = options.partialReportPath ?? process.env.YONA_DIFFERENTIAL_PARTIAL_REPORT;
@@ -2977,7 +3760,10 @@ export async function runSweep(options = {}) {
         const progressPath = process.env.YONA_DIFFERENTIAL_PROGRESS;
         if (progressPath) {
           const progressTemporary = `${path.resolve(progressPath)}.tmp`;
-          writeFileSync(progressTemporary, `${JSON.stringify({ status: "RUNNING", scenarioId: scenario.id, attempted: report.scenarios.length }, null, 2)}\n`);
+          writeFileSync(
+            progressTemporary,
+            `${JSON.stringify({ status: "RUNNING", scenarioId: scenario.id, attempted: report.scenarios.length }, null, 2)}\n`,
+          );
           renameSync(progressTemporary, path.resolve(progressPath));
         }
       }
@@ -2992,7 +3778,9 @@ export async function runSweep(options = {}) {
     await stopLegacy();
 
     if (report.labelLifecycle) {
-      report.labelLifecycle.sqliteAfterScenarios = readYoramParityLabelRows(report.labelLifecycle.databasePath);
+      report.labelLifecycle.sqliteAfterScenarios = readYoramParityLabelRows(
+        report.labelLifecycle.databasePath,
+      );
     }
     report.dbProjection = await projectDatabases(options, runId);
     return report;
@@ -3004,12 +3792,13 @@ export async function runSweep(options = {}) {
   } finally {
     if (browserHandle) await browserHandle.close().catch(() => {});
     if (yoramHandle) await yoramHandle.stop().catch(() => {});
+    await stopLegacy().catch((error) => infraErrors.push(`legacy stop: ${error.message}`));
     if (mailSink) await stopChild(mailSink).catch(() => {});
   }
 }
 
 async function projectDatabases(options, runId) {
-  const legacyDb = path.join(repoRoot, ".agent/legacy-localhost/instances/parity/data/db/yona.h2.db");
+  const legacyDb = path.join(legacyInstanceDir, "data/db/yona.h2.db");
   const yoramDb = path.join(yoramRuntimeDir, "yoram.db");
   const projectName = "sample";
   const kinds = [
@@ -3023,8 +3812,14 @@ async function projectDatabases(options, runId) {
     // to this run keeps accumulated legacy H2 rows from poisoning the diff.
     // Labels are seed data and stay unfiltered.
     const tag = kind === "labels" ? null : runId;
-    const legacyRows = filterRowsByTag(project(await queryLegacyH2(repoRoot, legacyDb, kind, projectName), "legacy"), tag);
-    const yoramRows = filterRowsByTag(project(await queryYoramSqlite(yoramDb, kind, projectName), "yoram"), tag);
+    const legacyRows = filterRowsByTag(
+      project(await queryLegacyH2(repoRoot, legacyDb, kind, projectName), "legacy"),
+      tag,
+    );
+    const yoramRows = filterRowsByTag(
+      project(await queryYoramSqlite(yoramDb, kind, projectName), "yoram"),
+      tag,
+    );
     projection[kind] = { legacyRows: legacyRows.length, yoramRows: yoramRows.length };
     const diffs = diffProjections(legacyRows, yoramRows);
     if (diffs.length > 0) {
@@ -3053,8 +3848,12 @@ async function main() {
             violation({
               route: `db:admin/sample/${kind}`,
               kind: "db",
-              expected: projection.violations.filter((entry) => entry.side === "legacy-only").map((entry) => entry.row),
-              actual: projection.violations.filter((entry) => entry.side === "yoram-only").map((entry) => entry.row),
+              expected: projection.violations
+                .filter((entry) => entry.side === "legacy-only")
+                .map((entry) => entry.row),
+              actual: projection.violations
+                .filter((entry) => entry.side === "yoram-only")
+                .map((entry) => entry.row),
             }),
           ],
           errors: [],
@@ -3081,13 +3880,17 @@ async function main() {
     }),
   };
   mkdirSync(outputDir, { recursive: true });
-  writeFileSync(path.join(outputDir, "behavior-coverage.json"), `${JSON.stringify(coverage, null, 2)}\n`);
+  writeFileSync(
+    path.join(outputDir, "behavior-coverage.json"),
+    `${JSON.stringify(coverage, null, 2)}\n`,
+  );
   const reportPath = writeReport(report, outputDir);
   console.log(formatSummary(report));
   console.log(`report: ${reportPath}`);
 }
 
-const isMainModule = Boolean(process.argv[1]) && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
+const isMainModule =
+  Boolean(process.argv[1]) && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
 if (isMainModule) {
   await main();
 }

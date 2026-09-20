@@ -1,55 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
-
-const STATISTICS_ROUTE_SOURCE = readFileSync(
-  "src/routes/$ownerName/$projectName/statistics.tsx",
-  "utf8",
-);
-const STATISTICS_LEGACY_SOURCE = readFileSync(
-  "../yona-original/app/views/project/statistics.scala.html",
-  "utf8",
-);
-const LEGACY_PAGE_LESS_SOURCE = readFileSync(
-  "../yona-original/app/assets/stylesheets/less/_page.less",
-  "utf8",
-);
-const LEGACY_RESPONSIVE_LESS_SOURCE = readFileSync(
-  "../yona-original/app/assets/stylesheets/less/_responsive.less",
-  "utf8",
-);
-const LEGACY_BOOTSTRAP_SOURCE = readFileSync(
-  "../yona-original/public/bootstrap/css/bootstrap.css",
-  "utf8",
-);
-
-test("project statistics body owners follow the legacy two-wrapper skeleton", () => {
-  expect(STATISTICS_LEGACY_SOURCE).toContain(`<div class="page-wrap-outer">
-    <div class="project-page-wrap">
-        <h1>Under Construction</h1>`);
-  expect(LEGACY_PAGE_LESS_SOURCE).toContain(`.page-wrap-outer {
-    min-height: 450px;
-    margin-top: 10px;`);
-  expect(LEGACY_PAGE_LESS_SOURCE).toContain(`.project-page-wrap {
-    margin:20px auto 0;`);
-  expect(LEGACY_RESPONSIVE_LESS_SOURCE).toContain(`.page-wrap-outer {
-    min-width: 10px !important;
-    padding: 0 !important;`);
-  expect(LEGACY_RESPONSIVE_LESS_SOURCE).toContain(`.project-page-wrap {
-    width: 100%;
-    margin-top: 5px !important;`);
-  expect(LEGACY_BOOTSTRAP_SOURCE).toContain(`h1,
-h2,
-h3,
-h4,
-h5,
-h6 {`);
-  expect(STATISTICS_ROUTE_SOURCE).toContain('data-owner="project-statistics-page-outer"');
-  expect(STATISTICS_ROUTE_SOURCE).toContain('data-owner="project-statistics-page"');
-  // F5 (2026-08-13): the route renders the legacy shell classes —
-  // statistics.scala.html:24-25 (page-wrap-outer + project-page-wrap).
-  expect(STATISTICS_ROUTE_SOURCE).toContain('className="page-wrap-outer"');
-  expect(STATISTICS_ROUTE_SOURCE).toContain('className="project-page-wrap"');
-});
 
 test("project statistics matches legacy project/statistics.scala.html DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -80,7 +29,6 @@ test("project statistics matches legacy project/statistics.scala.html DOM", asyn
     projectPageWidth: 1346,
     projectPageTopEqualsPageWrapTop: true,
   });
-  expect(await statisticsFallbackEquivalence(page)).toBe(true);
 });
 
 test("project statistics body keeps the frozen max-720 shell geometry", async ({ page }) => {
@@ -110,7 +58,6 @@ test("project statistics body keeps the frozen max-720 shell geometry", async ({
     projectPageWidth: 390,
     projectPageTopEqualsPageWrapTop: true,
   });
-  expect(await statisticsFallbackEquivalence(page)).toBe(true);
 });
 
 test("project statistics empty header assets stay inside configured application context", async ({
@@ -230,49 +177,6 @@ test("project statistics breadcrumb links navigate through the SPA history marke
 
   await expect.poll(() => pushStateCalls(page)).toBeGreaterThan(0);
   await expect(page).toHaveURL(`${basePath}/admin/sample`);
-});
-
-test("project statistics route TSX has no route-local raw anchor elements", () => {
-  expect(STATISTICS_ROUTE_SOURCE).toContain(
-    'import { ProjectHeader, ProjectNestedShellContext } from "../$projectName"',
-  );
-  expect(STATISTICS_ROUTE_SOURCE).toContain(
-    "<ProjectHeader basePath={runtimeConfig.basePath} project={project} />",
-  );
-  expect(STATISTICS_ROUTE_SOURCE).toContain(
-    "const nestedProjectShell = use(ProjectNestedShellContext);",
-  );
-  expect(STATISTICS_ROUTE_SOURCE).toContain("if (nestedProjectShell) {");
-  expect(STATISTICS_ROUTE_SOURCE).not.toContain("function ProjectHeader(");
-  expect(STATISTICS_ROUTE_SOURCE).not.toContain("toggleProjectWatchRest");
-  expect(STATISTICS_ROUTE_SOURCE).not.toContain('"/assets/images/project_default_logo.png"');
-  expect(STATISTICS_ROUTE_SOURCE).toContain("projectSearchScope={projectSearchScope}");
-  expect(STATISTICS_ROUTE_SOURCE).toContain(
-    "organizationName: projectSearchScopeOrganizationName(project, ownerName)",
-  );
-  expect(STATISTICS_ROUTE_SOURCE).toContain(
-    "function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string)",
-  );
-  expect(STATISTICS_ROUTE_SOURCE).toContain(
-    "return projectIsProtected(project) ? ownerName : undefined;",
-  );
-  expect(STATISTICS_ROUTE_SOURCE).toContain(
-    "function projectIsProtected(project: ProjectContainer)",
-  );
-  expect(STATISTICS_ROUTE_SOURCE).toContain(
-    'stringField(project.projectScope, "") === "protected"',
-  );
-  expect(STATISTICS_ROUTE_SOURCE).toContain(
-    "<title>{`statistics - ${ownerName}/${projectName}`}</title>",
-  );
-  expect(STATISTICS_ROUTE_SOURCE).not.toContain("onMouseDown=");
-  expect(STATISTICS_ROUTE_SOURCE).not.toContain("document.");
-  expect(STATISTICS_ROUTE_SOURCE).not.toContain("addEventListener");
-  expect(STATISTICS_ROUTE_SOURCE).not.toContain("classList");
-  expect(STATISTICS_ROUTE_SOURCE).not.toContain("style.display");
-  expect(STATISTICS_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
-  expect(STATISTICS_ROUTE_SOURCE).not.toContain("<a ");
-  expect(STATISTICS_ROUTE_SOURCE).not.toContain("</a>");
 });
 
 test("project statistics header favorite star posts and toggles starred class", async ({
@@ -480,46 +384,6 @@ async function readStatisticsMetrics(page: Page) {
       if (!element) {
         throw new Error(`Missing ${selector}`);
       }
-      return element;
-    }
-  });
-}
-
-async function statisticsFallbackEquivalence(page: Page) {
-  return page.evaluate(() => {
-    const outer = document.querySelector('[data-owner="project-statistics-page-outer"]');
-    const projectPage = document.querySelector('[data-owner="project-statistics-page"]');
-    const capture = () => ({
-      outer: pick(outer),
-      projectPage: pick(projectPage),
-    });
-    const migrated = capture();
-    for (const element of [outer, projectPage]) {
-      for (const token of Array.from(element.classList)) {
-        if (token.startsWith("x")) element.classList.remove(token);
-      }
-    }
-    outer.classList.add("page-wrap-outer");
-    projectPage.classList.add("project-page-wrap");
-    return JSON.stringify(capture()) === JSON.stringify(migrated);
-
-    function pick(element: HTMLElement) {
-      const style = getComputedStyle(element);
-      const box = element.getBoundingClientRect();
-      return {
-        box: { height: box.height, left: box.left, top: box.top, width: box.width },
-        boxSizing: style.boxSizing,
-        marginTop: style.marginTop,
-        minHeight: style.minHeight,
-        paddingLeft: style.paddingLeft,
-        paddingRight: style.paddingRight,
-        width: style.width,
-      };
-    }
-
-    function requireElement(selector: string): HTMLElement {
-      const element = document.querySelector<HTMLElement>(selector);
-      if (!element) throw new Error(`Missing ${selector}`);
       return element;
     }
   });

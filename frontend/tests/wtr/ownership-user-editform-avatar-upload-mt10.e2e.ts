@@ -1,4 +1,3 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
@@ -12,61 +11,7 @@ const screenshotDirectory = resolve(
   "normal",
 );
 
-const read = (relativePath: string) => readFileSync(resolve(process.cwd(), relativePath), "utf8");
-
 test.use({ locale: "en-US" });
-
-test("user edit avatar upload preserves legacy source and Style ownership", () => {
-  const legacy = read("../yona-original/app/views/user/edit.scala.html");
-  const commonLess = read("../yona-original/app/assets/stylesheets/less/_common.less");
-  const pageLess = read("../yona-original/app/assets/stylesheets/less/_page.less");
-  const yobiUiLess = read("../yona-original/app/assets/stylesheets/less/_yobiUI.less");
-  const messages = read("../yona-original/conf/messages");
-  const route = read("src/routes/user/editform.tsx");
-  const styles = read("src/app.css");
-  const legacyAvatar = legacy.split(/\r?\n/u).slice(42, 59).join("\n");
-
-  expect(legacyAvatar).toContain('<form id="frmAvatar"');
-  expect(legacyAvatar).toContain('<div class="avatar-frm">');
-  expect(legacyAvatar).toContain('<div class="avatar-wrap xlarge">');
-  expect(legacyAvatar).toContain('<div class="upload-progress avatar" style="display:none;">');
-  expect(legacyAvatar).toContain('<div class="btn-wrap mt10 center-txt">');
-  expect(legacyAvatar).toContain('<div class="ybtn ybtn-small fake-file-wrap btnUploadAvatar">');
-  expect(legacyAvatar).toContain('@Messages("userinfo.changeAvatar")');
-  expect(legacyAvatar).toContain(
-    '<input id="avatarFile" type="file" class="file" name="filePath" accept="image/*">',
-  );
-  expect(legacyAvatar.indexOf("avatar-wrap xlarge")).toBeLessThan(
-    legacyAvatar.indexOf("upload-progress avatar"),
-  );
-  expect(legacyAvatar.indexOf("upload-progress avatar")).toBeLessThan(
-    legacyAvatar.indexOf("btn-wrap mt10 center-txt"),
-  );
-
-  expect(commonLess).toContain(".mt10 { margin-top:10px; }");
-  expect(commonLess).toContain(".center-txt    { text-align:center; }");
-  expect(pageLess).toContain(".profile-frmwrap {");
-  expect(pageLess).toContain(".avatar-frm {");
-  expect(pageLess).toContain("display:inline-block;");
-  expect(pageLess).toContain("vertical-align:top;");
-  expect(yobiUiLess).toContain(".fake-file-wrap {");
-  expect(yobiUiLess).toContain("position: relative; display:block; clear:both;");
-  expect(yobiUiLess).toContain(".file {");
-  expect(messages).toContain("userinfo.changeAvatar = Change avatar");
-
-  expect(route).not.toContain("btn-wrap mt10");
-
-  expect(route).toContain('data-owner="user-settings-avatar-upload-wrap"');
-
-  expect(route).toContain('data-owner="user-settings-avatar-upload"');
-  expect(route).toContain('data-owner="user-settings-avatar-upload-input"');
-  expect(route).toContain('name="filePath"');
-  expect(route).toContain('accept="image/*"');
-  expect(route).toContain('t("userinfo.changeAvatar")');
-  expect(route).not.toMatch(/\bstyle\s*=/u);
-  expect(route).not.toContain("document.querySelector");
-  expect(route).not.toContain("addEventListener");
-});
 
 test(`user edit avatar upload geometry ${"normal"}`, async ({ page }) => {
   await mockProfile(page);
@@ -87,11 +32,14 @@ test(`user edit avatar upload geometry ${"normal"}`, async ({ page }) => {
 
     await expect(avatarForm).toBeVisible();
     await expect(uploadWrap).toBeVisible();
-    await expect(uploadWrap).not.toHaveClass(/\bmt10\b/u);
     await expect(uploadWrap).toHaveCSS("margin-top", "10px");
     await expect(uploadWrap).toHaveCSS("text-align", "center");
-    await expect(uploadWrap).not.toHaveAttribute("style");
     await expect(upload).toContainText("Change avatar");
+    // The visible control is the ybtn; its native file input is only a transparent overlay.
+    await expect(upload).toHaveCSS("display", "inline-block");
+    await expect(upload).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await expect(upload).toHaveCSS("overflow", "hidden");
+    await expect(input).toHaveCSS("opacity", "0");
     await expect(input).toHaveAttribute("type", "file");
     await expect(input).toHaveAttribute("name", "filePath");
     await expect(input).toHaveAttribute("accept", "image/*");
@@ -112,6 +60,10 @@ test(`user edit avatar upload geometry ${"normal"}`, async ({ page }) => {
     expect(box).not.toBeNull();
     expect(box!.x).toBeGreaterThanOrEqual(0);
     expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width + 1);
+    const buttonBox = await upload.boundingBox();
+    expect(buttonBox).not.toBeNull();
+    expect(buttonBox!.width).toBeLessThan(box!.width);
+    expect(buttonBox!.x + buttonBox!.width / 2).toBeCloseTo(box!.x + box!.width / 2, 1);
 
     await page.screenshot({
       fullPage: true,

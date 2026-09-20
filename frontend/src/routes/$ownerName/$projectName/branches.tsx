@@ -9,7 +9,7 @@ import {
 } from "../../../api/code-branches";
 import { apiQueryKeys } from "../../../api/query-keys";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
-import { useLegacyMessages } from "../../../i18n";
+import { formatLegacyTimestamp, useLegacyMessages } from "../../../i18n";
 import type { RuntimeConfig } from "../../../runtime-config";
 
 export const Route = createFileRoute("/$ownerName/$projectName/branches")({
@@ -170,6 +170,7 @@ function BranchRow({
   const { ownerName, projectName } = Route.useParams();
   const queryClient = useQueryClient();
   const isHead = isDefaultBranch(branch, branches.defaultBranch);
+  const commitDate = formatLegacyTimestamp(branch.commitDate, t);
   const queryKey = apiQueryKeys.project.codeBranches(ownerName, projectName);
   const setDefaultMutation = useMutation({
     mutationFn: async () => {
@@ -246,12 +247,12 @@ function BranchRow({
         >
           {branch.commitShortId}
         </Link>
-        <span className="date" data-owner="project-branches-commit-date" title={branch.commitDate}>
-          {branch.commitDate}
+        <span className="date" data-owner="project-branches-commit-date" title={commitDate.title}>
+          {commitDate.label}
         </span>
       </td>
       <td className="pullRequest" data-owner="project-branches-pull-request-cell">
-        {branch.pullRequest ? (
+        {!isHead && branch.pullRequest ? (
           <Link
             to="/$ownerName/$projectName/pullRequest/$pullRequestNumber"
             params={{
@@ -270,7 +271,7 @@ function BranchRow({
               className: undefined,
               "data-status": undefined,
             }}
-            className={`pullrequest-state ${branch.pullRequest.state.toLowerCase()}`}
+            className={`blue-txt pullrequest-state ${branch.pullRequest.state.toLowerCase()}`}
             data-owner="project-branches-pull-request-link"
             title={t(`pullRequest.state.${branch.pullRequest.state.toLowerCase()}`)}
           >

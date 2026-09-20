@@ -98,7 +98,7 @@ async function mockPost(page: Page) {
         authorLabel: "admin",
         authorLoginId: "admin",
         authorAvatarUrl: "",
-        createdLabel: "Jul 1, 2026",
+        createdAt: "2026-07-01T00:00:00+09:00",
         attachments: [],
         comments: [],
         labels: [],

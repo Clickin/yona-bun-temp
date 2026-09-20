@@ -162,7 +162,7 @@ impl AppRepositoryImpl<'_> {
 
         if let Some(actor_id) = actor_id {
             if let Some(user) = self.find_user_by_id(actor_id).await? {
-                viewer.is_guest = user.is_guest;
+                viewer.is_guest = !user.is_site_admin;
                 viewer.is_site_admin = user.is_site_admin;
             }
 
@@ -176,6 +176,7 @@ impl AppRepositoryImpl<'_> {
                 viewer.is_organization_admin = role_name == "org_admin";
                 viewer.is_organization_member =
                     viewer.is_organization_admin || role_name == "org_member";
+                viewer.is_guest = !viewer.is_site_admin && role_name == "guest";
             }
 
             enrollment_requested =

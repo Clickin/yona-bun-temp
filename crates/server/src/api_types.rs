@@ -232,6 +232,12 @@ pub struct IssueMilestone {
     #[serde(default)]
     pub viewer_can_delete: bool,
     #[serde(default)]
+    pub project_labels: Vec<IssueLabel>,
+    #[serde(default)]
+    pub open_milestones: Vec<IssueMilestone>,
+    #[serde(default)]
+    pub assignable_users: Vec<ProjectMemberSummary>,
+    #[serde(default)]
     pub issue_references: Vec<IssueReferenceMetadata>,
     #[serde(default)]
     pub mention_references: Vec<MentionReferenceMetadata>,
@@ -375,13 +381,15 @@ pub struct OrganizationProjectCard {
     #[serde(default)]
     pub project_scope: String,
     #[serde(default)]
-    pub created_label: String,
+    pub created_at: String,
     #[serde(default)]
     pub is_watching: bool,
     #[serde(default)]
-    pub last_pushed_label: String,
+    pub last_pushed_at: String,
     #[serde(default)]
     pub member_count: u32,
+    #[serde(default)]
+    pub members: Vec<ProjectMemberSummary>,
     #[serde(default)]
     pub origin_owner_name: String,
     #[serde(default)]
@@ -626,6 +634,8 @@ pub struct ProjectIssueListItem {
 #[serde(rename_all = "camelCase")]
 pub struct ProjectMemberSummary {
     #[serde(default)]
+    pub user_id: i64,
+    #[serde(default)]
     pub login_id: String,
     #[serde(default)]
     pub user_label: String,
@@ -854,13 +864,13 @@ pub struct WorkspaceMemberProjectItem {
     #[serde(default)]
     pub project_scope: String,
     #[serde(default)]
-    pub created_label: String,
+    pub created_at: String,
     #[serde(default)]
     pub is_watching: bool,
     #[serde(default)]
     pub is_favorited: bool,
     #[serde(default)]
-    pub last_pushed_label: String,
+    pub last_pushed_at: String,
     #[serde(default)]
     pub member_count: u32,
     #[serde(default)]
@@ -962,9 +972,9 @@ pub struct ProjectListItem {
     #[serde(default)]
     pub project_scope: String,
     #[serde(default)]
-    pub created_label: String,
+    pub created_at: String,
     #[serde(default)]
-    pub last_pushed_label: String,
+    pub last_pushed_at: String,
     #[serde(default)]
     pub is_favorited: bool,
     #[serde(default)]
@@ -992,7 +1002,7 @@ pub struct OrganizationListItem {
     #[serde(default)]
     pub description: String,
     #[serde(default)]
-    pub created_label: String,
+    pub created_at: String,
     #[serde(default)]
     pub is_enrolled: bool,
     #[serde(default)]

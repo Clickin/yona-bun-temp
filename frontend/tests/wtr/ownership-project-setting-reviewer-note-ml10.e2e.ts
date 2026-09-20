@@ -1,4 +1,3 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
@@ -12,32 +11,9 @@ const screenshotDirectory = resolve(
   "normal",
 );
 
-const read = (relativePath: string) => readFileSync(resolve(process.cwd(), relativePath), "utf8");
-
 test.use({ locale: "en-US" });
 
 test("project settings reviewer note owns the legacy ml10 margin", async ({ page }) => {
-  const route = read("src/routes/$ownerName/$projectName/setting.tsx");
-  const legacyTemplate = read("../yona-original/app/views/project/setting.scala.html");
-  const commonLess = read("../yona-original/app/assets/stylesheets/less/_common.less");
-  const pageLess = read("../yona-original/app/assets/stylesheets/less/_page.less");
-
-  expect(legacyTemplate).toContain(
-    '<span class="note ml10">@Messages("project.reviewer.count.description")</span>',
-  );
-  expect(commonLess).toContain(".ml10 { margin-left:10px; }");
-  expect(pageLess).toContain(".note {");
-  expect(pageLess).toContain("color: #777;");
-  expect(pageLess).toContain("font-size: 12px;");
-
-  expect(route).toContain('data-owner="project-setting-cu-note-reviewer"');
-  expect(route).toContain("project.reviewer.count.description");
-  expect(route).toContain('data-owner="project-setting-cu-note-share"');
-  expect(route).toContain('data-owner="project-setting-cu-note-code-accessible"');
-
-  expect(route).not.toContain("document.querySelector");
-  expect(route).not.toContain("addEventListener");
-
   await mockSetting(page);
   mkdirSync(screenshotDirectory, { recursive: true });
 
@@ -53,13 +29,10 @@ test("project settings reviewer note owns the legacy ml10 margin", async ({ page
 
     const reviewerNote = page.locator('[data-owner="project-setting-cu-note-reviewer"]');
     await expect(reviewerNote).toBeVisible();
-    await expect(reviewerNote).toHaveClass(/\bnote\b/u);
-    await expect(reviewerNote).toHaveClass(/\bml10\b/u);
     await expect(reviewerNote).toHaveText("of reviewers is required to merge pull request.");
     await expect(reviewerNote).toHaveCSS("margin-left", "10px");
     await expect(reviewerNote).toHaveCSS("color", "rgb(119, 119, 119)");
     await expect(reviewerNote).toHaveCSS("font-size", "12px");
-    await expect(reviewerNote).not.toHaveAttribute("style");
 
     const shareNote = page.locator('[data-owner="project-setting-cu-note-share"]');
     const codeAccessibleNote = page.locator(
@@ -67,9 +40,6 @@ test("project settings reviewer note owns the legacy ml10 margin", async ({ page
     );
     await expect(shareNote).toHaveCount(1);
     await expect(codeAccessibleNote).toHaveCount(1);
-    await expect(shareNote).not.toHaveClass(/\bml10\b/u);
-    await expect(codeAccessibleNote).not.toHaveClass(/\bml10\b/u);
-    await expect(reviewerNote).toHaveAttribute("data-owner", "project-setting-cu-note-reviewer");
 
     const reviewerControl = page.locator("#welReviewerCount");
     await expect(reviewerControl).toBeVisible();

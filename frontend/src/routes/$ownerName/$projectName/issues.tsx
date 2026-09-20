@@ -27,7 +27,7 @@ import {
   useWireframeContentProgress,
 } from "../../../components/route-fetch-lock";
 import { TabButton } from "../../../components/tab-button";
-import { useLegacyMessages } from "../../../i18n";
+import { formatLegacyTimestamp, useLegacyMessages } from "../../../i18n";
 
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import {
@@ -128,7 +128,7 @@ export function validateProjectIssuesSearch(search: Record<string, unknown>): Pr
     filter: stringSearch(search.filter),
     labelIds: arraySearch(search.labelIds),
     milestoneId: stringSearch(search.milestoneId),
-    orderBy: stringSearch(search.orderBy, "updatedDate"),
+    orderBy: stringSearch(search.orderBy, "createdDate"),
     orderDir: stringSearch(search.orderDir, "desc"),
     pageNum: Number(search.pageNum) || 1,
     state: issueListStateSearch(search.state),
@@ -424,7 +424,7 @@ function ProjectIssuesListWireframe() {
       aria-label="이슈 목록을 불러오는 중"
     >
       <div className="filter-wrap board">
-        <IssueFilters orderBy="updatedDate" orderDir="desc" onSortChange={() => undefined} />
+        <IssueFilters orderBy="createdDate" orderDir="desc" onSortChange={() => undefined} />
       </div>
       <ul className="post-list-wrap row-fluid" aria-hidden="true">
         {wireframeRows.map((rowKey) => (
@@ -729,7 +729,7 @@ function ProjectIssuesBody({
             />
           </div>
           <div className="span10 span-hard-wrap" id="span10" data-owner="project-issues-results">
-            <div data-owner="project-issues-new-issue-action">
+            <div className="pull-right" data-owner="project-issues-new-issue-action">
               <Link
                 activeProps={legacyRouteLocalActiveProps}
                 to="/$ownerName/$projectName/issueform"
@@ -819,7 +819,7 @@ function ProjectIssuesBody({
                     />
                   ) : null}
                 </div>
-                {rawDraftItems.length > 0 ? (
+                {shouldShowDraftItems(search) ? (
                   <ul className="post-list-wrap row-fluid">
                     {draftItems.map((issue) => (
                       <ProjectIssueItem
@@ -893,7 +893,7 @@ function ProjectIssuesBody({
                     />
                   ))}
                 </ul>
-                <div data-owner="project-issues-excel-download">
+                <div className="pull-left" data-owner="project-issues-excel-download">
                   <Link
                     activeProps={{ className: "ybtn small" }}
                     to={excelHref("", ownerName, projectName, currentSearchString)}
@@ -1085,7 +1085,7 @@ function IssueFilters({
   ];
 
   return (
-    <div className="filters" data-owner="project-issues-sort-filters">
+    <div className="filters pull-right" data-owner="project-issues-sort-filters">
       {filters.map((filter) => {
         const active = orderBy === filter.field;
         return (
@@ -1234,8 +1234,7 @@ function MassUpdateToolbar({
     // as its scroll threshold. Keep that threshold stable after the toolbar
     // becomes fixed; reading its rect on every scroll would otherwise make a
     // fixed toolbar move its own threshold.
-    massUpdateOffsetTopRef.current =
-      wrap.getBoundingClientRect().top + window.scrollY - 15;
+    massUpdateOffsetTopRef.current = wrap.getBoundingClientRect().top + window.scrollY - 15;
     const updateAffixState = () => {
       const offsetTop = massUpdateOffsetTopRef.current;
       if (offsetTop === null) {
@@ -1335,12 +1334,12 @@ function MassUpdateToolbar({
       className={
         massUpdateAffixed
           ? "mass-update-wrap hide-in-mobile affix"
-          : "mass-update-wrap hide-in-mobile"
+          : "mass-update-wrap hide-in-mobile affix-top"
       }
     >
       <form
         id="mass-update-form"
-        className="mass-update-form"
+        className="mass-update-form pull-left"
         action={massUpdateAction}
         method="post"
         onSubmit={(event) => event.preventDefault()}
@@ -1743,7 +1742,10 @@ function ProjectIssueItem({
   const authorLoginId = stringField(issue.authorLoginId, "");
   const assigneeLabel = stringField(issue.assigneeLabel, "");
   const assigneeLoginId = stringField(issue.assigneeLoginId, "");
-  const createdLabel = stringField(issue.createdLabel, stringField(issue.updatedLabel, ""));
+  const created = formatLegacyTimestamp(
+    stringField(issue.createdLabel, stringField(issue.updatedLabel, "")),
+    t,
+  );
   const issueWeight = issue.weight ?? 0;
   const issueLabels = sortedIssueLabels(issue);
   const titleParts = splitHeaderWordsInBrackets(issue.title);
@@ -1937,8 +1939,8 @@ function ProjectIssueItem({
             ) : (
               <span className="infos-item">{t("issue.noAuthor")}</span>
             )}
-            <span className="infos-item" title={createdLabel}>
-              {createdLabel}
+            <span className="infos-item" title={created.title}>
+              {created.label}
             </span>
             <IssueSubtaskSummary issue={issue} ownerName={ownerName} projectName={projectName} />
             {showMilestone && issue.milestoneId ? (
@@ -2029,7 +2031,7 @@ function ProjectIssueItem({
         </div>
       </div>
       <div className="span3 hide-in-mobile">
-        <div className="mt5" data-owner="project-issues-assignee-rail">
+        <div className="mt5 pull-right" data-owner="project-issues-assignee-rail">
           {assigneeLoginId && assigneeLabel ? (
             <Link
               activeProps={legacyRouteLocalActiveProps}
@@ -2057,11 +2059,11 @@ function ProjectIssueItem({
         </div>
         {issue.dueDateLabel ? (
           <div
-            className={`mr20 mt10${issue.dueDateOverdue ? " overdue" : ""}${issue.state === "closed" ? " project-issues-due-date-closed" : ""}`.trim()}
+            className={`mr20 mt10 pull-right${issue.state === "closed" ? " darkgray-txt" : issue.dueDateOverdue ? " overdue" : ""}`}
             data-owner="project-issues-due-date"
             {...dueDateAttrs}
           >
-            <i className="yobicon-clock2 vmiddle" data-owner="project-issues-due-date-icon"></i>
+            <i className="yobicon-clock2 mr3 vmiddle" data-owner="project-issues-due-date-icon"></i>
             <span className="vmiddle">
               {issue.state === "open" && issue.dueDateOverdue
                 ? t("issue.dueDate.overdue")
@@ -2144,6 +2146,8 @@ function IssueChildRow({
   projectName: string;
   useTwoColumnMode: boolean;
 }) {
+  const { t } = useLegacyMessages();
+  const created = formatLegacyTimestamp(issue.createdLabel, t);
   const [hovered, setHovered] = useState(false);
   const issueNumber = stringField(issue.issueNumber, "");
   const issueId = stringField(issue.id, "");
@@ -2213,7 +2217,11 @@ function IssueChildRow({
       >
         <span className="item-name">
           <span className="subtask-number">
-            {issue.isDraft ? <span className="draft-number">#Draft</span> : `#${issueNumber}`}
+            {issue.isDraft ? (
+              <span className="draft-number">#{t("issue.state.draft")}</span>
+            ) : (
+              `#${issueNumber}`
+            )}
           </span>
           <span>{issue.title}</span>
           <span>{issue.assigneeLabel ? ` - ${issue.assigneeLabel}` : ""}</span>
@@ -2240,10 +2248,10 @@ function IssueChildRow({
       ))}
       <span
         className={`child-issue-date${hovered ? " project-issues-child-date-visible" : ""}`}
-        title={issue.createdLabel}
+        title={created.title}
         data-owner="project-issues-child-date"
       >
-        {issue.createdLabel}
+        {created.label}
       </span>
     </div>
   );
@@ -2405,7 +2413,7 @@ function QuickSearch({
           }}
         >
           {allLabel}
-          <span className="num-badge" data-owner="project-issues-quicksearch-all-count">
+          <span className="num-badge pull-right" data-owner="project-issues-quicksearch-all-count">
             {allCount}
           </span>
         </button>
@@ -2431,7 +2439,10 @@ function QuickSearch({
               }}
             >
               {t("issue.list.assignedToMe")}
-              <span className="num-badge" data-owner="project-issues-quicksearch-assigned-count">
+              <span
+                className="num-badge pull-right"
+                data-owner="project-issues-quicksearch-assigned-count"
+              >
                 {countField(issues, "assignedToMeCount")}
               </span>
             </button>
@@ -2455,7 +2466,10 @@ function QuickSearch({
               }}
             >
               {t("issue.list.authoredByMe")}
-              <span className="num-badge" data-owner="project-issues-quicksearch-authored-count">
+              <span
+                className="num-badge pull-right"
+                data-owner="project-issues-quicksearch-authored-count"
+              >
                 {countField(issues, "authoredByMeCount")}
               </span>
             </button>
@@ -2479,7 +2493,10 @@ function QuickSearch({
               }}
             >
               {t("issue.list.commentedByMe")}
-              <span className="num-badge" data-owner="project-issues-quicksearch-commented-count">
+              <span
+                className="num-badge pull-right"
+                data-owner="project-issues-quicksearch-commented-count"
+              >
                 {countField(issues, "commentedByMeCount")}
               </span>
             </button>
@@ -2632,10 +2649,6 @@ function IssueSearchForm({
   const { t } = useLegacyMessages();
   const [invalidDueDateNoticeKey, setInvalidDueDateNoticeKey] = useState(0);
   const dueDateInputRef = useRef<HTMLInputElement>(null);
-  const dueDatePickerRef = useRef<HTMLInputElement>(null);
-  const authorSelectRef = useRef<HTMLSelectElement>(null);
-  const assigneeSelectRef = useRef<HTMLSelectElement>(null);
-  const milestoneSelectRef = useRef<HTMLSelectElement>(null);
   const focusedSearchInputValuesRef = useRef(new Map<HTMLInputElement, string>());
   const authors = projectIssueSearchUserOptions(issueAuthors, issues, "author");
   const assignees = projectIssueSearchUserOptions(issueAssignees, issues, "assignee");
@@ -2654,8 +2667,10 @@ function IssueSearchForm({
     currentUserId,
     assigneeHasCurrentUserOption,
   );
-  const handleSubmit = (event: ReactFormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const submitSearchForm = (
+    form: HTMLFormElement,
+    selection: Partial<ProjectIssuesSearch> = {},
+  ) => {
     const dueDateInput = dueDateInputRef.current;
     if (dueDateInput && !isValidIssueDueDate(dueDateInput.value)) {
       setInvalidDueDateNoticeKey((currentKey) => currentKey + 1);
@@ -2663,7 +2678,15 @@ function IssueSearchForm({
       return;
     }
 
-    onSearchSubmit(projectIssuesSearchFromForm(event.currentTarget, search));
+    onSearchSubmit({ ...projectIssuesSearchFromForm(form, search), ...selection });
+  };
+  const handleSubmit = (event: ReactFormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    submitSearchForm(event.currentTarget);
+  };
+  const selectSearchOption = (selection: Partial<ProjectIssuesSearch>) => {
+    const form = dueDateInputRef.current?.form;
+    if (form) submitSearchForm(form, selection);
   };
   const rememberSearchInputValue = (control: HTMLInputElement) => {
     focusedSearchInputValuesRef.current.set(control, control.value);
@@ -2683,7 +2706,6 @@ function IssueSearchForm({
   return (
     <form
       id="search"
-      className="project-issues-search-form"
       name="search"
       action={prefixBasePath(basePath, `/${ownerName}/${projectName}/issues`)}
       method="get"
@@ -2694,7 +2716,7 @@ function IssueSearchForm({
       <input type="hidden" name="orderDir" value={search.orderDir} />
       <input type="hidden" name="state" value={search.state} />
       <input type="hidden" name="commenterId" value={search.commenterId} />
-      <hr className="project-issues-search-divider hide-in-mobile" />
+      <hr className="hide-in-mobile" />
       <div className="search">
         <div className="search-bar">
           <input
@@ -2727,7 +2749,18 @@ function IssueSearchForm({
           <dd>
             <IssueSearchSingleSelectDisplay
               id="authorId"
-              onActivate={() => authorSelectRef.current?.focus()}
+              options={[
+                { value: "", label: t("common.order.all") },
+                ...(!isAnonymous && showAuthorCurrentUserOption
+                  ? [{ value: currentUserId, label: t("issue.list.authoredByMe") }]
+                  : []),
+                ...authors.map((author) => ({
+                  ...author,
+                  avatarUrl: mountedAppLocalUrl(basePath, author.avatarUrl),
+                  value: author.id,
+                })),
+              ]}
+              onSelect={(authorId) => selectSearchOption({ authorId, pageNum: 1 })}
               label={
                 search.authorId
                   ? (authors.find((author) => author.id === search.authorId)?.label ??
@@ -2736,7 +2769,6 @@ function IssueSearchForm({
               }
             />
             <select
-              ref={authorSelectRef}
               key={issueSearchUserSelectKey("author", search.authorId, authors)}
               id="authorId"
               name="authorId"
@@ -2765,7 +2797,19 @@ function IssueSearchForm({
           <dd>
             <IssueSearchSingleSelectDisplay
               id="assigneeId"
-              onActivate={() => assigneeSelectRef.current?.focus()}
+              options={[
+                { value: "", label: t("common.order.all") },
+                { value: "0", label: t("issue.noAssignee") },
+                ...(!isAnonymous && showAssigneeCurrentUserOption
+                  ? [{ value: currentUserId, label: t("issue.list.assignedToMe") }]
+                  : []),
+                ...assignees.map((assignee) => ({
+                  ...assignee,
+                  avatarUrl: mountedAppLocalUrl(basePath, assignee.avatarUrl),
+                  value: assignee.id,
+                })),
+              ]}
+              onSelect={(assigneeId) => selectSearchOption({ assigneeId, pageNum: 1 })}
               label={
                 search.assigneeId === "0"
                   ? t("issue.noAssignee")
@@ -2778,7 +2822,6 @@ function IssueSearchForm({
               }
             />
             <select
-              ref={assigneeSelectRef}
               key={issueSearchUserSelectKey("assignee", search.assigneeId, assignees)}
               id="assigneeId"
               name="assigneeId"
@@ -2809,7 +2852,21 @@ function IssueSearchForm({
             <dd>
               <IssueSearchSingleSelectDisplay
                 id="milestoneId"
-                onActivate={() => milestoneSelectRef.current?.focus()}
+                options={[
+                  { value: "", label: t("milestone.state.all") },
+                  { value: "-1", label: t("issue.noMilestone") },
+                  ...milestones.open.map((milestone) => ({
+                    value: stringField(milestone.id, ""),
+                    label: stringField(milestone.title, ""),
+                    group: t("milestone.state.open"),
+                  })),
+                  ...milestones.closed.map((milestone) => ({
+                    value: stringField(milestone.id, ""),
+                    label: stringField(milestone.title, ""),
+                    group: t("milestone.state.closed"),
+                  })),
+                ]}
+                onSelect={(milestoneId) => selectSearchOption({ milestoneId, pageNum: 1 })}
                 label={
                   search.milestoneId === "-1"
                     ? t("issue.noMilestone")
@@ -2819,7 +2876,6 @@ function IssueSearchForm({
                 }
               />
               <select
-                ref={milestoneSelectRef}
                 id="milestoneId"
                 key={[search.milestoneId, milestones.open.length, milestones.closed.length].join(
                   ":",
@@ -2873,13 +2929,15 @@ function IssueSearchForm({
           <dt>{t("issue.dueDate")}</dt>
           <dd className="search search-bar">
             <IssueDueDateInput
+              key={search.dueDate}
               ownerPrefix="project-issue-list"
               inputId="issueDueDate"
               dueDateRef={dueDateInputRef}
-              datePickerRef={dueDatePickerRef}
               defaultValue={search.dueDate}
               onFocus={(event) => rememberSearchInputValue(event.currentTarget)}
-              onBlur={(event) => submitSearchInputIfChanged(event.currentTarget)}
+              onBlur={() => {
+                if (dueDateInputRef.current) submitSearchInputIfChanged(dueDateInputRef.current);
+              }}
             />
           </dd>
         </dl>
@@ -2889,7 +2947,7 @@ function IssueSearchForm({
               activeProps={legacyRouteLocalActiveProps}
               to="/$ownerName/$projectName/issue/labelsform"
               params={{ ownerName, projectName }}
-              className="ybtn ybtn-default ybtn-mini"
+              className="ybtn ybtn-default ybtn-mini pull-right"
               data-owner="project-issues-label-manage-action"
             >
               <i className="yobicon-cog vmiddle"></i>
@@ -2917,32 +2975,163 @@ function IssueSearchForm({
 function IssueSearchSingleSelectDisplay({
   id,
   label,
-  onActivate,
+  options,
+  onSelect,
 }: {
   id: string;
   label: string;
-  onActivate: () => void;
+  options: Array<{
+    value: string;
+    label: string;
+    avatarUrl?: string;
+    loginId?: string;
+    group?: string;
+  }>;
+  onSelect: (value: string) => void;
 }) {
+  const { t } = useLegacyMessages();
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
+  const choiceRef = useRef<HTMLButtonElement>(null);
+  const selectedOption = options.find((option) => option.label === label);
+  const filteredOptions = options.filter((option) =>
+    `${option.label} ${option.loginId ?? ""}`
+      .toLocaleLowerCase()
+      .includes(query.toLocaleLowerCase()),
+  );
+  useEffect(() => {
+    if (open) searchRef.current?.focus();
+  }, [open]);
+  const selectOption = (value: string) => {
+    setOpen(false);
+    setQuery("");
+    choiceRef.current?.focus();
+    onSelect(value);
+  };
   return (
-    // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- legacy Select2 emits a clickable div; React forwards it to the native select.
     <div
       id={`s2id_${id}`}
-      className="select2-container fullsize"
-      onMouseDown={(event) => {
-        // Select2 focuses its offscreen native control before the browser's
-        // click handling. Prevent the non-focusable display div from stealing
-        // that focus, which also keeps an unchanged text field blur inert.
-        event.preventDefault();
-        onActivate();
+      className={`select2-container fullsize${open ? " select2-dropdown-open select2-container-active" : ""}`}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false);
       }}
-      onClick={onActivate}
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          setOpen(false);
+          choiceRef.current?.focus();
+        }
+      }}
     >
-      <div className="select2-choice" role="presentation">
-        <span className="select2-chosen">{label}</span>
+      <button
+        ref={choiceRef}
+        type="button"
+        className="select2-choice"
+        aria-expanded={open}
+        aria-controls={`${id}-options`}
+        aria-haspopup="listbox"
+        onClick={() => {
+          setQuery("");
+          setOpen((previous) => !previous);
+        }}
+      >
+        <span className="select2-chosen">
+          {selectedOption?.avatarUrl ? (
+            <div className="usf-group" title={`${label} @${selectedOption.loginId}`}>
+              <span className="avatar-wrap smaller">
+                <img src={selectedOption.avatarUrl} width="20" height="20" alt="" />
+              </span>
+              <strong className="name">{label}</strong>{" "}
+              <span className="loginid">@{selectedOption.loginId}</span>
+            </div>
+          ) : id === "authorId" || id === "assigneeId" ? (
+            <div>{label}</div>
+          ) : selectedOption?.group ? (
+            <div title={`[${selectedOption.group}] ${label}`}>{label}</div>
+          ) : (
+            label
+          )}
+        </span>
         <span className="select2-arrow" aria-hidden="true">
           <b></b>
         </span>
-      </div>
+      </button>
+      {open ? (
+        <div className="select2-drop select2-with-searchbox select2-drop-active">
+          <div className="select2-search">
+            <input
+              ref={searchRef}
+              className="select2-input"
+              type="text"
+              autoComplete="off"
+              role="combobox"
+              aria-label={t(
+                id === "authorId"
+                  ? "issue.author"
+                  : id === "assigneeId"
+                    ? "issue.assignee"
+                    : "milestone",
+              )}
+              aria-controls={`${id}-options`}
+              aria-expanded="true"
+              value={query}
+              onChange={(event) => setQuery(event.currentTarget.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && filteredOptions[0]) {
+                  event.preventDefault();
+                  selectOption(filteredOptions[0].value);
+                }
+              }}
+            />
+          </div>
+          <ul className="select2-results" id={`${id}-options`} role="listbox">
+            {filteredOptions.map((option, index) => (
+              <Fragment key={`${option.value}:${index}`}>
+                {option.group && option.group !== filteredOptions[index - 1]?.group ? (
+                  <li className="select2-result-with-children">
+                    <div className="select2-result-label">{option.group}</div>
+                  </li>
+                ) : null}
+                <li
+                  className="select2-results-dept-0 select2-result select2-result-selectable"
+                  role="option"
+                  aria-selected={option.label === label}
+                  tabIndex={0}
+                  onClick={() => selectOption(option.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      selectOption(option.value);
+                    }
+                  }}
+                >
+                  <div className="select2-result-label">
+                    {option.avatarUrl ? (
+                      <div className="usf-group" title={`${option.label} @${option.loginId}`}>
+                        <span className="avatar-wrap smaller">
+                          <img src={option.avatarUrl} width="20" height="20" alt="" />
+                        </span>
+                        <strong className="name">{option.label}</strong>{" "}
+                        <span className="loginid">@{option.loginId}</span>
+                      </div>
+                    ) : id === "authorId" || id === "assigneeId" ? (
+                      <div>{option.label}</div>
+                    ) : option.group ? (
+                      <div title={`[${option.group}] ${option.label}`}>{option.label}</div>
+                    ) : (
+                      option.label
+                    )}
+                  </div>
+                </li>
+              </Fragment>
+            ))}
+            {filteredOptions.length === 0 ? (
+              <li className="select2-no-results">{t("title.no.results")}</li>
+            ) : null}
+          </ul>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -3069,8 +3258,17 @@ function IssueSearchLabelSelect({
   const navigate = useNavigate();
   const { runLocked } = useRootProgressStatusBar();
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const groupedLabels = groupProjectLabels(labels);
   const labelOptions = groupedLabels.flatMap((category) => category.labels);
+  const matchingCategories = groupedLabels
+    .map((category) => ({
+      ...category,
+      labels: category.labels.filter((label) =>
+        `${category.name} ${label.name}`.toLocaleLowerCase().includes(query.toLocaleLowerCase()),
+      ),
+    }))
+    .filter((category) => category.labels.length > 0);
   const selectedLabels = search.labelIds.flatMap((labelId) => {
     const label = labelOptions.find((option) => option.id === labelId);
     return label ? [label] : [];
@@ -3078,6 +3276,7 @@ function IssueSearchLabelSelect({
 
   const updateSelectedLabels = (labelIds: string[]) => {
     setOpen(false);
+    setQuery("");
     void runLocked(() =>
       navigate({
         params: { ownerName, projectName },
@@ -3085,6 +3284,19 @@ function IssueSearchLabelSelect({
         to: "/$ownerName/$projectName/issues",
       }),
     );
+  };
+  const selectLabel = (labelId: string) => {
+    const category = groupedLabels.find((group) =>
+      group.labels.some((label) => label.id === labelId),
+    );
+    updateSelectedLabels([
+      labelId,
+      ...search.labelIds.filter(
+        (id) =>
+          id !== labelId &&
+          (!category?.isExclusive || !category.labels.some((label) => label.id === id)),
+      ),
+    ]);
   };
 
   if (groupedLabels.length === 0) {
@@ -3176,8 +3388,15 @@ function IssueSearchLabelSelect({
                 aria-expanded={open}
                 placeholder={selectedLabels.length > 0 ? "" : t("label.select")}
                 className={
-                  selectedLabels.length > 0 ? "project-issues-label-search-compact" : undefined
+                  selectedLabels.length > 0
+                    ? "select2-input project-issues-label-search-compact"
+                    : "select2-input select2-default"
                 }
+                value={query}
+                onChange={(event) => {
+                  setQuery(event.currentTarget.value);
+                  setOpen(true);
+                }}
                 onClick={() => setOpen(true)}
                 onFocus={() => setOpen(true)}
                 onKeyDown={(event) => {
@@ -3193,7 +3412,7 @@ function IssueSearchLabelSelect({
             className={`select2-drop select2-drop-multi issue-labels${open ? " select2-drop-active" : " select2-display-none"}`}
           >
             <ul id="labelIds-options" className="select2-results" role="listbox">
-              {groupedLabels.map((category) => {
+              {matchingCategories.map((category) => {
                 const categorySelected = category.labels.every((label) =>
                   search.labelIds.includes(label.id),
                 );
@@ -3225,13 +3444,13 @@ function IssueSearchLabelSelect({
                             tabIndex={selected ? -1 : 0}
                             onClick={() => {
                               if (!selected) {
-                                updateSelectedLabels([...search.labelIds, label.id]);
+                                selectLabel(label.id);
                               }
                             }}
                             onKeyDown={(event) => {
                               if (!selected && (event.key === "Enter" || event.key === " ")) {
                                 event.preventDefault();
-                                updateSelectedLabels([...search.labelIds, label.id]);
+                                selectLabel(label.id);
                               }
                             }}
                           >
@@ -3247,6 +3466,9 @@ function IssueSearchLabelSelect({
                   </li>
                 );
               })}
+              {matchingCategories.length === 0 ? (
+                <li className="select2-no-results">{t("title.no.results")}</li>
+              ) : null}
             </ul>
           </div>
         </div>
@@ -3260,7 +3482,7 @@ function IssueSearchLabelSelect({
           data-container-css-class="issue-labels bordered fullsize"
           data-placeholder={t("label.select")}
           className="hide select2-offscreen"
-          defaultValue={search.labelIds}
+          value={search.labelIds}
           onChange={(event) => event.currentTarget.form?.requestSubmit()}
         >
           <option></option>
@@ -3304,26 +3526,21 @@ function StateTab({
   projectName: string;
   search: ProjectIssuesSearch;
 }) {
-  const lockedLinkClick = useLockedLinkClick();
-  const { armTransitionLock } = useRootProgressStatusBar();
+  const navigate = useNavigate();
+  const { runLocked } = useRootProgressStatusBar();
   return (
     <TabButton
-      as={Link}
+      type="button"
       active={active}
-      activeOptions={legacyRouteLocalActiveOptions}
-      activeProps={legacyRouteLocalActiveProps}
-      onClick={(event: ReactMouseEvent<HTMLElement>) => {
-        lockedLinkClick(event);
-        if (!event.defaultPrevented) {
-          // Arm the lock at the triggering click: the derived fetch-group
-          // lock only engages after the navigated-to query starts, which can
-          // lag fast local queries past their entire lifetime.
-          armTransitionLock();
-        }
+      onClick={() => {
+        void runLocked(() =>
+          navigate({
+            to: "/$ownerName/$projectName/issues",
+            params: { ownerName, projectName },
+            search: tabSearch,
+          }),
+        );
       }}
-      to="/$ownerName/$projectName/issues"
-      params={{ ownerName, projectName }}
-      search={tabSearch}
     >
       {label}
       <span className="num-badge">{count}</span>
@@ -3553,7 +3770,7 @@ function excelHref(
     if (
       value === "" ||
       (name === "labelIds" && value === "[]") ||
-      (name === "orderBy" && value === "updatedDate") ||
+      (name === "orderBy" && value === "createdDate") ||
       (name === "orderDir" && value === "desc") ||
       (name === "state" && value === "open" && !initialNavigationSearchHas("state", "open"))
     ) {
@@ -4025,7 +4242,8 @@ function projectMilestoneMenuEnabled(project: ProjectContainer) {
 }
 
 function projectMemberControlsEnabled(project: ProjectContainer) {
-  return booleanField((project as Record<string, unknown>).viewerCanUpdate);
+  const record = project as Record<string, unknown>;
+  return booleanField(record.viewerIsProjectMember ?? record.viewerCanUpdate);
 }
 
 function projectMemberSearchOptionsEnabled(project: ProjectContainer) {

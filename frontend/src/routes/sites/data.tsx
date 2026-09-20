@@ -72,8 +72,10 @@ function SiteDataScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               />
             </div>
             <div className="span10" data-owner="site-data-setting-content-column">
-              <div data-owner="site-data-title-strip">
-                <h2 data-owner="site-data-title-heading">{t("site.sidebar.data")}</h2>
+              <div className="title_area" data-owner="site-data-title-strip">
+                <h2 className="pull-left" data-owner="site-data-title-heading">
+                  {t("site.sidebar.data")}
+                </h2>
               </div>
 
               <div className="cu-desc" data-owner="site-data-warning-surface">

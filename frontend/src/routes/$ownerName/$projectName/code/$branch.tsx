@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter, useParams } from "@tanstack/react-router";
 import { redirect } from "@tanstack/react-router";
@@ -9,6 +9,7 @@ import type { ProjectContainer } from "../../../../api/types";
 import { useLegacyMessages } from "../../../../i18n";
 import { LastOutletTransition } from "../../../-last-outlet-transition";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
+import defaultAvatarUrl from "../../../../assets/legacy/default-avatar-128.png";
 
 export const Route = createFileRoute("/$ownerName/$projectName/code/$branch")({
   beforeLoad: ({ location, params }) => {
@@ -101,13 +102,52 @@ function ProjectCodeFolderBody({
   const { branch, ownerName, projectName } = Route.useParams();
   const selectedBranch = code.selectedBranch || branch;
   const displayedBranch =
-    code.branches.find((item) => item.name === selectedBranch)?.name ??
+    code.branches.find((item) => branchItemName(item.name) === branchItemName(selectedBranch))
+      ?.name ??
     code.branches[0]?.name ??
     selectedBranch;
   const encodedBranch = encodeBranch(selectedBranch);
   const newFilePath = `${projectRoute(ownerName, projectName, "postform")}?path=&branch=${encodeURIComponent(branchItemName(selectedBranch))}`;
   const isGit = project.vcs === "GIT";
   const [branchMenuOpen, setBranchMenuOpen] = useState(false);
+  const [branchSearch, setBranchSearch] = useState("");
+  const [highlightedBranch, setHighlightedBranch] = useState(0);
+  const branchTriggerRef = useRef<HTMLButtonElement>(null);
+  const branchSearchRef = useRef<HTMLInputElement>(null);
+  const highlightedBranchRef = useRef<HTMLLIElement>(null);
+  const matchingBranches = code.branches.filter((item) =>
+    branchItemName(item.name).toLowerCase().includes(branchSearch.toLowerCase()),
+  );
+
+  useEffect(() => {
+    if (branchMenuOpen) branchSearchRef.current?.focus();
+  }, [branchMenuOpen]);
+
+  useEffect(() => {
+    if (branchMenuOpen) highlightedBranchRef.current?.scrollIntoView({ block: "nearest" });
+  }, [branchMenuOpen, branchSearch, highlightedBranch]);
+
+  const openBranchMenu = (search = "") => {
+    setBranchSearch(search);
+    setHighlightedBranch(
+      search
+        ? 0
+        : Math.max(
+            0,
+            code.branches.findIndex((item) => item.name === displayedBranch),
+          ),
+    );
+    setBranchMenuOpen(true);
+  };
+  const selectBranch = (name: string) => {
+    setBranchMenuOpen(false);
+    branchTriggerRef.current?.focus();
+    if (name === displayedBranch) return;
+    void router.navigate({
+      to: "/$ownerName/$projectName/code/$branch",
+      params: { ownerName, projectName, branch: branchItemName(name) },
+    });
+  };
 
   return (
     <div className="page-wrap-outer" data-owner="project-code-branch-page">
@@ -178,76 +218,150 @@ function ProjectCodeFolderBody({
 
           <div className="code-browse-header" data-owner="project-code-branch-header">
             <div
-              className={`select2-container${branchMenuOpen ? " select2-dropdown-open select2-container-active" : ""}`}
+              className={`select2-container pull-left${branchMenuOpen ? " select2-dropdown-open select2-container-active" : ""}`}
               data-owner="project-code-branch-picker"
+              onBlur={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget)) {
+                  setBranchMenuOpen(false);
+                }
+              }}
+              onKeyDown={(event) => {
+                if (event.nativeEvent.isComposing) return;
+                if (!branchMenuOpen) {
+                  if (["ArrowDown", "ArrowUp", "Enter", " "].includes(event.key)) {
+                    event.preventDefault();
+                    openBranchMenu();
+                  } else if (
+                    event.key.length === 1 &&
+                    !event.ctrlKey &&
+                    !event.metaKey &&
+                    !event.altKey
+                  ) {
+                    event.preventDefault();
+                    openBranchMenu(event.key);
+                  }
+                } else if (event.key === "Escape") {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setBranchMenuOpen(false);
+                  branchTriggerRef.current?.focus();
+                } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                  event.preventDefault();
+                  setHighlightedBranch((index) =>
+                    Math.max(
+                      0,
+                      Math.min(
+                        matchingBranches.length - 1,
+                        index + (event.key === "ArrowDown" ? 1 : -1),
+                      ),
+                    ),
+                  );
+                } else if (event.key === "Enter") {
+                  event.preventDefault();
+                  const item = matchingBranches[highlightedBranch];
+                  if (item) selectBranch(item.name);
+                }
+              }}
             >
               <button
+                ref={branchTriggerRef}
                 type="button"
-                className="project-code-branch-picker-choice select2-choice"
+                className="select2-choice"
                 aria-expanded={branchMenuOpen}
-                onClick={() => setBranchMenuOpen((open) => !open)}
+                aria-haspopup="listbox"
+                aria-controls="code-branch-options"
+                onClick={() => {
+                  if (branchMenuOpen) setBranchMenuOpen(false);
+                  else openBranchMenu();
+                }}
               >
                 <span className="select2-chosen">
-                  {isGit ? <strong className="branch-label branch">branch</strong> : null}
+                  {isGit ? (
+                    <strong
+                      className={`branch-label ${displayedBranch.startsWith("refs/tags/") ? "tag" : "branch"}`}
+                    >
+                      {displayedBranch.startsWith("refs/tags/") ? "tag" : "branch"}
+                    </strong>
+                  ) : null}
                   {isGit ? " " : null}
-                  {displayedBranch}
+                  {branchItemName(displayedBranch)}
                 </span>
                 <span className="select2-arrow" aria-hidden="true">
                   <b></b>
                 </span>
               </button>
-              <input
-                className="select2-focusser select2-offscreen"
-                type="text"
-                disabled={branchMenuOpen}
-                aria-label={t("title.branches")}
-              />
               <div
-                className={`select2-drop select2-with-searchbox branches${branchMenuOpen ? " select2-drop-active is-open" : " select2-display-none"}`}
+                className={`select2-drop${branchMenuOpen ? " select2-drop-active is-open" : " select2-display-none"} branches select2-with-searchbox`}
                 data-owner="project-code-branch-picker-drop"
               >
                 <div className="select2-search">
                   <input
+                    ref={branchSearchRef}
+                    role="combobox"
+                    aria-expanded={branchMenuOpen}
+                    aria-controls="code-branch-options"
+                    aria-autocomplete="list"
+                    aria-activedescendant={
+                      branchMenuOpen && matchingBranches[highlightedBranch]
+                        ? `code-branch-option-${highlightedBranch}`
+                        : undefined
+                    }
                     type="text"
                     className={`select2-input${branchMenuOpen ? " select2-focused" : ""}`}
                     aria-label={t("title.branches")}
+                    value={branchSearch}
+                    onChange={(event) => {
+                      setBranchSearch(event.currentTarget.value);
+                      setHighlightedBranch(0);
+                    }}
                   />
                 </div>
-                <ul className="select2-results">
-                  {code.branches.map((item) => (
-                    <li
-                      key={item.name}
-                      className={`select2-results-dept-0 select2-result select2-result-selectable${item.name === displayedBranch ? " select2-selected" : ""}`}
-                    >
-                      <button
-                        type="button"
-                        className="project-code-branch-picker-choice select2-result-label"
-                        onClick={() => {
-                          setBranchMenuOpen(false);
-                          router.history.push(
-                            projectHref(
-                              runtimeConfig.basePath,
-                              ownerName,
-                              projectName,
-                              "code",
-                              encodeBranch(item.name),
-                            ),
-                          );
-                        }}
-                      >
-                        {isGit ? <strong className="branch-label branch">branch</strong> : null}
-                        {isGit ? " " : null}
-                        {item.name}
-                      </button>
-                    </li>
-                  ))}
+                <ul
+                  className="select2-results"
+                  id="code-branch-options"
+                  role="listbox"
+                  aria-label={t("title.branches")}
+                >
+                  {branchMenuOpen
+                    ? matchingBranches.map((item, index) => (
+                        <li
+                          key={item.name}
+                          ref={index === highlightedBranch ? highlightedBranchRef : undefined}
+                          id={`code-branch-option-${index}`}
+                          role="option"
+                          aria-selected={item.name === displayedBranch}
+                          className={`select2-results-dept-0 select2-result select2-result-selectable${index === highlightedBranch ? " select2-highlighted" : ""}`}
+                          onMouseMove={() => setHighlightedBranch(index)}
+                        >
+                          <button
+                            type="button"
+                            className="select2-result-label"
+                            tabIndex={-1}
+                            onMouseDown={(event) => event.preventDefault()}
+                            onClick={() => selectBranch(item.name)}
+                          >
+                            {isGit ? (
+                              <strong
+                                className={`branch-label ${item.name.startsWith("refs/tags/") ? "tag" : "branch"}`}
+                              >
+                                {item.name.startsWith("refs/tags/") ? "tag" : "branch"}
+                              </strong>
+                            ) : null}
+                            {isGit ? " " : null}
+                            {branchItemName(item.name)}
+                          </button>
+                        </li>
+                      ))
+                    : null}
+                  {branchMenuOpen && matchingBranches.length === 0 ? (
+                    <li className="select2-no-results">{t("title.no.results")}</li>
+                  ) : null}
                 </ul>
               </div>
             </div>
             <select
+              key={selectedBranch}
               id="branches"
-              data-format="branch"
-              data-dropdown-css-class="branches"
               className="pull-left select2-offscreen"
               tabIndex={-1}
               defaultValue={projectHref(
@@ -258,7 +372,22 @@ function ProjectCodeFolderBody({
                 encodedBranch,
               )}
               onChange={(event) => {
-                router.history.push(event.currentTarget.value);
+                const selected = code.branches.find(
+                  (item) =>
+                    projectHref(
+                      runtimeConfig.basePath,
+                      ownerName,
+                      projectName,
+                      "code",
+                      encodeBranch(branchItemName(item.name)),
+                    ) === event.currentTarget.value,
+                );
+                if (selected) {
+                  void router.navigate({
+                    to: "/$ownerName/$projectName/code/$branch",
+                    params: { ownerName, projectName, branch: branchItemName(selected.name) },
+                  });
+                }
               }}
             >
               {code.branches.map((item) => (
@@ -269,7 +398,7 @@ function ProjectCodeFolderBody({
                     ownerName,
                     projectName,
                     "code",
-                    encodeBranch(item.name),
+                    encodeBranch(branchItemName(item.name)),
                   )}
                 >
                   {item.name}
@@ -299,24 +428,6 @@ function ProjectCodeFolderBody({
               >
                 {projectName}
               </Link>
-              {code.path === "" ? (
-                <Link
-                  activeOptions={{
-                    exact: true,
-                    explicitUndefined: true,
-                    includeHash: true,
-                    includeSearch: true,
-                  }}
-                  activeProps={{
-                    "aria-current": undefined,
-                    className: undefined,
-                    "data-status": undefined,
-                  }}
-                  to={projectRoute(ownerName, projectName, "code", encodedBranch)}
-                  hash="code-browser-active-sentinel"
-                  mask={{ to: projectRoute(ownerName, projectName, "code", encodedBranch) }}
-                ></Link>
-              ) : null}
             </div>
             {isGit ? (
               <>
@@ -449,6 +560,24 @@ function FolderList({ code }: { code: CodeBrowserResponse }) {
             </Link>
           </div>
           <div className="span5 commitMsg">
+            {entry.authorAvatarUrl ? (
+              <>
+                {entry.authorLoginId ? (
+                  <Link
+                    to="/$user"
+                    params={{ user: entry.authorLoginId }}
+                    className="avatar-wrap smaller"
+                    title={entry.authorLabel}
+                  >
+                    <img src={entry.authorAvatarUrl} alt={entry.authorLabel} />
+                  </Link>
+                ) : (
+                  <button type="button" className="avatar-wrap smaller" title={entry.authorLabel}>
+                    <img src={defaultAvatarUrl} alt={entry.authorLabel} />
+                  </button>
+                )}{" "}
+              </>
+            ) : null}
             <span className="ml5" data-owner={`project-code-branch-${entry.kind}-commit-message`}>
               <Link
                 activeOptions={{

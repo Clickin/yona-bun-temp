@@ -1,41 +1,6 @@
-import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Locator, type Page, type Route } from "../wtr-compat.ts";
 
-// Browser harness: node:fs/promises readFile has no browser equivalent; the
-// compat readFileSync is a sync XHR over the same middleware. Promise-wrap it
-// so the spec's await/Promise.all call sites keep their shape.
-const readFile = (path: string | URL, encoding?: string | null): Promise<string> =>
-  Promise.resolve(readFileSync(path, encoding ?? "utf8"));
-
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const routeSource = new URL("../src/routes/sites/postList.tsx", import.meta.url);
-const themeSource = new URL("../src/app.css", import.meta.url);
-const templateSource = new URL(
-  "../../yona-original/app/views/site/postList.scala.html",
-  import.meta.url,
-);
-const layoutSource = new URL(
-  "../../yona-original/app/views/site/siteMngLayout.scala.html",
-  import.meta.url,
-);
-const yobiSource = new URL("../../yona-original/app/assets/stylesheets/yobi.less", import.meta.url);
-const pageLessSource = new URL(
-  "../../yona-original/app/assets/stylesheets/less/_page.less",
-  import.meta.url,
-);
-const responsiveLessSource = new URL(
-  "../../yona-original/app/assets/stylesheets/less/_responsive.less",
-  import.meta.url,
-);
-const appCssSource = new URL("../src/app.css", import.meta.url);
-const overrideLessSource = new URL(
-  "../../yona-original/app/assets/stylesheets/less/_override.less",
-  import.meta.url,
-);
-const bootstrapSource = new URL(
-  "../../yona-original/public/bootstrap/css/bootstrap.css",
-  import.meta.url,
-);
 
 const owners = {
   container: "site-post-list-container",
@@ -78,7 +43,7 @@ async function openPostList(page: Page) {
             authorName: "Alice Example",
             commentCount: 3,
             createdLabel: "1 day ago",
-            createdTitle: "2026-06-29 14:30",
+            createdTitle: new Date(Date.now() - 26 * 60 * 60 * 1_000).toISOString(),
             ownerName: "acme",
             postNumber: "7",
             projectLogoUrl: "/assets/images/default-project-logo.png",
@@ -100,93 +65,6 @@ async function openPostList(page: Page) {
 }
 
 test.describe("Style site post-list shell fallback retirement", () => {
-  test("pins the frozen shell cascade and three post-list owner/theme boundaries", async () => {
-    const [
-      route,
-      theme,
-      template,
-      layout,
-      yobi,
-      pageLess,
-      responsive,
-      appCss,
-      override,
-      bootstrap,
-    ] = await Promise.all([
-      readFile(routeSource, "utf8"),
-      Promise.resolve(curatedAppCss()),
-      readFile(templateSource, "utf8"),
-      readFile(layoutSource, "utf8"),
-      readFile(yobiSource, "utf8"),
-      readFile(pageLessSource, "utf8"),
-      readFile(responsiveLessSource, "utf8"),
-      Promise.resolve(curatedAppCss()),
-      readFile(overrideLessSource, "utf8"),
-      readFile(bootstrapSource, "utf8"),
-    ]);
-
-    expect(template).toContain('<div class="title_area">');
-    expect(template).toContain('<h2 class="pull-left">');
-    expect(template).toContain('<ul class="post-list-wrap">');
-    expect(layout).toContain('<div class="span10">');
-    expect(yobi).toContain('@import "less/_page.less";');
-    expect(yobi).toContain('@import "less/_responsive.less";');
-    expect(yobi).toContain('@import "less/_override.less";');
-    expect(yobi.indexOf("_page.less")).toBeLessThan(yobi.indexOf("_responsive.less"));
-    expect(yobi.indexOf("_responsive.less")).toBeLessThan(yobi.indexOf("_override.less"));
-    expect(pageLess).toContain(".title_area {\n      overflow:hidden;");
-    expect(pageLess).toContain(".post-list-wrap {\n        list-style: none;");
-    expect(responsive).toContain(".post-list-wrap {\n    margin-left: 10px;");
-    for (const retiredSelector of [
-      ".site-setting-wrap .post-list-wrap",
-      ".site-setting-wrap .post-list-wrap .listitem",
-      ".site-setting-wrap .post-list-wrap .post-info-wrap",
-      ".site-setting-wrap .post-list-wrap .post-project",
-      ".site-setting-wrap .post-list-wrap .post-info-separator",
-      ".site-setting-wrap .post-list-wrap .post-title",
-      ".site-setting-wrap .post-list-wrap .post-meta-wrap",
-      ".site-setting-wrap .post-list-wrap .post-meta-item",
-      ".site-setting-wrap .post-list-wrap .post-comments i",
-    ]) {
-      expect(appCss).not.toContain(`${retiredSelector} {`);
-    }
-    for (const deadBridgeSelector of [
-      ".site-admin-page .post-list-wrap",
-      ".site-admin-page .post-list-wrap .listitem",
-      ".site-admin-page .post-list-wrap .listitem:last-child",
-    ]) {
-      expect(appCss).not.toContain(deadBridgeSelector);
-    }
-    expect(appCss).toContain(".post-list-wrap {");
-    expect(appCss).not.toContain(".site-admin-page");
-    expect(override).toContain(".title_area {\n    .nav {");
-    expect(override).toContain("ul {\n        li {");
-    expect(bootstrap).toContain(".pull-left {\n  float: left;");
-
-    for (const explicitOwner of [owners.title, owners.heading, owners.container])
-      expect(route).toContain(`data-owner="${explicitOwner}"`);
-    expect(route).toContain('data-owner-page="site-post-list-page"');
-    for (const canonicalToken of [
-      "siteDiagnosticNoErrorTitleOverflow",
-      "siteDiagnosticNoErrorTitleMarginBottom",
-      "siteDiagnosticNoErrorTitlePaddingBottom",
-      "siteDiagnosticNoErrorTitleBorder",
-      "siteDiagnosticNoErrorHeadingMargin",
-      "siteDiagnosticNoErrorHeadingFontSize",
-      "siteDiagnosticNoErrorHeadingText",
-      "siteDiagnosticNoErrorHeadingLineHeight",
-    ]) {
-      expect(theme).not.toContain(canonicalToken);
-    }
-    for (const routeToken of [
-      "sitePostListTitleHeadingFloat",
-      "sitePostListContainerDesktopMarginLeft",
-      "sitePostListContainerMobileMarginLeft",
-    ]) {
-      expect(theme).not.toContain(routeToken);
-    }
-  });
-
   test("keeps DIV > H2 and exact title, populated-list, pagination order", async ({ page }) => {
     const title = await openPostList(page);
     await expect(owner(title, owners.heading)).toHaveText("Posts");

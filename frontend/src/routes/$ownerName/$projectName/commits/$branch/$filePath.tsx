@@ -4,7 +4,7 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { codeHistoryQueryOptions, type CodeHistoryResponse } from "../../../../../api/code-commits";
 import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
 import type { ProjectContainer } from "../../../../../api/types";
-import { useLegacyMessages } from "../../../../../i18n";
+import { formatLegacyTimestamp, useLegacyMessages } from "../../../../../i18n";
 import { type RuntimeConfig } from "../../../../../runtime-config";
 import { useRootToast } from "../../../../__root";
 
@@ -289,7 +289,9 @@ function ProjectCodeFileHistoryBody({
                               {t("code.showCode")}
                             </Link>
                           </td>
-                          <td className="date">{commit.authorDate}</td>
+                          <td className="date">
+                            {formatLegacyTimestamp(commit.authorDate, t).label}
+                          </td>
                           <td className="author">
                             <CommitAuthor commit={commit} />
                           </td>

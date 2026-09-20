@@ -1,102 +1,15 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
-// Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
-// (no-op); resolve builds those paths; fileURLToPath yields the served URL
-// pathname so string mapping + .txt raw-suffix applies.
+// Browser harness: no filesystem; screenshot paths are served by the runner.
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
-const fileURLToPath = (u: URL) => u.pathname;
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const screenshotDirectory = resolve("output/playwright/style-project-pull-request-edit-form-mr5");
-const source = (relativePath: string) =>
-  readFileSync(fileURLToPath(new URL(relativePath, import.meta.url)), "utf8");
 
-test("pull request edit form owns mr5 only on disabled project selects", async ({ page }) => {
-  const routeSource = source(
-    "../src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber/editform.tsx",
-  );
-  const styleSource = source("../src/app.css");
-  const legacy = source("../../yona-original/app/views/git/edit.scala.html");
-  const commonLess = source("../../yona-original/app/assets/stylesheets/less/_common.less");
-  const pageLess = source("../../yona-original/app/assets/stylesheets/less/_page.less");
-  const responsiveLess = source("../../yona-original/app/assets/stylesheets/less/_responsive.less");
-  const bootstrapCss = source("../../yona-original/public/bootstrap/css/bootstrap.css");
-  const bootstrapResponsiveCss = source(
-    "../../yona-original/public/bootstrap/css/bootstrap-responsive.css",
-  );
-  const yobiLess = source("../../yona-original/app/assets/stylesheets/yobi.less");
-  const messages = source("../../yona-original/conf/messages");
-  const pullRequestPageLess = pageLess.split("\n").slice(5458, 5478).join("\n");
-
-  expect(legacy).toContain(
-    '<select id="fromProjectId" name="fromProjectId" data-toggle="select2" class="mr5" disabled>',
-  );
-  expect(legacy).toContain(
-    '<select id="toProjectId" name="toProjectId" data-toggle="select2" class="mr5" disabled>',
-  );
-  for (const id of ["fromBranch", "toBranch"]) {
-    const start = legacy.indexOf(`<select id="${id}"`);
-    const end = legacy.indexOf("</select>", start);
-    expect(start).toBeGreaterThanOrEqual(0);
-    expect(legacy.slice(start, end)).not.toContain("mr5");
-  }
-  expect(commonLess).toContain(".mr5 { margin-right:5px; }");
-  expect(pullRequestPageLess).toContain(".pull-request-wrap {");
-  expect(pullRequestPageLess).toContain("margin-bottom:20px;");
-  expect(pullRequestPageLess).toContain("min-height:55px;");
-  expect(pullRequestPageLess).toContain(".field-title {");
-  expect(pullRequestPageLess).toContain(".arrow {");
-  expect(responsiveLess).toContain("@media all and (max-width: 720px) {");
-  expect(responsiveLess).toContain('input[type="text"],');
-  expect(responsiveLess).toContain(".project-selects {");
-  expect(bootstrapCss).toContain("button,\ninput,\nselect,\ntextarea {\n  margin: 0;");
-  expect(bootstrapCss).toContain("input::-moz-focus-inner");
-  expect(bootstrapResponsiveCss).toContain("@media (max-width: 767px) {");
-  expect(bootstrapResponsiveCss).toContain(".row-fluid {");
-  expect(bootstrapResponsiveCss).toContain(".input-block-level {");
-  for (const importedFile of [
-    "_variables.less",
-    "_mixins.less",
-    "_common.less",
-    "_sprites.less",
-    "_page.less",
-    "_tippy.less",
-    "_scrollbar.less",
-    "_responsive.less",
-    "_yobiUI.less",
-    "_temporary.less",
-    "_markdown.less",
-    "_migration.less",
-    "_override.less",
-  ]) {
-    expect(yobiLess).toContain(`@import "less/${importedFile}";`);
-  }
-  for (const message of [
-    "button.add.checklist = Add checklist",
-    "button.cancel = Cancel",
-    "button.clear.temporary = Clear Temporary",
-    "button.save = Save",
-    "common.attach.attachIfYouSave = Selected file will be attached when your comment is saved.",
-    "common.attach.clickbutton = Click upload button",
-    "common.attach.drophere = Drag & Drop files to attach here or",
-    "common.attach.pastehere = Paste the clipboard image",
-    "common.editor.edit = Edit",
-    "common.editor.preview = Preview",
-    "pullRequest.from = From",
-    "pullRequest.select.branch = Select branch",
-    "pullRequest.to = To",
-    "title.editPullRequest = Edit pull request",
-  ]) {
-    expect(messages).toContain(message);
-  }
-
-  expect(routeSource).toContain('data-owner="pull-request-edit-from-project-select"');
-  expect(routeSource).toContain('data-owner="pull-request-edit-to-project-select"');
-
-  expect(routeSource).not.toContain('data-toggle="select2"');
-
+test("pull request edit keeps disabled project picker spacing on desktop and mobile", async ({
+  page,
+}) => {
   await mockEditForm(page);
   for (const viewport of [
     { height: 900, name: "1366x900", width: 1366 },
@@ -121,29 +34,26 @@ test("pull request edit form owns mr5 only on disabled project selects", async (
         .evaluateAll((elements) => elements.map((element) => element.id)),
     ).toEqual(["fromProjectId", "fromBranch", "toProjectId", "toBranch"]);
 
-    for (const [select, owner] of [
-      [fromProject, "pull-request-edit-from-project-select"],
-      [toProject, "pull-request-edit-to-project-select"],
-    ] as const) {
-      await expect(select).toHaveClass(/\bmr5\b/u);
-      await expect(select).toHaveCSS("margin-right", "5px");
-      await expect(select).toHaveAttribute("data-owner", owner);
-      // data-style-src is dev-only metadata (dist renders null; parity helper treats it as env-variant noise) — dropped in WTR copy.
-      await expect(select).toBeDisabled();
+    // Select2 transfers mr5 to its visible container; the offscreen backing select has no margin.
+    for (const id of ["fromProjectId", "toProjectId"]) {
+      const picker = page.locator(`#s2id_${id}`);
+      await expect(picker).toBeVisible();
+      await expect(picker).toHaveCSS("margin-right", "5px");
+      await expect(picker.locator(".select2-choice")).toBeDisabled();
     }
-    for (const select of [fromBranch, toBranch]) {
-      await expect(select).not.toHaveClass(/\bmr5\b/u);
-      await expect(select).not.toHaveCSS("margin-right", "5px");
-      await expect(select).not.toHaveAttribute("data-style-src");
-      await expect(select).toBeDisabled();
+    for (const id of ["fromBranch", "toBranch"]) {
+      const picker = page.locator(`#s2id_${id}`);
+      await expect(picker).toBeVisible();
+      await expect(picker).toHaveCSS("margin-right", "0px");
+      await expect(picker.locator(".select2-choice")).toBeDisabled();
     }
 
     await expect(fromProject).toHaveValue("8");
-    await expect(fromProject.locator("option:checked")).toHaveText("dev/fork");
+    await expect(fromProject.locator("option:checked")).toHaveText("dev / fork");
     await expect(fromBranch).toHaveValue("feature/ui");
     await expect(fromBranch.locator("option:checked")).toHaveText("feature/ui");
     await expect(toProject).toHaveValue("7");
-    await expect(toProject.locator("option:checked")).toHaveText("admin/sample");
+    await expect(toProject.locator("option:checked")).toHaveText("admin / sample");
     await expect(toBranch).toHaveValue("main");
     await expect(toBranch.locator("option:checked")).toHaveText("main");
     await expect(fromBranch).toHaveAttribute("data-placeholder", "Select branch");
@@ -170,10 +80,10 @@ test("pull request edit form owns mr5 only on disabled project selects", async (
         ".content-wrap.frm-wrap",
         "form.nm",
         ".pull-request-wrap",
-        "#fromProjectId",
-        "#fromBranch",
-        "#toProjectId",
-        "#toBranch",
+        "#s2id_fromProjectId",
+        "#s2id_fromBranch",
+        "#s2id_toProjectId",
+        "#s2id_toBranch",
       ];
       const boxes = targets.map((selector) => {
         const element = document.querySelector<HTMLElement>(selector);

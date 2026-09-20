@@ -12,8 +12,8 @@ const projects = [
     logoUrl: "/assets/images/private-project.png",
     overview: "Private project overview",
     memberCount: 3,
-    createdLabel: "today",
-    lastPushedLabel: "an hour ago",
+    createdAt: "2020-01-02T12:00:00Z",
+    lastPushedAt: "2020-01-03T12:00:00Z",
     viewerCanWatch: false,
     isWatching: false,
     watchCount: 2,
@@ -28,7 +28,8 @@ const projects = [
     logoUrl: "/assets/images/forked-project.png",
     overview: "Forked project overview",
     memberCount: 2,
-    createdLabel: "yesterday",
+    createdAt: "2020-01-01T12:00:00Z",
+    lastPushedAt: "",
     originOwnerName: "origin-owner",
     originProjectName: "origin-project",
     viewerCanWatch: true,
@@ -45,7 +46,8 @@ const projects = [
     logoUrl: "/assets/images/public-project.png",
     overview: "Public project overview",
     memberCount: 1,
-    createdLabel: "Monday",
+    createdAt: "2019-12-30T12:00:00Z",
+    lastPushedAt: "",
     viewerCanWatch: true,
     isWatching: false,
     watchCount: 1,
@@ -333,7 +335,7 @@ test("Projects pane retires only avatar, lock-size, and fork-alignment utility c
         ),
       ).toBe(1);
       await expect(row.locator('[data-owner="user-profile-project-name-tag"]')).toContainText(
-        `${project.memberCount} ${project.ownerName} ${project.createdLabel}`,
+        `${project.memberCount} ${project.ownerName}`,
       );
     }
 

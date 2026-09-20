@@ -1,4 +1,4 @@
-import { Link, useRouteContext } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import type { ComponentPropsWithoutRef } from "react";
 import { useState } from "react";
 import {
@@ -7,7 +7,7 @@ import {
   type MarkdownComponents,
 } from "../components/legacy-markdown";
 import { useLegacyMessages } from "../i18n";
-import { prefixBasePath } from "../runtime-config";
+import markdownSampleImageUrl from "../assets/legacy/ico-like-small.png";
 const MARKDOWN_HELP_TARGETS = [
   "markdownHeaders",
   "markdownStyling",
@@ -52,14 +52,14 @@ const MARKDOWN_STYLING_SAMPLE = `
 `;
 
 const MARKDOWN_LINK_SAMPLE = `
-[Site](https://example.com/ "Example Site")
+[Site](https://example.com/ "Yoram Site")
 
 https://example.com/
 `;
 
 const MARKDOWN_LINK_OUTPUT_SAMPLE = `
 
-[Site](https://example.com/ "Example Site")
+[Site](https://example.com/ "Yoram Site")
 
 https://example.com/
 `;
@@ -86,11 +86,11 @@ const MARKDOWN_TASK_LIST_SAMPLE = `
 `;
 
 const MARKDOWN_IMAGE_INPUT_SAMPLE = `
-![title](https://example.com/images/sample.png "Sample image")
+![title](https://example.com/assets/images/ico-like-small.png "Yoram")
 `;
 
 const MARKDOWN_IMAGE_OUTPUT_SAMPLE = `
-![title](/assets/images/ico-like-small.png "Sample image")
+![title](/assets/images/ico-like-small.png "Yoram")
 `;
 
 const MARKDOWN_BLOCKQUOTE_SAMPLE = `
@@ -170,19 +170,8 @@ function MarkdownSampleLink({ children, href, ...props }: MarkdownSampleLinkProp
   );
 }
 
-function MarkdownSampleImage({ alt, src, ...props }: MarkdownSampleImageProps) {
-  const basePath = useRouteContext({
-    from: "__root__",
-    select: (context) => context.runtimeConfig.basePath,
-  });
-  const imageSrc =
-    src === "/assets/images/ico-like-small.png"
-      ? prefixBasePath(basePath, "/legacy-assets/images/ico-like-small.png")
-      : src
-        ? prefixBasePath(basePath, src)
-        : undefined;
-
-  return <img {...props} alt={alt ?? ""} src={imageSrc} />;
+function MarkdownSampleImage({ alt, ...props }: MarkdownSampleImageProps) {
+  return <img {...props} alt={alt ?? ""} src={markdownSampleImageUrl} />;
 }
 
 function MarkdownSampleHeading({
@@ -222,7 +211,7 @@ function MarkdownSampleCode({ children, className, ...props }: MarkdownSampleCod
   }
 
   return (
-    <code {...props} className={`${className} hljs`} data-owner="markdown-help-output-pre-code">
+    <code {...props} className="javascript hljs" data-owner="markdown-help-output-pre-code">
       <span className="hljs-function">
         <span className="hljs-keyword">function</span> <span className="hljs-title">test</span>(
         <span className="hljs-params" />){" "}
@@ -376,15 +365,18 @@ function MarkdownHelpNav({
       {MARKDOWN_HELP_NAV_ITEMS.map(({ label, target }, index) => {
         const active = activeTarget === target;
         const navClassName = `help-nav${active ? " active" : ""}`;
-        const buttonClassName = "markdown-help-nav-button";
         const item = (
-          <li className={navClassName} data-owner="markdown-help-nav-choice" key={target}>
+          <li
+            className={navClassName}
+            data-owner="markdown-help-nav-choice"
+            key={target}
+          >
             <button
               type="button"
-              className={buttonClassName}
+              className="markdown-help-nav-button"
+              data-owner="markdown-help-nav-button"
               aria-controls={markdownHelpContentId(target)}
               aria-expanded={active}
-              data-owner="markdown-help-nav-button"
               onClick={() => toggleActiveTarget(target)}
             >
               {label}
@@ -399,11 +391,9 @@ function MarkdownHelpNav({
 
 export function LegacyMarkdownHelp() {
   const [activeTarget, setActiveTarget] = useState<MarkdownHelpTarget | null>(null);
-
   const toggleActiveTarget = (target: MarkdownHelpTarget) => {
     setActiveTarget((current) => (current === target ? null : target));
   };
-
   return (
     <div className={"markdown-help"} data-owner="markdown-help-nav-root">
       <MarkdownHelpNav activeTarget={activeTarget} toggleActiveTarget={toggleActiveTarget} />

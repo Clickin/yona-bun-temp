@@ -373,30 +373,14 @@ function ProjectSearchSuccessBody({
                         data-active={category.type === activeType ? "true" : undefined}
                         key={category.type}
                       >
-                        <Link
+                        <button
+                          type="button"
                           className="project-search-category-action"
-                          activeOptions={projectSearchPaginationLinkActiveOptions}
-                          activeProps={projectSearchPaginationLinkActiveProps}
-                          from="/$ownerName/$projectName/search"
-                          hash={`project-search-category-active-suppressor-${category.type}-${activeType}`}
-                          mask={{
-                            params: { ownerName, projectName },
-                            search: {
-                              keyword: keywordValue,
-                              searchType: category.type,
-                            },
-                            to: "/$ownerName/$projectName/search",
-                          }}
-                          params={{ ownerName, projectName }}
-                          search={{
-                            keyword: keywordValue,
-                            searchType: category.type,
-                          }}
-                          to="/$ownerName/$projectName/search"
+                          onClick={() => navigateToSearch(category.type, keywordValue)}
                         >
                           {t(category.labelKey)}{" "}
-                          <span className="project-search-category-badge num-badge">{count}</span>
-                        </Link>
+                          <span className="num-badge pull-right">{count}</span>
+                        </button>
                       </li>
                     );
                   })}

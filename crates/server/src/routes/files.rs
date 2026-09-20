@@ -12,8 +12,8 @@ use unicode_normalization::UnicodeNormalization;
 
 use crate::{
     base_path_href, persistence, posting_can_update, project_code_menu_visible,
-    project_read_allowed, project_update_allowed, read_issue_access,
-    read_posting_access, PilotBackend, PilotServiceImpl,
+    project_read_allowed, project_update_allowed, read_issue_access, read_posting_access,
+    PilotBackend, PilotServiceImpl,
 };
 
 fn uploaded_files_root(data_root: &std::path::Path) -> PathBuf {
@@ -748,7 +748,11 @@ pub(crate) async fn upload_file(
             url: base_path_href(&service.base_path, &format!("/files/{}", attachment.id)),
         };
         return (
-            if created { StatusCode::CREATED } else { StatusCode::OK },
+            if created {
+                StatusCode::CREATED
+            } else {
+                StatusCode::OK
+            },
             Json(response),
         )
             .into_response();

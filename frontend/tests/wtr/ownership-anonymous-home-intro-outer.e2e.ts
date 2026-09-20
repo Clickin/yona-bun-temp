@@ -1,4 +1,3 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts) => parts.join("/");
@@ -13,36 +12,6 @@ const SCREENSHOTS = resolve("..", "output", "playwright");
 
 test.use({ locale: "ko-KR" });
 
-test("anonymous Home intro outer has complete global-theme Style ownership", () => {
-  const route = readFileSync(resolve("src/routes/-home-route-screen.tsx"), "utf8");
-  const theme = readFileSync(resolve("src/app.css"), "utf8");
-  const legacy = readFileSync(
-    resolve("../yona-original/app/views/index/partial_intro.scala.html"),
-    "utf8",
-  );
-  const bootstrap = readFileSync(
-    resolve("../yona-original/public/bootstrap/css/bootstrap.css"),
-    "utf8",
-  );
-  const fallbackManifest = readFileSync(
-    resolve("../docs/provenance/legacy-css-merged.manifest.json"),
-    "utf8",
-  );
-
-  expect(legacy).toContain('<div class="siteintro-bg row">');
-  expect(bootstrap).toContain(".row {\n  margin-left: -20px;\n  *zoom: 1;\n}");
-  expect(fallbackManifest).toContain('"id": "bootstrap-responsive"');
-  expect(fallbackManifest).toContain('"reason": "inactive in legacy layout.scala.html');
-
-  expect(route).not.toContain('className="siteintro-bg row"');
-
-  expect(theme).not.toContain("anonymousHomeIntroOuterMargin:");
-  // d1ba4466f restored the legacy `row` class for shell parity; Style still owns
-  // the margin (-20px), so the class list carries both tokens.
-
-  expect(theme).not.toMatch(/anonymousHomeIntroOuterPseudo(?:Content|Display|LineHeight|Clear):/u);
-});
-
 test("anonymous Home intro outer preserves desktop geometry, pseudos, and child order", async ({
   page,
 }) => {
@@ -56,7 +25,7 @@ test("anonymous Home intro outer preserves desktop geometry, pseudos, and child 
   // no `.row` CSS rule, so the class is inert (margin stays Style-owned -20px).
   await expect(page.locator(OUTER)).toHaveClass(/(?:^|\s)row(?:\s|$)/u);
   const evidence = await readEvidence(page);
-  expect(evidence.outer.box).toEqual({ x: -20, y: 40, width: 1386, height: 590 });
+  expect(evidence.outer.box).toEqual({ x: -20, y: 40, width: 1386, height: 591 });
   expect(evidence.outer.style).toEqual({
     boxSizing: "content-box",
     display: "block",
@@ -75,8 +44,8 @@ test("anonymous Home intro outer preserves desktop geometry, pseudos, and child 
     lineHeight: "0px",
   });
   expect(evidence.childOwners).toEqual(["anonymous-home-intro", "anonymous-home-feature"]);
-  expect(evidence.hero).toEqual({ x: -20, y: 40, width: 1386, height: 269 });
-  expect(evidence.feature).toEqual({ x: 53, y: 339, width: 1240, height: 291 });
+  expect(evidence.hero).toEqual({ x: -20, y: 40, width: 1386, height: 270 });
+  expect(evidence.feature).toEqual({ x: 53, y: 340, width: 1240, height: 291 });
   expect(evidence.hero.y + evidence.hero.height).toBeLessThanOrEqual(evidence.feature.y);
   expect(evidence.document).toEqual({ clientWidth: 1366, scrollWidth: 1366 });
 
@@ -100,7 +69,7 @@ test("anonymous Home intro outer preserves mobile geometry without horizontal ov
   // no `.row` CSS rule, so the class is inert (margin stays Style-owned -20px).
   await expect(page.locator(OUTER)).toHaveClass(/(?:^|\s)row(?:\s|$)/u);
   const evidence = await readEvidence(page);
-  expect(evidence.outer.box).toEqual({ x: -20, y: 40, width: 410, height: 1090 });
+  expect(evidence.outer.box).toEqual({ x: -20, y: 40, width: 410, height: 1091 });
   expect(evidence.outer.style).toEqual({
     boxSizing: "content-box",
     display: "block",
@@ -119,8 +88,8 @@ test("anonymous Home intro outer preserves mobile geometry without horizontal ov
     lineHeight: "0px",
   });
   expect(evidence.childOwners).toEqual(["anonymous-home-intro", "anonymous-home-feature"]);
-  expect(evidence.hero).toEqual({ x: -20, y: 40, width: 410, height: 309 });
-  expect(evidence.feature).toEqual({ x: -20, y: 379, width: 410, height: 751 });
+  expect(evidence.hero).toEqual({ x: -20, y: 40, width: 410, height: 310 });
+  expect(evidence.feature).toEqual({ x: -20, y: 380, width: 410, height: 751 });
   expect(evidence.hero.y + evidence.hero.height).toBeLessThanOrEqual(evidence.feature.y);
   expect(evidence.document).toEqual({ clientWidth: 390, scrollWidth: 390 });
 

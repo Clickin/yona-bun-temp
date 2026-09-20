@@ -208,7 +208,7 @@ async function mockPosts(page: Page) {
             authorLabel: "Dev Member",
             authorLoginId: "dev",
             commentCount: 1,
-            createdLabel: "Jul 2, 2026",
+            createdAt: "2026-07-02T00:00:00+09:00",
             labels: [
               {
                 categoryId: "3",

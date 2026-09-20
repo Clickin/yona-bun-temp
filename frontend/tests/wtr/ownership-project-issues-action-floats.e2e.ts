@@ -1,102 +1,10 @@
-import { expect, test, mergedLegacyBlock } from "../wtr-compat.ts";
-import { readFileSync } from "../wtr-compat.ts";
+import { expect, test } from "../wtr-compat.ts";
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const fallback = "normal";
 const screenshotDir = resolve(`output/playwright/style-project-issues-action-floats/${fallback}`);
-const routeSource = readFileSync("src/routes/$ownerName/$projectName/issues.tsx", "utf8");
-const styleSource = readFileSync("src/app.css", "utf8");
-const legacyRoot = readFileSync(
-  "../yona-original/app/views/issue/partial_list_wrap.scala.html",
-  "utf8",
-);
-const legacyList = readFileSync("../yona-original/app/views/issue/partial_list.scala.html", "utf8");
-const legacyDraftList = readFileSync(
-  "../yona-original/app/views/issue/partial_list_draft.scala.html",
-  "utf8",
-);
-const legacyMassUpdate = readFileSync(
-  "../yona-original/app/views/issue/partial_massupdate.scala.html",
-  "utf8",
-);
-const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
-const bootstrapResponsive = readFileSync(
-  "../yona-original/public/bootstrap/css/bootstrap-responsive.css",
-  "utf8",
-);
-const yobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
-const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
-const responsiveLess = readFileSync(
-  "../yona-original/app/assets/stylesheets/less/_responsive.less",
-  "utf8",
-);
-const messages = readFileSync("../yona-original/conf/messages", "utf8");
-
-test("project issue action owners preserve legacy source evidence", () => {
-  expect(legacyRoot).toContain('<div class="pull-right">');
-  expect(legacyRoot).toContain('<div class="filters pull-right">');
-  expect(legacyRoot).toContain('<div class="pull-left" style="padding:10px;">');
-  for (const source of [legacyList, legacyDraftList]) {
-    expect(source).toContain('<ul class="post-list-wrap row-fluid">');
-    expect(source).toContain('<li class="post-item title"');
-  }
-  expect(legacyMassUpdate).toContain('<div class="mass-update-wrap hide-in-mobile">');
-  expect(legacyMassUpdate).toContain('id="mass-update-form"');
-  expect(bootstrap).toMatch(/\.pull-right\s*\{[^}]*float:\s*right;/u);
-  expect(bootstrap).toMatch(/\.pull-left\s*\{[^}]*float:\s*left;/u);
-  expect(bootstrapResponsive).toContain(".pull-right");
-  expect(bootstrapResponsive).toContain(".pull-left");
-  for (const imported of [
-    "_variables.less",
-    "_mixins.less",
-    "_common.less",
-    "_sprites.less",
-    "_page.less",
-    "_tippy.less",
-    "_scrollbar.less",
-    "_responsive.less",
-    "_yobiUI.less",
-    "_temporary.less",
-    "_markdown.less",
-    "_migration.less",
-    "_override.less",
-  ]) {
-    expect(yobi).toContain(`@import "less/${imported}"`);
-    expect(
-      readFileSync(`../yona-original/app/assets/stylesheets/less/${imported}`, "utf8"),
-    ).not.toBe("");
-  }
-  expect(pageLess).toContain(".filter-wrap {");
-  expect(pageLess).toContain(".filters {");
-  expect(pageLess).toContain("float: right;");
-  expect(pageLess).toContain(".post-list-wrap {");
-  expect(pageLess).toContain("    .download {");
-  expect(responsiveLess).toContain(".post-list-wrap {");
-  expect(responsiveLess).toContain("margin-left: 10px;");
-  expect(responsiveLess).toContain("padding: 10px 0 !important;");
-  for (const message of [
-    "common.order.dueDate = Due Date",
-    "common.order.updatedDate = Updated",
-    "common.order.date = Created",
-    "common.order.comments = Comments",
-    "issue.downloadAsExcel = Download as Excel file",
-    "issue.menu.new = New issue",
-    "issue.state.open = Open",
-    "issue.state.closed = Closed",
-  ]) {
-    expect(messages).toContain(message);
-  }
-  for (const marker of [
-    "project-issues-new-issue-action",
-    "project-issues-sort-filters",
-    "project-issues-excel-download",
-  ]) {
-    expect(routeSource).toContain(`data-owner="${marker}"`);
-  }
-  expect(routeSource).not.toContain("LegacyOrderAttributes");
-});
 
 async function mockProjectIssues(page: Page) {
   await page.addInitScript((runtimeBasePath) => {
@@ -240,7 +148,6 @@ test(`project issue action owners preserve float, action, and responsive parity 
     `${basePath}/admin/sample/issues?format=xls`,
   );
   for (const owner of [newIssue, filters, exportAction]) {
-    await expect(owner).not.toHaveClass(/(?:^|\s)pull-(?:right|left)(?:\s|$)/u);
     await expect(owner).not.toHaveAttribute("style");
     await expect(owner).not.toHaveAttribute("data-toggle");
     await expect(owner).not.toHaveAttribute("data-action");

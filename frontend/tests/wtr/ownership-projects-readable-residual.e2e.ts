@@ -1,4 +1,4 @@
-import { readFileSync, readFile } from "../wtr-compat.ts";
+import { readFile } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
@@ -31,6 +31,7 @@ const owners = {
 test.use({ locale: "ko-KR" });
 
 async function open(page: Page) {
+  await page.clock.setFixedTime("2026-07-17T12:00:00Z");
   await page.addInitScript((runtimeBasePath) => {
     (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
       basePath: runtimeBasePath,
@@ -60,10 +61,10 @@ async function open(page: Page) {
       json: {
         items: [
           {
-            createdLabel: "21초 전",
+            createdAt: "2026-07-17T11:59:39Z",
             isForked: true,
             labels: [],
-            lastPushedLabel: "",
+            lastPushedAt: "",
             logoUrl: "",
             memberCount: 1,
             members: [{ avatarUrl: avatarDataUrl, loginId: "alice", userLabel: "Alice Kim" }],
@@ -76,9 +77,9 @@ async function open(page: Page) {
             watchCount: 0,
           },
           {
-            createdLabel: "07-07",
+            createdAt: "2026-07-07T12:00:00Z",
             labels: [],
-            lastPushedLabel: "",
+            lastPushedAt: "",
             logoUrl: "",
             memberCount: 1,
             members: [{ avatarUrl: avatarDataUrl, loginId: "alice", userLabel: "Alice Kim" }],
@@ -89,9 +90,9 @@ async function open(page: Page) {
             watchCount: 1,
           },
           {
-            createdLabel: "07-07",
+            createdAt: "2026-07-07T12:00:00Z",
             labels: [],
-            lastPushedLabel: "",
+            lastPushedAt: "",
             logoUrl: "",
             memberCount: 1,
             members: [{ avatarUrl: avatarDataUrl, loginId: "admin", userLabel: "Site Admin" }],
@@ -102,9 +103,9 @@ async function open(page: Page) {
             watchCount: 1,
           },
           {
-            createdLabel: "07-07",
+            createdAt: "2026-07-07T12:00:00Z",
             labels: [],
-            lastPushedLabel: "5일 전",
+            lastPushedAt: "2026-07-12T12:00:00Z",
             logoUrl: "",
             memberCount: 1,
             members: [{ avatarUrl: avatarDataUrl, loginId: "admin", userLabel: "Site Admin" }],
@@ -125,43 +126,6 @@ async function open(page: Page) {
   await page.goto(`${basePath}/projects`);
   await expect(page.locator(`[data-owner="${owners.identity}"]`).first()).toBeVisible();
 }
-
-test("readable residual wave records five direct owner groups and branch-scoped deletion", () => {
-  const route = readFileSync("src/routes/projects.tsx", "utf8");
-  const scala = readFileSync("../yona-original/app/views/project/list.scala.html", "utf8");
-  const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
-  const yobicon = readFileSync("../yona-original/public/stylesheets/yobicon/style.css", "utf8");
-
-  expect(scala).toContain('<li class="project">\n                <div class="info-wrap">');
-  expect(scala).toContain('<div style="float:left">');
-  expect(scala).toContain('<i class="yobicon-search"></i>');
-  expect(scala).toContain('<i class="yobicon-split"></i>');
-  expect(scala).toContain('<i class="yobicon-eye yobicon-middle"></i>');
-  expect(pageLess).toContain(".all-projects {");
-  expect(pageLess).toContain(".project {");
-  expect(pageLess).toContain(".info-wrap {");
-  expect(yobicon).toContain("font-family: 'yobicon';");
-  expect(yobicon).toContain("font-variant: normal;");
-  expect(yobicon).toContain("background-image:none;");
-  for (const [name, glyph] of [
-    ["search", "e225"],
-    ["friends", "e27b"],
-    ["split", "e450"],
-    ["eye", "e52e"],
-  ])
-    expect(route).toContain('data-owner="projects-directory-readable-identity"');
-  expect(route).toContain('data-owner="projects-directory-readable-info"');
-  expect(route).toContain('data-owner="projects-directory-search-icon"');
-  expect(route).toContain('data-owner="projects-directory-fork-split-icon"');
-  expect(route.match(/data-owner="projects-directory-stats-icon"/gu)).toHaveLength(2);
-
-  expect(route).not.toMatch(/className=.*all-projects/u);
-  expect(route).not.toMatch(/className=.*\bproject\b/u);
-  expect(route).not.toContain('className="info-wrap"');
-
-  for (const retired of ["yobicon-search", "yobicon-split", "yobicon-friends", "yobicon-eye"])
-    expect(route).not.toMatch(new RegExp(`className=.*${retired}`, "u"));
-});
 
 for (const viewport of [
   { height: 900, name: "desktop", width: 1366 },

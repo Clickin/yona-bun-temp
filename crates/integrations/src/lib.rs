@@ -407,9 +407,10 @@ pub fn mailbox_resource_path_from_detail(detail: &str) -> Option<String> {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MailboxMimePart {
-    pub body: String,
+    pub body: Vec<u8>,
     pub content_id: Option<String>,
     pub content_type: String,
+    pub filename: Option<String>,
     pub parts: Vec<MailboxMimePart>,
 }
 
@@ -455,14 +456,15 @@ pub struct MailboxParsedMessageInput {
 }
 
 pub fn mailbox_parse_raw_message(
-    raw: &str,
+    raw: impl AsRef<[u8]>,
     imap_address: &str,
 ) -> Option<MailboxParsedMessageInput> {
-    let (headers, body) = mailbox_split_message(raw);
+    let (headers, body) = mailbox_split_message(raw.as_ref());
     let message_id = mailbox_header_first(&headers, "Message-ID")?;
     let content_type =
         mailbox_header_first(&headers, "Content-Type").unwrap_or_else(|| "text/plain".to_string());
     let transfer_encoding = mailbox_header_first(&headers, "Content-Transfer-Encoding");
+    let disposition = mailbox_header_first(&headers, "Content-Disposition");
     Some(MailboxParsedMessageInput {
         from_addresses: mailbox_header_addresses(&headers, &["From"]),
         imap_address: imap_address.to_string(),
@@ -475,16 +477,18 @@ pub fn mailbox_parse_raw_message(
         references: mailbox_header_values(&headers, "References"),
         root_part: mailbox_parse_mime_part(
             &content_type,
-            None,
+            mailbox_header_first(&headers, "Content-ID"),
+            disposition.as_deref(),
             transfer_encoding.as_deref(),
-            &body,
-        ),
+            body,
+        )?,
         subject: mailbox_header_first(&headers, "Subject").unwrap_or_default(),
     })
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MailboxNormalizedMessage {
+    pub attachments: Vec<MailboxMimePart>,
     pub body_markdown: String,
     pub content_type: String,
     pub from_addresses: Vec<String>,
@@ -494,12 +498,23 @@ pub struct MailboxNormalizedMessage {
     pub title: String,
 }
 
-fn mailbox_split_message(raw: &str) -> (Vec<(String, String)>, String) {
-    let normalized = raw.replace("\r\n", "\n").replace('\r', "\n");
-    let (header_text, body) = normalized
-        .split_once("\n\n")
-        .map_or((normalized.as_str(), ""), |(headers, body)| (headers, body));
-    (mailbox_parse_headers(header_text), body.to_string())
+fn mailbox_split_message(raw: &[u8]) -> (Vec<(String, String)>, &[u8]) {
+    let separator = raw
+        .windows(4)
+        .position(|part| part == b"\r\n\r\n")
+        .map(|index| (index, 4))
+        .or_else(|| {
+            raw.windows(2)
+                .position(|part| part == b"\n\n")
+                .map(|index| (index, 2))
+        });
+    let (headers, body) = separator.map_or((raw, &[][..]), |(index, length)| {
+        (&raw[..index], &raw[index + length..])
+    });
+    (
+        mailbox_parse_headers(&String::from_utf8_lossy(headers)),
+        body,
+    )
 }
 
 fn mailbox_parse_headers(header_text: &str) -> Vec<(String, String)> {
@@ -566,57 +581,71 @@ fn mailbox_extract_addresses(value: &str) -> Vec<String> {
 fn mailbox_parse_mime_part(
     content_type: &str,
     content_id: Option<String>,
+    disposition: Option<&str>,
     transfer_encoding: Option<&str>,
-    body: &str,
-) -> MailboxMimePart {
-    if mailbox_mime_type_matches(content_type, "multipart/*") {
-        let boundary = mailbox_content_type_parameter(content_type, "boundary");
-        let parts = boundary
-            .as_deref()
-            .map(|boundary| mailbox_parse_multipart_body(boundary, body))
-            .unwrap_or_default();
-        return MailboxMimePart {
-            body: String::new(),
+    body: &[u8],
+) -> Option<MailboxMimePart> {
+    let filename = disposition
+        .and_then(|value| mailbox_filename_parameter(value, "filename"))
+        .or_else(|| mailbox_filename_parameter(content_type, "name"));
+    if filename.is_none() && mailbox_mime_type_matches(content_type, "multipart/*") {
+        let boundary = mailbox_content_type_parameter(content_type, "boundary")?;
+        return Some(MailboxMimePart {
+            body: Vec::new(),
             content_id,
             content_type: content_type.to_string(),
-            parts,
-        };
+            filename,
+            parts: mailbox_parse_multipart_body(&boundary, body)?,
+        });
     }
 
-    MailboxMimePart {
-        body: mailbox_decode_transfer_body(body, transfer_encoding),
+    Some(MailboxMimePart {
+        body: mailbox_decode_transfer_body(body, transfer_encoding)?,
         content_id,
         content_type: content_type.to_string(),
+        filename,
         parts: Vec::new(),
-    }
+    })
 }
 
-fn mailbox_parse_multipart_body(boundary: &str, body: &str) -> Vec<MailboxMimePart> {
+fn mailbox_parse_multipart_body(boundary: &str, body: &[u8]) -> Option<Vec<MailboxMimePart>> {
     let delimiter = format!("--{boundary}");
     let closing_delimiter = format!("--{boundary}--");
     let mut parts = Vec::new();
-    for segment in body.split(&delimiter).skip(1) {
-        let segment = segment.trim_start_matches('\n');
-        if segment.starts_with("--") || segment.starts_with(&closing_delimiter) {
-            break;
+    let mut start = None;
+    let mut offset = 0;
+    for line in body.split_inclusive(|byte| *byte == b'\n') {
+        let marker = line.trim_ascii_end();
+        if marker == delimiter.as_bytes() || marker == closing_delimiter.as_bytes() {
+            if let Some(start) = start {
+                let segment = &body[start..offset];
+                // The CRLF immediately before a delimiter belongs to the boundary.
+                let segment = segment
+                    .strip_suffix(b"\r\n")
+                    .or_else(|| segment.strip_suffix(b"\n"))
+                    .unwrap_or(segment);
+                let (headers, part_body) = mailbox_split_message(segment);
+                let content_type = mailbox_header_first(&headers, "Content-Type")
+                    .unwrap_or_else(|| "text/plain".to_string());
+                parts.push(mailbox_parse_mime_part(
+                    &content_type,
+                    mailbox_header_first(&headers, "Content-ID"),
+                    mailbox_header_first(&headers, "Content-Disposition").as_deref(),
+                    mailbox_header_first(&headers, "Content-Transfer-Encoding").as_deref(),
+                    part_body,
+                )?);
+            }
+            if marker == closing_delimiter.as_bytes() {
+                return (!parts.is_empty()).then_some(parts);
+            }
+            start = Some(offset + line.len());
         }
-        let segment = segment.trim_end_matches('\n');
-        let (headers, part_body) = mailbox_split_message(segment);
-        let content_type = mailbox_header_first(&headers, "Content-Type")
-            .unwrap_or_else(|| "text/plain".to_string());
-        let content_id = mailbox_header_first(&headers, "Content-ID");
-        let transfer_encoding = mailbox_header_first(&headers, "Content-Transfer-Encoding");
-        parts.push(mailbox_parse_mime_part(
-            &content_type,
-            content_id,
-            transfer_encoding.as_deref(),
-            &part_body,
-        ));
+        offset += line.len();
     }
-    parts
+    None
 }
 
-fn mailbox_decode_transfer_body(body: &str, transfer_encoding: Option<&str>) -> String {
+fn mailbox_decode_transfer_body(body: &[u8], transfer_encoding: Option<&str>) -> Option<Vec<u8>> {
     match transfer_encoding
         .unwrap_or_default()
         .trim()
@@ -624,43 +653,39 @@ fn mailbox_decode_transfer_body(body: &str, transfer_encoding: Option<&str>) -> 
         .as_str()
     {
         "quoted-printable" => mailbox_decode_quoted_printable(body),
-        "base64" => mailbox_decode_base64(body),
-        _ => body.to_string(),
+        "base64" => {
+            let compact: Vec<u8> = body
+                .iter()
+                .copied()
+                .filter(|byte| !byte.is_ascii_whitespace())
+                .collect();
+            general_purpose::STANDARD.decode(compact).ok()
+        }
+        "" | "7bit" | "8bit" | "binary" => Some(body.to_vec()),
+        _ => None,
     }
 }
 
-fn mailbox_decode_base64(body: &str) -> String {
-    let compact = body
-        .chars()
-        .filter(|character| !character.is_ascii_whitespace())
-        .collect::<String>();
-    general_purpose::STANDARD
-        .decode(compact.as_bytes())
-        .map(|bytes| String::from_utf8_lossy(&bytes).to_string())
-        .unwrap_or_else(|_| body.to_string())
-}
-
-fn mailbox_decode_quoted_printable(body: &str) -> String {
-    let bytes = body.as_bytes();
+fn mailbox_decode_quoted_printable(bytes: &[u8]) -> Option<Vec<u8>> {
     let mut decoded = Vec::with_capacity(bytes.len());
     let mut index = 0;
     while index < bytes.len() {
-        if bytes[index] == b'=' && index + 1 < bytes.len() && bytes[index + 1] == b'\n' {
-            index += 2;
-            continue;
-        }
-        if bytes[index] == b'=' && index + 2 < bytes.len() {
-            let pair = &body[index + 1..index + 3];
-            if let Ok(value) = u8::from_str_radix(pair, 16) {
-                decoded.push(value);
+        if bytes[index] == b'=' {
+            if bytes[index..].starts_with(b"=\r\n") {
                 index += 3;
-                continue;
+            } else if bytes[index..].starts_with(b"=\n") {
+                index += 2;
+            } else {
+                let pair = std::str::from_utf8(bytes.get(index + 1..index + 3)?).ok()?;
+                decoded.push(u8::from_str_radix(pair, 16).ok()?);
+                index += 3;
             }
+        } else {
+            decoded.push(bytes[index]);
+            index += 1;
         }
-        decoded.push(bytes[index]);
-        index += 1;
     }
-    String::from_utf8_lossy(&decoded).to_string()
+    Some(decoded)
 }
 
 pub fn mailbox_normalize_parsed_message(
@@ -675,6 +700,7 @@ pub fn mailbox_normalize_parsed_message(
         mailbox_collect_thread_message_ids(input.in_reply_to.as_deref(), &input.references);
 
     MailboxNormalizedMessage {
+        attachments: content.attachments,
         body_markdown: content.body,
         content_type: content.content_type,
         from_addresses: input.from_addresses,
@@ -689,10 +715,20 @@ fn mailbox_process_part(
     part: &MailboxMimePart,
     parent: Option<&MailboxMimePart>,
 ) -> MailboxExtractedContent {
+    if part.filename.is_some() {
+        return MailboxExtractedContent {
+            attachments: vec![part.clone()],
+            body: String::new(),
+            content_type: String::new(),
+        };
+    }
     if mailbox_mime_type_matches(&part.content_type, "text/*") {
         return MailboxExtractedContent {
             attachments: Vec::new(),
-            body: part.body.clone(),
+            body: mailbox_decode_text(
+                &part.body,
+                mailbox_content_type_parameter(&part.content_type, "charset").as_deref(),
+            ),
             content_type: part.content_type.clone(),
         };
     }
@@ -795,20 +831,119 @@ fn mailbox_mime_type_matches(content_type: &str, pattern: &str) -> bool {
 }
 
 fn mailbox_content_type_parameter(content_type: &str, name: &str) -> Option<String> {
-    content_type.split(';').skip(1).find_map(|parameter| {
-        let (key, value) = parameter.split_once('=')?;
-        if key.trim().eq_ignore_ascii_case(name) {
-            Some(
-                value
-                    .trim()
-                    .trim_matches('"')
-                    .trim_matches('\'')
-                    .to_string(),
-            )
+    let mut quoted = false;
+    let mut escaped = false;
+    content_type
+        .split(|ch| {
+            if escaped {
+                escaped = false;
+                return false;
+            }
+            if quoted && ch == '\\' {
+                escaped = true;
+                return false;
+            }
+            if ch == '"' {
+                quoted = !quoted;
+            }
+            ch == ';' && !quoted
+        })
+        .skip(1)
+        .find_map(|parameter| {
+            let (key, value) = parameter.split_once('=')?;
+            if key.trim().eq_ignore_ascii_case(name) {
+                Some(value.trim().trim_matches('"').to_string())
+            } else {
+                None
+            }
+        })
+}
+
+fn mailbox_decode_text(bytes: &[u8], charset: Option<&str>) -> String {
+    charset
+        .and_then(|label| encoding_rs::Encoding::for_label(label.as_bytes()))
+        .unwrap_or(encoding_rs::UTF_8)
+        .decode_without_bom_handling(bytes)
+        .0
+        .into_owned()
+}
+
+fn mailbox_filename_parameter(header: &str, name: &str) -> Option<String> {
+    let mut segments = Vec::new();
+    if let Some(value) = mailbox_content_type_parameter(header, &format!("{name}*")) {
+        segments.push((value, true));
+    } else {
+        for index in 0.. {
+            let parameter = format!("{name}*{index}");
+            let segment = mailbox_content_type_parameter(header, &format!("{parameter}*"))
+                .map(|value| (value, true))
+                .or_else(|| {
+                    mailbox_content_type_parameter(header, &parameter).map(|value| (value, false))
+                });
+            let Some(segment) = segment else { break };
+            segments.push(segment);
+        }
+    }
+    if !segments.is_empty() {
+        let mut charset = None;
+        let mut bytes = Vec::new();
+        for (index, (value, encoded)) in segments.iter().enumerate() {
+            let mut rest = value.as_bytes();
+            if index == 0 && *encoded {
+                if let Some((label, value)) = value.split_once('\'').and_then(|(label, rest)| {
+                    rest.split_once('\'').map(|(_, value)| (label, value))
+                }) {
+                    charset = Some(label);
+                    rest = value.as_bytes();
+                }
+            }
+            while !rest.is_empty() {
+                if *encoded && rest[0] == b'%' && rest.len() >= 3 {
+                    if let Ok(hex) = std::str::from_utf8(&rest[1..3]) {
+                        if let Ok(byte) = u8::from_str_radix(hex, 16) {
+                            bytes.push(byte);
+                            rest = &rest[3..];
+                            continue;
+                        }
+                    }
+                }
+                bytes.push(rest[0]);
+                rest = &rest[1..];
+            }
+        }
+        return Some(mailbox_decode_text(&bytes, charset));
+    }
+    let value = mailbox_content_type_parameter(header, name)?;
+    let mut remaining = value.as_str();
+    let mut decoded = String::new();
+    while let Some(start) = remaining.find("=?") {
+        let Some((charset, rest)) = remaining[start + 2..].split_once('?') else {
+            break;
+        };
+        let Some((encoding, rest)) = rest.split_once('?') else {
+            break;
+        };
+        let Some((encoded, rest)) = rest.split_once("?=") else {
+            break;
+        };
+        let bytes = if encoding.eq_ignore_ascii_case("b") {
+            general_purpose::STANDARD.decode(encoded).ok()
+        } else if encoding.eq_ignore_ascii_case("q") {
+            mailbox_decode_quoted_printable(encoded.replace('_', " ").as_bytes())
         } else {
             None
-        }
-    })
+        };
+        let Some(bytes) = bytes else { break };
+        decoded.push_str(&remaining[..start]);
+        decoded.push_str(&mailbox_decode_text(&bytes, Some(charset)));
+        remaining = if rest.trim_start().starts_with("=?") {
+            rest.trim_start()
+        } else {
+            rest
+        };
+    }
+    decoded.push_str(remaining);
+    Some(decoded)
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

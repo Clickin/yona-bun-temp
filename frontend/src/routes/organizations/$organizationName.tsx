@@ -15,8 +15,9 @@ import type {
   YoramRecord,
   YoramUserItem,
 } from "../../api/types";
+import defaultAvatarUrl from "../../assets/legacy/default-avatar-34.png";
 import { readSessionBootstrap } from "../../auth-workspace-client";
-import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
+import { formatLegacyTimestamp, LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
@@ -38,6 +39,7 @@ function OrganizationNestedLayout({ runtimeConfig }: { runtimeConfig: RuntimeCon
   const isClosedPullRequests = pathname === `/organizations/${organizationName}/closedPullrequests`;
   const isSettings = pathname === `/organizations/${organizationName}/settingform`;
   const isDeleteForm = pathname === `/organizations/${organizationName}/deleteForm`;
+  const isMembers = pathname === `/organizations/${organizationName}/members`;
   const isSearch = pathname.endsWith("/search");
   const organizationQuery = useQuery({
     queryFn: () => readOrganizationContainerRest(runtimeConfig, organizationName),
@@ -66,7 +68,9 @@ function OrganizationNestedLayout({ runtimeConfig }: { runtimeConfig: RuntimeCon
     <YoramQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <SiteLayoutShell
-          projectSearchScope={isSettings || isDeleteForm ? undefined : { organizationName }}
+          projectSearchScope={
+            isSettings || isDeleteForm || isMembers ? undefined : { organizationName }
+          }
           runtimeConfig={runtimeConfig}
           showLegacyProjectHeaderLinks
         >
@@ -78,7 +82,7 @@ function OrganizationNestedLayout({ runtimeConfig }: { runtimeConfig: RuntimeCon
           />
           <OrganizationMenu
             active={
-              isSettings || isDeleteForm
+              isSettings || isDeleteForm || isMembers
                 ? "none"
                 : isPullRequests || isClosedPullRequests
                   ? "pullrequests"
@@ -323,7 +327,13 @@ function OrganizationHomeScreen({
   );
 }
 
-function OrganizationProject({ filter, project }: { filter: string; project: YoramRecord }) {
+function OrganizationProject({
+  filter,
+  project,
+}: {
+  filter: string;
+  project: OrganizationContainer["visibleProjects"][number];
+}) {
   const { t } = useLegacyMessages();
   const ownerName = stringField(project.ownerName, "");
   const projectName = stringField(project.projectName, "");
@@ -333,8 +343,9 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
   const isPrivate = booleanField(project.isPrivate) || projectScope === "private";
   const isProtected = booleanField(project.isProtected) || projectScope === "protected";
   const isWatching = booleanField(project.isWatching);
-  const createdLabel = stringField(project.createdLabel, "");
-  const lastPushedLabel = stringField(project.lastPushedLabel, "");
+  const created = formatLegacyTimestamp(stringField(project.createdAt, ""), t);
+  const lastPushedAt = stringField(project.lastPushedAt, "");
+  const lastPushed = formatLegacyTimestamp(lastPushedAt, t);
   const projectLogoUrl = stringField(project.logoUrl, "").trim();
   const dataValue = `${projectName} ${stringField(project.overview, "")}`;
   const normalizedFilter = filter.trim().toLowerCase();
@@ -399,7 +410,7 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
               to="/$ownerName/$projectName"
             >
               {projectName}
-            </Link>
+            </Link>{" "}
             {originOwnerName && originProjectName ? (
               <span className="blue-txt" data-owner="organization-home-project-origin">
                 <Link
@@ -465,22 +476,36 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
             >
               {ownerName}
             </Link>{" "}
-            at{" "}
-            <strong title={stringField(project.createdTitle, createdLabel)}>{createdLabel}</strong>{" "}
-            {lastPushedLabel ? (
-              <span className="small-font" data-owner="organization-home-project-code-update">
-                , {t("project.codeUpdate")}{" "}
-                <strong title={stringField(project.lastPushedTitle, lastPushedLabel)}>
-                  {lastPushedLabel}
-                </strong>
-              </span>
-            ) : null}
+            at <strong title={created.title}>{created.label}</strong>{" "}
+            <span className="small-font" data-owner="organization-home-project-code-update">
+              {lastPushedAt ? (
+                <>
+                  , {t("project.codeUpdate")}{" "}
+                  <strong title={lastPushed.title}>{lastPushed.label}</strong>
+                </>
+              ) : null}
+            </span>
           </p>
         </div>
       </div>
       <div className="stats-wrap pull-right" data-owner="organization-home-project-card-stats">
         <div className="members" data-owner="organization-home-project-card-members">
-          <ul className="unstyled" data-owner="organization-home-project-card-members-list"></ul>
+          <ul className="unstyled" data-owner="organization-home-project-card-members-list">
+            {project.members.map((member) =>
+              member.loginId === ownerName ? null : (
+                <li key={member.loginId}>
+                  <Link
+                    className="avatar-wrap"
+                    params={{ user: member.loginId }}
+                    search={{}}
+                    to="/$user"
+                  >
+                    <img src={member.avatarUrl || defaultAvatarUrl} alt={member.userLabel} />
+                  </Link>
+                </li>
+              ),
+            )}
+          </ul>
           <p>
             <i
               className="yobicon-friends"

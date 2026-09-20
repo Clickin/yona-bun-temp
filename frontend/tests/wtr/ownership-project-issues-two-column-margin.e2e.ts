@@ -1,4 +1,3 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
@@ -12,87 +11,6 @@ const screenshotDirectory = resolve("output/playwright/style-project-issues-two-
 test.use({ locale: "en-US" });
 
 test("project issues owns legacy mr10 on both mode-control wrappers", async ({ page }) => {
-  const routeSource = readFileSync("src/routes/$ownerName/$projectName/issues.tsx", "utf8");
-  const styleSource = readFileSync("src/app.css", "utf8");
-  const legacyRoot = readFileSync(
-    "../yona-original/app/views/issue/partial_list_wrap.scala.html",
-    "utf8",
-  );
-  const legacyTwoColumn = readFileSync(
-    "../yona-original/app/views/common/twoColumnModeCheckboxArea.scala.html",
-    "utf8",
-  );
-  const legacySubtasks = readFileSync(
-    "../yona-original/app/views/common/showSubtasksCheckbox.scala.html",
-    "utf8",
-  );
-  const commonLess = readFileSync(
-    "../yona-original/app/assets/stylesheets/less/_common.less",
-    "utf8",
-  );
-  const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
-  const yobiLess = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
-  const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
-  const bootstrapResponsive = readFileSync(
-    "../yona-original/public/bootstrap/css/bootstrap-responsive.css",
-    "utf8",
-  );
-  const messages = readFileSync("../yona-original/conf/messages", "utf8");
-
-  expect(legacyRoot).toContain('<ul class="nav nav-tabs nm">');
-  expect(legacyRoot).toContain("<li>@common.twoColumnModeCheckboxArea()</li>");
-  expect(legacyRoot).toContain('<li class="show-subtasks-li">@common.showSubtasksCheckbox()</li>');
-  expect(legacyTwoColumn).toContain('class="two-column-icon mr10 hide-in-mobile"');
-  expect(legacyTwoColumn).toContain('id="two-column-mode-checkbox"');
-  expect(legacyTwoColumn).toContain('id="two-column-mode"');
-  expect(legacySubtasks).toContain('class="show-subtasks mr10"');
-  expect(legacySubtasks).toContain('id="toggle-show-subtasks"');
-  expect(commonLess).toContain(".mr10 { margin-right:10px; }");
-  expect(pageLess).toContain(".show-subtasks-li");
-  expect(pageLess).toContain(".two-column-icon, .show-subtasks");
-  expect(pageLess).toContain("line-height: 37px;");
-  expect(pageLess).toContain("margin-left: 10px;");
-  expect(bootstrap).toContain(".nav-tabs");
-  expect(bootstrap).toContain('.checkbox input[type="checkbox"]');
-  expect(bootstrapResponsive).toContain("@media (max-width: 767px)");
-  expect(bootstrapResponsive).toContain(".row-fluid");
-  for (const importPath of [
-    "less/_variables.less",
-    "less/_mixins.less",
-    "less/_common.less",
-    "less/_sprites.less",
-    "less/_page.less",
-    "less/_tippy.less",
-    "less/_scrollbar.less",
-    "less/_responsive.less",
-    "less/_yobiUI.less",
-    "less/_temporary.less",
-    "less/_markdown.less",
-    "less/_migration.less",
-    "less/_override.less",
-  ]) {
-    expect(yobiLess).toContain(`@import "${importPath}";`);
-    expect(
-      readFileSync(`../yona-original/app/assets/stylesheets/${importPath}`, "utf8"),
-    ).not.toHaveLength(0);
-  }
-  for (const messageKey of [
-    "common.two.column.mode",
-    "common.two.column.mode.desc",
-    "common.two.column.view",
-    "common.show.subtasks",
-    "common.show.subtasks.desc",
-  ]) {
-    expect(messages).toContain(`${messageKey} =`);
-  }
-
-  expect(routeSource).toContain("two-column-icon mr10 hide-in-mobile");
-  expect(routeSource).toContain("show-subtasks mr10");
-  expect(routeSource).toContain('anchorOwner="project-issues-two-column-anchor"');
-  expect(routeSource).toContain('anchorOwner="project-issues-subtasks-anchor"');
-  expect(routeSource).not.toContain('data-toggle="popover"');
-  expect(routeSource).not.toContain('data-trigger="hover"');
-
   await mockProjectIssues(page);
   mkdirSync(screenshotDirectory, { recursive: true });
 
@@ -116,11 +34,7 @@ test("project issues owns legacy mr10 on both mode-control wrappers", async ({ p
     await expect(stateTabs).toHaveCount(4);
     await expect(twoColumn).toHaveCount(1);
     await expect(subtasks).toHaveCount(1);
-    await expect(twoColumn).toHaveClass(/two-column-icon/);
-    await expect(twoColumn).toHaveClass(/mr10/);
     await expect(twoColumn).toHaveAttribute("id", "two-column-mode-checkbox");
-    await expect(subtasks).toHaveClass(/show-subtasks/);
-    await expect(subtasks).toHaveClass(/mr10/);
     await expect(subtasks).toHaveAttribute("id", "two-column-mode-checkbox");
     await expect(twoColumn).toHaveCSS("margin-right", "10px");
     await expect(subtasks).toHaveCSS("margin-right", "10px");

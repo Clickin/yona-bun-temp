@@ -4862,7 +4862,9 @@ dependencies = [
  "sea-orm",
  "serde",
  "serde_json",
+ "sha2",
  "sqlx",
+ "tempfile",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -4878,6 +4880,7 @@ name = "yoram-integrations"
 version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
+ "encoding_rs",
  "lettre",
 ]
 
@@ -4901,6 +4904,7 @@ name = "yoram-persistence"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "bcrypt",
  "chrono",
  "moka",
  "rand 0.8.5",
@@ -4982,6 +4986,7 @@ name = "yoram-vcs"
 version = "0.1.0"
 dependencies = [
  "mime_guess",
+ "sqlx",
  "tempfile",
  "thiserror 2.0.18",
 ]

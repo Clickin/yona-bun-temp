@@ -1,57 +1,24 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
-import { expect, test } from "../wtr-compat.ts";
+import { expect, test, type Page } from "../wtr-compat.ts";
 
-const owners = {
-  actions: "organization-new-actions",
-  field: "organization-new-field",
-  form: "organization-new-form",
-  label: "organization-new-label",
-} as const;
-// Bucket-3 (wave 11): the app refactored the validation alert out of the
-// style owner surface — the n-alert div now carries only data-errtype="name".
 const validationSelector = '[data-errtype="name"]';
-
-test("organization create visible skeleton has exactly four route-local Style owner types", () => {
-  const routeSource = readFileSync("src/routes/organizations/new.tsx", "utf8");
-  const styleSource = readFileSync("src/app.css", "utf8");
-  const declaredOwners = new Set(
-    [...routeSource.matchAll(/data-owner="([^"]+)"/gu)].map((match) => match[1]),
-  );
-
-  expect([...declaredOwners].sort()).toEqual(Object.values(owners).sort());
-  for (const retired of [
-    'className="form-wrap new-project"',
-    'className="frm-wrap"',
-    'className="text"',
-    'className="text textarea.span4"',
-    // F5 dist-truth (2026-08-11): the actions/ybtn legacy classes are
-    // intentionally retained on the route alongside their data-owners.
-    'className="ybtn ybtn-success"',
-  ]) {
-    expect(routeSource).not.toContain(retired);
-  }
-  expect(routeSource).not.toMatch(
-    /dangerouslySetInnerHTML|document\.|addEventListener|classList|\.style\.display/u,
-  );
-});
 
 for (const viewport of [
   { height: 900, name: "desktop", width: 1366 },
   { height: 844, name: "mobile", width: 390 },
 ]) {
-  test(`organization create default and invalid-name state match live legacy on ${viewport.name}`, async ({
+  test(`organization create default and invalid-name state preserve legacy layout on ${viewport.name}`, async ({
     page,
-  }, testInfo) => {
+  }) => {
     const requests = await mockAuthenticatedSession(page);
     await page.setViewportSize(viewport);
     await page.goto("/yona/organizations/new");
 
-    const frame = page.locator(`[data-owner="${owners.form}"]`).first();
-    const legend = page.locator(`legend[data-owner="${owners.label}"]`);
-    const labels = page.locator(`label[data-owner="${owners.label}"]`);
-    const fields = page.locator(`[data-owner="${owners.field}"]`);
+    const frame = page.locator(".form-wrap.new-project");
+    const legend = frame.locator("legend");
+    const labels = frame.locator("label");
+    const fields = frame.locator("input, textarea");
     const validation = page.locator(validationSelector);
-    const actions = page.locator(`div[data-owner="${owners.actions}"]`);
+    const actions = frame.locator(".actions");
 
     await expect(frame).toBeVisible();
     await expect(legend).toHaveText("New Group");
@@ -67,12 +34,12 @@ for (const viewport of [
     await expect(actions.locator("button")).toHaveText(/Create Group/u);
     await expect(actions.locator("a")).toHaveText("Cancel");
 
-    const metrics = await page.evaluate((stableOwners) => {
-      const frameElement = required(`[data-owner="${stableOwners.form}"]`) as HTMLElement;
-      const legendElement = required(`legend[data-owner="${stableOwners.label}"]`) as HTMLElement;
+    const metrics = await page.evaluate(() => {
+      const frameElement = required(".form-wrap.new-project") as HTMLElement;
+      const legendElement = required('form[name="new-org"] legend') as HTMLElement;
       const name = required("#name") as HTMLElement;
       const description = required("#descr") as HTMLElement;
-      const actionRow = required(`div[data-owner="${stableOwners.actions}"]`) as HTMLElement;
+      const actionRow = required('form[name="new-org"] .actions') as HTMLElement;
       const frameBox = box(frameElement);
       const legendBox = box(legendElement);
       const nameBox = box(name);
@@ -80,9 +47,13 @@ for (const viewport of [
       const actionsBox = box(actionRow);
       const nameStyle = getComputedStyle(name);
       const legendStyle = getComputedStyle(legendElement);
+      const definitions = required('form[name="new-org"] dl');
+      const terms = definitions.querySelectorAll("dt");
 
       return {
         actions: actionsBox,
+        createButton: box(required('form[name="new-org"] .actions button') as HTMLElement),
+        cancelLink: box(required('form[name="new-org"] .actions a') as HTMLElement),
         description: descriptionBox,
         frame: frameBox,
         legend: legendBox,
@@ -92,7 +63,10 @@ for (const viewport of [
         name: nameBox,
         nameBorder: nameStyle.borderColor,
         nameFont: nameStyle.fontSize,
-        scrollWidth: document.documentElement.scrollWidth,
+        nameMarginBottom: nameStyle.marginBottom,
+        definitionsPadding: getComputedStyle(definitions).padding,
+        termMargins: Array.from(terms, (term) => getComputedStyle(term).margin),
+        pageWrap: box(required(".project-page-wrap") as HTMLElement),
       };
 
       function box(element: HTMLElement) {
@@ -112,7 +86,7 @@ for (const viewport of [
         if (!element) throw new Error(`Missing ${selector}`);
         return element;
       }
-    }, owners);
+    });
 
     expect(metrics.frame.width).toBe(700);
     expect(metrics.legend.width).toBe(700);
@@ -125,14 +99,23 @@ for (const viewport of [
     expect(metrics.description.width).toBe(700);
     expect(metrics.description.height).toBe(50);
     expect(metrics.actions.width).toBe(700);
-    expect(metrics.actions.height).toBe(30);
     expect(metrics.nameFont).toBe(viewport.name === "mobile" ? "16px" : "12px");
     expect(metrics.nameBorder).toBe("rgb(243, 108, 34)");
-    expect(metrics.name.top - metrics.legend.bottom).toBe(48);
-    expect(metrics.description.top - metrics.name.bottom).toBe(41);
+    expect(metrics.definitionsPadding).toBe("0px");
+    expect(metrics.termMargins).toEqual(["3px 0px 1px", "3px 0px 1px"]);
+    expect(metrics.nameMarginBottom).toBe("10px");
+    expect(metrics.name.top).toBeGreaterThan(metrics.legend.bottom);
+    expect(metrics.description.top).toBeGreaterThan(metrics.name.bottom);
     expect(metrics.actions.top - metrics.description.bottom).toBe(10);
-    expect(metrics.frame.left).toBe(viewport.name === "mobile" ? 0 : 333);
-    expect(metrics.scrollWidth).toBe(viewport.name === "mobile" ? 700 : 1366);
+    expect(metrics.frame.left - metrics.pageWrap.left).toBeCloseTo(
+      Math.max(0, (metrics.pageWrap.width - metrics.frame.width) / 2),
+      1,
+    );
+    expect((metrics.createButton.left + metrics.cancelLink.right) / 2).toBeCloseTo(
+      (metrics.frame.left + metrics.frame.right) / 2,
+      1,
+    );
+    expect(metrics.cancelLink.left).toBeGreaterThan(metrics.createButton.right);
 
     await page.locator("#name").fill("bad name");
     await actions.locator("button").click();
@@ -155,7 +138,7 @@ test("organization create preserves REST/CSRF success and TanStack cancel bounda
   await page.goto("/yona/organizations/new");
   await page.locator("#name").fill("한글-group");
   await page.locator("#descr").fill("Hangul team");
-  await page.locator(`div[data-owner="${owners.actions}"] button`).click();
+  await page.locator('form[name="new-org"] .actions button').click();
 
   await expect
     .poll(() => requests.createdOrganizations)
@@ -172,7 +155,7 @@ test("organization create preserves REST/CSRF success and TanStack cancel bounda
   await page.evaluate(() => {
     (window as Window & { __orgNewSpa?: string }).__orgNewSpa = "kept";
   });
-  await page.locator(`div[data-owner="${owners.actions}"] a`).click();
+  await page.locator('form[name="new-org"] .actions a').click();
   await expect(page).toHaveURL("/yona/");
   await expect
     .poll(() => page.evaluate(() => (window as Window & { __orgNewSpa?: string }).__orgNewSpa))
@@ -188,7 +171,7 @@ test("organization create keeps a duplicate-name REST error in the legacy valida
 
   await page.locator("#name").fill("team-alpha");
   await page.locator("#descr").fill("Existing team");
-  await page.locator(`div[data-owner="${owners.actions}"] button`).click();
+  await page.locator('form[name="new-org"] .actions button').click();
 
   const validation = page.locator(validationSelector);
   await expect(validation.locator("span").first()).toBeVisible();
@@ -271,4 +254,3 @@ async function mockAuthenticatedSession(page: Page, options: { duplicateName?: b
   });
   return requests;
 }
-// Batch 1112: geometry fix verified

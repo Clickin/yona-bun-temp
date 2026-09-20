@@ -496,6 +496,7 @@ pub(super) fn lock(
     if let Ok(value) = HeaderValue::from_str(&format!("<{}>", lock.token)) {
         response.headers_mut().insert("lock-token", value);
     }
+    lock_helpers::add_metadata_headers(response.headers_mut(), &lock);
     response
 }
 

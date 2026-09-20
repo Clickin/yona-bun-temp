@@ -7,7 +7,10 @@ use std::sync::{Arc, Mutex, OnceLock};
 use axum::body::Body;
 use http::{Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
-use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, NotSet, Set};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, Database, DatabaseConnection, EntityTrait, NotSet, QueryFilter,
+    Set,
+};
 use serde_json::json;
 use tempfile::tempdir;
 use tokio::sync::Barrier;
@@ -15,8 +18,9 @@ use tower::ServiceExt;
 use yoram_integrations::{clear_test_webhook_outbox, snapshot_test_webhook_outbox};
 use yoram_migration::Migrator;
 use yoram_persistence::{
-    original_email, AppRepository, CreateOrganizationInput, CreatePostingInput, CreateProjectInput,
-    PostingMutationInput,
+    issue, mention, original_email, posting, project, AppRepository, CreateIssueInput,
+    CreateOrganizationInput, CreatePostingInput, CreateProjectInput, IssueMutationInput,
+    PostingMutationInput, ProjectTransferRequestInput,
 };
 use yoram_server::{
     create_router_with_app_repository, create_router_with_repository_and_app_config,
@@ -1112,6 +1116,16 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
         commented["comments"][0]["contentsMarkdown"],
         "First **comment** @owner/projectYobi @nforge #1"
     );
+    for timestamp in [
+        &list["items"][0]["createdAt"],
+        &list["notices"][0]["createdAt"],
+        &detail["createdAt"],
+        &commented["comments"][0]["createdAt"],
+    ] {
+        chrono::DateTime::parse_from_rfc3339(timestamp.as_str().expect("board timestamp"))
+            .expect("board timestamps preserve time and timezone for legacy relative dates");
+    }
+    assert_eq!(list["items"][0]["createdAt"], detail["createdAt"]);
     let comment_mentions = mention_targets(&commented["comments"][0]);
     assert!(comment_mentions.contains(&(
         "project".to_string(),
@@ -1489,6 +1503,123 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
 }
 
 #[tokio::test]
+async fn board_update_notification_mail_preserves_author_rules_and_mentions() {
+    let (app, repository, db) = build_app_with_repository().await;
+    let (author_csrf, author_cookie, author_id) = register_user(app.clone(), "owner").await;
+    let (editor_csrf, editor_cookie, editor_id) = register_user(app.clone(), "editor").await;
+    let (_, _, recipient_id) = register_user(app.clone(), "recipient").await;
+    let (_, _, previous_id) = register_user(app.clone(), "previous").await;
+    create_project(app.clone(), &author_cookie, &author_csrf).await;
+    let project = repository
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    repository
+        .add_project_membership(project.id, editor_id, "manager")
+        .await
+        .unwrap();
+    let created = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/posts",
+            Some(&author_cookie),
+            Some(&author_csrf),
+            Some(json!({ "title": "Notification rules", "bodyMarkdown": "@previous" })),
+        )
+        .await,
+    )
+    .await;
+    let posting_id: i64 = created["id"].as_str().unwrap().parse().unwrap();
+    repository
+        .watch_posting(posting_id, recipient_id)
+        .await
+        .unwrap();
+    let due =
+        sea_orm::prelude::DateTime::parse_from_str("2099-01-01 00:00:00", "%Y-%m-%d %H:%M:%S")
+            .unwrap();
+    repository
+        .drain_due_notification_mail_deliveries(due, 0)
+        .await
+        .unwrap();
+
+    for (cookie, csrf, selected, body, expected_mentions, expected_recipients) in [
+        (
+            &author_cookie,
+            &author_csrf,
+            false,
+            "Silent edit @recipient",
+            vec![recipient_id],
+            vec![],
+        ),
+        (
+            &author_cookie,
+            &author_csrf,
+            true,
+            "Notified edit @recipient @previous",
+            vec![recipient_id, previous_id],
+            vec!["previous", "recipient"],
+        ),
+        (
+            &editor_cookie,
+            &editor_csrf,
+            false,
+            "Manager edit @recipient",
+            vec![recipient_id],
+            vec!["owner", "recipient"],
+        ),
+    ] {
+        let updated = ok_json(
+            rest(
+                app.clone(),
+                Method::PATCH,
+                "/yona/api/v1/projects/owner/projectYobi/posts/1",
+                Some(cookie),
+                Some(csrf),
+                Some(json!({
+                    "title": "Notification rules",
+                    "bodyMarkdown": body,
+                    "notificationMail": selected,
+                })),
+            )
+            .await,
+        )
+        .await;
+        assert_eq!(updated["bodyMarkdown"], body);
+        let persisted = repository
+            .read_posting_detail_for_viewer("owner", "projectYobi", 1, Some(author_id))
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(persisted.body_markdown, body);
+        let mentioned = mention::Entity::find()
+            .filter(mention::Column::ResourceType.eq("posting"))
+            .filter(mention::Column::ResourceId.eq(posting_id.to_string()))
+            .all(&db)
+            .await
+            .unwrap()
+            .into_iter()
+            .filter_map(|row| row.user_id)
+            .collect::<HashSet<_>>();
+        assert_eq!(mentioned, expected_mentions.into_iter().collect(), "{body}");
+        let deliveries = repository
+            .drain_due_notification_mail_deliveries(due, 0)
+            .await
+            .unwrap();
+        let mut recipients = deliveries
+            .iter()
+            .map(|delivery| delivery.recipient_login_id.as_str())
+            .collect::<Vec<_>>();
+        recipients.sort_unstable();
+        assert_eq!(recipients, expected_recipients, "{body}");
+        assert!(deliveries
+            .iter()
+            .all(|delivery| delivery.item.event_type == "POSTING_BODY_CHANGED"));
+    }
+}
+
+#[tokio::test]
 async fn board_contract_preserves_legacy_acl_for_project_group_and_public_users() {
     // Guards route-utils-owned project resource create authorization for board routes.
     let data_dir = tempdir().expect("yona data");
@@ -1714,7 +1845,7 @@ async fn board_contract_preserves_legacy_acl_for_project_group_and_public_users(
 }
 
 #[tokio::test]
-async fn board_contract_allocates_unique_post_numbers_under_concurrent_create() {
+async fn board_contract_allocates_unique_resource_numbers_under_concurrent_create() {
     let data_dir = tempdir().expect("yona data");
     let (app, repo, _) = build_app_with_data_root(data_dir.path()).await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
@@ -1728,33 +1859,420 @@ async fn board_contract_allocates_unique_post_numbers_under_concurrent_create() 
         let barrier = barrier.clone();
         tasks.push(tokio::spawn(async move {
             barrier.wait().await;
-            repo.create_posting(CreatePostingInput {
-                actor_display_name: "owner".to_string(),
-                actor_id: owner_id,
-                actor_login_id: "owner".to_string(),
-                owner_name: "owner".to_string(),
-                project_name: "projectYobi".to_string(),
-                values: PostingMutationInput {
-                    attachment_ids: vec![],
-                    body_markdown: format!("body {index}"),
-                    label_ids: vec![],
-                    notice: false,
-                    readme: false,
-                    title: format!("post {index}"),
-                },
-            })
-            .await
+            let posting = repo
+                .create_posting(CreatePostingInput {
+                    actor_display_name: "owner".to_string(),
+                    actor_id: owner_id,
+                    actor_login_id: "owner".to_string(),
+                    owner_name: "owner".to_string(),
+                    project_name: "projectYobi".to_string(),
+                    values: PostingMutationInput {
+                        attachment_ids: vec![],
+                        body_markdown: format!("body {index}"),
+                        label_ids: vec![],
+                        notice: false,
+                        readme: false,
+                        title: format!("post {index}"),
+                    },
+                })
+                .await
+                .unwrap()
+                .unwrap();
+            let issue = repo
+                .create_issue(CreateIssueInput {
+                    actor_display_name: "owner".to_string(),
+                    actor_id: owner_id,
+                    actor_login_id: "owner".to_string(),
+                    owner_name: "owner".to_string(),
+                    project_name: "projectYobi".to_string(),
+                    values: IssueMutationInput {
+                        assignee_login_id: None,
+                        attachment_ids: vec![],
+                        body_markdown: format!("body {index}"),
+                        due_date: None,
+                        is_draft: false,
+                        is_publish: false,
+                        label_ids: vec![],
+                        milestone_id: None,
+                        parent_issue_id: None,
+                        title: format!("issue {index}"),
+                    },
+                })
+                .await
+                .unwrap()
+                .unwrap();
+            (posting.post_number, issue.issue_number)
         }));
     }
 
-    let mut numbers = Vec::new();
+    let mut post_numbers = Vec::new();
+    let mut issue_numbers = Vec::new();
     for task in tasks {
-        let posting = task.await.unwrap().unwrap().unwrap();
-        numbers.push(posting.post_number);
+        let (post_number, issue_number) = task.await.unwrap();
+        post_numbers.push(post_number);
+        issue_numbers.push(issue_number);
     }
 
-    let unique_numbers: HashSet<i64> = numbers.iter().copied().collect();
-    assert_eq!(unique_numbers.len(), task_count);
-    assert_eq!(numbers.iter().min().copied(), Some(1));
-    assert_eq!(numbers.iter().max().copied(), Some(task_count as i64));
+    for (resource, field, numbers) in [
+        ("posts", "postNumber", post_numbers),
+        ("issues", "issueNumber", issue_numbers),
+    ] {
+        let unique_numbers: HashSet<i64> = numbers.iter().copied().collect();
+        assert_eq!(unique_numbers.len(), task_count);
+        assert_eq!(numbers.iter().min().copied(), Some(1));
+        assert_eq!(numbers.iter().max().copied(), Some(task_count as i64));
+        // Delete every row so the next result depends on the durable counter,
+        // not MAX(number), even when concurrent inserts completed out of order.
+        let path = format!("/yona/api/v1/projects/owner/projectYobi/{resource}");
+        for number in numbers {
+            let deleted = rest(
+                app.clone(),
+                Method::DELETE,
+                &format!("{path}/{number}"),
+                Some(&owner_cookie),
+                Some(&owner_csrf),
+                None,
+            )
+            .await;
+            assert!(deleted.status().is_success());
+        }
+        let created = ok_json(
+            rest(
+                app.clone(),
+                Method::POST,
+                &path,
+                Some(&owner_cookie),
+                Some(&owner_csrf),
+                Some(json!({"title": "After deletion", "bodyMarkdown": "body"})),
+            )
+            .await,
+        )
+        .await;
+        assert_eq!(
+            created[field],
+            if resource == "issues" {
+                json!(task_count + 1)
+            } else {
+                json!((task_count + 1).to_string())
+            }
+        );
+    }
+}
+
+#[tokio::test]
+async fn resource_numbers_preserve_imported_high_water_and_project_transfer() {
+    let data_dir = tempdir().expect("yona data");
+    let (app, repo, db) = build_app_with_data_root(data_dir.path()).await;
+    let (csrf, cookie, owner_id) = register_user(app.clone(), "owner").await;
+    let (recipient_csrf, recipient_cookie, _) = register_user(app.clone(), "recipient").await;
+    create_project(app.clone(), &cookie, &csrf).await;
+    let project_record = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+
+    for (resource, field) in [("issues", "issueNumber"), ("posts", "postNumber")] {
+        let path = format!("/yona/api/v1/projects/owner/projectYobi/{resource}");
+        for expected in [1, 2] {
+            let created = ok_json(
+                rest(
+                    app.clone(),
+                    Method::POST,
+                    &path,
+                    Some(&cookie),
+                    Some(&csrf),
+                    Some(json!({"title": "Lifecycle", "bodyMarkdown": "body"})),
+                )
+                .await,
+            )
+            .await;
+            assert_eq!(
+                created[field],
+                if resource == "issues" {
+                    json!(expected)
+                } else {
+                    json!(expected.to_string())
+                }
+            );
+            if expected == 1 {
+                let deleted = rest(
+                    app.clone(),
+                    Method::DELETE,
+                    &format!("{path}/1"),
+                    Some(&cookie),
+                    Some(&csrf),
+                    None,
+                )
+                .await;
+                assert!(deleted.status().is_success());
+            }
+        }
+
+        // Imported counters can legitimately exceed every surviving row.
+        let mut counter = project::ActiveModel {
+            id: Set(project_record.id),
+            ..Default::default()
+        };
+        if resource == "issues" {
+            counter.last_issue_number = Set(Some(40));
+        } else {
+            counter.last_posting_number = Set(Some(40));
+        }
+        counter.update(&db).await.unwrap();
+        let created = ok_json(
+            rest(
+                app.clone(),
+                Method::POST,
+                &path,
+                Some(&cookie),
+                Some(&csrf),
+                Some(json!({"title": "Imported high water", "bodyMarkdown": "body"})),
+            )
+            .await,
+        )
+        .await;
+        assert_eq!(
+            created[field],
+            if resource == "issues" {
+                json!(41)
+            } else {
+                json!("41")
+            }
+        );
+
+        // Old imports may instead leave a missing/stale counter beneath rows.
+        let mut counter = project::ActiveModel {
+            id: Set(project_record.id),
+            ..Default::default()
+        };
+        if resource == "issues" {
+            let id = created["issueId"].as_i64().unwrap();
+            counter.last_issue_number = Set(None);
+            issue::ActiveModel {
+                id: Set(id),
+                number: Set(Some(70)),
+                ..Default::default()
+            }
+            .update(&db)
+            .await
+            .unwrap();
+        } else {
+            let id = created["id"].as_str().unwrap().parse::<i64>().unwrap();
+            counter.last_posting_number = Set(Some(3));
+            posting::ActiveModel {
+                id: Set(id),
+                number: Set(Some(70)),
+                ..Default::default()
+            }
+            .update(&db)
+            .await
+            .unwrap();
+        }
+        counter.update(&db).await.unwrap();
+        let created = ok_json(
+            rest(
+                app.clone(),
+                Method::POST,
+                &path,
+                Some(&cookie),
+                Some(&csrf),
+                Some(json!({"title": "After stale import", "bodyMarkdown": "body"})),
+            )
+            .await,
+        )
+        .await;
+        assert_eq!(
+            created[field],
+            if resource == "issues" {
+                json!(71)
+            } else {
+                json!("71")
+            }
+        );
+        let deleted = rest(
+            app.clone(),
+            Method::DELETE,
+            &format!("{path}/71"),
+            Some(&cookie),
+            Some(&csrf),
+            None,
+        )
+        .await;
+        assert!(deleted.status().is_success());
+    }
+
+    let transfer = repo
+        .request_project_transfer(ProjectTransferRequestInput {
+            destination: "recipient".to_string(),
+            new_project_name: "transferred".to_string(),
+            project_id: project_record.id,
+            sender_id: owner_id,
+        })
+        .await
+        .unwrap();
+    repo.accept_project_transfer(transfer.id, "transferred")
+        .await
+        .unwrap()
+        .unwrap();
+    for (resource, field) in [("issues", "issueNumber"), ("posts", "postNumber")] {
+        let created = ok_json(
+            rest(
+                app.clone(),
+                Method::POST,
+                &format!("/yona/api/v1/projects/recipient/transferred/{resource}"),
+                Some(&recipient_cookie),
+                Some(&recipient_csrf),
+                Some(json!({"title": "After transfer", "bodyMarkdown": "body"})),
+            )
+            .await,
+        )
+        .await;
+        assert_eq!(
+            created[field],
+            if resource == "issues" {
+                json!(72)
+            } else {
+                json!("72")
+            }
+        );
+    }
+    // The create form can select another project: allocate in that destination,
+    // not in the source URL's sequence, even after its highest issue was deleted.
+    ok_json(
+        rpc(
+            app.clone(),
+            "CreateProject",
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "ownerName": "owner", "projectName": "source",
+                "overview": "Destination sequence", "projectScope": "public"
+            }),
+        )
+        .await,
+    )
+    .await;
+    let deleted = rest(
+        app.clone(),
+        Method::DELETE,
+        "/yona/api/v1/projects/recipient/transferred/issues/72",
+        Some(&recipient_cookie),
+        Some(&recipient_csrf),
+        None,
+    )
+    .await;
+    assert!(deleted.status().is_success());
+    let selected = ok_json(
+        rest(
+            app,
+            Method::POST,
+            "/yona/api/v1/projects/owner/source/issues",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "title": "Selected destination", "bodyMarkdown": "body",
+                "targetProjectId": project_record.id
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(selected["ownerName"], "recipient");
+    assert_eq!(selected["projectName"], "transferred");
+    assert_eq!(selected["issueNumber"], 73);
+}
+
+#[tokio::test]
+async fn resource_imports_do_not_lower_number_high_water() {
+    let data_dir = tempdir().expect("yona data");
+    let (app, repo, _) = build_app_with_data_root(data_dir.path()).await;
+    let (csrf, cookie, owner_id) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &cookie, &csrf).await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+
+    for (resource, field) in [("issues", "issueNumber"), ("posts", "postNumber")] {
+        // Explicit imports can complete out of numeric order.
+        for number in [80, 7] {
+            if resource == "issues" {
+                repo.insert_site_import_issue(
+                    0,
+                    project.id,
+                    number,
+                    "Imported issue",
+                    "body",
+                    "",
+                    "open",
+                    owner_id,
+                    "owner",
+                    "owner",
+                    None,
+                    None,
+                    None,
+                    None,
+                    vec![],
+                    vec![],
+                )
+                .await
+                .unwrap()
+                .unwrap();
+            } else {
+                repo.insert_site_import_posting(
+                    0,
+                    project.id,
+                    number,
+                    "Imported post",
+                    "body",
+                    "",
+                    owner_id,
+                    "owner",
+                    "owner",
+                    false,
+                    false,
+                    None,
+                    None,
+                    vec![],
+                    vec![],
+                )
+                .await
+                .unwrap()
+                .unwrap();
+            }
+        }
+        let path = format!("/yona/api/v1/projects/owner/projectYobi/{resource}");
+        let deleted = rest(
+            app.clone(),
+            Method::DELETE,
+            &format!("{path}/80"),
+            Some(&cookie),
+            Some(&csrf),
+            None,
+        )
+        .await;
+        assert!(deleted.status().is_success());
+        let created = ok_json(
+            rest(
+                app.clone(),
+                Method::POST,
+                &path,
+                Some(&cookie),
+                Some(&csrf),
+                Some(json!({"title": "After imported deletion", "bodyMarkdown": "body"})),
+            )
+            .await,
+        )
+        .await;
+        assert_eq!(
+            created[field],
+            if resource == "issues" {
+                json!(81)
+            } else {
+                json!("81")
+            }
+        );
+    }
 }

@@ -523,6 +523,92 @@ async fn smart_http_allows_basic_member_write_advertisement_and_rejects_outsider
 }
 
 #[tokio::test]
+async fn startup_oauth_password_repair_blocks_local_and_basic_auth_before_oauth_relogin() {
+    let data_dir = tempdir().expect("yona data tempdir");
+    let (app, repo, _) = build_app_with_data_root(data_dir.path()).await;
+    let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "private").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    seed_bare_repository(data_dir.path(), &project.owner_name, &project.project_name);
+
+    let mut oauth_users = Vec::new();
+    for login_id in ["owner", "vulnerable", "changed"] {
+        let input = yoram_persistence::OAuthUserInput {
+            email_address: format!("{login_id}@example.com"),
+            display_name: login_id.to_string(),
+            login_id_hint: login_id.to_string(),
+            password_hash: hash(format!("github:{login_id}:oauth"), 4).unwrap(),
+            provider: "github".to_string(),
+            provider_display_name: "GitHub".to_string(),
+            provider_user_id: login_id.to_string(),
+        };
+        let user = repo.link_or_create_oauth_user(input.clone()).await.unwrap();
+        if login_id == "owner" {
+            assert_eq!(user.id, owner_id);
+        } else {
+            repo.add_project_membership(project.id, user.id, "member")
+                .await
+                .unwrap();
+        }
+        if login_id == "changed" {
+            repo.update_password_hash_for_user(user.id, &hash("user-chosen-password", 4).unwrap())
+                .await
+                .unwrap();
+        }
+        oauth_users.push((user.id, input));
+    }
+
+    // Simulate the pre-listen startup repair, without any OAuth re-login.
+    assert_eq!(repo.revoke_predictable_oauth_passwords().await.unwrap(), 1);
+    assert_eq!(repo.revoke_predictable_oauth_passwords().await.unwrap(), 0);
+    for (login_id, password, expected) in [
+        (
+            "vulnerable",
+            "github:vulnerable:oauth",
+            StatusCode::UNAUTHORIZED,
+        ),
+        ("owner", "doorpass1", StatusCode::OK),
+        ("changed", "user-chosen-password", StatusCode::OK),
+        ("changed", "github:changed:oauth", StatusCode::UNAUTHORIZED),
+    ] {
+        let (csrf, cookie) = bootstrap(app.clone()).await;
+        let sign_in = rpc(
+            app.clone(),
+            "SignInWithPassword",
+            Some(&cookie),
+            Some(&csrf),
+            json!({"identifier": login_id, "password": password}),
+        )
+        .await;
+        assert_eq!(sign_in.status(), expected, "local login for {login_id}");
+        let basic_auth = direct_request(
+            app.clone(),
+            Method::GET,
+            "/owner/projectYobi.git/info/refs?service=git-receive-pack",
+            Some(&basic(login_id, password)),
+        )
+        .await;
+        assert_eq!(basic_auth.status(), expected, "BasicAuth for {login_id}");
+    }
+
+    // Repair retains the identity association; verified OAuth can still resolve
+    // the same account without restoring the old local credential.
+    for (user_id, input) in oauth_users {
+        let user = repo.link_or_create_oauth_user(input).await.unwrap();
+        assert_eq!(user.id, user_id);
+        if user.login_id == "vulnerable" {
+            assert!(
+                !bcrypt::verify("github:vulnerable:oauth", &user.password_hash).unwrap_or(false)
+            );
+        }
+    }
+}
+
+#[tokio::test]
 async fn smart_http_basic_auth_routes_ldap_and_preserves_local_fallback_and_tokens() {
     let data_dir = tempdir().expect("yona data tempdir");
     let (app, repo, _) = build_app_with_app_config(AppRuntimeConfig {

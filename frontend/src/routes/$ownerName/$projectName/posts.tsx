@@ -16,7 +16,7 @@ import {
 } from "../../../api/boards";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
-import { useLegacyMessages } from "../../../i18n";
+import { formatLegacyTimestamp, useLegacyMessages } from "../../../i18n";
 import { issueLabelStyle } from "../../../legacy-issue-label-style";
 import { useLockedLinkClick } from "../../../components/route-fetch-lock";
 import { TwoColumnModeCheckbox } from "../../../components/two-column-mode-checkbox";
@@ -151,7 +151,7 @@ function ProjectPostsBody({
     <div className="page-wrap-outer" data-owner="project-posts-page" data-content-ready="true">
       <div className="post-list project-page-wrap" data-owner="project-posts-list">
         <div className="search-wrap underline">
-          <form id="option_form" action={action} method="get" data-owner="project-posts-search">
+          <form id="option_form" className="pull-left" action={action} method="get" data-owner="project-posts-search">
             <input type="hidden" name="orderBy" value={search.orderBy} />
             <input type="hidden" name="orderDir" value={search.orderDir} />
             <div className="search-bar">
@@ -182,7 +182,7 @@ function ProjectPostsBody({
               wrapPopoverContentInP
             />
           </form>
-          <div data-owner="project-posts-new-post-wrap">
+          <div className="pull-right" data-owner="project-posts-new-post-wrap">
             <Link
               to="/$ownerName/$projectName/postform"
               params={{ ownerName, projectName }}
@@ -518,6 +518,7 @@ function ProjectBoardPost({
   post: BoardPostListItem;
 }) {
   const { t } = useLegacyMessages();
+  const created = formatLegacyTimestamp(post.createdAt, t);
   const lockedLinkClick = useLockedLinkClick();
   const titleParts = splitHeaderWordsInBrackets(post.title);
   const postRoutePath = `/${post.ownerName}/${post.projectName}/post/${post.postNumber}`;
@@ -586,17 +587,24 @@ function ProjectBoardPost({
         ) : (
           <span className="infos-item">{t("issue.noAuthor")}</span>
         )}
-        <span className="infos-item" title={post.createdLabel}>
-          {post.createdLabel}
+        <span className="infos-item" title={created.title}>
+          {created.label}
         </span>
-        <span className="infos-item item-count-groups">
-          <Link to={postRoutePath} hash="comments" activeProps={legacyRouteLocalActiveProps}>
-            <span className="count-groups item-icon ">
-              <i className="yobicon-comments"></i>
-            </span>
-            <span className="count-groups item-count ">{post.commentCount}</span>
-          </Link>
-        </span>
+        {post.commentCount > 0 ? (
+          <span className="infos-item item-count-groups">
+            <Link
+              to={postRoutePath}
+              hash="comments"
+              activeProps={legacyRouteLocalActiveProps}
+              className="comments-count comments-count-color"
+            >
+              <span className="count-groups item-icon">
+                <i className="yobicon-comment2"></i>
+              </span>
+              <span className="count-groups item-count">{post.commentCount}</span>
+            </Link>
+          </span>
+        ) : null}
         {post.labels.map((label) => {
           return (
             <button

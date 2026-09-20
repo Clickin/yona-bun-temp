@@ -1,4 +1,3 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
@@ -15,6 +14,7 @@ const owners = {
 test.use({ locale: "ko-KR" });
 
 async function open(page: Page) {
+  await page.clock.setFixedTime("2026-07-17T12:00:00Z");
   await page.addInitScript((runtimeBasePath) => {
     (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
       basePath: runtimeBasePath,
@@ -46,9 +46,9 @@ async function open(page: Page) {
       json: {
         items: [
           {
-            createdLabel: "방금 전",
+            createdAt: "2026-07-17T12:00:00Z",
             labels: [],
-            lastPushedLabel: "",
+            lastPushedAt: "",
             logoUrl: "",
             memberCount: 1,
             members: [],
@@ -69,36 +69,6 @@ async function open(page: Page) {
   await page.goto(`${basePath}/projects`);
   await expect(page.locator(`[data-owner="${owners.lock}"]`)).toBeVisible();
 }
-
-test("final consumers record reachable controller branches and zero presentation fallback", () => {
-  const route = readFileSync("src/routes/projects.tsx", "utf8");
-  const controller = readFileSync("../yona-original/app/controllers/ProjectApp.java", "utf8");
-  const scala = readFileSync("../yona-original/app/views/project/list.scala.html", "utf8");
-  const labelModel = readFileSync("../yona-original/app/models/Label.java", "utf8");
-  const yobicon = readFileSync("../yona-original/public/stylesheets/yobicon/style.css", "utf8");
-
-  expect(controller).toContain(
-    "if (!user.isSiteManager() && !Config.displayPrivateRepositories())",
-  );
-  expect(controller).toContain('el.eq("projectScope", ProjectScope.PUBLIC);');
-  expect(scala).toContain(
-    "@if(Config.displayPrivateRepositories() || AccessControl.isAllowed(UserApp.currentUser(), project.asResource(), Operation.READ))",
-  );
-  expect(scala).toContain('<li class="project" style="background-color: #fcfcfc;">');
-  expect(labelModel).toContain("public String category;");
-  expect(labelModel).toContain('return category + " - " + name;');
-
-  expect(route).not.toContain("projectIsReadable");
-  expect(route).not.toContain("viewerCanRead");
-  expect(route).not.toContain("You do not have permission to view this project's information");
-  expect(route).not.toContain("all-projects");
-  expect(route).not.toContain("info-wrap");
-  expect(route).not.toMatch(/className=.*yobicon-lock/u);
-
-  expect(route).toContain('data-owner="projects-directory-private-lock"');
-
-  expect(route).toContain("label.category.toLowerCase()");
-});
 
 for (const viewport of [
   { height: 900, name: "desktop", width: 1366 },

@@ -20,8 +20,9 @@ use crate::{
     redirect_to, require_authenticated_user, require_session, require_valid_csrf, rest_actor_id,
     rest_issue_reference_metadata_from_resolved, rest_mention_reference_metadata_from_resolved,
     rest_repository, rest_require_project_code_read, visible_code_projects_for_organization,
-    ConnectError, MarkdownIssueReference, MarkdownMentionReference, PilotBackend, PilotRepository,
-    PilotServiceImpl, RestIssueReferenceMetadata, RestMentionReferenceMetadata, RestRouteError,
+    workspace_avatar_url, ConnectError, MarkdownIssueReference, MarkdownMentionReference,
+    PilotBackend, PilotRepository, PilotServiceImpl, RestIssueReferenceMetadata,
+    RestMentionReferenceMetadata, RestRouteError,
 };
 
 mod review_comments;
@@ -376,6 +377,7 @@ pub(crate) struct RestReviewThread {
     pub(crate) comments: Vec<RestReviewComment>,
     commit_id: String,
     created_label: String,
+    end_column: Option<i32>,
     end_line: Option<i32>,
     end_side: Option<String>,
     pub(crate) id: i64,
@@ -383,6 +385,7 @@ pub(crate) struct RestReviewThread {
     path: String,
     prev_commit_id: String,
     pull_request_number: Option<i64>,
+    start_column: Option<i32>,
     start_line: Option<i32>,
     start_side: Option<String>,
     state: String,
@@ -391,8 +394,11 @@ pub(crate) struct RestReviewThread {
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RestPullRequestCommit {
+    author_avatar_url: String,
     author_date_label: String,
     author_email: String,
+    author_login_id: String,
+    author_name: String,
     commit_id: String,
     commit_message: String,
     commit_short_id: String,
@@ -1502,7 +1508,10 @@ fn rest_review_comment_from_record_with_permissions(
         can_delete,
         contents_html: String::new(),
         contents_markdown: record.contents_markdown,
-        created_label: record.created_label,
+        created_label: record
+            .created_at
+            .map(|created| created.and_utc().to_rfc3339())
+            .unwrap_or_default(),
         id: record.id,
         issue_references: issue_references
             .iter()
@@ -1532,7 +1541,11 @@ fn rest_review_thread_from_record(
             .map(|comment| rest_review_comment_from_record(comment, base_path))
             .collect(),
         commit_id: record.commit_id,
-        created_label: record.created_label,
+        created_label: record
+            .created_at
+            .map(|created| created.and_utc().to_rfc3339())
+            .unwrap_or_default(),
+        end_column: record.end_column,
         end_line: record.end_line,
         end_side: record.end_side,
         id: record.id,
@@ -1540,6 +1553,7 @@ fn rest_review_thread_from_record(
         path: record.path,
         prev_commit_id: record.prev_commit_id,
         pull_request_number: record.pull_request_number,
+        start_column: record.start_column,
         start_line: record.start_line,
         start_side: record.start_side,
         state: record.state,
@@ -1574,7 +1588,11 @@ fn rest_pull_request_thread_from_record(
             })
             .collect(),
         commit_id: record.commit_id,
-        created_label: record.created_label,
+        created_label: record
+            .created_at
+            .map(|created| created.and_utc().to_rfc3339())
+            .unwrap_or_default(),
+        end_column: record.end_column,
         end_line: record.end_line,
         end_side: record.end_side,
         id: record.id,
@@ -1582,6 +1600,7 @@ fn rest_pull_request_thread_from_record(
         path: record.path,
         prev_commit_id: record.prev_commit_id,
         pull_request_number: record.pull_request_number,
+        start_column: record.start_column,
         start_line: record.start_line,
         start_side: record.start_side,
         state: record.state,
@@ -1616,7 +1635,11 @@ pub(crate) fn rest_commit_thread_from_record(
             })
             .collect(),
         commit_id: record.commit_id,
-        created_label: record.created_label,
+        created_label: record
+            .created_at
+            .map(|created| created.and_utc().to_rfc3339())
+            .unwrap_or_default(),
+        end_column: record.end_column,
         end_line: record.end_line,
         end_side: record.end_side,
         id: record.id,
@@ -1624,6 +1647,7 @@ pub(crate) fn rest_commit_thread_from_record(
         path: record.path,
         prev_commit_id: record.prev_commit_id,
         pull_request_number: record.pull_request_number,
+        start_column: record.start_column,
         start_line: record.start_line,
         start_side: record.start_side,
         state: record.state,
@@ -1634,8 +1658,11 @@ fn rest_pull_request_commit_from_record(
     record: persistence::PullRequestCommitRecord,
 ) -> RestPullRequestCommit {
     RestPullRequestCommit {
+        author_avatar_url: String::new(),
         author_date_label: record.author_date_label,
         author_email: record.author_email,
+        author_login_id: String::new(),
+        author_name: String::new(),
         commit_id: record.commit_id,
         commit_message: record.commit_message,
         commit_short_id: record.commit_short_id,
@@ -1653,8 +1680,11 @@ fn rest_pull_request_commit_from_vcs_record_with_state(
         .cloned()
         .unwrap_or_else(|| "CURRENT".to_string());
     RestPullRequestCommit {
+        author_avatar_url: String::new(),
         author_date_label: record.author_date_label,
         author_email: record.author_email,
+        author_login_id: String::new(),
+        author_name: String::new(),
         commit_id: record.commit_id,
         commit_message: record.commit_message,
         commit_short_id: record.commit_short_id,
@@ -2651,15 +2681,37 @@ async fn accept_pull_request_for_actor(
     ),
     RestRouteError,
 > {
-    let current = rest_pull_request_detail_response(
+    let authorization =
+        rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
+            .await?;
+    let record = repository
+        .read_pull_request_detail(
+            &owner_name,
+            &project_name,
+            pull_request_number,
+            Some(actor.id),
+        )
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("pull request not found"))?;
+    let mut review_trailers = String::new();
+    for reviewer in &record.reviewers {
+        review_trailers.push_str("Reviewed-by: ");
+        review_trailers.push_str(&reviewer.user_label);
+        review_trailers.push_str(" <");
+        review_trailers.push_str(&reviewer.email_address);
+        review_trailers.push_str(">\n");
+    }
+    let current = rest_pull_request_detail_from_record_with_repository_issue_references(
         service,
         repository,
-        &owner_name,
-        &project_name,
-        pull_request_number,
+        record,
+        &authorization,
         Some(actor.id),
     )
-    .await?;
+    .await
+    .map_err(RestRouteError::from_connect_error)?;
     if !current.permissions.can_update_state {
         return Err(RestRouteError::from_connect_error(
             ConnectError::permission_denied("pull request merge is not allowed"),
@@ -2676,9 +2728,6 @@ async fn accept_pull_request_for_actor(
             "pullRequest.not.enough.review.point",
         ));
     }
-    let authorization =
-        rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
-            .await?;
     let from_project = repository
         .read_project_by_owner_and_name(&current.from_owner_name, &current.from_project_name)
         .await
@@ -2699,11 +2748,20 @@ async fn accept_pull_request_for_actor(
     )
     .map_err(internal_error)
     .map_err(RestRouteError::from_connect_error)?;
+    let source_project = (from_project.id != authorization.project.id)
+        .then(|| format!("{}/{}", from_project.owner_name, from_project.project_name));
     let merge = yoram_vcs::merge_pull_request(
         &source_repo_path,
         &target_repo_path,
         &current.from_branch,
         &current.to_branch,
+        &yoram_vcs::PullRequestMergeMetadata {
+            author_name: &actor.display_name,
+            author_email: &actor.email_address,
+            pull_request_number,
+            source_project: source_project.as_deref(),
+            review_trailers: &review_trailers,
+        },
     )
     .map_err(code_browser_error)
     .map_err(RestRouteError::from_connect_error)?;
@@ -3166,7 +3224,7 @@ pub(crate) async fn rest_read_pull_request_changes(
         .ok_or_else(|| RestRouteError::not_found("pull request not found"))?;
     let merged_commit_id_from = record.merged_commit_id_from.clone();
     let merged_commit_id_to = record.merged_commit_id_to.clone();
-    let detail = rest_pull_request_detail_from_record_with_repository_issue_references(
+    let mut detail = rest_pull_request_detail_from_record_with_repository_issue_references(
         &service,
         repository,
         record,
@@ -3206,7 +3264,7 @@ pub(crate) async fn rest_read_pull_request_changes(
     let (commits, files) = if diff.no_head {
         (Vec::new(), Vec::new())
     } else {
-        let commits: Vec<RestPullRequestCommit> = diff
+        let mut commits: Vec<RestPullRequestCommit> = diff
             .commits
             .into_iter()
             .map(|record| {
@@ -3229,9 +3287,51 @@ pub(crate) async fn rest_read_pull_request_changes(
                 .iter()
                 .any(|commit| commit.commit_id == selected_commit_id)
         {
-            yoram_vcs::read_commit_detail(&repo_path, selected_commit_id, None, "")
+            let snapshot = yoram_vcs::read_commit_detail(&repo_path, selected_commit_id, None, "")
                 .map_err(code_browser_error)
-                .map_err(RestRouteError::from_connect_error)?
+                .map_err(RestRouteError::from_connect_error)?;
+            if let Some(commit) = snapshot.commit {
+                let author = if commit.author_email.trim().is_empty() {
+                    None
+                } else {
+                    repository
+                        .find_user_by_identifier(&commit.author_email)
+                        .await
+                        .map_err(internal_error)
+                        .map_err(RestRouteError::from_connect_error)?
+                        .filter(|author| author.login_id != "anonymous")
+                };
+                let (author_name, author_login_id, author_avatar_url) = if let Some(author) = author
+                {
+                    let avatar_url = workspace_avatar_url(
+                        repository,
+                        author.id,
+                        &author.email_address,
+                        &service.base_path,
+                    )
+                    .await
+                    .map_err(RestRouteError::from_connect_error)?;
+                    (author.display_name, author.login_id, avatar_url)
+                } else {
+                    let avatar_url = if commit.author_email.trim().is_empty() {
+                        String::new()
+                    } else {
+                        gravatar_url(&commit.author_email)
+                    };
+                    (commit.author_name, String::new(), avatar_url)
+                };
+                for selected in commits
+                    .iter_mut()
+                    .chain(detail.commits.iter_mut())
+                    .filter(|selected| selected.commit_id == selected_commit_id)
+                {
+                    selected.author_email.clone_from(&commit.author_email);
+                    selected.author_name.clone_from(&author_name);
+                    selected.author_login_id.clone_from(&author_login_id);
+                    selected.author_avatar_url.clone_from(&author_avatar_url);
+                }
+            }
+            snapshot
                 .files
                 .into_iter()
                 .map(rest_pull_request_changed_file_from_code_commit_record)
@@ -3242,21 +3342,6 @@ pub(crate) async fn rest_read_pull_request_changes(
         (commits, files)
     };
     let mut threads = detail.threads.clone();
-    // Legacy commit-discussion threads (no pull request link) on the pull
-    // request's own commits are part of the changes surface review cards.
-    let commit_ids = detail
-        .commits
-        .iter()
-        .map(|commit| commit.commit_id.clone())
-        .collect::<Vec<_>>();
-    let commit_threads = repository
-        .list_project_commit_scoped_review_threads(authorization.project.id, &commit_ids)
-        .await
-        .map_err(internal_error)
-        .map_err(RestRouteError::from_connect_error)?
-        .into_iter()
-        .map(|thread| rest_review_thread_from_record(thread, &service.base_path));
-    threads.extend(commit_threads);
     for thread in &mut threads {
         thread.is_outdated = rest_review_thread_is_outdated(thread, &detail);
     }

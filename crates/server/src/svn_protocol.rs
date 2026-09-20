@@ -223,7 +223,14 @@ pub(crate) async fn direct_request(request: Request, service: PilotServiceImpl) 
                 return RestRouteError::from_connect_error(internal_error(error)).into_response();
             }
         };
-        return activity::merge(&repo_path, &route, principal.as_ref(), &body_bytes);
+        return activity::merge(
+            &repo_path,
+            &route,
+            principal.as_ref(),
+            &body_bytes,
+            &parts.headers,
+        )
+        .await;
     }
     if method == "PUT" {
         let body_bytes = match body.collect().await {

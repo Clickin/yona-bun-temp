@@ -16,6 +16,7 @@ export type CodeBranchPullRequest = {
 };
 
 export type CodeBranchListItem = {
+  /** Original Git committer timestamp, including time and UTC offset (ISO 8601). */
   commitDate: string;
   commitId: string;
   commitMessage: string;

@@ -1374,6 +1374,63 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         .as_str()
         .unwrap()
         .contains("+topic"));
+    assert_eq!(specific_change["commits"][0]["authorName"], "Test User");
+    assert_eq!(specific_change["commits"][0]["authorLoginId"], "");
+    assert!(specific_change["commits"][0]["authorAvatarUrl"]
+        .as_str()
+        .unwrap()
+        .starts_with("https://www.gravatar.com/avatar/"));
+
+    let (_, _, commit_author_id) = register_user(app.clone(), "commitauthor").await;
+    db.execute(Statement::from_sql_and_values(
+        db.get_database_backend(),
+        "UPDATE n4user SET email = ?, name = ? WHERE id = ?",
+        vec![
+            "test@example.com".into(),
+            "Commit Author Account".into(),
+            commit_author_id.into(),
+        ],
+    ))
+    .await
+    .expect("associate Git email with an account whose login differs");
+    let avatar = repo
+        .create_user_attachment_upload(
+            commit_author_id,
+            "commitauthor",
+            "avatar.png",
+            "image/png",
+            128,
+            "commit-author-avatar",
+        )
+        .await
+        .expect("upload author avatar");
+    repo.promote_avatar_attachment_for_user(commit_author_id, avatar.id)
+        .await
+        .expect("promote author avatar")
+        .expect("author avatar");
+    let known_author_change = response_json(
+        rest_get(
+            app.clone(),
+            &format!(
+                "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/1/changes?commitId={created_commit_id}"
+            ),
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        known_author_change["commits"][0]["authorName"],
+        "Commit Author Account"
+    );
+    assert_eq!(
+        known_author_change["commits"][0]["authorLoginId"],
+        "commitauthor"
+    );
+    assert_eq!(
+        known_author_change["commits"][0]["authorAvatarUrl"],
+        format!("/yona/files/{}", avatar.id)
+    );
 
     let duplicate = response_json(
         rest_json(
@@ -1687,8 +1744,10 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
                 "path": "src/lib.rs",
                 "startSide": "A",
                 "startLine": 2,
+                "startColumn": 0,
                 "endSide": "A",
-                "endLine": 4
+                "endLine": 4,
+                "endColumn": 12
             }),
         )
         .await,
@@ -1706,8 +1765,10 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     assert_eq!(ranged_thread["prevCommitId"], "base-head");
     assert_eq!(ranged_thread["startSide"], "A");
     assert_eq!(ranged_thread["startLine"], 2);
+    assert_eq!(ranged_thread["startColumn"], 0);
     assert_eq!(ranged_thread["endSide"], "A");
     assert_eq!(ranged_thread["endLine"], 4);
+    assert_eq!(ranged_thread["endColumn"], 12);
     assert_eq!(
         ranged_thread["comments"][0]["contentsMarkdown"],
         "Inline review body"
@@ -1728,6 +1789,23 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     let deliveries = snapshot_test_webhook_outbox();
     assert_eq!(deliveries.len(), 6);
     assert_eq!(deliveries[5].event_type, "NEW_REVIEW_COMMENT");
+    let persisted_changes = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/1/changes",
+            Some(&reviewer_cookie),
+        )
+        .await,
+    )
+    .await;
+    let persisted_thread = persisted_changes["threads"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|thread| thread["id"] == ranged_thread["id"])
+        .expect("persisted ranged thread");
+    assert_eq!(persisted_thread["startColumn"], 0);
+    assert_eq!(persisted_thread["endColumn"], 12);
 
     let ranged_comment_id = ranged_thread["comments"][0]["id"].as_i64().unwrap();
     let forbidden_ranged_edit = rest_json(
@@ -2030,6 +2108,23 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     assert_eq!(
         git_dir_output(&repo_path, &["show", "refs/heads/main:README.md"]),
         "topic\n"
+    );
+    assert_eq!(
+        git_dir_output(
+            &repo_path,
+            &[
+                "show",
+                "-s",
+                "--format=%an <%ae>%n%cn <%ce>",
+                "refs/heads/main"
+            ],
+        )
+        .trim(),
+        "owner <owner@example.com>\nowner <owner@example.com>"
+    );
+    assert_eq!(
+        git_dir_output(&repo_path, &["show", "-s", "--format=%B", "refs/heads/main"]).trim_end(),
+        "Merge branch 'topic/pr' into 'main'\n\nfrom pull-request 1\n\n* topic/pr:\n  topic\n\nReviewed-by: reviewer <reviewer@example.com>"
     );
     let deliveries = snapshot_test_webhook_outbox();
     assert_eq!(deliveries.len(), 8);

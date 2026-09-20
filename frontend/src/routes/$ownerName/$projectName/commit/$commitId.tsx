@@ -3,8 +3,10 @@ import { DiffLineView, type ParsedDiffLine } from "../../../../components/diff-l
 import { UploadForm } from "../../../../components/file-uploader";
 import { FileDiffErrorRow } from "../../../../components/file-diff-error-row";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LegacyMarkdown } from "../../../../components/legacy-markdown";
+import { TabButton } from "../../../../components/tab-button";
+import defaultAvatarUrl from "../../../../assets/legacy/default-avatar-34.png";
 import {
   codeCommitDetailQueryOptions,
   closeCommitDiscussionThreadRest,
@@ -20,11 +22,12 @@ import {
   watchCommitRest,
 } from "../../../../api/code-commits";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
+import { uploadTemporaryAttachment } from "../../../../api/attachments";
 import { apiQueryKeys } from "../../../../api/query-keys";
 import { currentSessionQueryOptions } from "../../../../api/session";
 import type { ProjectContainer } from "../../../../api/types";
 import { readSessionBootstrap } from "../../../../auth-workspace-client";
-import { useLegacyMessages } from "../../../../i18n";
+import { formatLegacyTimestamp, useLegacyMessages } from "../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
 
@@ -53,6 +56,17 @@ type CommitFileDiff = CodeCommitDetailResponse["files"][number] & {
   isFileModeChanged?: boolean | string;
   newMode?: string;
   oldMode?: string;
+};
+
+type CommitReviewRange = {
+  endColumn: number;
+  endLine: number;
+  endSide: string;
+  path: string;
+  prevCommitId: string;
+  startColumn: number;
+  startLine: number;
+  startSide: string;
 };
 
 export const Route = createFileRoute("/$ownerName/$projectName/commit/$commitId")({
@@ -113,10 +127,7 @@ function ProjectCommitDetailScreen({
       <ProjectCommitDetailTitle commitId={detailQuery.data.commit?.commitId ?? commitId} />
       <ProjectCommitDetailBody
         currentUser={{
-          avatarUrl: stringField(
-            sessionQuery.data.avatarUrl,
-            "/assets/images/default-avatar-32.png",
-          ),
+          avatarUrl: stringField(sessionQuery.data.avatarUrl, defaultAvatarUrl),
           loginId: stringField(sessionQuery.data.loginId, ""),
           userLabel: stringField(
             sessionQuery.data.userLabel,
@@ -156,15 +167,52 @@ function ProjectCommitDetailBody({
   const selectedBranch = detail.selectedBranch || branch;
   const encodedBranch = encodeURIComponent(selectedBranch);
   const commit = detail.commit;
+  const authorDate = formatLegacyTimestamp(commit?.authorDate ?? "", t);
   const openThreads = detail.threads.filter((thread) => thread.state.toLowerCase() === "open");
   const closedThreads = detail.threads.filter((thread) => thread.state.toLowerCase() === "closed");
   const [reviewCardTab, setReviewCardTab] = useState<"closed" | "open">("open");
   const [reviewCardsCollapsed, setReviewCardsCollapsed] = useState(false);
+  const reviewWrapRef = useRef<HTMLDivElement>(null);
+  const reviewListRef = useRef<HTMLDivElement>(null);
+  const diffLayoutRef = useRef<HTMLDivElement>(null);
+  const [reviewAffixed, setReviewAffixed] = useState(false);
+  const [reviewListMaxHeight, setReviewListMaxHeight] = useState<number>();
   const [blockReviewFormOpen, setBlockReviewFormOpen] = useState(false);
   const [blockReviewButtonVisible, setBlockReviewButtonVisible] = useState(false);
+  const [blockReviewRange, setBlockReviewRange] = useState<CommitReviewRange | null>(null);
   const [commentDeleteCommentId, setCommentDeleteCommentId] = useState<number | null>(null);
   const nonRangedThreads = detail.threads.filter(isNonRangedThread);
   const isSvn = project.vcs === "SVN" || project.vcs === "SUBVERSION";
+
+  useEffect(() => {
+    const reviewWrap = reviewWrapRef.current;
+    const reviewList = reviewListRef.current;
+    const diffLayout = diffLayoutRef.current;
+    if (isSvn || reviewCardsCollapsed || !reviewWrap || !reviewList || !diffLayout) return;
+
+    // yobi.code.Diff._setReviewWrapAffixed / _setReviewListHeight.
+    const offsetTop = reviewWrap.getBoundingClientRect().top + window.scrollY - 10;
+    const updateReviewPosition = () => {
+      const affixed = window.scrollY > offsetTop;
+      setReviewAffixed(affixed);
+      const diffBottom = diffLayout.offsetTop + diffLayout.offsetHeight;
+      const listBottom = reviewList.getBoundingClientRect().bottom + window.scrollY;
+      setReviewListMaxHeight(
+        affixed
+          ? diffBottom <= listBottom + 15
+            ? diffBottom - window.scrollY + 90
+            : window.innerHeight - reviewList.offsetTop - 15
+          : diffLayout.offsetHeight - reviewList.offsetTop,
+      );
+    };
+    updateReviewPosition();
+    window.addEventListener("scroll", updateReviewPosition, { passive: true });
+    window.addEventListener("resize", updateReviewPosition);
+    return () => {
+      window.removeEventListener("scroll", updateReviewPosition);
+      window.removeEventListener("resize", updateReviewPosition);
+    };
+  }, [commitId, isSvn, reviewCardsCollapsed]);
   const detailQueryKey = apiQueryKeys.project.commitDetail(ownerName, projectName, commitId, {
     branch: branch ?? "",
     path: path ?? "",
@@ -281,6 +329,7 @@ function ProjectCommitDetailBody({
             <div
               className={`codediff-wrap${reviewCardsCollapsed ? " diffs-only" : ""}`}
               data-owner="commit-detail-diff-layout"
+              ref={diffLayoutRef}
             >
               <button
                 type="button"
@@ -296,12 +345,12 @@ function ProjectCommitDetailBody({
                     <span
                       className={` ago`}
                       data-owner="commit-detail-author-ago"
-                      title={commit?.authorDate ?? ""}
+                      title={authorDate.title}
                     >
-                      {commit?.authorDate ?? ""}
+                      {authorDate.label}
                     </span>
                   </div>
-                  <div data-owner="commit-detail-message">
+                  <div className="commitMsg-wrap" data-owner="commit-detail-message">
                     <CommitMessage
                       message={commit?.message ?? ""}
                       shortMessage={commit?.shortMessage ?? ""}
@@ -314,32 +363,15 @@ function ProjectCommitDetailBody({
                   </div>
                 </div>
 
-                {detail.files.length > 0 ? (
-                  <div data-owner="commit-detail-diff-stat-bar">
-                    <span className="commit-detail-diff-stat-badge-changed">
-                      {detail.filesChanged ?? detail.files.length}{" "}
-                      {(detail.filesChanged ?? detail.files.length) === 1 ? "file" : "files"}{" "}
-                      changed
-                    </span>
-                    <span className="commit-detail-diff-stat-badge-add">
-                      +{detail.insertions ?? 0}
-                    </span>
-                    <span className="commit-detail-diff-stat-badge-delete">
-                      -{detail.deletions ?? 0}
-                    </span>
-                  </div>
-                ) : null}
-
                 {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- legacy yobi.CodeCommentBlock opens block review controls from text selection inside .diff-body. */}
                 <div
                   className={` diff-body`}
                   data-owner="commit-detail-diff-body-layout"
-                  onMouseUp={() => {
-                    const selection = globalThis.getSelection?.();
-                    const selectedText = selection?.toString() ?? "";
-                    if (selectedText.length > 0) {
-                      setBlockReviewButtonVisible(true);
-                    }
+                  onMouseUp={(event) => {
+                    if (event.target instanceof Element && event.target.closest(".btnPop")) return;
+                    const range = readCommitReviewRange(event.currentTarget);
+                    if (range) setBlockReviewRange(range);
+                    setBlockReviewButtonVisible(range !== null);
                   }}
                 >
                   {detail.files.map((file) => (
@@ -433,13 +465,18 @@ function ProjectCommitDetailBody({
                     )}
                     currentUser={currentUser}
                     isOpen={blockReviewFormOpen}
+                    range={blockReviewRange}
                     onClose={() => setBlockReviewFormOpen(false)}
                   />
                 ) : null}
               </div>
 
-              <div className="review-wrap span-hard-wrap" data-owner="commit-detail-review-panel">
-                <div className="review-container">
+              <div
+                className="review-wrap span-hard-wrap"
+                data-owner="commit-detail-review-panel"
+                ref={reviewWrapRef}
+              >
+                <div className={`review-container ${reviewAffixed ? "affix" : "affix-top"}`}>
                   <button
                     type="button"
                     className="ybtn ybtn-default btn-hide-reviewcards"
@@ -463,7 +500,11 @@ function ProjectCommitDetailBody({
                       </button>
                     </li>
                   </ul>
-                  <div className="tab-content review-list">
+                  <div
+                    className="tab-content review-list"
+                    ref={reviewListRef}
+                    style={{ maxHeight: reviewListMaxHeight }}
+                  >
                     <ReviewCards
                       id="reviewcards-open"
                       isActive={reviewCardTab === "open"}
@@ -483,7 +524,7 @@ function ProjectCommitDetailBody({
           <button
             id="watch-button"
             type="button"
-            className={` ybtn ${detail.isWatching ? "active ybtn-watching" : ""}`}
+            className={`pull-left ybtn ${detail.isWatching ? "active ybtn-watching" : ""}`}
             data-owner="commit-detail-footer-watch"
             onClick={() => watchMutation.mutate(!detail.isWatching)}
           >
@@ -492,7 +533,7 @@ function ProjectCommitDetailBody({
 
           <Link
             to={projectTo(ownerName, projectName, "commits", encodedBranch, path)}
-            className={` ybtn`}
+            className="ybtn pull-right"
             data-owner="commit-detail-footer-list"
           >
             {t("button.list")}
@@ -535,6 +576,7 @@ function SvnCommitDetailBody({
   const { t } = useLegacyMessages();
   const { commitId } = Route.useParams();
   const commit = detail.commit;
+  const authorDate = formatLegacyTimestamp(commit?.authorDate ?? "", t);
   const patch = detail.files[0]?.patch ?? "";
   const [branchDropdownOpen, setBranchDropdownOpen] = useState(false);
   const anonymousAuthorName = t("user.role.anonymous");
@@ -594,20 +636,11 @@ function SvnCommitDetailBody({
 
           <p className={` commitInfo`} data-owner="commit-detail-svn-info">
             <span className="avatar-wrap">
-              <img
-                src={prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png")}
-                width="32"
-                height="32"
-                alt=""
-              />
+              <img src={defaultAvatarUrl} width="32" height="32" alt="" />
             </span>
             <strong>{commit?.authorName || commit?.authorEmail || anonymousAuthorName}</strong>
-            <span
-              className={` ago`}
-              data-owner="commit-detail-svn-ago"
-              title={commit?.authorDate ?? ""}
-            >
-              {commit?.authorDate ?? ""}
+            <span className={` ago`} data-owner="commit-detail-svn-ago" title={authorDate.title}>
+              {authorDate.label}
             </span>
             <strong className={`  commitId`} data-owner="commit-detail-svn-id">
               @{commit?.commitId ?? commitId}
@@ -694,7 +727,6 @@ function FileDiffView({
   updateComment: (commentId: number, contentsMarkdown: string) => void;
 }) {
   const { t } = useLegacyMessages();
-  const [collapsed, setCollapsed] = useState(false);
   const parsed = parseUnifiedDiff(file.path, file.patch);
   const filePath = parsed.pathB || parsed.pathA || file.path;
   const fileHeader = fileDiffHeaderLabel(parsed, filePath, t);
@@ -706,159 +738,119 @@ function FileDiffView({
   const fileModeChange = getFileModeChange(file);
   const shouldRenderNoChanges = parsed.lines.length === 0 && !fileModeChange;
 
-  const fileAdditions = parsed.lines.filter((l) => l.kind === "line" && l.type === "add").length;
-  const fileDeletions = parsed.lines.filter((l) => l.kind === "line" && l.type === "remove").length;
-
   return (
     <div id={fileId} className={` diff-partial-outer`} data-owner="commit-detail-file">
       <div className="diff-partial-inner">
-        <button
-          type="button"
-          onClick={() => setCollapsed(!collapsed)}
-          data-owner="commit-detail-file-card-header"
-        >
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <span className="commit-detail-file-toggle-icon">{collapsed ? "▶" : "▼"}</span>
-            <span className="filename" style={{ fontWeight: 600, fontSize: "13px" }}>
+        <div className={` diff-partial-meta`} data-owner="commit-detail-file-meta">
+          <div className={` diff-partial-commit`} data-owner="commit-detail-file-commit">
+            <div className={` diff-partial-commit-id`} data-owner="commit-detail-file-commit-id">
+              {commitA && parsed.pathA ? (
+                <Link
+                  to={projectTo(ownerName, projectName, "code", commitA, parsed.pathA)}
+                  title={commitA}
+                  target="_blank"
+                >
+                  {commitAShort}
+                </Link>
+              ) : (
+                "\u00a0"
+              )}
+            </div>
+            <div className={` diff-partial-commit-id`} data-owner="commit-detail-file-commit-id">
+              {commitB && parsed.pathB ? (
+                <Link
+                  to={projectTo(ownerName, projectName, "code", commitB, parsed.pathB)}
+                  title={commitB}
+                  target="_blank"
+                >
+                  {commitBShort}
+                </Link>
+              ) : (
+                "\u00a0"
+              )}
+            </div>
+          </div>
+          <div className={` diff-partial-file`} data-owner="commit-detail-file-header">
+            <span className={` filename`} data-owner="commit-detail-file-header-filename">
               {fileHeader}
             </span>
           </div>
-          <div style={{ margin: 0 }}>
-            {fileAdditions > 0 ? (
-              <span className="commit-detail-diff-stat-badge-add">+{fileAdditions}</span>
-            ) : null}
-            {fileDeletions > 0 ? (
-              <span className="commit-detail-diff-stat-badge-delete">-{fileDeletions}</span>
-            ) : null}
+        </div>
+        <div
+          className={` diff-partial-code`}
+          data-hashcode={filePath}
+          data-owner="commit-detail-file-code"
+        >
+          <div className="patch-header">
+            {parsed.pathA ? <div className="path">{`--- ${parsed.pathA}`}</div> : null}
+            {parsed.pathB ? <div className="path">{`+++ ${parsed.pathB}`}</div> : null}
           </div>
-        </button>
+          <table
+            className={` diff-container show-comments`}
+            data-owner="commit-detail-diff-partial-table"
+            data-path-a={parsed.pathA}
+            data-path-b={parsed.pathB}
+            data-commit-a={commitA}
+            data-commit-b={commitB}
+            data-file-path={filePath}
+          >
+            <tbody>
+              {errorMessageKey ? (
+                <FileDiffErrorRow messageKey={errorMessageKey} />
+              ) : shouldRenderNoChanges ? (
+                <FileDiffErrorRow messageKey="code.noChanges" />
+              ) : (
+                <>
+                  {fileModeChange ? <FileModeChangedRow modeChange={fileModeChange} /> : null}
+                  {parsed.lines.map((line) => {
+                    const lineThreads =
+                      line.kind === "line" ? threadsForDiffLine(fileThreads, line) : [];
 
-        {!collapsed ? (
-          <>
-            <div className={` diff-partial-meta`} data-owner="commit-detail-file-meta">
-              <div className={` diff-partial-commit`} data-owner="commit-detail-file-commit">
-                <div
-                  className={` diff-partial-commit-id`}
-                  data-owner="commit-detail-file-commit-id"
-                >
-                  {commitA && parsed.pathA ? (
-                    <Link
-                      to={projectTo(ownerName, projectName, "code", commitA, parsed.pathA)}
-                      title={commitA}
-                      target="_blank"
-                    >
-                      {commitAShort}
-                    </Link>
-                  ) : (
-                    "\u00a0"
-                  )}
-                </div>
-                <div
-                  className={` diff-partial-commit-id`}
-                  data-owner="commit-detail-file-commit-id"
-                >
-                  {commitB && parsed.pathB ? (
-                    <Link
-                      to={projectTo(ownerName, projectName, "code", commitB, parsed.pathB)}
-                      title={commitB}
-                      target="_blank"
-                    >
-                      {commitBShort}
-                    </Link>
-                  ) : (
-                    "\u00a0"
-                  )}
-                </div>
-              </div>
-              <div className={` diff-partial-file`} data-owner="commit-detail-file-header">
-                <span className={` filename`} data-owner="commit-detail-file-header-filename">
-                  {fileHeader}
-                </span>
-              </div>
-            </div>
-            <div
-              className={` diff-partial-code`}
-              data-hashcode={filePath}
-              data-owner="commit-detail-file-code"
-            >
-              <div className="patch-header">
-                {parsed.pathA ? <div className="path">{`--- ${parsed.pathA}`}</div> : null}
-                {parsed.pathB ? <div className="path">{`+++ ${parsed.pathB}`}</div> : null}
-              </div>
-              <table
-                className={` diff-container show-comments`}
-                data-owner="commit-detail-diff-partial-table"
-                data-path-a={parsed.pathA}
-                data-path-b={parsed.pathB}
-                data-commit-a={commitA}
-                data-commit-b={commitB}
-                data-file-path={filePath}
-              >
-                <tbody>
-                  {errorMessageKey ? (
-                    <FileDiffErrorRow messageKey={errorMessageKey} />
-                  ) : shouldRenderNoChanges ? (
-                    <FileDiffErrorRow messageKey="code.noChanges" />
-                  ) : (
-                    <>
-                      {fileModeChange ? <FileModeChangedRow modeChange={fileModeChange} /> : null}
-                      {parsed.lines.map((line) => {
-                        const lineThreads =
-                          line.kind === "line" ? threadsForDiffLine(fileThreads, line) : [];
-
-                        return line.kind === "range" ? (
-                          <tr className="range" key={diffLineKey(line)}>
-                            <td
-                              data-owner="commit-detail-diff-line-number-cell"
-                              className={` linenum`}
-                            >
-                              <div
-                                data-owner="commit-detail-diff-line-number"
-                                className={` line-number`}
-                                data-line-num="..."
-                              >
-                                <span className="hidden">...</span>
-                              </div>
-                            </td>
-                            <td
-                              data-owner="commit-detail-diff-line-number-cell"
-                              className={` linenum`}
-                            >
-                              <div
-                                data-owner="commit-detail-diff-line-number"
-                                className={` line-number`}
-                                data-line-num="..."
-                              >
-                                <span className="hidden">...</span>
-                              </div>
-                            </td>
-                            <td className="hunk">{line.text}</td>
-                          </tr>
-                        ) : (
-                          <FragmentWithInlineComments
-                            commitId={commitB}
-                            currentUser={currentUser}
-                            deleteComment={deleteComment}
-                            key={diffLineKey(line)}
-                            line={line}
-                            openCommentDeleteModal={openCommentDeleteModal}
-                            ownerName={ownerName}
-                            projectName={projectName}
-                            runtimeConfig={runtimeConfig}
-                            submitReply={submitReply}
-                            threads={lineThreads}
-                            toggleThreadState={toggleThreadState}
-                            updateComment={updateComment}
-                          />
-                        );
-                      })}
-                    </>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </>
-        ) : null}
+                    return line.kind === "range" ? (
+                      <tr className="range" key={diffLineKey(line)}>
+                        <td data-owner="commit-detail-diff-line-number-cell" className={` linenum`}>
+                          <div
+                            data-owner="commit-detail-diff-line-number"
+                            className={` line-number`}
+                            data-line-num="..."
+                          >
+                            <span className="hidden">...</span>
+                          </div>
+                        </td>
+                        <td data-owner="commit-detail-diff-line-number-cell" className={` linenum`}>
+                          <div
+                            data-owner="commit-detail-diff-line-number"
+                            className={` line-number`}
+                            data-line-num="..."
+                          >
+                            <span className="hidden">...</span>
+                          </div>
+                        </td>
+                        <td className="hunk">{line.text}</td>
+                      </tr>
+                    ) : (
+                      <FragmentWithInlineComments
+                        commitId={commitB}
+                        currentUser={currentUser}
+                        deleteComment={deleteComment}
+                        key={diffLineKey(line)}
+                        line={line}
+                        openCommentDeleteModal={openCommentDeleteModal}
+                        ownerName={ownerName}
+                        projectName={projectName}
+                        runtimeConfig={runtimeConfig}
+                        submitReply={submitReply}
+                        threads={lineThreads}
+                        toggleThreadState={toggleThreadState}
+                        updateComment={updateComment}
+                      />
+                    );
+                  })}
+                </>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
@@ -1225,6 +1217,7 @@ function CodeCommentThreadView({
       <ul className="comments">
         {thread.comments.map((comment) => {
           const isEditing = editingCommentIds.has(comment.id);
+          const createdDate = formatLegacyTimestamp(comment.createdLabel, t);
           return (
             <li
               id={`comment-${comment.id}`}
@@ -1241,10 +1234,7 @@ function CodeCommentThreadView({
                   title={comment.authorLabel}
                 >
                   <img
-                    src={
-                      comment.authorAvatarUrl ||
-                      prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png")
-                    }
+                    src={comment.authorAvatarUrl || defaultAvatarUrl}
                     width="32"
                     height="32"
                     alt={comment.authorLoginId}
@@ -1274,9 +1264,9 @@ function CodeCommentThreadView({
                         className: undefined,
                         "data-status": undefined,
                       }}
-                      title={comment.createdLabel}
+                      title={createdDate.title}
                     >
-                      {comment.createdLabel}
+                      {createdDate.label}
                     </Link>
                   </span>
                   {comment.canUpdate ? (
@@ -1391,7 +1381,7 @@ function CodeCommentThreadView({
                 helpClassName="right-txt help"
                 helpOwner="commit-detail-attachment-help"
               />
-              <div data-owner="commit-detail-thread-actions">
+              <div className="right-txt" data-owner="commit-detail-thread-actions">
                 <button
                   type="button"
                   className="ybtn ybtn-default ybtn-small"
@@ -1583,7 +1573,6 @@ function AttachmentFileMarker({ file }: { file: CodeReviewAttachment }) {
 }
 
 function CommitAuthor({ detail }: { detail: CodeCommitDetailResponse }) {
-  const { runtimeConfig } = Route.useRouteContext();
   const { t } = useLegacyMessages();
   const anonymousAuthorName = t("user.role.anonymous");
   const commit = detail.commit as
@@ -1608,10 +1597,7 @@ function CommitAuthor({ detail }: { detail: CodeCommitDetailResponse }) {
           data-owner="commit-detail-author-avatar"
         >
           <img
-            src={
-              commit.authorAvatarUrl ||
-              prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png")
-            }
+            src={commit.authorAvatarUrl || defaultAvatarUrl}
             alt={authorName}
             width="32"
             height="32"
@@ -1622,18 +1608,14 @@ function CommitAuthor({ detail }: { detail: CodeCommitDetailResponse }) {
     );
   }
 
+  if (!commit.authorEmail) {
+    return <strong>{commit.authorName || anonymousAuthorName}</strong>;
+  }
+
   return (
     <>
       <span className={` avatar-wrap smaller`} data-owner="commit-detail-author-avatar">
-        <img
-          src={
-            commit.authorAvatarUrl ||
-            prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png")
-          }
-          width="32"
-          height="32"
-          alt=""
-        />
+        <img src={commit.authorAvatarUrl || defaultAvatarUrl} width="32" height="32" alt="" />
       </span>
       <strong>{authorName}</strong>
     </>
@@ -1646,18 +1628,7 @@ function CommitMessage({ message, shortMessage }: { message: string; shortMessag
   const detail = lines.slice(1).join("\n");
   return (
     <>
-      {/* F5 18px/normal — yona-original/app/assets/stylesheets/less/_page.less:4608
-          (legacy commit message wrapper .commitMsg.short). The route owns the
-          message DOM without the legacy wrapper element, so the frozen fallback
-          arm (.code-browse-wrap .commitInfo ... .commitMsg.short) never matches
-          and app.css's [data-owner=commit-detail-short-message] override loses
-          to the base .commitMsg.short (14px/pre-line) on specificity; the
-          inline style pins the legacy output. */}
-      <span
-        className={` commitMsg short`}
-        data-owner="commit-detail-short-message"
-        style={{ fontSize: "18px", whiteSpace: "normal" }}
-      >
+      <span className={` commitMsg short`} data-owner="commit-detail-short-message">
         {shortMessage || t("code.commitMsg.empty")}
       </span>
       {detail ? (
@@ -1696,7 +1667,7 @@ function CommentForm({
           helpOwner="commit-detail-attachment-help"
         />
         <div className="write-comment-wrap">
-          <div data-owner="commit-detail-comment-actions">
+          <div className="right-txt" data-owner="commit-detail-comment-actions">
             <button type="button" className="ybtn hidden" id="dynamic-comment-btn"></button>
             <button type="submit" className="ybtn ybtn-success">
               {t("button.comment.new")}
@@ -1719,20 +1690,75 @@ function ReviewForm({
   currentUser,
   isOpen = false,
   onClose,
+  range,
 }: {
   action: string;
   currentUser: CurrentUserSummary;
   isOpen?: boolean;
   onClose?: () => void;
+  range: CommitReviewRange | null;
 }) {
   const { t } = useLegacyMessages();
+  const { runtimeConfig } = Route.useRouteContext();
+  const { commitId, ownerName, projectName } = Route.useParams();
+  const { branch, path } = Route.useSearch();
+  const queryClient = useQueryClient();
+  const [formKey, setFormKey] = useState(0);
+  const detailQueryKey = apiQueryKeys.project.commitDetail(ownerName, projectName, commitId, {
+    branch: branch ?? "",
+    path: path ?? "",
+  });
+  const mutation = useMutation({
+    mutationFn: async ({
+      formData,
+      selection,
+    }: {
+      formData: FormData;
+      selection: CommitReviewRange;
+    }) => {
+      const contentsMarkdown = String(formData.get("contents") ?? "");
+      if (!contentsMarkdown.trim()) throw new Error(t("post.comment.empty"));
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      const attachments = await Promise.all(
+        formData
+          .getAll("filePath")
+          .filter((value): value is File => value instanceof File && value.name !== "")
+          .map((file) => uploadTemporaryAttachment(runtimeConfig, csrfToken, file)),
+      );
+      return createCommitDiscussionCommentRest(runtimeConfig, csrfToken, {
+        commitId,
+        ownerName,
+        projectName,
+        ...selection,
+        contentsMarkdown,
+        attachmentIds: attachments.map((attachment) => attachment.id),
+      });
+    },
+    onSuccess(detail) {
+      queryClient.setQueryData(detailQueryKey, detail);
+      setFormKey((key) => key + 1);
+      onClose?.();
+      return queryClient.invalidateQueries({ queryKey: detailQueryKey });
+    },
+  });
   return (
     <div
       id="review-form"
       className={`review-form${isOpen ? " is-open" : ""}`}
       data-owner="commit-detail-review-form"
     >
-      <form action={action} method="post" encType="multipart/form-data">
+      <form
+        action={action}
+        method="post"
+        encType="multipart/form-data"
+        key={formKey}
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (range && !mutation.isPending) {
+            mutation.mutate({ formData: new FormData(event.currentTarget), selection: range });
+          }
+        }}
+      >
         <div className="author-info-wrap pull-left hide-in-mobile">
           <div className="author-info">
             <Link
@@ -1767,8 +1793,17 @@ function ReviewForm({
               helpClassName="right-txt help"
               helpOwner="commit-detail-attachment-help"
             />
-            <div data-owner="commit-detail-review-actions">
-              <button type="submit" className="ybtn ybtn-success ybtn-small">
+            {mutation.error ? (
+              <p className="alert alert-error" role="alert">
+                {mutation.error.message}
+              </p>
+            ) : null}
+            <div className="right-txt" data-owner="commit-detail-review-actions">
+              <button
+                type="submit"
+                className="ybtn ybtn-success ybtn-small"
+                disabled={mutation.isPending}
+              >
                 {t("button.comment.new")}
               </button>
             </div>
@@ -1777,6 +1812,55 @@ function ReviewForm({
       </form>
     </div>
   );
+}
+
+function readCommitReviewRange(container: HTMLElement): CommitReviewRange | null {
+  const selection = container.ownerDocument.getSelection();
+  if (!selection?.rangeCount || selection.isCollapsed) return null;
+  const range = selection.getRangeAt(0);
+  const startElement =
+    range.startContainer instanceof Element
+      ? range.startContainer
+      : range.startContainer.parentElement;
+  const endElement =
+    range.endContainer instanceof Element ? range.endContainer : range.endContainer.parentElement;
+  const startCode = startElement?.closest("td.code > pre");
+  const endCode = endElement?.closest("td.code > pre");
+  const startRow = startCode?.closest<HTMLTableRowElement>("tr[data-line]");
+  const endRow = endCode?.closest<HTMLTableRowElement>("tr[data-line]");
+  const table = startRow?.closest("table");
+  if (
+    !startCode ||
+    !endCode ||
+    !startRow ||
+    !endRow ||
+    !table ||
+    !container.contains(table) ||
+    table !== endRow.closest("table")
+  )
+    return null;
+  const betweenRows = Array.from(table.rows).slice(startRow.rowIndex + 1, endRow.rowIndex);
+  if (betweenRows.some((row) => !row.matches("tr[data-line], tr.comments"))) return null;
+  const path = table.dataset.filePath;
+  const startLine = Number(startRow.dataset.line);
+  const endLine = Number(endRow.dataset.line);
+  if (!path || !Number.isFinite(startLine) || !Number.isFinite(endLine)) return null;
+  const prefix = range.cloneRange();
+  prefix.setStart(startCode, 0);
+  prefix.setEnd(range.startContainer, range.startOffset);
+  const startColumn = prefix.toString().length;
+  prefix.setStart(endCode, 0);
+  prefix.setEnd(range.endContainer, range.endOffset);
+  return {
+    path,
+    prevCommitId: table.dataset.commitA ?? "",
+    startLine,
+    startColumn,
+    startSide: startRow.dataset.side ?? "B",
+    endLine,
+    endColumn: prefix.toString().length,
+    endSide: endRow.dataset.side ?? "B",
+  };
 }
 
 function stringField(value: unknown, fallback: string) {
@@ -1798,6 +1882,18 @@ function Editor({
 }) {
   const { t } = useLegacyMessages();
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
+  const [contents, setContents] = useState(value);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const insertChecklist = () => {
+    const start = textareaRef.current?.selectionStart || contents.length;
+    const checklist = "\n- [ ] Todo A\n- [ ] Todo B\n- [ ] Todo C";
+    setContents(`${contents.slice(0, start)}${checklist}${contents.slice(start)}`);
+    setActiveTab("edit");
+    requestAnimationFrame(() => {
+      textareaRef.current?.focus();
+      textareaRef.current?.setSelectionRange(start + checklist.length, start + checklist.length);
+    });
+  };
   return (
     <div
       className="mt10"
@@ -1805,21 +1901,22 @@ function Editor({
       data-owner-instance={wrapId}
     >
       <ul className="nav nav-tabs nm small" data-owner="commit-detail-editor-tabs">
-        <li className={activeTab === "edit" ? "active" : undefined}>
-          <button type="button" onClick={() => setActiveTab("edit")}>
-            {t("common.editor.edit")}
-          </button>
-        </li>
-        <li className={activeTab === "preview" ? "active" : undefined}>
-          <button type="button" onClick={() => setActiveTab("preview")}>
-            {t("common.editor.preview")}
-          </button>
-        </li>
+        <TabButton type="button" active={activeTab === "edit"} onClick={() => setActiveTab("edit")}>
+          {t("common.editor.edit")}
+        </TabButton>
+        <TabButton
+          type="button"
+          active={activeTab === "preview"}
+          onClick={() => setActiveTab("preview")}
+        >
+          {t("common.editor.preview")}
+        </TabButton>
         <li>
           <div className="task-list-button">
             <button
               type="button"
               className="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"
+              onClick={insertChecklist}
             >
               <i className="yobicon-list task-list-icon"></i> {t("button.add.checklist")}
             </button>
@@ -1851,7 +1948,9 @@ function Editor({
               className="editorSeries content comment nm"
               data-editor-mode={editorMode}
               id={`editor-${textareaName}-${wrapId}`}
-              defaultValue={value}
+              ref={textareaRef}
+              value={contents}
+              onChange={(event) => setContents(event.currentTarget.value)}
               style={
                 editorMode === "code-review-body" && threadHeight100
                   ? { height: "100px" }
@@ -1868,10 +1967,9 @@ function Editor({
           id={`preview-${wrapId}`}
           className={`tab-pane${activeTab === "preview" ? " active" : ""}`}
         >
-          <div
-            className={`markdown-preview markdown-wrap ${editorMode}`}
-            data-via-email="false"
-          ></div>
+          <div className={`markdown-preview markdown-wrap ${editorMode}`} data-via-email="false">
+            {activeTab === "preview" ? <LegacyMarkdown>{contents}</LegacyMarkdown> : null}
+          </div>
         </div>
         <div className="notification-receiver">
           <span className="notification-receiver-title">
@@ -1893,7 +1991,7 @@ function ReviewCards({
   isActive?: boolean;
   threads: CodeReviewThread[];
 }) {
-  const { runtimeConfig } = Route.useRouteContext();
+  const { t } = useLegacyMessages();
   const { branch, path } = Route.useSearch();
   const hashSearch = {
     ...(branch ? { branch } : {}),
@@ -1903,6 +2001,7 @@ function ReviewCards({
   return (
     <div id={id} className={`tab-pane${isActive ? " active" : ""}`}>
       {threads.map((thread) => {
+        const createdDate = formatLegacyTimestamp(thread.createdLabel, t);
         return (
           <Link
             to="."
@@ -1924,7 +2023,7 @@ function ReviewCards({
             <span
               className="date"
               data-owner="commit-detail-review-card-date"
-              title={thread.createdLabel}
+              title={createdDate.title}
             >
               <span className="comments" data-owner="commit-detail-review-card-comments">
                 {thread.comments.length > 1 ? (
@@ -1935,14 +2034,11 @@ function ReviewCards({
               </span>
               <span className="avatar-wrap smaller margin-right-5">
                 <img
-                  src={
-                    thread.comments[0]?.authorAvatarUrl ||
-                    prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png")
-                  }
+                  src={thread.comments[0]?.authorAvatarUrl || defaultAvatarUrl}
                   alt={thread.comments[0]?.authorLabel ?? ""}
                 />
               </span>
-              {thread.createdLabel}
+              {createdDate.label}
             </span>
           </Link>
         );

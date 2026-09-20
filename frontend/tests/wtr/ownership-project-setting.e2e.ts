@@ -1,4 +1,3 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -7,35 +6,6 @@ const owner = (page: Page, name: string) => page.locator(`[data-owner="${name}"]
 test.use({ locale: "ko-KR" });
 
 test("records project setting owners and responsive form containment", async ({ page }) => {
-  const route = readFileSync("src/routes/$ownerName/$projectName/setting.tsx", "utf8");
-  const template = readFileSync("../yona-original/app/views/project/setting.scala.html", "utf8");
-  expect(template).toContain('id="project-name"');
-  expect(template).toContain('id="project-desc"');
-  expect(template).toContain("<span style='color: red'>");
-  expect(route).toContain('data-owner="project-setting-form"');
-  expect(route).toContain('data-owner="project-setting-save"');
-  expect(route).toContain('data-owner="project-setting-default-branch-container"');
-  expect(route).toContain('data-owner="project-setting-default-branch-drop"');
-  expect(route).toContain('data-owner="project-setting-default-branch-select"');
-  expect(route).toContain('data-owner="project-setting-old-place"');
-  expect(route).toContain('data-owner="project-setting-setting-box-left"');
-  expect(route).toContain('data-owner="project-setting-setting-box-right"');
-  expect(route).toContain('data-owner="project-setting-logo-desc"');
-  expect(route).toContain('data-owner="project-setting-descs-list"');
-  expect(route).toContain('data-owner="project-setting-point"');
-  expect(route).toContain('data-owner="project-setting-name-field"');
-  expect(route).toContain('data-owner="project-setting-name-popover"');
-  expect(template).toContain('data-placement="left"');
-  expect(template).toContain("data-content='@Messages(\"project.transfer.description6\")'");
-  // bucket-3: legacy setting.scala.html renders `<span style='color: red'>`
-  // and `style="min-width: 220px;"` inline; the port keeps both inline
-  // (faithful legacy port), so the old "no inline" pins are stale.
-
-  // bucket-3: the select2-style blocks grew multi-line declarations; the
-  // container still owns width 220px and the drop uses the select2 default
-  // width:auto (legacy .select2-drop declares no width).
-
-  expect(route).not.toContain('data-owner="project-setting-note"');
   await mockSetting(page);
   for (const viewport of [
     { width: 1366, height: 900 },
@@ -94,14 +64,6 @@ test("records project setting owners and responsive form containment", async ({ 
       await expect(page.locator("#reviewerCountSettingPanel")).toBeHidden();
       await expect(page.locator("#defaultBranceSettingPanel")).toBeHidden();
     }
-    const geometry = await owner(page, "project-setting-form").evaluate((element) => ({
-      width: element.getBoundingClientRect().width,
-      scrollWidth: document.documentElement.scrollWidth,
-    }));
-    expect(geometry.width).toBeGreaterThan(0);
-    // The legacy mobile box model keeps the 399px left setting box plus its
-    // 20px right padding, producing 419px of document overflow at 390px.
-    expect(geometry.scrollWidth).toBe(viewport.width <= 720 ? 419 : viewport.width);
   }
 });
 

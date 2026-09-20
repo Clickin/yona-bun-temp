@@ -21,7 +21,7 @@ import { normalizeOAuthProviderKind, OAuthProviderLogo } from "../components/oau
 import { IssueLabel } from "../components/issue-label";
 import { issueLabelStyle } from "../legacy-issue-label-style";
 import { TwoColumnModeCheckbox } from "../components/two-column-mode-checkbox";
-import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
+import { formatLegacyTimestamp, LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
@@ -1274,6 +1274,8 @@ function ProfileProjectRow({
   const projectPath = `/${project.ownerName}/${project.projectName}`;
   const watchPath: string = `${projectPath}/${project.isWatching ? "unwatch" : "watch"}`;
   const ownerPath = `/${project.ownerName}`;
+  const created = formatLegacyTimestamp(project.createdAt, t);
+  const lastPushed = formatLegacyTimestamp(project.lastPushedAt, t);
 
   return (
     <li className={"project"} data-owner="user-profile-project-row">
@@ -1348,11 +1350,11 @@ function ProfileProjectRow({
             >
               {project.ownerName}
             </Link>{" "}
-            <span title={project.createdLabel}>{project.createdLabel}</span>
-            {project.lastPushedLabel ? (
+            <span title={created.title}>{created.label}</span>
+            {project.lastPushedAt ? (
               <>
                 {`, ${t("project.codeUpdate")} `}
-                <span title={project.lastPushedLabel}>{project.lastPushedLabel}</span>
+                <span title={lastPushed.title}>{lastPushed.label}</span>
               </>
             ) : null}
           </div>

@@ -1,4 +1,3 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -6,26 +5,6 @@ const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 test.use({ locale: "ko-KR" });
 
 test("issue editform owns dynamic selected label color and picker geometry", async ({ page }) => {
-  const route = readFileSync(
-    "src/routes/$ownerName/$projectName/issue/$issueNumber/editform.tsx",
-    "utf8",
-  );
-  const styleSource = readFileSync("src/app.css", "utf8");
-  const partial = readFileSync(
-    "../yona-original/app/views/issue/partial_select_label.scala.html",
-    "utf8",
-  );
-  const override = readFileSync(
-    "../yona-original/app/assets/stylesheets/less/_override.less",
-    "utf8",
-  );
-
-  expect(partial).toContain('data-container-css-class="issue-labels bordered fullsize"');
-  expect(override).toContain(".select2-search-field input");
-
-  expect(route).toContain('data-owner="issue-editform-label-picker"');
-  expect(route).toContain('data-owner="issue-editform-label-search-input"');
-
   await mockIssueEditForm(page);
   await page.goto(`${basePath}/weblabs/demo/issue/1/editform`, { waitUntil: "commit" });
 
@@ -37,6 +16,26 @@ test("issue editform owns dynamic selected label color and picker geometry", asy
   await expect(input).toHaveCSS("width", "10px");
   await expect(picker).not.toHaveAttribute("style", /.+/u);
   await expect(input).not.toHaveAttribute("style", /.+/u);
+  await expect(picker.locator(".select2-search-choice .label")).toHaveCSS(
+    "background-color",
+    "rgb(255, 0, 0)",
+  );
+  const assignee = page.locator('[data-owner="issue-editform-assignee-picker"]');
+  await expect(assignee.locator(".select2-chosen")).toHaveText("담당자 없음");
+  await expect(assignee.locator(".select2-choice")).toHaveCSS("color", "rgb(153, 153, 153)");
+  await picker.getByRole("button", { name: "bug 삭제" }).click();
+  await expect(input).toHaveAttribute("placeholder", "라벨 선택");
+  expect(await input.evaluate((element) => element.getBoundingClientRect().width)).toBeGreaterThan(
+    80,
+  );
+  await input.fill("bug");
+  await expect(input).not.toHaveAttribute("placeholder", /.+/u);
+  await picker.getByRole("option", { name: "bug", exact: true }).click();
+  await expect(picker.locator(".select2-search-choice")).toContainText("bug");
+  await page.locator("#title").click();
+  await expect(picker.getByRole("listbox")).not.toBeVisible();
+  await expect(input).not.toHaveAttribute("placeholder", /.+/u);
+  await expect(input).toHaveValue("");
 });
 
 async function mockIssueEditForm(page: Page) {

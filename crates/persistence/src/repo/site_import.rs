@@ -491,22 +491,8 @@ impl AppRepositoryImpl<'_> {
             )
             .await?;
         }
-        let Some(project_model) = project::Entity::find_by_id(project_record.id)
-            .one(&self.db)
-            .await?
-        else {
-            return Err(DbErr::Custom(
-                "project missing after issue insert".to_string(),
-            ));
-        };
-        if project_model.last_issue_number.unwrap_or_default() < issue_number {
-            let mut project_active = project::ActiveModel {
-                id: Set(project_record.id),
-                ..Default::default()
-            };
-            project_active.last_issue_number = Set(Some(issue_number));
-            project_active.update(&self.db).await?;
-        }
+        self.advance_project_number(project_record.id, "last_issue_number", issue_number)
+            .await?;
         self.issue_record_from_model(created, &project_record, Some(author_id))
             .await
             .map(Some)
@@ -599,22 +585,8 @@ impl AppRepositoryImpl<'_> {
             )
             .await?;
         }
-        let Some(project_model) = project::Entity::find_by_id(project_record.id)
-            .one(&self.db)
-            .await?
-        else {
-            return Err(DbErr::Custom(
-                "project missing after posting insert".to_string(),
-            ));
-        };
-        if project_model.last_posting_number.unwrap_or_default() < post_number {
-            let mut project_active = project::ActiveModel {
-                id: Set(project_record.id),
-                ..Default::default()
-            };
-            project_active.last_posting_number = Set(Some(post_number));
-            project_active.update(&self.db).await?;
-        }
+        self.advance_project_number(project_record.id, "last_posting_number", post_number)
+            .await?;
         self.posting_record_from_model(created, &project_record, Some(author_id))
             .await
             .map(Some)

@@ -15,8 +15,6 @@ const INFO = '[data-owner="anonymous-home-feature-info"]';
 const TITLE = '[data-owner="anonymous-home-feature-title"]';
 const DESCRIPTION = '[data-owner="anonymous-home-feature-description"]';
 const SCREENSHOTS = resolve("..", "output", "playwright");
-const PRESENTATION_CLASSES =
-  /(?:^|\s)(?:feature|feature-wrap|row|feature-image|feature-info|feature-title|feature-desc)(?:\s|$)/u;
 
 const ENGLISH = [
   [
@@ -43,39 +41,6 @@ const ENGLISH = [
   ],
 ] as const;
 
-const KOREAN = [
-  [
-    "yobicon-cgicenter",
-    "프로젝트/그룹 기반으로 작업",
-    "프로젝트/그룹 기반으로 효율적으로 개발을 진행 할 수 있습니다.",
-  ],
-  [
-    "yobicon-code",
-    "코드 관리",
-    "작성한 코드는 모두 이력이 관리되는 형태로 안전하게 서버에 보관됩니다.",
-  ],
-  [
-    "yobicon-articles",
-    "이슈 트래커",
-    "팀이 함께 고민하고 처리해야 하는 내용들을 적고 거친 파도를 합심해 헤쳐나가듯 해결해 나갑니다.",
-  ],
-  [
-    "yobicon-lock",
-    "비공개 프로젝트",
-    "다른 사람에게 공개하고 싶지 않은 비밀 프로젝트 공간을 만들어 자유롭게 생각의 나래를 펼쳐보세요.",
-  ],
-  [
-    "yobicon-preview",
-    "코드 리뷰",
-    "변경된 코드를 보면서 팀원들과 토론해보세요. 코드의 완성도를 더욱 높일 수 있습니다.",
-  ],
-  [
-    "yobicon-friends",
-    "팀 구성",
-    "프로젝트별로 멤버를 자유롭게 구성할수 있는 쉽고 간편한 멤버관리 기능이 제공 됩니다.",
-  ],
-] as const;
-
 test.describe("Korean anonymous Home feature geometry", () => {
   test.use({ locale: "ko-KR" });
 
@@ -86,7 +51,7 @@ test.describe("Korean anonymous Home feature geometry", () => {
     await assertCopyAndGlyphs(page, "Key features", ENGLISH);
 
     const evidence = await readEvidence(page);
-    expect(evidence.feature.box).toEqual({ x: 53, y: 339, width: 1240, height: 311 });
+    expect(evidence.feature.box).toEqual({ x: 53, y: 340, width: 1240, height: 311 });
     expect(evidence.feature.style).toMatchObject({
       borderBottom: "1px solid rgb(232, 232, 232)",
       margin: "0px 73px",
@@ -95,7 +60,7 @@ test.describe("Korean anonymous Home feature geometry", () => {
       position: "relative",
       textAlign: "center",
     });
-    expect(evidence.heading.box).toEqual({ x: 73, y: 339, width: 1200, height: 40 });
+    expect(evidence.heading.box).toEqual({ x: 73, y: 340, width: 1200, height: 40 });
     expect(evidence.heading.style).toMatchObject({
       display: "block",
       fontSize: "26px",
@@ -109,7 +74,7 @@ test.describe("Korean anonymous Home feature geometry", () => {
       backgroundColor: "rgb(255, 255, 255)",
       padding: "0px 20px",
     });
-    expect(evidence.list.box).toEqual({ x: 73, y: 389, width: 1200, height: 220 });
+    expect(evidence.list.box).toEqual({ x: 73, y: 390, width: 1200, height: 220 });
     expect(evidence.list.style).toMatchObject({
       listStyleType: "none",
       margin: "10px 0px 40px",
@@ -117,12 +82,12 @@ test.describe("Korean anonymous Home feature geometry", () => {
       padding: "0px",
     });
     expect(evidence.items.map(({ box }) => box)).toEqual([
-      { x: 154.40625, y: 389, width: 330, height: 100 },
-      { x: 528, y: 389, width: 330, height: 100 },
-      { x: 901.59375, y: 389, width: 330, height: 100 },
-      { x: 154.40625, y: 509, width: 330, height: 100 },
-      { x: 528, y: 489, width: 330, height: 100 },
-      { x: 901.59375, y: 489, width: 330, height: 100 },
+      { x: 154.40625, y: 390, width: 330, height: 100 },
+      { x: 528, y: 390, width: 330, height: 100 },
+      { x: 901.59375, y: 390, width: 330, height: 100 },
+      { x: 154.40625, y: 510, width: 330, height: 100 },
+      { x: 528, y: 490, width: 330, height: 100 },
+      { x: 901.59375, y: 490, width: 330, height: 100 },
     ]);
     for (const item of evidence.items) {
       expect(item.style).toMatchObject({
@@ -176,13 +141,13 @@ test.describe("Korean anonymous Home feature geometry", () => {
     await page.goto(`${BASE_PATH}/`);
     await page.evaluate(() => document.fonts.ready);
     const evidence = await readEvidence(page);
-    expect(evidence.feature.box).toEqual({ x: -20, y: 379, width: 410, height: 751 });
-    expect(evidence.heading.box).toEqual({ x: 0, y: 379, width: 370, height: 40 });
-    expect(evidence.list.box).toEqual({ x: 0, y: 429, width: 370, height: 660 });
+    expect(evidence.feature.box).toEqual({ x: -20, y: 380, width: 410, height: 751 });
+    expect(evidence.heading.box).toEqual({ x: 0, y: 380, width: 370, height: 40 });
+    expect(evidence.list.box).toEqual({ x: 0, y: 430, width: 370, height: 660 });
     expect(evidence.items.map(({ box }) => box)).toEqual(
       Array.from({ length: 6 }, (_, index) => ({
         x: 14.25,
-        y: 439 + index * 110,
+        y: 440 + index * 110,
         width: 351.5,
         height: 100,
       })),

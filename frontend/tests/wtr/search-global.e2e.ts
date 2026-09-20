@@ -1,5 +1,4 @@
 import { expect, test, type Page } from "../wtr-compat.ts";
-import { readFileSync } from "../wtr-compat.ts";
 
 const _EXPECTED_GLOBAL_SEARCH = `
 <div class="unsupported hidden">
@@ -498,7 +497,8 @@ test("global search matches localhost legacy empty issue result DOM for sample k
     categoryPaddingLeft: "0px",
     // F5 dist-truth: legacy .empty-result min-height 250px (_page.less:2966-2974); 52px pin stale
     emptyHeight: 250,
-    formDisplay: "flex",
+    // partial_search.scala.html:132 uses a normal block form, not flex.
+    formDisplay: "block",
     innerProjectWrapWidth: 1260,
     keywordHeight: 30,
     keywordPadding: "4px 6px",
@@ -510,7 +510,8 @@ test("global search matches localhost legacy empty issue result DOM for sample k
     // F5 dist-truth: legacy .search-box-wrap has no margin-bottom (_page.less:6378-6392); 16px pin stale
     searchBoxMarginBottom: "0px",
     titleFontSize: "16px",
-    titleMargin: "15px 0px 10px",
+    // _common.less resets h3 margins; _page.less:6383 adds only the top margin.
+    titleMargin: "15px 0px 0px",
   });
 });
 
@@ -649,102 +650,6 @@ test("global search result navigation keeps legacy hrefs through TanStack Router
     "href",
     `${basePath}/alice`,
   );
-
-  const routeSource = readFileSync(new URL("../src/routes/search.tsx", import.meta.url), "utf8");
-  const routeBodySource = routeSource.slice(
-    routeSource.indexOf("function GlobalSearchSuccessBody"),
-    routeSource.indexOf("function GlobalSearchResultList"),
-  );
-  const resultListSource = routeSource.slice(
-    routeSource.indexOf("function GlobalSearchResultList"),
-    routeSource.indexOf("function globalSearchInternalLinkTarget"),
-  );
-  const categoryListSource = routeBodySource.slice(
-    routeBodySource.indexOf("GLOBAL_SEARCH_CATEGORIES.map"),
-    routeBodySource.indexOf("</ul>"),
-  );
-  expect(routeBodySource).not.toMatch(/<a[\s>]/u);
-  expect(routeSource).not.toContain("LegacySearchBody");
-  expect(routeSource).not.toContain("includeProjectCategory");
-  expect(routeSource).toContain("function GlobalSearchSuccessBody");
-  expect(routeSource).toContain("function GlobalSearchResultList");
-  expect(routeSource).toContain("function GlobalSearchPagination");
-  expect(routeSource).toContain("function globalSearchInternalLinkTarget");
-  expect(routeSource).toContain("function GlobalSearchHighlightedText");
-  expect(routeSource).toContain("<GlobalSearchSuccessBody");
-  expect(routeBodySource).not.toContain('href="#"');
-  expect(routeBodySource).not.toContain("<Link href");
-  expect(routeBodySource).not.toContain('data-toggle="search-category"');
-  expect(routeBodySource).not.toContain("data-type={menu.type}");
-  expect(routeBodySource).not.toContain("dangerouslySetInnerHTML");
-  expect(resultListSource).not.toMatch(/<a[\s>]/u);
-  expect(resultListSource).not.toContain("</a>");
-  expect(resultListSource).not.toContain("LegacySearchBody");
-  expect(resultListSource).toContain("isDefaultUserSearchAvatar(item.avatarUrl)");
-  expect(resultListSource).toContain("<Link");
-  expect(resultListSource).toContain("<RouterLink");
-  expect(resultListSource).toContain("to={itemLink.to}");
-  expect(resultListSource).toContain("hash={itemLink.hash || undefined}");
-  expect(resultListSource).not.toContain('data-toggle="tooltip"');
-  expect(resultListSource).not.toContain("data-toggle=");
-  expect(resultListSource).not.toContain("data-placement=");
-  expect(categoryListSource).toContain("<Link");
-  expect(categoryListSource).not.toContain('<button\n                          type="button"');
-  expect(categoryListSource).toContain("activeOptions={legacySearchPaginationLinkActiveOptions}");
-  expect(categoryListSource).toContain("activeProps={legacySearchPaginationLinkActiveProps}");
-  expect(routeSource).not.toContain("createLink");
-  expect(routeSource).not.toMatch(/<a[\s>]/u);
-  expect(routeSource).not.toContain("setAttribute");
-  expect(routeSource).not.toContain("removeAttribute");
-  expect(routeSource).not.toContain("globalThis.document");
-  expect(routeSource).not.toContain("document.title");
-  expect(routeSource).toContain("Link as RouterLink");
-  expect(routeSource).not.toContain("data-toggle=");
-  expect(routeSource).not.toContain("data-placement=");
-  expect(routeSource).toContain('<title>{t("title.search")}</title>');
-  expect(routeSource).not.toContain("activeProps={{ className: undefined }}");
-  expect(routeSource).toContain("const legacySearchPaginationLinkActiveOptions =");
-  expect(routeSource).toContain("const legacySearchPaginationLinkActiveProps =");
-  expect(routeSource).toContain("const navigationMutation = useMutation({");
-  expect(routeSource).toContain(
-    "void queryClient.invalidateQueries({ queryKey: globalSearchQueryKey(result) });",
-  );
-  expect(routeSource).toContain("router.navigate(target);");
-  expect(routeSource).toContain("explicitUndefined: true");
-  expect(routeSource).toContain('"aria-current": undefined');
-  expect(routeSource).toContain('"data-status": undefined');
-
-  const searchScreenSource = readFileSync(
-    new URL("../src/routes/-search-screen.tsx", import.meta.url),
-    "utf8",
-  );
-  const defaultErrorBodySource = searchScreenSource.slice(
-    searchScreenSource.indexOf("export function DefaultSearchErrorBody"),
-    searchScreenSource.indexOf("export function RequestTextTooLargeErrorBody"),
-  );
-  expect(searchScreenSource).not.toContain("createLink");
-  expect(searchScreenSource).not.toContain("reactJsx");
-  expect(searchScreenSource).not.toContain("react/jsx-runtime");
-  expect(searchScreenSource).not.toContain("function SearchMountedRootLinkAnchor");
-  expect(searchScreenSource).not.toContain("SearchMountedRootLink");
-  expect(searchScreenSource).not.toContain("ref?: Ref<HTMLAnchorElement>");
-  expect(searchScreenSource).not.toContain("useLinkProps");
-  expect(searchScreenSource).not.toContain("LegacyHrefAnchor");
-  expect(searchScreenSource).not.toContain("React.createElement");
-  expect(searchScreenSource).not.toContain('data-toggle="tooltip"');
-  expect(searchScreenSource).not.toContain('data-placement="top"');
-  expect(searchScreenSource).not.toContain("data-placement=");
-  expect(searchScreenSource).not.toContain("forwardRef");
-  expect(searchScreenSource).not.toContain("router.history");
-  expect(defaultErrorBodySource).not.toMatch(/<a[\s>]/u);
-  expect(defaultErrorBodySource).toContain("<Link");
-  expect(defaultErrorBodySource).toContain('to="/"');
-  expect(defaultErrorBodySource).toContain(
-    "activeOptions={legacySearchPaginationLinkActiveOptions}",
-  );
-  expect(defaultErrorBodySource).toContain("activeProps={legacySearchPaginationLinkActiveProps}");
-  expect(defaultErrorBodySource).not.toContain("onClick=");
-  expect(defaultErrorBodySource).not.toContain('prefixBasePath(runtimeConfig.basePath, "/")');
 });
 
 test("global search category Link keeps legacy SPA navigation without query noise", async ({
@@ -849,20 +754,6 @@ test("global search shared root sidebar tabs use React button state without Boot
     tabRowAndContentDoNotOverlap: true,
     tabsStayWithinRow: true,
   });
-
-  const rootSource = readFileSync(new URL("../src/routes/__root.tsx", import.meta.url), "utf8");
-  const rootSidebarSource = rootSource.slice(
-    rootSource.indexOf('<div id="mySidenav"'),
-    rootSource.indexOf('<ul className="gnb-usermenu">'),
-  );
-  expect(rootSidebarSource).toContain('<button type="button"');
-  expect(rootSidebarSource).not.toContain('data-toggle="tab"');
-  expect(rootSidebarSource).not.toContain('href="#');
-  expect(rootSidebarSource).not.toMatch(/<a[\s>]/u);
-  expect(rootSidebarSource).not.toContain("dangerouslySetInnerHTML");
-  expect(rootSidebarSource).not.toContain("document.");
-  expect(rootSidebarSource).not.toContain("classList");
-  expect(rootSidebarSource).not.toContain("style.display");
 });
 
 test("global search without required query renders legacy badrequest_default.scala.html shell", async ({

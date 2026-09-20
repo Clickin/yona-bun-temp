@@ -218,14 +218,18 @@ function ProjectMilestoneCreateFormBody({ runtimeConfig }: { runtimeConfig: Runt
                     pasteHelpStyleProps={{ style: { display: "block" } }}
                   />
 
-                  <div className="actrow" data-owner="project-milestone-actions">
-                    <button type="submit" className="" data-owner="project-milestone-save">
+                  <div className="actrow right-txt" data-owner="project-milestone-actions">
+                    <button
+                      type="submit"
+                      className="ybtn ybtn-info"
+                      data-owner="project-milestone-save"
+                    >
                       {t("button.save")}
-                    </button>{" "}
+                    </button>
                     <Link
                       to="/$ownerName/$projectName/milestones"
                       params={{ ownerName, projectName }}
-                      className=""
+                      className="ybtn"
                       data-owner="project-milestone-cancel"
                     >
                       {t("button.cancel")}

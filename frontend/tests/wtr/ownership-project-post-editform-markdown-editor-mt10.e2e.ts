@@ -210,7 +210,7 @@ async function mockPostEditForm(page: Page) {
         bodyMarkdown: "Release body",
         commentCount: 0,
         comments: [],
-        createdLabel: "Jul 2, 2026",
+        createdAt: "2026-07-02T00:00:00+09:00",
         historyHtml: "",
         historyMarkdown: "",
         id: "12",

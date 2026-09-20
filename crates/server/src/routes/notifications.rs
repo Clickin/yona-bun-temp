@@ -13,8 +13,8 @@ use super::{messages::legacy_message, utils::preferred_language_from_headers};
 use crate::assets::serve_frontend_page;
 use crate::{
     base_path_href, direct_toggle_workspace_notification, internal_error, persistence, redirect_to,
-    require_project_read, require_session, AssetMode,
-    BrowserRuntimeConfig, ConnectError, PilotBackend, PilotServiceImpl, RestRouteError,
+    require_project_read, require_session, AssetMode, BrowserRuntimeConfig, ConnectError,
+    PilotBackend, PilotServiceImpl, RestRouteError,
 };
 
 #[derive(Default, Deserialize)]

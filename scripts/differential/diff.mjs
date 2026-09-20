@@ -37,7 +37,10 @@ function collapseWhitespace(text) {
 // untouched. This removes copy-only identity noise before the structural diff
 // without turning arbitrary user/project text into an allowlist.
 const DOM_REBRAND_URL_REPLACEMENTS = Object.freeze([
-  [/(?:https?:\/\/)(?:yobi\.io|repo\.yona\.io|demo\.yobi\.io|example\.com)(?![A-Za-z0-9.-])/gu, "<example-host>"],
+  [
+    /(?:https?:\/\/)(?:yobi\.io|repo\.yona\.io|demo\.yobi\.io|example\.com)(?![A-Za-z0-9.-])/gu,
+    "<example-host>",
+  ],
 ]);
 const DOM_REBRAND_COPY_REPLACEMENTS = Object.freeze([
   [/@(?:yobi|example)(?![A-Za-z0-9_.-])/gu, "@<example>"],
@@ -85,7 +88,10 @@ export function normalizeSkeletonEntry(entry) {
 export function projectIssueMutation({ legacy, yoram }) {
   return {
     legacy: { title: legacy?.title ?? null, body: legacy?.body ?? null },
-    yoram: { title: yoram?.title ?? yoram?.issue?.title ?? null, body: yoram?.bodyMarkdown ?? yoram?.issue?.bodyMarkdown ?? null },
+    yoram: {
+      title: yoram?.title ?? yoram?.issue?.title ?? null,
+      body: yoram?.bodyMarkdown ?? yoram?.issue?.bodyMarkdown ?? null,
+    },
   };
 }
 
@@ -96,10 +102,7 @@ export function projectIssueMutation({ legacy, yoram }) {
 // extraction runs in-browser; this module owns normalization + comparison.
 
 export function normalizeSkeletonEntries(entries) {
-  return entries
-    .map(normalizeSkeletonEntry)
-    .filter(Boolean)
-    .sort();
+  return entries.map(normalizeSkeletonEntry).filter(Boolean).sort();
 }
 
 // PullRequestApp's mergeability actor leaves the legacy detail in a pending
@@ -121,7 +124,7 @@ export const PULL_REQUEST_MERGE_SUCCESS_SIGNATURE = Object.freeze([
 // Canonical decision for the sanctioned anchor->button translation
 // (AGENTS.md: href="#" / javascript: anchors are behavior evidence, not exact
 // DOM preservation targets — React re-owns them as buttons). An anchor is a
-// side effect when its href cannot navigate (fragment-only, javascript:, empty
+// side effect when its href cannot navigate (bare #, javascript:, empty
 // or absent), or when legacy behavior attributes carry the action
 // (data-request-method/-uri, or a behavioral data-toggle — tooltip/popover are
 // presentational plugins and do NOT count). Pure and data-level so the
@@ -132,8 +135,10 @@ export function sideEffectAnchorTag(
   { href = "", dataToggle = null, hasRequestMethod = false, hasRequestUri = false } = {},
 ) {
   if (tagName !== "a") return tagName;
-  const target = String(href ?? "").trim().toLowerCase();
-  const navigational = target !== "" && !target.startsWith("#") && !target.startsWith("javascript:");
+  const target = String(href ?? "")
+    .trim()
+    .toLowerCase();
+  const navigational = target !== "" && target !== "#" && !target.startsWith("javascript:");
   const behavioralToggle = dataToggle !== null && !/^(tooltip|popover)$/iu.test(String(dataToggle));
   if (!navigational || hasRequestMethod || hasRequestUri || behavioralToggle) return "a#";
   return tagName;
@@ -206,9 +211,7 @@ function diffNormalizedSkeletons(legacyEntries, yoramEntries, limit = Infinity) 
 // A fingerprint may store this signature instead of repeating every diff.
 export function domDiffSignature(diffs) {
   if (!Array.isArray(diffs)) return null;
-  return JSON.stringify(
-    diffs.map((diff) => [diff?.side, diff?.expected, diff?.actual]),
-  );
+  return JSON.stringify(diffs.map((diff) => [diff?.side, diff?.expected, diff?.actual]));
 }
 
 // Elements whose absence from the Yoram render is a user-visible loss, not a
@@ -232,7 +235,10 @@ export function domVisibleLoss(detail) {
   const diffs = detail?.actual?.fullDiffs;
   if (!Array.isArray(diffs)) return false;
   const yoramEntries = new Set(
-    diffs.filter((diff) => diff.side === "yoram-only").map((diff) => skeletonEntryOf(diff.actual)).filter(Boolean),
+    diffs
+      .filter((diff) => diff.side === "yoram-only")
+      .map((diff) => skeletonEntryOf(diff.actual))
+      .filter(Boolean),
   );
   return diffs.some((diff) => {
     if (diff.side !== "legacy-only") return false;
@@ -248,7 +254,9 @@ export function domVisibleLoss(detail) {
 // --- DB semantic projection -------------------------------------------------
 
 function normalizeColumnKey(key) {
-  return String(key).replaceAll(/[_\s-]/gu, "").toLowerCase();
+  return String(key)
+    .replaceAll(/[_\s-]/gu, "")
+    .toLowerCase();
 }
 
 function pick(row, ...names) {
@@ -276,7 +284,9 @@ export function projectIssueRows(rows, stateEncoding = {}) {
     .map((row) => ({
       title: collapseWhitespace(String(pick(row, "title") ?? "")),
       author: pick(row, "authorLoginId"),
-      state: stateEncoding[String(pick(row, "state") ?? "")] ?? String(pick(row, "state") ?? "").toLowerCase(),
+      state:
+        stateEncoding[String(pick(row, "state") ?? "")] ??
+        String(pick(row, "state") ?? "").toLowerCase(),
     }))
     .sort((a, b) => (a.title < b.title ? -1 : a.title > b.title ? 1 : 0));
 }
@@ -313,8 +323,12 @@ export function diffProjections(legacyRows, yoramRows) {
   const legacy = JSON.stringify(legacyRows);
   const yoram = JSON.stringify(yoramRows);
   if (legacy === yoram) return [];
-  const missing = legacyRows.filter((row) => !yoramRows.some((candidate) => JSON.stringify(candidate) === JSON.stringify(row)));
-  const extra = yoramRows.filter((row) => !legacyRows.some((candidate) => JSON.stringify(candidate) === JSON.stringify(row)));
+  const missing = legacyRows.filter(
+    (row) => !yoramRows.some((candidate) => JSON.stringify(candidate) === JSON.stringify(row)),
+  );
+  const extra = yoramRows.filter(
+    (row) => !legacyRows.some((candidate) => JSON.stringify(candidate) === JSON.stringify(row)),
+  );
   return [
     ...missing.map((row) => ({ side: "legacy-only", row })),
     ...extra.map((row) => ({ side: "yoram-only", row })),

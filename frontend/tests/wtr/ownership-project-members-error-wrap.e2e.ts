@@ -1,83 +1,10 @@
-import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
-
-// Browser harness: node:fs/promises readFile has no browser equivalent; the
-// compat readFileSync is a sync XHR over the same middleware. Promise-wrap it
-// so the spec's await/Promise.all call sites keep their shape.
-const readFile = (path: string | URL, encoding?: string | null): Promise<string> =>
-  Promise.resolve(readFileSync(path, encoding ?? "utf8"));
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 test.use({ locale: "en-US" });
 
 test("project members error-wrap preserves forbidden and bad-request parity", async ({ page }) => {
-  const [route, styles, members, projectMenu, forbidden, badRequest, pageLess, sprites, messages] =
-    await Promise.all([
-      readFile(new URL("../src/routes/$ownerName/$projectName.tsx", import.meta.url), "utf8"),
-      Promise.resolve(curatedAppCss()),
-      readFile(
-        new URL("../../yona-original/app/views/project/members.scala.html", import.meta.url),
-        "utf8",
-      ),
-      readFile(
-        new URL("../../yona-original/app/views/projectMenu.scala.html", import.meta.url),
-        "utf8",
-      ),
-      readFile(
-        new URL("../../yona-original/app/views/error/forbidden.scala.html", import.meta.url),
-        "utf8",
-      ),
-      readFile(
-        new URL("../../yona-original/app/views/error/badrequest.scala.html", import.meta.url),
-        "utf8",
-      ),
-      readFile(
-        new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
-        "utf8",
-      ),
-      readFile(
-        new URL("../../yona-original/app/assets/stylesheets/less/_sprites.less", import.meta.url),
-        "utf8",
-      ),
-      readFile(new URL("../../yona-original/conf/messages", import.meta.url), "utf8"),
-    ]);
-
-  expect(members).toContain("@projectLayout(message, project, utils.MenuType.PROJECT_SETTING)");
-  expect(members).toContain('@projectMenu(project, utils.MenuType.PROJECT_SETTING, "")');
-  expect(members).toContain('<div class="page-wrap-outer">');
-  expect(members).toContain('<div class="project-page-wrap">');
-  expect(projectMenu).toContain('<div class="project-menu-outer">');
-  expect(projectMenu).toContain("@isActiveMenu(MenuType.PROJECT_SETTING)");
-  expect(forbidden).toContain('@projectMenu(project, utils.MenuType.PROJECT_HOME, "")');
-  expect(forbidden).toContain('<div class="error-wrap">');
-  expect(forbidden).toContain('<i class="ico ico-err2"></i>');
-  expect(forbidden).toContain("@Messages(messageKey)");
-  expect(badRequest).toContain('@projectMenu(project, menuType, "")');
-  expect(badRequest).toContain('<div class="error-wrap">');
-  expect(badRequest).toContain('<i class="ico ico-err2"></i>');
-  expect(pageLess).toContain("padding:100px 0px;");
-  expect(pageLess).toContain("text-align:center;");
-  expect(pageLess).toContain("font-weight:bold; font-size:16px;");
-  expect(pageLess).toContain("color:#898989; margin:30px 0;");
-  expect(sprites).toContain("background-position: -80px -160px;");
-  expect(messages).toContain(
-    "error.badrequest = The request cannot be fulfilled due to bad syntax",
-  );
-  expect(messages).toContain("error.forbidden = You are not authorized");
-  expect(route).toContain("function ProjectMembersErrorRouteShell");
-  for (const owner of [
-    "project-members-error-wrap",
-    "project-members-error-icon",
-    "project-members-error-message",
-    "project-members-error-login",
-  ]) {
-    expect(route).toContain(`data-owner="${owner}"`);
-  }
-  for (const declaration of []) {
-    expect(styles).toContain(declaration);
-  }
-
   await mockProjectHome(page);
   for (const viewport of [
     { width: 1366, height: 900 },

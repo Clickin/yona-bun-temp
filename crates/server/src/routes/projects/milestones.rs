@@ -1,17 +1,24 @@
 use super::*;
+use crate::routes::utils::issue_label_from_record;
 
-fn project_milestone_due_date_projection(due_date: Option<DateTime>) -> (bool, String) {
-    let Some(due_date) = due_date else {
-        return (false, String::new());
-    };
-    let today =
-        sea_orm::entity::prelude::DateTimeUtc::from(std::time::SystemTime::now()).naive_utc();
-    let today = today.date();
-    let days = due_date.date().signed_duration_since(today).num_days();
-    if days < 0 {
-        (true, format!("{} days past", days.abs()))
-    } else {
-        (false, format!("{days} days left"))
+fn populate_project_milestone_dates(
+    milestone: &mut IssueMilestone,
+    record: &persistence::IssueMilestoneRecord,
+) {
+    let (due_date_overdue, until_label) =
+        crate::routes::utils::project_milestone_due_date_projection(record.due_date);
+    milestone.due_date_overdue = due_date_overdue;
+    milestone.until_label = until_label;
+    for (issue, record) in milestone
+        .open_issues
+        .iter_mut()
+        .chain(&mut milestone.closed_issues)
+        .zip(record.open_issues.iter().chain(&record.closed_issues))
+    {
+        issue.created_label = record
+            .created_at
+            .map(|created| created.and_utc().to_rfc3339())
+            .unwrap_or_default();
     }
 }
 
@@ -20,9 +27,7 @@ fn project_milestone_from_record(
     base_path: &str,
 ) -> IssueMilestone {
     let mut milestone = issue_milestone_from_record(record, base_path);
-    let (due_date_overdue, until_label) = project_milestone_due_date_projection(record.due_date);
-    milestone.due_date_overdue = due_date_overdue;
-    milestone.until_label = until_label;
+    populate_project_milestone_dates(&mut milestone, record);
     milestone
 }
 
@@ -41,9 +46,7 @@ async fn project_milestone_from_record_with_issue_references(
         base_path,
     )
     .await?;
-    let (due_date_overdue, until_label) = project_milestone_due_date_projection(record.due_date);
-    milestone.due_date_overdue = due_date_overdue;
-    milestone.until_label = until_label;
+    populate_project_milestone_dates(&mut milestone, record);
     Ok(milestone)
 }
 
@@ -236,6 +239,45 @@ pub(crate) async fn project_milestone_read(
     .await?;
     milestone.viewer_can_update = viewer_can_update;
     milestone.viewer_can_delete = viewer_can_update;
+    milestone.project_labels = repository
+        .list_project_labels(&request.owner_name, &request.project_name)
+        .await
+        .map_err(internal_error)?
+        .iter()
+        .map(issue_label_from_record)
+        .collect();
+    milestone.open_milestones = repository
+        .list_project_milestone_options(
+            &request.owner_name,
+            &request.project_name,
+            persistence::MilestoneListFilter {
+                order_by: "dueDate".to_string(),
+                order_dir: "asc".to_string(),
+                state: "open".to_string(),
+            },
+        )
+        .await
+        .map_err(internal_error)?
+        .iter()
+        .map(|record| project_milestone_from_record(record, &service.base_path))
+        .collect();
+    let mut assignable_users = repository
+        .list_project_assignable_users(&request.owner_name, &request.project_name, None, "", "", 10)
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("project not found"))?;
+    legacy_assignable_user_avatar_urls(repository, &mut assignable_users).await;
+    milestone.assignable_users = assignable_users
+        .items
+        .into_iter()
+        .map(|user| ProjectMemberSummary {
+            avatar_url: user.avatar_url,
+            login_id: user.login_id,
+            user_id: user.user_id,
+            user_label: user.display_name,
+            ..Default::default()
+        })
+        .collect();
     Ok((
         ProjectMilestoneMutationResponse {
             milestone: Some(milestone),

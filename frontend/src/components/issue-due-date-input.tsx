@@ -1,22 +1,18 @@
-/* Shared legacy issue due-date search-bar control: visible text input keeps the
- * submitted `dueDate` value contract (name="dueDate", class "textbox full",
- * no data-toggle) and a hidden native date input powers the calendar button.
- * Native picker value is the raw YYYY-MM-DD format; display formatting is the
- * caller's responsibility via `value` (controlled) or `defaultValue`
- * (uncontrolled, e.g. quicksearch forms that read the DOM on submit).
- * The native input's clip geometry lives in app.css (`.issue-due-date-native-picker`),
- * shared by all screens without per-screen style classes. Screens whose
- * search-bar needs route-scoped geometry (issue create form) own that paint
- * in their slice css keyed by the data-owner values emitted here.
- */
-import { useEffect, useState, type FocusEvent, type RefObject } from "react";
+import {
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type FocusEvent,
+  type KeyboardEvent,
+  type RefObject,
+} from "react";
+import { createPortal, flushSync } from "react-dom";
 import { useLegacyMessages } from "../i18n";
-
-const NATIVE_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/u;
+import { MilestoneDatePicker } from "./milestone-date-picker";
 
 export function IssueDueDateInput({
   autoComplete,
-  datePickerRef,
   defaultValue,
   dueDateRef,
   inputId,
@@ -27,51 +23,78 @@ export function IssueDueDateInput({
   value,
 }: {
   autoComplete?: "off";
-  datePickerRef: RefObject<HTMLInputElement | null>;
   defaultValue?: string;
   dueDateRef: RefObject<HTMLInputElement | null>;
   inputId?: string;
-  onBlur?: (event: FocusEvent<HTMLInputElement>) => void;
+  onBlur?: () => void;
   onChange?: (value: string) => void;
   onFocus?: (event: FocusEvent<HTMLInputElement>) => void;
   ownerPrefix: string;
   value?: string;
 }) {
   const { t } = useLegacyMessages();
-  const currentDate = value ?? defaultValue ?? "";
-  const [nativeDateValue, setNativeDateValue] = useState(() =>
-    NATIVE_DATE_PATTERN.test(currentDate) ? currentDate : "",
-  );
+  const calendarId = useId();
+  const calendarRef = useRef<HTMLDivElement>(null);
+  const [localValue, setLocalValue] = useState(defaultValue ?? "");
+  const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState({ left: 0, top: 0 });
+  const currentDate = value ?? localValue;
 
-  useEffect(() => {
-    // Controlled consumers pass `value`; uncontrolled ones (edit form, list
-    // quicksearch) rely on defaultValue and never get a `value` prop — skip
-    // the sync so the native picker keeps its defaultValue-derived state.
-    if (value === undefined) return;
-    setNativeDateValue(NATIVE_DATE_PATTERN.test(value ?? "") ? (value ?? "") : "");
-  }, [value]);
+  useLayoutEffect(() => {
+    const field = dueDateRef.current;
+    const calendar = calendarRef.current;
+    if (!open || !field || !calendar) return;
+    // Pikaday.adjustPosition: body-owned popup, right/top flip at viewport edges.
+    const rect = field.getBoundingClientRect();
+    let left = rect.left + window.scrollX;
+    let top = rect.bottom + window.scrollY;
+    if (left + calendar.offsetWidth > window.innerWidth) {
+      left = left - calendar.offsetWidth + field.offsetWidth;
+    }
+    if (top + calendar.offsetHeight > window.innerHeight + window.scrollY) {
+      top = top - calendar.offsetHeight - field.offsetHeight;
+    }
+    setPosition({ left, top });
+  }, [dueDateRef, open]);
 
-  const openPicker = () => {
-    // Legacy pikaday keeps the visible text input focused when the calendar
-    // opens; mirror that instead of focusing the hidden native picker.
+  function handleBlur(event: FocusEvent<HTMLElement>) {
+    const next = event.relatedTarget;
+    if (
+      next instanceof Node &&
+      (next === dueDateRef.current || calendarRef.current?.contains(next))
+    )
+      return;
+    setOpen(false);
+    onBlur?.();
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLElement>) {
+    if (open && event.key === "ArrowDown" && event.currentTarget === dueDateRef.current) {
+      event.preventDefault();
+      const calendar = calendarRef.current;
+      const day =
+        calendar?.querySelector<HTMLButtonElement>(".is-selected .pika-day") ??
+        calendar?.querySelector<HTMLButtonElement>(".pika-day");
+      day?.focus();
+      return;
+    }
+    if (event.key !== "Escape" || !open) return;
+    event.preventDefault();
+    event.stopPropagation();
     dueDateRef.current?.focus();
-    const picker = datePickerRef.current;
-    if (picker) {
-      try {
-        picker.showPicker?.();
-      } catch {
-        // native picker unavailable — the visible input still has focus
-      }
-    }
-  };
+    setOpen(false);
+  }
 
-  const handleNativeChange = (nextValue: string) => {
-    setNativeDateValue(nextValue);
-    if (dueDateRef.current) {
-      dueDateRef.current.value = nextValue;
-    }
-    onChange?.(nextValue);
-  };
+  function selectDate(nextValue: string) {
+    // Commit React's value before blur-driven detail mutations and quicksearch read it.
+    flushSync(() => {
+      setLocalValue(nextValue);
+      onChange?.(nextValue);
+    });
+    dueDateRef.current?.focus();
+    dueDateRef.current?.blur();
+    setOpen(false);
+  }
 
   return (
     <>
@@ -82,32 +105,62 @@ export function IssueDueDateInput({
         name="dueDate"
         className="textbox full"
         data-owner={`${ownerPrefix}-due-date-input`}
-        value={value}
-        defaultValue={defaultValue}
+        value={currentDate}
         autoComplete={autoComplete}
-        onFocus={onFocus}
-        onBlur={onBlur}
-        onChange={(event) => onChange?.(event.currentTarget.value)}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-controls={open ? calendarId : undefined}
+        onFocus={(event) => {
+          if (!open) onFocus?.(event);
+          setOpen(true);
+        }}
+        onClick={() => setOpen(true)}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+        onChange={(event) => {
+          setLocalValue(event.currentTarget.value);
+          onChange?.(event.currentTarget.value);
+        }}
       />
       <button
         type="button"
         className="search-btn btn-calendar"
         data-owner={`${ownerPrefix}-due-date-calendar`}
         aria-label={t("issue.dueDate")}
-        onClick={openPicker}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-controls={open ? calendarId : undefined}
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={() => {
+          dueDateRef.current?.focus();
+          setOpen(true);
+        }}
+        onKeyDown={handleKeyDown}
       >
         <i className="yobicon-calendar2" />
       </button>
-      <input
-        ref={datePickerRef}
-        type="date"
-        className="issue-due-date-native-picker"
-        data-owner={`${ownerPrefix}-due-date-native-picker`}
-        aria-label={t("milestone.form.dueDate")}
-        tabIndex={-1}
-        value={nativeDateValue}
-        onChange={(event) => handleNativeChange(event.currentTarget.value)}
-      />
+      {open
+        ? createPortal(
+            <MilestoneDatePicker
+              dueDate={currentDate}
+              onSelect={selectDate}
+              popupProps={{
+                id: calendarId,
+                ref: calendarRef,
+                role: "dialog",
+                "aria-label": t("issue.dueDate"),
+                style: position,
+                onBlur: handleBlur,
+                onChange: () => dueDateRef.current?.focus(),
+                onKeyDown: handleKeyDown,
+                onMouseDown: (event) => {
+                  if (!(event.target instanceof HTMLSelectElement)) event.preventDefault();
+                },
+              }}
+            />,
+            document.body,
+          )
+        : null}
     </>
   );
 }

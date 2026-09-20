@@ -115,13 +115,14 @@ import {
 import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
 import { currentSessionQueryOptions } from "../../../../../api/session";
 import type { ProjectContainer } from "../../../../../api/types";
-import { useLegacyMessages } from "../../../../../i18n";
+import { formatLegacyTimestamp, useLegacyMessages } from "../../../../../i18n";
 import {
   useLockedLinkClick,
   useWireframeContentProgress,
 } from "../../../../../components/route-fetch-lock";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
 import legacySpriteUrl from "../../../../../assets/legacy/sprite.png";
+import defaultAvatarUrl from "../../../../../assets/legacy/default-avatar-128.png";
 
 export const Route = createFileRoute("/$ownerName/$projectName/code/$branch/$filePath")({
   component: ProjectCodeFileRoute,
@@ -307,40 +308,100 @@ function ProjectCodeFileBody({
     projectName,
     "postform",
   )}?path=${newFilePath}&branch=${encodedBranchItemName}`;
+  const displayedBranch =
+    code.branches.find((item) => branchItemName(item.name) === selectedBranchItemName)?.name ??
+    selectedBranch;
+  const [branchMenuOpen, setBranchMenuOpen] = React.useState(false);
+  const [branchSearch, setBranchSearch] = React.useState("");
+  const [highlightedBranch, setHighlightedBranch] = React.useState(0);
+  const branchTriggerRef = React.useRef<HTMLButtonElement>(null);
+  const branchSearchRef = React.useRef<HTMLInputElement>(null);
+  const highlightedBranchRef = React.useRef<HTMLLIElement>(null);
+  const matchingBranches = code.branches.filter((item) =>
+    branchItemName(item.name).toLowerCase().includes(branchSearch.toLowerCase()),
+  );
+
+  React.useEffect(() => {
+    if (branchMenuOpen) branchSearchRef.current?.focus();
+  }, [branchMenuOpen]);
+
+  React.useEffect(() => {
+    if (branchMenuOpen) highlightedBranchRef.current?.scrollIntoView({ block: "nearest" });
+  }, [branchMenuOpen, branchSearch, highlightedBranch]);
+
+  const openBranchMenu = (search = "") => {
+    setBranchSearch(search);
+    setHighlightedBranch(
+      search
+        ? 0
+        : Math.max(
+            0,
+            code.branches.findIndex((item) => item.name === displayedBranch),
+          ),
+    );
+    setBranchMenuOpen(true);
+  };
+  const selectBranch = (name: string) => {
+    setBranchMenuOpen(false);
+    branchTriggerRef.current?.focus();
+    if (name === displayedBranch) return;
+    void router.navigate({
+      to: "/$ownerName/$projectName/code/$branch/$",
+      params: { ownerName, projectName, branch: branchItemName(name), _splat: filePath },
+    });
+  };
 
   return (
     <div className="page-wrap-outer">
       <div className="project-page-wrap">
         <div className="code-browse-wrap">
-          {isFolder ? (
-            <ul className="nav nav-tabs">
-              <li className="active">
-                <Link
-                  to={projectPath(
-                    ownerName,
-                    projectName,
-                    "code",
-                    encodedBranch,
-                    pathWithoutFileName(filePath),
-                  )}
-                  activeOptions={{
-                    exact: true,
-                    explicitUndefined: true,
-                    includeHash: true,
-                    includeSearch: true,
-                  }}
-                  activeProps={{
-                    "aria-current": undefined,
-                    className: undefined,
-                    "data-status": undefined,
-                  }}
-                >
-                  {t("code.files")}
-                </Link>
-              </li>
+          <ul className="nav nav-tabs">
+            <li className="active">
+              <Link
+                to={projectPath(
+                  ownerName,
+                  projectName,
+                  "code",
+                  encodedBranch,
+                  pathWithoutFileName(filePath),
+                )}
+                activeOptions={{
+                  exact: true,
+                  explicitUndefined: true,
+                  includeHash: true,
+                  includeSearch: true,
+                }}
+                activeProps={{
+                  "aria-current": undefined,
+                  className: undefined,
+                  "data-status": undefined,
+                }}
+              >
+                {t("code.files")}
+              </Link>
+            </li>
+            <li>
+              <Link
+                to={projectPath(ownerName, projectName, "commits", encodedBranch)}
+                activeOptions={{
+                  exact: true,
+                  explicitUndefined: true,
+                  includeHash: true,
+                  includeSearch: true,
+                }}
+                activeProps={{
+                  "aria-current": undefined,
+                  className: undefined,
+                  "data-status": undefined,
+                }}
+              >
+                {t("code.commits")}
+              </Link>
+            </li>
+            {isGit ? (
               <li>
                 <Link
-                  to={projectPath(ownerName, projectName, "commits", encodedBranch)}
+                  to={projectPath(ownerName, projectName, "branches")}
                   activeOptions={{
                     exact: true,
                     explicitUndefined: true,
@@ -353,38 +414,159 @@ function ProjectCodeFileBody({
                     "data-status": undefined,
                   }}
                 >
-                  {t("code.commits")}
+                  {t("title.branches")}
                 </Link>
               </li>
-              {isGit ? (
-                <li>
-                  <Link
-                    to={projectPath(ownerName, projectName, "branches")}
-                    activeOptions={{
-                      exact: true,
-                      explicitUndefined: true,
-                      includeHash: true,
-                      includeSearch: true,
-                    }}
-                    activeProps={{
-                      "aria-current": undefined,
-                      className: undefined,
-                      "data-status": undefined,
-                    }}
-                  >
-                    {t("title.branches")}
-                  </Link>
-                </li>
-              ) : null}
-            </ul>
-          ) : null}
+            ) : null}
+          </ul>
           <div className="code-browse-header">
+            <div
+              className={`select2-container pull-left${branchMenuOpen ? " select2-dropdown-open select2-container-active" : ""}`}
+              data-owner="project-code-file-branch-picker"
+              onBlur={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget)) {
+                  setBranchMenuOpen(false);
+                }
+              }}
+              onKeyDown={(event) => {
+                if (event.nativeEvent.isComposing) return;
+                if (!branchMenuOpen) {
+                  if (["ArrowDown", "ArrowUp", "Enter", " "].includes(event.key)) {
+                    event.preventDefault();
+                    openBranchMenu();
+                  } else if (
+                    event.key.length === 1 &&
+                    !event.ctrlKey &&
+                    !event.metaKey &&
+                    !event.altKey
+                  ) {
+                    event.preventDefault();
+                    openBranchMenu(event.key);
+                  }
+                } else if (event.key === "Escape") {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setBranchMenuOpen(false);
+                  branchTriggerRef.current?.focus();
+                } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                  event.preventDefault();
+                  setHighlightedBranch((index) =>
+                    Math.max(
+                      0,
+                      Math.min(
+                        matchingBranches.length - 1,
+                        index + (event.key === "ArrowDown" ? 1 : -1),
+                      ),
+                    ),
+                  );
+                } else if (event.key === "Enter") {
+                  event.preventDefault();
+                  const item = matchingBranches[highlightedBranch];
+                  if (item) selectBranch(item.name);
+                }
+              }}
+            >
+              <button
+                ref={branchTriggerRef}
+                type="button"
+                className="select2-choice"
+                aria-expanded={branchMenuOpen}
+                aria-haspopup="listbox"
+                aria-controls="code-file-branch-options"
+                onClick={() => {
+                  if (branchMenuOpen) setBranchMenuOpen(false);
+                  else openBranchMenu();
+                }}
+              >
+                <span className="select2-chosen">
+                  {isGit ? (
+                    <strong
+                      className={`branch-label ${displayedBranch.startsWith("refs/tags/") ? "tag" : "branch"}`}
+                    >
+                      {displayedBranch.startsWith("refs/tags/") ? "tag" : "branch"}
+                    </strong>
+                  ) : null}
+                  {isGit ? " " : null}
+                  {branchItemName(displayedBranch)}
+                </span>
+                <span className="select2-arrow" aria-hidden="true">
+                  <b></b>
+                </span>
+              </button>
+              <div
+                className={`select2-drop${branchMenuOpen ? " select2-drop-active is-open" : " select2-display-none"} branches select2-with-searchbox`}
+                data-owner="project-code-file-branch-picker-drop"
+              >
+                <div className="select2-search">
+                  <input
+                    ref={branchSearchRef}
+                    role="combobox"
+                    aria-expanded={branchMenuOpen}
+                    aria-controls="code-file-branch-options"
+                    aria-autocomplete="list"
+                    aria-activedescendant={
+                      branchMenuOpen && matchingBranches[highlightedBranch]
+                        ? `code-file-branch-option-${highlightedBranch}`
+                        : undefined
+                    }
+                    type="text"
+                    className={`select2-input${branchMenuOpen ? " select2-focused" : ""}`}
+                    aria-label={t("title.branches")}
+                    value={branchSearch}
+                    onChange={(event) => {
+                      setBranchSearch(event.currentTarget.value);
+                      setHighlightedBranch(0);
+                    }}
+                  />
+                </div>
+                <ul
+                  className="select2-results"
+                  id="code-file-branch-options"
+                  role="listbox"
+                  aria-label={t("title.branches")}
+                >
+                  {branchMenuOpen
+                    ? matchingBranches.map((item, index) => (
+                        <li
+                          key={item.name}
+                          ref={index === highlightedBranch ? highlightedBranchRef : undefined}
+                          id={`code-file-branch-option-${index}`}
+                          role="option"
+                          aria-selected={item.name === displayedBranch}
+                          className={`select2-results-dept-0 select2-result select2-result-selectable${index === highlightedBranch ? " select2-highlighted" : ""}`}
+                          onMouseMove={() => setHighlightedBranch(index)}
+                        >
+                          <button
+                            type="button"
+                            className="select2-result-label"
+                            tabIndex={-1}
+                            onMouseDown={(event) => event.preventDefault()}
+                            onClick={() => selectBranch(item.name)}
+                          >
+                            {isGit ? (
+                              <strong
+                                className={`branch-label ${item.name.startsWith("refs/tags/") ? "tag" : "branch"}`}
+                              >
+                                {item.name.startsWith("refs/tags/") ? "tag" : "branch"}
+                              </strong>
+                            ) : null}
+                            {isGit ? " " : null}
+                            {branchItemName(item.name)}
+                          </button>
+                        </li>
+                      ))
+                    : null}
+                  {branchMenuOpen && matchingBranches.length === 0 ? (
+                    <li className="select2-no-results">{t("title.no.results")}</li>
+                  ) : null}
+                </ul>
+              </div>
+            </div>
             <select
               id="branches"
-              data-format="branch"
-              data-dropdown-css-class="branches"
-              className={`pull-left${isFolder ? "" : " mb10"}`}
-              data-owner="project-code-file-branch-picker"
+              key={`${selectedBranchItemName}:${filePath}`}
+              className="pull-left select2-offscreen"
+              tabIndex={-1}
               defaultValue={projectHref(
                 runtimeConfig.basePath,
                 ownerName,
@@ -620,7 +802,7 @@ function FolderListEntry({
           onClick={lockedLinkClick}
           to={projectPath(ownerName, projectName, "code", encodedBranch, entry.path)}
           hash={entry.kind === "folder" ? rowId : undefined}
-          className={entry.kind === "folder" ? "folder" : "file"}
+          className={entry.kind === "folder" ? "dynatree-ico-cf" : "dynatree-ico-c"}
           title={entry.name}
         >
           <span className="dynatree-icon vmiddle"></span>
@@ -628,6 +810,24 @@ function FolderListEntry({
         </Link>
       </div>
       <div className="span5 commitMsg" data-owner="project-code-folder-commit-message">
+        {entry.authorAvatarUrl ? (
+          <>
+            {entry.authorLoginId ? (
+              <Link
+                to="/$user"
+                params={{ user: entry.authorLoginId }}
+                className="avatar-wrap smaller"
+                title={entry.authorLabel}
+              >
+                <img src={entry.authorAvatarUrl} alt={entry.authorLabel} />
+              </Link>
+            ) : (
+              <button type="button" className="avatar-wrap smaller" title={entry.authorLabel}>
+                <img src={defaultAvatarUrl} alt={entry.authorLabel} />
+              </button>
+            )}{" "}
+          </>
+        ) : null}
         <span className="ml5" data-owner="project-code-folder-commit-message-wrapper">
           <Link
             activeOptions={{
@@ -678,15 +878,43 @@ function FileView({
 }) {
   const { t } = useLegacyMessages();
   const [isOpenInBrowserPopoverVisible, setIsOpenInBrowserPopoverVisible] = React.useState(false);
+  const openInBrowserRef = React.useRef<HTMLAnchorElement>(null);
+  const openPopoverRef = React.useRef<HTMLDivElement>(null);
+  const [popoverPosition, setPopoverPosition] = React.useState({ left: 0, top: 0 });
+  const showOpenPopover = () => {
+    if (!isOpenInBrowserPopoverVisible) {
+      setPopoverPosition({ left: 0, top: 0 });
+      setIsOpenInBrowserPopoverVisible(true);
+    }
+  };
+  React.useLayoutEffect(() => {
+    const control = openInBrowserRef.current;
+    const popover = openPopoverRef.current;
+    const parent = popover?.offsetParent;
+    if (!isOpenInBrowserPopoverVisible || !control || !popover || !(parent instanceof HTMLElement))
+      return;
+    const controlBox = control.getBoundingClientRect();
+    const parentBox = parent.getBoundingClientRect();
+    // Bootstrap's top placement uses the measured tooltip size; frozen .popover.top supplies its gap.
+    setPopoverPosition({
+      left:
+        controlBox.left -
+        parentBox.left -
+        parent.clientLeft +
+        parent.scrollLeft +
+        (controlBox.width - popover.offsetWidth) / 2,
+      top:
+        controlBox.top - parentBox.top - parent.clientTop + parent.scrollTop - popover.offsetHeight,
+    });
+  }, [isOpenInBrowserPopoverVisible]);
   const commitId = stringField(file.commitId, "");
   const shortCommitId = commitId.slice(0, 7);
   const isGit = project.vcs === "GIT";
   const selectedBranchItemName = branchItemName(selectedBranch);
-  const authorLoginId = stringField(file.userLoginId, "");
-  const hasViewableText = typeof file.data === "string" || typeof file.text === "string";
-  const fileText = stringField(file.data, "") || stringField(file.text, "");
+  const authorLoginId = stringField(file.authorLoginId, "");
+  const fileText = stringField(file.text, "");
   const isBinary = booleanField(file.isBinary);
-  const isTooLargeText = !isBinary && !hasViewableText && numberField(file.size) > 0;
+  const isTooLargeText = booleanField(file.isTooLarge);
   const mimeType = stringField(file.mimeType, "");
   const rawRevision = encodeURIComponent(isGit ? selectedBranchItemName : commitId);
   const rawPath = projectPath(ownerName, projectName, "rawcode", rawRevision, filePath);
@@ -710,48 +938,41 @@ function FileView({
       <div className="file-header nm" data-owner="project-code-file-header">
         <div id="fileInfo" className="file-info" data-owner="project-code-file-info">
           <span id="commiter" className="commiter" data-owner="project-code-file-author">
-            <Link
-              to="/$user"
-              params={{ user: authorLoginId }}
-              activeOptions={{
-                exact: true,
-                explicitUndefined: true,
-                includeHash: true,
-                includeSearch: true,
-              }}
-              activeProps={{
-                "aria-current": undefined,
-                className: undefined,
-                "data-status": undefined,
-              }}
-              className="avatar-wrap"
-              title={authorLoginId}
-            >
-              <img src={stringField(file.avatarUrl, "")} alt="" width="32" height="32" />
-            </Link>
-            <Link
-              to="/$user"
-              params={{ user: authorLoginId }}
-              activeOptions={{
-                exact: true,
-                explicitUndefined: true,
-                includeHash: true,
-                includeSearch: true,
-              }}
-              activeProps={{
-                "aria-current": undefined,
-                className: undefined,
-                "data-status": undefined,
-              }}
-              className="ml5"
-              data-owner="project-code-file-author-link"
-            >
-              {stringField(file.author, "")}
-            </Link>
-          </span>
+            {authorLoginId ? (
+              <>
+                <Link
+                  to="/$user"
+                  params={{ user: authorLoginId }}
+                  className="avatar-wrap smaller"
+                  title={authorLoginId}
+                >
+                  <img src={stringField(file.authorAvatarUrl, "") || defaultAvatarUrl} alt="" />
+                </Link>{" "}
+                <Link
+                  to="/$user"
+                  params={{ user: authorLoginId }}
+                  className="ml5"
+                  data-owner="project-code-file-author-link"
+                >
+                  {stringField(file.authorLabel, "")}
+                </Link>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="avatar-wrap smaller"
+                  title={stringField(file.authorLabel, "")}
+                >
+                  <img src={defaultAvatarUrl} alt="" />
+                </button>{" "}
+                <span className="ml5">{stringField(file.authorLabel, "")}</span>
+              </>
+            )}{" "}
+          </span>{" "}
           <span id="commitDate" className="commitDate" data-owner="project-code-file-date">
-            {stringField(file.createdDate, "")}
-          </span>
+            {formatLegacyTimestamp(stringField(file.commitDate, ""), t).label}
+          </span>{" "}
           <span id="revisionNo" className="revision" data-owner="project-code-file-revision">
             <Link
               to={projectPath(ownerName, projectName, "commit", commitId)}
@@ -769,7 +990,8 @@ function FileView({
                 "data-status": undefined,
               }}
             >
-              {isGit ? shortCommitId : `Revision ${commitId}`}
+              {" "}
+              {isGit ? shortCommitId : `Revision ${commitId}`}{" "}
               {numberField(file.commentCount) > 0 ? (
                 <span
                   className="number-of-comments ml5"
@@ -777,13 +999,15 @@ function FileView({
                 >
                   <i className="yobicon-comments"></i> {numberField(file.commentCount)}
                 </span>
-              ) : null}
-            </Link>
-          </span>
+              ) : null}{" "}
+            </Link>{" "}
+          </span>{" "}
           <span id="commitMessage" className="commitMsg" data-owner="project-code-file-message">
             {stringField(file.commitMessage, "")}
+          </span>{" "}
+          <span>
+            {isBinary ? "" : fileText ? (fileText.includes("\r\n") ? "DOS" : "UNIX") : "UNDEFINED"}
           </span>
-          <span>{stringField(file.lineEnding, "")}</span>
         </div>
         <div className="pull-right" data-owner="project-code-file-actions">
           {!isBinary ? (
@@ -796,7 +1020,7 @@ function FileView({
                 target="_blank"
               >
                 <i className="yobicon-download-alt yobicon-white vmiddle"></i> Raw
-              </Link>
+              </Link>{" "}
               {!currentUserIsAnonymous ? (
                 <Link
                   to={editPathWithSearch}
@@ -816,38 +1040,36 @@ function FileView({
                 >
                   Edit
                 </Link>
-              ) : null}
+              ) : null}{" "}
             </>
           ) : null}
-          <span
-            className="open-in-browser-popover"
-            data-owner="project-code-file-open-wrap"
+          <Link
+            ref={openInBrowserRef}
+            id="open-in-browser"
+            to={openPath}
+            reloadDocument
+            className="ybtn"
+            data-owner="project-code-file-open-action"
+            target="_blank"
             onBlur={() => setIsOpenInBrowserPopoverVisible(false)}
-            onFocus={() => setIsOpenInBrowserPopoverVisible(true)}
-            onMouseEnter={() => setIsOpenInBrowserPopoverVisible(true)}
+            onFocus={showOpenPopover}
+            onMouseEnter={showOpenPopover}
             onMouseLeave={() => setIsOpenInBrowserPopoverVisible(false)}
           >
-            <Link
-              id="open-in-browser"
-              to={openPath}
-              reloadDocument
-              className="ybtn"
-              data-owner="project-code-file-open-action"
-              target="_blank"
+            <i className="yobicon-download-alt yobicon-white vmiddle"></i> {t("code.open")}
+          </Link>{" "}
+          {isOpenInBrowserPopoverVisible ? (
+            <div
+              ref={openPopoverRef}
+              className="popover top in"
+              data-owner="project-code-file-open-popover"
+              role="tooltip"
+              style={{ display: "block", ...popoverPosition }}
             >
-              <i className="yobicon-download-alt yobicon-white vmiddle"></i> {t("code.open")}
-            </Link>
-            {isOpenInBrowserPopoverVisible ? (
-              <div
-                className="popover top in"
-                data-owner="project-code-file-open-popover"
-                role="tooltip"
-              >
-                <div className="arrow"></div>
-                <div className="popover-content">{t("code.open.desc")}</div>
-              </div>
-            ) : null}
-          </span>
+              <div className="arrow"></div>
+              <div className="popover-content">{t("code.open.desc")}</div>
+            </div>
+          ) : null}
           <Link
             to={historyPath}
             activeOptions={{

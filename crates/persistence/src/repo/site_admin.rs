@@ -1,4 +1,5 @@
 use super::*;
+use sea_orm::QueryTrait;
 
 impl AppRepositoryImpl<'_> {
     /// Lists users for the legacy site-admin user-management surface.
@@ -378,6 +379,83 @@ impl AppRepositoryImpl<'_> {
         }
 
         Ok(projects)
+    }
+
+    pub async fn list_project_directory(
+        &self,
+        filter: &str,
+        label_ids: &[i64],
+        page: u32,
+        include_private: bool,
+    ) -> Result<SiteProjectListRecord, DbErr> {
+        const PAGE_SIZE: u64 = 10;
+        let page = page.max(1);
+        let mut query = project::Entity::find();
+        if !include_private {
+            query = query.filter(
+                Expr::expr(Func::lower(Expr::col(project::Column::ProjectScope))).eq("public"),
+            );
+        }
+        if !filter.trim().is_empty() {
+            let pattern = format!("%{}%", filter.to_lowercase());
+            let matching_labels = label::Entity::find()
+                .select_only()
+                .column(label::Column::Id)
+                .filter(
+                    Expr::expr(Func::lower(Expr::col(label::Column::Name))).like(pattern.clone()),
+                )
+                .into_query();
+            let labeled_projects = project_label::Entity::find()
+                .select_only()
+                .column(project_label::Column::ProjectId)
+                .filter(project_label::Column::LabelId.in_subquery(matching_labels))
+                .into_query();
+            query = query.filter(
+                Condition::any()
+                    .add(
+                        Expr::expr(Func::lower(Expr::col(project::Column::Owner)))
+                            .like(pattern.clone()),
+                    )
+                    .add(
+                        Expr::expr(Func::lower(Expr::col(project::Column::Name)))
+                            .like(pattern.clone()),
+                    )
+                    .add(
+                        Expr::expr(Func::lower(Expr::col(project::Column::Overview))).like(pattern),
+                    )
+                    .add(project::Column::Id.in_subquery(labeled_projects)),
+            );
+        }
+        if !label_ids.is_empty() {
+            let labeled_projects = project_label::Entity::find()
+                .select_only()
+                .column(project_label::Column::ProjectId)
+                .filter(project_label::Column::LabelId.is_in(label_ids.iter().copied()))
+                .into_query();
+            query = query.filter(project::Column::Id.in_subquery(labeled_projects));
+        }
+        let total = query.clone().count(&self.db).await? as u32;
+        let rows = query
+            .order_by_desc(project::Column::CreatedDate)
+            .order_by_desc(project::Column::Id)
+            .into_model::<ProjectRow>()
+            .paginate(&self.db, PAGE_SIZE)
+            .fetch_page(u64::from(page - 1))
+            .await?;
+        let mut projects = Vec::with_capacity(rows.len());
+        for row in rows {
+            if let Some(record) = self.project_record_from_row(row).await? {
+                projects.push(record);
+            }
+        }
+        Ok(SiteProjectListRecord {
+            page,
+            page_size: PAGE_SIZE as u32,
+            filter: filter.to_string(),
+            total,
+            total_pages: total.div_ceil(PAGE_SIZE as u32),
+            projects,
+        })
     }
 
     pub async fn list_site_projects(

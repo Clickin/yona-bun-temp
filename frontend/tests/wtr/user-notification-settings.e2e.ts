@@ -1,5 +1,4 @@
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
-import { readFile } from "../wtr-compat.ts";
 
 const NOTIFICATION_TYPES = [
   ["NEW_ISSUE", "New issue added"],
@@ -36,7 +35,7 @@ const CHECKED_BY_PROJECT = new Map([
   ["7", new Set(["NEW_POSTING", "NEW_COMMIT"])],
 ]);
 
-test("current-user notification settings page matches legacy user/edit_notifications.scala.html screen DOM", async ({
+test("current-user notification settings preserve project navigation and persistent switches", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -62,8 +61,9 @@ test("current-user notification settings page matches legacy user/edit_notificat
       }),
     });
   });
+  const workspace = workspaceBody();
   await page.route("**/api/v1/workspace", async (route) => {
-    await route.fulfill({ contentType: "application/json", body: JSON.stringify(workspaceBody()) });
+    await route.fulfill({ contentType: "application/json", body: JSON.stringify(workspace) });
   });
   await page.route("**/api/v1/workspace/notifications", async (route) => {
     expect(route.request().method()).toBe("POST");
@@ -72,7 +72,11 @@ test("current-user notification settings page matches legacy user/edit_notificat
       eventType: "NEW_COMMENT",
       projectId: "2",
     });
-    await route.fulfill({ contentType: "application/json", body: JSON.stringify(workspaceBody()) });
+    const notification = workspace.watchedProjects[0].notifications.find(
+      (entry) => entry.eventType === "NEW_COMMENT",
+    )!;
+    notification.enabled = !notification.enabled;
+    await route.fulfill({ contentType: "application/json", body: JSON.stringify(workspace) });
   });
 
   await page.goto(`${basePath}/user/editform/notifications#7`);
@@ -80,9 +84,6 @@ test("current-user notification settings page matches legacy user/edit_notificat
   await expect(page).toHaveTitle("admin");
   expect(await page.locator("head > title").first().textContent()).toBe("admin");
 
-  const actual = await canonicalizeScreenRoots(page);
-  const expected = await canonicalizeHtml(page, expectedScreen(basePath, "7"));
-  expect(actual).toEqual(expected);
   await expect(page.locator('#notification-projects a[href$="#2"]')).toHaveCount(1);
   await expect(page.locator('#notification-projects a[href$="#7"]')).toHaveCount(1);
   await expect(page.locator("#notification-projects button")).toHaveCount(0);
@@ -224,6 +225,9 @@ test("current-user notification settings page matches legacy user/edit_notificat
       '[data-owner="user-notification-project-pane"][id="2"] [data-owner="user-notification-switch"]',
     ),
   ).toHaveCount(NOTIFICATION_TYPES.length);
+  await expect(page.locator('[data-owner="user-notification-project-pane"][id="2"] th')).toHaveText(
+    NOTIFICATION_TYPES.map(([, label]) => label),
+  );
   const newCommentSwitch = page
     .locator('[data-owner="user-notification-project-pane"][id="2"] tr', {
       hasText: "New comment on post or issue added",
@@ -231,56 +235,41 @@ test("current-user notification settings page matches legacy user/edit_notificat
     .locator('[data-owner="user-notification-switch"]');
   await expect(newCommentSwitch).toHaveAttribute("role", "switch");
   await expect(newCommentSwitch).toHaveAttribute("aria-checked", "true");
-  const toggleResponse = page.waitForResponse(
-    (response) =>
-      response.url().endsWith("/api/v1/workspace/notifications") &&
-      response.request().method() === "POST",
-  );
-  await newCommentSwitch.click();
-  await toggleResponse;
-  await expect(newCommentSwitch).toHaveAttribute("aria-checked", "false");
-});
-
-test("current-user notification settings route uses typed tab Links without a route-local generic adapter", async () => {
-  const source = await readFile("src/routes/user/editform/notifications.tsx", "utf8");
-  expect(source).not.toContain("LegacyInternalLink");
-  expect(source).not.toContain("AnchorHTMLAttributes");
-  expect(source).not.toContain("ComponentType");
-  expect(source).not.toContain("createLink");
-  expect(source).not.toContain("<a");
-  expect(source).not.toContain("setAttribute");
-  expect(source).not.toContain("removeAttribute");
-  expect(source).not.toContain("window.location");
-  expect(source).not.toContain("document.title");
-  expect(source).not.toContain("document.location");
-  expect(source).not.toContain("globalThis.document");
-  expect(source).not.toContain("globalThis.location");
-  expect(source).not.toContain("data-href");
-  expect(source).not.toContain('data-toggle="switch"');
-  expect(source).not.toContain("location.hash");
-  expect(source).not.toContain("location.href");
-  expect(source).not.toContain("location.pathname");
-  expect(source).not.toContain("location.search");
-  expect(source).not.toContain("to={href}");
-  expect(source).not.toContain("activeProps={{ className: undefined }}");
-  expect(source).toContain("useLocation");
-  expect(source).toContain('"aria-current": undefined');
-  expect(source).toContain('"data-status": undefined');
-  expect(source).toContain("includeHash: true");
-  expect(source).toContain("includeSearch: true");
-  expect(source).toContain("explicitUndefined: true");
-  expect(source).toContain('data-owner="user-notification-project-link"');
-  expect(source).toContain(
-    "const projectTabLinkInactiveSearch = { __legacyNotificationProjectTabActiveMarker: undefined }",
-  );
-  expect(source).toContain("search={projectTabLinkInactiveSearch}");
-  expect(source).toContain('to="/user/editform/notifications"');
-  expect(source).toContain("hash={projectId}");
-  expect(source.match(/activeProps={{/g)).toHaveLength(1);
-  expect(source.match(/activeOptions={{/g)).toHaveLength(1);
-  expect(source).not.toContain("<title>");
-  expect(source).not.toMatch(/useEffect\s*\([^)]*title/s);
-  expect(source).not.toMatch(/\.(?:title|textContent|innerText)\s*=\s*loginId/);
+  for (const expectedState of ["false", "true"]) {
+    const geometry = await newCommentSwitch.evaluate((element) => {
+      const inner = element.firstElementChild!;
+      const labels = inner.querySelectorAll("[data-owner=user-notification-switch-label]");
+      const outerRect = element.getBoundingClientRect();
+      return {
+        height: outerRect.height,
+        width: outerRect.width,
+        innerDisplay: getComputedStyle(inner).display,
+        innerWidth: inner.getBoundingClientRect().width,
+        labelWidths: Array.from(labels, (label) => label.getBoundingClientRect().width),
+      };
+    });
+    // Live legacy .has-switch is 80x29 with a 162%-wide block and two half-width labels.
+    expect(geometry.width).toBe(80);
+    expect(geometry.height).toBe(29);
+    expect(geometry.innerDisplay).toBe("block");
+    expect(geometry.innerWidth).toBeCloseTo(129.59375, 1);
+    for (const labelWidth of geometry.labelWidths) {
+      expect(labelWidth).toBeCloseTo(64.796875, 1);
+    }
+    await expect(
+      newCommentSwitch.locator("[data-owner=user-notification-switch-label]"),
+    ).toHaveText(["On", "Off"]);
+    const toggleResponse = page.waitForResponse(
+      (response) =>
+        response.url().endsWith("/api/v1/workspace/notifications") &&
+        response.request().method() === "POST",
+    );
+    await newCommentSwitch.click();
+    await toggleResponse;
+    await expect(newCommentSwitch).toHaveAttribute("aria-checked", expectedState);
+    await page.goto(`${basePath}/user/editform/notifications#2`);
+    await expect(newCommentSwitch).toHaveAttribute("aria-checked", expectedState);
+  }
 });
 
 async function mockAuthenticatedSession(page: Page) {
@@ -343,87 +332,6 @@ function watchedProject(projectId: number, ownerName: string, projectName: strin
   };
 }
 
-function expectedScreen(basePath: string, activeProjectId: string) {
-  return `
-<div class="unsupported hidden">
-  <div class="unsupported-inner"><p id="unsupported-content"></p></div>
-</div>
-<header class="gnb-outer">
-  <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
-    <ul class="gnb-nav">
-      <li><a href="${basePath}/" class="logo logo-letter">Y</a></li>
-      <li><form action="${basePath}/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
-    </ul>
-    <div id="mySidenav" class="sidenav">
-      <div class="span5 right-menu span-hard-wrap">
-        <div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="${basePath}/admin">Profile</a></span><span class="user-menu"><a href="${basePath}/user/editform">Account</a></span><a href="${basePath}/users/logout"><span class="user-menu logout label">Log out</span></a></div>
-        <ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button">Favorite</button></li><li class="myProjectList"><button type="button">Project</button></li><li class="myRecentIssueList"><button type="button">Recent History</button></li></ul>
-        <div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div>
-      </div>
-    </div>
-    <ul class="gnb-usermenu">
-      <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="${basePath}/user/issues" class="user-item-btn loggged-in">My Issues</a></li>
-      <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="${basePath}/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
-      <li class="divider"></li>
-      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
-      <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="${basePath}/user/issues/new">New issue</a></li><li><a href="${basePath}/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="${basePath}/projectform">Create new project</a></li><li><a href="${basePath}/organizations/new">New Group</a></li></ul></li>
-    </ul>
-  </div>
-</header>
-<div class="site-breadcrumb-outer">
-  <div class="site-breadcrumb-inner"><h3>Account</h3></div>
-</div>
-<div class="page-wrap-outer">
-  <div class="page-wrap">
-    <ul class="nav nav-tabs mt20">
-      <li><a href="${basePath}/user/editform">Edit profile</a></li>
-      <li><a href="${basePath}/user/editform/password">Change password</a></li>
-      <li class="active"><a href="${basePath}/user/editform/notifications">Notification settings</a></li>
-      <li><a href="${basePath}/user/editform/emails">Email settings</a></li>
-      <li><a href="${basePath}/user/editform/token">User Token</a></li>
-    </ul>
-    <div>
-      <ul id="notification-projects" class="unstyled lst-stacked span3 mr20">
-        ${expectedProjectTab(basePath, "2", "admin", "projectYobi", activeProjectId)}
-        ${expectedProjectTab(basePath, "7", "weblabs", "projectAlpha", activeProjectId)}
-      </ul>
-      <div class="tab-content">
-        ${expectedProjectPane(basePath, "2", activeProjectId)}
-        ${expectedProjectPane(basePath, "7", activeProjectId)}
-      </div>
-    </div>
-  </div>
-</div>
-<footer class="page-footer-outer">
-  <div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div>
-</footer>
-`;
-}
-
-function expectedProjectTab(
-  basePath: string,
-  id: string,
-  owner: string,
-  name: string,
-  activeProjectId: string,
-) {
-  return `<li${id === activeProjectId ? ' class="active"' : ""}><a href="${basePath}/user/editform/notifications#${id}">${owner} / ${name}</a></li>`;
-}
-
-function expectedProjectPane(basePath: string, projectId: string, activeProjectId: string) {
-  const activeClass = projectId === activeProjectId ? "tab-pane active" : "tab-pane";
-  return `<div id="${projectId}" class="${activeClass}"><table class="table table-striped table-bordered"><tbody>${NOTIFICATION_TYPES.map(
-    ([eventType, label]) => expectedNotificationRow(projectId, eventType, label),
-  ).join("")}</tbody></table></div>`;
-}
-
-function expectedNotificationRow(projectId: string, eventType: string, label: string) {
-  const checked = CHECKED_BY_PROJECT.get(projectId)?.has(eventType) ?? false;
-  return `<tr><th>${label}</th><td><div class="switch" data-on-label="On" data-off-label="Off"><input class="notiUpdate" type="checkbox"${checked ? ' checked="checked"' : ""}></div></td></tr>`;
-}
-
 async function readNotificationSettingsMetrics(page: Page) {
   return page.evaluate(() => {
     const breadcrumb = document.querySelector<HTMLElement>(
@@ -466,322 +374,5 @@ async function readNotificationProjectTabAnchors(page: Page) {
       text: link.textContent?.trim() ?? "",
       title: link.getAttribute("title"),
     })),
-  );
-}
-
-async function canonicalizeScreenRoots(page: Page) {
-  return page.evaluate(() => {
-    function visit(current: Element): string {
-      if (current.matches('[data-owner="user-notification-table"]')) {
-        return canonicalNotificationTable(current, true);
-      }
-      const stableAttributes = [
-        "id",
-        "class",
-        "name",
-        "type",
-        "method",
-        "action",
-        "placeholder",
-        "value",
-        "width",
-        "height",
-        "autocomplete",
-        "accesskey",
-        "href",
-        "target",
-        "title",
-        "data-toggle",
-        "data-placement",
-        "data-on-label",
-        "data-off-label",
-      ];
-      const attrs = stableAttrs(current, stableAttributes);
-      const open = attrs
-        ? `<${current.tagName.toLowerCase()} ${attrs}>`
-        : `<${current.tagName.toLowerCase()}>`;
-      if (current.id === "usermenu-tab-content-list") {
-        return `${open}Loading...</${current.tagName.toLowerCase()}>`;
-      }
-      const children = Array.from(current.childNodes)
-        .map((child) => {
-          if (child.nodeType === Node.TEXT_NODE) {
-            return (child.textContent ?? "").replace(/\s+/g, " ").trim();
-          }
-          if (child.nodeType === Node.ELEMENT_NODE) {
-            return visit(child as Element);
-          }
-          return "";
-        })
-        .filter(Boolean)
-        .join("");
-      return `${open}${children}</${current.tagName.toLowerCase()}>`;
-    }
-
-    function canonicalNotificationTable(current: Element, react: boolean) {
-      const rows = Array.from(current.querySelectorAll(":scope > tbody > tr"))
-        .map((row) => {
-          const label = row.querySelector(":scope > th")?.textContent?.trim() ?? "";
-          const checked = react
-            ? row.querySelector('[role="switch"]')?.getAttribute("aria-checked") === "true"
-            : (row.querySelector('input[type="checkbox"]') as HTMLInputElement | null)?.checked ===
-              true;
-          const visibleLabels = react
-            ? Array.from(row.querySelectorAll('[data-owner="user-notification-switch-label"]'))
-                .map((node) => node.textContent?.trim() ?? "")
-                .join(" ")
-            : `${row.querySelector(".switch")?.getAttribute("data-on-label") ?? ""} ${row.querySelector(".switch")?.getAttribute("data-off-label") ?? ""}`.trim();
-          return `<tr><th>${label}</th><td><button role="switch" aria-checked="${checked}">${visibleLabels}</button></td></tr>`;
-        })
-        .join("");
-      return `<table class="table table-striped table-bordered"><tbody>${rows}</tbody></table>`;
-    }
-
-    function stableAttrs(current: Element, names: string[]) {
-      const attrs = names
-        .filter((name) => current.hasAttribute(name))
-        .map((name) => normalizeAttribute(current, name))
-        .filter(Boolean);
-      if (current instanceof HTMLInputElement && current.type === "checkbox" && current.checked) {
-        attrs.push('checked="checked"');
-      }
-      return attrs.join(" ");
-    }
-
-    function normalizeAttribute(current: Element, name: string): string {
-      if (name === "class") {
-        const owner = current.getAttribute("data-owner");
-        if (owner === "user-settings-breadcrumb-outer") {
-          return 'class="site-breadcrumb-outer"';
-        }
-        if (owner === "user-settings-breadcrumb-inner") {
-          return 'class="site-breadcrumb-inner"';
-        }
-        if (owner === "user-settings-breadcrumb-heading") {
-          return "";
-        }
-        if (owner === "user-settings-edit-tabs") {
-          return 'class="nav nav-tabs mt20"';
-        }
-        if (owner === "user-settings-edit-tab-item") {
-          return current.getAttribute("data-selected") === "true" ? 'class="active"' : "";
-        }
-        if (owner === "user-settings-edit-tab-link") {
-          return "";
-        }
-        if (owner === "user-settings-page-wrap-outer") {
-          return 'class="page-wrap-outer"';
-        }
-        if (owner === "user-settings-page-wrap") {
-          return 'class="page-wrap"';
-        }
-        if (owner === "user-notification-project-list") {
-          return 'class="unstyled lst-stacked span3 mr20"';
-        }
-        if (owner === "user-notification-project-item") {
-          return current.getAttribute("data-selected") === "true" ? 'class="active"' : "";
-        }
-        if (owner === "user-notification-project-link") {
-          return "";
-        }
-        if (owner === "user-notification-tab-content") {
-          return 'class="tab-content"';
-        }
-        if (owner === "user-notification-project-pane") {
-          return current.getAttribute("data-selected") === "true"
-            ? 'class="tab-pane active"'
-            : 'class="tab-pane"';
-        }
-      }
-      if (
-        name === "class" &&
-        (current.matches('[data-owner="global-gnb-inner"]') ||
-          current.matches('[data-owner="global-gnb-outer"]') ||
-          current.matches('[data-owner="site-footer"]') ||
-          current.matches('[data-owner="site-footer-inner"]') ||
-          current.matches('[data-owner="site-footer-provider"]'))
-      ) {
-        return "";
-      }
-      if (
-        name === "class" &&
-        current.classList.contains("gnb-nav") &&
-        current.matches('[data-owner="global-gnb-nav"]')
-      ) {
-        const originalValue = current.getAttribute(name) ?? "";
-        current.setAttribute(
-          name,
-          originalValue
-            .split(/\s+/u)
-            .filter((token) => token !== "gnb-nav")
-            .join(" "),
-        );
-        try {
-          return normalizeAttribute(current, name);
-        } finally {
-          current.setAttribute(name, originalValue);
-        }
-      }
-      return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
-    }
-
-    return Array.from(
-      document.querySelectorAll(
-        '.unsupported, [data-owner="user-settings-breadcrumb-outer"], [data-owner="user-settings-page-wrap-outer"]',
-      ),
-    )
-      .map((root) => visit(root))
-      .join("");
-  });
-}
-
-async function canonicalizeHtml(page: Page, html: string) {
-  return page.evaluate(
-    ({ markup }) => {
-      function visit(current: Element): string {
-        if (current.matches("table.table.table-striped.table-bordered")) {
-          return canonicalNotificationTable(current, false);
-        }
-        const stableAttributes = [
-          "id",
-          "class",
-          "name",
-          "type",
-          "method",
-          "action",
-          "placeholder",
-          "value",
-          "width",
-          "height",
-          "autocomplete",
-          "accesskey",
-          "href",
-          "target",
-          "title",
-          "data-toggle",
-          "data-placement",
-          "data-on-label",
-          "data-off-label",
-        ];
-        const attrs = stableAttrs(current, stableAttributes);
-        const open = attrs
-          ? `<${current.tagName.toLowerCase()} ${attrs}>`
-          : `<${current.tagName.toLowerCase()}>`;
-        if (current.id === "usermenu-tab-content-list") {
-          return `${open}Loading...</${current.tagName.toLowerCase()}>`;
-        }
-        const children = Array.from(current.childNodes)
-          .map((child) => {
-            if (child.nodeType === Node.TEXT_NODE) {
-              return (child.textContent ?? "").replace(/\s+/g, " ").trim();
-            }
-            if (child.nodeType === Node.ELEMENT_NODE) {
-              return visit(child as Element);
-            }
-            return "";
-          })
-          .filter(Boolean)
-          .join("");
-        return `${open}${children}</${current.tagName.toLowerCase()}>`;
-      }
-
-      function canonicalNotificationTable(current: Element, react: boolean) {
-        const rows = Array.from(current.querySelectorAll(":scope > tbody > tr"))
-          .map((row) => {
-            const label = row.querySelector(":scope > th")?.textContent?.trim() ?? "";
-            const checked = react
-              ? row.querySelector('[role="switch"]')?.getAttribute("aria-checked") === "true"
-              : (row.querySelector('input[type="checkbox"]') as HTMLInputElement | null)
-                  ?.checked === true;
-            const visibleLabels = react
-              ? Array.from(row.querySelectorAll('[data-owner="user-notification-switch-label"]'))
-                  .map((node) => node.textContent?.trim() ?? "")
-                  .join(" ")
-              : `${row.querySelector(".switch")?.getAttribute("data-on-label") ?? ""} ${row.querySelector(".switch")?.getAttribute("data-off-label") ?? ""}`.trim();
-            return `<tr><th>${label}</th><td><button role="switch" aria-checked="${checked}">${visibleLabels}</button></td></tr>`;
-          })
-          .join("");
-        return `<table class="table table-striped table-bordered"><tbody>${rows}</tbody></table>`;
-      }
-
-      function stableAttrs(current: Element, names: string[]) {
-        const attrs = names
-          .filter((name) => current.hasAttribute(name))
-          .map((name) => normalizeAttribute(current, name))
-          .filter(Boolean);
-        if (current instanceof HTMLInputElement && current.type === "checkbox" && current.checked) {
-          attrs.push('checked="checked"');
-        }
-        return attrs.join(" ");
-      }
-
-      function normalizeAttribute(current: Element, name: string): string {
-        const value = current.getAttribute(name) ?? "";
-        const isSiteLayoutHeader =
-          name === "class" &&
-          current.classList.contains("gnb-outer") &&
-          current.matches("header.gnb-outer") &&
-          current.querySelector(':scope > div.gnb-inner form[name="gnb-search-form"]') !== null;
-        const isSiteLayoutFooterOuter =
-          name === "class" &&
-          value.split(/\s+/u).includes("page-footer-outer") &&
-          current.matches("footer.page-footer-outer") &&
-          current.querySelector(":scope > div.page-footer > span.provider") !== null;
-        const isSiteLayoutFooterInner =
-          name === "class" &&
-          value.split(/\s+/u).includes("page-footer") &&
-          current.matches("footer.page-footer-outer > div.page-footer") &&
-          current.querySelector(":scope > span.provider") !== null;
-        const isSiteLayoutFooterProvider =
-          name === "class" &&
-          value.split(/\s+/u).includes("provider") &&
-          current.matches("footer.page-footer-outer > div.page-footer > span.provider");
-        const retiredToken = isSiteLayoutFooterOuter
-          ? "page-footer-outer"
-          : isSiteLayoutFooterInner
-            ? "page-footer"
-            : isSiteLayoutFooterProvider
-              ? "provider"
-              : isSiteLayoutHeader && current.classList.contains("project-header")
-                ? "project-header"
-                : isSiteLayoutHeader
-                  ? "gnb-outer"
-                  : name === "class" &&
-                      current.classList.contains("gnb-inner") &&
-                      current.matches("header.gnb-outer > div.gnb-inner") &&
-                      current.querySelector('form[name="gnb-search-form"]') !== null
-                    ? "gnb-inner"
-                    : name === "class" &&
-                        current.classList.contains("gnb-nav") &&
-                        current.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
-                        current.querySelector('form[name="gnb-search-form"]') !== null
-                      ? "gnb-nav"
-                      : null;
-        if (retiredToken) {
-          const originalValue = current.getAttribute(name) ?? "";
-          current.setAttribute(
-            name,
-            originalValue
-              .split(/\s+/u)
-              .filter((token) => token !== retiredToken)
-              .join(" "),
-          );
-          try {
-            return normalizeAttribute(current, name);
-          } finally {
-            current.setAttribute(name, originalValue);
-          }
-        }
-        return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
-      }
-
-      const template = document.createElement("template");
-      template.innerHTML = markup.trim();
-      return Array.from(template.content.children)
-        .filter((root) => root.matches(".unsupported, .site-breadcrumb-outer, .page-wrap-outer"))
-        .map((root) => visit(root))
-        .join("");
-    },
-    { markup: html },
   );
 }

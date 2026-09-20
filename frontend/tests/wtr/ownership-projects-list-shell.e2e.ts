@@ -1,4 +1,4 @@
-import { readFileSync, readFile } from "../wtr-compat.ts";
+import { readFile } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
@@ -20,6 +20,7 @@ const rowOwner = "projects-directory-row";
 test.use({ locale: "ko-KR" });
 
 async function open(page: Page) {
+  await page.clock.setFixedTime("2026-07-17T12:00:00Z");
   await page.addInitScript((basePath) => {
     (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
       basePath,
@@ -49,9 +50,9 @@ async function open(page: Page) {
       json: {
         items: [
           {
-            createdLabel: "07-07",
+            createdAt: "2026-07-07T12:00:00Z",
             labels: [],
-            lastPushedLabel: "",
+            lastPushedAt: "",
             logoUrl: "",
             memberCount: 1,
             overview: "Protected organization project for localhost parity",
@@ -61,9 +62,9 @@ async function open(page: Page) {
             watchCount: 1,
           },
           {
-            createdLabel: "07-07",
+            createdAt: "2026-07-07T12:00:00Z",
             labels: [],
-            lastPushedLabel: "",
+            lastPushedAt: "",
             logoUrl: "",
             memberCount: 1,
             members: [
@@ -80,9 +81,9 @@ async function open(page: Page) {
             watchCount: 1,
           },
           {
-            createdLabel: "07-07",
+            createdAt: "2026-07-07T12:00:00Z",
             labels: [],
-            lastPushedLabel: "",
+            lastPushedAt: "",
             logoUrl: "",
             memberCount: 1,
             members: [
@@ -99,9 +100,9 @@ async function open(page: Page) {
             watchCount: 1,
           },
           {
-            createdLabel: "07-07",
+            createdAt: "2026-07-07T12:00:00Z",
             labels: [],
-            lastPushedLabel: "5일 전",
+            lastPushedAt: "2026-07-12T12:00:00Z",
             logoUrl: "",
             memberCount: 1,
             members: [
@@ -128,27 +129,6 @@ async function open(page: Page) {
   await page.goto(`${basePath}/projects`);
   await expect(page.locator(`[data-owner="${listOwner}"]`)).toBeVisible();
 }
-
-test("list shell records the two direct Style owners", () => {
-  const route = readFileSync("src/routes/projects.tsx", "utf8");
-  const scala = readFileSync("../yona-original/app/views/project/list.scala.html", "utf8");
-  const siteLayout = readFileSync("../yona-original/app/views/siteLayout.scala.html", "utf8");
-  const yobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
-  const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
-  const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
-  expect(scala).toContain('<ul class="all-projects">');
-  expect(scala).toContain('<li class="project">');
-  expect(siteLayout).toContain('@layout(Messages(title))("")');
-  expect(yobi).toContain("_page.less");
-  expect(pageLess).toContain(".all-projects {");
-  expect(pageLess).toContain("border-bottom: 1px solid #DCDCDC;");
-  expect(bootstrap).toContain("ul,\nol {");
-  expect(route).toContain(`data-owner="${listOwner}"`);
-  expect(route).toContain(`data-owner="${rowOwner}"`);
-  expect(route).not.toMatch(/className=.*all-projects/u);
-  expect(route).not.toMatch(/className="project(?:\s|")/u);
-  expect(route).not.toContain('className="info-wrap"');
-});
 
 for (const viewport of [
   { height: 900, name: "desktop", width: 1366 },

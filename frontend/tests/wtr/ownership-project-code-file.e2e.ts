@@ -92,16 +92,16 @@ test("populated code-file author link owns the legacy ml5 margin", async ({ page
         breadcrumbs: [],
         entries: [],
         file: {
-          author: "Admin",
-          avatarUrl: "",
+          authorLabel: "Admin",
+          authorAvatarUrl: "",
           commitId: "1234567890abcdef",
           commitMessage: "Update README",
-          createdDate: "Jul 2, 2026",
-          data: "# Readme\n\nhello",
+          commitDate: "2026-07-02T12:00:00Z",
+          text: "# Readme\n\nhello",
           isBinary: false,
-          lineEnding: "LF",
+          isTooLarge: false,
           mimeType: "text/markdown",
-          userLoginId: "admin",
+          authorLoginId: "admin",
         },
         noHead: false,
         ownerName: "admin",
@@ -111,6 +111,7 @@ test("populated code-file author link owns the legacy ml5 margin", async ({ page
       },
     }),
   );
+  page.clock.setFixedTime(new Date(2026, 6, 20, 12));
 
   for (const viewport of [
     { width: 1366, height: 900 },
@@ -130,7 +131,7 @@ test("populated code-file author link owns the legacy ml5 margin", async ({ page
     // data-style-src is dev-only metadata (dist renders null; parity helper treats it as env-variant noise) — dropped in WTR copy.
     await expect(authorLink).toHaveAttribute("href", /\/yona\/admin/u);
     await expect(avatarLink).toHaveAttribute("href", /\/yona\/admin/u);
-    await expect(date).toContainText("Jul 2, 2026");
+    await expect(date).toContainText("07-02");
     await expect(revision).toContainText("1234567");
 
     const [metadataBox, avatarBox, authorBox, dateBox, revisionBox] = await Promise.all([
@@ -197,16 +198,16 @@ test("code file renders legacy metadata, markdown, and actions", async ({ page }
         breadcrumbs: [],
         entries: [],
         file: {
-          author: "Admin",
-          avatarUrl: "",
+          authorLabel: "Admin",
+          authorAvatarUrl: "",
           commitId: "1234567890abcdef",
           commitMessage: "Update README",
-          createdDate: "Jul 2, 2026",
-          data: "# Readme\n\nhello",
+          commitDate: "2026-07-02T12:00:00Z",
+          text: "# Readme\n\nhello",
           isBinary: false,
-          lineEnding: "LF",
+          isTooLarge: false,
           mimeType: "text/markdown",
-          userLoginId: "admin",
+          authorLoginId: "admin",
         },
         noHead: false,
         ownerName: "admin",

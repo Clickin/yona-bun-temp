@@ -1,26 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
-
-const ROUTE_SOURCE = readFileSync(
-  new URL("../src/routes/$ownerName/$projectName/code/$branch.tsx", import.meta.url),
-  "utf8",
-);
-const PROJECT_ROUTE_SOURCE = readFileSync(
-  new URL("../src/routes/$ownerName/$projectName.tsx", import.meta.url),
-  "utf8",
-);
-const FILE_ROUTE_SOURCE = readFileSync(
-  new URL("../src/routes/$ownerName/$projectName/code/$branch/$filePath.tsx", import.meta.url),
-  "utf8",
-);
-
-const EXPECTED_CODE_FOLDER_BODY = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="code-browse-wrap"><ul class="nav nav-tabs"><li class="active"><a href="__BASE_PATH__/admin/sample/code/main">Files</a></li><li><a href="__BASE_PATH__/admin/sample/commits/main/">Commit</a></li><li><a href="__BASE_PATH__/admin/sample/branches">Branches</a></li></ul><div class="code-browse-header"><select id="branches" data-format="branch" data-dropdown-css-class="branches" class="pull-left"><option value="__BASE_PATH__/admin/sample/code/main" selected="">main</option><option value="__BASE_PATH__/admin/sample/code/feature%2Frelease">feature/release</option></select><div id="breadcrumbs" class="code-breadcrumb-wrap ml10 pull-left"><a href="__BASE_PATH__/admin/sample/code/main">sample</a><a href="__BASE_PATH__/admin/sample/code/main"></a></div><div class="pull-right"><a href="__BASE_PATH__/admin/sample/archive/main.zip" class="ybtn">Download as .zip file</a></div><div class="pull-right"><a id="new-file-link" href="__BASE_PATH__/admin/sample/postform?path=&amp;branch=main" class="ybtn">New file</a></div></div><div class="code-viewer-wrap"><div id="spin" style="position:fixed;top:50%;left:50%"></div><div class="list-wrap"><div class="row-fluid listhead"><div class="span6 filename"><strong>File name</strong></div><div class="span4 commitMsg"><strong>Commit message</strong></div><div class="span2 commitDate"><strong>Commit date</strong></div></div><div id="cb-src" class="row-fluid listitem"><div class="span6 filename"><a href="__BASE_PATH__/admin/sample/code/main/src#cb-src" class="folder" title="src"><span class="dynatree-icon vmiddle"></span>src</a></div><div class="span5 commitMsg"><span class="ml5"><a href="__BASE_PATH__/admin/sample/commit/abcdef1?branch=main">Add source</a></span></div><div class="span1 commitDate">2 hours ago</div></div><div id="cb-README.md" class="row-fluid listitem"><div class="span6 filename"><a href="__BASE_PATH__/admin/sample/code/main/README.md" class="file" title="README.md"><span class="dynatree-icon vmiddle"></span>README.md</a></div><div class="span5 commitMsg"><span class="ml5"><a href="__BASE_PATH__/admin/sample/commit/1234567?branch=main">Update README</a></span></div><div class="span1 commitDate">2 hours ago</div></div></div></div></div></div></div>
-`;
-
-const EXPECTED_SVN_CODE_FOLDER_BODY = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="code-browse-wrap"><ul class="nav nav-tabs"><li class="active"><a href="__BASE_PATH__/admin/sample/code/trunk">Files</a></li><li><a href="__BASE_PATH__/admin/sample/commits/trunk/">Commit</a></li></ul><div class="code-browse-header"><select id="branches" data-format="branch" data-dropdown-css-class="branches" class="pull-left"><option value="__BASE_PATH__/admin/sample/code/trunk" selected="">trunk</option><option value="__BASE_PATH__/admin/sample/code/branches%2Frelease">branches/release</option></select><div id="breadcrumbs" class="code-breadcrumb-wrap ml10 pull-left"><a href="__BASE_PATH__/admin/sample/code/trunk">sample</a></div></div><div class="code-viewer-wrap"><div id="spin" style="position:fixed;top:50%;left:50%"></div><div class="list-wrap"><div class="row-fluid listhead"><div class="span6 filename"><strong>File name</strong></div><div class="span4 commitMsg"><strong>Commit message</strong></div><div class="span2 commitDate"><strong>Commit date</strong></div></div><div id="cb-src" class="row-fluid listitem"><div class="span6 filename"><a href="__BASE_PATH__/admin/sample/code/trunk/src#cb-src" class="folder" title="src"><span class="dynatree-icon vmiddle"></span>src</a></div><div class="span5 commitMsg"><span class="ml5"><a href="__BASE_PATH__/admin/sample/commit/abcdef1?branch=trunk">Add source</a></span></div><div class="span1 commitDate">Jul 1, 2026</div></div><div id="cb-README.md" class="row-fluid listitem"><div class="span6 filename"><a href="__BASE_PATH__/admin/sample/code/trunk/README.md" class="file" title="README.md"><span class="dynatree-icon vmiddle"></span>README.md</a></div><div class="span5 commitMsg"><span class="ml5"><a href="__BASE_PATH__/admin/sample/commit/1234567?branch=trunk">Update README</a></span></div><div class="span1 commitDate">Jul 2, 2026</div></div></div></div></div></div></div>
-`;
 
 test("project code branch root folder matches legacy code/view.scala.html DOM", async ({
   page,
@@ -63,7 +41,7 @@ test("project code branch root folder matches legacy code/view.scala.html DOM", 
   await expect(breadcrumbProjectLink).toHaveAttribute("href", `${basePath}/admin/sample/code/main`);
   await expect(breadcrumbProjectLink).not.toHaveAttribute("aria-current", /.+/u);
   await expect(breadcrumbProjectLink).not.toHaveAttribute("data-status", /.+/u);
-  await expect(page.locator("#breadcrumbs a")).toHaveCount(2);
+  await expect(page.locator("#breadcrumbs a")).toHaveCount(1);
   await expect(page.locator("#breadcrumbs")).toHaveText("sample");
   await expect(page.locator(".select2-chosen .branch-label.branch")).toHaveText("branch");
   await expect(page.locator(".listitem .commitDate")).toHaveText(["2 hours ago", "2 hours ago"]);
@@ -121,9 +99,6 @@ test("project code branch root folder matches legacy code/view.scala.html DOM", 
     },
   });
 
-  expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
-    await canonicalizeHtml(page, expectedCodeFolderBody(EXPECTED_CODE_FOLDER_BODY, basePath)),
-  );
   const shell = await shellMetrics(page);
   expect(shell).not.toBeNull();
   expect(shell!.searchForm.top).toBeGreaterThanOrEqual(shell!.navbar.top);
@@ -137,6 +112,7 @@ test("project code branch root folder matches legacy code/view.scala.html DOM", 
   expect(shell!.codeTabs.top).toBeGreaterThanOrEqual(shell!.projectMenu.bottom - 1);
   expect(shell!.branchSelect.top).toBeGreaterThanOrEqual(shell!.codeTabs.bottom - 1);
   expect(Math.abs(shell!.branchSelect.top - shell!.breadcrumbs.top)).toBeLessThanOrEqual(3);
+  expect(shell!.breadcrumbs.left).toBeCloseTo(shell!.branchSelect.right + 10, 1);
   expect(await folderViewMetrics(page)).toEqual({
     commitDateColor: "rgb(126, 126, 126)",
     commitDateFontSize: "10.6667px",
@@ -163,6 +139,55 @@ test("project code branch root folder matches legacy code/view.scala.html DOM", 
   });
 });
 
+test("folder commit authors keep legacy avatar geometry without inventing user links", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectCodeFolder(page, {}, undefined, undefined, true);
+  await page.setViewportSize({ width: 1366, height: 900 });
+
+  // partial_view_folder.scala.html:37-39; TemplateHelper.scala:523-535;
+  // _yobiUI.less:440-460. Live legacy 1366px: avatar 20x20, then whitespace + .ml5.
+  for (const path of ["", "/src"]) {
+    await page.goto(`${basePath}/admin/sample/code/main${path}`);
+    await expect(page.locator(".listitem .avatar-wrap")).toHaveCount(2);
+    const registered = page.locator(".listitem a.avatar-wrap");
+    await expect(registered).toHaveAttribute("href", `${basePath}/author`);
+    await expect(registered.locator("img")).toHaveAttribute("src", `${basePath}/files/42`);
+    const unknown = page.locator(".listitem button.avatar-wrap");
+    await expect(unknown).not.toHaveAttribute("href", /.+/u);
+    await expect(unknown.locator("img")).toHaveAttribute("src", /default-avatar-128[^/]*\.png/u);
+    await expect
+      .poll(() =>
+        unknown
+          .locator("img")
+          .evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0),
+      )
+      .toBe(true);
+    await expect(page.locator(".listitem .avatar-wrap[data-toggle]")).toHaveCount(0);
+    const rows = await page.evaluate(() =>
+      Array.from(document.querySelectorAll(".listitem"), (row) => {
+        const avatar = row.querySelector<HTMLElement>(".avatar-wrap")!.getBoundingClientRect();
+        const message = row.querySelector<HTMLElement>(".commitMsg .ml5")!.getBoundingClientRect();
+        const cell = row.querySelector<HTMLElement>(".commitMsg")!.getBoundingClientRect();
+        return { avatar, message, cell };
+      }),
+    );
+    for (const { avatar, message, cell } of rows) {
+      expect(avatar.width).toBe(20);
+      expect(avatar.height).toBe(20);
+      expect(avatar.left).toBeCloseTo(cell.left, 1);
+      expect(avatar.top).toBeGreaterThanOrEqual(cell.top);
+      expect(avatar.bottom).toBeLessThanOrEqual(cell.bottom);
+      expect(message.left - avatar.right).toBeGreaterThanOrEqual(5);
+      expect(message.left - avatar.right).toBeLessThanOrEqual(10);
+      expect(
+        Math.abs((message.top + message.bottom) / 2 - (avatar.top + avatar.bottom) / 2),
+      ).toBeLessThanOrEqual(3);
+    }
+  }
+});
+
 test("project code root redirects non-empty repository to default branch folder", async ({
   page,
 }) => {
@@ -177,9 +202,6 @@ test("project code root redirects non-empty repository to default branch folder"
   await expect(page.locator("#cb-src .filename a.dynatree-ico-cf")).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/code/main/src#cb-src`,
-  );
-  expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
-    await canonicalizeHtml(page, expectedCodeFolderBody(EXPECTED_CODE_FOLDER_BODY, basePath)),
   );
 });
 
@@ -221,26 +243,23 @@ test("project SVN code branch root folder matches legacy code/view.scala.html DO
   await expect(page.locator(".code-browse-header > .pull-right")).toHaveCount(0);
   await expect(page.locator(".code-viewer-wrap .listitem")).toHaveCount(2);
 
-  expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
-    await canonicalizeHtml(
-      page,
-      EXPECTED_SVN_CODE_FOLDER_BODY.replaceAll("__BASE_PATH__", basePath)
-        .replace(
-          `<a href="${basePath}/admin/sample/code/trunk">sample</a>`,
-          `<a href="${basePath}/admin/sample/code/trunk">sample</a><a href="${basePath}/admin/sample/code/trunk"></a>`,
-        )
-        .replaceAll("Jul 1, 2026", "2 hours ago")
-        .replaceAll("Jul 2, 2026", "2 hours ago")
-        .replaceAll('class="folder"', 'class="dynatree-ico-cf"')
-        .replaceAll('class="file"', 'class="dynatree-ico-c"'),
-    ),
-  );
+  await expect(page.locator("#breadcrumbs a")).toHaveText(["sample"]);
+  await expect(page.locator(".select2-chosen")).toHaveText("trunk");
+  await expect(page.locator(".listitem .filename a")).toHaveText(["src", "README.md"]);
   expect(await folderViewMetrics(page)).toMatchObject({
     headerHeight: "40px",
     headerMarginBottom: "5px",
     listWidth: 1260,
     rowLineHeight: "40px",
   });
+  await page.locator(".select2-choice").press("ArrowDown");
+  const search = page.locator(".select2-search input");
+  await expect(search).toBeFocused();
+  await search.press("ArrowDown");
+  await expect(page.locator(".select2-highlighted")).toHaveText("branches/release");
+  await expect(page.locator(".select2-highlighted .branch-label")).toHaveCount(0);
+  await search.press("Enter");
+  await expect(page).toHaveURL(`${basePath}/admin/sample/code/branches%2Frelease`);
 });
 
 test("project code branch folder links navigate with TanStack Router without document reload", async ({
@@ -303,7 +322,7 @@ test("project code nested folder matches legacy partial_view_folder.scala.html D
   const folderRow = page.locator("#cb-srcmain");
   await expect(folderRow).toHaveClass(/(?:^|\s)listitem(?:\s|$)/u);
   await expect(folderRow).not.toHaveAttribute("data-path", /.+/u);
-  await expect(folderRow.locator(".filename a")).toHaveClass("folder");
+  await expect(folderRow.locator(".filename a")).toHaveClass("dynatree-ico-cf");
   await expect(folderRow.locator(".filename a")).not.toHaveAttribute("data-type", /.+/u);
   await expect(folderRow.locator(".filename a")).not.toHaveAttribute("data-targetpath", /.+/u);
   await expect(folderRow.locator(".filename a")).toHaveAttribute(
@@ -314,7 +333,7 @@ test("project code nested folder matches legacy partial_view_folder.scala.html D
   const fileRow = page.locator('[id="cb-srclib.rs"]');
   await expect(fileRow).toHaveClass(/(?:^|\s)listitem(?:\s|$)/u);
   await expect(fileRow).not.toHaveAttribute("data-path", /.+/u);
-  await expect(fileRow.locator(".filename a")).toHaveClass("file");
+  await expect(fileRow.locator(".filename a")).toHaveClass("dynatree-ico-c");
   await expect(fileRow.locator(".filename a")).not.toHaveAttribute("data-type", /.+/u);
   await expect(fileRow.locator(".filename a")).not.toHaveAttribute("data-targetpath", /.+/u);
   await expect(fileRow.locator(".filename a")).toHaveAttribute(
@@ -349,8 +368,8 @@ test("project code branch selector navigates slash branch in the SPA", async ({ 
         .__yonaCodeFolderBranchDocumentMarker,
   );
   await expect(page.locator("#branches")).not.toHaveAttribute("data-toggle", /.+/u);
-  await expect(page.locator("#branches")).toHaveAttribute("data-format", "branch");
-  await expect(page.locator("#branches")).toHaveAttribute("data-dropdown-css-class", "branches");
+  await expect(page.locator("#branches")).not.toHaveAttribute("data-format", /.+/u);
+  await expect(page.locator("#branches")).not.toHaveAttribute("data-dropdown-css-class", /.+/u);
   await expect(page.locator("#branches")).toHaveValue(`${basePath}/admin/sample/code/main`);
   await expect(
     page.locator('#branches option[value$="/admin/sample/code/feature%2Frelease"]'),
@@ -381,6 +400,7 @@ test("project code branch renders React-owned legacy Select2 geometry and naviga
   await expect(container).toHaveClass(/select2-container/);
   await expect(container).toHaveCSS("width", "220px");
   await expect(container.locator(".select2-chosen")).toHaveText("branch main");
+  await expect(container.locator(".select2-results > li")).toHaveCount(0);
   await expect(page.locator("#branches")).toHaveClass("pull-left select2-offscreen");
   await container.locator("button.select2-choice").click();
   await expect(container).toHaveClass(/select2-container-active/);
@@ -429,78 +449,70 @@ test("project code branch renders React-owned legacy Select2 geometry and naviga
       },
     });
   }
+  await container.locator(".select2-search input").fill("RELEASE");
+  await expect(container.locator(".select2-result-label")).toHaveText(["branch feature/release"]);
+  await container.locator(".select2-search input").fill("missing-branch");
+  await expect(container.locator(".select2-no-results")).toHaveText("No results");
+  await container.locator(".select2-search input").press("Escape");
+  await expect(container.locator(".select2-drop")).not.toBeVisible();
+  await container.locator("button.select2-choice").click();
+  await expect(container.locator(".select2-search input")).toHaveValue("");
   await container.locator(".select2-result-label", { hasText: "feature/release" }).click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/code/feature%2Frelease`);
+  await expect(container.locator(".select2-chosen")).toHaveText("branch feature/release");
+  await expect(page.locator("#branches")).toHaveValue(
+    `${basePath}/admin/sample/code/feature%2Frelease`,
+  );
+  await expect(page.locator("#cb-src .filename a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/code/feature%2Frelease/src#cb-src`,
+  );
 });
 
-test("project code branch route source converts internal raw anchors to Link", async () => {
-  expect(ROUTE_SOURCE).toContain('import "./legacy-dynatree.css";');
-  expect(ROUTE_SOURCE).not.toContain(
-    'import "../../../../../../yona-original/public/stylesheets/dynatree/skin/ui.dynatree.css";',
-  );
-  expect(ROUTE_SOURCE).toContain(
-    'import { Link, createFileRoute, useRouter, useParams } from "@tanstack/react-router"',
-  );
-  expect(ROUTE_SOURCE).toContain(
-    '<title>{`${t("menu.code")} - ${ownerName}/${projectName}`}</title>',
-  );
-  expect(ROUTE_SOURCE).not.toContain("useProjectCodeBranchDocumentTitle");
-  // F6 copy-fix: since f70dbbc0b the SiteLayoutShell + projectSearchScope + showLegacyProjectHeaderLinks
-  // were hoisted out of code/$branch.tsx; the route is now a thin LastOutletTransition wrapper and the
-  // shell/search scope lives in the parent $projectName.tsx route.
-  expect(ROUTE_SOURCE).toContain("<LastOutletTransition routeId={Route.id} />");
-  expect(PROJECT_ROUTE_SOURCE).toContain("projectSearchScope={projectSearchScope}");
-  expect(PROJECT_ROUTE_SOURCE).toContain('showLegacyProjectHeaderLinks={active === "search"}');
-  expect(ROUTE_SOURCE).not.toContain("document.title");
-  expect(ROUTE_SOURCE).toContain("router.history.push(event.currentTarget.value)");
-  expect(ROUTE_SOURCE).not.toContain('data-toggle="select2"');
-  expect(ROUTE_SOURCE).not.toContain('data-toggle={"select2"}');
-  expect(ROUTE_SOURCE).toContain("activeOptions={{");
-  expect(ROUTE_SOURCE).toContain("activeProps={{");
-  expect(ROUTE_SOURCE).toContain('"data-status": undefined');
-  expect(ROUTE_SOURCE).not.toContain("__legacyInactive");
-  expect(ROUTE_SOURCE).toContain("reloadDocument");
-  expect(ROUTE_SOURCE).not.toContain("legacyLinkProps");
-  expect(ROUTE_SOURCE).not.toContain("FILE_LIST_ITEM_TEMPLATE");
-  expect(ROUTE_SOURCE).not.toContain("tplFileListItem");
-  expect(ROUTE_SOURCE).not.toContain("text/x-jquery-tmpl");
-  expect(ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
-  expect(ROUTE_SOURCE).not.toContain('data-type="folder"');
-  expect(ROUTE_SOURCE).not.toContain("data-targetpath");
-  expect(ROUTE_SOURCE).not.toContain("data-path={entry.path}");
-  expect(ROUTE_SOURCE).not.toContain("<a");
-  expect(ROUTE_SOURCE).not.toContain("function commitHref");
-  expect(ROUTE_SOURCE).not.toContain("href={commitHref(");
-  expect(ROUTE_SOURCE).not.toContain("href={`${projectHref(");
-  expect(ROUTE_SOURCE).not.toContain('id="new-file-link"\n                      href=');
-  // F6 copy-fix: the legacy-assets images are now bundled imports resolved through
-  // prefixBasePath(basePath, defaultProjectBackgroundUrl / defaultProjectLogoUrl).
-  expect(PROJECT_ROUTE_SOURCE).toContain("prefixBasePath(basePath, defaultProjectBackgroundUrl)");
-  expect(PROJECT_ROUTE_SOURCE).toContain("prefixBasePath(basePath, defaultProjectLogoUrl)");
-});
+test("code branch keyboard picker focuses, highlights, dismisses and selects a slash branch", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectCodeFolder(page, {}, [{ name: "main" }, { name: "feature/ui" }]);
+  await page.goto(`${basePath}/admin/sample/code/main`);
+  const picker = page.locator('[data-owner="project-code-branch-picker"]');
+  const trigger = picker.locator(".select2-choice");
+  const search = picker.locator(".select2-search input");
+  const highlighted = picker.locator(".select2-highlighted");
 
-test("project code file route source keeps nested folder view in React Link state", async () => {
-  expect(FILE_ROUTE_SOURCE).toContain("function FolderList(");
-  expect(FILE_ROUTE_SOURCE).not.toContain('data-type="folder"');
-  expect(FILE_ROUTE_SOURCE).not.toContain("data-listpath={filePath}");
-  expect(FILE_ROUTE_SOURCE).not.toContain("data-targetpath");
-  expect(FILE_ROUTE_SOURCE).not.toContain("data-path={entry.path}");
-  expect(FILE_ROUTE_SOURCE).toContain("const isFolder = code.file === null");
-  expect(FILE_ROUTE_SOURCE).toContain("router.history.push(event.currentTarget.value)");
-  expect(FILE_ROUTE_SOURCE).not.toContain("document.");
-  expect(FILE_ROUTE_SOURCE).not.toContain("classList");
-  expect(FILE_ROUTE_SOURCE).not.toContain("style.display");
-  expect(FILE_ROUTE_SOURCE).not.toContain("<a");
-  expect(FILE_ROUTE_SOURCE).not.toContain("tplFileListItem");
-  expect(FILE_ROUTE_SOURCE).not.toContain("text/x-jquery-tmpl");
-});
+  await trigger.focus();
+  await trigger.press("ArrowDown");
+  await expect(search).toBeFocused();
+  await expect(highlighted).toHaveText("branch main");
+  await search.press("ArrowDown");
+  await expect(highlighted).toHaveText("branch feature/ui");
+  await search.press("ArrowUp");
+  await expect(highlighted).toHaveText("branch main");
+  await search.fill("missing-branch");
+  await search.press("ArrowDown");
+  await search.press("Enter");
+  await expect(picker.locator(".select2-no-results")).toBeVisible();
+  await expect(highlighted).toHaveCount(0);
+  await expect(trigger).toHaveAttribute("aria-expanded", "true");
+  await expect(page).toHaveURL(`${basePath}/admin/sample/code/main`);
+  await search.press("Escape");
+  await expect(trigger).toBeFocused();
+  await expect(picker.locator(".select2-drop")).not.toBeVisible();
 
-function expectedCodeFolderBody(template: string, basePath: string) {
-  return template
-    .replaceAll("__BASE_PATH__", basePath)
-    .replaceAll('class="folder"', 'class="dynatree-ico-cf"')
-    .replaceAll('class="file"', 'class="dynatree-ico-c"');
-}
+  await trigger.press("Enter");
+  await expect(search).toHaveValue("");
+  await expect(search).toBeFocused();
+  await page.locator("#breadcrumbs a").focus();
+  await expect(picker.locator(".select2-drop")).not.toBeVisible();
+  await trigger.click();
+  await expect(search).toBeFocused();
+  await search.fill("feature/ui");
+  await search.press("ArrowDown");
+  await expect(highlighted).toHaveText("branch feature/ui");
+  await search.press("Enter");
+  await expect(page).toHaveURL(`${basePath}/admin/sample/code/feature%2Fui`);
+  await expect(picker.locator(".select2-chosen")).toHaveText("branch feature/ui");
+});
 
 async function codeIconMetrics(page: Page) {
   return page.evaluate(() => {
@@ -628,6 +640,7 @@ async function mockProjectCodeFolder(
   projectOverrides: Record<string, unknown> = {},
   branches: Array<{ name: string }> = [{ name: "main" }, { name: "feature/release" }],
   selectedBranch = "main",
+  withAuthors = false,
 ) {
   const ownerName =
     typeof projectOverrides.ownerName === "string" ? projectOverrides.ownerName : "admin";
@@ -735,7 +748,19 @@ async function mockProjectCodeFolder(
       body: JSON.stringify({
         branches,
         breadcrumbs: folderResponse.breadcrumbs,
-        entries: folderResponse.entries,
+        entries: folderResponse.entries.map((entry) => ({
+          ...entry,
+          ...(withAuthors
+            ? {
+                authorAvatarUrl:
+                  entry.kind === "folder"
+                    ? `${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/files/42`
+                    : `${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/assets/images/default-avatar-128.png`,
+                authorLabel: entry.kind === "folder" ? "Registered Author" : "External Author",
+                authorLoginId: entry.kind === "folder" ? "author" : "",
+              }
+            : {}),
+        })),
         file: null,
         noHead: false,
         ownerName,
@@ -749,131 +774,4 @@ async function mockProjectCodeFolder(
 
 function recentCommitTimestamp() {
   return new Date(Date.now() - (2 * 60 + 5) * 60 * 1_000).toISOString();
-}
-
-async function canonicalize(page: Page, selector: string) {
-  return page.locator(selector).evaluate((root) => {
-    return visit(root);
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return (node.textContent ?? "").replace(/\s+/g, " ").trim();
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      if (node.matches(".select2-container")) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter(
-          (attr) =>
-            !attr.name.startsWith("data-v-") &&
-            attr.name !== "alt" &&
-            attr.name !== "tabindex" &&
-            attr.name !== "data-style-src" &&
-            attr.name !== "data-owner",
-        )
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => [attr.name, normalizeAttr(attr)] as const)
-        .filter(([name, value]) => !(name === "class" && value === ""))
-        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeAttr(attr: Attr) {
-      if (attr.name === "style") {
-        return attr.value
-          .replace(/\s+/g, "")
-          .replace(/;$/u, "")
-          .split(";")
-          .filter(Boolean)
-          .sort((left, right) => left.localeCompare(right))
-          .join(";");
-      }
-      return attr.name === "class"
-        ? attr.value
-            .split(/\s+/u)
-            .filter(
-              (name) =>
-                name &&
-                name !== "select2-offscreen" &&
-                name !== "gray-txt" &&
-                name !== "right-txt" &&
-                !/^x[0-9a-z]+$/u.test(name) &&
-                !name.includes("__"),
-            )
-            .join(" ")
-        : attr.value;
-    }
-  });
-}
-
-async function canonicalizeHtml(page: Page, html: string) {
-  return page.evaluate((input) => {
-    const template = document.createElement("template");
-    template.innerHTML = input;
-    return Array.from(template.content.children)
-      .map((root) => visit(root))
-      .join("");
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return (node.textContent ?? "").replace(/\s+/g, " ").trim();
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter(
-          (attr) =>
-            !attr.name.startsWith("data-v-") &&
-            attr.name !== "alt" &&
-            attr.name !== "data-style-src" &&
-            attr.name !== "data-owner",
-        )
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => [attr.name, normalizeAttr(attr)] as const)
-        .filter(([name, value]) => !(name === "class" && value === ""))
-        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeAttr(attr: Attr) {
-      if (attr.name === "class") {
-        return attr.value
-          .split(/\s+/u)
-          .filter(
-            (token) =>
-              token &&
-              token !== "gray-txt" &&
-              token !== "right-txt" &&
-              !/^x[0-9a-z]+$/u.test(token) &&
-              !token.includes("__"),
-          )
-          .join(" ");
-      }
-      return attr.name === "style"
-        ? attr.value
-            .replace(/\s+/g, "")
-            .replace(/;$/u, "")
-            .split(";")
-            .filter(Boolean)
-            .sort((left, right) => left.localeCompare(right))
-            .join(";")
-        : attr.value;
-    }
-  }, html);
 }

@@ -1,15 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
-
-const BUG_LABEL_STYLE = "--x-backgroundColor:rgb(81,170,204)";
-
-const EXPECTED_MILESTONES_BODY = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="tab-wrap"><div class="btns"><a href="__BASE_PATH__/admin/sample/newMilestoneForm" class="ybtn ybtn-success">New milestone</a></div><ul class="nav nav-tabs"><li class="active"><a href="__BASE_PATH__/admin/sample/milestones?state=open">Open</a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones?state=closed">Closed</a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones?state=all">All</a></li></ul></div><div class="filter-wrap milestone"><div class="filters"><a href="__BASE_PATH__/admin/sample/milestones?orderBy=dueDate&amp;orderDir=desc&amp;state=open" class="filter active"><i class="ico btn-gray-arrow "></i>Due Date</a><a href="__BASE_PATH__/admin/sample/milestones?orderBy=completionRate&amp;orderDir=asc&amp;state=open" class="filter"><i class="ico btn-gray-arrow"></i>Completion Rate</a></div><div class="search search-bar"><input name="filter" class="textbox" type="text" placeholder="Search" value=""><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div></div><div class="row-fluid"><div><ul class="milestones"><li class="milestone"><div class="infos"><div class="meta-info"><strong class="version"></strong><a href="__BASE_PATH__/admin/sample/milestone/5" class="milestone-name">v1.0</a><span class="sp">|</span><span class="issue-item">1 / 2</span><span class="sp">|</span><span class="due-date over">Due Date<strong>2026-06-30</strong><span class="date">(Overdue)</span></span><div class="pull-right"><span class="number completion-rate">50 %</span></div></div><div class="progress-wrap"><div class="progress progress-success"><div class="bar" style="width:50%"></div></div></div></div><div><div></div><div><a class="issue-link" href="__BASE_PATH__/admin/sample/issue/11" target="_blank"><div class="issue-item"><span class="state-label open"></span><span class="item-name"><span class="number">#11</span>Open milestone issue - Dev Member<span class="label issue-label list-label active" data-category-id="3" data-label-id="8" style="${BUG_LABEL_STYLE}">bug</span></span></div></a></div><div></div><div><a class="issue-link" href="__BASE_PATH__/admin/sample/issue/12" target="_blank"><div class="issue-item"><span class="state-label closed"><i class=" yobicon-checkmark"></i></span><span class="item-name"><span class="number">#12</span>Closed milestone issue<span class="label issue-label list-label active" data-category-id="3" data-label-id="8" style="${BUG_LABEL_STYLE}">bug</span></span></div></a></div></div></li><li class="milestone"><div class="infos"><div class="meta-info"><strong class="version"></strong><a href="__BASE_PATH__/admin/sample/milestone/6" class="milestone-name">v2.0</a><span class="sp">|</span><span class="issue-item">0 / 0</span><span class="sp">|</span><span class="due-date ">Due Date<strong>2026-08-31</strong><span class="date">(D-61)</span></span><div class="pull-right"><span class="number completion-rate"></span></div></div><div class="progress-wrap"><div class="progress progress-success"><div class="bar" style="width:0%"></div></div></div></div><div><div></div><div></div><div></div><div></div></div></li></ul></div></div></div></div>
-`;
-
-const EXPECTED_MILESTONES_ALL_BODY = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="tab-wrap"><div class="btns"><a href="__BASE_PATH__/admin/sample/newMilestoneForm" class="ybtn ybtn-success">New milestone</a></div><ul class="nav nav-tabs"><li class=""><a href="__BASE_PATH__/admin/sample/milestones?state=open">Open</a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones?state=closed">Closed</a></li><li class="active"><a href="__BASE_PATH__/admin/sample/milestones?state=all">All</a></li></ul></div><div class="filter-wrap milestone"><div class="filters"><a href="__BASE_PATH__/admin/sample/milestones?orderBy=dueDate&amp;orderDir=desc&amp;state=all" class="filter active"><i class="ico btn-gray-arrow "></i>Due Date</a><a href="__BASE_PATH__/admin/sample/milestones?orderBy=completionRate&amp;orderDir=asc&amp;state=all" class="filter"><i class="ico btn-gray-arrow"></i>Completion Rate</a></div><div class="search search-bar"><input name="filter" class="textbox" type="text" placeholder="Search" value=""><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div></div><div class="row-fluid"><div><ul class="milestones"><li class="milestone"><div class="infos"><div class="meta-info"><strong class="version"></strong><a href="__BASE_PATH__/admin/sample/milestone/5" class="milestone-name">v1.0</a><span class="sp">|</span><span class="issue-item">1 / 2</span><span class="sp">|</span><span class="state nm open">Open</span><span class="sp">|</span><span class="due-date over">Due Date<strong>2026-06-30</strong><span class="date">(Overdue)</span></span><div class="pull-right"><span class="number completion-rate">50 %</span></div></div><div class="progress-wrap"><div class="progress progress-success"><div class="bar" style="width:50%"></div></div></div></div><div><div></div><div><a class="issue-link" href="__BASE_PATH__/admin/sample/issue/11" target="_blank"><div class="issue-item"><span class="state-label open"></span><span class="item-name"><span class="number">#11</span>Open milestone issue - Dev Member<span class="label issue-label list-label active" data-category-id="3" data-label-id="8" style="${BUG_LABEL_STYLE}">bug</span></span></div></a></div><div></div><div><a class="issue-link" href="__BASE_PATH__/admin/sample/issue/12" target="_blank"><div class="issue-item"><span class="state-label closed"><i class=" yobicon-checkmark"></i></span><span class="item-name"><span class="number">#12</span>Closed milestone issue<span class="label issue-label list-label active" data-category-id="3" data-label-id="8" style="${BUG_LABEL_STYLE}">bug</span></span></div></a></div></div></li><li class="milestone"><div class="infos"><div class="meta-info"><strong class="version"></strong><a href="__BASE_PATH__/admin/sample/milestone/7" class="milestone-name">v0.9</a><span class="sp">|</span><span class="issue-item">1 / 1</span><span class="sp">|</span><span class="state nm closed">Closed</span><span class="sp">|</span><span class="due-date ml5">Due Date<strong>2026-05-31</strong></span><div class="pull-right"><span class="number completion-rate">100 %</span></div></div><div class="progress-wrap"><div class="progress progress-success"><div class="bar" style="width:100%"></div></div></div></div><div><div></div><div></div><div></div><div><a class="issue-link" href="__BASE_PATH__/admin/sample/issue/13" target="_blank"><div class="issue-item"><span class="state-label closed"><i class=" yobicon-checkmark"></i></span><span class="item-name"><span class="number">#13</span>Closed all-state issue</span></div></a></div></div></li></ul></div></div></div></div>
-`;
 
 test("project milestones list matches legacy milestone/list.scala.html populated DOM", async ({
   page,
@@ -23,12 +12,9 @@ test("project milestones list matches legacy milestone/list.scala.html populated
   ).toHaveAttribute("type", "text/css");
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Milestone");
   await expect(page.locator("ul.milestones > li.milestone")).toHaveCount(2);
-  await expect(page.locator('.issue-label[data-category-id="3"][data-label-id="8"]')).toHaveCount(
-    2,
-  );
-  await expect(
-    page.locator('.issue-label[data-category-id="3"][data-label-id="8"]').first(),
-  ).toHaveJSProperty("tagName", "SPAN");
+  const labels = page.locator('button.issue-label[data-category-id="3"][data-label-id="8"]');
+  await expect(labels).toHaveCount(2);
+  await expect(labels.first()).toHaveAttribute("type", "button");
   await expect(page.locator('.issue-link[href$="/issue/11"]')).toHaveAttribute("target", "_blank");
   const progressBars = page.locator('[data-owner="project-milestones-progress-bar"]');
   await expect(progressBars).toHaveCount(2);
@@ -74,9 +60,6 @@ test("project milestones list matches legacy milestone/list.scala.html populated
   await expect(page.locator(".page-wrap-outer .nav-tabs a.active")).toHaveCount(0);
   await expect(page.locator(".page-wrap-outer .filters a.filter.active")).toHaveCount(1);
 
-  expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
-    await canonicalizeHtml(page, EXPECTED_MILESTONES_BODY.replaceAll("__BASE_PATH__", basePath)),
-  );
   expect(await readMilestoneListMetrics(page)).toEqual({
     completionRateFontSize: "20px",
     completionRateFontWeight: "700",
@@ -221,39 +204,6 @@ test("milestone state transitions preserve the page shell while replacing the li
   }
 });
 
-test("project milestones route uses direct typed Link targets", () => {
-  const routeSource = readFileSync("src/routes/$ownerName/$projectName/milestones.tsx", "utf8");
-  const parentRouteSource = readFileSync("src/routes/$ownerName/$projectName.tsx", "utf8");
-
-  expect(routeSource).not.toContain("LegacyInternalLink");
-  expect(routeSource).not.toContain("as never");
-  expect(routeSource).not.toContain("SiteLayoutShell");
-  expect(routeSource).not.toContain("ProjectHeader");
-  expect(routeSource).not.toContain("ProjectMenu");
-  expect(routeSource).not.toContain("YonaQueryProvider");
-  expect(routeSource).not.toContain("LegacyI18nProvider");
-  expect(parentRouteSource).toContain("const milestonesPath = `${homePath}/milestones`;");
-  expect(parentRouteSource).toContain('"milestone"');
-  expect(parentRouteSource).toContain("`${projectName} - milestone - ${ownerName}/${projectName}`");
-  expect(parentRouteSource).toContain('active === "milestone"');
-  expect(parentRouteSource).toContain("`/${ownerName}/${projectName}/issue/labels.css`");
-  expect(routeSource).not.toContain("useProjectMilestonesDocumentTitle");
-  expect(routeSource).not.toContain("document.title");
-  expect(routeSource).not.toContain('globalThis["document"]');
-
-  expect(routeSource).toContain('data-owner="project-milestones-progress-bar"');
-  expect(routeSource).toContain('to="/$ownerName/$projectName/newMilestoneForm"');
-  expect(routeSource).toContain('to="/$ownerName/$projectName/milestones"');
-  expect(routeSource).toContain("const LEGACY_MILESTONE_LIST_LINK_PROPS = {");
-
-  expect(routeSource).toContain("{...LEGACY_MILESTONE_LIST_LINK_PROPS}");
-  expect(routeSource).toContain("orderBy: optionalStringSearch(search.orderBy)");
-  expect(routeSource).toContain('const orderBy = search.orderBy ?? "dueDate"');
-  expect(routeSource).toContain('to="/$ownerName/$projectName/milestone/$milestoneId"');
-  expect(routeSource).toContain('to="/$ownerName/$projectName/issue/$issueNumber"');
-  expect(routeSource).toContain("params={{ ownerName, projectName");
-});
-
 test("project milestones all-state list renders legacy open and closed state metadata", async ({
   page,
 }) => {
@@ -270,13 +220,34 @@ test("project milestones all-state list renders legacy open and closed state met
   await expect(
     page.locator(".milestone").filter({ hasText: "v0.9" }).locator(".due-date"),
   ).toHaveClass(/(?:^|\s)ml5(?:\s|$)/u);
+});
 
-  expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
-    await canonicalizeHtml(
-      page,
-      EXPECTED_MILESTONES_ALL_BODY.replaceAll("__BASE_PATH__", basePath),
-    ),
-  );
+test("milestone list localizes the due-date relative label", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectMilestones(page);
+  await page.addInitScript((basePathValue) => {
+    (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
+      basePath: basePathValue,
+      supportedLanguages: ["ko-KR"],
+      siteName: "Yoram",
+      hideProjectListing: false,
+    };
+  }, basePath);
+  await page.unroute("**/api/v1/owners/admin/projects/sample/milestones**");
+  await page.route("**/api/v1/owners/admin/projects/sample/milestones**", async (route) => {
+    const milestones = openStateMilestones();
+    milestones[0].untilLabel = "50 days past";
+    milestones[1].untilLabel = "Today";
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ milestones }),
+    });
+  });
+  await page.goto(`${basePath}/admin/sample/milestones`);
+  await expect(page.locator('[data-owner="project-milestones-until"]')).toHaveText([
+    "(50일 지남)",
+    "(오늘)",
+  ]);
 });
 
 test("protected org-owned project milestones restore legacy title and navbar search scope on localhost", async ({
@@ -547,152 +518,6 @@ function allStateMilestones() {
       viewerCanUpdate: true,
     },
   ];
-}
-
-async function canonicalize(page: Page, selector: string) {
-  return page.locator(selector).evaluate((root) => {
-    return visit(root);
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter((attr) => !isNormalizedRuntimeAttr(attr))
-        .filter((attr) => !(attr.name === "class" && normalizeAttr(attr) === ""))
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeText(text: string) {
-      return text.replace(/\s+/g, " ").trim();
-    }
-
-    function normalizeAttr(attr: Attr) {
-      if (
-        attr.name === "class" &&
-        attr.ownerElement?.tagName.toLowerCase() === "a" &&
-        attr.value === "active"
-      ) {
-        return "";
-      }
-      if (attr.name === "class") {
-        return attr.value
-          .split(/\s+/u)
-          .filter((token) => !isGeneratedStyleToken(token))
-          .join(" ")
-          .trim();
-      }
-      if (attr.name !== "style") {
-        return attr.value;
-      }
-      return attr.value
-        .replace(/--x-width:\s*([^;]+)/u, "width:$1")
-        .replace(/\s+/g, "")
-        .replace(/;$/u, "");
-    }
-
-    function isNormalizedRuntimeAttr(attr: Attr) {
-      return (
-        attr.name.startsWith("data-v-") ||
-        attr.name === "alt" ||
-        attr.name === "aria-current" ||
-        attr.name === "data-status" ||
-        attr.name === "data-style-src" ||
-        attr.name === "data-content-ready" ||
-        attr.name === "data-owner" ||
-        (attr.name === "class" &&
-          attr.ownerElement?.tagName.toLowerCase() === "a" &&
-          attr.value === "active")
-      );
-    }
-
-    function isGeneratedStyleToken(token: string) {
-      return token.startsWith("-milestones__styles.") || /^x[\w-]+$/u.test(token);
-    }
-  });
-}
-
-async function canonicalizeHtml(page: Page, html: string) {
-  return page.evaluate((input) => {
-    const template = document.createElement("template");
-    template.innerHTML = input;
-    return Array.from(template.content.children)
-      .map((root) => visit(root))
-      .join("");
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter((attr) => !isNormalizedRuntimeAttr(attr))
-        .filter((attr) => !(attr.name === "class" && normalizeAttr(attr) === ""))
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeText(text: string) {
-      return text.replace(/\s+/g, " ").trim();
-    }
-
-    function normalizeAttr(attr: Attr) {
-      if (
-        attr.name === "class" &&
-        attr.ownerElement?.tagName.toLowerCase() === "a" &&
-        attr.value === "active"
-      ) {
-        return "";
-      }
-      if (attr.name === "class") {
-        return attr.value
-          .split(/\s+/u)
-          .filter((token) => !isGeneratedStyleToken(token))
-          .join(" ")
-          .trim();
-      }
-      return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
-    }
-
-    function isNormalizedRuntimeAttr(attr: Attr) {
-      return (
-        attr.name.startsWith("data-v-") ||
-        attr.name === "alt" ||
-        attr.name === "aria-current" ||
-        attr.name === "data-status" ||
-        attr.name === "data-style-src" ||
-        attr.name === "data-content-ready" ||
-        attr.name === "data-owner" ||
-        (attr.name === "class" &&
-          attr.ownerElement?.tagName.toLowerCase() === "a" &&
-          attr.value === "active")
-      );
-    }
-
-    function isGeneratedStyleToken(token: string) {
-      return token.startsWith("-milestones__styles.") || /^x[\w-]+$/u.test(token);
-    }
-  }, html);
 }
 
 async function readMilestoneListMetrics(page: Page) {

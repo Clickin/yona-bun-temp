@@ -535,8 +535,7 @@ function ProjectMembersBody({
                   className="ybtn ybtn-success"
                   data-owner="project-members-add-member-submit"
                 >
-                  <i className="yobicon-addfriend"></i>
-                  {t("button.add")}
+                  <i className="yobicon-addfriend"></i> {t("button.add")}
                 </button>
               </form>
               {showTypeaheadSuggestions ? (
@@ -712,6 +711,7 @@ function ProjectMemberListItem({
         activeProps={legacyLinkActiveProps}
         to="/$user"
         params={{ user: loginId }}
+        className="avatar-wrap mlarge pull-left mr10"
         data-owner="project-members-avatar"
       >
         <img
@@ -722,9 +722,11 @@ function ProjectMemberListItem({
           alt=""
         />
       </Link>
-      <div data-owner="project-members-member-name">{stringField(member.userLabel, loginId)}</div>
-      <div data-owner="project-members-member-id">
-        @{loginId}
+      <div className="member-name" data-owner="project-members-member-name">
+        {stringField(member.userLabel, loginId)}
+      </div>
+      <div className="member-id" data-owner="project-members-member-id">
+        @{loginId}{" "}
         {booleanField(memberRecord.isGuest) ? (
           <span className="guest" data-owner="project-members-guest-badge">
             GUEST
@@ -879,7 +881,7 @@ function ProjectSettingMenu({
         <Link
           activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
           activeProps={legacyLinkActiveProps}
-          to="/$ownerName/$projectName/setting"
+          to="/$ownerName/$projectName/settingform"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
         >

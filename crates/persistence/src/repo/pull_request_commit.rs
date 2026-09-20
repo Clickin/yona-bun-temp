@@ -99,15 +99,15 @@ impl AppRepositoryImpl<'_> {
                 created_date: Set(Some(current_datetime())),
                 pull_request_id: Set(None),
                 project_id: Set(Some(project.id)),
-                prev_commit_id: Set(None),
+                prev_commit_id: Set(input.prev_commit_id),
                 commit_id: Set(Some(input.commit_id.clone())),
                 path: Set(path),
-                start_side: Set(None),
+                start_side: Set(input.start_side),
                 start_line: Set(input.start_line),
-                start_column: Set(None),
-                end_side: Set(None),
+                start_column: Set(input.start_column),
+                end_side: Set(input.end_side),
                 end_line: Set(input.end_line),
-                end_column: Set(None),
+                end_column: Set(input.end_column),
             }
             .insert(&self.db)
             .await?
@@ -137,9 +137,26 @@ impl AppRepositoryImpl<'_> {
             Some(input.actor_id),
         )
         .await?;
-        let receiver_ids = self
-            .commit_notification_receiver_ids(project.id, input.actor_id, "NEW_REVIEW_COMMENT")
+        let mut receiver_ids = self
+            .commit_notification_receiver_ids(
+                project.id,
+                input.actor_id,
+                "NEW_REVIEW_COMMENT",
+                Some((&input.commit_id, input.commit_author_id)),
+            )
             .await?;
+        for user_id in self
+            .mentioned_active_user_ids(&input.contents_markdown)
+            .await?
+        {
+            if user_id != input.actor_id
+                && self
+                    .search_project_visible_for_actor(&project, Some(user_id))
+                    .await?
+            {
+                receiver_ids.push(user_id);
+            }
+        }
         self.create_notification_event_for_commit_discussion(
             input.actor_id,
             "REVIEW_COMMENT",

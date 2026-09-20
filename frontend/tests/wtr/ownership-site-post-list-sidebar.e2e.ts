@@ -1,14 +1,6 @@
-import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Locator, type Page, type Route } from "../wtr-compat.ts";
 
-// Browser harness: node:fs/promises readFile has no browser equivalent; the
-// compat readFileSync is a sync XHR over the same middleware. Promise-wrap it
-// so the spec's await/Promise.all call sites keep their shape.
-const readFile = (path: string | URL, encoding?: string | null): Promise<string> =>
-  Promise.resolve(readFileSync(path, encoding ?? "utf8"));
-
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const src = (path: string) => new URL(path, import.meta.url);
 const owners = {
   badge: "site-post-list-sidebar-badge",
   item: "site-post-list-sidebar-item",
@@ -16,39 +8,6 @@ const owners = {
   sidebar: "site-post-list-sidebar",
 } as const;
 const owner = (root: Page | Locator, name: string) => root.locator(`[data-owner="${name}"]`);
-const suffixes = [
-  "Margin",
-  "Padding",
-  "ListStyle",
-  "ItemBorderLeftColor",
-  "ItemBorderLeftStyle",
-  "ItemBorderLeftWidth",
-  "ItemFontSize",
-  "ItemLineHeight",
-  "ItemMarginTop",
-  "FirstItemMarginTop",
-  "ActiveItemBorderLeftColor",
-  "ActiveItemFontWeight",
-  "LinkColor",
-  "LinkDisplay",
-  "LinkOutline",
-  "LinkPadding",
-  "LinkTextDecoration",
-  "LinkHoverBackground",
-  "LinkHoverOutline",
-  "LinkHoverTextDecoration",
-  "ActiveLinkHoverBackground",
-  "BadgeBackground",
-  "BadgeBorderColor",
-  "BadgeBorderRadius",
-  "BadgeBorderStyle",
-  "BadgeBorderWidth",
-  "BadgeBoxShadow",
-  "BadgeColor",
-  "BadgeFontSize",
-  "BadgeLineHeight",
-  "BadgePadding",
-] as const;
 
 async function openPostList(page: Page) {
   await page.route("**/api/v1/session", (route) =>
@@ -83,7 +42,7 @@ async function openPostList(page: Page) {
             authorLoginId: "alice",
             commentCount: 3,
             createdLabel: "1 day ago",
-            createdTitle: "2026-06-29 14:30",
+            createdTitle: new Date(Date.now() - 26 * 60 * 60 * 1_000).toISOString(),
             labels: [],
             notice: false,
             ownerName: "acme",
@@ -123,80 +82,6 @@ async function openPostList(page: Page) {
 }
 
 test.describe("Style site post list sidebar", () => {
-  test("pins legacy sources, global theme, old bridge absence, and retirement", async () => {
-    const paths = [
-      "../src/routes/sites/postList.tsx",
-      "../src/app.css",
-      "../src/app.css",
-      "../../yona-original/app/views/site/postList.scala.html",
-      "../../yona-original/app/views/site/siteMngLayout.scala.html",
-      "../../yona-original/conf/messages",
-      "../../yona-original/app/assets/stylesheets/yobi.less",
-      "../../yona-original/app/assets/stylesheets/less/_common.less",
-      "../../yona-original/app/assets/stylesheets/less/_page.less",
-      "../../yona-original/app/assets/stylesheets/less/_variables.less",
-      "../../yona-original/app/assets/stylesheets/less/_mixins.less",
-    ];
-    const [
-      route,
-      theme,
-      appCss,
-      template,
-      layout,
-      messages,
-      yobi,
-      common,
-      legacyPage,
-      variables,
-      mixins,
-    ] = await Promise.all(paths.map((path) => readFile(src(path), "utf8")));
-    expect(template).toContain("@siteMngLayout(message)");
-    expect(layout).toContain("routes.SiteApp.postList()");
-    expect(layout).toContain('<ul class="site-setting-nav">');
-    expect(layout).toContain('<span class="notification-badge">1</span>');
-    for (const key of [
-      "userList",
-      "postList",
-      "issueList",
-      "projectList",
-      "mailSend",
-      "massMail",
-      "update",
-      "diagnostics",
-    ])
-      expect(messages).toContain(`site.sidebar.${key}`);
-    for (const imported of ["_variables.less", "_mixins.less", "_common.less", "_page.less"])
-      expect(yobi).toContain(imported);
-    expect(common).toContain("body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,form,fieldset,p,button{");
-    expect(common).toContain("a {");
-    expect(common).toContain(".notification-badge {");
-    expect(legacyPage).toContain(".site-setting-nav {");
-    expect(variables).toContain("@yobi-orange : #FF7332;");
-    expect(variables).toContain("@primary         : @orange;");
-    expect(mixins).toContain(".border-radius(@radius: 5px)");
-    expect(curatedAppCss()).not.toContain(".site-setting-wrap .site-setting-nav {");
-    expect(curatedAppCss()).not.toContain(
-      ".site-setting-wrap .site-setting-nav li.active a:hover {",
-    );
-    // The sidebar now lives in the shared SiteAdminSidebar component; the
-    // route wires the four owners through props (bucket-3 pin update).
-    expect(route).toContain('navOwner="site-post-list-sidebar"');
-    expect(route).toContain('ownerPrefix="site-post-list-sidebar"');
-    expect(route).toContain('badgeOwner="site-post-list-sidebar-badge"');
-    for (const suffix of suffixes) {
-      const key = `sitePostListSidebar${suffix}`;
-
-      expect(theme).not.toContain(key);
-    }
-    for (const retired of [
-      'className="site-setting-nav"',
-      'className="active"',
-      'className="notification-badge"',
-      'className=""',
-    ])
-      expect(route).not.toContain(retired);
-  });
-
   test("keeps eight links, second active Posts, and update badge", async ({ page }) => {
     await openPostList(page);
     const sidebar = owner(page, owners.sidebar);

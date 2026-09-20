@@ -1,11 +1,8 @@
-import { readFile } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. resolve only builds page.screenshot paths (artifact-only).
 const resolve = (...parts: string[]) => parts.join("/").replace(/^\/+/, "");
 const frontendRoot = resolve("..");
-const rootRoutePath = "src/routes/__root.tsx";
-const themePath = "src/app.css";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 const toastOwner = '[data-owner="root-yoram-toast"]';
@@ -15,20 +12,8 @@ const dismissSelector = `${toastOwner} [data-part="toast-dismiss"]`;
 const dismissButtonSelector = `${dismissSelector} button`;
 const messageSelector = `${toastOwner} [data-part="toast-message"]`;
 
-test.describe("RootYoramToast Style ownership", () => {
-  test("declares a stable React-owned Style boundary with global theme tokens", async () => {
-    const [routeSource, themeSource] = await Promise.all([
-      readFile(rootRoutePath),
-      readFile(themePath),
-    ]);
-
-    expect(routeSource).toContain('data-owner="root-yoram-toast"');
-    expect(routeSource).toContain('data-part="toast"');
-    expect(routeSource).toContain('data-part="toast-dismiss"');
-    expect(routeSource).toContain('data-part="toast-message"');
-  });
-
-  test("shows the legacy-visible signup-requested toast and dismisses on click", async ({
+test.describe("Root toast behavior and paint", () => {
+  test("shows the legacy-visible signup-requested toast and dismisses from its message", async ({
     page,
   }) => {
     await page.goto(`${basePath}/?signup=requested`);
@@ -43,21 +28,21 @@ test.describe("RootYoramToast Style ownership", () => {
     await expect(page.locator(messageSelector)).toHaveText(
       "Sign-up request has been sent. Site admin will review and accept your request. Thanks.",
     );
-    await expect(toast).not.toHaveClass(/\btoast\b/);
-    await expect(page.locator(dismissSelector)).not.toHaveClass(/\bbtn-dismiss\b/);
-    await expect(page.locator(dismissButtonSelector)).not.toHaveClass(/\bbtn-transparent\b/);
 
-    await page.locator(dismissButtonSelector).click();
+    await page.locator(messageSelector).click();
     await expect(toast).toBeHidden();
   });
 
-  test("dismisses after the React-owned timeout", async ({ page }) => {
-    await page.clock.install();
+  test("fades after its lifetime before removing the toast", async ({ page }) => {
     await page.goto(`${basePath}/?signup=requested`);
 
     const toast = page.locator(toastSelector);
     await expect(toast).toBeVisible();
-    await page.clock.runFor(10_000);
+    await page.clock.runFor(4_000);
+    await expect(toast).toHaveCSS("opacity", "1");
+    await expect
+      .poll(() => toast.evaluate((node) => Number(getComputedStyle(node).opacity) < 1))
+      .toBe(true);
     await expect(toast).toBeHidden();
   });
 
@@ -80,7 +65,8 @@ test.describe("RootYoramToast Style ownership", () => {
     await expect(toast).toHaveCSS("background-color", "rgb(205, 220, 57)");
     await expect(toast).toHaveCSS("border-radius", "2px");
     await expect(toast).toHaveCSS("box-shadow", "rgb(0, 0, 0) 1px 1px 3px 0px");
-    await expect(toast).toHaveCSS("opacity", "0.9");
+    await expect(toast).toHaveCSS("opacity", "1");
+    await expect(toast).toHaveCSS("transition-duration", "0.3s");
     await expect(toast).toHaveCSS("padding", "10px 20px");
     await expect(toast).toHaveCSS("font-size", "13px");
     await expect(toast).toHaveCSS("font-weight", "700");

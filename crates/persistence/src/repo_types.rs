@@ -173,6 +173,7 @@ pub struct IssueRecord {
 pub struct IssueChildRecord {
     pub assignee_label: String,
     pub comment_count: u32,
+    pub created_at: Option<DateTime>,
     pub created_label: String,
     pub id: i64,
     pub is_draft: bool,
@@ -237,6 +238,7 @@ pub struct IssueAssignableUserRecord {
     pub item_type: String,
     pub login_id: String,
     pub pure_name_only: String,
+    pub user_id: i64,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -347,6 +349,7 @@ pub struct ProjectIssueListItemRecord {
     pub author_login_id: String,
     pub assignee_login_id: String,
     pub comment_count: u32,
+    pub created_at: Option<DateTime>,
     pub created_label: String,
     pub created_title: String,
     pub child_closed_count: u32,
@@ -446,6 +449,7 @@ pub struct ProjectPostingListItemRecord {
     pub author_label: String,
     pub author_login_id: String,
     pub comment_count: u32,
+    pub created_at: Option<DateTime>,
     pub created_label: String,
     pub created_title: String,
     pub labels: Vec<IssueLabelRecord>,
@@ -940,11 +944,23 @@ pub struct MailboxResourceActionRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MailboxAttachmentInput {
+    pub content_id: Option<String>,
+    pub filename: String,
+    pub hash: String,
+    pub mime_type: String,
+    pub size: i64,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MailboxActionExecutionInput {
     pub actor_display_name: String,
     pub actor_id: i64,
     pub actor_login_id: String,
+    pub attachments: Vec<MailboxAttachmentInput>,
+    pub base_path: String,
     pub body_markdown: String,
+    pub content_type: String,
     pub message_id: String,
     pub title: String,
 }
@@ -961,7 +977,10 @@ pub struct MailboxActionExecutionRecord {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MailboxNormalizedMessageInput {
+    pub attachments: Vec<MailboxAttachmentInput>,
+    pub base_path: String,
     pub body_markdown: String,
+    pub content_type: String,
     pub from_addresses: Vec<String>,
     pub message_id: String,
     pub recipient_details: Vec<String>,
@@ -1029,6 +1048,7 @@ pub struct UpdatePostingInput {
     pub owner_name: String,
     pub post_number: i64,
     pub project_name: String,
+    pub send_notification: bool,
     pub values: PostingMutationInput,
 }
 
@@ -1420,6 +1440,7 @@ pub struct ProjectMenuSettingsRecord {
 pub struct ProjectMilestoneSummaryRecord {
     pub closed_issue_count: u32,
     pub completion_percent: u32,
+    pub due_date: Option<DateTime>,
     pub due_date_label: String,
     pub id: i64,
     pub open_issue_count: u32,
@@ -1815,6 +1836,7 @@ pub struct CreatePullRequestCommentInput {
     pub attachment_ids: Vec<i64>,
     pub commit_id: Option<String>,
     pub contents_markdown: String,
+    pub end_column: Option<i32>,
     pub end_line: Option<i32>,
     pub owner_name: String,
     pub path: Option<String>,
@@ -1822,6 +1844,7 @@ pub struct CreatePullRequestCommentInput {
     pub project_name: String,
     pub pull_request_number: i64,
     pub end_side: Option<String>,
+    pub start_column: Option<i32>,
     pub start_line: Option<i32>,
     pub start_side: Option<String>,
     pub thread_id: Option<i64>,
@@ -1929,13 +1952,19 @@ pub struct CreateCommitDiscussionCommentInput {
     pub actor_id: i64,
     pub actor_login_id: String,
     pub attachment_ids: Vec<i64>,
+    pub commit_author_id: Option<i64>,
     pub commit_id: String,
     pub contents_markdown: String,
+    pub end_column: Option<i32>,
     pub end_line: Option<i32>,
+    pub end_side: Option<String>,
     pub owner_name: String,
     pub path: Option<String>,
+    pub prev_commit_id: Option<String>,
     pub project_name: String,
+    pub start_column: Option<i32>,
     pub start_line: Option<i32>,
+    pub start_side: Option<String>,
     pub thread_id: Option<i64>,
 }
 
@@ -1943,6 +1972,7 @@ pub struct CreateCommitDiscussionCommentInput {
 pub struct CommitDiscussionThreadStateInput {
     pub actor_id: i64,
     pub actor_login_id: String,
+    pub commit_author_id: Option<i64>,
     pub commit_id: String,
     pub owner_name: String,
     pub project_name: String,
@@ -1999,7 +2029,7 @@ pub struct ReviewCommentRecord {
     pub author_label: String,
     pub author_login_id: String,
     pub contents_markdown: String,
-    pub created_label: String,
+    pub created_at: Option<DateTime>,
     pub id: i64,
     pub thread_id: i64,
     pub via_email: bool,
@@ -2013,13 +2043,16 @@ pub struct ReviewThreadRecord {
     pub author_login_id: String,
     pub comments: Vec<ReviewCommentRecord>,
     pub commit_id: String,
+    pub created_at: Option<DateTime>,
     pub created_label: String,
+    pub end_column: Option<i32>,
     pub end_line: Option<i32>,
     pub end_side: Option<String>,
     pub id: i64,
     pub path: String,
     pub prev_commit_id: String,
     pub pull_request_number: Option<i64>,
+    pub start_column: Option<i32>,
     pub start_line: Option<i32>,
     pub start_side: Option<String>,
     pub state: String,
@@ -2103,8 +2136,8 @@ pub struct ReviewThreadListRecord {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct WorkspaceMemberProjectRecord {
-    pub created_label: String,
-    pub last_pushed_label: String,
+    pub created_at: Option<DateTime>,
+    pub last_pushed_at: Option<DateTime>,
     pub member_count: u32,
     pub origin_owner_name: String,
     pub origin_project_name: String,

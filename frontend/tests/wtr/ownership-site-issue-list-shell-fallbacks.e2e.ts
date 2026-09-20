@@ -79,7 +79,7 @@ async function openIssueList(page: Page) {
             authorName: "Alice Example",
             commentCount: 3,
             createdLabel: "1 day ago",
-            createdTitle: "2026-06-29 14:30",
+            createdTitle: "2026-06-29T14:30:00Z",
             issueNumber: "42",
             ownerName: "acme",
             projectLogoUrl: "/assets/images/default-project-logo.png",

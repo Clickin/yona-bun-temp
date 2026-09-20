@@ -12,8 +12,8 @@ const projects = [
     logoUrl: "/assets/images/project_default_logo.png",
     overview: "Private project",
     memberCount: 3,
-    createdLabel: "today",
-    lastPushedLabel: "an hour ago",
+    createdAt: "2020-01-02T12:00:00Z",
+    lastPushedAt: "2020-01-03T12:00:00Z",
     viewerCanWatch: false,
     isWatching: false,
     watchCount: 2,
@@ -28,7 +28,8 @@ const projects = [
     logoUrl: "/assets/images/project_default_logo.png",
     overview: "Forked project",
     memberCount: 2,
-    createdLabel: "yesterday",
+    createdAt: "2020-01-01T12:00:00Z",
+    lastPushedAt: "",
     originOwnerName: "origin-owner",
     originProjectName: "origin-project",
     viewerCanWatch: true,
@@ -45,7 +46,8 @@ const projects = [
     logoUrl: "/assets/images/project_default_logo.png",
     overview: "Public project",
     memberCount: 1,
-    createdLabel: "Monday",
+    createdAt: "2019-12-30T12:00:00Z",
+    lastPushedAt: "",
     viewerCanWatch: true,
     isWatching: false,
     watchCount: 1,
@@ -262,10 +264,11 @@ test("profile Projects pane retires only Style-owned header, desc, and name-tag 
       "public-project",
     ]);
     await expect(descriptions).toHaveText(["Private project", "Forked project", "Public project"]);
-    await expect(nameTags).toHaveText([
-      "3 private-owner today, Latest code update an hour ago",
-      "2 fork-owner yesterday",
-      "1 public-owner Monday",
+    await expect(nameTags.locator("strong")).toHaveText(["3", "2", "1"]);
+    await expect(nameTags.locator(".owner-name-small")).toHaveText([
+      "private-owner",
+      "fork-owner",
+      "public-owner",
     ]);
     for (const [owner, legacyClass] of [
       ["user-profile-project-header", "header"],

@@ -1590,15 +1590,21 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
         imported_user["createdAt"]
             .as_str()
             .expect("imported user created date")
-            .replace(' ', "T"),
-        "2020-01-01T00:00:01"
+            .parse::<chrono::DateTime<chrono::Utc>>()
+            .expect("user creation instant must include its UTC offset"),
+        "2020-01-01T00:00:01Z"
+            .parse::<chrono::DateTime<chrono::Utc>>()
+            .unwrap()
     );
     assert_eq!(
         imported_user["lastStateModifiedAt"]
             .as_str()
             .expect("imported user last state modified date")
-            .replace(' ', "T"),
-        "2020-01-01T00:00:02"
+            .parse::<chrono::DateTime<chrono::Utc>>()
+            .expect("user state-change instant must include its UTC offset"),
+        "2020-01-01T00:00:02Z"
+            .parse::<chrono::DateTime<chrono::Utc>>()
+            .unwrap()
     );
 
     let projects = response_json(
@@ -1618,8 +1624,11 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
         projects["projects"][0]["createdAt"]
             .as_str()
             .expect("imported project created date")
-            .replace(' ', "T"),
-        "2020-01-01T02:03:04"
+            .parse::<chrono::DateTime<chrono::Utc>>()
+            .expect("project creation instant must include its UTC offset"),
+        "2020-01-01T02:03:04Z"
+            .parse::<chrono::DateTime<chrono::Utc>>()
+            .unwrap()
     );
 
     let members = repo
@@ -1668,6 +1677,16 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
         response_json(rest_get(app.clone(), "/yona/api/v1/site/posts", Some(&admin_cookie)).await)
             .await;
     assert_eq!(posts["posts"][0]["title"], "Restored post");
+    assert_eq!(
+        posts["posts"][0]["createdTitle"]
+            .as_str()
+            .expect("imported post creation instant")
+            .parse::<chrono::DateTime<chrono::Utc>>()
+            .expect("post creation instant must include its UTC offset"),
+        "2020-01-02T03:00:00Z"
+            .parse::<chrono::DateTime<chrono::Utc>>()
+            .unwrap()
+    );
     assert_eq!(posts["posts"][0]["labels"][0]["name"], "Notice");
     assert_eq!(posts["posts"][0]["labels"][0]["categoryName"], "Type");
     let post_detail = repo
@@ -1716,6 +1735,16 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
     )
     .await;
     assert_eq!(issues["issues"][0]["title"], "Restored issue");
+    assert_eq!(
+        issues["issues"][0]["createdTitle"]
+            .as_str()
+            .expect("imported issue creation instant")
+            .parse::<chrono::DateTime<chrono::Utc>>()
+            .expect("issue creation instant must include its UTC offset"),
+        "2020-01-04T05:00:00Z"
+            .parse::<chrono::DateTime<chrono::Utc>>()
+            .unwrap()
+    );
     assert_eq!(issues["issues"][0]["labels"][0]["name"], "Bug");
     assert_eq!(issues["issues"][0]["labels"][0]["categoryName"], "Type");
     let issue_detail = repo

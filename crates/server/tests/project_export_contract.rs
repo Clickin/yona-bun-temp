@@ -539,6 +539,87 @@ async fn project_import_restores_exported_ndjson_records() {
 }
 
 #[tokio::test]
+async fn project_import_rejects_foreign_issue_and_comment_ids_without_data_loss() {
+    for failure_section in ["issues", "issues.comments"] {
+        let data_dir = tempfile::tempdir().expect("yona data");
+        let (app, repo, db) = build_app_with_app_config(AppRuntimeConfig {
+            data_root: data_dir.path().to_path_buf(),
+            ..AppRuntimeConfig::default()
+        })
+        .await;
+        let (csrf, cookie, user_id) = register_user(app.clone(), "member").await;
+        seed_exportable_project(&app, &repo, &db, &data_dir, &cookie, &csrf, user_id).await;
+        let original = repo
+            .read_issue_detail("member", "dataproj", 1)
+            .await
+            .expect("read original issue")
+            .expect("original issue");
+        let issue_id = if failure_section == "issues" {
+            original.id
+        } else {
+            original.id + 1
+        };
+        let records = [
+            json!({
+                "kind": "project",
+                "owner": "member",
+                "projectName": "imported",
+                "projectVcs": "GIT",
+                "projectScope": "public"
+            }),
+            json!({
+                "kind": "issue",
+                "id": issue_id,
+                "issueNumber": "1",
+                "ownerName": "member",
+                "projectName": "imported",
+                "authorLoginId": "member",
+                "title": "Converted issue",
+                "bodyMarkdown": "Converted body",
+                "state": "open",
+                "comments": [{
+                    "id": original.comments[0].id,
+                    "authorLoginId": "member",
+                    "contentsMarkdown": "Converted comment"
+                }]
+            }),
+            json!({"kind": "done", "issueCount": 1}),
+        ];
+        let body = records
+            .iter()
+            .map(|record| serde_json::to_string(record).expect("serialize record"))
+            .collect::<Vec<_>>()
+            .join("\n")
+            + "\n";
+        let response = rest_raw_post(
+            app,
+            "/yona/api/v1/owners/member/projects/imported/imports",
+            Some(&cookie),
+            "application/x-ndjson",
+            &body,
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        let failure: Value =
+            serde_json::from_str(&response_text(response).await).expect("failure response");
+        assert_eq!(failure["checkpoint"]["failure"]["section"], failure_section);
+        assert!(repo
+            .read_project_by_owner_and_name("member", "imported")
+            .await
+            .expect("read rolled back project")
+            .is_none());
+        let retained = repo
+            .read_issue_detail("member", "dataproj", 1)
+            .await
+            .expect("read retained issue")
+            .expect("retained issue");
+        assert_eq!(retained.title, original.title);
+        assert_eq!(retained.body_markdown, original.body_markdown);
+        assert_eq!(retained.comments, original.comments);
+    }
+}
+
+#[tokio::test]
 async fn project_import_dry_run_parses_stream_without_writing() {
     let data_dir = tempfile::tempdir().expect("yona data");
     let (app, repo, db) = build_app_with_app_config(AppRuntimeConfig {

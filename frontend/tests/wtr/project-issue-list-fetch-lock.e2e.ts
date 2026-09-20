@@ -163,13 +163,13 @@ test("rapid open/closed toggling drops triggers while the fetch group is in flig
   await page.goto(`${basePath}/${OWNER}/${PROJECT}/issues?state=open`);
   await expect(page.getByRole("link", { name: "Fix flaky issue" })).toBeVisible();
 
-  await page.locator(".nav-tabs a", { hasText: "Closed" }).click();
-  // the open/closed toggle is a plain Link: the first click wins and locks
+  await page.getByRole("button", { name: /^Closed\s*1$/u }).click();
+  // The state tab submits a new list filter; the first click wins and locks.
   await expect(page.locator("#nprogress .bar")).toBeVisible();
   await expect.poll(() => currentState(page)).toBe("closed");
 
   // a second trigger during the in-flight fetch must be dropped
-  await page.locator(".nav-tabs a", { hasText: "Open" }).click();
+  await page.getByRole("button", { name: /^Open\s*1$/u }).click();
   await page.waitForTimeout(200);
   await expect.poll(() => currentState(page)).toBe("closed");
 
@@ -179,7 +179,7 @@ test("rapid open/closed toggling drops triggers while the fetch group is in flig
 
   // once the closed list is committed to the DOM, the block has released and
   // the toggle works again
-  await page.locator(".nav-tabs a", { hasText: "Open" }).click();
+  await page.getByRole("button", { name: /^Open\s*1$/u }).click();
   await expect(page.getByRole("link", { name: "Fix flaky issue" })).toBeVisible();
   await expect.poll(() => currentState(page)).toBe("open");
 });
@@ -254,21 +254,22 @@ test("modifier clicks are never blocked while the lock is held", async ({ page }
   await page.goto(`${basePath}/${OWNER}/${PROJECT}/issues?state=open`);
   await expect(page.getByRole("link", { name: "Fix flaky issue" })).toBeVisible();
 
-  await page.locator(".nav-tabs a", { hasText: "Closed" }).click();
+  await page.getByRole("button", { name: /^Closed\s*1$/u }).click();
   await expect(page.locator("#nprogress .bar")).toBeVisible();
 
-  const notPrevented = await page.evaluate(() => {
-    const anchor = [...document.querySelectorAll(".nav-tabs a")].find((a) =>
-      a.textContent.includes("Open"),
-    );
-    const event = new MouseEvent("click", {
-      bubbles: true,
-      cancelable: true,
-      button: 0,
-      metaKey: true,
+  // State tabs are filter buttons. New-tab gestures belong to the issue's
+  // native detail link, which remains visible while the next list loads.
+  const notPrevented = await page
+    .getByRole("link", { name: "Fix flaky issue" })
+    .evaluate((anchor) => {
+      const event = new MouseEvent("click", {
+        bubbles: true,
+        cancelable: true,
+        button: 0,
+        metaKey: true,
+      });
+      anchor.dispatchEvent(event);
+      return !event.defaultPrevented;
     });
-    anchor!.dispatchEvent(event);
-    return !event.defaultPrevented;
-  });
   expect(notPrevented).toBe(true);
 });

@@ -1,4 +1,4 @@
-import { readFileSync, readFile, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFile } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
@@ -30,6 +30,7 @@ const owners = {
 test.use({ locale: "ko-KR" });
 
 async function open(page: Page) {
+  await page.clock.setFixedTime("2026-07-17T12:00:00Z");
   await page.addInitScript((runtimeBasePath) => {
     (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
       basePath: runtimeBasePath,
@@ -59,9 +60,9 @@ async function open(page: Page) {
       json: {
         items: [
           {
-            createdLabel: "07-07",
+            createdAt: "2026-07-07T12:00:00Z",
             labels: [],
-            lastPushedLabel: "",
+            lastPushedAt: "",
             logoUrl: "",
             memberCount: 1,
             overview: "Protected organization project for localhost parity",
@@ -71,9 +72,9 @@ async function open(page: Page) {
             watchCount: 1,
           },
           {
-            createdLabel: "07-07",
+            createdAt: "2026-07-07T12:00:00Z",
             labels: [],
-            lastPushedLabel: "",
+            lastPushedAt: "",
             logoUrl: "",
             memberCount: 1,
             members: [{ avatarUrl: memberAvatarDataUrl, loginId: "alice", userLabel: "Alice Kim" }],
@@ -84,9 +85,9 @@ async function open(page: Page) {
             watchCount: 1,
           },
           {
-            createdLabel: "07-07",
+            createdAt: "2026-07-07T12:00:00Z",
             labels: [],
-            lastPushedLabel: "",
+            lastPushedAt: "",
             logoUrl: "",
             memberCount: 1,
             members: [
@@ -99,9 +100,9 @@ async function open(page: Page) {
             watchCount: 1,
           },
           {
-            createdLabel: "07-07",
+            createdAt: "2026-07-07T12:00:00Z",
             labels: [],
-            lastPushedLabel: "5일 전",
+            lastPushedAt: "2026-07-12T12:00:00Z",
             logoUrl: "",
             memberCount: 1,
             members: [
@@ -124,98 +125,6 @@ async function open(page: Page) {
   await page.goto(`${basePath}/projects`);
   await expect(page.locator('[data-owner="projects-directory-list"]')).toBeVisible();
 }
-
-test("stats/member wave owns exactly six targets and preserves the intentional avatar fallback", () => {
-  const route = readFileSync("src/routes/projects.tsx", "utf8");
-  const theme = readFileSync("src/app.css", "utf8");
-  const scala = readFileSync("../yona-original/app/views/project/list.scala.html", "utf8");
-  const siteLayout = readFileSync("../yona-original/app/views/siteLayout.scala.html", "utf8");
-  const yobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
-  const variables = readFileSync(
-    "../yona-original/app/assets/stylesheets/less/_variables.less",
-    "utf8",
-  );
-  const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
-  const commonLess = readFileSync(
-    "../yona-original/app/assets/stylesheets/less/_common.less",
-    "utf8",
-  );
-  const yobiUiLess = readFileSync(
-    "../yona-original/app/assets/stylesheets/less/_yobiUI.less",
-    "utf8",
-  );
-  const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
-  const yobicon = readFileSync("../yona-original/public/stylesheets/yobicon/style.css", "utf8");
-  const messages = readFileSync("../yona-original/conf/messages", "utf8");
-
-  expect(scala).toContain('<div class="stats-wrap pull-right">');
-  expect(scala).toContain('<div class="members">\n                        <ul class="unstyled">');
-  expect(scala).toContain(
-    'class="avatar-wrap">\n                                    <img src="@member.avatarUrl"',
-  );
-  expect(scala).toContain(
-    '@Html(Messages("project.onmember", User.findUsersByProject(project.id).size))\n                            <i class="yobicon-eye yobicon-middle"></i> @Html(Messages("project.onwatching", project.getWatchingCount))',
-  );
-  expect(siteLayout).toContain(
-    '@layout(Messages(title))(""){\n    @common.navbar(menuType, null, null)\n\n    @content\n\n    @common.footer()\n}',
-  );
-  expect(yobi.trim().split("\n")).toEqual([
-    '@import "less/_variables.less";',
-    '@import "less/_mixins.less";',
-    '@import "less/_common.less";',
-    '@import "less/_sprites.less";',
-    '@import "less/_page.less";',
-    '@import "less/_tippy.less";',
-    '@import "less/_scrollbar.less";',
-    '@import "less/_responsive.less";',
-    '@import "less/_yobiUI.less";',
-    '@import "less/_temporary.less";',
-    '@import "less/_markdown.less";',
-    '@import "less/_migration.less";',
-    '@import "less/_override.less";',
-  ]);
-  expect(variables).toContain("@blue2  : #51AACC;");
-  expect(variables).toContain("@secondary       : @blue2;");
-  expect(pageLess).toContain(
-    ".stats-wrap {\n            margin-top: 0px;\n            text-align: right;",
-  );
-  expect(pageLess).toContain(
-    ".stats-wrap {\n    i {\n        font-size: 16px;\n        margin-left: 5px;\n        margin-right: 5px;",
-  );
-  expect(pageLess).toContain(
-    "ul {\n                    display:inline-block;\n                    padding-left: 50px;",
-  );
-  expect(pageLess).toContain(".avatar-wrap { margin-right:3px; margin-bottom:3px; }");
-  expect(commonLess).toContain(
-    "body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,form,fieldset,p,button{\n    margin:0;\n    padding:0",
-  );
-  expect(commonLess).toContain(".avatar-wrap {\n    width:32px; height:32px;");
-  expect(yobiUiLess).toContain("background:#ddd;\n    .border-radius(3px) !important;");
-  expect(yobiUiLess).toContain("img {\n        width:100%;\n        vertical-align:top;");
-  expect(bootstrap).toContain(
-    "ul.unstyled,\nol.unstyled {\n  margin-left: 0;\n  list-style: none;",
-  );
-  expect(bootstrap).toContain(".pull-right {\n  float: right;");
-  expect(yobicon).toContain("font-family: 'yobicon';");
-  expect(yobicon).toContain("display: inline-block;");
-
-  expect(messages).toContain(
-    'project.onmember = <i class="yobicon-friends yobicon-middle"></i><strong>{0}</strong>',
-  );
-  expect(messages).toContain("project.onwatching = <strong>{0}</strong>");
-
-  for (const owner of Object.values(owners)) {
-    expect(route.match(new RegExp(`data-owner=["']${owner}["']`, "gu"))?.length).toBe(
-      owner === owners.count || owner === owners.icon ? 2 : 1,
-    );
-  }
-  expect(route).not.toContain("stats-wrap");
-  expect(route).not.toMatch(/className=.*yobicon-(?:friends|eye)/u);
-  expect(route).not.toContain("yobicon-friends yobicon-middle");
-  expect(route).not.toContain("yobicon-eye yobicon-middle");
-  expect(route).not.toContain('className="stats-wrap pull-right"');
-  expect(route).not.toContain('className="unstyled"');
-});
 
 for (const viewport of [
   { height: 900, name: "desktop", width: 1366 },

@@ -1116,10 +1116,6 @@ async fn rest_organization_routes_cover_directory_views_and_membership_mutations
     let (_member_csrf, _member_cookie) = register_user(app.clone(), "member").await;
     let (guest_csrf, guest_cookie) = register_user(app.clone(), "guest").await;
     let (_outsider_csrf, outsider_cookie) = register_user(app.clone(), "outsider").await;
-    repository
-        .toggle_site_user_guest_mode("guest")
-        .await
-        .expect("mark organization enrollment actor as guest");
 
     let created = create_organization_rest(
         app.clone(),

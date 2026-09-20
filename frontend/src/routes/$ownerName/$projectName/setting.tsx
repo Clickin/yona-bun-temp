@@ -387,7 +387,7 @@ function ProjectSettingBody({
                   backgroundImage: `url('${projectLogoUrl(project, runtimeConfig.basePath)}')`,
                 }}
                 data-owner="project-setting-logo"
-              ></div>
+              ></div>{" "}
               <div className="logo-desc" data-owner="project-setting-logo-desc">
                 <ul className="unstyled descs" data-owner="project-setting-descs-list">
                   <li className="" data-owner="project-setting-descs-item">
@@ -411,7 +411,7 @@ function ProjectSettingBody({
                         className="nbtn medium white fake-file-wrap"
                         data-owner="project-setting-logo-upload-button"
                       >
-                        <i className="yobicon-upload"></i> {t("button.upload")}
+                        <i className="yobicon-upload"></i> {t("button.upload")}{" "}
                         <input
                           key={logoInputResetKey}
                           id="logoPath"
@@ -428,7 +428,6 @@ function ProjectSettingBody({
                 </ul>
               </div>
             </div>
-            {/* Keep the legacy setting-box/right owner adjacent to the Style border cascade. */}
             <dl className="setting-box right" data-owner="project-setting-setting-box-right">
               <dt className="" data-owner="project-setting-name-term">
                 <label className="" data-owner="project-setting-name-label" htmlFor="project-name">
@@ -591,7 +590,7 @@ function ProjectSettingBody({
               />
               <label htmlFor="codeAccessibleAnyone" className="bg-radiobtn label-private">
                 {t("button.no")}
-              </label>
+              </label>{" "}
               <span className="note" data-owner="project-setting-cu-note-code-accessible"></span>
             </div>
           </div>
@@ -599,7 +598,8 @@ function ProjectSettingBody({
           {isGit ? (
             <>
               <div
-                className={`box-wrap middle reviewer-count-wrap${reviewerCountPanelVisible ? " is-visible" : " is-hidden"}`}
+                className="box-wrap middle reviewer-count-wrap"
+                style={reviewerCountPanelVisible ? undefined : { display: "none" }}
                 id="reviewerCountSettingPanel"
                 data-owner="project-setting-middle-reviewer"
               >
@@ -616,7 +616,7 @@ function ProjectSettingBody({
                     checked={reviewerCountEnabled}
                     onChange={() => setReviewerCountEnabled(true)}
                     data-owner="project-setting-radio-reviewer-enable"
-                  />
+                  />{" "}
                   <label htmlFor="reviewerCountEnable" className="bg-radiobtn label-public">
                     {t("project.reviewer.count.enable")}
                   </label>{" "}
@@ -629,13 +629,14 @@ function ProjectSettingBody({
                     checked={!reviewerCountEnabled}
                     onChange={() => setReviewerCountEnabled(false)}
                     data-owner="project-setting-radio-reviewer-disable"
-                  />
+                  />{" "}
                   <label htmlFor="reviewerCountDisable" className="bg-radiobtn label-private">
                     {t("project.reviewer.count.disable")}
                   </label>
                   <div
                     id="welReviewerCount"
-                    className={`hide s2e-reviewer-count-controls${reviewerCountEnabled ? " is-visible" : ""}`}
+                    className="hide"
+                    style={reviewerCountEnabled ? { display: "block" } : undefined}
                   >
                     <input
                       type="hidden"
@@ -647,25 +648,23 @@ function ProjectSettingBody({
                       data-owner="project-reviewer-count-dropdown"
                     >
                       <button
-                        className={`btn dropdown-toggle large s2e-reviewer-dropdown-toggle${reviewerCountDropdownOpen ? " is-open" : ""}`}
+                        type="button"
+                        className="btn dropdown-toggle large"
+                        aria-expanded={reviewerCountDropdownOpen}
                         onClick={(event) => {
                           event.preventDefault();
                           event.stopPropagation();
                           setReviewerCountDropdownOpen((open) => !open);
                         }}
                       >
-                        <span className="d-label s2e-reviewer-dropdown-label">
-                          {selectedDefaultReviewerCount}
-                        </span>
-                        <span className="d-caret s2e-reviewer-dropdown-caret-wrap">
-                          <span className="caret s2e-reviewer-dropdown-caret"></span>
+                        <span className="d-label">{selectedDefaultReviewerCount}</span>{" "}
+                        <span className="d-caret">
+                          <span className="caret"></span>
                         </span>
                       </button>
-                      <ul
-                        className={`dropdown-menu s2e-reviewer-dropdown-menu${reviewerCountDropdownOpen ? " is-visible" : " is-hidden"}`}
-                      >
+                      <ul className="dropdown-menu">
                         {reviewerPoints.map((point) => (
-                          <li className="s2e-reviewer-dropdown-item" data-value={point} key={point}>
+                          <li data-value={point} key={point}>
                             <button
                               type="button"
                               onClick={(event) => {
@@ -680,7 +679,7 @@ function ProjectSettingBody({
                           </li>
                         ))}
                       </ul>
-                    </div>
+                    </div>{" "}
                     <span className="note ml10" data-owner="project-setting-cu-note-reviewer">
                       {t("project.reviewer.count.description")}
                     </span>
@@ -689,7 +688,8 @@ function ProjectSettingBody({
               </div>
 
               <div
-                className={`box-wrap middle${menuCodeChecked ? " is-visible" : " is-hidden"}`}
+                className="box-wrap middle"
+                style={menuCodeChecked ? undefined : { display: "none" }}
                 id="defaultBranceSettingPanel"
                 data-owner="project-setting-middle-default-branch"
               >
@@ -714,7 +714,6 @@ function ProjectSettingBody({
               <MenuCheckbox
                 id="menuSettingCode"
                 name="code"
-                first
                 checked={menuCodeChecked}
                 label={t("menu.code")}
                 onChange={(checked) => {
@@ -850,6 +849,7 @@ function DefaultBranchSelect2({
             </strong>{" "}
             {selectedBranch}
           </span>
+          <abbr className="select2-search-choice-close" aria-hidden="true"></abbr>
           <span
             className="select2-arrow"
             data-owner="project-setting-default-branch-arrow"
@@ -860,7 +860,8 @@ function DefaultBranchSelect2({
         </button>
         <input className="select2-focusser select2-offscreen" type="text" />
         <div
-          className={`select2-drop select2-display-none select2-with-searchbox branches ${open ? `select2-drop-active is-visible` : "is-hidden"}`.trim()}
+          className={`select2-drop select2-display-none branches select2-with-searchbox${open ? " select2-drop-active" : ""}`}
+          style={open ? { display: "block" } : undefined}
           data-owner="project-setting-default-branch-drop"
         >
           <div className="select2-search" data-owner="project-setting-default-branch-search">
@@ -873,40 +874,40 @@ function DefaultBranchSelect2({
             />
           </div>
           <ul className="select2-results" data-owner="project-setting-default-branch-results">
-            {visibleBranches.map((branchName) => (
-              <li
-                key={branchName}
-                className={`select2-results-dept-0 select2-result select2-result-selectable${branchName === selectedBranch ? " select2-selected" : ""}`.trim()}
-                data-owner="project-setting-default-branch-result-item"
-              >
-                <button
-                  type="button"
-                  className="select2-result-label"
-                  data-owner="project-setting-default-branch-result"
-                  onClick={() => {
-                    setSelectedBranch(branchName);
-                    setOpen(false);
-                    setSearchTerm("");
-                  }}
-                >
-                  <strong
-                    className="branch-label branch"
-                    data-owner="project-setting-default-branch-result-label"
+            {open
+              ? visibleBranches.map((branchName) => (
+                  <li
+                    key={branchName}
+                    className={`select2-results-dept-0 select2-result select2-result-selectable${branchName === selectedBranch ? " select2-selected" : ""}`.trim()}
+                    data-owner="project-setting-default-branch-result-item"
                   >
-                    branch
-                  </strong>{" "}
-                  {branchName}
-                </button>
-              </li>
-            ))}
+                    <button
+                      type="button"
+                      className="select2-result-label"
+                      data-owner="project-setting-default-branch-result"
+                      onClick={() => {
+                        setSelectedBranch(branchName);
+                        setOpen(false);
+                        setSearchTerm("");
+                      }}
+                    >
+                      <strong
+                        className="branch-label branch"
+                        data-owner="project-setting-default-branch-result-label"
+                      >
+                        branch
+                      </strong>{" "}
+                      {branchName}
+                    </button>
+                  </li>
+                ))
+              : null}
           </ul>
         </div>
       </div>
       <select
         id="project-default-branch"
         name="defaultBranch"
-        data-format="branch"
-        data-dropdown-css-class="branches"
         data-owner="project-setting-default-branch-select"
         className="select2-offscreen"
         style={{ minWidth: "220px" }}
@@ -916,7 +917,7 @@ function DefaultBranchSelect2({
       >
         {branches.map((branchName) => (
           <option value={branchName} key={branchName}>
-            {branchName}
+            {`refs/heads/${branchName}`}
           </option>
         ))}
       </select>
@@ -927,7 +928,6 @@ function DefaultBranchSelect2({
 function MenuCheckbox({
   checked,
   defaultChecked,
-  first = false,
   id,
   label,
   name,
@@ -935,7 +935,6 @@ function MenuCheckbox({
 }: {
   checked?: boolean;
   defaultChecked?: boolean;
-  first?: boolean;
   id: string;
   label: string;
   name: string;
@@ -943,7 +942,7 @@ function MenuCheckbox({
 }) {
   return (
     <label
-      className={`bg-radiobtn label-public inline-list${first ? " is-first" : ""}`}
+      className="bg-radiobtn label-public inline-list"
       htmlFor={id}
       data-owner={`project-menu-checkbox-${name}-label`}
     >
@@ -957,7 +956,7 @@ function MenuCheckbox({
         checked={checked}
         defaultChecked={defaultChecked}
         onChange={(event) => onChange?.(event.currentTarget.checked)}
-      />
+      />{" "}
       {label}
     </label>
   );
@@ -980,12 +979,6 @@ function ProjectSettingMenu({
 }) {
   const { t } = useLegacyMessages();
   const enrolledMemberCount = enrolledUserCount(project);
-  const submenuLinkClassName = (isActive: boolean) =>
-    `s2e-setting-submenu-link${isActive ? " is-active" : ""}`;
-  const submenuActiveProps = {
-    ...legacyProjectSettingsLinkSuppressActiveProps,
-    className: submenuLinkClassName(true),
-  };
 
   return (
     <ul className="nav nav-tabs" data-owner="project-setting-submenu-list">
@@ -995,9 +988,8 @@ function ProjectSettingMenu({
         data-owner="project-setting-submenu-item"
       >
         <Link
-          className={submenuLinkClassName(active === "setting")}
           activeOptions={legacyProjectSettingsLinkActiveOptions}
-          activeProps={submenuActiveProps}
+          activeProps={legacyProjectSettingsLinkSuppressActiveProps}
           to={selfRoutePath}
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
@@ -1011,9 +1003,8 @@ function ProjectSettingMenu({
       </li>
       <li id="subMenuProjectMember" className="" data-owner="project-setting-submenu-item">
         <Link
-          className={submenuLinkClassName(false)}
           activeOptions={legacyProjectSettingsLinkActiveOptions}
-          activeProps={submenuActiveProps}
+          activeProps={legacyProjectSettingsLinkSuppressActiveProps}
           to="/$ownerName/$projectName/members"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
@@ -1025,9 +1016,8 @@ function ProjectSettingMenu({
       </li>
       <li id="subMenuIssueLabel" className="" data-owner="project-setting-submenu-item">
         <Link
-          className={submenuLinkClassName(false)}
           activeOptions={legacyProjectSettingsLinkActiveOptions}
-          activeProps={submenuActiveProps}
+          activeProps={legacyProjectSettingsLinkSuppressActiveProps}
           to="/$ownerName/$projectName/issue/labelsform"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
@@ -1038,9 +1028,8 @@ function ProjectSettingMenu({
       </li>
       <li id="subMenuWebhook" className="" data-owner="project-setting-submenu-item">
         <Link
-          className={submenuLinkClassName(false)}
           activeOptions={legacyProjectSettingsLinkActiveOptions}
-          activeProps={submenuActiveProps}
+          activeProps={legacyProjectSettingsLinkSuppressActiveProps}
           to="/$ownerName/$projectName/webhooks"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
@@ -1051,9 +1040,8 @@ function ProjectSettingMenu({
       </li>
       <li id="subMenuProjectTransfer" className="" data-owner="project-setting-submenu-item">
         <Link
-          className={submenuLinkClassName(false)}
           activeOptions={legacyProjectSettingsLinkActiveOptions}
-          activeProps={submenuActiveProps}
+          activeProps={legacyProjectSettingsLinkSuppressActiveProps}
           to="/$ownerName/$projectName/transfer"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
@@ -1064,9 +1052,8 @@ function ProjectSettingMenu({
       </li>
       <li id="subMenuProjectDelete" className="" data-owner="project-setting-submenu-item">
         <Link
-          className={submenuLinkClassName(false)}
           activeOptions={legacyProjectSettingsLinkActiveOptions}
-          activeProps={submenuActiveProps}
+          activeProps={legacyProjectSettingsLinkSuppressActiveProps}
           to="/$ownerName/$projectName/deleteform"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
@@ -1082,9 +1069,8 @@ function ProjectSettingMenu({
         data-owner="project-setting-submenu-item"
       >
         <Link
-          className={submenuLinkClassName(false)}
           activeOptions={legacyProjectSettingsLinkActiveOptions}
-          activeProps={submenuActiveProps}
+          activeProps={legacyProjectSettingsLinkSuppressActiveProps}
           to="/$ownerName/$projectName/changeVCS"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}

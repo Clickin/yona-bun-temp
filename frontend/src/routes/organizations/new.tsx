@@ -106,17 +106,17 @@ function OrganizationNewScreen({
       <SiteLayoutShell runtimeConfig={runtimeConfig}>
         <div className="page-wrap-outer">
           <div className="project-page-wrap">
-            <div data-owner="organization-new-form">
+            <div className="form-wrap new-project">
               <form
                 action={prefixBasePath(runtimeConfig.basePath, "/organizations/new")}
                 method="post"
                 name="new-org"
-                data-owner="organization-new-form"
+                className="frm-wrap"
                 onSubmit={handleSubmit}
               >
-                <legend data-owner="organization-new-label">{t("title.newOrganization")}</legend>
-                <dl data-owner="organization-new-form">
-                  <dt data-owner="organization-new-form">
+                <legend>{t("title.newOrganization")}</legend>
+                <dl>
+                  <dt>
                     <div className="n-alert" data-errtype="name">
                       <div className="orange-txt">
                         {!nameError && (serverNameError || warning) ? (
@@ -132,46 +132,41 @@ function OrganizationNewScreen({
                         </span>
                       </div>
                     </div>
-                    <label data-owner="organization-new-label" htmlFor="name">
-                      {t("organization.name.placeholder")}
-                    </label>
+                    <label htmlFor="name">{t("organization.name.placeholder")}</label>
                   </dt>
-                  <dd data-owner="organization-new-form">
+                  <dd>
                     <input
                       ref={nameInputRef}
                       id="name"
                       type="text"
                       name="name"
-                      data-owner="organization-new-field"
+                      className="text"
                       placeholder=""
                       maxLength={250}
                       defaultValue=""
                     />
                   </dd>
 
-                  <dt data-owner="organization-new-form">
-                    <label data-owner="organization-new-label" htmlFor="descr">
-                      {t("organization.description.placeholder")}
-                    </label>
+                  <dt>
+                    <label htmlFor="descr">{t("organization.description.placeholder")}</label>
                   </dt>
-                  <dd data-owner="organization-new-form">
+                  <dd>
                     <textarea
                       id="descr"
                       name="descr"
-                      data-owner="organization-new-field"
+                      className="text textarea.span4"
                       defaultValue=""
                       style={{ resize: "vertical" }}
                     />
                   </dd>
                 </dl>
-                <div className="actions" data-owner="organization-new-actions">
-                  <button data-owner="organization-new-actions" disabled={createMutation.isPending}>
+                <div className="actions">
+                  <button className="ybtn ybtn-success" disabled={createMutation.isPending}>
                     <i className="yobicon-friends" /> {t("organization.create")}
-                  </button>
+                  </button>{" "}
                   <Link
                     to="/"
                     className="ybtn"
-                    data-owner="organization-new-actions"
                     activeOptions={{ exact: true }}
                     activeProps={legacyAnchorActiveProps}
                   >

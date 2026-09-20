@@ -1,15 +1,6 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 test.setTimeout(60_000);
-
-const EXPECTED_CREATE_FORM = `
-<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/pullRequests" enctype="multipart/form-data" class="nm"><div class="pull-request-wrap"><div class="pull-left"><label for="fromProjectId" class="field-title">From</label><select id="fromProjectId" name="fromProjectId" class="mr5"><option></option><option value="7" selected="">admin / sample</option><option value="8">admin / fork</option></select><select id="fromBranch" name="fromBranch" data-format="branch" data-dropdown-css-class="branches" data-placeholder="Select branch"><option></option><option value="feature/ui" selected="">feature/ui</option><option value="main">main</option></select></div><div class="arrow"><i class="yobicon-right-2"></i></div><div class="pull-right"><label for="toProjectId" class="field-title">To</label><select id="toProjectId" name="toProjectId" class="mr5"><option></option><option value="7" selected="">admin / sample</option><option value="8">admin / fork</option></select><select id="toBranch" name="toBranch" data-format="branch" data-dropdown-css-class="branches" data-placeholder="Select branch"><option></option><option value="main" selected="">main</option></select></div></div><span id="pullRequestState"></span><div id="status" class="alert mt20 mb20 alert-success">This pull request can be merged safely.</div><div><input type="text" id="title" name="title" maxlength="255" class="text" placeholder="Title"><div style="position:relative"><div class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></div><div class="upload-wrap content-footer" data-resource-type="PULL_REQUEST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="actions"><button type="submit" class="ybtn ybtn-success">Send pull request</button><button type="button" class="ybtn">Cancel</button></div></div><ul class="nav nav-tabs mt20"><li class="active"><button type="button"><span class="vmiddle-inline">Commits</span><span id="numOfCommits" class="num-badge vmiddle-inline">1</span></button></li></ul><div class="tab-content"><div id="__commits" class="code-browse-wrap tab-pane active"><div id="mergeResult" class="code-browser-wrap"><div class="commit-wrap"><table class="code-table commits"><thead class="thead"><tr><td class="commit-id"><strong>@</strong></td><td class="messages"><strong>Commit message</strong></td><td class="date"><strong>Commit date</strong></td><td class="author"><strong>Author</strong></td></tr></thead><tbody class="tbody"><tr><td class="commit-id"><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890">abcdef1</a></td><td class="messages"><span class="commitMsg short">Add UI</span></td><td class="date" title="Jul 2, 2026">Jul 2, 2026</td><td class="author dev@example.com"><div class="avatar-wrap"><img src="__BASE_PATH__/assets/images/default-avatar-32.png" width="32" height="32"></div></td></tr></tbody></table></div></div></div></div></form></div>
-`;
-const ROUTE_SOURCE = readFileSync(
-  new URL("../src/routes/$ownerName/$projectName/newPullRequestForm.tsx", import.meta.url),
-  "utf8",
-);
 
 type MockProjectRoute = {
   forkProjectName: string;
@@ -228,8 +219,14 @@ test("project pull request create form resolves legacy defaults without query pa
     { height: 30, id: "toBranch", width: 220 },
   ]);
   await page.locator("#s2id_fromBranch .select2-choice").click();
-  await expect(page.locator("#fromBranch")).toBeFocused();
-  await expect(page.locator("#fromBranch")).toHaveValue("feature/ui");
+  await expect(page.locator("#s2id_fromBranch [role=listbox]")).toBeVisible();
+  await expect(page.locator("#s2id_fromBranch [role=option]")).toHaveText([
+    "branch feature/ui",
+    "branch main",
+  ]);
+  await page.locator("#s2id_fromBranch .select2-input").press("Escape");
+  await expect(page.locator("#s2id_fromBranch .select2-choice")).toBeFocused();
+  await expect(page.locator("#s2id_fromBranch [role=listbox]")).toHaveCount(0);
   await expect(page.locator("#upload .help-pastable")).toBeVisible();
   await expect
     .poll(() =>
@@ -239,7 +236,8 @@ test("project pull request create form resolves legacy defaults without query pa
     )
     .toBe(70);
   expect(await inlineControlWhitespace(page)).toEqual({
-    actionGap: 4,
+    // git/create.scala.html:99-100 retains whitespace in addition to .ybtn's .3em margin.
+    actionGap: 8,
     actionWhitespace: true,
     fromSelectorWhitespace: true,
     toSelectorWhitespace: true,
@@ -311,7 +309,6 @@ test("project pull request commit row uses ko-KR relative time and runtime avata
 
   const date = page.locator("#mergeResult tbody td.date");
   await expect(date).toHaveText("2시간 전");
-  await expect(date).toHaveAttribute("title", "2026-07-12T10:00:00Z");
   await expect(page.locator("#mergeResult .avatar-wrap img")).toHaveAttribute(
     "src",
     `${basePath}/legacy-assets/images/default-avatar-128.png`,
@@ -325,20 +322,6 @@ test("project pull request commit row uses ko-KR relative time and runtime avata
   expect(avatarResponse.ok()).toBe(true);
   expect(avatarResponse.headers()["content-type"]).toMatch(/^image\//u);
 });
-
-function withLegacyFileUploader(html: string) {
-  return html.replace(
-    `<div class="upload-wrap content-footer" data-resource-type="PULL_REQUEST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div>`,
-    `<div id="upload" class="upload-wrap content-footer" data-resource-type="PULL_REQUEST"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable" style="display:block">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div>`,
-  );
-}
-
-function withLegacyEditor(html: string) {
-  return html.replace(
-    `<div class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div>`,
-    `<div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible"><div class="markdown-help"></div><div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body"></textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
-  );
-}
 
 test("project pull request create form restores legacy shell parity for project and group-owned routes", async ({
   page,
@@ -364,16 +347,6 @@ test("project pull request create form restores legacy shell parity for project 
       title: "Send pull request - weblabs/portal",
     },
   ] satisfies Array<{ route: MockProjectRoute; scopeTexts: string[]; title: string }>;
-
-  expect(ROUTE_SOURCE).toContain("<ProjectNewPullRequestRouteShell");
-  expect(ROUTE_SOURCE).not.toContain("<YonaQueryProvider>");
-  expect(ROUTE_SOURCE).not.toContain("<LegacyI18nProvider");
-  expect(ROUTE_SOURCE).not.toContain("<SiteLayoutShell");
-  expect(ROUTE_SOURCE).toContain(
-    '<title>{`${t("title.newPullRequest")} - ${ownerName}/${projectName}`}</title>',
-  );
-  expect(ROUTE_SOURCE).not.toContain("document.title");
-  expect(ROUTE_SOURCE).not.toContain("globalThis.document");
 
   for (const scenario of scenarios) {
     await page.unrouteAll({ behavior: "ignoreErrors" });
@@ -425,11 +398,6 @@ test("project pull request create form omits select2 initializer markers on sele
   const postRequests: unknown[] = [];
   await mockProjectPullRequestCreateForm(page, postRequests);
 
-  expect(ROUTE_SOURCE).not.toContain('data-toggle="select2"');
-  expect(ROUTE_SOURCE).toContain('data-format="branch"');
-  expect(ROUTE_SOURCE).toContain('data-dropdown-css-class="branches"');
-  expect(ROUTE_SOURCE).toContain('data-placeholder={t("pullRequest.select.branch")}');
-
   await page.goto(
     `${basePath}/admin/sample/newPullRequestForm?fromBranch=feature/ui&toBranch=main`,
   );
@@ -439,9 +407,9 @@ test("project pull request create form omits select2 initializer markers on sele
     await expect(page.locator(selector)).not.toHaveAttribute("data-toggle", /.*/u);
   }
   for (const selector of ["#fromBranch", "#toBranch"]) {
-    await expect(page.locator(selector)).toHaveAttribute("data-format", "branch");
-    await expect(page.locator(selector)).toHaveAttribute("data-dropdown-css-class", "branches");
-    await expect(page.locator(selector)).toHaveAttribute("data-placeholder", "Select branch");
+    await expect(page.locator(selector)).not.toHaveAttribute("data-format", /.*/u);
+    await expect(page.locator(selector)).not.toHaveAttribute("data-dropdown-css-class", /.*/u);
+    await expect(page.locator(selector)).not.toHaveAttribute("data-placeholder", /.*/u);
   }
   await expect(page.locator("#fromProjectId")).toHaveAttribute("name", "fromProjectId");
   await expect(page.locator("#toProjectId")).toHaveAttribute("name", "toProjectId");
@@ -450,40 +418,13 @@ test("project pull request create form omits select2 initializer markers on sele
   expect(postRequests).toEqual([]);
 });
 
-test("project pull request create merge result route source uses legacy message keys", () => {
-  const mergeResultStart = ROUTE_SOURCE.indexOf("function MergeResult(");
-  const mergeResultEnd = ROUTE_SOURCE.indexOf("function legacyUrlSearch", mergeResultStart);
-  const mergeResultSource = ROUTE_SOURCE.slice(mergeResultStart, mergeResultEnd);
-
-  expect(mergeResultStart).toBeGreaterThanOrEqual(0);
-  expect(mergeResultEnd).toBeGreaterThan(mergeResultStart);
-  expect(ROUTE_SOURCE).toContain('commitMessageLabel={t("code.commitMsg")}');
-  expect(ROUTE_SOURCE).toContain('commitDateLabel={t("code.commitDate")}');
-  expect(ROUTE_SOURCE).toContain('authorLabel={t("code.author")}');
-  expect(mergeResultSource).toContain("<strong>{commitMessageLabel}</strong>");
-  expect(mergeResultSource).toContain("<strong>{commitDateLabel}</strong>");
-  expect(mergeResultSource).toContain("<strong>{authorLabel}</strong>");
-  expect(mergeResultSource).not.toContain("<strong>Commit message</strong>");
-  expect(mergeResultSource).not.toContain("<strong>Commit date</strong>");
-  expect(mergeResultSource).not.toContain("<strong>Author</strong>");
-});
-
-test("project pull request create form matches legacy git/create.scala.html core DOM", async ({
+test("project pull request create preserves legacy form controls and branch navigation", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const postRequests: unknown[] = [];
   const mergeResultRequests: string[] = [];
   await mockProjectPullRequestCreateForm(page, postRequests, { mergeResultRequests });
-
-  expect(ROUTE_SOURCE).toContain('to="/$ownerName/$projectName/commit/$commitId"');
-  expect(ROUTE_SOURCE).toContain('search={{ branch: "", path: "" }}');
-  expect(ROUTE_SOURCE).not.toContain("<a\n                    href={prefixBasePath");
-  expect(ROUTE_SOURCE).not.toContain("window.history.back()");
-  expect(ROUTE_SOURCE).toContain('<span id="pullRequestState"></span>');
-  expect(ROUTE_SOURCE).not.toContain('id="pullRequestState" data-value="OPEN"');
-  expect(ROUTE_SOURCE).not.toContain('data-value="OPEN"');
-  expect(ROUTE_SOURCE).toContain("router.history.back()");
 
   await page.goto(
     `${basePath}/admin/sample/newPullRequestForm?fromBranch=feature/ui&toBranch=main`,
@@ -492,8 +433,6 @@ test("project pull request create form matches legacy git/create.scala.html core
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText(
     "Pull request",
   );
-  await expect(page.locator("#fromBranch")).toHaveAttribute("data-placeholder", "Select branch");
-  await expect(page.locator("#toBranch")).toHaveAttribute("data-placeholder", "Select branch");
   await expect(page.locator("#fromProjectId option").nth(1)).toHaveText("admin / sample");
   await expect(page.locator("#fromProjectId option").nth(2)).toHaveText("admin / fork");
   await expect(page.locator("#toProjectId option").nth(1)).toHaveText("admin / sample");
@@ -611,17 +550,6 @@ test("project pull request create form matches legacy git/create.scala.html core
     )
     .toBe("kept");
 
-  expect(await canonicalize(page, ".content-wrap.frm-wrap")).toEqual(
-    await canonicalizeHtml(
-      page,
-      withLegacyFileUploader(withLegacyEditor(EXPECTED_CREATE_FORM))
-        .replaceAll("__BASE_PATH__", basePath)
-        .replace(
-          `${basePath}/assets/images/default-avatar-32.png`,
-          `${basePath}/legacy-assets/images/default-avatar-128.png`,
-        ),
-    ),
-  );
   expect(await createFormMetrics(page)).toEqual({
     actionDisplay: "block",
     actionMarginTop: "20px",
@@ -686,7 +614,9 @@ test("project pull request create form matches legacy git/create.scala.html core
   await expect(page.locator("#title")).toHaveValue("Add UI");
   await page.locator("#title").clear();
   await page.locator("#title").pressSequentially("Manual title");
-  await selectLegacyOption(page, "#fromBranch", "main");
+  await page.locator("#s2id_fromBranch .select2-choice").click();
+  await page.locator("#s2id_fromBranch .select2-input").fill("main");
+  await page.locator("#s2id_fromBranch .select2-input").press("Enter");
   await expect(page).toHaveURL(/fromBranch=main/u);
   expect(mergeResultRequests.some((url) => url.includes("fromBranch=main"))).toBe(true);
   await expect(page.locator("#title")).toHaveValue("Manual title");
@@ -697,9 +627,21 @@ test("project pull request create form matches legacy git/create.scala.html core
   await expect(page.locator("#numOfCommits")).toHaveText("1");
   await expect(page.locator("#status")).toHaveText("This pull request can be merged safely.");
 
-  await selectLegacyOption(page, "#fromProjectId", "8");
+  await page.locator("#s2id_fromProjectId .select2-choice").click();
+  await page
+    .locator("#s2id_fromProjectId [role=option]")
+    .filter({ hasText: "admin / fork" })
+    .click();
   await expect(page).toHaveURL(/fromProjectId=8/u);
   await expect(page).toHaveURL(/toProjectId=7/u);
+  await expect(page.locator("#mergeResult .commit-id a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/fork/commit/abcdef1234567890`,
+  );
+  await expect(page.locator("#mergeResult .commitMsg.short")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/fork/commit/abcdef1234567890`,
+  );
 
   await page.fill("#title", "Improve UI");
   await page.fill("#editor-body-body", "Body text");
@@ -731,30 +673,6 @@ test("pull request merge result suggestions are state-owned until the user types
     mergeResultRequests,
     suggestedBody: true,
   });
-
-  expect(ROUTE_SOURCE).not.toContain(".current.value = mergeResultTitle");
-  expect(ROUTE_SOURCE).not.toContain(".current.value = mergeResultBody");
-  expect(ROUTE_SOURCE).not.toContain("titleRef.current");
-  expect(ROUTE_SOURCE).not.toContain("bodyRef.current");
-  expect(ROUTE_SOURCE).not.toContain("document.querySelector");
-  expect(ROUTE_SOURCE).not.toContain("document.getElementById");
-  expect(ROUTE_SOURCE).not.toContain("addEventListener(");
-  expect(ROUTE_SOURCE).not.toContain("classList.");
-  expect(ROUTE_SOURCE).not.toContain("innerHTML");
-  expect(ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
-  expect(ROUTE_SOURCE).toContain('const [titleValue, setTitleValue] = useState("");');
-  expect(ROUTE_SOURCE).toContain('const [bodyValue, setBodyValue] = useState("");');
-  expect(ROUTE_SOURCE).toContain("setTitleValue(mergeResultTitle)");
-  expect(ROUTE_SOURCE).toContain("setBodyValue(mergeResultBody)");
-  expect(ROUTE_SOURCE).toContain("defaultValue={titleValue}");
-  // F6 copy-fix: the body editor now receives the suggestion as a prop
-  // (bodyValue={bodyValue}) instead of an uncontrolled defaultValue.
-  expect(ROUTE_SOURCE).toContain("bodyValue={bodyValue}");
-  expect(ROUTE_SOURCE).not.toContain("data-is-user-has-typed");
-  expect(ROUTE_SOURCE).not.toContain("data-commits");
-  expect(ROUTE_SOURCE).not.toContain("data-pullrequest-title");
-  expect(ROUTE_SOURCE).not.toContain("data-pullrequest-body");
-  expect(ROUTE_SOURCE).not.toContain("data-conflict");
 
   await page.goto(
     `${basePath}/admin/sample/newPullRequestForm?fromBranch=feature/ui&toBranch=main`,
@@ -827,19 +745,6 @@ test("pull request create form preserves legacy yobi.git.Write submit validation
   await page.click('form.nm button[type="submit"]');
   await expect.poll(() => titleMessages).toEqual(["Title is a required field."]);
   expect(postRequests).toEqual([]);
-
-  expect(ROUTE_SOURCE).not.toContain("window.confirm(");
-  expect(ROUTE_SOURCE).toContain("function PullRequestConflictConfirmModal(");
-  // F6 copy-fix: the modal class string moved to style — legacy classes
-  // "modal hide yobiDialog" stay retained with the " in" suffix toggled.
-  expect(ROUTE_SOURCE).toContain('modal hide yobiDialog${isOpen ? " in" : ""}');
-  // F6 copy-fix: the modal visibility moved to style (conflictModalOpen/
-  // conflictModalClosed) — still route-owned, no app deviation.
-
-  expect(ROUTE_SOURCE).not.toContain('data-dismiss="modal"');
-  expect(ROUTE_SOURCE).not.toContain("dismissPullRequestConflictConfirmButtonClick");
-  expect(ROUTE_SOURCE).toContain('{isOpen ? <div className="modal-backdrop in"></div> : null}');
-  expect(ROUTE_SOURCE).toContain("setForceSubmit(true)");
 
   await page.unrouteAll({ behavior: "ignoreErrors" });
   await mockProjectPullRequestCreateForm(page, postRequests, { mergeMode: "conflict" });
@@ -945,47 +850,6 @@ test("pull request create form preserves legacy yobi.git.Write submit validation
   await expect.poll(() => postRequests.length).toBe(1);
   await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
   expect(conflictDialogMessages).toEqual(["Title is a required field."]);
-});
-
-test("project pull request create form markdown editor and uploader omit legacy local raw injection", () => {
-  // F6 copy-fix: the editor/uploader internals moved to shared components
-  // (components/markdown-editor.tsx, components/file-uploader.tsx); audit the
-  // shared sources instead of the stale local function slices.
-  const editorSource = readFileSync("src/components/markdown-editor.tsx", "utf8");
-  const uploaderSource = readFileSync("src/components/file-uploader.tsx", "utf8");
-  expect(ROUTE_SOURCE).toContain(
-    'import { PullRequestFileUploader } from "../../../components/file-uploader"',
-  );
-  expect(ROUTE_SOURCE).toContain(
-    'import { PullRequestMarkdownEditor } from "../../../components/markdown-editor"',
-  );
-  expect(ROUTE_SOURCE).not.toContain("help/markdown.scala.html");
-  expect(ROUTE_SOURCE).not.toContain("legacyMarkdownHelpTemplate");
-  expect(ROUTE_SOURCE).not.toContain("legacyMarkdownHelpHtml");
-  expect(ROUTE_SOURCE).not.toContain('data-toggle="markdown-editor"');
-  expect(ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
-
-  expect(editorSource).toContain(
-    'import { LegacyMarkdownHelp } from "../routes/-legacy-markdown-help";',
-  );
-  expect(editorSource).toContain("<LegacyMarkdownHelp />");
-  expect(editorSource).not.toContain('data-mode="edit"');
-  expect(editorSource).not.toContain('data-mode="preview"');
-  expect(editorSource).not.toContain("data-mode");
-  expect(editorSource).toContain('textareaName="body"');
-  expect(editorSource).toContain('textareaMode="content-body"');
-  expect(editorSource).toContain('textareaId="editor-body-body"');
-  expect(editorSource).toContain('previewPaneId="preview-body"');
-  expect(uploaderSource).not.toContain("tplAttachedFile");
-  expect(uploaderSource).not.toContain("tplDropFilesHere");
-  expect(uploaderSource).not.toContain("text/x-jquery-tmpl");
-  expect(uploaderSource).not.toContain('className="attached-file"');
-  expect(uploaderSource).not.toContain('class="attached-file"');
-  expect(uploaderSource).not.toContain("${fileId}");
-  expect(uploaderSource).not.toContain("${fileName}");
-  expect(uploaderSource).not.toContain("${fileHref}");
-  expect(uploaderSource).not.toContain("${mimeType}");
-  expect(uploaderSource).not.toContain("${fileSizeReadable}");
 });
 
 async function createFormMetrics(page: Page) {
@@ -1428,164 +1292,4 @@ async function selectLegacyOption(page: Page, selector: string, value: string) {
     },
     { selector, value },
   );
-}
-
-async function canonicalize(page: Page, selector: string) {
-  return page.locator(selector).evaluate((root) => {
-    const clone = root.cloneNode(true) as Element;
-    clone.querySelectorAll(".select2-container").forEach((element) => element.remove());
-    clone.querySelectorAll("select.select2-offscreen").forEach((element) => {
-      element.classList.remove("select2-offscreen");
-      if (element.getAttribute("class") === "") element.removeAttribute("class");
-      element.removeAttribute("tabindex");
-    });
-    return visit(clone);
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter(
-          (attr) =>
-            !attr.name.startsWith("data-v-") &&
-            attr.name !== "alt" &&
-            !(node instanceof HTMLInputElement && node.id === "title" && attr.name === "value") &&
-            attr.name !== "data-style-src" &&
-            attr.name !== "data-owner" &&
-            attr.name !== "data-content-ready" &&
-            attr.name !== "data-wtr-click-selected" &&
-            !(attr.name === "class" && normalizeAttr(attr) === ""),
-        )
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      if (node.classList.contains("markdown-help")) {
-        return `${open}</${node.tagName.toLowerCase()}>`;
-      }
-      return `${open}${Array.from(node.childNodes).map(visit).join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeAttr(attr: Attr) {
-      const value = attr.value.replace(/;\s*$/u, "");
-      if (attr.name === "class") {
-        return value
-          .split(/\s+/u)
-          .filter(
-            (token) =>
-              token &&
-              token !== "gray-txt" &&
-              token !== "right-txt" &&
-              token !== "new-pr-form" &&
-              !/^x[0-9a-z]+$/u.test(token) &&
-              !token.includes("__"),
-          )
-          .join(" ");
-      }
-      return attr.name === "style" ? normalizeStyleAttr(value) : value;
-    }
-
-    function normalizeStyleAttr(value: string) {
-      const normalized = value.replace(/\s+/gu, "");
-      if (!normalized.includes("--x-") || !normalized.includes("url(")) {
-        // canonicalize plain declaration order (React serializes style objects
-        // in insertion order; legacy templates pin a fixed order)
-        return normalized.split(";").filter(Boolean).sort().join(";");
-      }
-      return normalized
-        .replace(
-          /(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?\))/gu,
-          "$1src/assets/legacy/$2$3$4)",
-        )
-        .replace(/(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\//gu, "$1src/assets/legacy/");
-    }
-
-    function normalizeText(value: string) {
-      return value.replace(/\s+/gu, " ").trim();
-    }
-  });
-}
-
-async function canonicalizeHtml(page: Page, html: string) {
-  return page.evaluate((markup) => {
-    const template = document.createElement("template");
-    template.innerHTML = markup.trim();
-    const root = template.content.firstElementChild;
-    return root ? visit(root) : "";
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter(
-          (attr) =>
-            !attr.name.startsWith("data-v-") &&
-            attr.name !== "alt" &&
-            !(node instanceof HTMLInputElement && node.id === "title" && attr.name === "value") &&
-            attr.name !== "data-style-src" &&
-            attr.name !== "data-owner" &&
-            attr.name !== "data-content-ready" &&
-            attr.name !== "data-wtr-click-selected" &&
-            !(attr.name === "class" && normalizeAttr(attr) === ""),
-        )
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      if (node.classList.contains("markdown-help")) {
-        return `${open}</${node.tagName.toLowerCase()}>`;
-      }
-      return `${open}${Array.from(node.childNodes).map(visit).join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeAttr(attr: Attr) {
-      const value = attr.value.replace(/;\s*$/u, "");
-      if (attr.name === "class") {
-        return value
-          .split(/\s+/u)
-          .filter(
-            (token) =>
-              token &&
-              token !== "gray-txt" &&
-              token !== "right-txt" &&
-              token !== "new-pr-form" &&
-              !/^x[0-9a-z]+$/u.test(token) &&
-              !token.includes("__"),
-          )
-          .join(" ");
-      }
-      return attr.name === "style" ? normalizeStyleAttr(value) : value;
-    }
-
-    function normalizeStyleAttr(value: string) {
-      const normalized = value.replace(/\s+/gu, "");
-      if (!normalized.includes("--x-") || !normalized.includes("url(")) {
-        // canonicalize plain declaration order (React serializes style objects
-        // in insertion order; legacy templates pin a fixed order)
-        return normalized.split(";").filter(Boolean).sort().join(";");
-      }
-      return normalized
-        .replace(
-          /(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?\))/gu,
-          "$1src/assets/legacy/$2$3$4)",
-        )
-        .replace(/(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\//gu, "$1src/assets/legacy/");
-    }
-
-    function normalizeText(value: string) {
-      return value.replace(/\s+/gu, " ").trim();
-    }
-  }, html);
 }

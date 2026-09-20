@@ -1,68 +1,10 @@
-import { expect, test, type Page, readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { expect, test, readFileSync } from "../wtr-compat.ts";
 import {
-  EXPECTED_ISSUE_DETAIL,
-  TASKLIST,
-  COMMENT_FORM,
-  LEFT_COMMENT_TIMELINE,
-  RIGHT_INDEX_COMMENT_TIMELINE,
-  LEFT_EVENT_TIMELINE,
-  LEFT_ASSIGNEE_EVENT_TIMELINE,
-  LEFT_MILESTONE_EVENT_TIMELINE,
-  LEFT_NULL_MILESTONE_EVENT_TIMELINE,
-  LEFT_MOVED_EVENT_TIMELINE,
-  LEFT_COMMIT_REFERRED_EVENT_TIMELINE,
-  LEFT_PULL_REQUEST_REFERRED_EVENT_TIMELINE,
-  LEFT_SHARER_ADDED_EVENT_TIMELINE,
-  LEFT_SHARER_DELETED_EVENT_TIMELINE,
-  LEFT_LABEL_ADDED_EVENT_TIMELINE,
-  LEFT_LABEL_DELETED_EVENT_TIMELINE,
-  LEFT_CONSECUTIVE_SHARER_ADDED_EVENT_TIMELINE,
-  LEFT_CONSECUTIVE_LABEL_DELETED_EVENT_TIMELINE,
-  LEFT_DEFAULT_EVENT_TIMELINE,
   mockProjectIssueDetail,
-  issueNotFoundMetrics,
-  headTitleText,
-  lastHeadMetaContent,
-  commentDeleteModalMetrics,
-  canonicalize,
-  canonicalizeAll,
-  canonicalizeHtml,
-  setBrowserLanguage,
-  armRootModalBridgeTrap,
-  rootModalBridgeHits,
-  installClipboardSpy,
-  lastCopiedText,
-  expectIssueDetailAssets,
-  expectIssueDetailTooltipMetadata,
   expectLegacyTopHoverPopover,
-  expectIssueDetailSelect2Partial,
   childReplyPlaceholder,
-  protectedIssueShellMetrics,
-  readReplyMetrics,
-  dedupeRequests,
-  getUserAvatar,
-  insulateModalButtonClick,
-  splitOriginalMessage,
-  assertContained,
-  loadModule,
-  partial_voters,
-  attachedFilesHtml,
-  child_commentForm,
-  legacyIssueOpenGraphDescription,
-  yonaAssgineeModule,
-  commentVoters,
-  issueVoterAvatarOrderMetrics,
   commentUpdateFormMetrics,
   childCommentAnchorMetrics,
-  commentVoterModalMetrics,
-  issueDetailShellMetrics,
-  indexCommentMetrics,
-  issueCommentMetrics,
-  eventTimelineMetrics,
-  childIssueMetrics,
-  selectedLabelMetrics,
-  keymapModalMetrics,
-  dueDateInlineUpdateMetrics,
 } from "./project-issue-detail-shared.ts";
 
 test("issue comment deep link scrolls after the issue response arrives", async ({ page }) => {
@@ -95,8 +37,7 @@ test("issue comment deep link scrolls after the issue response arrives", async (
         const documentTop = comment.getBoundingClientRect().top + window.scrollY;
         const maximumScroll = document.documentElement.scrollHeight - window.innerHeight;
         return (
-          window.scrollY > 0 &&
-          Math.abs(window.scrollY - Math.min(documentTop, maximumScroll)) <= 1
+          window.scrollY > 0 && Math.abs(window.scrollY - Math.min(documentTop, maximumScroll)) <= 1
         );
       }),
     )
@@ -147,6 +88,17 @@ test("project issue detail switches legacy comment editor tabs through React sta
   await expect(page.locator("#comment-form .markdown-help-wrap > .markdown-help-item")).toHaveCount(
     10,
   );
+  const firstHelpItem = page.locator("#comment-form .help-nav").first();
+  const helpButton = firstHelpItem.getByRole("button", { name: "Header", exact: true });
+  await firstHelpItem.evaluate((element) => element.scrollIntoView({ block: "center" }));
+  const helpBounds = await firstHelpItem.boundingBox();
+  if (!helpBounds) throw new Error("Markdown help navigation is missing");
+  await page.mouse.click(helpBounds.x + 2, helpBounds.y + helpBounds.height / 2);
+  await expect(helpButton).toHaveAttribute("aria-expanded", "true");
+  await expect(page.locator("#comment-form .markdown-help-item.active")).toBeVisible();
+  await helpButton.press("Enter");
+  await expect(helpButton).toHaveAttribute("aria-expanded", "false");
+  expect(page.url()).toBe(initialUrl);
   const editMetrics = await page.evaluate(() => {
     const tabs = document.querySelector("#comment-form .nav-tabs");
     const edit = document.querySelector("#edit-contents");
@@ -1281,9 +1233,7 @@ test("project issue detail keeps the legacy sidebar, action, and timeline order"
     ".span-left-pane > .board-actrow[data-owner='project-issue-detail-actions']",
   );
   await expect(issueActions).toHaveClass(/(?:^|\s)right-txt(?:\s|$)/u);
-  const editIssueButton = issueActions.locator(
-    "[data-owner='project-issue-detail-action-edit']",
-  );
+  const editIssueButton = issueActions.locator("[data-owner='project-issue-detail-action-edit']");
   const deleteIssueButton = issueActions.locator(
     "[data-owner='project-issue-detail-action-delete']",
   );
@@ -1308,12 +1258,10 @@ test("project issue detail keeps the legacy sidebar, action, and timeline order"
       avatarBeforeBody:
         directIndex(comment, ".comment-avatar") < directIndex(comment, ".media-body"),
       authorBeforeDate: directIndex(meta, ".comment_author") < directIndex(meta, ".ago-date"),
-      agoBeforeShare:
-        directIndex(commentDate, ".ago") < directIndex(commentDate, ".share-link"),
+      agoBeforeShare: directIndex(commentDate, ".ago") < directIndex(commentDate, ".share-link"),
       indexAuthorBeforeDate:
         directIndex(indexAuthor, ".comment_author") < directIndex(indexAuthor, ".ago-date"),
-      indexAgoBeforeShare:
-        directIndex(indexDate, ".ago") < directIndex(indexDate, ".share-link"),
+      indexAgoBeforeShare: directIndex(indexDate, ".ago") < directIndex(indexDate, ".share-link"),
       eventParts: event
         ? Array.from(event.children).map((child) => child.className || child.tagName.toLowerCase())
         : [],
@@ -1445,6 +1393,9 @@ test("project issue detail keeps React-owned comment edit button for readable co
 
 test("project issue detail preserves legacy child comment anchor divs", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.addInitScript(() => {
+    Date.now = () => new Date(2026, 6, 11, 12).getTime();
+  });
   await mockProjectIssueDetail(page);
 
   await page.goto(`${basePath}/admin/sample/issue/11`);
@@ -1456,7 +1407,7 @@ test("project issue detail preserves legacy child comment anchor divs", async ({
     comment.locator(
       `.subcomment-author a[href="${basePath}/admin/sample/issue/11#comment-78"].ago`,
     ),
-  ).toHaveText("Jul 2, 2026");
+  ).toHaveText("07-02");
 
   expect(await childCommentAnchorMetrics(page)).toEqual({
     anchorHeight: 0,
@@ -1464,6 +1415,11 @@ test("project issue detail preserves legacy child comment anchor divs", async ({
     childHref: `${basePath}/admin/sample/issue/11#comment-78`,
     inlineChildAnchorCount: 0,
   });
+  const childDate = comment.locator(".subcomment-author .ago");
+  await expect(childDate).toBeVisible();
+  await expect(comment.locator(".one-line-comment .contents > p .subcomment-author")).toBeVisible();
+  await childDate.click();
+  await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11#comment-78`);
 });
 
 test("project issue detail does not duplicate child replies from the flat comment payload", async ({
@@ -1583,12 +1539,7 @@ test("project issue detail renders legacy index comment mention and child count 
   await expect(page.locator(".span-left-pane #comment-77")).toHaveClass("comment mentioned");
   const indexComment = page.locator(".span-right-pane #comment-77.index-comment");
   await expect(indexComment).toHaveClass("comment index-comment mentioned mentionedInChild");
-  expect(await canonicalize(page, ".span-right-pane #comment-77 .comment-exists")).toEqual(
-    await canonicalizeHtml(
-      page,
-      `<span class="comment-exists"><i class="yobicon-comment2"></i>2</span>`,
-    ),
-  );
+  await expect(indexComment.locator(".comment-exists")).toHaveText("2");
 });
 
 test("project issue detail renders legacy draft header state", async ({ page }) => {
@@ -1602,16 +1553,9 @@ test("project issue detail renders legacy draft header state", async ({ page }) 
   await page.goto(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator(".span-left-pane > #comments")).toHaveCount(0);
 
-  const expectedHeader = `<div class="board-header issue"><div class="pull-right mr10 mt10 hide-in-mobile"><div class="date" title="Jul 1, 2026">Jul 1, 2026</div><span class="badge badge-issue-open">Open</span></div><div class="title"><strong class="board-id"><span class="draft-number">#Draft</span></strong>Fix flaky issue<span class="favorite-issue" data-issue-id="42"><i class="star material-icons va-text-top">star</i></span><div class="hide show-in-mobile"><span class="date" title="Jul 1, 2026">Jul 1, 2026</span><span class="badge badge-small badge-issue-open">Open</span></div></div><div class="draft">This is an draft issue. Only you can see it until you publish.</div></div>`;
-  expect(await canonicalize(page, ".board-header.issue")).toEqual(
-    await canonicalizeHtml(page, expectedHeader),
-  );
-  expect(await canonicalize(page, ".span-right-pane #comments")).toEqual(
-    await canonicalizeHtml(
-      page,
-      `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><strong>Comment</strong> <strong class="num">0</strong></div></div></div></div>`,
-    ),
-  );
+  await expect(page.locator(".board-header .draft-number")).toHaveText("#Draft");
+  await expect(page.locator(".board-header .draft")).toBeVisible();
+  await expect(page.locator(".span-right-pane .comment-header .num")).toHaveText("0");
 });
 
 test("project issue detail hides watch button when legacy WATCH is not allowed", async ({

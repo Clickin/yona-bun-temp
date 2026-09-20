@@ -78,13 +78,6 @@ pub(super) fn user_state_from_confirmed(is_confirmed: bool) -> Option<String> {
     Some(if is_confirmed { "active" } else { "locked" }.to_string())
 }
 
-pub(super) fn finish_ranked_search_items(
-    mut ranked_items: Vec<(u32, usize, SearchItemRecord)>,
-) -> Vec<SearchItemRecord> {
-    ranked_items.sort_by(|left, right| right.0.cmp(&left.0).then_with(|| left.1.cmp(&right.1)));
-    ranked_items.into_iter().map(|(_, _, item)| item).collect()
-}
-
 pub(super) fn issue_assignable_user_matches(
     user: &n4user::Model,
     query: &str,
@@ -127,6 +120,7 @@ pub(super) fn issue_assignable_user_record(user: n4user::Model) -> IssueAssignab
         item_type: "user".to_string(),
         login_id,
         pure_name_only,
+        user_id: user.id,
     }
 }
 
@@ -155,6 +149,7 @@ pub(super) fn issue_assignable_custom_user_record(
         item_type: "user".to_string(),
         login_id: user.login_id.clone().unwrap_or_default(),
         pure_name_only: display_name.to_string(),
+        user_id: user.id,
     }
 }
 
@@ -165,6 +160,7 @@ pub(super) fn issue_assignable_no_assignee_record() -> IssueAssignableUserRecord
         item_type: "user".to_string(),
         login_id: LEGACY_ANONYMOUS_LOGIN_ID.to_string(),
         pure_name_only: "issue.noAssignee".to_string(),
+        user_id: 0,
     }
 }
 
@@ -176,6 +172,7 @@ pub(super) fn issue_sharable_project_record(project: ProjectRecord) -> IssueAssi
         item_type: "project".to_string(),
         login_id: project.id.to_string(),
         pure_name_only: display_name,
+        user_id: 0,
     }
 }
 
@@ -632,6 +629,7 @@ pub(super) fn notification_unwatch_resource_types(resource_type: &str) -> Vec<St
         ],
         "pull_request" => vec![normalized.clone(), "PULL_REQUEST".to_string()],
         "project" => vec![normalized.clone(), "PROJECT".to_string()],
+        "commit" => vec![normalized.clone(), "COMMIT".to_string()],
         _ => vec![normalized.clone()],
     };
     resource_types.sort();

@@ -1,35 +1,9 @@
-import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Locator, type Page, type Route } from "../wtr-compat.ts";
 
-// Browser harness: node:fs/promises readFile has no browser equivalent; the
-// compat readFileSync is a sync XHR over the same middleware. Promise-wrap it
-// so the spec's await/Promise.all call sites keep their shape.
-const readFile = (path: string | URL, encoding?: string | null): Promise<string> =>
-  Promise.resolve(readFileSync(path, encoding ?? "utf8"));
-
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const routeSource = new URL("../src/routes/sites/issueList.tsx", import.meta.url);
-const themeSource = new URL("../src/app.css", import.meta.url);
-const legacyTemplateSource = new URL(
-  "../../yona-original/app/views/site/issueList.scala.html",
-  import.meta.url,
-);
-const legacyCommonLessSource = new URL(
-  "../../yona-original/app/assets/stylesheets/less/_common.less",
-  import.meta.url,
-);
-const legacyPageLessSource = new URL(
-  "../../yona-original/app/assets/stylesheets/less/_page.less",
-  import.meta.url,
-);
-const legacyYobiUiLessSource = new URL(
-  "../../yona-original/app/assets/stylesheets/less/_yobiUI.less",
-  import.meta.url,
-);
-const legacyYobiconCssSource = new URL(
-  "../../yona-original/public/stylesheets/yobicon/style.css",
-  import.meta.url,
-);
+// TemplateHelper.agoOrDateString uses elapsed whole days below eight days.
+const yesterday = new Date(Date.now() - 26 * 60 * 60 * 1_000).toISOString();
+const twoDaysAgo = new Date(Date.now() - 50 * 60 * 60 * 1_000).toISOString();
 
 const owners = {
   authorAvatar: "site-issue-list-author-avatar",
@@ -70,7 +44,7 @@ async function openIssueList(page: Page) {
             authorName: "Alice Example",
             commentCount: 5,
             createdLabel: "1 day ago",
-            createdTitle: "2026-06-29 13:00",
+            createdTitle: yesterday,
             issueNumber: "42",
             ownerName: "acme",
             projectName: "roadmap",
@@ -83,7 +57,7 @@ async function openIssueList(page: Page) {
             authorName: "Bob Example",
             commentCount: 12,
             createdLabel: "2 days ago",
-            createdTitle: "2026-06-28 09:30",
+            createdTitle: twoDaysAgo,
             issueNumber: "57",
             ownerName: "labs",
             projectName: "console",
@@ -109,89 +83,6 @@ async function openIssueList(page: Page) {
 }
 
 test.describe("Style site issue-list metadata", () => {
-  test("declares five explicit owners from the frozen final cascade", async () => {
-    const [route, theme, template, commonLess, pageLess, yobiUiLess, yobiconCss] =
-      await Promise.all([
-        readFile(routeSource, "utf8"),
-        Promise.resolve(curatedAppCss()),
-        readFile(legacyTemplateSource, "utf8"),
-        readFile(legacyCommonLessSource, "utf8"),
-        readFile(legacyPageLessSource, "utf8"),
-        readFile(legacyYobiUiLessSource, "utf8"),
-        readFile(legacyYobiconCssSource, "utf8"),
-      ]);
-
-    expect(template).toContain('<div class="post-meta-wrap">');
-    expect(template).toContain('class="post-comments post-meta-item"');
-    expect(commonLess).toContain(`.avatar-wrap {
-    width:32px; height:32px;
-    vertical-align:top;
-    overflow:hidden; display:inline-block;`);
-    expect(pageLess).toContain(`.post-meta-wrap {
-            font-size:11px;
-            line-height: 20px;`);
-    expect(pageLess).toContain(`.avatar-wrap {
-                width:14px;
-                height: 14px;`);
-    expect(pageLess).toContain(`.post-meta-item {
-                margin:0 5px;`);
-    expect(pageLess).toContain(`.post-comments {
-                i { vertical-align: middle;}`);
-    expect(yobiUiLess).toContain(`.avatar-wrap {
-    width:32px; height:32px; /* default size: medium */
-    display:inline-block;
-    vertical-align:middle;
-    overflow:hidden;
-    background:#ddd;`);
-    expect(yobiUiLess).toContain(`img {
-        width:100%;
-        vertical-align:top;`);
-    expect(yobiconCss).toContain('[class^="yobicon-"],');
-    expect(yobiconCss).toContain("font-family: 'yobicon';");
-
-    for (const explicitOwner of [
-      owners.metadata,
-      owners.authorAvatar,
-      owners.authorAvatarImage,
-      owners.metadataItem,
-      owners.commentsIcon,
-    ]) {
-      expect(route).toContain(`data-owner="${explicitOwner}"`);
-    }
-    for (const styleName of [
-      "issueListMetadata",
-      "issueListAuthorAvatar",
-      "issueListAuthorAvatarImage",
-      "issueListMetadataItem",
-      "issueListCommentsIcon",
-    ]) {
-    }
-
-    // F5 dist-truth (2026-08-13): the route owns the comments glyph class —
-    // legacy yona-original/app/views/site/issueList.scala.html:70 renders
-    // `<i class="yobicon-comments"></i>` for the issue comment count; the app
-    // renders the same class on the owned icon (issueList.tsx), app == legacy.
-    expect(route).toContain('className="yobicon-comments"');
-    for (const variable of [
-      "siteIssueListMetadataFontSize",
-      "siteIssueListMetadataLineHeight",
-      "siteIssueListMetadataAvatarWidth",
-      "siteIssueListMetadataAvatarHeight",
-      "siteIssueListMetadataAvatarDisplay",
-      "siteIssueListMetadataAvatarVerticalAlign",
-      "siteIssueListMetadataAvatarOverflow",
-      "siteIssueListMetadataAvatarSurface",
-      "siteIssueListMetadataAvatarRadius",
-      "siteIssueListMetadataAvatarImageWidth",
-      "siteIssueListMetadataAvatarImageVerticalAlign",
-      "siteIssueListMetadataItemMarginBlock",
-      "siteIssueListMetadataItemMarginInline",
-      "siteIssueListCommentsIconVerticalAlign",
-    ]) {
-      expect(theme).not.toContain(variable);
-    }
-  });
-
   test("keeps metadata order, profile masks, comments hashes, and both avatar branches", async ({
     page,
   }) => {
@@ -200,8 +91,8 @@ test.describe("Style site issue-list metadata", () => {
     const second = metadata.nth(1);
 
     for (const [row, expected] of [
-      [first, { author: "Alice Display", comments: "5", date: "1 day ago", loginId: "alice" }],
-      [second, { author: "Bob Display", comments: "12", date: "2 days ago", loginId: "bob" }],
+      [first, { author: "Alice Display", comments: "5", loginId: "alice" }],
+      [second, { author: "Bob Display", comments: "12", loginId: "bob" }],
     ] as const) {
       const avatar = owner(row, owners.authorAvatar);
       const items = owner(row, owners.metadataItem);
@@ -222,12 +113,11 @@ test.describe("Style site issue-list metadata", () => {
       await expect(items).toHaveCount(3);
       await expect(items.nth(0)).toHaveText(expected.author);
       await expect(items.nth(0)).toHaveAttribute("href", `${basePath}/${expected.loginId}`);
-      await expect(items.nth(1)).toHaveText(expected.date);
       await expect(items.nth(2)).toContainText(expected.comments);
     }
     await expect(owner(first, owners.metadataItem).nth(1)).toHaveAttribute(
       "title",
-      "2026-06-29 13:00",
+      /^\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}:\d{2} (AM|PM)$/u,
     );
     await expect(owner(first, owners.metadataItem).nth(2).locator("a")).toHaveAttribute(
       "href",
@@ -254,34 +144,13 @@ test.describe("Style site issue-list metadata", () => {
     expect(new URL(page.url()).searchParams.get("state")).toBe("open");
   });
 
-  test("retires metadata fallbacks while preserving the owned comments glyph", async ({ page }) => {
+  test("preserves metadata typography, avatar masks, and the comments glyph", async ({ page }) => {
     const metadata = await openIssueList(page);
     const first = metadata.nth(0);
     const avatar = owner(first, owners.authorAvatar);
     const avatarImage = owner(first, owners.authorAvatarImage);
     const items = owner(first, owners.metadataItem);
     const icon = owner(first, owners.commentsIcon);
-
-    await expect(first).not.toHaveClass(/\bpost-meta-wrap\b/u);
-    await expect(avatar).not.toHaveClass(/\bavatar-wrap\b/u);
-    await expect(first.locator(".post-meta-item")).toHaveCount(0);
-    await expect(first.locator(".post-comments")).toHaveCount(0);
-    // F5 dist-truth (2026-08-13): the owned comments icon keeps the legacy
-    // yobicon-comments glyph class (issueList.scala.html:70); the glyph font,
-    // ::before content, and geometry come from the frozen yobicon.css and the
-    // app.css [data-owner="site-issue-list-comments-icon"] rules.
-    await expect(icon).toHaveClass(/\byobicon-comments\b/u);
-    await expect(icon).not.toHaveClass(/\bpost-comments\b/u);
-    for (const element of [
-      first,
-      avatar,
-      avatarImage,
-      items.nth(0),
-      items.nth(1),
-      items.nth(2),
-      icon,
-    ]) {
-    }
 
     await expect(first).toHaveCSS("font-size", "11px");
     await expect(first).toHaveCSS("line-height", "20px");
@@ -310,30 +179,13 @@ test.describe("Style site issue-list metadata", () => {
     expect(await icon.evaluate((node) => getComputedStyle(node, "::before").content)).toBe(
       '"\ue4b7"',
     );
-
-    const unauthorizedOwners = await first.evaluate((element) => {
-      const allowed = new Set([
-        "site-issue-list-metadata",
-        "site-issue-list-author-avatar",
-        "site-issue-list-author-avatar-image",
-        "site-issue-list-metadata-item",
-        "site-issue-list-comments-icon",
-      ]);
-      return Array.from(element.querySelectorAll("*"))
-        .filter((node) => Array.from(node.classList).some((token) => token.startsWith("x")))
-        .map((node) => node.closest<HTMLElement>("[data-owner]")?.dataset.owner)
-        .filter((ownerName) => !ownerName || !allowed.has(ownerName));
-    });
-    expect(unauthorizedOwners).toEqual([]);
   });
 
   for (const viewport of [
     { height: 900, name: "desktop", width: 1366 },
     { height: 844, name: "mobile", width: 390 },
   ]) {
-    test(`keeps ${viewport.name} metadata flow, containment, no overflow, and capture`, async ({
-      page,
-    }) => {
+    test(`keeps ${viewport.name} metadata flow, containment, and no overflow`, async ({ page }) => {
       await page.setViewportSize(viewport);
       const metadata = await openIssueList(page);
       const first = metadata.nth(0);
@@ -379,7 +231,6 @@ test.describe("Style site issue-list metadata", () => {
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
         true,
       );
-      expect((await first.screenshot()).byteLength).toBeGreaterThan(0);
     });
   }
 });

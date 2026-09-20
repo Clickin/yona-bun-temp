@@ -256,7 +256,6 @@ function ProjectIssueEditFormBody({
   const canceledUploadKeysRef = useRef(new Set<number>());
   const uploadSequenceRef = useRef(0);
   const dueDateRef = useRef<HTMLInputElement>(null);
-  const dueDatePickerRef = useRef<HTMLInputElement>(null);
   const submitIntentRef = useRef<"draft" | "publish" | "save">("save");
 
   useEffect(() => {
@@ -816,7 +815,6 @@ function ProjectIssueEditFormBody({
                           ownerPrefix="project-issue-edit-form"
                           inputId="issueDueDate"
                           dueDateRef={dueDateRef}
-                          datePickerRef={dueDatePickerRef}
                           defaultValue={stringField(issueRecord.dueDateLabel, "")}
                         />
                       </div>
@@ -1207,7 +1205,7 @@ function LegacyEditSingleSelect({
       data-owner={className === "bigdrop" ? "issue-editform-assignee-picker" : undefined}
     >
       <div
-        className="select2-choice"
+        className={`select2-choice${className === "bigdrop" && !value ? " select2-default" : ""}`}
         role="button"
         aria-label={label}
         aria-expanded={open}
@@ -1310,15 +1308,22 @@ function LegacyEditLabelSelect({
   }
   return (
     <div
-      className="select2-container select2-container-multi hide issue-labels bordered fullsize"
+      className={`select2-container select2-container-multi hide issue-labels bordered fullsize${open ? " select2-container-active" : ""}`}
       data-owner="issue-editform-label-picker"
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          setOpen(false);
+          setQuery("");
+        }
+      }}
     >
       <ul className="select2-choices">
         {selectedLabelElements}
         <li className="select2-search-field">
           <input
-            className="select2-input"
+            className={`select2-input${!open && selected.length === 0 ? " select2-default" : ""}`}
             aria-label={t("label.select")}
+            placeholder={!open && selected.length === 0 ? t("label.select") : undefined}
             autoComplete="off"
             data-owner="issue-editform-label-search-input"
             aria-expanded={open}

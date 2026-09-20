@@ -20,7 +20,7 @@ import {
   readProjectMilestone,
   readSessionBootstrap,
 } from "../../../../auth-workspace-client";
-import { useLegacyMessages } from "../../../../i18n";
+import { formatLegacyTimestamp, useLegacyMessages } from "../../../../i18n";
 import { useWireframeContentProgress } from "../../../../components/route-fetch-lock";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 
@@ -332,11 +332,11 @@ function ProjectMilestoneDetailBody({
             <div className="content empty-content"></div>
           )}
 
-          <div className="actrow row-fluid" data-owner="milestone-detail-actions">
+          <div className="actrow right-txt row-fluid" data-owner="milestone-detail-actions">
             <Link
               to="/$ownerName/$projectName/milestones"
               params={{ ownerName, projectName }}
-              className="ybtn"
+              className="ybtn pull-left"
               data-owner="milestone-detail-list-action"
             >
               {t("button.list")}
@@ -422,7 +422,7 @@ function ProjectMilestoneDetailBody({
                   runtimeConfig={runtimeConfig}
                   viewerIsProjectMember={viewerIsProjectMember}
                 />
-                <div className="search search-bar" data-owner="milestone-detail-search">
+                <div className="pull-right search search-bar" data-owner="milestone-detail-search">
                   <input
                     ref={searchInputRef}
                     name="filter"
@@ -557,6 +557,14 @@ function MassUpdateShell({
   const hasCheckedIssues = effectiveCheckedIssueIds.length > 0;
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const labels = projectIssueLabelOptions(recordArray(milestone.projectLabels), []);
+  const selectedLabels = uniqueLabels(selectedIssues);
+  const attachLabels = labels.filter(
+    (label) =>
+      !hasCheckedIssues ||
+      !selectedIssues.every((issue) =>
+        issue.labels?.some((issueLabel) => stringField(issueLabel.id) === label.id),
+      ),
+  );
   const openMilestones = projectMilestoneOptions(
     recordArray(milestone.openMilestones) as ProjectMilestone[],
   );
@@ -574,21 +582,10 @@ function MassUpdateShell({
   const closeDropdown = () => {
     setOpenDropdownId(null);
   };
-  const stateMassUpdateMutation = useMutation({
-    mutationFn: async ({
-      issueNumbers,
-      state,
-    }: {
-      issueNumbers: number[];
-      state: "CLOSED" | "OPEN";
-    }) => {
+  const massUpdateMutation = useMutation({
+    mutationFn: async (input: Record<string, unknown>) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
-      return massUpdateIssues(runtimeConfig, csrfToken, {
-        issueNumbers,
-        ownerName,
-        projectName,
-        state,
-      });
+      return massUpdateIssues(runtimeConfig, csrfToken, { ...input, ownerName, projectName });
     },
     onSuccess() {
       onCheckedIssueIdsChange([]);
@@ -598,6 +595,9 @@ function MassUpdateShell({
       void queryClient.invalidateQueries({
         queryKey: ["project", ownerName, projectName, "milestones"],
       });
+      void queryClient.invalidateQueries({
+        queryKey: ["project", ownerName, projectName, "issues"],
+      });
     },
   });
   useEffect(() => {
@@ -605,13 +605,14 @@ function MassUpdateShell({
       closeDropdown();
     }
   }, [hasCheckedIssues]);
-  const submitMassUpdateState = (value: string) => {
+  const submitMassUpdate = (name: string, value: string) => {
     closeDropdown();
-    if (!viewerIsProjectMember || !hasCheckedIssues) {
+    if (!viewerIsProjectMember || !hasCheckedIssues || massUpdateMutation.isPending) {
       return;
     }
     const normalizedState = value.toLowerCase();
     if (
+      name === "state" &&
       selectedIssues.length > 0 &&
       selectedIssues.every((issue) => stringField(issue.state).toLowerCase() === normalizedState)
     ) {
@@ -629,19 +630,46 @@ function MassUpdateShell({
       return;
     }
 
-    stateMassUpdateMutation.mutate({
-      issueNumbers,
-      state: value === "CLOSED" ? "CLOSED" : "OPEN",
-    });
+    const input: Record<string, unknown> = { issueNumbers };
+    switch (name) {
+      case "state":
+        input.state = value;
+        break;
+      case "assignee.id":
+        input.assigneeUpdate = true;
+        input.assigneeLoginId = users.find((user) => user.id === value)?.loginId ?? "";
+        break;
+      case "milestone.id":
+        input.milestoneUpdate = true;
+        input.milestoneId = value === "-1" ? 0 : Number(value);
+        break;
+      case "attachingLabelIds": {
+        input.addLabelIds = [Number(value)];
+        const label = labels.find((candidate) => candidate.id === value);
+        if (label?.categoryIsExclusive) {
+          input.removeLabelIds = selectedLabels
+            .filter((selected) => selected.id !== value && selected.categoryId === label.categoryId)
+            .map((selected) => Number(selected.id));
+        }
+        break;
+      }
+      case "detachingLabelIds":
+        input.removeLabelIds = [Number(value)];
+        break;
+      default:
+        return;
+    }
+    massUpdateMutation.mutate(input);
   };
   return (
     <div className="mass-update-wrap hide-in-mobile" data-owner="milestone-detail-mass-update">
       <form
         id="mass-update-form"
-        className="mass-update-form"
+        className="mass-update-form pull-left"
         action={prefixBasePath(runtimeConfig.basePath, `${projectPath}/issues`)}
         method="post"
         data-owner="milestone-detail-mass-update-form"
+        onSubmit={(event) => event.preventDefault()}
       >
         <div className="btn-group check-all">
           <label htmlFor="check-all" aria-label="check-all">
@@ -660,8 +688,7 @@ function MassUpdateShell({
           id="state"
           label={t("issue.update.state")}
           name="state"
-          onClose={closeDropdown}
-          onSelect={submitMassUpdateState}
+          onSelect={(value) => submitMassUpdate("state", value)}
           onToggle={toggleDropdown}
           open={openDropdownId === "state"}
           options={[
@@ -696,7 +723,7 @@ function MassUpdateShell({
                 onClick={(event) => {
                   event.preventDefault();
                   event.stopPropagation();
-                  closeDropdown();
+                  submitMassUpdate("assignee.id", "0");
                 }}
               >
                 {t("issue.noAssignee")}
@@ -709,7 +736,7 @@ function MassUpdateShell({
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
-                    closeDropdown();
+                    submitMassUpdate("assignee.id", currentUser.id);
                   }}
                 >
                   {t("issue.assignToMe")}
@@ -725,7 +752,7 @@ function MassUpdateShell({
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
-                    closeDropdown();
+                    submitMassUpdate("assignee.id", user.id);
                   }}
                 >
                   <span className="avatar-wrap smaller">
@@ -756,7 +783,7 @@ function MassUpdateShell({
             id="milestone"
             label={t("issue.update.milestone.id")}
             name="milestone.id"
-            onClose={closeDropdown}
+            onSelect={(value) => submitMassUpdate("milestone.id", value)}
             onToggle={toggleDropdown}
             open={openDropdownId === "milestone"}
             options={[
@@ -777,23 +804,28 @@ function MassUpdateShell({
               label={t("issue.update.attachLabel")}
               listId="attach-label-list"
               name="attachingLabelIds"
-              onClose={closeDropdown}
+              onSelect={(value) => submitMassUpdate("attachingLabelIds", value)}
               onToggle={toggleDropdown}
               open={openDropdownId === "attaching-label"}
-              options={labels}
+              options={attachLabels}
             />
             <LabelMassUpdateDropdown
-              disabled={!hasCheckedIssues}
+              disabled={!hasCheckedIssues || selectedLabels.length === 0}
               id="detaching-label"
               label={t("issue.update.detachLabel")}
               listId="delete-label-list"
               name="detachingLabelIds"
-              onClose={closeDropdown}
+              onSelect={(value) => submitMassUpdate("detachingLabelIds", value)}
               onToggle={toggleDropdown}
               open={openDropdownId === "detaching-label"}
-              options={labels}
+              options={hasCheckedIssues ? selectedLabels : labels}
             />
           </>
+        ) : null}
+        {massUpdateMutation.error ? (
+          <div className="alert alert-error" role="alert">
+            {massUpdateMutation.error.message}
+          </div>
         ) : null}
       </form>
     </div>
@@ -805,7 +837,6 @@ function MassUpdateDropdown({
   id,
   label,
   name,
-  onClose,
   onSelect,
   onToggle,
   open,
@@ -815,8 +846,7 @@ function MassUpdateDropdown({
   id: string;
   label: string;
   name: string;
-  onClose: () => void;
-  onSelect?: (value: string) => void;
+  onSelect: (value: string) => void;
   onToggle: (id: string, disabled: boolean) => void;
   open: boolean;
   options: Array<{ divider?: boolean; label?: string; value: string }>;
@@ -851,11 +881,7 @@ function MassUpdateDropdown({
                 onClick={(event) => {
                   event.preventDefault();
                   event.stopPropagation();
-                  if (onSelect) {
-                    onSelect(option.value);
-                    return;
-                  }
-                  onClose();
+                  onSelect(option.value);
                 }}
               >
                 {option.label}
@@ -874,7 +900,7 @@ function LabelMassUpdateDropdown({
   label,
   listId,
   name,
-  onClose,
+  onSelect,
   onToggle,
   open,
   options,
@@ -884,7 +910,7 @@ function LabelMassUpdateDropdown({
   label: string;
   listId: string;
   name: string;
-  onClose: () => void;
+  onSelect: (value: string) => void;
   onToggle: (id: string, disabled: boolean) => void;
   open: boolean;
   options: Array<{
@@ -914,7 +940,7 @@ function LabelMassUpdateDropdown({
       </button>
       <ul id={listId} className="dropdown-menu mass-update-list">
         {groupLabels(options).map((group) => (
-          <LabelMassUpdateGroup group={group} key={group.categoryId} onClose={onClose} />
+          <LabelMassUpdateGroup group={group} key={group.categoryId} onSelect={onSelect} />
         ))}
       </ul>
     </div>
@@ -923,14 +949,14 @@ function LabelMassUpdateDropdown({
 
 function LabelMassUpdateGroup({
   group,
-  onClose,
+  onSelect,
 }: {
   group: {
     categoryId: string;
     categoryName: string;
     labels: Array<{ color?: string; id: string; name: string }>;
   };
-  onClose: () => void;
+  onSelect: (value: string) => void;
 }) {
   return (
     <>
@@ -946,7 +972,7 @@ function LabelMassUpdateGroup({
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
-              onClose();
+              onSelect(label.id);
             }}
           >
             <span className="issue-label active list-label" data-label-id={label.id}>
@@ -998,8 +1024,8 @@ function MilestoneIssueRow({
   const authorLabel = stringField(issue.authorLabel);
   const assigneeLoginId = stringField(issue.assigneeLoginId);
   const createdLabel = stringField(issue.createdLabel, stringField(issue.updatedLabel));
-  const createdTitle = stringField(issue.createdTitle, createdLabel);
-  const createdDisplayLabel = localizedIssueCreatedLabel(createdLabel, t);
+  const created = formatLegacyTimestamp(createdLabel, t);
+  const createdTitle = stringField(issue.createdTitle, created.title);
   const issueWeight = numberField(issue.weight);
   const titleParts = splitHeaderWordsInBrackets(title);
   const normalizedFilter = filter.toLowerCase().trim();
@@ -1100,6 +1126,7 @@ function MilestoneIssueRow({
           <div className="infos" data-owner="milestone-detail-issue-infos">
             {authorLabel && authorLoginId ? (
               <Link
+                {...LEGACY_MILESTONE_LINK_PROPS}
                 to="/$user"
                 params={{ user: authorLoginId }}
                 className="infos-item infos-link-item"
@@ -1118,7 +1145,7 @@ function MilestoneIssueRow({
               data-owner="milestone-detail-issue-infos-item"
               title={createdTitle}
             >
-              {createdDisplayLabel}
+              {created.label}
             </span>
             <IssueSubtaskSummary issue={issue} ownerName={ownerName} projectName={projectName} />
             {stringField(issue.milestoneId) ? (
@@ -1250,7 +1277,7 @@ function MilestoneIssueRow({
         </div>
       </div>
       <div className="span3 hide-in-mobile">
-        <div className="mt5" data-owner="milestone-detail-issue-assignee-rail">
+        <div className="mt5 pull-right" data-owner="milestone-detail-issue-assignee-rail">
           {assigneeLoginId ? (
             <Link
               to="/$user"
@@ -1274,14 +1301,14 @@ function MilestoneIssueRow({
         </div>
         {stringField(issue.dueDateLabel) ? (
           <div
-            className={`mr20 mt10${
+            className={`mr20 mt10 pull-right${
               booleanField(issue.dueDateOverdue) ? " overdue" : ""
             }${state === "closed" ? " is-closed" : ""}`}
             data-owner="milestone-detail-issue-due-date-rail"
             {...dueDateAttrs}
           >
             <i
-              className="yobicon-clock2 vmiddle"
+              className="yobicon-clock2 mr3 vmiddle"
               data-owner="milestone-detail-issue-due-date-icon"
             ></i>
             <span className="vmiddle">
@@ -1596,6 +1623,7 @@ function projectIssueLabelOptions(
       ? [
           {
             categoryId: stringField(label.categoryId),
+            categoryIsExclusive: booleanField(label.categoryIsExclusive),
             categoryName: stringField(label.categoryName, stringField(label.category)),
             color: stringField(label.color),
             id,
@@ -1611,7 +1639,14 @@ function projectIssueLabelOptions(
 function uniqueLabels(issues: ProjectMilestoneIssue[]) {
   const labels = new Map<
     string,
-    { categoryId: string; categoryName: string; color?: string; id: string; name: string }
+    {
+      categoryId: string;
+      categoryIsExclusive: boolean;
+      categoryName: string;
+      color?: string;
+      id: string;
+      name: string;
+    }
   >();
   for (const issue of issues) {
     for (const label of issue.labels ?? []) {
@@ -1619,6 +1654,7 @@ function uniqueLabels(issues: ProjectMilestoneIssue[]) {
       if (id && !labels.has(id)) {
         labels.set(id, {
           categoryId: stringField(label.categoryId),
+          categoryIsExclusive: booleanField(label.categoryIsExclusive),
           categoryName: stringField(label.categoryName),
           color: stringField(label.color),
           id,
@@ -1735,7 +1771,10 @@ function normalizedAvatarUrl(value: unknown) {
   return avatarUrl || defaultAvatarUrl;
 }
 
-function localizedMilestoneUntilLabel(value: string, t: LegacyTranslate) {
+export function localizedMilestoneUntilLabel(value: string, t: LegacyTranslate) {
+  if (/^today$/iu.test(value.trim())) {
+    return t("common.time.today");
+  }
   const match = /^(\d+)\s+days?\s+(left|past)$/iu.exec(value.trim());
   if (!match) {
     return value;
@@ -1743,20 +1782,6 @@ function localizedMilestoneUntilLabel(value: string, t: LegacyTranslate) {
   return t(match[2]?.toLowerCase() === "past" ? "common.time.overday" : "common.time.leftday", {
     args: [match[1] ?? "0"],
   });
-}
-
-function localizedIssueCreatedLabel(value: string, t: LegacyTranslate, now = Date.now()) {
-  if (!/^\d{4}-\d{2}-\d{2}$/u.test(value)) {
-    return value;
-  }
-  const timestamp = Date.parse(value);
-  if (Number.isNaN(timestamp) || timestamp > now) {
-    return value;
-  }
-  const elapsedDays = Math.floor((now - timestamp) / (24 * 60 * 60 * 1000));
-  return elapsedDays === 0
-    ? t("common.time.today")
-    : t(elapsedDays === 1 ? "common.time.day" : "common.time.days", { args: [elapsedDays] });
 }
 
 function localizedIssueDueDateText(value: string, t: LegacyTranslate) {

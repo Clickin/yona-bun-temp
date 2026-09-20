@@ -122,9 +122,14 @@ export type CommitDiscussionScopeInput = {
 export type CommitDiscussionCommentInput = CommitDiscussionScopeInput & {
   attachmentIds?: number[];
   contentsMarkdown: string;
+  endColumn?: number;
   endLine?: number;
+  endSide?: string;
   path?: string;
+  prevCommitId?: string;
+  startColumn?: number;
   startLine?: number;
+  startSide?: string;
   threadId?: number;
 };
 
@@ -286,9 +291,14 @@ function commentBody(input: CommitDiscussionCommentInput) {
   return {
     attachmentIds: input.attachmentIds ?? [],
     contentsMarkdown: input.contentsMarkdown,
+    endColumn: input.endColumn,
     endLine: input.endLine,
+    endSide: input.endSide,
     path: input.path,
+    prevCommitId: input.prevCommitId,
+    startColumn: input.startColumn,
     startLine: input.startLine,
+    startSide: input.startSide,
     threadId: input.threadId,
   };
 }

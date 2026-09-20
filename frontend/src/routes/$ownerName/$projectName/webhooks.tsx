@@ -262,7 +262,7 @@ function ProjectWebhooksBody({
                     onChange={() => onWebhookTypeChange("SIMPLE")}
                   />{" "}
                   Messenger (Only text)
-                </label>
+                </label>{" "}
                 <label className="radio inline">
                   <input
                     type="radio"
@@ -272,7 +272,7 @@ function ProjectWebhooksBody({
                     onChange={() => onWebhookTypeChange("DETAIL_SLACK")}
                   />{" "}
                   Slack (Meta)
-                </label>
+                </label>{" "}
                 <label className="radio inline">
                   <input
                     type="radio"
@@ -282,7 +282,7 @@ function ProjectWebhooksBody({
                     onChange={() => onWebhookTypeChange("DETAIL_HANGOUT_CHAT")}
                   />{" "}
                   Google Chat (Thread)
-                </label>
+                </label>{" "}
                 <label className="radio inline">
                   <input
                     type="radio"
@@ -292,11 +292,11 @@ function ProjectWebhooksBody({
                     onChange={() => onWebhookTypeChange("JSON")}
                   />{" "}
                   Continuous Integration tool (Only push event)
-                </label>
+                </label>{" "}
                 {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy project/webhooks.scala.html renders this separator as a label with surrounding spaces. */}
                 <label className="radio inline"> | </label>
                 {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy project/webhooks.scala.html renders this empty spacer as a label. */}
-                <label className="radio inline"></label>
+                <label className="radio inline"></label>{" "}
                 <label className="checkbox inline" htmlFor="gitPush">
                   <input
                     type="checkbox"

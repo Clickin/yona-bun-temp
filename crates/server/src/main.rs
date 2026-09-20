@@ -43,6 +43,13 @@ async fn main() -> anyhow::Result<()> {
         repository = repository
             .with_sqlite_write_coordinator(std::sync::Arc::new(tokio::sync::Mutex::new(())));
     }
+    let revoked_oauth_passwords = repository.revoke_predictable_oauth_passwords().await?;
+    if revoked_oauth_passwords > 0 {
+        tracing::warn!(
+            count = revoked_oauth_passwords,
+            "revoked predictable OAuth passwords; affected users can use OAuth or password reset"
+        );
+    }
     reconcile_site_import_staging_uploads_for_startup(&app_config.data_root, &repository)
         .await
         .map_err(anyhow::Error::msg)?;
@@ -55,6 +62,8 @@ async fn main() -> anyhow::Result<()> {
     );
     let _mailbox_polling_scheduler = spawn_mailbox_polling_scheduler(
         repository.clone(),
+        app_config.data_root.clone(),
+        config.base_path.clone(),
         mailbox_polling_config_from_startup(&startup),
     );
     let app = if startup.use_embedded_assets {

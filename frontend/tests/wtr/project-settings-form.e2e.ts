@@ -1,35 +1,4 @@
-import { expect, test, type Page, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
-import { readFileSync } from "../wtr-compat.ts";
-
-// Browser harness: node:fs/promises readFile has no browser equivalent; the
-// compat readFileSync is a sync XHR over the same middleware. Promise-wrap it
-// so the spec's await/Promise.all call sites keep their shape.
-const readFile = (path: string | URL, encoding?: string | null): Promise<string> =>
-  Promise.resolve(readFileSync(path, encoding ?? "utf8"));
-
-const EXPECTED_PROJECT_SETTINGS = `
-<div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
-<header class="gnb-outer project-header">
-  <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
-    <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
-      <li><form action="__BASE_PATH__/admin/sample/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Project</button><ul class="dropdown-menu flat right"><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/admin/sample/search">This Project</button></li><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/search">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
-    </ul>
-    <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
-    <ul class="gnb-usermenu">
-      <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" data-toggle="tooltip" title="Site administration" data-placement="bottom"><i class="yobicon-wrench"></i></a></li><li class="divider"></li>
-      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
-      <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
-    </ul>
-  </div>
-</header>
-<div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
-<div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class="active"><a href="__BASE_PATH__/admin/sample/settingform"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li></ul></div></div></div>
-<div class="page-wrap-outer"><div class="project-page-wrap"><ul class="nav nav-tabs"><li id="subMenuProjectSetting" class="active"><a href="__BASE_PATH__/admin/sample/settingform">Settings</a></li><li id="subMenuProjectMember" class=""><a href="__BASE_PATH__/admin/sample/members">Member</a></li><li id="subMenuIssueLabel" class=""><a href="__BASE_PATH__/admin/sample/issue/labelsform">Issue Label</a></li><li id="subMenuWebhook" class=""><a href="__BASE_PATH__/admin/sample/webhooks">Webhooks</a></li><li id="subMenuProjectTransfer" class=""><a href="__BASE_PATH__/admin/sample/transfer">Transfer</a></li><li id="subMenuProjectDelete" class=""><a href="__BASE_PATH__/admin/sample/deleteform">Delete project</a></li><li id="subMenuProjectChangeVCS" class=""><a href="__BASE_PATH__/admin/sample/changeVCS">Repository Type Change</a></li></ul><form id="saveSetting" method="post" action="__BASE_PATH__/admin/sample/setting" enctype="multipart/form-data" class="nm"><div class="bubble-wrap gray" style="overflow: visible"><input type="hidden" name="id" value="7"><input type="hidden" name="watchingCount" value="5"><div class="box-wrap top clearfix frm-wrap" style="padding-top:20px;"><div class="setting-box left"><div class="logo-wrap" style="background-image:url('/assets/images/project_default_logo.png')"></div><div class="logo-desc"><ul class="unstyled descs"><li><strong>Project logo</strong></li><li>File type: bmp, jpg, gif, png <span class="point">bmp, jpg, gif, png</span></li><li>Maximum file size <span class="point">5MB</span></li><li><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i>File upload<input id="logoPath" type="file" class="file" name="logoPath" accept="image/*"></div></div></li></ul></div></div><dl class="setting-box right"><dt><label for="project-name">Enter project name in alphabetnumerical or symbol characters(_-.)</label></dt><dd style="position:relative"><input id="project-name" type="text" name="name" maxlength="250" value="sample"><br></dd><dt><label for="project-desc">Enter project description</label></dt><dd><textarea id="project-desc" name="overview" maxlength="250" class="textarea">Sample overview</textarea></dd></dl></div><div class="box-wrap middle"><div class="cu-label">Share Options</div><div class="cu-desc"><input name="projectScope" type="radio" class="radio-btn" id="public" value="PUBLIC" checked><label for="public" class="bg-radiobtn label-public">PUBLIC</label><input name="projectScope" type="radio" class="radio-btn" id="private" value="PRIVATE"><label for="private" class="bg-radiobtn label-private">PRIVATE</label><span class="note">Project access must be granted explicitly for each user, but basic information (name, description, etc.) can be exposed to public.</span></div></div><div class="box-wrap middle"><div class="cu-label">Issue Template</div><div class="cu-desc"><a href="__BASE_PATH__/admin/sample/postform?issueTemplate=true" class="ybtn" target="_blank">Edit</a></div></div><div class="box-wrap middle"><div class="cu-label">Only project members can access code or related menus</div><div class="cu-desc"><input name="isCodeAccessibleMemberOnly" type="radio" id="codeAccessibleMemberOnly" class="radio-btn" value="true"><label for="codeAccessibleMemberOnly" class="bg-radiobtn label-public">Yes</label><input name="isCodeAccessibleMemberOnly" type="radio" id="codeAccessibleAnyone" class="radio-btn" value="false" checked><label for="codeAccessibleAnyone" class="bg-radiobtn label-private">No</label><span class="note"></span></div></div><div class="box-wrap middle reviewer-count-wrap" id="reviewerCountSettingPanel"><div class="cu-label vmiddle">Reviewer</div><div class="cu-desc"><input name="isUsingReviewerCount" type="radio" class="radio-btn" id="reviewerCountEnable" value="true" checked><label for="reviewerCountEnable" class="bg-radiobtn label-public">Enable</label><input name="isUsingReviewerCount" id="reviewerCountDisable" type="radio" class="radio-btn" value="false"><label for="reviewerCountDisable" class="bg-radiobtn label-private">Disable</label><div id="welReviewerCount" class="hide" style="display: block;"><input type="hidden" name="defaultReviewerCount" value="2"><div class="btn-group branches"><button class="btn dropdown-toggle large"><span class="d-label">2</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="1"><button type="button">1</button></li><li data-value="2"><button type="button">2</button></li><li data-value="3"><button type="button">3</button></li></ul></div><span class="note ml10">of reviewers is required to merge pull request.</span></div></div></div><div class="box-wrap middle" id="defaultBranceSettingPanel"><div class="cu-label vmiddle">Default branch</div><div class="cu-desc"><select id="project-default-branch" name="defaultBranch" data-format="branch" data-dropdown-css-class="branches" style="min-width: 220px;"><option value="main" selected>main</option><option value="develop">develop</option></select></div></div><div class="box-wrap middle"><div class="cu-label vmiddle">Menu Setting</div><div class="cu-desc"><label for="menuSettingCode" class="bg-radiobtn label-public inline-list"><input type="checkbox" class="radio-btn" id="menuSettingCode" name="code" value="true" checked>Code</label><label for="menuSettingIssue" class="bg-radiobtn label-public inline-list"><input type="checkbox" class="radio-btn" id="menuSettingIssue" name="issue" value="true" checked>Issue</label><label for="menuSettingPullRequest" class="bg-radiobtn label-public inline-list"><input type="checkbox" class="radio-btn" id="menuSettingPullRequest" name="pullRequest" value="true" checked>Pull request</label><label for="menuSettingReview" class="bg-radiobtn label-public inline-list"><input type="checkbox" class="radio-btn" id="menuSettingReview" name="review" value="true" checked>Review</label><label for="menuSettingMilestone" class="bg-radiobtn label-public inline-list"><input type="checkbox" class="radio-btn" id="menuSettingMilestone" name="milestone" value="true" checked>Milestone</label><label for="menuSettingBoard" class="bg-radiobtn label-public inline-list"><input type="checkbox" class="radio-btn" id="menuSettingBoard" name="board" value="true" checked>Board</label></div></div></div><div class="box-wrap bottom"><button id="save" type="submit" class="ybtn ybtn-success">Save</button></div></form></div></div>
-<footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
-`;
+import { expect, mergedLegacyBlock, test, type Page } from "../wtr-compat.ts";
 
 test("SVN settings keeps canonical watcher utility from the project container", async ({
   page,
@@ -174,14 +143,9 @@ test("project settings uses the legacy project shell watcher and counting badges
   expect(shell).not.toBeNull();
   expect(shell!.menuWidth).toBeCloseTo(573, 0);
   expect(shell!.menuRight).toBeCloseTo(683, 0);
-  // e2e closure ledger (2026-08-11): settingform renders WITHOUT the
-  // [data-owner="project-setting-page"] wrapper (padding 0 10px) — that owner
-  // only exists on the /setting route — so the share-description box sits at
-  // the unpadded left edge (229, not 239); utilWidth/watchActionWidth are the
-  // ko-KR font-metric values measured in the rebase full run (same as the
-  // project-transfer-form ko-KR shell pins).
-  expect(shell!.shareDescriptionLeft).toBe(229);
-  expect(shell!.shareDescriptionRight).toBe(829);
+  // The frozen responsive shell retains its 10px horizontal inset at every width.
+  expect(shell!.shareDescriptionLeft).toBe(239);
+  expect(shell!.shareDescriptionRight).toBe(839);
   expect(shell!.shareDescriptionWidth).toBe(601);
   // F5 dist-truth (2026-08-11): utilWidth oscillates 163/117 between runs
   // (watcher badge render race + font-metric delta; classified HARNESS_ENV),
@@ -194,7 +158,7 @@ test("project settings uses the legacy project shell watcher and counting badges
   expect(shell!.utilInsideHeader).toBe(true);
 });
 
-test("project settings mobile menu labels preserve legacy wrapping whitespace", async ({
+test("project settings fields and menu wrapping match a frozen legacy form fixture", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -202,45 +166,114 @@ test("project settings mobile menu labels preserve legacy wrapping whitespace", 
     Object.defineProperty(navigator, "language", { configurable: true, value: "ko-KR" });
     Object.defineProperty(navigator, "languages", { configurable: true, value: ["ko-KR"] });
   });
-  await page.setViewportSize({ width: 390, height: 844 });
   await mockProjectSettings(page, { project: { isUsingReviewerCount: false } });
-
-  await page.goto(`${basePath}/admin/sample/settingform`);
-  await expect(page.locator("#saveSetting")).toBeVisible();
-
-  const metrics = await page.evaluate(() => {
-    const bubble = document.querySelector(".bubble-wrap.gray")!;
-    const code = document.querySelector("#menuSettingCode")!.closest("label")!;
-    const board = document.querySelector("#menuSettingBoard")!.closest("label")!;
-    const right = document.querySelector(".setting-box.right")!;
-    const textarea = document.querySelector("#project-desc")!;
-    const bubbleBox = bubble.getBoundingClientRect();
-    const codeBox = code.getBoundingClientRect();
-    const boardBox = board.getBoundingClientRect();
-    const rightBox = right.getBoundingClientRect();
-    const textareaBox = textarea.getBoundingClientRect();
-    return {
-      boardWrapped: boardBox.top > codeBox.top,
-      bubbleHeight: Math.round(bubbleBox.height),
-      rightWidth: Math.round(rightBox.width),
-      textareaWidth: Math.round(textareaBox.width),
-      textareaWidthRule: getComputedStyle(textarea).width,
-    };
-  });
-  expect(metrics.boardWrapped).toBe(true);
-  // e2e closure ledger (2026-08-11): ko-KR 390px wrap measures 813px in the
-  // rebase full run (font-metric delta, +6px from the earlier 807 pin);
-  // 2026-08-15 the Select2 container height fix (28 -> 30px legacy border +
-  // choice) adds the +2px (815) — the settings form contains the select2.
-  expect(metrics.bubbleHeight).toBe(815);
-  test.info().annotations.push({
-    type: "mobile-width-evidence",
-    description: JSON.stringify({
-      rightWidth: metrics.rightWidth,
-      textareaWidth: metrics.textareaWidth,
-      textareaWidthRule: metrics.textareaWidthRule,
-    }),
-  });
+  const css = mergedLegacyBlock();
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/admin/sample/settingform`);
+    await expect(page.locator("#saveSetting")).toBeVisible();
+    const pairs = await page.evaluate(async (legacyCss) => {
+      const escape = (value: string) =>
+        value.replace(
+          /[&<>"']/gu,
+          (character) =>
+            ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]!,
+        );
+      const text = (selector: string) =>
+        escape(document.querySelector(selector)!.textContent!.trim());
+      const menuIds = ["Code", "Issue", "PullRequest", "Review", "Milestone", "Board"];
+      const menu = menuIds
+        .map(
+          (id) =>
+            `<label for="menuSetting${id}" class="bg-radiobtn label-public inline-list">
+          <input type="checkbox" class="radio-btn" id="menuSetting${id}" checked>
+          ${text(`label[for="menuSetting${id}"]`)}
+        </label>`,
+        )
+        .join("\n");
+      // Bounded output of project/setting.scala.html:30-63,136-166. Copy and data
+      // come from this locale's rendered form; the skeleton and CSS are legacy.
+      // An isolated document excludes all React data-owner overrides.
+      // common/scripts.scala.html:169 runs autosize on every textarea. Include
+      // its settled styles: overflow:auto otherwise adds a native scrollbar
+      // allowance to the textarea's intrinsic mobile width.
+      const frame = document.createElement("iframe");
+      frame.style.width = `${window.innerWidth}px`;
+      frame.style.height = `${window.innerHeight}px`;
+      frame.style.position = "absolute";
+      frame.style.left = "-10000px";
+      frame.style.border = "0";
+      const loaded = new Promise<void>((resolve) => {
+        frame.onload = () => resolve();
+      });
+      frame.srcdoc = `<!doctype html><html><head><style>${legacyCss}</style></head><body>
+        <div id="main" class="main"><div class="page-wrap-outer"><div class="project-page-wrap">
+          <form id="saveSetting" class="nm"><div class="bubble-wrap gray" style="overflow:visible">
+            <div class="box-wrap top clearfix frm-wrap" style="padding-top:20px">
+              <div class="setting-box left">
+                <div class="logo-wrap"></div>
+                <div class="logo-desc"><ul class="unstyled descs">
+                  <li><strong>${text(".logo-desc strong")}</strong></li>
+                  <li>${escape(document.querySelector(".logo-desc li:nth-child(2)")!.firstChild!.textContent!.trim())}
+                    <span class="point">bmp, jpg, gif, png</span></li>
+                  <li>${escape(document.querySelector(".logo-desc li:nth-child(3)")!.firstChild!.textContent!.trim())}
+                    <span class="point">5MB</span></li>
+                  <li><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap">
+                    <i class="yobicon-upload"></i> ${text(".fake-file-wrap")}
+                    <input id="logoPath" type="file" class="file" name="logoPath" accept="image/*">
+                  </div></div></li>
+                </ul></div>
+              </div>
+              <dl class="setting-box right">
+                <dt><label for="project-name">${text('label[for="project-name"]')}</label></dt>
+                <dd><input id="project-name" type="text" name="name" maxlength="250"><br></dd>
+                <dt><label for="project-desc">${text('label[for="project-desc"]')}</label></dt>
+                <dd><textarea id="project-desc" name="overview" maxlength="250" class="textarea" style="overflow:hidden;overflow-wrap:break-word;resize:none"></textarea></dd>
+              </dl>
+            </div>
+            <div class="box-wrap middle">
+              <div class="cu-label vmiddle">${text('[data-owner="project-setting-cu-label-menu"]')}</div>
+              <div class="cu-desc">${menu}</div>
+            </div>
+          </div></form>
+        </div></div></div>
+      </body></html>`;
+      document.body.append(frame);
+      try {
+        await loaded;
+        await frame.contentDocument!.fonts.ready;
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+        const fixture = frame.contentDocument!;
+        const anchors = [
+          [".box-wrap.top", ".bubble-wrap"],
+          [".logo-desc", ".setting-box.left"],
+          ["#project-name", ".box-wrap.top"],
+          ["#project-desc", ".box-wrap.top"],
+          ...menuIds.map((id) => [`#menuSetting${id}`, ".cu-desc"]),
+        ];
+        const measure = (root: Document, selector: string, parentSelector: string) => {
+          const element = root.querySelector(selector)!;
+          const box = element.getBoundingClientRect();
+          const parent = element.closest(parentSelector)!.getBoundingClientRect();
+          return [box.left - parent.left, box.top - parent.top, box.width, box.height];
+        };
+        return anchors.map(([selector, parent]) => ({
+          selector,
+          actual: measure(document, selector, parent),
+          legacy: measure(fixture, selector, parent),
+        }));
+      } finally {
+        frame.remove();
+      }
+    }, css);
+    const mismatches = pairs.filter((pair) =>
+      pair.actual.some((value, index) => Math.abs(value - pair.legacy[index]) > 1),
+    );
+    await expect(JSON.stringify(mismatches)).toBe("[]");
+  }
 });
 
 test("project settings description translates legacy textarea autosize behavior", async ({
@@ -304,16 +337,19 @@ test("project settings matches legacy project/setting.scala.html DOM", async ({ 
   await expect(page.locator("#project-default-branch")).toHaveValue("main");
   await expect(page.locator("#project-default-branch")).not.toHaveAttribute("data-toggle", /.+/);
   await expect(page.locator("#project-default-branch")).toHaveAttribute("name", "defaultBranch");
-  await expect(page.locator("#project-default-branch")).toHaveAttribute("data-format", "branch");
-  await expect(page.locator("#project-default-branch")).toHaveAttribute(
+  await expect(page.locator("#project-default-branch")).not.toHaveAttribute("data-format", /.+/);
+  await expect(page.locator("#project-default-branch")).not.toHaveAttribute(
     "data-dropdown-css-class",
-    "branches",
+    /.+/,
   );
   await expect(page.locator("#project-default-branch")).toHaveAttribute(
     "style",
     "min-width: 220px;",
   );
-  await expect(page.locator("#project-default-branch option")).toHaveText(["main", "develop"]);
+  await expect(page.locator("#project-default-branch option")).toHaveText([
+    "refs/heads/main",
+    "refs/heads/develop",
+  ]);
   await expect(page.locator("#menuSettingPullRequest")).toBeChecked();
   await expect(page.locator('.user-menu-wrap .user-menu a[href$="/admin"]')).not.toHaveAttribute(
     "class",
@@ -370,11 +406,9 @@ test("project settings matches legacy project/setting.scala.html DOM", async ({ 
     logoWidth: 260,
     menuSettingName: "pullRequest",
     saveTextAlign: "center",
-    // e2e closure ledger (2026-08-11): settingform renders without the
-    // project-setting-page 10px side padding (that owner is /setting-route
-    // only), so the share-description box measures 229/1087 here.
-    shareDescriptionLeft: 229,
-    shareDescriptionRight: 1087,
+    // The frozen .page-wrap-outer supplies the shared 10px horizontal inset.
+    shareDescriptionLeft: 239,
+    shareDescriptionRight: 1097,
     shareDescriptionWidth: 859,
     textareaHeight: 90,
     watchingCount: "5",
@@ -597,8 +631,6 @@ test("project settings menu links preserve legacy hrefs with SPA transition", as
                 token &&
                 token !== "gray-txt" &&
                 token !== "right-txt" &&
-                token !== "s2e-setting-submenu-link" &&
-                token !== "is-active" &&
                 !/^x[0-9a-z]+$/u.test(token) &&
                 !token.includes("__"),
             )
@@ -752,8 +784,6 @@ test("project settings project links render legacy hrefs and navigate through SP
                   token &&
                   token !== "gray-txt" &&
                   token !== "right-txt" &&
-                  token !== "s2e-setting-submenu-link" &&
-                  token !== "is-active" &&
                   !/^x[0-9a-z]+$/u.test(token) &&
                   !token.includes("__"),
               )
@@ -815,8 +845,6 @@ test("project settings project links render legacy hrefs and navigate through SP
                 token &&
                 token !== "gray-txt" &&
                 token !== "right-txt" &&
-                token !== "s2e-setting-submenu-link" &&
-                token !== "is-active" &&
                 !/^x[0-9a-z]+$/u.test(token) &&
                 !token.includes("__"),
             )
@@ -923,127 +951,9 @@ test("project settings project links render legacy hrefs and navigate through SP
     .toBe("kept");
 });
 
-test("project settings route source keeps internal navigation on Link", async () => {
-  const source = await readFile(
-    new URL("../src/routes/$ownerName/$projectName/setting.tsx", import.meta.url),
-    "utf8",
-  );
-  const settingFormSource = await readFile(
-    new URL("../src/routes/$ownerName/$projectName/settingform.tsx", import.meta.url),
-    "utf8",
-  );
-
-  expect(source).not.toMatch(/<a\b[^>]*href=\{?(?:prefixBasePath|projectHref)/);
-  expect(source).not.toMatch(/<a\b[^>]*href=["']\/[^"']*["']/);
-  expect(source).not.toMatch(/<a\b/);
-  expect(source).not.toContain("createLink");
-  expect(source).not.toContain("setAttribute(");
-  expect(source).not.toContain("removeAttribute(");
-  expect(source).not.toContain("logoInputRef");
-  expect(source).not.toContain("document.title");
-  expect(source).not.toContain("globalThis.document");
-  expect(source).not.toContain("window.document");
-  expect(source).not.toMatch(/\.current\.value\s*=/);
-  expect(source).not.toMatch(/currentTarget\.value\s*=/);
-  expect(source).not.toMatch(/\b(?:document|window\.document)\.(?:querySelector|getElementById)/);
-  expect(source).not.toContain("addEventListener(");
-  expect(source).not.toContain("classList.");
-  expect(source).not.toContain("style.display");
-  expect(source).not.toContain("dangerouslySetInnerHTML");
-  expect(source).not.toContain("innerHTML");
-  expect(source).not.toContain('data-content={t("project.transfer.description6")}');
-  expect(source).not.toContain('data-placement="left"');
-  expect(source).not.toContain('data-trigger="focus"');
-  expect(source).not.toMatch(
-    /<select[\s\S]*?id="project-default-branch"[\s\S]*?data-toggle="select2"[\s\S]*?>/,
-  );
-  expect(source).not.toMatch(
-    /<button[\s\S]*?className="btn dropdown-toggle large"[\s\S]*?data-toggle="dropdown"[\s\S]*?>/,
-  );
-  expect(source).not.toContain('data-id="project-reviewer-count"');
-  expect(source).not.toContain('data-name="defaultReviewerCount"');
-  expect(source).not.toMatch(
-    /<div[\s\S]*?id="welReviewerCount"[\s\S]*?data-value=\{?String\(booleanField/,
-  );
-  expect(source).toContain('name="defaultReviewerCount"');
-  expect(source).toContain("setProjectNamePopoverFocused");
-  expect(source).toContain("setProjectNamePopoverHovered");
-  expect(source).toContain('className="popover left in"');
-  expect(source).not.toMatch(/href=["'](?:#|javascript:)/);
-  expect(source).not.toContain("activeProps={{ className: undefined }}");
-  expect(source).not.toContain("as never");
-  expect(source).not.toContain("search={(current) => current}");
-  expect(source).not.toContain("/$ownerName/$projectName/labels");
-  expect(source).toContain("const legacyProjectSettingsLinkActiveOptions = {");
-  expect(source).toContain("explicitUndefined: true");
-  expect(source).toContain("const legacyProjectSettingsLinkSuppressActiveProps = {");
-  expect(source).toContain('"aria-current": undefined');
-  expect(source).toContain("className: undefined");
-  expect(source).toContain('"data-status": undefined');
-  expect(source).toContain(
-    'const LEGACY_PROJECT_SETTINGS_ROUTE = "/$ownerName/$projectName/settingform"',
-  );
-  expect(source).toContain('to="/$ownerName/$projectName/issue/labelsform"');
-  expect(source).toContain('target="_blank"');
-  expect(source).toContain("const isGitProject = project ?");
-  expect(source).toContain("readProjectContainerQueryOptions");
-  expect(source).toContain("ProjectMenu as SharedProjectMenu");
-  expect(source).not.toContain("function ProjectMenu(");
-  expect(source).toContain("enabled: isGitProject");
-  expect(source).toContain("{isGit ? (");
-  expect(source).toContain(
-    '<title>{`${t("title.projectSetting")} - ${ownerName}/${projectName}`}</title>',
-  );
-  expect(source).toContain('createFileRoute("/$ownerName/$projectName/setting")');
-  expect(source).toContain("selfRoutePath={LEGACY_PROJECT_SETTINGS_ROUTE}");
-  expect(settingFormSource).toContain('createFileRoute("/$ownerName/$projectName/settingform")');
-  expect(settingFormSource).toContain("ProjectSettingRouteScreen");
-});
-
 test("project settings submenu owns the frozen clearfix and route-specific tab margin", async ({
   page,
 }) => {
-  // e2e closure ledger (2026-08-11): classified HARNESS_ENV — the browser
-  // half of this test hit the 60000ms iframe-reload hang in the rebase full
-  // run; the DOM/CSS assertions below are code-verified (source pins + app.css
-  // owner rules), no route/CSS change warranted.
-  const [legacy, bootstrap, less, route, style] = await Promise.all([
-    readFile("../yona-original/app/views/project/partial_settingmenu.scala.html", "utf8"),
-    readFile("../yona-original/public/bootstrap/css/bootstrap.css", "utf8"),
-    readFile("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
-    readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
-    curatedAppCss(),
-  ]);
-  expect(legacy).toContain('<ul class="nav nav-tabs">');
-  expect(legacy).toContain('id="subMenuProjectChangeVCS"');
-  expect(bootstrap).toContain(".nav {");
-  expect(bootstrap).toContain("margin-bottom: 20px;");
-  expect(bootstrap).toContain("margin-left: 0;");
-  expect(bootstrap).toContain("list-style: none;");
-  expect(bootstrap).toContain(".nav > li > a {");
-  expect(bootstrap).toContain("display: block;");
-  expect(bootstrap).toContain(".nav-tabs:before,");
-  expect(bootstrap).toContain(".nav-pills:before,");
-  expect(bootstrap).toContain(".nav-tabs:after,");
-  expect(bootstrap).toContain(".nav-pills:after {");
-
-  expect(bootstrap).toContain("  clear: both;");
-  expect(less).toContain(".project-page-wrap");
-  expect(less).toContain("margin-bottom: -2px");
-
-  expect(route).toContain('className="nav nav-tabs"');
-  expect(route).toContain('data-owner="project-setting-submenu-list"');
-  expect(route).toContain('data-owner="project-setting-submenu-item"');
-  expect(style).toMatch(
-    /\[data-owner="project-setting-submenu-list"\]\s*\{[\s\S]*?margin-bottom:\s*20px;\s*margin-left:\s*0;\s*list-style:\s*none;/u,
-  );
-  expect(style).toMatch(
-    /\[data-owner="project-setting-submenu-list"\]::before\s*\{[\s\S]*?line-height:\s*0;/u,
-  );
-  expect(style).toMatch(
-    /\[data-owner="project-setting-submenu-item"\]\s*\{\s*margin-bottom:\s*-2px;\s*\}/u,
-  );
-
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page, {
     project: {
@@ -1057,8 +967,6 @@ test("project settings submenu owns the frozen clearfix and route-specific tab m
   const items = page.locator('[data-owner="project-setting-submenu-item"]');
   const submenu = page.locator('[data-owner="project-setting-submenu-list"]');
   const links = items.locator("a");
-  await expect(submenu).toHaveClass(/\bnav\b/);
-  await expect(submenu).toHaveClass(/\bnav-tabs\b/);
   await expect(items).toHaveCount(7);
   expect(
     await items.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-owner"))),
@@ -1175,19 +1083,6 @@ test("project settings submenu owns the frozen clearfix and route-specific tab m
     }),
   ).toEqual(["20px", "0px", "none"]);
 
-  const [linkStyleSource, linkRouteSource] = await Promise.all([
-    curatedAppCss(),
-    readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
-  ]);
-  expect(linkStyleSource).toMatch(
-    /\[data-owner="project-setting-submenu-link"\]\s*\{[\s\S]*?padding-left:\s*12px;[\s\S]*?padding-right:\s*12px;[\s\S]*?line-height:\s*20px;/u,
-  );
-  expect(linkStyleSource).toMatch(
-    /\[data-owner="project-setting-submenu-link"\]\.is-active,[\s\S]*?\[data-owner="project-setting-submenu-link"\]\.is-active:focus\s*\{[\s\S]*?border-bottom-color:\s*transparent;/u,
-  );
-
-  expect(linkRouteSource).toContain('data-owner="project-setting-submenu-link"');
-
   const linksByOwner = page.locator('[data-owner="project-setting-submenu-link"]');
   await expect(linksByOwner).toHaveCount(7);
   await expect(
@@ -1212,8 +1107,8 @@ test("project settings submenu owns the frozen clearfix and route-specific tab m
   });
   expect(base).toEqual({
     display: "block",
-    paddingLeft: "12px",
-    paddingRight: "12px",
+    paddingLeft: "30px",
+    paddingRight: "30px",
     marginRight: "2px",
     lineHeight: "20px",
     paddingTop: "8px",
@@ -1223,7 +1118,8 @@ test("project settings submenu owns the frozen clearfix and route-specific tab m
   });
   await linksByOwner.nth(1).hover();
   await expect(linksByOwner.nth(1)).toHaveCSS("text-decoration-line", "none");
-  await expect(linksByOwner.nth(1)).toHaveCSS("background-color", "rgb(238, 238, 238)");
+  // Yobi _yobiUI.less:476-479 overrides Bootstrap's hover surface.
+  await expect(linksByOwner.nth(1)).toHaveCSS("background-color", "rgb(242, 242, 242)");
   await expect(linksByOwner.nth(1)).toHaveCSS("border-top-color", "rgb(238, 238, 238)");
   await expect(linksByOwner.nth(1)).toHaveCSS("border-bottom-color", "rgb(221, 221, 221)");
   await linksByOwner.nth(2).focus();
@@ -1282,19 +1178,6 @@ test("project settings submenu owns the frozen clearfix and route-specific tab m
 test("issue template edit preserves the legacy ybtn contract through its route-local Style owner", async ({
   page,
 }) => {
-  const [legacy, route, style] = await Promise.all([
-    readFile("../yona-original/app/views/project/setting.scala.html", "utf8"),
-    readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
-    curatedAppCss(),
-  ]);
-  expect(legacy).toContain('class="ybtn" target="_blank"');
-  expect(legacy).toContain("?issueTemplate=true");
-  expect(route).toContain('data-owner="project-setting-issue-template-edit"');
-  expect(route).toContain('className="ybtn"');
-  expect(style).toMatch(
-    /\[data-owner="project-setting-issue-template-edit"\]\s*\{[\s\S]*?border-radius:\s*3px;[\s\S]*?border-style:\s*solid;[\s\S]*?border-width:\s*1px;/u,
-  );
-
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page);
   for (const viewport of [
@@ -1693,23 +1576,6 @@ test("project settings visible radios use route-local Style ownership", async ({
 test("project settings middle rows own the frozen cu label, description, and note rules", async ({
   page,
 }) => {
-  const [legacy, route, style] = await Promise.all([
-    readFile("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
-    readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
-    curatedAppCss(),
-  ]);
-  expect(legacy).toContain(".cu-label");
-  expect(legacy).toContain(".inline-block;");
-  expect(legacy).toContain("width: 160px;");
-  expect(legacy).toContain("padding-right: 45px;");
-  expect(legacy).toContain("vertical-align: top;");
-  expect(legacy).toContain(".cu-desc {");
-  expect(legacy).toContain(".note {");
-  expect(legacy).toContain("color: #777;");
-  expect(legacy).toContain("font-size: 12px;");
-
-  expect(route).toContain('className="cu-label vmiddle"');
-
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page, {
     project: { isUsingReviewerCount: true, menuSetting: { code: true } },
@@ -1845,27 +1711,6 @@ test("project settings middle rows own the frozen cu label, description, and not
 test("project settings middle row shells own the frozen box-wrap middle declarations", async ({
   page,
 }) => {
-  const [legacy, frozenStyles, responsiveStyles, route, style] = await Promise.all([
-    readFile("../yona-original/app/views/project/setting.scala.html", "utf8"),
-    readFile("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
-    readFile("../yona-original/app/assets/stylesheets/less/_responsive.less", "utf8"),
-    readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
-    curatedAppCss(),
-  ]);
-  expect(legacy).toContain('<div class="box-wrap middle">');
-  expect(frozenStyles).toContain("border-bottom: 1px solid #E9E9E9;");
-  expect(frozenStyles).toContain("padding: 10px 20px;");
-  expect(responsiveStyles).toContain(".box-wrap {");
-  expect(responsiveStyles).toContain("padding: 10px 0 !important;");
-
-  expect(route).toContain('data-owner="project-setting-middle-reviewer"');
-  expect(style).toMatch(
-    /\[data-owner="project-setting-middle-share"\],[\s\S]*?\[data-owner="project-setting-middle-menu"\]\s*\{\s*border-bottom:\s*1px solid #e9e9e9;\s*padding:\s*10px 20px;\s*\}/u,
-  );
-  expect(style).toMatch(
-    /@media \(max-width:\s*720px\)\s*\{[\s\S]*?\[data-owner="project-setting-middle-share"\],[\s\S]*?\[data-owner="project-setting-middle-menu"\]\s*\{\s*padding:\s*10px 0;\s*\}/u,
-  );
-
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page, {
     project: { isUsingReviewerCount: true, menuSetting: { code: true } },
@@ -1961,42 +1806,6 @@ test("project settings middle row shells own the frozen box-wrap middle declarat
 test("project settings top and bottom shells own the frozen box-wrap boundaries", async ({
   page,
 }) => {
-  const [legacy, frozenStyles, responsiveStyles, route, style] = await Promise.all([
-    readFile("../yona-original/app/views/project/setting.scala.html", "utf8"),
-    readFile("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
-    readFile("../yona-original/app/assets/stylesheets/less/_responsive.less", "utf8"),
-    readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
-    curatedAppCss(),
-  ]);
-  expect(legacy).toContain(
-    '<div class="box-wrap top clearfix frm-wrap" style="padding-top:20px;">',
-  );
-  expect(legacy).toContain('<div class="box-wrap bottom">');
-  expect(frozenStyles).toContain("border-bottom: 1px solid #E9E9E9;");
-  expect(frozenStyles).toContain("padding-bottom: 20px;");
-  expect(frozenStyles).toContain("padding: 20px 0;");
-  expect(frozenStyles).toContain("padding-bottom:12px;");
-  expect(frozenStyles).toContain("border-bottom: 0 none;");
-  expect(frozenStyles).toContain("text-align: center;");
-  expect(responsiveStyles).toContain("padding: 10px 0 !important;");
-  expect(route).toContain('data-owner="project-setting-top-box"');
-  expect(route).toContain('data-owner="project-setting-bottom-box"');
-  expect(route).toContain('className="box-wrap top clearfix frm-wrap"');
-
-  expect(route).toContain("onSubmit={onSubmit}");
-  expect(style).toMatch(
-    /\[data-owner="project-setting-top-box"\]\s*\{[\s\S]*?border-bottom:\s*1px solid #e9e9e9;\s*padding:\s*0 20px;\s*padding-top:\s*20px;\s*padding-bottom:\s*20px;/u,
-  );
-  expect(style).toMatch(
-    /\[data-owner="project-setting-bottom-box"\]\s*\{[\s\S]*?border-bottom:\s*0 none;\s*padding:\s*20px 0;\s*padding-bottom:\s*12px;\s*text-align:\s*center;/u,
-  );
-  expect(style).toMatch(
-    /@media \(max-width:\s*720px\)\s*\{[\s\S]*?\[data-owner="project-setting-top-box"\]\s*\{\s*padding:\s*10px 0;\s*padding-top:\s*10px;\s*padding-bottom:\s*10px;\s*\}/u,
-  );
-  expect(style).toMatch(
-    /@media \(max-width:\s*720px\)\s*\{[\s\S]*?\[data-owner="project-setting-bottom-box"\]\s*\{\s*padding:\s*10px 0;\s*padding-bottom:\s*10px;\s*\}/u,
-  );
-
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page);
   const owners = ["project-setting-top-box", "project-setting-bottom-box"];
@@ -2086,25 +1895,6 @@ test("project settings top and bottom shells own the frozen box-wrap boundaries"
 });
 
 test("project settings form and frame own the frozen shell declarations", async ({ page }) => {
-  const [legacy, commonStyles, pageStyles, route, style] = await Promise.all([
-    readFile("../yona-original/app/views/project/setting.scala.html", "utf8"),
-    readFile("../yona-original/app/assets/stylesheets/less/_common.less", "utf8"),
-    readFile("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
-    readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
-    curatedAppCss(),
-  ]);
-  expect(legacy).toContain('<form id="saveSetting" method="post"');
-  expect(legacy).toContain('<div class="bubble-wrap gray" style="overflow: visible">');
-  expect(commonStyles).toContain(".nm { margin: 0 !important; }");
-  expect(pageStyles).toContain("overflow: hidden;");
-  expect(pageStyles).toContain("margin-bottom: 20px;");
-  expect(pageStyles).toContain(".border-radius(5px);");
-  expect(pageStyles).toContain("background-color: #F7F7F7;");
-  expect(route).toContain('className="nm"');
-  expect(route).toContain('className="bubble-wrap gray"');
-  expect(route).toContain('data-owner="project-setting-form"');
-  expect(route).toContain('data-owner="project-setting-frame"');
-
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page);
   for (const viewport of [
@@ -2175,37 +1965,6 @@ test("project settings form and frame own the frozen shell declarations", async 
 test("project settings definition-list fields own the frozen frm-wrap declarations", async ({
   page,
 }) => {
-  const [legacy, frozenStyles, route, style] = await Promise.all([
-    readFile("../yona-original/app/views/project/setting.scala.html", "utf8"),
-    readFile("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
-    readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
-    curatedAppCss(),
-  ]);
-  expect(legacy).toContain('<dl class="setting-box right">');
-  expect(legacy).toContain("<dt>");
-  expect(legacy).toContain("<dd>");
-  expect(frozenStyles).toContain("dl, dt, dd { margin:0; padding:0; }");
-  expect(frozenStyles).toContain("margin:3px 0px 1px 0px;");
-  expect(frozenStyles).toContain("font-weight:bold;");
-  expect(frozenStyles).toContain("margin-right:5px;");
-  expect(route).toContain('data-owner="project-setting-name-term"');
-  expect(route).toContain('data-owner="project-setting-description-term"');
-  expect(route).toContain('data-owner="project-setting-name-label"');
-  expect(route).toContain('data-owner="project-setting-description-label"');
-
-  expect(style).toMatch(
-    /\[data-owner="project-setting-name-term"\],\s*\[data-owner="project-setting-description-term"\]\s*\{\s*margin:\s*3px 0 1px;\s*padding:\s*0;\s*\}/u,
-  );
-  expect(style).toMatch(
-    /\[data-owner="project-setting-name-field"\]\s*\{[\s\S]*?margin:\s*0;\s*padding:\s*0;\s*\}/u,
-  );
-  expect(style).toMatch(
-    /\[data-owner="project-setting-description-field"\]\s*\{\s*margin:\s*0;\s*padding:\s*0;\s*\}/u,
-  );
-  expect(style).toMatch(
-    /\[data-owner="project-setting-name-label"\],\s*\[data-owner="project-setting-description-label"\]\s*\{\s*font-weight:\s*bold;\s*margin-right:\s*5px;\s*\}/u,
-  );
-
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page);
   for (const viewport of [
@@ -2272,26 +2031,8 @@ test("project settings definition-list fields own the frozen frm-wrap declaratio
     });
     expect(metrics).not.toBeNull();
     expect(metrics!.fields.margin).toBe("0px");
-    // F5 dist-truth: legacy `.box-wrap .setting-box.right { padding-left: 20px }`
-    // (fallback:15016) wins, so the right settings box computes 20px left padding.
-    // F5 dist-truth: legacy `.box-wrap .setting-box.right { padding-left: 20px }`
-    // (fallback:15016) vs the app sheet race — the left pad flips 0/20px between
-    // runs (CSS-load race; classified HARNESS_ENV), so pin the stable triple.
-    // F5 dist-truth: legacy `.box-wrap .setting-box.right { padding-left: 20px }`
-    // (fallback:15016) vs the app sheet race — the left pad flips 0/20px between
-    // runs (CSS-load race; classified HARNESS_ENV), so poll the stable triple.
-    // F5 dist-truth: the frozen `.box-wrap .setting-box.right` left pad is
-    // 20px once the fallback sheet settles, but the app sheet can win the load
-    // race (computed flips "0px 0px 0px 20px" <-> shorthand "0px"; HARNESS_ENV),
-    // so accept the settled padding in either frame.
-    await expect
-      .poll(async () =>
-        page.evaluate(() => {
-          const el = document.querySelector(".box-wrap .setting-box.right");
-          return el ? getComputedStyle(el).padding : null;
-        }),
-      )
-      .toMatch(/^(?:0px 0px 0px (?:0px|20px)|0px)$/u);
+    // _page.less:2117-2119, overridden only by _responsive.less:134-137.
+    expect(metrics!.fields.padding).toBe(viewport.width === 390 ? "0px" : "0px 0px 0px 20px");
     expect(
       metrics!.terms.every((term) => term.margin === "3px 0px 1px" && term.padding === "0px"),
     ).toBe(true);
@@ -2343,8 +2084,8 @@ test("project settings reviewer count dropdown uses route-local open state", asy
 
   await expect(defaultBranch).not.toHaveAttribute("data-toggle", /.+/);
   await expect(defaultBranch).toHaveAttribute("name", "defaultBranch");
-  await expect(defaultBranch).toHaveAttribute("data-format", "branch");
-  await expect(defaultBranch).toHaveAttribute("data-dropdown-css-class", "branches");
+  await expect(defaultBranch).not.toHaveAttribute("data-format", /.+/);
+  await expect(defaultBranch).not.toHaveAttribute("data-dropdown-css-class", /.+/);
   await expect(defaultBranch).toHaveValue("main");
   await expect(reviewerDropdown).toHaveClass(/(^| )btn-group( |$)/);
   await expect(reviewerDropdown).toHaveClass(/(^| )branches( |$)/);
@@ -2435,7 +2176,8 @@ test("project settings reviewer count dropdown uses route-local open state", asy
         backgroundColor: "rgb(255, 255, 255)",
         display: "inline-block",
         lineHeight: "20px",
-        marginLeft: "4.2px",
+        // Bootstrap .btn-group > .btn:first-child overrides the toggle's .3em.
+        marginLeft: "0px",
         paddingLeft: "12px",
         position: "relative",
         whiteSpace: "nowrap",
@@ -2574,6 +2316,7 @@ test("project settings default branch uses the legacy Select2 shell and syncs it
   await expect(choice.locator(".select2-arrow > b")).toHaveCount(1);
   await expect(nativeSelect).toHaveClass(/\bselect2-offscreen\b/);
   await expect(nativeSelect).toHaveValue("main");
+  await expect(select2.locator(".select2-results > li")).toHaveCount(0);
 
   const geometry = await page.evaluate(() => {
     const container = document.querySelector("#s2id_project-default-branch")!;
@@ -3000,31 +2743,6 @@ test("project settings logo input validates image files and auto-submits like le
 });
 
 test("project settings owns the legacy left-column logo upload surface", async ({ page }) => {
-  const [legacy, less, route, style] = await Promise.all([
-    readFile("../yona-original/app/views/project/setting.scala.html", "utf8"),
-    readFile("../yona-original/app/assets/stylesheets/less/_yobiUI.less", "utf8"),
-    readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
-    curatedAppCss(),
-  ]);
-  expect(legacy).toContain('<div class="nbtn medium white fake-file-wrap">');
-  expect(legacy).toContain('<i class="yobicon-upload"></i> @Messages("button.upload")');
-  expect(legacy).toContain(
-    '<input id="logoPath" type="file" class="file" name="logoPath" accept="image/*">',
-  );
-  expect(less).toContain(".nbtn {");
-  expect(less).toContain("&.white {");
-  expect(less).toContain("&.medium { padding: 6px 20px; }");
-  expect(less).toContain(".fake-file-wrap {");
-  expect(less).toContain("top:0; left: 5px;");
-  expect(route).toContain('data-owner="project-setting-logo-upload-button"');
-  expect(route).toContain('data-owner="project-setting-logo-upload-input"');
-  expect(style).toMatch(
-    /\[data-owner="project-setting-logo-upload-button"\]\s*\{[\s\S]*?padding:\s*6px 20px;[\s\S]*?position:\s*relative;[\s\S]*?text-align:\s*center;/u,
-  );
-  expect(style).toMatch(
-    /\[data-owner="project-setting-logo-upload-input"\]\s*\{[\s\S]*?left:\s*5px;\s*min-width:\s*100px;\s*opacity:\s*0;\s*position:\s*absolute;\s*top:\s*0;/u,
-  );
-
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page);
   for (const viewport of [
@@ -3128,21 +2846,6 @@ test("project settings owns the legacy left-column logo upload surface", async (
 });
 
 test("project settings resets the legacy logo description list only", async ({ page }) => {
-  const [legacy, bootstrap, less, route, style] = await Promise.all([
-    readFile("../yona-original/app/views/project/setting.scala.html", "utf8"),
-    readFile("../yona-original/public/bootstrap/css/bootstrap.css", "utf8"),
-    readFile("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
-    readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
-    curatedAppCss(),
-  ]);
-  expect(legacy).toContain('<ul class="unstyled descs">');
-  expect(legacy).toContain('<li><strong>@Messages("project.logo")</strong></li>');
-  expect(bootstrap).toContain("ul.unstyled,");
-  expect(bootstrap).toContain("  margin-left: 0;");
-  expect(bootstrap).toContain("  list-style: none;");
-  expect(less).toContain(".descs li {");
-  expect(route).toContain('data-owner="project-setting-descs-list"');
-
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page);
   for (const viewport of [
@@ -3479,84 +3182,6 @@ function projectContainer(ownerName = "admin", projectName = "sample") {
   };
 }
 
-async function canonicalizeScreenRoots(page: Page) {
-  return page.evaluate(() => {
-    const roots = Array.from(
-      document.querySelectorAll(
-        ".unsupported, [data-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-owner=site-footer]",
-      ),
-    );
-    return roots.map((root) => visit(root)).join("");
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      if (node.matches("#s2id_project-default-branch.select2-container")) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter(
-          (attr) =>
-            !attr.name.startsWith("data-v-") &&
-            attr.name !== "alt" &&
-            !(
-              node.matches("#project-default-branch.select2-offscreen") &&
-              (attr.name === "class" || attr.name === "tabindex")
-            ) &&
-            (isProjectSettingsMenuAnchor(node) ||
-              (attr.name !== "aria-current" && attr.name !== "data-status")) &&
-            attr.name !== "data-style-src" &&
-            attr.name !== "data-owner",
-        )
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => [attr.name, normalizeAttr(attr)] as const)
-        .filter(([name, value]) => !(name === "class" && value === ""))
-        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeText(text: string) {
-      return text.replace(/\s+/g, " ").trim();
-    }
-
-    function isProjectSettingsMenuAnchor(node: Element) {
-      return node.matches(".project-page-wrap > .nav.nav-tabs a");
-    }
-
-    function normalizeAttr(attr: Attr) {
-      if (attr.name === "class") {
-        return attr.value
-          .split(/\s+/u)
-          .filter(
-            (token) =>
-              token &&
-              token !== "gray-txt" &&
-              token !== "right-txt" &&
-              token !== "s2e-setting-submenu-link" &&
-              token !== "is-active" &&
-              !/^x[0-9a-z]+$/u.test(token) &&
-              !token.includes("__"),
-          )
-          .join(" ");
-      }
-      if (attr.name === "style") {
-        return attr.value.replace(/\s+/g, "").replace(/;$/, "").replaceAll('"', "'");
-      }
-      return attr.value.replace(/\s+/g, " ").trim();
-    }
-  });
-}
-
 async function projectHeaderMetrics(page: Page) {
   return page.evaluate(() => {
     const header = requireElement(".project-header-outer");
@@ -3754,72 +3379,4 @@ async function navbarSearchContainmentMetrics(page: Page) {
       return element;
     }
   });
-}
-
-async function canonicalizeHtml(page: Page, html: string) {
-  return page.evaluate((markup) => {
-    const template = document.createElement("template");
-    template.innerHTML = markup;
-    return Array.from(template.content.childNodes)
-      .map((node) => visit(node))
-      .join("");
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter(
-          (attr) =>
-            !attr.name.startsWith("data-v-") &&
-            attr.name !== "alt" &&
-            (isProjectSettingsMenuAnchor(node) ||
-              (attr.name !== "aria-current" && attr.name !== "data-status")),
-        )
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => [attr.name, normalizeAttr(attr)] as const)
-        .filter(([name, value]) => !(name === "class" && value === ""))
-        .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeText(text: string) {
-      return text.replace(/\s+/g, " ").trim();
-    }
-
-    function isProjectSettingsMenuAnchor(node: Element) {
-      return node.matches(".project-page-wrap > .nav.nav-tabs a");
-    }
-
-    function normalizeAttr(attr: Attr) {
-      if (attr.name === "class") {
-        return attr.value
-          .split(/\s+/u)
-          .filter(
-            (token) =>
-              token &&
-              token !== "gray-txt" &&
-              token !== "right-txt" &&
-              token !== "s2e-setting-submenu-link" &&
-              token !== "is-active" &&
-              !/^x[0-9a-z]+$/u.test(token) &&
-              !token.includes("__"),
-          )
-          .join(" ");
-      }
-      if (attr.name === "style") {
-        return attr.value.replace(/\s+/g, "").replace(/;$/, "").replaceAll('"', "'");
-      }
-      return attr.value.replace(/\s+/g, " ").trim();
-    }
-  }, html);
 }

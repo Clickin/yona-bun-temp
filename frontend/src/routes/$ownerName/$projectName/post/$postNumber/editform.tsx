@@ -12,6 +12,7 @@ import {
 } from "../../../../../api/boards";
 import { ProjectPostEditNotFoundBody, ProjectPostEditNotFoundTitle } from "../$postNumber";
 import { readSessionBootstrap } from "../../../../../auth-workspace-client";
+import { currentSessionQueryOptions } from "../../../../../api/session";
 
 import { useLegacyMessages } from "../../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
@@ -71,10 +72,14 @@ function ProjectBoardEditFormBody({
   const router = useRouter();
   const queryClient = useQueryClient();
   const { ownerName, postNumber, projectName } = Route.useParams();
+  const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
   const canSetNotice = Boolean(post.permissions.canSetNotice);
   const canUpdate = Boolean(post.permissions.canUpdate);
   const canShowReadme = canUpdate;
-  const canSendNotification = !post.readme && post.authorLoginId !== "";
+  const canSendNotification =
+    !post.readme &&
+    sessionQuery.data?.isAnonymous === false &&
+    post.authorId === String(sessionQuery.data.actorId);
   const [titleFocusRequest, setTitleFocusRequest] = useState(1);
   const [bodyFocusRequest, setBodyFocusRequest] = useState(0);
   const titleRef = useRef<HTMLInputElement>(null);
@@ -91,6 +96,7 @@ function ProjectBoardEditFormBody({
         attachmentIds: [],
         bodyMarkdown: stringFormValue(formData, "body"),
         notice: formData.has("notice"),
+        notificationMail: formData.has("notificationMail"),
         ownerName,
         postNumber,
         projectName,
@@ -217,11 +223,9 @@ function ProjectBoardEditFormBody({
                   </span>
                 ) : null}
                 {canUpdate ? (
-                  <>
-                    <button tabIndex={3} className="ybtn ybtn-info">
-                      {t("button.save")}
-                    </button>{" "}
-                  </>
+                  <button tabIndex={3} className="ybtn ybtn-info">
+                    {t("button.save")}
+                  </button>
                 ) : null}
                 <HistoryBackLink>{t("button.cancel")}</HistoryBackLink>
               </div>

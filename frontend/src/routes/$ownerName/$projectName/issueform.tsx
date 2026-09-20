@@ -611,7 +611,6 @@ function ProjectIssueFormBody({
   const titleRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const dueDateRef = useRef<HTMLInputElement>(null);
-  const datePickerRef = useRef<HTMLInputElement>(null);
   const allowNavigationRef = useRef(false);
   const pendingBodySelectionRef = useRef<BodySelection | null>(null);
   const uploadSequenceRef = useRef(0);
@@ -1137,7 +1136,7 @@ function ProjectIssueFormBody({
                     onInsert={insertAttachment}
                     onRemove={(row) => void removeAttachment(row)}
                   />
-                  <div className="actrow" data-owner="project-issue-form-actions">
+                  <div className="actrow right-txt" data-owner="project-issue-form-actions">
                     <button
                       type="submit"
                       id="button-save"
@@ -1201,7 +1200,6 @@ function ProjectIssueFormBody({
                         <IssueDueDateInput
                           ownerPrefix="project-issue-form"
                           inputId="issueDueDate"
-                          datePickerRef={datePickerRef}
                           dueDateRef={dueDateRef}
                           value={dueDate}
                           autoComplete="off"
@@ -1461,6 +1459,24 @@ function SubtaskSelects({
   const isCrossProject = targetProjectId !== currentProjectId;
   const [projectOpen, setProjectOpen] = useState(false);
   const [parentOpen, setParentOpen] = useState(false);
+  const [projectQuery, setProjectQuery] = useState("");
+  const [parentQuery, setParentQuery] = useState("");
+  const matchingProjects = formProjects.filter((project) =>
+    `${project.projectId === currentProjectId ? "" : `${project.ownerName} / `}${project.projectName}`
+      .toLowerCase()
+      .includes(projectQuery.toLowerCase()),
+  );
+  const parentSearchText = parentQuery.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+  const matchingParents = parentOptions.filter((issue) =>
+    `#${String(issue.issueNumber)}. ${issue.title}`
+      .normalize("NFD")
+      .replace(/\p{M}/gu, "")
+      .toLowerCase()
+      .includes(parentSearchText),
+  );
+  const showNoParentOption = t("issue.subtask.select")
+    .toLowerCase()
+    .includes(parentQuery.toLowerCase());
   const selectedProject =
     formProjects.find((project) => project.projectId === targetProjectId) ?? formProjects[0];
   const selectedParent = parentOptions.find((issue) => String(issue.id) === String(parentIssueId));
@@ -1468,11 +1484,13 @@ function SubtaskSelects({
   const selectProject = (projectId: number) => {
     onTargetProjectChange(projectId);
     setProjectOpen(false);
+    setProjectQuery("");
   };
 
   const selectParent = (value: string) => {
     onParentIssueChange(value);
     setParentOpen(false);
+    setParentQuery("");
   };
 
   return (
@@ -1484,6 +1502,7 @@ function SubtaskSelects({
           onBlurCapture={(event) => {
             if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
               setProjectOpen(false);
+              setProjectQuery("");
             }
           }}
         >
@@ -1528,10 +1547,17 @@ function SubtaskSelects({
             className={`select2-drop select2-with-searchbox${projectOpen ? " select2-drop-active" : " select2-display-none"}`}
           >
             <div className="select2-search">
-              <input className="select2-input" type="text" autoComplete="off" />
+              <input
+                className="select2-input"
+                type="text"
+                autoComplete="off"
+                aria-label={t("organization.choose.projects")}
+                value={projectQuery}
+                onChange={(event) => setProjectQuery(event.currentTarget.value)}
+              />
             </div>
             <ul className="select2-results" role="listbox">
-              {formProjects.map((formProject) => (
+              {matchingProjects.map((formProject) => (
                 <li key={formProject.projectId}>
                   <div
                     className="select2-result-label"
@@ -1552,6 +1578,9 @@ function SubtaskSelects({
                   </div>
                 </li>
               ))}
+              {matchingProjects.length === 0 ? (
+                <li className="select2-no-results">{t("select2.noMatches")}</li>
+              ) : null}
             </ul>
           </div>
         </div>
@@ -1588,6 +1617,7 @@ function SubtaskSelects({
           onBlurCapture={(event) => {
             if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
               setParentOpen(false);
+              setParentQuery("");
             }
           }}
         >
@@ -1634,27 +1664,36 @@ function SubtaskSelects({
             className={`select2-drop select2-with-searchbox${parentOpen ? " select2-drop-active" : " select2-display-none"}`}
           >
             <div className="select2-search">
-              <input className="select2-input" type="text" autoComplete="off" />
+              <input
+                className="select2-input"
+                type="text"
+                autoComplete="off"
+                aria-label={t("issue.subtask.select")}
+                value={parentQuery}
+                onChange={(event) => setParentQuery(event.currentTarget.value)}
+              />
             </div>
             <ul className="select2-results" role="listbox">
-              <li>
-                <div
-                  className="select2-result-label"
-                  role="option"
-                  tabIndex={0}
-                  aria-selected={parentIssueId === ""}
-                  onClick={() => selectParent("")}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      selectParent("");
-                    }
-                  }}
-                >
-                  {t("issue.subtask.select")}
-                </div>
-              </li>
-              {parentOptions.map((issue) => (
+              {showNoParentOption ? (
+                <li>
+                  <div
+                    className="select2-result-label"
+                    role="option"
+                    tabIndex={0}
+                    aria-selected={parentIssueId === ""}
+                    onClick={() => selectParent("")}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        selectParent("");
+                      }
+                    }}
+                  >
+                    {t("issue.subtask.select")}
+                  </div>
+                </li>
+              ) : null}
+              {matchingParents.map((issue) => (
                 <li key={String(issue.id)}>
                   <div
                     className="select2-result-label"
@@ -1673,6 +1712,9 @@ function SubtaskSelects({
                   </div>
                 </li>
               ))}
+              {!showNoParentOption && matchingParents.length === 0 ? (
+                <li className="select2-no-results">{t("select2.noMatches")}</li>
+              ) : null}
             </ul>
           </div>
         </div>

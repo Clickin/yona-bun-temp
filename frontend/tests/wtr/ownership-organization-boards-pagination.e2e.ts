@@ -171,7 +171,7 @@ async function mockOrganizationBoards(page: Page) {
             authorLabel: "Dev Member",
             authorLoginId: "dev",
             commentCount: 1,
-            createdLabel: "Jul 1, 2026",
+            createdAt: "2026-07-01T12:00:00Z",
             ownerName: "team",
             postNumber: String(10 + pageNum),
             projectName: "sample",

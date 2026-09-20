@@ -211,7 +211,7 @@ function ProjectMilestoneEditFormBody({
                     }}
                   />
 
-                  <div className="actrow" data-owner="milestone-edit-form-actions">
+                  <div className="actrow right-txt" data-owner="milestone-edit-form-actions">
                     <button type="submit" className="ybtn ybtn-info">
                       {t("button.save")}
                     </button>

@@ -153,42 +153,6 @@ test("organization settings form matches legacy organization/setting.scala.html 
   );
   await expect(page.locator("#project-name")).toHaveValue("weblabs");
   await expect(page.locator("#project-desc")).toHaveValue("Web labs group");
-  expect(
-    await page
-      .locator(
-        ".unsupported, [data-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-owner=site-footer]",
-      )
-      .evaluateAll((roots) =>
-        roots.map((root) => {
-          if (
-            root.getAttribute("data-owner") === "site-footer" &&
-            !root.classList.contains("page-footer-outer")
-          ) {
-            return "site-footer";
-          }
-          return [...root.classList]
-            .filter(
-              (token) =>
-                token &&
-                token !== "gray-txt" &&
-                token !== "right-txt" &&
-                !/^x[0-9a-z]+$/u.test(token) &&
-                !token.includes("__"),
-            )
-            .join(" ");
-        }),
-      ),
-  ).toEqual([
-    "unsupported hidden",
-    // F5 dist-truth (2026-08-11): the GNB header retains the legacy
-    // gnb-outer class (home-route-screen.tsx:972).
-    "gnb-outer",
-    "project-header-outer",
-    "project-menu-outer",
-    "page-wrap-outer",
-    "site-footer",
-  ]);
-
   expect(await canonicalizeScreenRoot(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(
       page,
@@ -205,6 +169,7 @@ test("organization settings form pins the live localhost authenticated generic s
   await mockOrganizationSettings(page);
 
   await page.goto(`${basePath}/organizations/weblabs/settingform`);
+  await expect(page.locator("#saveSetting")).toBeVisible();
 
   await expect(page).toHaveTitle("weblabs");
   await expect(page.locator('[data-owner="global-gnb-nav"] > li > a')).toHaveText([

@@ -3,7 +3,10 @@ use std::path::PathBuf;
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use yoram_vcs::{read_pull_request_diff, read_pull_request_diff_between_revisions};
+use yoram_vcs::{
+    merge_pull_request, read_pull_request_diff, read_pull_request_diff_between_revisions,
+    PullRequestMergeMetadata,
+};
 
 fn temp_repo_path(label: &str) -> PathBuf {
     let nanos = SystemTime::now()
@@ -171,4 +174,67 @@ fn repo_pull_request_diff_reads_stored_revision_pair() {
 
     fs::remove_dir_all(&work_path).unwrap();
     fs::remove_dir_all(&repo_path).unwrap();
+}
+
+#[test]
+fn pull_request_merge_records_fork_and_master_message_with_ordered_parents() {
+    let source_path = temp_repo_path("merge-source");
+    let target_path = temp_repo_path("merge-target");
+    let work_path = temp_repo_path("merge-work");
+    fs::create_dir_all(&work_path).unwrap();
+    run_git(&work_path, &["init", "-b", "master"]);
+    run_git(
+        &work_path,
+        &["config", "user.email", "contributor@example.com"],
+    );
+    run_git(&work_path, &["config", "user.name", "Contributor"]);
+    write_repo_file(&work_path, "README.md", "base\n");
+    run_git(&work_path, &["add", "README.md"]);
+    run_git(&work_path, &["commit", "-m", "base"]);
+    let target_parent = git_output(&work_path, &["rev-parse", "HEAD"]);
+    clone_bare(&work_path, &target_path);
+    run_git(&work_path, &["checkout", "-b", "topic"]);
+    write_repo_file(&work_path, "README.md", "first change\n");
+    run_git(&work_path, &["commit", "-am", "first change"]);
+    write_repo_file(&work_path, "README.md", "second change\n");
+    run_git(&work_path, &["commit", "-am", "second change"]);
+    let source_parent = git_output(&work_path, &["rev-parse", "HEAD"]);
+    clone_bare(&work_path, &source_path);
+
+    let merged = merge_pull_request(
+        &source_path,
+        &target_path,
+        "refs/heads/topic",
+        "refs/heads/master",
+        &PullRequestMergeMetadata {
+            author_name: "Maintainer",
+            author_email: "maintainer@example.com",
+            pull_request_number: 17,
+            source_project: Some("contributor/fork"),
+            review_trailers: "",
+        },
+    )
+    .unwrap();
+
+    assert!(!merged.conflict);
+    assert_eq!(
+        git_output(&target_path, &["show", "-s", "--format=%P", "master"]),
+        format!("{target_parent} {source_parent}")
+    );
+    assert_eq!(
+        git_output(&target_path, &["show", "-s", "--format=%B", "master"]),
+        "Merge branch 'topic' of contributor/fork\n\nfrom pull-request 17\n\n* topic:\n  second change\n  first change"
+    );
+    assert_eq!(
+        git_output(&target_path, &["show", "master:README.md"]),
+        "second change"
+    );
+    assert_eq!(
+        git_output(&source_path, &["rev-parse", "topic"]),
+        source_parent
+    );
+
+    fs::remove_dir_all(&work_path).unwrap();
+    fs::remove_dir_all(&source_path).unwrap();
+    fs::remove_dir_all(&target_path).unwrap();
 }

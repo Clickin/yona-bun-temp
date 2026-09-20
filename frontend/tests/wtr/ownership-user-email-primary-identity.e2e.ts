@@ -1,5 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
-import { expect, test } from "../wtr-compat.ts";
+import { expect, test, type Page } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
@@ -16,60 +15,23 @@ const owner = (page: Page, name: string) => page.locator(`[data-owner="${name}"]
 
 test.use({ locale: "ko-KR" });
 
-test("records the primary-only legacy identity and exact three-owner boundary", () => {
-  const route = readFileSync("src/routes/user/editform/emails.tsx", "utf8");
-  const template = readFileSync("../yona-original/app/views/user/edit_emails.scala.html", "utf8");
-  const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
-  const common = readFileSync("../yona-original/app/assets/stylesheets/less/_common.less", "utf8");
-  const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
-
-  expect(template).toContain('<img src="@user.avatarUrl(80)" width="40" height="40">');
-  expect(template).toContain('<strong class="ml10">@user.email</strong>');
-  expect(template).toContain(
-    '<span class="label-head vmiddle ml10">@Messages("emails.main.email")</span>',
-  );
-  expect(bootstrap).toContain(
-    "img {\n  width: auto\\9;\n  height: auto;\n  max-width: 100%;\n  vertical-align: middle;\n  border: 0;\n  -ms-interpolation-mode: bicubic;",
-  );
-  expect(bootstrap).toContain("strong {\n  font-weight: bold;\n}");
-  expect(common).toContain(".vmiddle  { vertical-align:middle !important; }");
-  expect(common).toContain(".ml10 { margin-left:10px; }");
-  expect(pageLess).toContain(
-    ".label-head {\n    color: #0088cc;\n    background-color: #fff;\n    border: 1px solid rgba(0, 0, 0, 0.1);\n    padding: 3px 5px;\n    display: inline-block;\n    .border-radius(3px);",
-  );
-
-  for (const name of Object.values(owners)) {
-    expect(route.match(new RegExp(`data-owner="${name}"`, "gu"))).toHaveLength(1);
-  }
-  expect(route).not.toContain('<strong className="ml10"');
-  expect(route).not.toContain('<span className="label-head vmiddle ml10"');
-  // Batch225+ rendered the primary/row avatar multiline with Style props and
-  // retired the literal legacy-class span; pin the live render contract.
-  expect(route).toContain("src={avatarSrc(row.avatarUrl)}");
-  expect(route).toContain("{stringValue(row.emailAddress)}");
-
-  // IE-only Bootstrap declarations remain legacy fallback evidence; modern Style does not own them.
-  expect(route).not.toContain("auto\\9");
-  expect(route).not.toContain("msInterpolationMode");
-});
-
 test("pins desktop and mobile primary identity in one browser page state", async ({ page }) => {
   await mockPrimaryEmailSettings(page);
   mkdirSync(screenshotDirectory, { recursive: true });
 
   for (const viewport of [
     {
-      address: { height: 16, left: 71.59375, top: 353.421875, width: 137.8125 },
-      avatar: { height: 40, left: 18, top: 343, width: 40 },
-      badge: { height: 28, left: 223, top: 349, width: 71.8125 },
+      address: { height: 16, left: 71.59375, top: 357.421875, width: 137.8125 },
+      avatar: { height: 40, left: 18, top: 347, width: 40 },
+      badge: { height: 28, left: 223, top: 353, width: 71.8125 },
       height: 900,
       name: "desktop",
       width: 1366,
     },
     {
-      address: { height: 16, left: 61.59375, top: 389.421875, width: 137.8125 },
-      avatar: { height: 40, left: 8, top: 379, width: 40 },
-      badge: { height: 28, left: 213, top: 385, width: 71.8125 },
+      address: { height: 16, left: 61.59375, top: 397.421875, width: 137.8125 },
+      avatar: { height: 40, left: 8, top: 387, width: 40 },
+      badge: { height: 28, left: 213, top: 393, width: 71.8125 },
       height: 844,
       name: "mobile",
       width: 390,

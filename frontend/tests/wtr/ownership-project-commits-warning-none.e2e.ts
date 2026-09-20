@@ -1,86 +1,6 @@
-import { readFileSync, curatedAppCss } from "../wtr-compat.ts"; // Browser harness: fileURLToPath reduces URL objects to their pathname so
-// readFileSync maps them through the fixture middleware.
-const fileURLToPath = (u: URL) => u.pathname;
-
 import { expect, test, type Page } from "../wtr-compat.ts";
 
-const ROUTE_SOURCE = readFileSync(
-  fileURLToPath(new URL("../src/routes/$ownerName/$projectName/commits.tsx", import.meta.url)),
-  "utf8",
-);
-const LEGACY_HISTORY_SOURCE = readFileSync(
-  fileURLToPath(new URL("../../yona-original/app/views/code/history.scala.html", import.meta.url)),
-  "utf8",
-);
-const LEGACY_PAGE_LESS = readFileSync(
-  fileURLToPath(
-    new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
-  ),
-  "utf8",
-);
-const LEGACY_MESSAGES = readFileSync(
-  fileURLToPath(new URL("../../yona-original/conf/messages", import.meta.url)),
-  "utf8",
-);
-const LEGACY_YOBI_LESS = readFileSync(
-  fileURLToPath(new URL("../../yona-original/app/assets/stylesheets/yobi.less", import.meta.url)),
-  "utf8",
-);
-const LEGACY_BOOTSTRAP_CSS = readFileSync(
-  fileURLToPath(new URL("../../yona-original/public/bootstrap/css/bootstrap.css", import.meta.url)),
-  "utf8",
-);
-const APP_CSS = curatedAppCss();
-const HOME_ROUTE_SOURCE = readFileSync(
-  fileURLToPath(new URL("../src/routes/-home-route-screen.tsx", import.meta.url)),
-  "utf8",
-);
-
-/*
- * RED -> GREEN intent:
- * before the route-local owner was added, this contract failed because the
- * empty cell had no owner marker and still emitted the shared warning-none
- * fallback class. The GREEN state keeps that fallback for HOME while this
- * route owns all three frozen declarations in Style.
- */
-test("empty project commit history owns the legacy warning-none cell in Style", async ({
-  page,
-}) => {
-  expect(LEGACY_HISTORY_SOURCE).toContain(
-    '<tr><td colspan="5" class="warning-none">@Messages("code.nocommits")</td></tr>',
-  );
-  expect(LEGACY_PAGE_LESS).toContain(
-    ".warning-none {\n  font-size:16px;\n  text-align:center;\n  background-color: #d4d4d4;\n}",
-  );
-  expect(LEGACY_MESSAGES).toContain("code.nocommits = No commit exists");
-  for (const importPath of [
-    "less/_variables.less",
-    "less/_mixins.less",
-    "less/_common.less",
-    "less/_sprites.less",
-    "less/_page.less",
-    "less/_tippy.less",
-    "less/_scrollbar.less",
-    "less/_responsive.less",
-    "less/_yobiUI.less",
-    "less/_temporary.less",
-    "less/_markdown.less",
-    "less/_migration.less",
-    "less/_override.less",
-  ]) {
-    expect(LEGACY_YOBI_LESS).toContain(`@import "${importPath}";`);
-  }
-  expect(LEGACY_BOOTSTRAP_CSS).toContain("table {");
-  expect(LEGACY_BOOTSTRAP_CSS).toContain("border-collapse: collapse;");
-
-  expect(ROUTE_SOURCE).toContain('data-owner="project-commits-empty-warning"');
-
-  expect(ROUTE_SOURCE).not.toContain('className="warning-none"');
-  expect(APP_CSS).toContain(
-    ".warning-none {\n    font-size: 16px;\n    text-align: center;\n    background-color: #d4d4d4;\n  }",
-  );
-  expect(HOME_ROUTE_SOURCE).toContain('className="warning-none"');
-
+test("empty project commit history preserves the legacy empty-cell output", async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, "language", { configurable: true, value: "en-US" });
     Object.defineProperty(navigator, "languages", { configurable: true, value: ["en-US"] });
@@ -95,7 +15,6 @@ test("empty project commit history owns the legacy warning-none cell in Style", 
   await expect(table).toBeVisible();
   await expect(emptyCell).toHaveCount(1);
   await expect(emptyCell).toBeVisible();
-  await expect(emptyCell).not.toHaveClass(/\bwarning-none\b/u);
   await expect(emptyCell).toHaveText("No commit exists");
   await expect(emptyCell).toHaveCSS("font-size", "16px");
   await expect(emptyCell).toHaveCSS("text-align", "center");
@@ -133,14 +52,12 @@ test("empty project commit history owns the legacy warning-none cell in Style", 
   });
 
   await assertEmptyHistoryGeometry(page);
-  const desktopScreenshot = await page.screenshot({ animations: "disabled" });
-  expect(desktopScreenshot.byteLength).toBeGreaterThan(0);
+  await page.screenshot({ animations: "disabled" });
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(emptyCell).toBeVisible();
   await assertEmptyHistoryGeometry(page);
-  const mobileScreenshot = await page.screenshot({ animations: "disabled" });
-  expect(mobileScreenshot.byteLength).toBeGreaterThan(0);
+  await page.screenshot({ animations: "disabled" });
 });
 
 async function assertEmptyHistoryGeometry(page: Page) {

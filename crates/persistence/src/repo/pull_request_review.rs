@@ -107,6 +107,7 @@ impl AppRepositoryImpl<'_> {
                 project.id,
                 input.actor_id,
                 "REVIEW_THREAD_STATE_CHANGED",
+                Some((&input.commit_id, input.commit_author_id)),
             )
             .await?;
         self.create_notification_event_for_commit_discussion(

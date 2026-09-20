@@ -3,12 +3,15 @@ import { DiffLineView, type ParsedDiffLine } from "../../../../../components/dif
 import { UploadForm } from "../../../../../components/file-uploader";
 import { FileDiffErrorRow } from "../../../../../components/file-diff-error-row";
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
-import type { MouseEvent } from "react";
-import { useState } from "react";
+import type { FormEvent, MouseEvent } from "react";
+import { useRef, useState } from "react";
 import { LegacyMarkdown } from "../../../../../components/legacy-markdown";
+import { TabButton } from "../../../../../components/tab-button";
+import defaultAvatarUrl from "../../../../../assets/legacy/default-avatar-34.png";
 import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
 import {
   closePullRequestThreadRest,
+  createPullRequestCommentRest,
   openPullRequestThreadRest,
   pullRequestChangesQueryOptions,
   type PullRequestChangesResponse,
@@ -18,12 +21,13 @@ import {
   type ReviewThread,
 } from "../../../../../api/pull-requests";
 import { apiQueryKeys } from "../../../../../api/query-keys";
+import { uploadTemporaryAttachment } from "../../../../../api/attachments";
 import { currentSessionQueryOptions } from "../../../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
 import type { ProjectContainer } from "../../../../../api/types";
 import { readSessionBootstrap } from "../../../../../auth-workspace-client";
 import legacySpriteUrl from "../../../../../assets/legacy/sprite.png";
-import { useLegacyMessages } from "../../../../../i18n";
+import { formatLegacyTimestamp, useLegacyMessages } from "../../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
 import {
   PullRequestBranchInfo,
@@ -169,10 +173,7 @@ function ProjectPullRequestChangesScreen({
         changes={changesQuery.data}
         commitId={commitId}
         currentUser={{
-          avatarUrl: stringField(
-            sessionQuery.data.avatarUrl,
-            "/assets/images/default-avatar-32.png",
-          ),
+          avatarUrl: stringField(sessionQuery.data.avatarUrl, defaultAvatarUrl),
           loginId: stringField(sessionQuery.data.loginId, ""),
           userLabel: stringField(
             sessionQuery.data.userLabel,
@@ -262,10 +263,12 @@ function ProjectPullRequestChangesBody({
 }) {
   const pullRequest = changes.pullRequest;
   const selectedCommit = commitId
-    ? changes.commits.find((commit) => commit.commitId === commitId)
+    ? (changes.commits.find((commit) => commit.commitId === commitId) ??
+      pullRequest.commits.find((commit) => commit.commitId === commitId))
     : undefined;
   const hasReviewCards = changes.threads.length > 0;
-  const codediffClassName = `codediff-wrap mt10${hasReviewCards ? "" : " diffs-only"}`;
+  const [reviewCardsHidden, setReviewCardsHidden] = useState(false);
+  const codediffClassName = `codediff-wrap mt10${hasReviewCards && !reviewCardsHidden ? "" : " diffs-only"}`;
   const [deleteRequestUri, setDeleteRequestUri] = useState<string | null>(null);
   const [activeInlineReview, setActiveInlineReview] = useState<ActiveInlineReview | null>(null);
   const queryClient = useQueryClient();
@@ -338,7 +341,11 @@ function ProjectPullRequestChangesBody({
 
             <div className={codediffClassName} data-owner="pull-request-changes-codediff-wrap">
               {hasReviewCards ? (
-                <button type="button" className="ybtn ybtn-default btn-show-reviewcards">
+                <button
+                  type="button"
+                  className="ybtn ybtn-default btn-show-reviewcards"
+                  onClick={() => setReviewCardsHidden(false)}
+                >
                   <i className="yobicon-restore"></i>
                 </button>
               ) : null}
@@ -359,6 +366,7 @@ function ProjectPullRequestChangesBody({
                   {changes.files.map((file) => (
                     <PullRequestFileDiff
                       activeInlineReview={activeInlineReview}
+                      commitId={commitId}
                       currentUser={currentUser}
                       file={file as PullRequestChangedFileWithError}
                       inlineThreads={changes.inlineThreads}
@@ -394,6 +402,9 @@ function ProjectPullRequestChangesBody({
                   {pullRequest.permissions.canComment ? (
                     <CommentForm
                       action={pullRequestCommentHref(runtimeConfig.basePath, pullRequest, commitId)}
+                      commitId={commitId}
+                      pullRequest={pullRequest}
+                      runtimeConfig={runtimeConfig}
                     />
                   ) : null}
                 </div>
@@ -402,13 +413,20 @@ function ProjectPullRequestChangesBody({
                   activeInlineReview === null ? (
                     <ReviewForm
                       action={pullRequestCommentHref(runtimeConfig.basePath, pullRequest, commitId)}
+                      commitId={commitId}
                       currentUser={currentUser}
+                      pullRequest={pullRequest}
+                      runtimeConfig={runtimeConfig}
                     />
                   ) : null
                 ) : null}
               </div>
               {hasReviewCards ? (
-                <ReviewWrap pullRequest={pullRequest} threads={changes.threads} />
+                <ReviewWrap
+                  onHide={() => setReviewCardsHidden(true)}
+                  pullRequest={pullRequest}
+                  threads={changes.threads}
+                />
               ) : null}
             </div>
           </div>
@@ -417,6 +435,82 @@ function ProjectPullRequestChangesBody({
       <CommentDeleteModal onClose={() => setDeleteRequestUri(null)} requestUri={deleteRequestUri} />
     </>
   );
+}
+
+function useReviewCommentForm(
+  runtimeConfig: RuntimeConfig,
+  pullRequest: PullRequestDetailResponse,
+  commitId: string,
+  onSuccess?: () => void,
+) {
+  const { t } = useLegacyMessages();
+  const queryClient = useQueryClient();
+  const [formKey, setFormKey] = useState(0);
+  const detailQueryKey = apiQueryKeys.project.pullRequestDetail(
+    pullRequest.ownerName,
+    pullRequest.projectName,
+    pullRequest.pullRequestNumber,
+  );
+  const mutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const contentsMarkdown = String(formData.get("contents") ?? "");
+      if (!contentsMarkdown.trim()) {
+        throw new Error(t("post.comment.empty"));
+      }
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      const attachments = await Promise.all(
+        formData
+          .getAll("filePath")
+          .filter((value): value is File => value instanceof File && value.name !== "")
+          .map((file) => uploadTemporaryAttachment(runtimeConfig, csrfToken, file)),
+      );
+      const optionalText = (name: string) => String(formData.get(name) ?? "") || undefined;
+      const optionalNumber = (name: string) =>
+        formData.has(name) ? Number(formData.get(name)) : undefined;
+      return createPullRequestCommentRest(runtimeConfig, csrfToken, {
+        ownerName: pullRequest.ownerName,
+        projectName: pullRequest.projectName,
+        pullRequestNumber: pullRequest.pullRequestNumber,
+        attachmentIds: attachments.map((attachment) => attachment.id),
+        contentsMarkdown,
+        commitId: optionalText("commitId") ?? (commitId || undefined),
+        prevCommitId: optionalText("prevCommitId"),
+        threadId: optionalNumber("thread.id"),
+        path: optionalText("path"),
+        startColumn: optionalNumber("startColumn"),
+        startLine: optionalNumber("startLine"),
+        startSide: optionalText("startSide"),
+        endColumn: optionalNumber("endColumn"),
+        endLine: optionalNumber("endLine"),
+        endSide: optionalText("endSide"),
+      });
+    },
+    onSuccess(detail) {
+      queryClient.setQueryData(detailQueryKey, detail);
+      setFormKey((key) => key + 1);
+      onSuccess?.();
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: detailQueryKey }),
+        queryClient.invalidateQueries({
+          queryKey: [
+            ...apiQueryKeys.project.base(pullRequest.ownerName, pullRequest.projectName),
+            "reviews",
+          ],
+        }),
+      ]);
+    },
+  });
+  return {
+    formKey,
+    isPending: mutation.isPending,
+    error: mutation.error?.message,
+    onSubmit(event: FormEvent<HTMLFormElement>) {
+      event.preventDefault();
+      if (!mutation.isPending) {
+        mutation.mutate(new FormData(event.currentTarget));
+      }
+    },
+  };
 }
 
 function NonRangedThread({
@@ -436,6 +530,7 @@ function NonRangedThread({
 }) {
   const state = thread.state.toLowerCase();
   const action = pullRequestCommentHref(runtimeConfig.basePath, pullRequest, thread.commitId);
+  const commentForm = useReviewCommentForm(runtimeConfig, pullRequest, thread.commitId);
 
   return (
     <div id={`thread-${thread.id}`} className={`comment-thread-wrap ${state}`}>
@@ -456,6 +551,8 @@ function NonRangedThread({
       </ul>
       <div className="write-comment-form">
         <form
+          key={commentForm.formKey}
+          onSubmit={commentForm.onSubmit}
           action={action}
           method="post"
           encType="multipart/form-data"
@@ -465,6 +562,8 @@ function NonRangedThread({
           <input type="hidden" name="thread.id" value={thread.id} />
           <ThreadReplyFormBody
             currentUser={currentUser}
+            error={commentForm.error}
+            isPending={commentForm.isPending}
             onThreadStateToggle={onThreadStateToggle}
             state={state}
             threadId={thread.id}
@@ -478,12 +577,16 @@ function NonRangedThread({
 
 function ThreadReplyFormBody({
   currentUser,
+  error,
+  isPending,
   onThreadStateToggle,
   state,
   threadId,
   wrapId,
 }: {
   currentUser: CurrentUserSummary;
+  error?: string;
+  isPending: boolean;
   onThreadStateToggle: (threadId: number, state: string) => void;
   state: string;
   threadId: number;
@@ -515,6 +618,11 @@ function ThreadReplyFormBody({
             helpClassName="help"
             helpOwner="pull-request-changes-upload-help"
           />
+          {error ? (
+            <p className="alert alert-error" role="alert">
+              {error}
+            </p>
+          ) : null}
           <div className="right-txt" data-owner="pull-request-changes-thread-actions">
             <button
               type="button"
@@ -523,7 +631,7 @@ function ThreadReplyFormBody({
             >
               {t(state === "open" ? "commentThread.close" : "commentThread.open")}
             </button>
-            <button type="submit" className="ybtn ybtn-success ybtn-small">
+            <button type="submit" className="ybtn ybtn-success ybtn-small" disabled={isPending}>
               {t("button.comment.new")}
             </button>
           </div>
@@ -543,6 +651,7 @@ function NonRangedThreadComment({
   runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
+  const createdDate = formatLegacyTimestamp(comment.createdLabel, t);
   const deleteUri = prefixBasePath(
     runtimeConfig.basePath,
     `/comments/review_comment/${comment.id}`,
@@ -562,10 +671,7 @@ function NonRangedThreadComment({
           title={comment.authorLabel}
         >
           <img
-            src={
-              comment.authorAvatarUrl ||
-              prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png")
-            }
+            src={comment.authorAvatarUrl || defaultAvatarUrl}
             width="32"
             height="32"
             alt={comment.authorLoginId}
@@ -591,9 +697,9 @@ function NonRangedThreadComment({
               hash={`comment-${comment.id}`}
               activeOptions={legacyHashLinkActiveOptions}
               activeProps={legacyLinkActiveProps}
-              title={comment.createdLabel}
+              title={createdDate.title}
             >
-              {comment.createdLabel}
+              {createdDate.label}
             </Link>
           </span>
           {comment.canDelete ? (
@@ -732,9 +838,11 @@ function CommentDeleteModal({
 }
 
 function ReviewWrap({
+  onHide,
   pullRequest,
   threads,
 }: {
+  onHide: () => void;
   pullRequest: PullRequestDetailResponse;
   threads: ReviewThread[];
 }) {
@@ -746,7 +854,7 @@ function ReviewWrap({
   return (
     <div className="review-wrap">
       <div className="review-container">
-        <button type="button" className="ybtn ybtn-default btn-hide-reviewcards">
+        <button type="button" className="ybtn ybtn-default btn-hide-reviewcards" onClick={onHide}>
           <i className="yobicon-maximize"></i>
         </button>
 
@@ -809,8 +917,8 @@ function ReviewCard({
   pullRequest: PullRequestDetailResponse;
   thread: ReviewThread;
 }) {
-  const { runtimeConfig } = Route.useRouteContext();
   const { t } = useLegacyMessages();
+  const createdDate = formatLegacyTimestamp(thread.createdLabel, t);
   const remainingCommentCount = Math.max(0, thread.comments.length - 1);
   const reviewCardClassName = [
     "review-card",
@@ -850,21 +958,15 @@ function ReviewCard({
         <span
           className="date"
           data-owner="pull-request-changes-review-card-date"
-          title={thread.createdLabel}
+          title={createdDate.title}
         >
-          {thread.createdLabel}
+          {createdDate.label}
         </span>
         <span
           className="avatar-wrap smaller ml5"
           data-owner="pull-request-changes-review-card-avatar"
         >
-          <img
-            src={
-              thread.authorAvatarUrl ||
-              prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png")
-            }
-            alt={thread.authorLabel}
-          />
+          <img src={thread.authorAvatarUrl || defaultAvatarUrl} alt={thread.authorLabel} />
         </span>
       </p>
     </Link>
@@ -873,6 +975,7 @@ function ReviewCard({
 
 function PullRequestFileDiff({
   activeInlineReview,
+  commitId,
   currentUser,
   file,
   inlineThreads,
@@ -883,6 +986,7 @@ function PullRequestFileDiff({
   runtimeConfig,
 }: {
   activeInlineReview: ActiveInlineReview | null;
+  commitId: string;
   currentUser: CurrentUserSummary;
   file: PullRequestChangedFileWithError;
   inlineThreads: ReviewThread[];
@@ -1032,7 +1136,7 @@ function PullRequestFileDiff({
                   event.stopPropagation();
                   onInlineReviewChange({
                     afterLineKey: pendingBlock.afterLineKey,
-                    fields: pendingBlock.fields,
+                    fields: { ...pendingBlock.fields, commitId },
                     placement:
                       pendingBlock.fields.startLine > pendingBlock.fields.endLine
                         ? "top"
@@ -1150,6 +1254,7 @@ function InlineThread({
   const isClosed = state === "closed";
   const [isFolded, setIsFolded] = useState(() => isClosed);
   const toggleFold = () => setIsFolded((current) => !current);
+  const commentForm = useReviewCommentForm(runtimeConfig, pullRequest, thread.commitId);
 
   return (
     <div
@@ -1161,10 +1266,10 @@ function InlineThread({
       data-range-path={thread.path}
       data-range-startside={thread.startSide}
       data-range-startline={thread.startLine}
-      data-range-startcolumn="0"
+      data-range-startcolumn={thread.startColumn ?? 0}
       data-range-endside={thread.endSide}
       data-range-endline={thread.endLine}
-      data-range-endcolumn="0"
+      data-range-endcolumn={thread.endColumn ?? 0}
     >
       <div
         className="btn-thread-here btn-thread-minimize"
@@ -1202,6 +1307,8 @@ function InlineThread({
       </ul>
       <div className="write-comment-form" data-owner="pull-request-changes-ranged-thread-form">
         <form
+          key={commentForm.formKey}
+          onSubmit={commentForm.onSubmit}
           action={pullRequestCommentHref(runtimeConfig.basePath, pullRequest, thread.commitId)}
           method="post"
           encType="multipart/form-data"
@@ -1211,6 +1318,8 @@ function InlineThread({
           <input type="hidden" name="thread.id" value={thread.id} />
           <ThreadReplyFormBody
             currentUser={currentUser}
+            error={commentForm.error}
+            isPending={commentForm.isPending}
             onThreadStateToggle={onThreadStateToggle}
             state={state}
             threadId={thread.id}
@@ -1245,6 +1354,9 @@ function InlineReviewFormRow({
             activeInlineReview.fields.commitId,
           )}
           currentUser={currentUser}
+          commitId={activeInlineReview.fields.commitId}
+          pullRequest={pullRequest}
+          runtimeConfig={runtimeConfig}
           hiddenFields={reviewBlockHiddenFields(activeInlineReview.fields)}
           onClose={onClose}
           visible
@@ -1602,21 +1714,39 @@ function CommitDropdown({
 }
 
 function SelectedCommitInfo({ commit }: { commit: PullRequestCommit }) {
-  const { runtimeConfig } = Route.useRouteContext();
   const { t } = useLegacyMessages();
 
   return (
     <>
       <p className="commitInfo">
-        <span className="avatar-wrap smaller">
-          <img
-            src={prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png")}
-            width="32"
-            height="32"
-            alt=""
-          />
-        </span>
-        <strong>{commit.authorEmail || t("user.role.anonymous")}</strong>
+        {commit.authorLoginId ? (
+          <>
+            <Link
+              to="/$user"
+              params={{ user: commit.authorLoginId }}
+              activeOptions={legacyLinkActiveOptions}
+              activeProps={legacyLinkActiveProps}
+              className="avatar-wrap smaller"
+            >
+              <img
+                src={commit.authorAvatarUrl || defaultAvatarUrl}
+                width="32"
+                height="32"
+                alt={commit.authorName}
+              />
+            </Link>
+            <strong>{commit.authorName}</strong>
+          </>
+        ) : commit.authorEmail ? (
+          <>
+            <span className="avatar-wrap smaller">
+              <img src={commit.authorAvatarUrl || defaultAvatarUrl} width="32" height="32" alt="" />
+            </span>
+            {commit.authorName ? <strong>{commit.authorName}</strong> : null}
+          </>
+        ) : (
+          <strong>{commit.authorName || t("user.role.anonymous")}</strong>
+        )}
         <span className="ago" title={commit.authorDateLabel}>
           {commit.authorDateLabel}
         </span>
@@ -1626,10 +1756,28 @@ function SelectedCommitInfo({ commit }: { commit: PullRequestCommit }) {
   );
 }
 
-function CommentForm({ action }: { action: string }) {
+function CommentForm({
+  action,
+  commitId,
+  pullRequest,
+  runtimeConfig,
+}: {
+  action: string;
+  commitId: string;
+  pullRequest: PullRequestDetailResponse;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { t } = useLegacyMessages();
+  const commentForm = useReviewCommentForm(runtimeConfig, pullRequest, commitId);
   return (
-    <form id="comment-form" action={action} method="post" encType="multipart/form-data">
+    <form
+      id="comment-form"
+      action={action}
+      method="post"
+      encType="multipart/form-data"
+      key={commentForm.formKey}
+      onSubmit={commentForm.onSubmit}
+    >
       <div className="write-comment-box">
         <Editor editorMode="comment-body" wrapId="comment" />
         <UploadForm
@@ -1638,10 +1786,15 @@ function CommentForm({ action }: { action: string }) {
           helpClassName="help"
           helpOwner="pull-request-changes-upload-help"
         />
+        {commentForm.error ? (
+          <p className="alert alert-error" role="alert">
+            {commentForm.error}
+          </p>
+        ) : null}
         <div className="write-comment-wrap">
-          <div data-owner="pull-request-changes-comment-actions">
+          <div className="right-txt" data-owner="pull-request-changes-comment-actions">
             <button type="button" className="ybtn hidden" id="dynamic-comment-btn"></button>
-            <button type="submit" className="ybtn ybtn-success">
+            <button type="submit" className="ybtn ybtn-success" disabled={commentForm.isPending}>
               {t("button.comment.new")}
             </button>
           </div>
@@ -1653,25 +1806,38 @@ function CommentForm({ action }: { action: string }) {
 
 function ReviewForm({
   action,
+  commitId,
   currentUser,
   hiddenFields = emptyReviewHiddenFields,
   onClose,
+  pullRequest,
+  runtimeConfig,
   visible = false,
 }: {
   action: string;
+  commitId: string;
   currentUser: CurrentUserSummary;
   hiddenFields?: readonly ReviewHiddenField[];
   onClose?: () => void;
+  pullRequest: PullRequestDetailResponse;
+  runtimeConfig: RuntimeConfig;
   visible?: boolean;
 }) {
   const { t } = useLegacyMessages();
+  const commentForm = useReviewCommentForm(runtimeConfig, pullRequest, commitId, onClose);
   return (
     <div
       id="review-form"
       className="review-form"
       data-owner={visible ? "pull-request-changes-visible-form" : undefined}
     >
-      <form action={action} method="post" encType="multipart/form-data">
+      <form
+        action={action}
+        method="post"
+        encType="multipart/form-data"
+        key={commentForm.formKey}
+        onSubmit={commentForm.onSubmit}
+      >
         {hiddenFields.map(([name, value]) => (
           <input key={name} type="hidden" name={name} value={value} />
         ))}
@@ -1710,8 +1876,17 @@ function ReviewForm({
               helpClassName="help"
               helpOwner="pull-request-changes-upload-help"
             />
-            <div data-owner="pull-request-changes-review-actions">
-              <button type="submit" className="ybtn ybtn-success ybtn-small">
+            {commentForm.error ? (
+              <p className="alert alert-error" role="alert">
+                {commentForm.error}
+              </p>
+            ) : null}
+            <div className="right-txt" data-owner="pull-request-changes-review-actions">
+              <button
+                type="submit"
+                className="ybtn ybtn-success ybtn-small"
+                disabled={commentForm.isPending}
+              >
                 {t("button.comment.new")}
               </button>
             </div>
@@ -1723,12 +1898,24 @@ function ReviewForm({
 }
 
 function stringField(value: unknown, fallback: string) {
-  return typeof value === "string" ? value : fallback;
+  return typeof value === "string" && value.length > 0 ? value : fallback;
 }
 
 function Editor({ editorMode, wrapId }: { editorMode: string; wrapId: string }) {
   const { t } = useLegacyMessages();
   const [mode, setMode] = useState<"edit" | "preview">("edit");
+  const [contents, setContents] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const insertChecklist = () => {
+    const start = textareaRef.current?.selectionStart || contents.length;
+    const checklist = "\n- [ ] Todo A\n- [ ] Todo B\n- [ ] Todo C";
+    setContents(`${contents.slice(0, start)}${checklist}${contents.slice(start)}`);
+    setMode("edit");
+    requestAnimationFrame(() => {
+      textareaRef.current?.focus();
+      textareaRef.current?.setSelectionRange(start + checklist.length, start + checklist.length);
+    });
+  };
   const isCodeReviewBody = editorMode === "code-review-body";
   return (
     <div
@@ -1736,21 +1923,18 @@ function Editor({ editorMode, wrapId }: { editorMode: string; wrapId: string }) 
       data-owner={isCodeReviewBody ? "pull-request-changes-review-editor-wrapper" : undefined}
     >
       <ul className="nav nav-tabs nm small">
-        <li className={mode === "edit" ? "active" : undefined}>
-          <button type="button" onClick={() => setMode("edit")}>
-            {t("common.editor.edit")}
-          </button>
-        </li>
-        <li className={mode === "preview" ? "active" : undefined}>
-          <button type="button" onClick={() => setMode("preview")}>
-            {t("common.editor.preview")}
-          </button>
-        </li>
+        <TabButton type="button" active={mode === "edit"} onClick={() => setMode("edit")}>
+          {t("common.editor.edit")}
+        </TabButton>
+        <TabButton type="button" active={mode === "preview"} onClick={() => setMode("preview")}>
+          {t("common.editor.preview")}
+        </TabButton>
         <li>
           <div className="task-list-button">
             <button
               type="button"
               className="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"
+              onClick={insertChecklist}
             >
               <i className="yobicon-list task-list-icon"></i> {t("button.add.checklist")}
             </button>
@@ -1782,16 +1966,18 @@ function Editor({ editorMode, wrapId }: { editorMode: string; wrapId: string }) 
               className="editorSeries content comment nm"
               data-editor-mode={editorMode}
               id={`editor-contents-${wrapId}`}
+              ref={textareaRef}
+              value={contents}
+              onChange={(event) => setContents(event.currentTarget.value)}
               data-owner={isCodeReviewBody ? "pull-request-changes-review-textarea" : undefined}
               {...legacyMarkdownTextareaAttr}
             ></textarea>
           </div>
         </div>
         <div id={`preview-${wrapId}`} className={`tab-pane${mode === "preview" ? " active" : ""}`}>
-          <div
-            className={`markdown-preview markdown-wrap ${editorMode}`}
-            data-via-email="false"
-          ></div>
+          <div className={`markdown-preview markdown-wrap ${editorMode}`} data-via-email="false">
+            {mode === "preview" ? <LegacyMarkdown>{contents}</LegacyMarkdown> : null}
+          </div>
         </div>
         <div className="notification-receiver">
           <span className="notification-receiver-title">

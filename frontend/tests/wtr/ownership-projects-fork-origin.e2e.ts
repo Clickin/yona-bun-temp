@@ -1,4 +1,4 @@
-import { readFileSync, readFile, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFile } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
@@ -26,6 +26,7 @@ const owners = {
 test.use({ locale: "ko-KR" });
 
 async function open(page: Page) {
+  await page.clock.setFixedTime("2026-07-17T12:00:00Z");
   await page.addInitScript((runtimeBasePath) => {
     (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
       basePath: runtimeBasePath,
@@ -55,10 +56,10 @@ async function open(page: Page) {
       json: {
         items: [
           {
-            createdLabel: "21초 전",
+            createdAt: "2026-07-17T11:59:39Z",
             isForked: true,
             labels: [],
-            lastPushedLabel: "",
+            lastPushedAt: "",
             logoUrl: "",
             memberCount: 1,
             members: [{ avatarUrl: avatarDataUrl, loginId: "alice", userLabel: "Alice Kim" }],
@@ -71,9 +72,9 @@ async function open(page: Page) {
             watchCount: 0,
           },
           {
-            createdLabel: "07-07",
+            createdAt: "2026-07-07T12:00:00Z",
             labels: [],
-            lastPushedLabel: "",
+            lastPushedAt: "",
             logoUrl: "",
             memberCount: 1,
             members: [{ avatarUrl: avatarDataUrl, loginId: "alice", userLabel: "Alice Kim" }],
@@ -84,9 +85,9 @@ async function open(page: Page) {
             watchCount: 1,
           },
           {
-            createdLabel: "07-07",
+            createdAt: "2026-07-07T12:00:00Z",
             labels: [],
-            lastPushedLabel: "",
+            lastPushedAt: "",
             logoUrl: "",
             memberCount: 1,
             members: [{ avatarUrl: avatarDataUrl, loginId: "admin", userLabel: "Site Admin" }],
@@ -97,9 +98,9 @@ async function open(page: Page) {
             watchCount: 1,
           },
           {
-            createdLabel: "07-07",
+            createdAt: "2026-07-07T12:00:00Z",
             labels: [],
-            lastPushedLabel: "5일 전",
+            lastPushedAt: "2026-07-12T12:00:00Z",
             logoUrl: "",
             memberCount: 1,
             members: [{ avatarUrl: avatarDataUrl, loginId: "admin", userLabel: "Site Admin" }],
@@ -120,43 +121,6 @@ async function open(page: Page) {
   await page.goto(`${basePath}/projects`);
   await expect(page.locator(`[data-owner="${owners.forkWrapper}"]`)).toBeVisible();
 }
-
-test("fork origin records its owners and directly owns the split Yobicon", () => {
-  const route = readFileSync("src/routes/projects.tsx", "utf8");
-  const theme = readFileSync("src/app.css", "utf8");
-  const scala = readFileSync("../yona-original/app/views/project/list.scala.html", "utf8");
-  const variables = readFileSync(
-    "../yona-original/app/assets/stylesheets/less/_variables.less",
-    "utf8",
-  );
-  const common = readFileSync("../yona-original/app/assets/stylesheets/less/_common.less", "utf8");
-  const yobicon = readFileSync("../yona-original/public/stylesheets/yobicon/style.css", "utf8");
-  const titleIndex = scala.indexOf('class="black">@project.name</a>');
-  const forkIndex = scala.indexOf('<span class="small-font blue-txt">');
-  const lockIndex = scala.indexOf("@if(project.isPrivate)");
-  const labelsIndex = scala.indexOf("@for(label <- project.labels)");
-
-  expect(titleIndex).toBeGreaterThan(-1);
-  expect(forkIndex).toBeGreaterThan(titleIndex);
-  expect(lockIndex).toBeGreaterThan(forkIndex);
-  expect(labelsIndex).toBeGreaterThan(lockIndex);
-  expect(scala).toContain('class="origin-title"');
-  expect(scala).toContain('<i class="yobicon-split"></i>');
-  expect(variables).toContain("@blue   : #5DBBE0;");
-  expect(common).toContain(".blue-txt      { color:@blue;}");
-  expect(common).toContain(".small-font{\n    font-size: 10px;\n    font-weight: normal;");
-
-  expect(route).toContain('data-owner="projects-directory-fork-origin"');
-  expect(route).toContain('data-owner="projects-directory-fork-origin-link"');
-  expect(route).toContain("project.isForked === true");
-  expect(route).toContain('stringField(project, "originOwnerName", "")');
-  expect(route).toContain('stringField(project, "originProjectName", "")');
-  expect(route).toContain('data-owner="projects-directory-fork-split-icon"');
-  expect(route).not.toMatch(/className=.*yobicon-split/u);
-  expect(route).not.toContain("small-font");
-  expect(route).not.toContain("blue-txt");
-  expect(route).not.toContain("origin-title");
-});
 
 for (const viewport of [
   { height: 900, name: "desktop", width: 1366 },

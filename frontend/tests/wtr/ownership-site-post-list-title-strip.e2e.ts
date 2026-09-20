@@ -1,16 +1,7 @@
-import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
-
-// Browser harness: node:fs/promises readFile has no browser equivalent; the
-// compat readFileSync is a sync XHR over the same middleware. Promise-wrap it
-// so the spec's await/Promise.all call sites keep their shape.
-const readFile = (path: string | URL, encoding?: string | null): Promise<string> =>
-  Promise.resolve(readFileSync(path, encoding ?? "utf8"));
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const ownerSelector = '[data-owner="site-post-list-title-strip"]';
-const routeSource = new URL("../src/routes/sites/postList.tsx", import.meta.url);
-const themeSource = new URL("../src/app.css", import.meta.url);
 
 async function openPostList(page: Page) {
   const session = (route: Route) =>
@@ -48,6 +39,7 @@ async function openPostList(page: Page) {
             authorLoginId: "alice",
             commentCount: 3,
             createdLabel: "1 day ago",
+            createdTitle: "",
             ownerName: "acme",
             postNumber: 7,
             projectLogoUrl: "/assets/images/default-project-logo.png",
@@ -66,16 +58,6 @@ async function openPostList(page: Page) {
 }
 
 test.describe("Style site post-list title strip", () => {
-  test("reuses canonical global title variables through the explicit owner", async () => {
-    const [route, theme] = await Promise.all([
-      readFile(routeSource, "utf8"),
-      Promise.resolve(curatedAppCss()),
-    ]);
-
-    expect(route).toContain('data-owner="site-post-list-title-strip"');
-    expect(route).toContain('data-owner="site-post-list-title-heading"');
-  });
-
   test("keeps the legacy title before the populated post list", async ({ page }) => {
     const owner = await openPostList(page);
     await expect(

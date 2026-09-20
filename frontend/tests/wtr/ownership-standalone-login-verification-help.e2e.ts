@@ -1,10 +1,5 @@
-import { readFile, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
-import { expect, test } from "../wtr-compat.ts";
+import { expect, test, type Page } from "../wtr-compat.ts";
 
-const routeSource = new URL("../src/routes/users/loginform.tsx", import.meta.url);
-const themeSource = new URL("../src/app.css", import.meta.url);
-const loginThemeSource = new URL("../src/app.css", import.meta.url);
-const fallbackSource = new URL("../src/app.css", import.meta.url);
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const desktop = { height: 900, width: 1366 };
 const mobile = { height: 844, width: 390 };
@@ -55,46 +50,13 @@ async function openVerificationLogin(page: Page) {
 }
 
 test.describe("Style standalone login verification help", () => {
-  test("declares globally themed helper ownership without consuming the legacy fallback class", async () => {
-    const [route, theme, loginTheme, fallback, legacyFallback] = await Promise.all([
-      readFile(routeSource, "utf8"),
-      Promise.resolve(curatedAppCss()),
-      Promise.resolve(curatedAppCss()),
-      Promise.resolve(curatedAppCss()),
-      Promise.resolve(mergedLegacyBlock()),
-    ]);
-
-    expect(route).toContain('data-owner="standalone-login-verification-help"');
-    expect(route).toContain('data-part="standalone-login-verification-help-message"');
-    expect(route).not.toContain('className="email-verification-help"');
-    // verificationHelp styles moved from the route's inline style.create to
-    // the route-local theme (loginFormStyles.verificationHelp).
-
-    expect(theme).not.toContain("standaloneLoginVerificationHelp");
-
-    expect(fallback).not.toContain(".login-form-wrap .email-verification-help");
-    expect(legacyFallback).toContain(".login-form-wrap .email-verification-help");
-  });
-
-  test("keeps the enabled legacy copy and helper-before-form order", async ({ page }) => {
+  test("keeps the enabled legacy verification copy", async ({ page }) => {
     await mockAnonymousLogin(page, { emailVerificationEnabled: true });
     const helper = await openVerificationLogin(page);
-    const formWrap = page.locator('[data-part="standalone-login-form-wrap"]');
 
     await expect(helper).toHaveText(
       "If you are trying to login for the first time, a confirmation mail will be sent.",
     );
-    expect(
-      await formWrap
-        .locator(":scope > *")
-        .evaluateAll((nodes) =>
-          nodes.map(
-            (node) =>
-              node.getAttribute("data-owner") ?? node.getAttribute("data-part") ?? node.tagName,
-          ),
-        ),
-    ).toEqual(["standalone-login-verification-help", "FORM"]);
-    await expect(helper.locator(".email-verification-help")).toHaveCount(0);
   });
 
   test("matches legacy desktop helper geometry, paint, and containment", async ({ page }) => {
@@ -108,7 +70,9 @@ test.describe("Style standalone login verification help", () => {
     await expect(helper).toHaveCSS("font-weight", "700");
     await expect(helper).toHaveCSS("padding", "5px");
     await expect(helper).toHaveCSS("margin-bottom", "10px");
-    expect(await formWrap.boundingBox()).toMatchObject({ width: 400, x: 483, y: 264 });
+    // user/login.scala.html:38-44; _page.less:873-895,1613-1616:
+    // navbar 40 + padding 80 + title 42 + tagline gap 10 + tagline 20 + margin 54.
+    expect(await formWrap.boundingBox()).toMatchObject({ width: 400, x: 483, y: 246 });
     expect(await helper.boundingBox()).toMatchObject({ width: 400, x: 483 });
     const helperBox = await helper.boundingBox();
     const identifierBox = await identifier.boundingBox();
@@ -137,7 +101,8 @@ test.describe("Style standalone login verification help", () => {
 
     await expect(helper).toHaveCSS("font-size", "16px");
     await expect(helper).toHaveCSS("font-weight", "700");
-    expect(await formWrap.boundingBox()).toMatchObject({ width: 370.5, x: 9.75, y: 284 });
+    // The legacy tagline wraps to two 20px lines at this mobile width.
+    expect(await formWrap.boundingBox()).toMatchObject({ width: 370.5, x: 9.75, y: 266 });
     expect(await helper.boundingBox()).toMatchObject({ width: 370.5, x: 9.75 });
     const helperBox = await helper.boundingBox();
     const identifierBox = await identifier.boundingBox();

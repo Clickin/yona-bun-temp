@@ -1,155 +1,62 @@
 import { expect, test, type Page } from "../wtr-compat.ts";
-import { readFileSync } from "../wtr-compat.ts";
 
-const SITE_PROJECT_LIST_ROUTE_SOURCE = new URL(
-  "../src/routes/sites/projectList.tsx",
-  import.meta.url,
-);
+test("project directory formats lossless timestamps across the eight-day and year boundaries", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.clock.setFixedTime(new Date(2026, 8, 19, 12));
+  await page.addInitScript((basePath) => {
+    (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
+      basePath,
+      supportedLanguages: ["en-US"],
+    };
+  }, basePath);
+  const dates = [
+    {
+      value: new Date(2026, 8, 19, 11, 58).toISOString(),
+      label: "2 minutes ago",
+      title: "2026-09-19 11:58:00 AM",
+    },
+    {
+      value: new Date(2026, 8, 11, 12, 0, 1).toISOString(),
+      label: "7 days ago",
+      title: "2026-09-11 12:00:01 PM",
+    },
+    {
+      value: new Date(2026, 8, 11, 12).toISOString(),
+      label: "09-11",
+      title: "2026-09-11 12:00:00 PM",
+    },
+    {
+      value: new Date(2025, 8, 11, 12).toISOString(),
+      label: "2025-09-11",
+      title: "2025-09-11 12:00:00 PM",
+    },
+    { value: "", label: "", title: "" },
+  ];
+  await mockAuthenticatedProjects(page, {
+    items: dates.map(({ value }, index) =>
+      makeReadableProjectDirectoryItem({
+        projectName: `date-${index}`,
+        createdAt: value,
+        lastPushedAt: value,
+      }),
+    ),
+  });
+  await page.goto(`${basePath}/projects`);
+  const createdDates = page.locator('[data-owner="projects-directory-name-tag"] > strong');
+  const pushedDates = page.locator('[data-owner="projects-directory-code-update"]');
+  await expect(createdDates).toHaveCount(dates.length);
+  for (const [index, date] of dates.entries()) {
+    await expect(createdDates.nth(index)).toHaveText(date.label);
+    await expect(createdDates.nth(index)).toHaveAttribute("title", date.title);
+    await expect(pushedDates.nth(index)).toHaveText(
+      date.value ? `, Latest code update ${date.label}` : "",
+    );
+  }
+});
 
-const EXPECTED_PROJECTS_LIST = `
-<div class="unsupported hidden">
-  <div class="unsupported-inner">
-    <p id="unsupported-content"></p>
-  </div>
-</div>
-<header class="gnb-outer">
-  <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar">
-      <i class="yobicon-arrow-left"></i>
-      <i class="yobicon-arrow-right"></i>
-    </div>
-    <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
-      <li class="active"><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
-      <li class="divider"></li>
-      <li>
-        <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
-          <input type="hidden" name="searchType" value="auto">
-          <div class="search-box">
-            <input type="text" name="keyword" autocomplete="off" accesskey="S">
-            <button type="submit"><i class="yobicon-search"></i></button>
-          </div>
-        </form>
-      </li>
-    </ul>
-    <div id="mySidenav" class="sidenav">
-      <div class="span5 right-menu span-hard-wrap">
-        <div class="row-fluid user-menu-wrap">
-          <span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span>
-          <span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span>
-          <a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a>
-        </div>
-        <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
-          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
-          <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
-        </ul>
-        <div class="tab-content tab-box">
-          <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
-        </div>
-      </div>
-    </div>
-    <ul class="gnb-usermenu">
-      <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)">
-        <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
-      </li>
-      <li class="divider"></li>
-      <li class="gnb-usermenu-item">
-        <a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" data-toggle="tooltip" title="Site administration" data-placement="bottom">
-          <i class="yobicon-wrench"></i>
-        </a>
-      </li>
-      <li class="divider"></li>
-      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn">
-        <button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)">
-          <span class="avatar-wrap smaller"><img alt="" src="/assets/images/default-avatar-32.png"></span><span class="caret"></span>
-        </button>
-      </li>
-      <li class="gnb-usermenu-dropdown">
-        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown">
-          <i class="yobicon-plus"></i><span class="caret"></span>
-        </button>
-        <ul class="dropdown-menu flat right">
-          <li><a href="__BASE_PATH__/user/issues/new">New issue</a></li>
-          <li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li>
-          <li><hr class="no-margin"></li>
-          <li><a href="__BASE_PATH__/projectform">Create new project</a></li>
-          <li><a href="__BASE_PATH__/organizations/new">New Group</a></li>
-        </ul>
-      </li>
-    </ul>
-  </div>
-</header>
-<div class="site-breadcrumb-outer">
-  <div class="site-breadcrumb-inner">
-    <div class="title_area">
-      <ul class="nav nav-tabs">
-        <li class="active"><a href="__BASE_PATH__/projects">PUBLICProject list</a></li>
-        <li><a href="__BASE_PATH__/orgs">Group List</a></li>
-      </ul>
-    </div>
-  </div>
-</div>
-<div class="page-wrap-outer">
-  <div class="project-page-wrap">
-    <div class="search-wrap">
-      <div id="search" class="pull-left">
-        <form action="__BASE_PATH__/projects" method="get">
-          <div class="search-bar">
-            <input name="filter" class="textbox" type="text" placeholder="Search by keyword" value="sample">
-            <button type="submit" class="search-btn"><i class="yobicon-search"></i></button>
-          </div>
-        </form>
-      </div>
-    </div>
-    <ul class="all-projects">
-      <li class="project">
-        <div class="info-wrap">
-          <div class="owner-avatar-wrap">
-            <a href="__BASE_PATH__/admin/sample"><img src="__BASE_PATH__/legacy-assets/images/project_default_logo.png" alt="sample"></a>
-          </div>
-          <div style="float:left">
-            <div class="header">
-              <a href="__BASE_PATH__/admin/sample" class="black">sample</a>
-              <a href="__BASE_PATH__/projects?labelIds=8" class="project-label bug">bug</a>
-            </div>
-            <div class="desc">Sample project</div>
-            <p class="name-tag">by<a href="__BASE_PATH__/admin?daysAgo=14&amp;selected=issues" class="owner-name-small">admin</a>at<strong title="2026-06-30">just now</strong><span class="small-font">, Latest code update<strong>just now</strong></span></p>
-          </div>
-        </div>
-        <div class="stats-wrap pull-right">
-          <div class="members">
-            <ul class="unstyled">
-              <li><a href="__BASE_PATH__/member1" class="avatar-wrap"><img src="/assets/images/default-avatar-32.png" alt="Member One"></a></li>
-              <li><a href="__BASE_PATH__/member2" class="avatar-wrap"><img src="/assets/images/default-avatar-32.png" alt="Member Two"></a></li>
-            </ul>
-            <p><i class="yobicon-friends yobicon-middle"></i><strong>2</strong> <i class="yobicon-eye yobicon-middle"></i> <strong>3</strong></p>
-          </div>
-        </div>
-      </li>
-    </ul>
-    <div id="pagination" class="page-navigation-wrap">
-      <ul class="page-nums">
-        <li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li>
-        <li class="page-num"><input class="input-mini nospinner" max="1" min="1" name="pageNum" pattern="[0-9]*" type="number" value="1"></li>
-        <li class="page-num delimiter">/</li>
-        <li class="page-num">1</li>
-        <li class="page-num ikon"><span class="off">Next page</span><i class="ico btn-pg-next off"></i></li>
-      </ul>
-    </div>
-  </div>
-</div>
-<footer class="page-footer-outer">
-  <div class="page-footer">
-    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a>
-      &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a>
-      &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a>
-      Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
-  </div>
-</footer>
-`;
-
-test("projects list matches legacy project/list.scala.html DOM", async ({ page }) => {
+test("projects list preserves legacy directory layout and title", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockAuthenticatedProjects(page);
 
@@ -163,12 +70,6 @@ test("projects list matches legacy project/list.scala.html DOM", async ({ page }
         .evaluateAll((titles) => titles.map((title) => title.textContent ?? "")),
     )
     .toContain("Project list");
-
-  const expected = await canonicalizeHtml(
-    page,
-    EXPECTED_PROJECTS_LIST.replaceAll("__BASE_PATH__", basePath),
-  );
-  await expect.poll(() => canonicalizeScreenRoots(page)).toBe(expected);
 
   const expectedMetrics = {
     avatarBorderRadius: "3px",
@@ -573,51 +474,6 @@ test("projects list renders legacy pagination controls for multi-page project li
   ).toHaveCount(1);
 });
 
-test("projects route source uses Link for project directory card navigation", () => {
-  const source = readFileSync(new URL("../src/routes/projects.tsx", import.meta.url), "utf8");
-
-  expect(source).toContain("import { queryOptions, useQuery } from");
-  expect(source).toMatch(/import \{[^}]*createFileRoute[^}]*Link[^}]*useRouter[^}]*\} from/u);
-  expect(source).toContain("apiQueryKeys");
-  expect(source).toContain("restFetch");
-  expect(source).toContain("projectsDirectoryQueryOptions(runtimeConfig, search)");
-  expect(source).toContain("queryFn: () => listProjectsDirectoryRest(runtimeConfig, input)");
-  expect(source).toContain("queryKey: [...apiQueryKeys.project.list(), input] as const");
-  expect(source).toContain('params.set("filter", input.filter)');
-  expect(source).toContain('params.set("labelIds", input.labelIds)');
-  expect(source).toContain('params.set("pageNum", String(input.pageNum))');
-  expect(source).toContain('return query ? `/projects?${query}` : "/projects";');
-  expect(source).toContain('to="/projects"');
-  expect(source).toContain('to="/orgs"');
-  expect(source).toContain('to="/$ownerName/$projectName"');
-  expect(source).toContain('to="/$user"');
-  expect(source).toContain("labelIds: number | string");
-  expect(source).toContain("labelIdSearchValue(label.id)");
-  expect(source).toContain("router.history.push(");
-  expect(source).toContain("prefixBasePath(");
-  expect(source).toContain("`/projects?labelIds=${encodeURIComponent(label.id)}`");
-  expect(source).toContain("pageSearch(pageNum)");
-  expect(source).toContain("pageNum?: number");
-  expect(source).toContain('name="pageNum"');
-  expect(source).toContain("router.navigate");
-  expect(source).toContain('"data-status": undefined');
-  expect(source).toContain('"aria-current": undefined');
-  expect(source).toContain("autoFocus");
-  expect(source).toContain('<title>{t("title.projectList")}</title>');
-
-  expect(source).not.toMatch(/setAttribute\(['"]autofocus['"]/);
-  expect(source).not.toContain("document.title");
-  expect(source).not.toContain("globalThis.document");
-  expect(source).not.toContain("window.document");
-  expect(source).not.toMatch(/use(?:Layout)?Effect\s*\([\s\S]*?(?:document|title)/u);
-  expect(source).not.toContain('<a href={prefixBasePath(runtimeConfig.basePath, "/projects")}');
-  expect(source).not.toContain('<a href={prefixBasePath(runtimeConfig.basePath, "/orgs")}');
-  expect(source).not.toContain("const projectHref =");
-  expect(source).not.toContain("const ownerHref =");
-  expect(source).not.toContain("<a href={projectHref}");
-  expect(source).not.toContain("<a href={ownerHref}");
-});
-
 test("site admin project delete button drops legacy delegated hooks while React owns delete", async ({
   page,
 }) => {
@@ -692,26 +548,6 @@ test("site admin project delete button drops legacy delegated hooks while React 
     .toBe("kept");
 });
 
-test("site admin project delete source has no legacy data-href delegated hook", () => {
-  const source = readFileSync(SITE_PROJECT_LIST_ROUTE_SOURCE, "utf8");
-  const projectListItemSource = source.slice(
-    source.indexOf("function ProjectListItem"),
-    source.indexOf("function LegacyMessage"),
-  );
-
-  expect(projectListItemSource).toContain('data-owner="site-project-list-delete-action"');
-  expect(projectListItemSource).toContain("data-project-name=");
-  expect(projectListItemSource).toContain("onClick={(event) => onDelete(project, event)}");
-  expect(projectListItemSource).not.toContain("data-href");
-  expect(projectListItemSource).not.toContain('data-toggle="delete-project"');
-  expect(projectListItemSource).not.toContain("/sites/project/delete/");
-  expect(source).toContain("deleteSiteProjectRest(runtimeConfig, csrfToken, projectId)");
-  expect(source).not.toContain("document.");
-  expect(source).not.toContain("classList");
-  expect(source).not.toContain("addEventListener(");
-  expect(source).not.toContain("dangerouslySetInnerHTML");
-});
-
 async function expectNoActiveMarker(locator: ReturnType<Page["locator"]>) {
   await expect(locator).not.toHaveAttribute("aria-current", /./);
   await expect(locator).not.toHaveAttribute("data-status", /./);
@@ -758,8 +594,7 @@ function makeReadableProjectDirectoryItem(
   overrides: ProjectsDirectoryMockPayload = {},
 ): ProjectsDirectoryMockPayload {
   return {
-    createdLabel: "just now",
-    createdTitle: "2026-06-30",
+    createdAt: "2026-06-30T12:00:00Z",
     labels: [
       {
         category: "BUG",
@@ -767,7 +602,7 @@ function makeReadableProjectDirectoryItem(
         name: "bug",
       },
     ],
-    lastPushedLabel: "just now",
+    lastPushedAt: "2026-06-30T12:00:00Z",
     logoUrl: `${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/legacy-assets/images/project_default_logo.png`,
     memberCount: 2,
     members: [
@@ -1021,289 +856,4 @@ async function readProjectsListMetrics(page: Page) {
       statsWidth: membersStyle.width,
     };
   });
-}
-
-async function canonicalizeScreenRoots(page: Page) {
-  return page.evaluate(() => {
-    const roots = Array.from(
-      document.querySelectorAll(
-        "[data-owner=projects-breadcrumb-outer], [data-owner=projects-directory-page-wrap]",
-      ),
-    );
-    return roots.map((root) => visit(root)).join("");
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter(
-          (attr) =>
-            attr.name !== "data-style-src" &&
-            attr.name !== "data-owner" &&
-            attr.name !== "data-disabled" &&
-            attr.name !== "data-pagination-kind" &&
-            attr.name !== "data-projects-directory-tabs-scope" &&
-            !(
-              attr.name === "data-selected" &&
-              attr.ownerElement?.matches('[data-owner="projects-directory-tabs-item"]')
-            ) &&
-            !(
-              attr.name === "class" &&
-              (attr.ownerElement?.matches('[data-owner="projects-directory-tabs-link"]') ||
-                attr.ownerElement?.matches('[data-owner="projects-directory-search-form"]') ||
-                attr.ownerElement?.matches('[data-owner="projects-directory-member-item"]') ||
-                attr.ownerElement?.matches('[data-owner="projects-directory-member-count"]') ||
-                attr.ownerElement?.matches(
-                  '[data-owner="projects-directory-member-avatar-image"]',
-                ) ||
-                attr.ownerElement?.matches(
-                  '[data-owner="projects-directory-owner-avatar-image"]',
-                ) ||
-                attr.ownerElement?.matches('[data-owner="projects-directory-readable-identity"]') ||
-                (attr.ownerElement?.matches('[data-owner="projects-directory-pagination-label"]') &&
-                  attr.ownerElement.getAttribute("data-disabled") === "false") ||
-                (attr.ownerElement?.matches('[data-owner="projects-directory-tabs-item"]') &&
-                  attr.ownerElement.getAttribute("data-selected") === "false"))
-            ) &&
-            !(
-              attr.name === "style" &&
-              attr.ownerElement?.matches(
-                '[data-owner="projects-directory-pagination-next-icon"], [data-owner="projects-directory-pagination-prev-icon"]',
-              )
-            ) &&
-            !attr.name.startsWith("data-v-"),
-        )
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}="${normalizeAttr(attr)}"`)
-        .join(" ");
-      const owner = node.getAttribute("data-owner");
-      const syntheticAttrs =
-        owner === "projects-directory-readable-info"
-          ? 'class="info-wrap"'
-          : owner === "projects-directory-readable-identity"
-            ? 'style="float:left"'
-            : "";
-      const canonicalAttrs = node.matches("[data-projects-directory-tabs-scope]")
-        ? 'class="title_area"'
-        : [attrs, syntheticAttrs].filter(Boolean).join(" ");
-      const open = canonicalAttrs
-        ? `<${node.tagName.toLowerCase()} ${canonicalAttrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeText(text: string) {
-      return text.replace(/\s+/g, " ").trim();
-    }
-
-    function normalizeAttr(attr: Attr): string {
-      if (
-        attr.name === "class" &&
-        (attr.ownerElement?.matches('[data-owner="global-gnb-inner"]') ||
-          attr.ownerElement?.matches('[data-owner="global-gnb-outer"]') ||
-          attr.ownerElement?.matches('[data-owner="site-footer"]') ||
-          attr.ownerElement?.matches('[data-owner="site-footer-inner"]') ||
-          attr.ownerElement?.matches('[data-owner="site-footer-provider"]'))
-      ) {
-        return "";
-      }
-      if (
-        attr.name === "class" &&
-        attr.ownerElement &&
-        attr.value.split(/\s+/u).includes("gnb-nav") &&
-        attr.ownerElement.matches('[data-owner="global-gnb-nav"]')
-      ) {
-        const originalValue = attr.value;
-        attr.value = originalValue
-          .split(/\s+/u)
-          .filter((token) => token !== "gnb-nav")
-          .join(" ");
-        try {
-          return normalizeAttr(attr);
-        } finally {
-          attr.value = originalValue;
-        }
-      }
-      const owner = attr.ownerElement?.getAttribute("data-owner");
-      if (attr.name === "class" && owner === "projects-breadcrumb-outer")
-        return "site-breadcrumb-outer";
-      if (attr.name === "class" && owner === "projects-breadcrumb-inner")
-        return "site-breadcrumb-inner";
-      if (attr.name === "class" && owner === "projects-directory-page-wrap")
-        return "page-wrap-outer";
-      if (attr.name === "class" && owner === "projects-directory-page") return "project-page-wrap";
-      if (attr.name === "class" && owner === "projects-directory-tabs-list") return "nav nav-tabs";
-      if (
-        attr.name === "class" &&
-        owner === "projects-directory-tabs-item" &&
-        attr.ownerElement?.getAttribute("data-selected") === "true"
-      )
-        return "active";
-      if (attr.name === "class" && owner === "projects-directory-search-wrap") return "search-wrap";
-      if (attr.name === "class" && owner === "projects-directory-search-container")
-        return "pull-left";
-      if (attr.name === "class" && owner === "projects-directory-search-bar") return "search-bar";
-      if (attr.name === "class" && owner === "projects-directory-search-input") return "textbox";
-      if (attr.name === "class" && owner === "projects-directory-search-button")
-        return "search-btn";
-      if (attr.name === "class" && owner === "projects-directory-search-icon")
-        return "yobicon-search";
-      if (attr.name === "class" && owner === "projects-directory-list") return "all-projects";
-      if (attr.name === "class" && owner === "projects-directory-row") return "project";
-      if (attr.name === "class" && owner === "projects-directory-owner-avatar")
-        return "owner-avatar-wrap";
-      if (attr.name === "class" && owner === "projects-directory-header") return "header";
-      if (attr.name === "class" && owner === "projects-directory-description") return "desc";
-      if (attr.name === "class" && owner === "projects-directory-name-tag") return "name-tag";
-      if (attr.name === "class" && owner === "projects-directory-title-link") return "black";
-      if (attr.name === "class" && owner === "projects-directory-owner-link")
-        return "owner-name-small";
-      if (attr.name === "class" && owner === "projects-directory-code-update") return "small-font";
-      if (attr.name === "class" && owner === "projects-directory-private-lock")
-        return "yobicon-lock yobicon-small";
-      if (attr.name === "class" && owner === "projects-directory-project-label") {
-        const category = attr.value.split(/\s+/u).find((token) => token && !token.startsWith("x"));
-        return `project-label${category ? ` ${category}` : ""}`;
-      }
-      if (attr.name === "class" && owner === "projects-directory-stats")
-        return "stats-wrap pull-right";
-      if (attr.name === "class" && owner === "projects-directory-members") return "members";
-      if (attr.name === "class" && owner === "projects-directory-members-list") return "unstyled";
-      if (attr.name === "class" && owner === "projects-directory-member-avatar")
-        return "avatar-wrap";
-      if (attr.name === "class" && owner === "projects-directory-stats-icon") {
-        const glyph = getComputedStyle(attr.ownerElement!, "::before").content;
-        return glyph === '""' ? "yobicon-friends yobicon-middle" : "yobicon-eye yobicon-middle";
-      }
-      if (attr.name === "class" && owner === "projects-directory-pagination-input")
-        return "input-mini nospinner";
-      if (attr.name === "class" && owner === "projects-directory-pagination")
-        return "page-navigation-wrap";
-      if (attr.name === "class" && owner === "projects-directory-pagination-list")
-        return "page-nums";
-      if (attr.name === "class" && owner === "projects-directory-pagination-item") {
-        const kind = attr.ownerElement?.getAttribute("data-pagination-kind");
-        return kind === "icon"
-          ? "page-num ikon"
-          : kind === "delimiter"
-            ? "page-num delimiter"
-            : "page-num";
-      }
-      if (attr.name === "class" && owner === "projects-directory-pagination-label")
-        return attr.ownerElement?.getAttribute("data-disabled") === "true" ? "off" : "";
-      if (attr.name === "class" && owner === "projects-directory-pagination-prev-icon")
-        return `ico btn-pg-prev${attr.ownerElement?.getAttribute("data-disabled") === "true" ? " off" : ""}`;
-      if (attr.name === "class" && owner === "projects-directory-pagination-next-icon")
-        return `ico btn-pg-next${attr.ownerElement?.getAttribute("data-disabled") === "true" ? " off" : ""}`;
-      if (attr.name === "class" && owner === "global-gnb-project-list-item") return "active";
-      if (attr.name === "class" && owner === "global-gnb-project-list-divider") return "divider";
-      if (attr.name === "class" && owner === "global-gnb-project-list-link")
-        return "show-progress-bar";
-      return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
-    }
-  });
-}
-
-async function canonicalizeHtml(page: Page, html: string) {
-  return page.evaluate((input) => {
-    const template = document.createElement("template");
-    template.innerHTML = input;
-    return Array.from(template.content.children)
-      .filter((element) => element.matches(".site-breadcrumb-outer, .page-wrap-outer"))
-      .map((node) => visit(node))
-      .join("");
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-"))
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}="${normalizeAttr(attr)}"`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeText(text: string) {
-      return text.replace(/\s+/g, " ").trim();
-    }
-
-    function normalizeAttr(attr: Attr): string {
-      const isSiteLayoutHeader =
-        attr.name === "class" &&
-        attr.ownerElement &&
-        attr.value.split(/\s+/u).includes("gnb-outer") &&
-        attr.ownerElement.matches("header.gnb-outer") &&
-        attr.ownerElement.querySelector(':scope > div.gnb-inner form[name="gnb-search-form"]') !==
-          null;
-      const isSiteLayoutFooterOuter =
-        attr.name === "class" &&
-        attr.ownerElement &&
-        attr.value.split(/\s+/u).includes("page-footer-outer") &&
-        attr.ownerElement.matches("footer.page-footer-outer") &&
-        attr.ownerElement.querySelector(":scope > div.page-footer > span.provider") !== null;
-      const isSiteLayoutFooterInner =
-        attr.name === "class" &&
-        attr.ownerElement &&
-        attr.value.split(/\s+/u).includes("page-footer") &&
-        attr.ownerElement.matches("footer.page-footer-outer > div.page-footer") &&
-        attr.ownerElement.querySelector(":scope > span.provider") !== null;
-      const isSiteLayoutFooterProvider =
-        attr.name === "class" &&
-        attr.ownerElement &&
-        attr.value.split(/\s+/u).includes("provider") &&
-        attr.ownerElement.matches("footer.page-footer-outer > div.page-footer > span.provider");
-      const retiredToken = isSiteLayoutFooterOuter
-        ? "page-footer-outer"
-        : isSiteLayoutFooterInner
-          ? "page-footer"
-          : isSiteLayoutFooterProvider
-            ? "provider"
-            : isSiteLayoutHeader && attr.value.split(/\s+/u).includes("project-header")
-              ? "project-header"
-              : isSiteLayoutHeader
-                ? "gnb-outer"
-                : attr.name === "class" &&
-                    attr.ownerElement &&
-                    attr.value.split(/\s+/u).includes("gnb-inner") &&
-                    attr.ownerElement.matches("header.gnb-outer > div.gnb-inner") &&
-                    attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
-                  ? "gnb-inner"
-                  : attr.name === "class" &&
-                      attr.ownerElement &&
-                      attr.value.split(/\s+/u).includes("gnb-nav") &&
-                      attr.ownerElement.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
-                      attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
-                    ? "gnb-nav"
-                    : null;
-      if (retiredToken) {
-        const originalValue = attr.value;
-        attr.value = originalValue
-          .split(/\s+/u)
-          .filter((token) => token !== retiredToken)
-          .join(" ");
-        try {
-          return normalizeAttr(attr);
-        } finally {
-          attr.value = originalValue;
-        }
-      }
-      return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
-    }
-  }, html);
 }

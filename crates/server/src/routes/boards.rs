@@ -65,6 +65,7 @@ struct RestPostMutationBody {
     line_ending: String,
     new_file_name: String,
     notice: bool,
+    notification_mail: Option<bool>,
     path: String,
     readme: bool,
     title: String,
@@ -223,7 +224,7 @@ struct RestPostComment {
     author_login_id: String,
     contents_html: String,
     contents_markdown: String,
-    created_label: String,
+    created_at: String,
     id: String,
     commit_references: Vec<RestMarkdownCommitReference>,
     issue_references: Vec<RestIssueReferenceMetadata>,
@@ -239,7 +240,7 @@ struct RestPostListItem {
     author_label: String,
     author_login_id: String,
     comment_count: u32,
-    created_label: String,
+    created_at: String,
     labels: Vec<RestBoardLabel>,
     notice: bool,
     owner_name: String,
@@ -261,7 +262,7 @@ struct RestPostDetailResponse {
     body_markdown: String,
     comment_count: u32,
     comments: Vec<RestPostComment>,
-    created_label: String,
+    created_at: String,
     history_html: String,
     history_markdown: String,
     id: String,
@@ -919,7 +920,10 @@ fn rest_post_comment_from_record(
         author_login_id: comment.author_login_id.clone(),
         contents_html: String::new(),
         contents_markdown: comment.contents_markdown.clone(),
-        created_label: comment.created_label.clone(),
+        created_at: comment
+            .created_at
+            .map(|created| created.and_utc().to_rfc3339())
+            .unwrap_or_default(),
         id: comment.id.to_string(),
         commit_references: commit_references
             .iter()
@@ -958,7 +962,10 @@ fn rest_post_list_item_from_record(
         author_label: item.author_label.clone(),
         author_login_id: item.author_login_id.clone(),
         comment_count: item.comment_count,
-        created_label: item.created_label.clone(),
+        created_at: item
+            .created_at
+            .map(|created| created.and_utc().to_rfc3339())
+            .unwrap_or_default(),
         labels: item
             .labels
             .iter()
@@ -1101,7 +1108,10 @@ fn rest_post_detail_response_from_record_with_references(
                 )
             })
             .collect(),
-        created_label: posting.created_label.clone(),
+        created_at: posting
+            .created_at
+            .map(|created| created.and_utc().to_rfc3339())
+            .unwrap_or_default(),
         history_html: String::new(),
         history_markdown: posting.history_markdown.clone(),
         id: posting.id.to_string(),
@@ -1739,6 +1749,8 @@ async fn rest_update_posting(
     let readme_body_markdown = body.body_markdown.clone();
     let owner_name_for_sync = owner_name.clone();
     let project_name_for_sync = project_name.clone();
+    let send_notification =
+        body.notification_mail.unwrap_or(true) || access.posting.author_id != Some(actor.id);
     let posting = repository
         .update_posting(persistence::UpdatePostingInput {
             actor_id: actor.id,
@@ -1746,6 +1758,7 @@ async fn rest_update_posting(
             owner_name,
             post_number,
             project_name,
+            send_notification,
             values: rest_post_mutation_input_from_body(body),
         })
         .await

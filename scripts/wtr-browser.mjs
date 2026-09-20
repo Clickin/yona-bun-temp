@@ -196,7 +196,8 @@ export class WtrSweepPage {
     const response = await this.nativePage.goto(url, {
       timeout: options.timeout,
       // Playwright-spelling compat: puppeteer calls this networkidle2.
-      waitUntil: options.waitUntil === "networkidle" ? "networkidle2" : options.waitUntil ?? "load",
+      waitUntil:
+        options.waitUntil === "networkidle" ? "networkidle2" : (options.waitUntil ?? "load"),
     });
     return responseFromPuppeteer(response, this.requestWrappers);
   }
@@ -352,6 +353,7 @@ export async function launchWtrBrowser() {
     concurrency: 2,
     launchOptions: {
       args: ["--no-first-run"],
+      defaultViewport: { width: 1366, height: 900 },
       headless: true,
     },
   });

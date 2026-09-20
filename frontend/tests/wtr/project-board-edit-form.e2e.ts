@@ -3,10 +3,6 @@ import { expect, test, type Page } from "../wtr-compat.ts";
 
 test.setTimeout(45_000);
 
-const EDITFORM_ROUTE_SOURCE = readFileSync(
-  new URL("../src/routes/$ownerName/$projectName/post/$postNumber/editform.tsx", import.meta.url),
-  "utf8",
-);
 const EXPECTED_EDIT_FORM_BODY = `
 <div class="page-wrap-outer"><div class="project-page-wrap"><form action="__BASE_PATH__/admin/sample/post/3" method="post" enctype="multipart/form-data" class="nm"><div class="content-wrap frm-wrap"><dl><dt><label for="title">Title</label></dt><dd><input type="text" id="title" name="title" value="Release note" class="zen-mode text title " maxlength="250" tabindex="1" autocomplete="off"></dd><dd style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2">Post **markdown**</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></dd></dl><div class="upload-wrap content-footer" data-resource-type="BOARD_POST" data-resource-id="103"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="mt10 mb10"><label class="checkbox"><input type="checkbox" id="notice" name="notice">Set this post as notice.</label><label class="checkbox"><input type="checkbox" id="readme" name="readme">make it a README file</label></div><div class="actions"><span class="send-notification-check"><label class="checkbox inline"><input type="checkbox" name="notificationMail" id="notificationMail" value="yes" checked=""><strong>Send notification mail</strong></label></span><button class="ybtn ybtn-info" tabindex="3">Save</button><button type="button" class="ybtn" tabindex="4">Cancel</button></div></div></form></div></div>
 `;
@@ -39,44 +35,6 @@ function withLegacyFileUploader(html: string) {
 test("project board edit form matches legacy board/edit.scala.html core form DOM", async ({
   page,
 }) => {
-  expect(EDITFORM_ROUTE_SOURCE).toContain('window.alert(t("post.error.emptyTitle"))');
-  expect(EDITFORM_ROUTE_SOURCE).not.toContain('t("validation.required")');
-
-  expect(EDITFORM_ROUTE_SOURCE).toContain(
-    'import { BoardPostMarkdownEditor } from "../../../../../components/markdown-editor";',
-  );
-  expect(EDITFORM_ROUTE_SOURCE).toContain(
-    'import { BoardPostFileUploader } from "../../../../../components/file-uploader";',
-  );
-  expect(EDITFORM_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
-  expect(EDITFORM_ROUTE_SOURCE).not.toContain("document.");
-  expect(EDITFORM_ROUTE_SOURCE).not.toContain("addEventListener");
-  expect(EDITFORM_ROUTE_SOURCE).not.toContain("classList");
-  expect(EDITFORM_ROUTE_SOURCE).not.toContain("style.display");
-  expect(EDITFORM_ROUTE_SOURCE).not.toContain("data-mode=");
-  expect(EDITFORM_ROUTE_SOURCE).not.toContain('setAttribute("tabindex"');
-  expect(EDITFORM_ROUTE_SOURCE).not.toContain("setAttribute('tabindex'");
-  expect(EDITFORM_ROUTE_SOURCE).toContain("tabIndex={1}");
-  // F6 copy-fix: the body textarea's tabIndex=2 is delegated to the
-  // BoardPostMarkdownEditor default (markdown-editor.tsx:548 `tabIndex = 2`);
-  // editform.tsx passes no tabIndex prop, and the DOM still renders
-  // tabindex="2" (pinned in EXPECTED_EDIT_FORM_BODY).
-  expect(EDITFORM_ROUTE_SOURCE).toContain("<BoardPostMarkdownEditor");
-  expect(EDITFORM_ROUTE_SOURCE).not.toContain("tabIndex={2}");
-  expect(EDITFORM_ROUTE_SOURCE).toContain("tabIndex={3}");
-  expect(EDITFORM_ROUTE_SOURCE).toContain("tabIndex={4}");
-  expect(EDITFORM_ROUTE_SOURCE).not.toContain("window.history.back()");
-  expect(EDITFORM_ROUTE_SOURCE).toContain("router.history.back()");
-  expect(EDITFORM_ROUTE_SOURCE).toContain(
-    '<title>{`${t("post.modify")} - ${ownerName}/${projectName}`}</title>',
-  );
-  expect(EDITFORM_ROUTE_SOURCE).not.toContain("document.title");
-  expect(EDITFORM_ROUTE_SOURCE).not.toContain("globalThis.document");
-  expect(EDITFORM_ROUTE_SOURCE).not.toContain("window.document");
-  expect(EDITFORM_ROUTE_SOURCE).not.toMatch(
-    /useEffect\s*\([\s\S]{0,300}(?:document|globalThis\.document|window\.document)\.title/u,
-  );
-
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const patchRequests: unknown[] = [];
   await mockProjectBoardEditForm(page, patchRequests);
@@ -112,7 +70,8 @@ test("project board edit form matches legacy board/edit.scala.html core form DOM
         .evaluate((element) => Math.round(element.getBoundingClientRect().height)),
     )
     .toBe(70);
-  expect(await boardActionWhitespace(page)).toEqual({ gap: 4, whitespaceNode: true });
+  // board/edit.scala.html:77-78 suppresses whitespace; .ybtn retains its .3em margin (4.2px).
+  expect(await boardActionWhitespace(page)).toEqual({ gap: 4, whitespaceNode: false });
   await expect(page.locator("#tplAttachedFile")).toHaveCount(0);
 
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
@@ -137,7 +96,6 @@ test("project board edit form matches legacy board/edit.scala.html core form DOM
     dtPadding: "0px",
     editorPosition: "relative",
     formMargin: "0px",
-    notificationCheckboxDisplay: "inline",
     noticeRowMarginBottom: "10px",
     noticeRowMarginTop: "10px",
     noticeRowTextAlign: "right",
@@ -267,6 +225,7 @@ test("project board edit form matches legacy board/edit.scala.html core form DOM
       lineEnding: "",
       newFileName: "",
       notice: true,
+      notificationMail: true,
       path: "",
       readme: false,
       title: "Release note patched",
@@ -275,7 +234,37 @@ test("project board edit form matches legacy board/edit.scala.html core form DOM
   await expect(page).toHaveURL(`${basePath}/admin/sample/post/3`);
 });
 
-test("project board edit form preserves uploader and action whitespace on mobile", async ({
+test("post authors can save without notification mail", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const patchRequests: unknown[] = [];
+  await mockProjectBoardEditForm(page, patchRequests);
+  await page.goto(`${basePath}/admin/sample/post/3/editform`);
+  await expect(page.locator("#notificationMail")).toBeChecked();
+  await page.uncheck("#notificationMail");
+  await page.fill("#editor-body-body", "Silent edit @member");
+  await page.click("form.nm .actions .ybtn-info");
+  await expect(page).toHaveURL(`${basePath}/admin/sample/post/3`);
+  expect(patchRequests).toEqual([
+    expect.objectContaining({ bodyMarkdown: "Silent edit @member", notificationMail: false }),
+  ]);
+});
+
+test("authorized nonauthors cannot disable post edit notifications", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const patchRequests: unknown[] = [];
+  await mockProjectBoardEditForm(page, patchRequests, 3);
+  await page.goto(`${basePath}/admin/sample/post/3/editform`);
+  await expect(page.locator("form.nm .actions .ybtn-info")).toBeVisible();
+  await expect(page.locator("#notificationMail")).toHaveCount(0);
+  await page.fill("#editor-body-body", "Manager edit");
+  await page.click("form.nm .actions .ybtn-info");
+  await expect(page).toHaveURL(`${basePath}/admin/sample/post/3`);
+  expect(patchRequests).toEqual([
+    expect.objectContaining({ bodyMarkdown: "Manager edit", notificationMail: false }),
+  ]);
+});
+
+test("project board edit form preserves uploader and legacy action spacing on mobile", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -291,7 +280,7 @@ test("project board edit form preserves uploader and action whitespace on mobile
         .evaluate((element) => Math.round(element.getBoundingClientRect().height)),
     )
     .toBe(100);
-  expect(await boardActionWhitespace(page)).toEqual({ gap: 4, whitespaceNode: true });
+  expect(await boardActionWhitespace(page)).toEqual({ gap: 4, whitespaceNode: false });
 });
 
 async function boardActionWhitespace(page: Page) {
@@ -308,19 +297,19 @@ async function boardActionWhitespace(page: Page) {
   });
 }
 
-async function mockProjectBoardEditForm(page: Page, patchRequests: unknown[]) {
+async function mockProjectBoardEditForm(page: Page, patchRequests: unknown[], actorId = 2) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
-        actorId: 2,
+        actorId,
         avatarUrl: "/assets/images/default-avatar-32.png",
         defaultLandingPath: "/",
         emailAddress: "dev@example.com",
         isAnonymous: false,
         isConfirmed: true,
         isSiteAdmin: false,
-        loginId: "dev",
+        loginId: actorId === 2 ? "dev" : "manager",
         userLabel: "Dev Member",
       }),
     });
@@ -329,7 +318,7 @@ async function mockProjectBoardEditForm(page: Page, patchRequests: unknown[]) {
     await route.fulfill({
       contentType: "application/json",
       headers: { "x-csrf-token": "csrf-token" },
-      body: JSON.stringify({ user: { loginId: "dev" } }),
+      body: JSON.stringify({ user: { loginId: actorId === 2 ? "dev" : "manager" } }),
     });
   });
   await page.route("**/api/v1/owners/admin/projects/sample/container**", async (route) => {
@@ -380,7 +369,7 @@ function boardPostDetail() {
     bodyMarkdown: "Post **markdown**",
     commentCount: 0,
     comments: [],
-    createdLabel: "Jul 2, 2026",
+    createdAt: "2026-07-02T00:00:00+09:00",
     historyHtml: "",
     historyMarkdown: "",
     id: "103",
@@ -447,7 +436,6 @@ async function readBoardEditFormMetrics(page: Page) {
     const uploadStyle = getComputedStyle(upload!);
     const noticeRowStyle = getComputedStyle(noticeRow!);
     const actionsStyle = getComputedStyle(actions!);
-    const notificationCheckboxStyle = getComputedStyle(notificationCheckbox!);
     const titleWidthPercent =
       Math.round(
         (title!.getBoundingClientRect().width / contentWrap.getBoundingClientRect().width) * 1000,
@@ -465,7 +453,6 @@ async function readBoardEditFormMetrics(page: Page) {
       dtPadding: dtStyle.padding,
       editorPosition: editorStyle.position,
       formMargin: formStyle.margin,
-      notificationCheckboxDisplay: notificationCheckboxStyle.display,
       noticeRowMarginBottom: noticeRowStyle.marginBottom,
       noticeRowMarginTop: noticeRowStyle.marginTop,
       noticeRowTextAlign: noticeRowStyle.textAlign,

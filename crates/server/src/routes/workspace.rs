@@ -184,6 +184,14 @@ async fn workspace_project_item_from_catalog(
     is_favorited: bool,
 ) -> Result<WorkspaceMemberProjectItem, ConnectError> {
     Ok(WorkspaceMemberProjectItem {
+        created_at: project
+            .created_date
+            .map(|value| value.and_utc().to_rfc3339())
+            .unwrap_or_default(),
+        last_pushed_at: project
+            .last_pushed_date
+            .map(|value| value.and_utc().to_rfc3339())
+            .unwrap_or_default(),
         is_favorited,
         logo_url: cached_workspace_project_logo_url(repository, base_path, logo_urls, project.id)
             .await?,
@@ -222,10 +230,16 @@ async fn workspace_member_project_item_from_record(
         viewer_id == Some(subject_user_id) && subject_login_id != item.owner_name;
 
     Ok(WorkspaceMemberProjectItem {
-        created_label: item.created_label.clone(),
+        created_at: item
+            .created_at
+            .map(|value| value.and_utc().to_rfc3339())
+            .unwrap_or_default(),
         is_favorited,
         is_watching,
-        last_pushed_label: item.last_pushed_label.clone(),
+        last_pushed_at: item
+            .last_pushed_at
+            .map(|value| value.and_utc().to_rfc3339())
+            .unwrap_or_default(),
         logo_url: cached_workspace_project_logo_url(
             repository,
             base_path,

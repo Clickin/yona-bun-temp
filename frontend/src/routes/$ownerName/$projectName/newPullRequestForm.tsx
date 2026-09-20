@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PullRequestFileUploader } from "../../../components/file-uploader";
 import { PullRequestMarkdownEditor } from "../../../components/markdown-editor";
 import { createFileRoute, Link, useRouter, useRouterState } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   createPullRequestRest,
   pullRequestCreateFormOptionsQueryOptions,
@@ -16,7 +16,7 @@ import { RestApiError } from "../../../api/rest-client";
 import type { ProjectContainer } from "../../../api/types";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import legacySpriteUrl from "../../../assets/legacy/sprite.png";
-import { useLegacyMessages } from "../../../i18n";
+import { formatLegacyTimestamp, useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { ProjectPullRequestsBadRequestRouteShell } from "./pullRequests";
 
@@ -174,10 +174,13 @@ function ProjectNewPullRequestBody({
   runtimeConfig: RuntimeConfig;
 }) {
   const { ownerName, projectName } = Route.useParams();
-  const { language, t } = useLegacyMessages();
+  const { t } = useLegacyMessages();
   const router = useRouter();
   const queryClient = useQueryClient();
   const selected = formOptions.selected;
+  const sourceProject = formOptions.fromProjects.find(
+    (project) => project.id === formOptions.selected.fromProjectId,
+  );
   const pendingConflictSubmitRef = useRef<HTMLFormElement | null>(null);
   const [formValues, setFormValues] = useState<PullRequestFormSelected>(selected);
   const [titleValue, setTitleValue] = useState("");
@@ -396,16 +399,11 @@ function ProjectNewPullRequestBody({
               <div className="tab-content">
                 <div id="__commits" className="code-browse-wrap tab-pane active">
                   {mergeResult ? (
-                    <MergeResult
-                      authorLabel={t("code.author")}
+                    <PullRequestMergeResult
                       basePath={runtimeConfig.basePath}
-                      commitDateLabel={t("code.commitDate")}
-                      commitMessageLabel={t("code.commitMsg")}
                       commits={mergeResult.commits}
-                      language={language}
-                      noChangesLabel={t("pullRequest.diff.noChanges")}
-                      ownerName={ownerName}
-                      projectName={projectName}
+                      ownerName={sourceProject?.ownerName ?? ownerName}
+                      projectName={sourceProject?.projectName ?? projectName}
                     />
                   ) : null}
                 </div>
@@ -446,10 +444,6 @@ function PullRequestBranchSelectors({
   selected: PullRequestFormSelected;
 }) {
   const { t } = useLegacyMessages();
-  const fromProjectRef = useRef<HTMLSelectElement>(null);
-  const fromBranchRef = useRef<HTMLSelectElement>(null);
-  const toProjectRef = useRef<HTMLSelectElement>(null);
-  const toBranchRef = useRef<HTMLSelectElement>(null);
   const changeValue = (
     field: keyof PullRequestFormSelected,
     value: string,
@@ -473,16 +467,16 @@ function PullRequestBranchSelectors({
         >
           {t("pullRequest.from")}
         </label>
-        <PullRequestSelect2Closed
+        <PullRequestSelect2
           controlId="fromProjectId"
-          controlRef={fromProjectRef}
-          label={projectOptionLabel(
-            formOptions.fromProjects.find((project) => project.id === selected.fromProjectId) ??
-              formOptions.fromProjects[0],
-          )}
+          value={String(selected.fromProjectId)}
+          options={formOptions.fromProjects.map((project) => ({
+            value: String(project.id),
+            label: projectOptionLabel(project),
+          }))}
+          onChange={(value) => changeValue("fromProjectId", value, true)}
         />
         <select
-          ref={fromProjectRef}
           id="fromProjectId"
           name="fromProjectId"
           className="mr5 select2-offscreen"
@@ -499,19 +493,19 @@ function PullRequestBranchSelectors({
             </option>
           ))}
         </select>{" "}
-        <PullRequestSelect2Closed
+        <PullRequestSelect2
           controlId="fromBranch"
-          controlRef={fromBranchRef}
-          label={selected.fromBranch}
+          value={selected.fromBranch}
+          options={formOptions.fromBranches.map((branch) => ({
+            value: branch.name,
+            label: branch.name,
+          }))}
+          onChange={(value) => changeValue("fromBranch", value)}
           branch
         />
         <select
-          ref={fromBranchRef}
           id="fromBranch"
           name="fromBranch"
-          data-format="branch"
-          data-dropdown-css-class="branches"
-          data-placeholder={t("pullRequest.select.branch")}
           className="select2-offscreen"
           tabIndex={-1}
           defaultValue={selected.fromBranch}
@@ -537,16 +531,16 @@ function PullRequestBranchSelectors({
         >
           {t("pullRequest.to")}
         </label>
-        <PullRequestSelect2Closed
+        <PullRequestSelect2
           controlId="toProjectId"
-          controlRef={toProjectRef}
-          label={projectOptionLabel(
-            formOptions.toProjects.find((project) => project.id === selected.toProjectId) ??
-              formOptions.toProjects[0],
-          )}
+          value={String(selected.toProjectId)}
+          options={formOptions.toProjects.map((project) => ({
+            value: String(project.id),
+            label: projectOptionLabel(project),
+          }))}
+          onChange={(value) => changeValue("toProjectId", value, true)}
         />
         <select
-          ref={toProjectRef}
           id="toProjectId"
           name="toProjectId"
           className="mr5 select2-offscreen"
@@ -563,19 +557,19 @@ function PullRequestBranchSelectors({
             </option>
           ))}
         </select>{" "}
-        <PullRequestSelect2Closed
+        <PullRequestSelect2
           controlId="toBranch"
-          controlRef={toBranchRef}
-          label={selected.toBranch}
+          value={selected.toBranch}
+          options={formOptions.toBranches.map((branch) => ({
+            value: branch.name,
+            label: branch.name,
+          }))}
+          onChange={(value) => changeValue("toBranch", value)}
           branch
         />
         <select
-          ref={toBranchRef}
           id="toBranch"
           name="toBranch"
-          data-format="branch"
-          data-dropdown-css-class="branches"
-          data-placeholder={t("pullRequest.select.branch")}
           className="select2-offscreen"
           tabIndex={-1}
           defaultValue={selected.toBranch}
@@ -594,46 +588,138 @@ function PullRequestBranchSelectors({
   );
 }
 
-function PullRequestSelect2Closed({
+export function PullRequestSelect2({
   branch = false,
   controlId,
-  controlRef,
-  label,
+  disabled = false,
+  onChange,
+  options,
+  owner = "new-pull-request",
+  value,
 }: {
   branch?: boolean;
   controlId: string;
-  controlRef: RefObject<HTMLSelectElement | null>;
-  label: string;
+  disabled?: boolean;
+  onChange?: (value: string) => void;
+  options: { label: string; value: string }[];
+  owner?: string;
+  value: string;
 }) {
+  const { t } = useLegacyMessages();
+  const [open, setOpen] = useState(false);
+  const [term, setTerm] = useState("");
+  const choiceRef = useRef<HTMLButtonElement>(null);
+  const selectedLabel = options.find((option) => option.value === value)?.label ?? "";
+  const visibleOptions = options.filter((option) =>
+    option.label.toLowerCase().includes(term.trim().toLowerCase()),
+  );
+  const choose = (nextValue: string) => {
+    setOpen(false);
+    setTerm("");
+    choiceRef.current?.focus();
+    onChange?.(nextValue);
+  };
+
   return (
     <div
       id={`s2id_${controlId}`}
-      className="select2-container"
-      data-owner={`new-pull-request-${controlId}-picker`}
+      className={`select2-container${disabled ? " select2-container-disabled" : ""}${branch ? "" : " mr5"}${open ? " select2-container-active select2-dropdown-open" : ""}`}
+      data-owner={`${owner}-${controlId}-picker`}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          setOpen(false);
+          setTerm("");
+        }
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          setOpen(false);
+          setTerm("");
+          choiceRef.current?.focus();
+        }
+      }}
     >
       <button
+        ref={choiceRef}
         type="button"
         className="select2-choice"
-        data-owner={`new-pull-request-${controlId}-select2-choice`}
-        aria-expanded="false"
-        onClick={() => controlRef.current?.focus()}
+        data-owner={`${owner}-${controlId}-select2-choice`}
+        disabled={disabled}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        aria-controls={`select2-results-${controlId}`}
+        onClick={() => {
+          setTerm("");
+          setOpen((current) => !current);
+        }}
       >
         <span className="select2-chosen">
-          {branch ? <strong className="branch-label branch">branch</strong> : null}
-          {branch ? " " : null}
-          {label}
+          {branch && selectedLabel ? (
+            <>
+              <strong className="branch-label branch">branch</strong>{" "}
+              {selectedLabel.replace(/^refs\/heads\//u, "")}
+            </>
+          ) : (
+            selectedLabel || (branch ? t("pullRequest.select.branch") : "")
+          )}
         </span>
         <span className="select2-arrow" aria-hidden="true">
           <b></b>
         </span>
       </button>
-      <input className="select2-focusser select2-offscreen" type="text" aria-hidden="true" />
-      <div className="select2-drop select2-display-none select2-with-searchbox">
-        <div className="select2-search">
-          <input className="select2-input" type="text" />
+      {open ? (
+        <div
+          className={`select2-drop select2-drop-active select2-with-searchbox${branch ? " branches" : ""}`}
+        >
+          <div className="select2-search">
+            <input
+              className="select2-input"
+              type="text"
+              autoComplete="off"
+              autoFocus
+              value={term}
+              aria-label={branch ? t("pullRequest.select.branch") : t("title.project")}
+              onChange={(event) => setTerm(event.currentTarget.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && visibleOptions[0]) {
+                  event.preventDefault();
+                  choose(visibleOptions[0].value);
+                }
+              }}
+            />
+          </div>
+          <ul id={`select2-results-${controlId}`} className="select2-results" role="listbox">
+            {visibleOptions.map((option) => (
+              <li
+                key={option.value}
+                className="select2-result select2-result-selectable"
+                role="option"
+                aria-selected={option.value === value}
+                tabIndex={0}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    choose(option.value);
+                  }
+                }}
+                onClick={() => choose(option.value)}
+              >
+                <div className="select2-result-label">
+                  {branch ? (
+                    <>
+                      <strong className="branch-label branch">branch</strong>{" "}
+                      {option.label.replace(/^refs\/heads\//u, "")}
+                    </>
+                  ) : (
+                    option.label
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
-        <ul className="select2-results"></ul>
-      </div>
+      ) : null}
     </div>
   );
 }
@@ -691,32 +777,23 @@ function PullRequestConflictConfirmModal({
   );
 }
 
-function MergeResult({
-  authorLabel,
+export function PullRequestMergeResult({
   basePath,
-  commitDateLabel,
-  commitMessageLabel,
   commits,
-  language,
-  noChangesLabel,
   ownerName,
   projectName,
 }: {
-  authorLabel: string;
   basePath: string;
-  commitDateLabel: string;
-  commitMessageLabel: string;
   commits: PullRequestCommit[];
-  language: string;
-  noChangesLabel: string;
   ownerName: string;
   projectName: string;
 }) {
+  const { t } = useLegacyMessages();
   if (!commits.length) {
     return (
       <div id="mergeResult" className="code-browser-wrap">
         <div>
-          <h5>{noChangesLabel}</h5>
+          <h5>{t("pullRequest.diff.noChanges")}</h5>
         </div>
       </div>
     );
@@ -732,45 +809,25 @@ function MergeResult({
                 <strong>@</strong>
               </td>
               <td className="messages">
-                <strong>{commitMessageLabel}</strong>
+                <strong>{t("code.commitMsg")}</strong>
               </td>
               <td className="date">
-                <strong>{commitDateLabel}</strong>
+                <strong>{t("code.commitDate")}</strong>
               </td>
               <td className="author">
-                <strong>{authorLabel}</strong>
+                <strong>{t("code.author")}</strong>
               </td>
             </tr>
           </thead>
           <tbody className="tbody">
             {commits.map((commit) => (
-              <tr key={commit.commitId}>
-                <td className="commit-id">
-                  <Link
-                    to="/$ownerName/$projectName/commit/$commitId"
-                    params={{ commitId: commit.commitId, ownerName, projectName }}
-                    search={{ branch: "", path: "" }}
-                  >
-                    {commit.commitShortId}
-                  </Link>
-                </td>
-                <td className="messages">
-                  <span className="commitMsg short">{commit.commitMessage}</span>
-                </td>
-                <td className="date" title={commit.authorDateLabel}>
-                  {legacyRelativeDateLabel(commit.authorDateLabel, language)}
-                </td>
-                <td className={`author ${commit.authorEmail}`}>
-                  <div className="avatar-wrap">
-                    <img
-                      src={prefixBasePath(basePath, "/legacy-assets/images/default-avatar-128.png")}
-                      width="32"
-                      height="32"
-                      alt=""
-                    />
-                  </div>
-                </td>
-              </tr>
+              <PullRequestMergeCommit
+                key={commit.commitId}
+                basePath={basePath}
+                commit={commit}
+                ownerName={ownerName}
+                projectName={projectName}
+              />
             ))}
           </tbody>
         </table>
@@ -779,23 +836,87 @@ function MergeResult({
   );
 }
 
+function PullRequestMergeCommit({
+  basePath,
+  commit,
+  ownerName,
+  projectName,
+}: {
+  basePath: string;
+  commit: PullRequestCommit;
+  ownerName: string;
+  projectName: string;
+}) {
+  const { t } = useLegacyMessages();
+  const [expanded, setExpanded] = useState(false);
+  const lines = commit.commitMessage.split("\n");
+  const date = formatLegacyTimestamp(commit.authorDateLabel, t);
+  const avatar = (
+    <img
+      src={
+        commit.authorAvatarUrl ||
+        prefixBasePath(basePath, "/legacy-assets/images/default-avatar-128.png")
+      }
+      width="32"
+      height="32"
+      alt={commit.authorName}
+    />
+  );
+  return (
+    <tr>
+      <td className="commit-id">
+        <Link
+          to="/$ownerName/$projectName/commit/$commitId"
+          params={{ commitId: commit.commitId, ownerName, projectName }}
+          search={{ branch: "", path: "" }}
+        >
+          {commit.commitShortId}
+        </Link>
+      </td>
+      <td className="messages">
+        <Link
+          className="commitMsg short"
+          to="/$ownerName/$projectName/commit/$commitId"
+          params={{ commitId: commit.commitId, ownerName, projectName }}
+          search={{ branch: "", path: "" }}
+        >
+          {lines[0] || t("code.commitMsg.empty")}
+        </Link>
+        {lines.length > 1 ? (
+          <>
+            <button
+              type="button"
+              className="commitMsg moreBtn"
+              aria-expanded={expanded}
+              onClick={() => setExpanded((current) => !current)}
+            >
+              <span>&hellip;</span>
+            </button>
+            <pre className={`commitMsg desc${expanded ? "" : " hidden"}`}>
+              {lines.slice(1).join("\n")}
+            </pre>
+          </>
+        ) : null}
+      </td>
+      <td className="date" title={date.title}>
+        {date.label}
+      </td>
+      <td className={`author ${commit.authorEmail}`}>
+        {commit.authorLoginId ? (
+          <Link to="/$user" params={{ user: commit.authorLoginId }} className="avatar-wrap">
+            {avatar}
+          </Link>
+        ) : (
+          <div className="avatar-wrap">{avatar}</div>
+        )}
+      </td>
+    </tr>
+  );
+}
+
 function legacyUrlSearch(locationHref: string): URLSearchParams {
   const queryIndex = locationHref.indexOf("?");
   return new URLSearchParams(queryIndex >= 0 ? locationHref.slice(queryIndex) : "");
-}
-
-function legacyRelativeDateLabel(rawLabel: string, language: string, now = Date.now()) {
-  if (language !== "ko-KR" || rawLabel === "") return rawLabel;
-  const timestamp = Date.parse(rawLabel);
-  if (Number.isNaN(timestamp)) return rawLabel;
-  const elapsedSeconds = Math.floor((now - timestamp) / 1000);
-  if (elapsedSeconds < 0) return rawLabel;
-  if (elapsedSeconds < 60) return "방금 전";
-  if (elapsedSeconds < 60 * 60) return `${Math.floor(elapsedSeconds / 60)}분 전`;
-  if (elapsedSeconds < 24 * 60 * 60) return `${Math.floor(elapsedSeconds / (60 * 60))}시간 전`;
-  if (elapsedSeconds < 30 * 24 * 60 * 60)
-    return `${Math.floor(elapsedSeconds / (24 * 60 * 60))}일 전`;
-  return rawLabel;
 }
 
 function stringFormValue(formData: FormData, name: string): string {

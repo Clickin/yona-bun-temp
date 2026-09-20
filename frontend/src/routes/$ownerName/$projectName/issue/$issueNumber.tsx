@@ -2,6 +2,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import {
+  Children,
   Fragment,
   isValidElement,
   use,
@@ -15,9 +16,13 @@ import {
   type KeyboardEvent,
   type MouseEvent,
   type ReactNode,
+  useLayoutEffect,
 } from "react";
 import {
   basePathUrlTransform,
+  childCommentParagraphMarkers,
+  CHILD_COMMENT_BLOCKQUOTE_MARKER,
+  CHILD_COMMENT_METADATA_MARKER,
   LegacyMarkdownHtml,
   LEGACY_SANITIZE_BASE_SCHEMA,
   type LegacySanitizeSchema,
@@ -35,7 +40,7 @@ import { listProjectMilestonesQueryOptions } from "../../../../api/milestones";
 import { currentSessionQueryOptions } from "../../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { translateLegacyResource } from "../../../../api/translation";
-import { useLegacyMessages } from "../../../../i18n";
+import { formatLegacyTimestamp, useLegacyMessages } from "../../../../i18n";
 import type { ProjectIssuesSearch } from "../issues";
 import { useWireframeContentProgress } from "../../../../components/route-fetch-lock";
 import type { ProjectContainer, ProjectMilestone, YoramRecord } from "../../../../api/types";
@@ -215,13 +220,17 @@ const ISSUE_MARKDOWN_COMPONENTS = {
   },
 };
 
+const CHILD_COMMENT_EXTENSIONS = [childCommentParagraphMarkers()];
+
 function IssueMarkdown({
   basePath,
   children,
+  childCommentMetadata,
   tasklist,
 }: {
   basePath: string;
   children: string;
+  childCommentMetadata?: ReactNode;
   tasklist?: { canUpdate: boolean; onToggle: (index: number, checked: boolean) => void };
 }) {
   const components = useMemo(
@@ -230,12 +239,36 @@ function IssueMarkdown({
       a: (props: ComponentPropsWithoutRef<"a">) => (
         <IssueMarkdownLink {...props} basePath={basePath} />
       ),
+      ...(childCommentMetadata
+        ? {
+            p: ({ children, ...props }: ComponentPropsWithoutRef<"p">) => {
+              let hasMetadata = false;
+              const content = Children.map(children, (child) => {
+                if (typeof child !== "string") return child;
+                hasMetadata ||= child.includes(CHILD_COMMENT_METADATA_MARKER);
+                return child
+                  .replaceAll(CHILD_COMMENT_BLOCKQUOTE_MARKER, "")
+                  .replaceAll(CHILD_COMMENT_METADATA_MARKER, "");
+              });
+              if (hasMetadata && content?.every((child) => child === "")) {
+                return childCommentMetadata;
+              }
+              return (
+                <p {...props}>
+                  {content}
+                  {hasMetadata ? childCommentMetadata : null}
+                </p>
+              );
+            },
+          }
+        : {}),
     }),
-    [basePath],
+    [basePath, childCommentMetadata],
   );
   return (
     <LegacyMarkdownHtml
       components={components}
+      extensions={childCommentMetadata ? CHILD_COMMENT_EXTENSIONS : undefined}
       tasklistInput={
         tasklist
           ? (props) => (
@@ -282,36 +315,43 @@ function LegacyHoverPopover({
   content: string;
   focusable?: boolean;
 }) {
-  const [position, setPosition] = useState<{ left: number; top: number } | null>(null);
+  const [visible, setVisible] = useState(false);
+  const [position, setPosition] = useState({ left: 0, top: 0 });
+  const anchor = useRef<HTMLElement | null>(null);
+  const popup = useRef<HTMLDivElement | null>(null);
   const show = (event: MouseEvent<HTMLElement> | FocusEvent<HTMLElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    setPosition({
-      left: rect.left + rect.width / 2,
-      top: rect.top,
-    });
+    anchor.current = event.currentTarget;
+    setVisible(true);
   };
-  const hide = () => setPosition(null);
+  useLayoutEffect(() => {
+    if (!visible || !anchor.current || !popup.current) return;
+    const target = anchor.current.getBoundingClientRect();
+    const parent = popup.current.offsetParent as HTMLElement;
+    const bounds = parent.getBoundingClientRect();
+    setPosition({
+      left:
+        target.left -
+        bounds.left -
+        parent.clientLeft +
+        parent.scrollLeft +
+        (target.width - popup.current.offsetWidth) / 2,
+      top:
+        target.top - bounds.top - parent.clientTop + parent.scrollTop - popup.current.offsetHeight,
+    });
+  }, [visible]);
   const triggerProps: LegacyPopoverTriggerProps = {
     onMouseEnter: show,
-    onMouseLeave: hide,
-    ...(focusable ? { onBlur: hide, onFocus: show } : {}),
+    onMouseLeave: () => setVisible(false),
+    ...(focusable ? { onBlur: () => setVisible(false), onFocus: show } : {}),
   };
-  const popoverStyle: React.CSSProperties | undefined = position
-    ? {
-        display: "block",
-        left: position.left,
-        position: "fixed",
-        top: position.top - 10,
-        transform: "translate(-50%, -100%)",
-      }
-    : undefined;
 
   return (
     <>
       {children(triggerProps)}
-      {position ? (
+      {visible ? (
         <div
-          style={popoverStyle}
+          ref={popup}
+          style={{ display: "block", ...position }}
           className="popover top in"
           data-owner="issue-detail-legacy-popover"
         >
@@ -676,8 +716,7 @@ function IssueDetailBody({
   const editIssuePath = `/${ownerName}/${projectName}/issue/${issueNumber}/editform`;
   const issueState = stringField(issue.state, "open").toLowerCase();
   const stateLabel = issueStateLabel(issueState, t);
-  const createdLabel = stringField(issue.createdLabel);
-  const createdDisplayLabel = legacyRelativeDateLabel(createdLabel, language);
+  const createdDate = formatLegacyTimestamp(stringField(issue.createdLabel), t);
   const isDraft = booleanField(issue.isDraft);
   const isWatching = booleanField(issue.isWatching);
   const [isWatchingIssue, setIsWatchingIssue] = useState(isWatching);
@@ -726,9 +765,8 @@ function IssueDetailBody({
   const [dueDateValue, setDueDateValue] = useState(dueDateLabel);
   const [committedDueDateValue, setCommittedDueDateValue] = useState(dueDateLabel.trim());
   const dueDateInputRef = useRef<HTMLInputElement>(null);
-  const dueDatePickerRef = useRef<HTMLInputElement>(null);
   const dueDateStatusLabel = booleanField(issue.dueDateOverdue)
-    ? "Overdue"
+    ? t("issue.dueDate.overdue")
     : localizeIssueDuration(stringField(issue.dueDateUntilLabel), language);
   const shouldShowDueDateStatus = dueDateLabel !== "" && issueState === "open";
   const weight = numberField(issue.weight);
@@ -988,8 +1026,8 @@ function IssueDetailBody({
             className="pull-right mr10 mt10 hide-in-mobile"
             data-owner="project-issue-detail-desktop-metadata"
           >
-            <div className="date" data-owner="project-issue-detail-date" title={createdLabel}>
-              {createdDisplayLabel}
+            <div className="date" data-owner="project-issue-detail-date" title={createdDate.title}>
+              {createdDate.label}
             </div>
             <span
               className={`badge badge-issue-${issueState}`}
@@ -1019,8 +1057,12 @@ function IssueDetailBody({
               </i>
             </span>
             <div className="hide show-in-mobile" data-owner="project-issue-detail-mobile-metadata">
-              <span className="date" data-owner="project-issue-detail-date" title={createdLabel}>
-                {createdDisplayLabel}
+              <span
+                className="date"
+                data-owner="project-issue-detail-date"
+                title={createdDate.title}
+              >
+                {createdDate.label}
               </span>
               <span
                 className={`badge badge-small badge-issue-${issueState}`}
@@ -1133,13 +1175,13 @@ function IssueDetailBody({
                       id="watch-button"
                       type="button"
                       className={`ybtn ${isWatchingIssue ? "ybtn-watching" : ""}`}
-                      title="Watch this issue"
+                      title={t("issue.watch.description")}
                       data-watching={String(isWatchingIssue)}
                       onClick={() => watchIssueMutation.mutate()}
                     >
                       {isWatchingIssue ? t("issue.unwatch") : t("issue.watch")}
                     </button>
-                  ) : null}
+                  ) : null}{" "}
                   {canUpdate ? (
                     <LegacyHoverPopover content={t("issue.sharer.description")} focusable>
                       {(popoverProps) => (
@@ -1189,7 +1231,7 @@ function IssueDetailBody({
                   id="translate"
                   className="icon btn-transparent-with-fontsize-lineheight"
                   data-owner="project-issue-detail-translation-button"
-                  title="Translation"
+                  title={t("button.translation")}
                   disabled={translatePending || translatedBodyMarkdown !== null}
                   onClick={() => void translateIssueBody()}
                 >
@@ -1412,7 +1454,6 @@ function IssueDetailBody({
                         <IssueDueDateInput
                           ownerPrefix="project-issue-detail"
                           dueDateRef={dueDateInputRef}
-                          datePickerRef={dueDatePickerRef}
                           value={dueDateValue}
                           autoComplete="off"
                           onBlur={commitDueDateChange}
@@ -1551,7 +1592,7 @@ function IssuePostingHistory({
         {updatedByAuthorLabel || updatedLabel ? (
           <span className="lastUpdatedBy">
             <span>{updatedByAuthorLabel}</span>
-            <span>{updatedLabel}</span>
+            <span>{formatLegacyTimestamp(updatedLabel, t).label}</span>
           </span>
         ) : null}
         <span>{t("change.edited")}</span>
@@ -1606,7 +1647,8 @@ function IssueVote({
           <button
             type="button"
             className={hasVoted ? "ybtn-watching" : ""}
-            title={hasVoted ? "Unvote this issue" : "Vote this issue"}
+            data-owner="project-issue-detail-vote-button"
+            title={t(hasVoted ? "issue.unvote.description" : "issue.vote.description")}
             onClick={onIssueVote}
           >
             <span
@@ -1898,175 +1940,167 @@ function IssueMilestoneSelect({
   onChange,
   selectedMilestoneId,
 }: {
-  milestones: {
-    closed: ProjectMilestone[];
-    open: ProjectMilestone[];
-  };
+  milestones: { closed: ProjectMilestone[]; open: ProjectMilestone[] };
   onChange: (value: string) => void;
   selectedMilestoneId: string;
 }) {
   const { t } = useLegacyMessages();
   const [open, setOpen] = useState(false);
-  const allMilestones = [...milestones.open, ...milestones.closed];
-  const selectedTitle =
-    allMilestones.find((milestone) => stringField(milestone.id) === selectedMilestoneId)?.title ??
-    t("issue.noMilestone");
-
-  return (
-    <>
-      <select
-        id="milestone"
-        name="milestone.id"
-        data-format="milestone"
-        data-container-css-class="fullsize"
-        value={selectedMilestoneId}
-        onChange={(event) => onChange(event.currentTarget.value)}
-        className="select2-offscreen"
-      >
-        <option
-          value="-1"
-          ref={
-            selectedMilestoneId === "-1"
-              ? (option) => {
-                  if (option) {
-                    option.defaultSelected = true;
-                  }
-                }
-              : undefined
-          }
-        >
-          {t("issue.noMilestone")}
-        </option>
-        <optgroup label={t("milestone.state.open")}>
-          {milestones.open.map((milestone) => (
-            <option
-              key={stringField(milestone.id)}
-              value={stringField(milestone.id)}
-              data-state={stringField(milestone.state, "open")}
-              ref={
-                stringField(milestone.id) === selectedMilestoneId
-                  ? (option) => {
-                      if (option) {
-                        option.defaultSelected = true;
-                      }
-                    }
-                  : undefined
-              }
-            >
-              {stringField(milestone.title)}
-            </option>
-          ))}
-        </optgroup>
-        <optgroup label={t("milestone.state.closed")}>
-          {milestones.closed.map((milestone) => (
-            <option
-              key={stringField(milestone.id)}
-              value={stringField(milestone.id)}
-              data-state={stringField(milestone.state, "closed")}
-              ref={
-                stringField(milestone.id) === selectedMilestoneId
-                  ? (option) => {
-                      if (option) {
-                        option.defaultSelected = true;
-                      }
-                    }
-                  : undefined
-              }
-            >
-              {stringField(milestone.title)}
-            </option>
-          ))}
-        </optgroup>
-      </select>
-      <LegacySingleSelectControl
-        ariaLabel={t("milestone")}
-        open={open}
-        options={[
-          { label: t("issue.noMilestone"), value: "-1" },
-          ...allMilestones.map((milestone) => ({
-            label: stringField(milestone.title),
-            value: stringField(milestone.id),
-          })),
-        ]}
-        selectedLabel={stringField(selectedTitle)}
-        selectedValue={selectedMilestoneId}
-        setOpen={setOpen}
-        onChange={onChange}
-        className="fullsize"
-      />
-    </>
-  );
-}
-
-function LegacySingleSelectControl({
-  ariaLabel,
-  className,
-  onChange,
-  open,
-  options,
-  selectedLabel,
-  selectedValue,
-  setOpen,
-}: {
-  ariaLabel: string;
-  className: string;
-  onChange: (value: string) => void;
-  open: boolean;
-  options: Array<{ label: string; value: string }>;
-  selectedLabel: string;
-  selectedValue: string;
-  setOpen: (open: boolean) => void;
-}) {
+  const [search, setSearch] = useState("");
+  const [activeValue, setActiveValue] = useState(selectedMilestoneId);
+  const choiceRef = useRef<HTMLDivElement>(null);
   const listboxId = useId();
-  return (
-    <div
-      className={`select2-container ${className}${open ? " select2-dropdown-open" : ""}`}
-      role="combobox"
-      aria-controls={listboxId}
-      aria-label={ariaLabel}
-      aria-expanded={open}
+  const groups = [
+    { state: "open", items: milestones.open },
+    { state: "closed", items: milestones.closed },
+  ];
+  const options = [
+    { label: t("issue.noMilestone"), text: t("issue.noMilestone"), value: "-1", group: "" },
+    ...groups.flatMap(({ state, items }) =>
+      items.map((milestone) => {
+        const text = stringField(milestone.title).trim();
+        return {
+          label: <div title={`[${t(`milestone.state.${state}`)}] ${text}`}>{text}</div>,
+          text,
+          value: stringField(milestone.id),
+          group: state,
+        };
+      }),
+    ),
+  ];
+  const term = search.trim().toLocaleLowerCase();
+  const filtered = options.filter((option) => option.text.toLocaleLowerCase().includes(term));
+  const active = filtered.find((option) => option.value === activeValue) ?? filtered[0];
+  const choose = (value: string) => {
+    onChange(value);
+    setOpen(false);
+    choiceRef.current?.focus();
+  };
+  const toggle = () => {
+    setSearch("");
+    setActiveValue(selectedMilestoneId);
+    setOpen(!open);
+  };
+  const renderOption = (option: (typeof options)[number]) => (
+    <li
+      key={option.value}
+      className={`select2-results-dept-${option.group ? 1 : 0} select2-result select2-result-selectable${active?.value === option.value ? " select2-highlighted" : ""}`}
     >
       <div
-        className="select2-choice"
-        role="button"
-        tabIndex={0}
-        onClick={() => setOpen(!open)}
-        onKeyDown={(event) => activateLegacyControl(event, () => setOpen(!open))}
+        id={`${listboxId}-${option.value}`}
+        className="select2-result-label"
+        role="option"
+        tabIndex={open ? 0 : -1}
+        aria-selected={selectedMilestoneId === option.value}
+        onMouseDown={(event) => event.preventDefault()}
+        onMouseEnter={() => setActiveValue(option.value)}
+        onClick={() => choose(option.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.stopPropagation();
+            activateLegacyControl(event, () => choose(option.value));
+          }
+        }}
       >
-        <span className="select2-chosen">{selectedLabel}</span>
-        <span className="select2-arrow" aria-hidden="true">
-          <b></b>
-        </span>
+        {option.label}
       </div>
-      <div className={`select2-drop${open ? " select2-drop-active" : " select2-display-none"}`}>
-        <ul className="select2-results" role="listbox" id={listboxId}>
-          {options.map((option) => (
-            <li
-              key={option.value}
-              className={selectedValue === option.value ? "select2-highlighted" : undefined}
-            >
-              <div
-                className="select2-result-label"
-                role="option"
-                tabIndex={open ? 0 : -1}
-                aria-selected={selectedValue === option.value}
-                onClick={() => {
-                  onChange(option.value);
-                  setOpen(false);
-                }}
-                onKeyDown={(event) =>
-                  activateLegacyControl(event, () => {
-                    onChange(option.value);
-                    setOpen(false);
-                  })
-                }
-              >
-                {option.label}
-              </div>
-            </li>
-          ))}
-        </ul>
+    </li>
+  );
+
+  return (
+    <div
+      data-owner="issue-detail-milestone-control"
+      role="combobox"
+      aria-controls={listboxId}
+      aria-label={t("milestone")}
+      aria-expanded={open}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          setOpen(false);
+          choiceRef.current?.focus();
+        } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+          event.preventDefault();
+          if (!open) {
+            toggle();
+          } else if (filtered.length) {
+            const index = filtered.indexOf(active);
+            const next = Math.max(
+              0,
+              Math.min(filtered.length - 1, index + (event.key === "ArrowDown" ? 1 : -1)),
+            );
+            setActiveValue(filtered[next].value);
+          }
+        } else if (event.key === "Enter" && open && active) {
+          event.preventDefault();
+          choose(active.value);
+        }
+      }}
+    >
+      <div className={`select2-container fullsize${open ? " select2-dropdown-open" : ""}`}>
+        <div
+          ref={choiceRef}
+          className="select2-choice"
+          role="button"
+          tabIndex={0}
+          onClick={toggle}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.stopPropagation();
+              activateLegacyControl(event, toggle);
+            }
+          }}
+        >
+          <span className="select2-chosen">
+            {options.find((option) => option.value === selectedMilestoneId)?.label ??
+              t("issue.noMilestone")}
+          </span>
+          <span className="select2-arrow" aria-hidden="true">
+            <b></b>
+          </span>
+        </div>
       </div>
+      {open ? (
+        <div className="select2-drop select2-drop-active">
+          <div className="select2-search">
+            <input
+              autoFocus
+              type="text"
+              className="select2-input"
+              role="searchbox"
+              aria-label={t("milestone")}
+              aria-controls={listboxId}
+              aria-activedescendant={active ? `${listboxId}-${active.value}` : undefined}
+              value={search}
+              onChange={(event) => {
+                setSearch(event.currentTarget.value);
+                setActiveValue("");
+              }}
+            />
+          </div>
+          <ul className="select2-results" role="listbox" id={listboxId}>
+            {filtered.filter((option) => !option.group).map(renderOption)}
+            {groups.map(({ state }) => {
+              const groupOptions = filtered.filter((option) => option.group === state);
+              return groupOptions.length ? (
+                <li
+                  key={state}
+                  className="select2-results-dept-0 select2-result select2-result-unselectable select2-result-with-children"
+                >
+                  <div className="select2-result-label">{t(`milestone.state.${state}`)}</div>
+                  <ul className="select2-result-sub">{groupOptions.map(renderOption)}</ul>
+                </li>
+              ) : null;
+            })}
+            {!filtered.length ? (
+              <li className="select2-no-results">{t("select2.noMatches")}</li>
+            ) : null}
+          </ul>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -2359,10 +2393,13 @@ function LegacyAssigneeControl({
   const displayName =
     selectedUser?.displayName ??
     (displayLoginId === initialLoginId ? stringField(issue.assigneeLabel, initialLoginId) : value);
+  const displayAvatarUrl =
+    selectedUser?.avatarUrl ??
+    (displayLoginId === initialLoginId ? stringField(issue.assigneeAvatarUrl) : "");
 
   return (
     <div
-      className={`select2-container bigdrop${open ? " select2-dropdown-open" : ""}`}
+      className={`select2-container bigdrop fullsize${open ? " select2-dropdown-open" : ""}`}
       role="combobox"
       aria-label={t("issue.assignee")}
       aria-expanded={open}
@@ -2370,7 +2407,7 @@ function LegacyAssigneeControl({
       data-owner="issue-detail-assignee-control"
     >
       <div
-        className="select2-choice"
+        className={`select2-choice${value ? "" : " select2-default"}`}
         role="button"
         tabIndex={0}
         onClick={() => (open ? setOpen(false) : openControl())}
@@ -2378,15 +2415,15 @@ function LegacyAssigneeControl({
       >
         <span className="select2-chosen">
           {value ? (
-            <span className="usf-group">
-              {value === initialLoginId && issue.assigneeAvatarUrl ? (
+            <div className="usf-group" title={`${displayName} ${displayLoginId}`}>
+              {displayAvatarUrl ? (
                 <span className="avatar-wrap smaller">
-                  <img src={stringField(issue.assigneeAvatarUrl)} width="20" height="20" alt="" />
+                  <img src={displayAvatarUrl} width="20" height="20" alt="" />
                 </span>
-              ) : null}
-              <strong className="name">{displayName}</strong>
-              <span className="loginid"> {displayLoginId}</span>
-            </span>
+              ) : null}{" "}
+              <strong className="name">{displayName}</strong>{" "}
+              <span className="loginid">{displayLoginId}</span>
+            </div>
           ) : (
             t("issue.noAssignee")
           )}
@@ -2437,7 +2474,17 @@ function LegacyAssigneeControl({
                   aria-selected={value === user.loginId}
                   onClick={() => choose(user)}
                 >
-                  {user.displayName || user.loginId} {user.loginId}
+                  {user.avatarUrl ? (
+                    <div className="usf-group" title={`${user.displayName} ${user.loginId}`}>
+                      <span className="avatar-wrap smaller">
+                        <img src={user.avatarUrl} width="20" height="20" alt="" />
+                      </span>{" "}
+                      <strong className="name">{user.displayName}</strong>{" "}
+                      <span className="loginid">{user.loginId}</span>
+                    </div>
+                  ) : (
+                    user.displayName || user.loginId
+                  )}
                 </button>
               </li>
             ))}
@@ -2459,6 +2506,8 @@ function LegacyLabelControl({
 }) {
   const { t } = useLegacyMessages();
   const [open, setOpen] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const selectedIds = [...selectedLabelIds];
   const filteredLabels = labels.filter((label) =>
@@ -2470,10 +2519,22 @@ function LegacyLabelControl({
     );
     setQuery("");
   };
+  const remove = (id: string) => {
+    toggle(id);
+    setOpen(false);
+    searchInputRef.current?.focus();
+  };
   return (
     <div
-      className={`select2-container select2-container-multi issue-labels bordered fullsize${open ? " select2-container-active" : ""}`.trim()}
+      className={`select2-container select2-container-multi issue-labels bordered fullsize${open || focused ? " select2-container-active" : ""}`.trim()}
       data-owner="project-issue-detail-label-control"
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          setOpen(false);
+          setFocused(false);
+          setQuery("");
+        }
+      }}
     >
       <ul className="select2-choices">
         {labels
@@ -2496,21 +2557,26 @@ function LegacyLabelControl({
                 role="button"
                 tabIndex={0}
                 aria-label={`${stringField(label.name)} ${t("button.delete")}`}
-                onClick={() => toggle(stringField(label.id))}
+                onClick={() => remove(stringField(label.id))}
                 onKeyDown={(event) =>
-                  activateLegacyControl(event, () => toggle(stringField(label.id)))
+                  activateLegacyControl(event, () => remove(stringField(label.id)))
                 }
               ></span>
             </li>
           ))}
         <li className="select2-search-field">
           <input
-            className="select2-input"
+            ref={searchInputRef}
+            className={`select2-input${!open && !focused ? (selectedIds.length ? " issue-detail-label-search-input" : " select2-default") : ""}`}
             aria-label={t("label.select")}
+            placeholder={
+              !open && !focused && selectedIds.length === 0 ? t("label.select") : undefined
+            }
             autoComplete="off"
             value={query}
             data-owner="project-issue-detail-label-search-input"
-            onFocus={() => setOpen(true)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
             onClick={() => setOpen(true)}
             onChange={(event) => {
               setQuery(event.currentTarget.value);
@@ -2720,6 +2786,8 @@ function IssueChildIssue({
   ownerName: string;
   projectName: string;
 }) {
+  const { t } = useLegacyMessages();
+  const createdDate = formatLegacyTimestamp(stringField(child.createdLabel), t);
   const issueNumber = stringField(child.issueNumber);
   const state = booleanField(child.isDraft) ? "draft" : stringField(child.state, "open");
   const isClosed = state === "closed";
@@ -2781,8 +2849,8 @@ function IssueChildIssue({
           {label.name}
         </IssueLabel>
       ))}
-      <span className="child-issue-date" title={stringField(child.createdLabel)}>
-        {stringField(child.createdLabel)}
+      <span className="child-issue-date" title={createdDate.title}>
+        {createdDate.label}
       </span>
     </div>
   );
@@ -3263,6 +3331,7 @@ function IssueEventRow({
 
   const eventId = stringField(event.id);
   const eventHash = `event-${eventId}`;
+  const createdDate = formatLegacyTimestamp(stringField(event.createdLabel), t);
   const newValue = stringField(event.newValue).toLowerCase();
   const senderLoginId = stringField(event.senderLoginId);
   const senderLabel = stringField(event.senderLabel, senderLoginId);
@@ -3289,7 +3358,7 @@ function IssueEventRow({
         {issueStateEventText(newValue)}
         <span className="date" data-owner="issue-detail-timeline-event-date">
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
-            {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
+            {createdDate.label}
           </Link>
         </span>
       </li>
@@ -3318,7 +3387,7 @@ function IssueEventRow({
         )}
         <span className="date" data-owner="issue-detail-timeline-event-date">
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
-            {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
+            {createdDate.label}
           </Link>
         </span>
       </li>
@@ -3359,7 +3428,7 @@ function IssueEventRow({
         )}
         <span className="date" data-owner="issue-detail-timeline-event-date">
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
-            {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
+            {createdDate.label}
           </Link>
         </span>
       </li>
@@ -3387,7 +3456,7 @@ function IssueEventRow({
         </strong>
         <span className="date" data-owner="issue-detail-timeline-event-date">
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
-            {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
+            {createdDate.label}
           </Link>
         </span>
       </li>
@@ -3416,7 +3485,7 @@ function IssueEventRow({
         </strong>
         <span className="date" data-owner="issue-detail-timeline-event-date">
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
-            {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
+            {createdDate.label}
           </Link>
         </span>
       </li>
@@ -3445,7 +3514,7 @@ function IssueEventRow({
         </strong>
         <span className="date" data-owner="issue-detail-timeline-event-date">
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
-            {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
+            {createdDate.label}
           </Link>
         </span>
       </li>
@@ -3486,7 +3555,7 @@ function IssueEventRow({
         {target}
         <span className="date" data-owner="issue-detail-timeline-event-date">
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
-            {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
+            {createdDate.label}
           </Link>
         </span>
       </li>
@@ -3517,7 +3586,7 @@ function IssueEventRow({
         {label} label
         <span className="date" data-owner="issue-detail-timeline-event-date">
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
-            {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
+            {createdDate.label}
           </Link>
         </span>
       </li>
@@ -3529,7 +3598,7 @@ function IssueEventRow({
       {stringField(event.newValue)} by {sender}
       <span className="date" data-owner="issue-detail-timeline-event-date">
         <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
-          {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
+          {createdDate.label}
         </Link>
       </span>
     </li>
@@ -3588,7 +3657,8 @@ function IssueCommentRow({
   onCommentVote: (commentId: string, hasVoted: boolean) => void;
   runtimeConfig: RuntimeConfig;
 }) {
-  const { language, t } = useLegacyMessages();
+  const { t } = useLegacyMessages();
+  const createdDate = formatLegacyTimestamp(stringField(comment.createdLabel), t);
   const queryClient = useQueryClient();
   const commentId = stringField(comment.id);
   const commentHash = `comment-${commentId}`;
@@ -3735,9 +3805,9 @@ function IssueCommentRow({
               to="."
               hash={commentHash}
               className="ago"
-              title={stringField(comment.createdLabel)}
+              title={createdDate.title}
             >
-              {legacyRelativeDateLabel(stringField(comment.createdLabel), language)}
+              {createdDate.label}
             </Link>
             <Link
               {...LEGACY_LINK_PROPS}
@@ -3768,7 +3838,7 @@ function IssueCommentRow({
               <button
                 type="button"
                 className="btn-transparent-with-fontsize-lineheight"
-                title="Withdraw"
+                title={t("common.comment.unvote")}
                 onClick={(event) => {
                   event.preventDefault();
                   onCommentVote(commentId, hasVoted);
@@ -3785,7 +3855,7 @@ function IssueCommentRow({
               <button
                 type="button"
                 className="btn-transparent-with-fontsize-lineheight"
-                title="Agree"
+                title={t("common.comment.vote")}
                 onClick={(event) => {
                   event.preventDefault();
                   onCommentVote(commentId, hasVoted);
@@ -3800,7 +3870,7 @@ function IssueCommentRow({
                 className="icon btn-transparent-with-fontsize-lineheight comment-translate"
                 data-owner="project-issue-detail-comment-translation-button"
                 data-comment-id={commentId}
-                title="Translation"
+                title={t("button.translation")}
                 disabled={translatePending || translatedContentsMarkdown !== null}
                 onClick={() => void translateComment()}
               >
@@ -3813,7 +3883,7 @@ function IssueCommentRow({
                 className="btn-transparent-with-fontsize-lineheight"
                 data-owner="project-issue-detail-comment-action-edit"
                 data-comment-id={commentId}
-                title="Edit comment"
+                title={t("common.comment.edit")}
                 onClick={(event) => {
                   event.preventDefault();
                   event.stopPropagation();
@@ -3830,7 +3900,7 @@ function IssueCommentRow({
                 type="button"
                 className="btn-transparent-with-fontsize-lineheight"
                 data-owner="project-issue-detail-comment-action-delete"
-                title="Delete comment"
+                title={t("common.comment.delete")}
                 onClick={(event) => {
                   insulateModalButtonClick(event);
                   onCommentDeleteRequest(deleteUri);
@@ -4163,6 +4233,7 @@ function ChildComment({
   issue: RestIssueDetailResponse;
   onCommentDeleteRequest: (requestUri: string) => void;
 }) {
+  const { t } = useLegacyMessages();
   const commentId = stringField(comment.id);
   const commentHash = `comment-${commentId}`;
   const authorLoginId = stringField(comment.authorLoginId);
@@ -4174,48 +4245,51 @@ function ChildComment({
     basePath,
     `/${ownerName}/${projectName}/issue/${issueNumber}/comment/${commentId}`,
   );
-  const createdLabel = stringField(comment.createdLabel);
+  const createdDate = formatLegacyTimestamp(stringField(comment.createdLabel), t);
+
+  const metadata = (
+    <span className="subcomment-author">
+      {" - "}
+      <Link
+        to="/$user"
+        params={{ user: authorLoginId }}
+        className="usf-group"
+        title={authorLoginId}
+      >
+        <strong>{authorLabel}</strong>
+      </Link>{" "}
+      <Link
+        {...LEGACY_LINK_PROPS}
+        to="."
+        hash={commentHash}
+        className="ago"
+        title={createdDate.title}
+      >
+        {createdDate.label}
+      </Link>
+      {booleanField(comment.viewerCanDelete) ? (
+        <button
+          type="button"
+          className="btn-transparent deleteButtonX"
+          data-owner="project-issue-detail-child-comment-delete"
+          title={t("common.comment.delete")}
+          onClick={(event) => {
+            insulateModalButtonClick(event);
+            onCommentDeleteRequest(deleteUri);
+          }}
+        >
+          x
+        </button>
+      ) : null}
+    </span>
+  );
 
   return (
     <div className="one-line-comment">
       <div className="contents" data-owner="project-issue-detail-child-comment-contents">
-        <IssueMarkdown basePath={basePath}>
+        <IssueMarkdown basePath={basePath} childCommentMetadata={metadata}>
           {stripMarkdownComments(stringField(comment.contentsMarkdown))}
         </IssueMarkdown>
-        <span className="subcomment-author hide">
-          -{" "}
-          <Link
-            to="/$user"
-            params={{ user: authorLoginId }}
-            className="usf-group"
-            title={authorLoginId}
-          >
-            <strong>{authorLabel}</strong>
-          </Link>
-          <Link
-            {...LEGACY_LINK_PROPS}
-            to="."
-            hash={commentHash}
-            className="ago"
-            title={createdLabel}
-          >
-            {createdLabel}
-          </Link>
-          {booleanField(comment.viewerCanDelete) ? (
-            <button
-              type="button"
-              className="btn-transparent deleteButtonX"
-              data-owner="project-issue-detail-child-comment-delete"
-              title="Delete comment"
-              onClick={(event) => {
-                insulateModalButtonClick(event);
-                onCommentDeleteRequest(deleteUri);
-              }}
-            >
-              x
-            </button>
-          ) : null}
-        </span>
       </div>
     </div>
   );
@@ -4616,7 +4690,8 @@ function IssueIndexComment({
   currentUserLoginId: string;
 }) {
   const router = useRouter();
-  const { language } = useLegacyMessages();
+  const { t } = useLegacyMessages();
+  const createdDate = formatLegacyTimestamp(stringField(comment.createdLabel), t);
   const commentId = stringField(comment.id);
   const commentHash = `comment-${commentId}`;
   const authorLoginId = stringField(comment.authorLoginId);
@@ -4685,9 +4760,9 @@ function IssueIndexComment({
               to="."
               hash={commentHash}
               className="ago"
-              title={stringField(comment.createdLabel)}
+              title={createdDate.title}
             >
-              {legacyRelativeDateLabel(stringField(comment.createdLabel), language)}
+              {createdDate.label}
             </Link>
             <Link
               {...LEGACY_LINK_PROPS}
@@ -4949,7 +5024,8 @@ function toLinkTarget(basePath: string, href: string): string {
 function ellipsisMarkdown(markdown: string) {
   const text = markdown
     .replace(/!?\[([^\]]*)\]\([^)]+\)/gu, "$1")
-    .replace(/[*_`>#-]/gu, "")
+    .replace(/^(?: {0,3}(?:#{1,6}\s+|>\s?|[-+*]\s+|\d+[.)]\s+))+/gmu, "")
+    .replace(/[*_`]/gu, "")
     .replace(/\s+/gu, " ")
     .trim();
   return text.length > 60 ? `${text.slice(0, 60)}...` : text;
@@ -4968,33 +5044,6 @@ function localizeIssueDuration(value: string, language: string) {
     return value;
   }
   return value.replace(/^(\d+)\s+days?$/u, "$1일");
-}
-
-function legacyRelativeDateLabel(rawLabel: string, language: string, now = Date.now()) {
-  if (language !== "ko-KR" || rawLabel === "") {
-    return rawLabel;
-  }
-  const timestamp = Date.parse(rawLabel);
-  if (Number.isNaN(timestamp)) {
-    return rawLabel;
-  }
-  const elapsedSeconds = Math.floor((now - timestamp) / 1000);
-  if (elapsedSeconds < 0) {
-    return rawLabel;
-  }
-  if (elapsedSeconds < 60) {
-    return "방금 전";
-  }
-  if (elapsedSeconds < 60 * 60) {
-    return `${Math.floor(elapsedSeconds / 60)}분 전`;
-  }
-  if (elapsedSeconds < 24 * 60 * 60) {
-    return `${Math.floor(elapsedSeconds / (60 * 60))}시간 전`;
-  }
-  if (elapsedSeconds < 30 * 24 * 60 * 60) {
-    return `${Math.floor(elapsedSeconds / (24 * 60 * 60))}일 전`;
-  }
-  return rawLabel;
 }
 
 function activateLegacyControl(event: KeyboardEvent<HTMLElement>, activate: () => void) {

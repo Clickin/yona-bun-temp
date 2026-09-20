@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PullRequestFileUploader } from "../../../../../components/file-uploader";
 import { PullRequestMarkdownEditor } from "../../../../../components/markdown-editor";
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import {
   pullRequestMergeResultQueryOptions,
@@ -15,6 +15,7 @@ import { readSessionBootstrap } from "../../../../../auth-workspace-client";
 import legacySpriteUrl from "../../../../../assets/legacy/sprite.png";
 import { useLegacyMessages } from "../../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
+import { PullRequestMergeResult, PullRequestSelect2 } from "../../newPullRequestForm";
 
 export const Route = createFileRoute(
   "/$ownerName/$projectName/pullRequest/$pullRequestNumber/editform",
@@ -210,25 +211,24 @@ function ProjectPullRequestEditBody({
                 defaultValue={pullRequest.title}
                 placeholder={t("title")}
               />
-              <div className="pr-edit-editor-wrap">
-                <PullRequestMarkdownEditor
-                  value={pullRequest.bodyMarkdown}
-                  wrapperClassName="mt10"
-                  editorStyle={{
-                    style: {
-                      borderColor: "#dddddd",
-                      borderStyle: "solid",
-                      borderWidth: "1px",
-                      height: "300px",
-                    },
-                  }}
-                  tabContentClassName="tab-content"
-                  owners={{
-                    wrapper: "pull-request-editform-markdown-editor-wrapper",
-                    tabContent: "pull-request-edit-editor-tab-content",
-                  }}
-                />
-              </div>
+              <PullRequestMarkdownEditor
+                value={pullRequest.bodyMarkdown}
+                wrapperClassName="mt10"
+                wrapperStyle={{ style: { position: "relative" } }}
+                editorStyle={{
+                  style: {
+                    borderColor: "#dddddd",
+                    borderStyle: "solid",
+                    borderWidth: "1px",
+                    height: "300px",
+                  },
+                }}
+                tabContentClassName="tab-content"
+                owners={{
+                  wrapper: "pull-request-editform-markdown-editor-wrapper",
+                  tabContent: "pull-request-edit-editor-tab-content",
+                }}
+              />
               <PullRequestFileUploader
                 resourceId={pullRequest.id}
                 attachedFilesStyleProps={{
@@ -244,7 +244,7 @@ function ProjectPullRequestEditBody({
                   saveHelp: "pull-request-edit-upload-save-help",
                 }}
               />
-              <div className="pr-edit-actions actions">
+              <div className="actions">
                 <button type="submit" className="ybtn ybtn-success">
                   {t("button.save")}
                 </button>
@@ -270,15 +270,11 @@ function ProjectPullRequestEditBody({
                 data-owner="pull-request-edit-merge-result"
               >
                 {mergeResult ? (
-                  <MergeResult
-                    authorLabel={t("code.author")}
-                    commitDateLabel={t("code.commitDate")}
-                    commitMessageLabel={t("code.commitMsg")}
+                  <PullRequestMergeResult
                     commits={mergeResult.commits}
-                    noChangesLabel={t("pullRequest.diff.noChanges")}
+                    basePath={runtimeConfig.basePath}
                     ownerName={sourceProjectOwnerName(formOptions)}
                     projectName={sourceProjectName(formOptions)}
-                    runtimeConfig={runtimeConfig}
                   />
                 ) : null}
               </div>
@@ -367,23 +363,47 @@ function PullRequestDisabledBranchSelectors({
         <label htmlFor="fromProjectId" className="field-title">
           {t("pullRequest.from")}
         </label>
+        <PullRequestSelect2
+          controlId="fromProjectId"
+          disabled
+          owner="pull-request-edit"
+          value={String(selected.fromProjectId)}
+          options={formOptions.fromProjects.map((project) => ({
+            value: String(project.id),
+            label: `${project.ownerName} / ${project.projectName}`,
+          }))}
+        />
         <select
           id="fromProjectId"
           name="fromProjectId"
-          className="mr5"
+          className="mr5 select2-offscreen"
+          tabIndex={-1}
           defaultValue={String(selected.fromProjectId)}
           disabled
           data-owner="pull-request-edit-from-project-select"
         >
           {formOptions.fromProjects.map((project) => (
             <option key={project.id} value={project.id}>
-              {project.ownerName}/{project.projectName}
+              {project.ownerName} / {project.projectName}
             </option>
           ))}
         </select>
+        <PullRequestSelect2
+          branch
+          controlId="fromBranch"
+          disabled
+          owner="pull-request-edit"
+          value={selected.fromBranch}
+          options={formOptions.fromBranches.map((branch) => ({
+            value: branch.name,
+            label: branch.name,
+          }))}
+        />
         <select
           id="fromBranch"
           name="fromBranch"
+          className="select2-offscreen"
+          tabIndex={-1}
           data-format="branch"
           disabled
           data-dropdown-css-class="branches"
@@ -407,23 +427,47 @@ function PullRequestDisabledBranchSelectors({
         <label htmlFor="toProjectId" className="field-title">
           {t("pullRequest.to")}
         </label>
+        <PullRequestSelect2
+          controlId="toProjectId"
+          disabled
+          owner="pull-request-edit"
+          value={String(selected.toProjectId)}
+          options={formOptions.toProjects.map((project) => ({
+            value: String(project.id),
+            label: `${project.ownerName} / ${project.projectName}`,
+          }))}
+        />
         <select
           id="toProjectId"
           name="toProjectId"
-          className="mr5"
+          className="mr5 select2-offscreen"
+          tabIndex={-1}
           defaultValue={String(selected.toProjectId)}
           disabled
           data-owner="pull-request-edit-to-project-select"
         >
           {formOptions.toProjects.map((project) => (
             <option key={project.id} value={project.id}>
-              {project.ownerName}/{project.projectName}
+              {project.ownerName} / {project.projectName}
             </option>
           ))}
         </select>
+        <PullRequestSelect2
+          branch
+          controlId="toBranch"
+          disabled
+          owner="pull-request-edit"
+          value={selected.toBranch}
+          options={formOptions.toBranches.map((branch) => ({
+            value: branch.name,
+            label: branch.name,
+          }))}
+        />
         <select
           id="toBranch"
           name="toBranch"
+          className="select2-offscreen"
+          tabIndex={-1}
           data-format="branch"
           disabled
           data-dropdown-css-class="branches"
@@ -439,96 +483,6 @@ function PullRequestDisabledBranchSelectors({
         </select>
         <input type="hidden" name="toProjectId" value={selected.toProjectId} />
         <input type="hidden" name="toBranch" value={selected.toBranch} />
-      </div>
-    </div>
-  );
-}
-
-function MergeResult({
-  authorLabel,
-  commitDateLabel,
-  commitMessageLabel,
-  commits,
-  noChangesLabel,
-  ownerName,
-  projectName,
-  runtimeConfig,
-}: {
-  authorLabel: string;
-  commitDateLabel: string;
-  commitMessageLabel: string;
-  commits: PullRequestCommit[];
-  noChangesLabel: string;
-  ownerName: string;
-  projectName: string;
-  runtimeConfig: RuntimeConfig;
-}) {
-  if (!commits.length) {
-    return (
-      <div id="mergeResult" className="code-browser-wrap">
-        <div>
-          <h5>{noChangesLabel}</h5>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div id="mergeResult" className="code-browser-wrap">
-      <div className="commit-wrap">
-        <table className="code-table commits">
-          <thead className="thead">
-            <tr>
-              <td className="commit-id">
-                <strong>@</strong>
-              </td>
-              <td className="messages">
-                <strong>{commitMessageLabel}</strong>
-              </td>
-              <td className="date">
-                <strong>{commitDateLabel}</strong>
-              </td>
-              <td className="author">
-                <strong>{authorLabel}</strong>
-              </td>
-            </tr>
-          </thead>
-          <tbody className="tbody">
-            {commits.map((commit) => (
-              <tr key={commit.commitId}>
-                <td className="commit-id">
-                  <Link
-                    to="/$ownerName/$projectName/commit/$commitId"
-                    reloadDocument
-                    params={{ commitId: commit.commitId, ownerName, projectName }}
-                    search={{ branch: "", path: "" }}
-                  >
-                    {commit.commitShortId}
-                  </Link>
-                </td>
-                <td className="messages">
-                  <span className="commitMsg short">{commit.commitMessage}</span>
-                </td>
-                <td className="date" title={commit.authorDateLabel}>
-                  {commit.authorDateLabel}
-                </td>
-                <td className={`author ${commit.authorEmail}`}>
-                  <div className="avatar-wrap">
-                    <img
-                      src={prefixBasePath(
-                        runtimeConfig.basePath,
-                        "/assets/images/default-avatar-32.png",
-                      )}
-                      width="32"
-                      height="32"
-                      alt=""
-                    />
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       </div>
     </div>
   );

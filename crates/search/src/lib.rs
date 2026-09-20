@@ -1,7 +1,5 @@
 //! Canonical search ownership placeholder for search query and snippet slices.
 
-use std::cmp::Ordering;
-
 use serde::Serialize;
 
 /// Returns the crate ownership label used by foundation tests and future packet wiring.
@@ -102,39 +100,6 @@ pub fn resolve_search_type(
 
 pub fn keyword_matches(value: &str, keyword: &str) -> bool {
     !keyword.is_empty() && value.to_lowercase().contains(&keyword.to_lowercase())
-}
-
-pub fn relevance_score(title: &str, body: &str, keyword: &str) -> u32 {
-    const TITLE_MATCH_WEIGHT: u32 = 100;
-    count_keyword_matches(title, keyword)
-        .saturating_mul(TITLE_MATCH_WEIGHT)
-        .saturating_add(count_keyword_matches(body, keyword))
-}
-
-fn count_keyword_matches(value: &str, keyword: &str) -> u32 {
-    let keyword = keyword.to_lowercase();
-    if keyword.is_empty() {
-        return 0;
-    }
-    value
-        .to_lowercase()
-        .match_indices(&keyword)
-        .count()
-        .try_into()
-        .unwrap_or(u32::MAX)
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct SearchRank {
-    pub relevance: u32,
-    pub legacy_order: usize,
-}
-
-pub fn compare_search_rank(left: SearchRank, right: SearchRank) -> Ordering {
-    right
-        .relevance
-        .cmp(&left.relevance)
-        .then_with(|| left.legacy_order.cmp(&right.legacy_order))
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
@@ -285,51 +250,5 @@ mod tests {
     fn keyword_matching_is_case_insensitive_without_regex_interpretation() {
         assert!(keyword_matches("Use [literal] Search", "[LITERAL]"));
         assert!(!keyword_matches("Use literal Search", "[literal]"));
-    }
-
-    #[test]
-    fn relevance_score_prioritizes_title_hits_over_body_hits() {
-        assert!(
-            relevance_score("Needle title", "", "needle")
-                > relevance_score("", "Needle body", "needle")
-        );
-        assert!(
-            relevance_score("", "Needle Needle", "needle")
-                > relevance_score("", "Needle", "needle")
-        );
-    }
-
-    #[test]
-    fn search_rank_prioritizes_relevance_then_preserves_legacy_order() {
-        let mut ranked = [
-            (
-                SearchRank {
-                    relevance: relevance_score("", "needle", "needle"),
-                    legacy_order: 0,
-                },
-                "newer body hit",
-            ),
-            (
-                SearchRank {
-                    relevance: relevance_score("needle", "", "needle"),
-                    legacy_order: 1,
-                },
-                "older title hit",
-            ),
-            (
-                SearchRank {
-                    relevance: relevance_score("", "needle", "needle"),
-                    legacy_order: 2,
-                },
-                "older body hit",
-            ),
-        ];
-
-        ranked.sort_by(|left, right| compare_search_rank(left.0, right.0));
-
-        assert_eq!(
-            ranked.map(|(_, label)| label),
-            ["older title hit", "newer body hit", "older body hit"]
-        );
     }
 }

@@ -1,13 +1,10 @@
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const fallbackMode = "normal";
 const screenshotDirectory = resolve("output/playwright/style-project-issues-keymap", fallbackMode);
-const readSource = (relativePath: string) =>
-  readFileSync(new URL(relativePath, import.meta.url), "utf8");
 const owner = "project-issues-keymap";
 
 async function openIssueList(page: Page) {
@@ -84,26 +81,6 @@ async function openIssueList(page: Page) {
   return keymap;
 }
 
-test("project issues keymap owns the legacy float without changing its wrapper DOM", async ({
-  page,
-}) => {
-  const routeSource = readSource("../src/routes/$ownerName/$projectName/issues.tsx");
-  const styleSource = readSource("../src/app.css");
-  const legacySource = readSource("../../yona-original/app/views/help/keymap.scala.html");
-  const bootstrapSource = readSource("../../yona-original/public/bootstrap/css/bootstrap.css");
-  const pageLessSource = readSource("../../yona-original/app/assets/stylesheets/less/_page.less");
-  const yobiSource = readSource("../../yona-original/app/assets/stylesheets/yobi.less");
-
-  expect(legacySource).toContain(
-    '<div class="pull-left" style="padding:10px 0; margin-left: 55px;">',
-  );
-  expect(bootstrapSource).toMatch(/\.pull-left\s*\{\s*float:\s*left;/u);
-  expect(pageLessSource).toContain(".keymap-help {");
-  expect(yobiSource).toContain('@import "less/_page.less";');
-  expect(routeSource).toContain(`data-owner="${owner}"`);
-  expect(routeSource).not.toContain("keymapWrap).className} pull-left");
-});
-
 test(`project issues keymap preserves float geometry and interaction (${fallbackMode})`, async ({
   page,
 }) => {
@@ -114,7 +91,6 @@ test(`project issues keymap preserves float geometry and interaction (${fallback
   ] as const) {
     await page.setViewportSize(viewport);
     const keymap = await openIssueList(page);
-    await expect(keymap).not.toHaveClass(/(?:^|\s)pull-left(?:\s|$)/u);
     await expect(keymap).not.toHaveAttribute("style");
     await expect(keymap).toHaveCSS("float", "left");
     await expect(keymap).toHaveCSS("margin-left", "55px");

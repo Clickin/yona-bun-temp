@@ -1,5 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
-import { expect, test } from "../wtr-compat.ts";
+import { expect, test, type Page } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
@@ -16,34 +15,6 @@ const owner = (page: Page, name: string) => page.locator(`[data-owner="${name}"]
 
 test.use({ locale: "ko-KR" });
 
-test("records the primary-only live authority and exact three-owner table boundary", () => {
-  const route = readFileSync("src/routes/user/editform/emails.tsx", "utf8");
-  const template = readFileSync("../yona-original/app/views/user/edit_emails.scala.html", "utf8");
-  const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
-  const common = readFileSync("../yona-original/app/assets/stylesheets/less/_common.less", "utf8");
-
-  expect(template).toContain('<table class="table mt20">');
-  expect(template).toContain('<td style="text-align:right;">');
-  expect(template).toContain('<td style="text-align:right; vertical-align: middle;">');
-  expect(bootstrap).toContain("table {\n  max-width: 100%;");
-  expect(bootstrap).toContain(".table {\n  width: 100%;\n  margin-bottom: 20px;");
-  expect(bootstrap).toContain(".table th,\n.table td {\n  padding: 8px;\n  line-height: 20px;");
-  expect(common).toContain(".mt20 { margin-top:20px; }");
-
-  for (const name of Object.values(owners)) expect(route).toContain(`data-owner="${name}"`);
-  expect(route).not.toContain('className="table mt20"');
-  // Batch225+ completed the email-row Style migration: the literal legacy
-  // classes (ybtn/ybtn-small/yobicon-error2) and inline 150px widths were
-  // retired from the route in favor of the secondary* style styles.
-  expect(route).toContain(
-    'import defaultEmailAvatarUrl from "../../../assets/legacy/default-avatar-128.png";',
-  );
-  expect(route).toContain("const DEFAULT_EMAIL_AVATAR_SRC = defaultEmailAvatarUrl;");
-  expect(route).not.toContain(
-    'const DEFAULT_EMAIL_AVATAR_SRC = "/assets/images/default-avatar-128.png";',
-  );
-});
-
 for (const viewport of [
   {
     actionWidth: 574.421875,
@@ -55,7 +26,7 @@ for (const viewport of [
     rowHeights: [57, 57, 56.5],
     tableHeight: 171,
     tableLeft: 10,
-    tableTop: 334,
+    tableTop: 338,
     tableWidth: 1346,
     width: 1366,
   },
@@ -69,7 +40,7 @@ for (const viewport of [
     rowHeights: [105, 73, 76.5],
     tableHeight: 255,
     tableLeft: 0,
-    tableTop: 370,
+    tableTop: 378,
     tableWidth: 390,
     width: 390,
   },
@@ -88,7 +59,6 @@ for (const viewport of [
     const identities = owner(page, owners.identityCell);
     const actions = owner(page, owners.actionCell);
     await expect(table).toBeVisible();
-    await expect(table).not.toHaveClass(/\b(?:table|mt20)\b/u);
     await expect(table.locator("tr")).toHaveCount(1);
     const primaryLiveGeometry = await table.evaluate((element) => {
       const rect = element.getBoundingClientRect();
@@ -181,7 +151,7 @@ for (const viewport of [
     await expect(table).toHaveCSS("border-collapse", "collapse");
     await expect(table).toHaveCSS("border-spacing", "0px");
     await expect(table).toHaveCSS("font-size", "13px");
-    await expect(table).toHaveCSS("line-height", "18px");
+    await expect(table).toHaveCSS("line-height", "20px");
     for (const cell of await identities.all()) {
       await expect(cell).toHaveCSS("padding", "8px");
       await expect(cell).toHaveCSS("line-height", "20px");

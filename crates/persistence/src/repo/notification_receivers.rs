@@ -346,7 +346,7 @@ impl AppRepositoryImpl<'_> {
                 .pull_request_review_comment_author_ids(pull_request_id)
                 .await?
             {
-                self.push_readable_pull_request_watcher_id(
+                self.push_readable_project_watcher_id(
                     &project,
                     &mut receivers,
                     &mut seen,
@@ -399,6 +399,7 @@ impl AppRepositoryImpl<'_> {
         project_id: i64,
         actor_id: i64,
         event_type: &str,
+        commit: Option<(&str, Option<i64>)>,
     ) -> Result<Vec<i64>, DbErr> {
         let mut receivers = Vec::new();
         let mut seen = HashSet::new();
@@ -422,6 +423,61 @@ impl AppRepositoryImpl<'_> {
         {
             if user_id != actor_id {
                 push_unique_user_id(&mut receivers, &mut seen, Some(user_id));
+            }
+        }
+
+        if let Some((commit_id, author_id)) = commit {
+            let Some(project) = self.read_project_by_id(project_id).await? else {
+                return Ok(Vec::new());
+            };
+            let resource_id = format!("{project_id}:{commit_id}");
+            let commenters = review_comment::Entity::find()
+                .select_only()
+                .column(review_comment::Column::AuthorId)
+                .distinct()
+                .join(
+                    JoinType::InnerJoin,
+                    review_comment::Relation::CommentThread.def(),
+                )
+                .filter(comment_thread::Column::ProjectId.eq(Some(project_id)))
+                .filter(comment_thread::Column::CommitId.eq(Some(commit_id.to_string())))
+                .filter(comment_thread::Column::PullRequestId.is_null())
+                .into_tuple::<Option<i64>>()
+                .all(&self.db)
+                .await?;
+            let watchers = self.active_watch_user_ids("COMMIT", &resource_id).await?;
+            for user_id in author_id
+                .into_iter()
+                .chain(commenters.into_iter().flatten())
+                .chain(watchers)
+            {
+                if user_id != actor_id
+                    && self
+                        .project_notification_enabled_for_user(user_id, project_id, event_type)
+                        .await?
+                {
+                    self.push_readable_project_watcher_id(
+                        &project,
+                        &mut receivers,
+                        &mut seen,
+                        Some(user_id),
+                    )
+                    .await?;
+                }
+            }
+            let unwatchers: HashSet<_> = self
+                .active_unwatch_user_ids("COMMIT", &resource_id)
+                .await?
+                .into_iter()
+                .collect();
+            for index in (0..receivers.len()).rev() {
+                if unwatchers.contains(&receivers[index])
+                    || !self
+                        .search_project_visible_for_actor(&project, Some(receivers[index]))
+                        .await?
+                {
+                    receivers.swap_remove(index);
+                }
             }
         }
 

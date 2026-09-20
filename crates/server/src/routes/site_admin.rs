@@ -3881,6 +3881,24 @@ async fn rest_import_site_data_streamed(
                 &imported_attachments.created_attachments,
             )
             .await;
+            if issue.id > 0 {
+                let existing = repository
+                    .read_issue_detail(
+                        &issue.owner_name,
+                        &issue.project_name,
+                        issue.issue_number.trim().parse::<i64>().unwrap_or(0),
+                    )
+                    .await
+                    .map_err(|error| RestRouteError::internal(error.to_string()))?;
+                if !existing.is_some_and(|existing| existing.id == issue.id) {
+                    let message = format!(
+                        "issue id {} or number {} conflicts with a different destination issue",
+                        issue.id, issue.issue_number,
+                    );
+                    checkpoint.set_failure("issues", index, failure_key, message.clone());
+                    return Err(RestRouteError::internal(message));
+                }
+            }
             skipped_issues += 1;
             checkpoint.mark_skipped("issues", index);
             continue;
@@ -5307,6 +5325,27 @@ async fn rest_site_import_issue_comments(
                         &imported_attachments.created_attachments,
                     )
                     .await;
+                    let existing = repository
+                        .read_issue_comment_origin(comment.id)
+                        .await
+                        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+                    if !existing.is_some_and(|existing| {
+                        existing.owner_name == owner_name
+                            && existing.project_name == project_name
+                            && existing.issue_number == issue_number
+                    }) {
+                        let message = format!(
+                            "issue comment id {} conflicts with a different destination issue",
+                            comment.id,
+                        );
+                        checkpoint.set_failure(
+                            "issues.comments",
+                            index,
+                            failure_resource_key,
+                            message.clone(),
+                        );
+                        return Err(RestRouteError::internal(message));
+                    }
                     continue;
                 }
                 Err(error) => {
@@ -6577,7 +6616,7 @@ async fn rest_site_user_from_record(
         avatar_url,
         created_at: record
             .created_at
-            .map(|value| value.to_string())
+            .map(|value| value.and_utc().to_rfc3339())
             .unwrap_or_default(),
         display_name: record.display_name,
         email_address: record.email_address,
@@ -6586,7 +6625,7 @@ async fn rest_site_user_from_record(
         is_site_admin: record.is_site_admin,
         last_state_modified_at: record
             .last_state_modified_at
-            .map(|value| value.to_string())
+            .map(|value| value.and_utc().to_rfc3339())
             .unwrap_or_default(),
         login_id: record.login_id,
         password_hash: record.password_hash,
@@ -6666,7 +6705,7 @@ async fn rest_site_project_from_record(
     Ok(RestSiteProjectItem {
         created_at: record
             .created_date
-            .map(|value| value.to_string())
+            .map(|value| value.and_utc().to_rfc3339())
             .unwrap_or_default(),
         id: record.id,
         owner_name: record.owner_name,
@@ -6889,7 +6928,10 @@ async fn rest_site_post_from_record(
         author_login_id: record.author_login_id.clone(),
         comment_count: record.comment_count,
         created_label: record.created_label.clone(),
-        created_title: record.created_title.clone(),
+        created_title: record
+            .created_at
+            .map(|created_at| created_at.and_utc().to_rfc3339())
+            .unwrap_or_default(),
         labels: record
             .labels
             .iter()
@@ -6918,7 +6960,10 @@ async fn rest_site_issue_from_record(
         author_login_id: record.author_login_id.clone(),
         comment_count: record.comment_count,
         created_label: record.created_label.clone(),
-        created_title: record.created_title.clone(),
+        created_title: record
+            .created_at
+            .map(|created_at| created_at.and_utc().to_rfc3339())
+            .unwrap_or_default(),
         issue_number: record.issue_number.to_string(),
         labels: record
             .labels

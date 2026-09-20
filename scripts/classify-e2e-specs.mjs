@@ -59,7 +59,7 @@ const HARNESS_ONLY_PATTERNS = [
   /\bon\s*\(\s*["'](?:response|request)["']/,
   /\buploadFile\s*\(/,
   /\bpage\.drag\s*\(/,
-  /\bdblclick\s*\(/,
+  /\bpage\.setContent\s*\(/,
 ];
 
 const ALL_CHROME_PATTERNS = [
@@ -75,6 +75,7 @@ const CHROME_FILES = [/^_diag-/u, /^wtr-smoke/u];
 // mock does not reproduce — deterministic timeouts under happy-dom, never a
 // DOM_UNSUPPORTED guard. Conservative chrome until triaged.
 const CHROME_FILES_OVERRIDE = [
+  "ownership-project-new-fork.e2e.ts",
   "ownership-project-projectform.e2e.ts",
   "project-issue-list-fetch-lock.e2e.ts",
 ];
@@ -125,9 +126,7 @@ function main() {
   const capabilityCounts = {};
   for (const [capability, patterns] of Object.entries(CAPABILITY_PATTERNS)) {
     capabilityCounts[capability] = manifest.chrome.filter((file) =>
-      patterns.some((pattern) =>
-        pattern.test(readFileSync(join(root, "frontend", file), "utf8")),
-      ),
+      patterns.some((pattern) => pattern.test(readFileSync(join(root, "frontend", file), "utf8"))),
     ).length;
   }
   console.log(

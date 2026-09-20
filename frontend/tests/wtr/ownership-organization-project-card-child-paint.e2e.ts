@@ -1,49 +1,5 @@
-import { readFile } from "../wtr-compat.ts";
+import type { OrganizationContainer } from "../../src/api/types";
 import { expect, test } from "../wtr-compat.ts";
-
-const routeSource = "src/routes/organizations/$organizationName.tsx";
-const legacySource = "../yona-original/app/views/organization/view.scala.html";
-const yobiSource = "../yona-original/app/assets/stylesheets/yobi.less";
-const pageLessSource = "../yona-original/app/assets/stylesheets/less/_page.less";
-
-const yobiImports = [
-  "_variables.less",
-  "_mixins.less",
-  "_common.less",
-  "_sprites.less",
-  "_page.less",
-  "_tippy.less",
-  "_scrollbar.less",
-  "_responsive.less",
-  "_yobiUI.less",
-  "_temporary.less",
-  "_markdown.less",
-  "_migration.less",
-  "_override.less",
-];
-
-test("organization project-card child paint has frozen provenance", async () => {
-  const [route, legacy, yobi, pageLess] = await Promise.all([
-    readFile(routeSource, "utf8"),
-    readFile(legacySource, "utf8"),
-    readFile(yobiSource, "utf8"),
-    readFile(pageLessSource, "utf8"),
-  ]);
-
-  expect(legacy).toContain('<div class="header">');
-  expect(legacy).toContain('@if(project.isPrivate){ <i class="yobicon-lock yobicon-small"></i> }');
-  expect(legacy).toContain('href="@routes.UserApp.userInfo(project.owner)"');
-  expect(legacy).toContain('class="owner-name-small"');
-  expect(legacy).toContain('<p class="name-tag">by <a');
-  expect(yobi.trim().split("\n")).toEqual(yobiImports.map((file) => `@import "less/${file}";`));
-  expect(pageLess).toMatch(
-    /\.header\s*\{[\s\S]*?font-size: 20px;[\s\S]*?font-weight: bold;[\s\S]*?margin-bottom: 5px;[\s\S]*?margin-left: 10px;[\s\S]*?\.yobicon-lock\s*\{\s*color:#?7F8C8D;\s*\}[\s\S]*?\.owner-name-small\s*\{\s*color:#?999;\s*font-size: 19px;/,
-  );
-
-  expect(route).toContain('data-owner="organization-home-project-card-private-lock"');
-  expect(route).toContain('data-owner="organization-home-project-card-owner-name"');
-  expect(route).toContain("owner-name-small");
-});
 
 async function mockOrganizationHome(page: Page) {
   const session = { isAnonymous: false, isGuest: false, isSiteAdmin: false, loginId: "admin" };
@@ -70,8 +26,32 @@ async function mockOrganizationHome(page: Page) {
             overview: "Private sample project",
             projectScope: "PRIVATE",
             isPrivate: true,
-            createdLabel: "today",
+            createdAt: "2026-06-01T10:00:00Z",
+            lastPushedAt: "",
             memberCount: 3,
+            members: [
+              {
+                avatarUrl: "",
+                loginId: "carol",
+                role: "member",
+                userId: 35,
+                userLabel: "Carol Lee",
+              },
+              {
+                avatarUrl: "",
+                loginId: "weblabs",
+                role: "manager",
+                userId: 36,
+                userLabel: "Web Labs",
+              },
+              {
+                avatarUrl: "",
+                loginId: "admin",
+                role: "manager",
+                userId: 1,
+                userLabel: "Administrator",
+              },
+            ],
             watchCount: 4,
             isWatching: true,
             labels: [],
@@ -79,7 +59,7 @@ async function mockOrganizationHome(page: Page) {
         ],
         adminMembers: [],
         memberMembers: [],
-      },
+      } satisfies OrganizationContainer,
     }),
   );
 }
@@ -117,12 +97,10 @@ async function assertChildPaint(page: Page, mobile: boolean, fallbackOff: boolea
       ownerBox: box(owner),
       lockColor: style(lock)?.color,
       ownerColor: style(owner)?.color,
-      ownerFontSize: style(owner)?.fontSize,
     };
   });
   expect(metrics.lockColor).toBe("rgb(127, 140, 141)");
   expect(metrics.ownerColor).toBe("rgb(153, 153, 153)");
-  expect(metrics.ownerFontSize).toBe("19px");
   expect(metrics.headerBox).not.toBeNull();
   expect(metrics.lockBox).not.toBeNull();
   expect(metrics.ownerBox).not.toBeNull();

@@ -1,54 +1,5 @@
-import { readFile } from "../wtr-compat.ts";
+import type { OrganizationContainer } from "../../src/api/types";
 import { expect, test } from "../wtr-compat.ts";
-
-const routeSource = "src/routes/organizations/$organizationName.tsx";
-const legacySource = "../yona-original/app/views/organization/view.scala.html";
-const yobiSource = "../yona-original/app/assets/stylesheets/yobi.less";
-const pageLessSource = "../yona-original/app/assets/stylesheets/less/_page.less";
-
-const yobiImports = [
-  "_variables.less",
-  "_mixins.less",
-  "_common.less",
-  "_sprites.less",
-  "_page.less",
-  "_tippy.less",
-  "_scrollbar.less",
-  "_responsive.less",
-  "_yobiUI.less",
-  "_temporary.less",
-  "_markdown.less",
-  "_migration.less",
-  "_override.less",
-];
-
-test("organization project-card stats icon paint has frozen provenance", async () => {
-  const [route, legacy, yobi, pageLess] = await Promise.all([
-    readFile(routeSource, "utf8"),
-    readFile(legacySource, "utf8"),
-    readFile(yobiSource, "utf8"),
-    readFile(pageLessSource, "utf8"),
-  ]);
-
-  expect(legacy).toContain('<div class="stats-wrap pull-right">');
-  expect(legacy).toContain('<i class="yobicon-eye"></i>');
-  expect(legacy).toContain('<i class="yobicon-lightbulb ramp-on"');
-  expect(legacy).toContain('<i class="yobicon-lightbulb ramp-off"');
-  expect(legacy).toContain('Messages("project.onmember"');
-  expect(legacy).toContain('Messages("project.onwatching"');
-  expect(yobi.trim().split("\n")).toEqual(yobiImports.map((file) => `@import "less/${file}";`));
-  expect(pageLess).toMatch(
-    /\.stats-wrap\s*\{[\s\S]*?i\s*\{\s*font-size: 16px;\s*margin-left: 5px;\s*margin-right: 5px;\s*\}[\s\S]*?\.yobicon-lightbulb\s*\{[\s\S]*?&\.ramp-on\s*\{\s*color: #B6DA54;\s*\}[\s\S]*?&\.ramp-off\s*\{\s*color: #DADADA;\s*\}/,
-  );
-
-  for (const owner of [
-    "organization-home-project-card-stats-friends-icon",
-    "organization-home-project-card-stats-eye-icon",
-    "organization-home-project-card-stats-lightbulb-icon",
-  ]) {
-    expect(route).toContain(`data-owner="${owner}"`);
-  }
-});
 
 async function mockOrganizationHome(page: Page) {
   const session = { isAnonymous: false, isGuest: false, isSiteAdmin: false, loginId: "admin" };
@@ -74,8 +25,32 @@ async function mockOrganizationHome(page: Page) {
             projectName: "watching",
             overview: "Watching project",
             projectScope: "PUBLIC",
-            createdLabel: "today",
+            createdAt: "2026-06-01T10:00:00Z",
+            lastPushedAt: "",
             memberCount: 3,
+            members: [
+              {
+                avatarUrl: "",
+                loginId: "carol",
+                role: "member",
+                userId: 35,
+                userLabel: "Carol Lee",
+              },
+              {
+                avatarUrl: "",
+                loginId: "weblabs",
+                role: "manager",
+                userId: 36,
+                userLabel: "Web Labs",
+              },
+              {
+                avatarUrl: "",
+                loginId: "admin",
+                role: "manager",
+                userId: 1,
+                userLabel: "Administrator",
+              },
+            ],
             watchCount: 4,
             isWatching: true,
             labels: [],
@@ -85,8 +60,18 @@ async function mockOrganizationHome(page: Page) {
             projectName: "unwatched",
             overview: "Unwatched project",
             projectScope: "PUBLIC",
-            createdLabel: "yesterday",
+            createdAt: "2026-05-31T10:00:00Z",
+            lastPushedAt: "",
             memberCount: 1,
+            members: [
+              {
+                avatarUrl: "",
+                loginId: "admin",
+                role: "manager",
+                userId: 1,
+                userLabel: "Administrator",
+              },
+            ],
             watchCount: 2,
             isWatching: false,
             labels: [],
@@ -94,7 +79,7 @@ async function mockOrganizationHome(page: Page) {
         ],
         adminMembers: [],
         memberMembers: [],
-      },
+      } satisfies OrganizationContainer,
     }),
   );
 }

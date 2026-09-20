@@ -116,13 +116,15 @@ fn mailbox_mime_extraction_prefers_plain_for_normal_alternative() {
 #[test]
 fn mailbox_mime_extraction_prefers_html_inside_related_root() {
     let content = mailbox_extract_content(&MailboxMimePart {
-        body: String::new(),
+        body: Vec::new(),
+        filename: None,
         content_id: None,
         content_type: "multipart/related; start=\"<root>\"".to_string(),
         parts: vec![
             attachment("<image-1>", "image/png"),
             MailboxMimePart {
-                body: String::new(),
+                body: Vec::new(),
+                filename: None,
                 content_id: Some("<root>".to_string()),
                 content_type: "multipart/alternative".to_string(),
                 parts: vec![
@@ -289,9 +291,107 @@ fn mailbox_raw_message_parsing_decodes_base64_transfer_bodies_like_javamail() {
     );
 }
 
+#[test]
+fn mailbox_attachment_decoding_preserves_octets_filenames_and_mime_boundaries() {
+    let mut raw = concat!(
+        "Message-ID: <binary@example.com>\r\n",
+        "Content-Type: multipart/mixed; boundary=outer\r\n\r\n",
+        "--outer\r\nContent-Type: text/plain\r\n\r\nMessage\r\n",
+        "--outer\r\nContent-Type: application/octet-stream\r\n",
+        "Content-Disposition: attachment; filename=\"=?UTF-8?B?7ZWc6riALmJpbg==?=\"\r\n",
+        "Content-ID: <binary@example.com>\r\n",
+        "Content-Transfer-Encoding: binary\r\n\r\n",
+    )
+    .as_bytes()
+    .to_vec();
+    let original = b"\0\xff\r\nembedded--outer\r\n\r\n";
+    raw.extend_from_slice(original);
+    raw.extend_from_slice(
+        concat!(
+            "\r\n--outer\r\nContent-Type: text/plain\r\n",
+            "Content-Disposition: attachment; filename*=UTF-8''caf%C3%A9%3B.txt\r\n",
+            "Content-Transfer-Encoding: quoted-printable\r\n\r\n",
+            "=00=FF=0D=0A\r\n--outer--\r\n",
+        )
+        .as_bytes(),
+    );
+    let normalized = mailbox_normalize_parsed_message(
+        mailbox_parse_raw_message(&raw, "noreply@yona.local").unwrap(),
+    );
+    assert_eq!(normalized.body_markdown, "Message");
+    assert_eq!(normalized.attachments.len(), 2);
+    assert_eq!(
+        normalized.attachments[0].filename.as_deref(),
+        Some("한글.bin")
+    );
+    assert_eq!(
+        normalized.attachments[0].content_id.as_deref(),
+        Some("<binary@example.com>")
+    );
+    assert_eq!(normalized.attachments[0].body, original);
+    assert_eq!(
+        normalized.attachments[1].filename.as_deref(),
+        Some("café;.txt")
+    );
+    assert_eq!(normalized.attachments[1].body, b"\0\xff\r\n");
+}
+
+#[test]
+fn mailbox_assembles_rfc2231_filename_continuations_before_charset_decoding() {
+    for (headers, expected) in [
+        (
+            "Content-Disposition: attachment; filename*1*=%A9; filename*0*=UTF-8''caf%C3; filename*2=\"%20.txt\"",
+            "café%20.txt",
+        ),
+        (
+            "Content-Disposition: attachment; filename*0=\"long \"; filename*1=\"report.txt\"",
+            "long report.txt",
+        ),
+        (
+            "Content-Type: application/octet-stream; name*1*=.bin; name*0*=UTF-8''%ED%95%9C%EA%B8%80",
+            "한글.bin",
+        ),
+    ] {
+        let raw = format!(
+            "Message-ID: <continued@example.com>\r\n\
+             Content-Type: multipart/mixed; boundary=outer\r\n\r\n\
+             --outer\r\nContent-Type: text/plain\r\n\r\nMessage\r\n\
+             --outer\r\n{headers}\r\n\
+             Content-Transfer-Encoding: base64\r\n\r\nAP8=\r\n--outer--\r\n"
+        );
+        let normalized = mailbox_normalize_parsed_message(
+            mailbox_parse_raw_message(raw, "noreply@yona.local").unwrap(),
+        );
+        assert_eq!(normalized.attachments.len(), 1, "{headers}");
+        assert_eq!(normalized.attachments[0].filename.as_deref(), Some(expected));
+        assert_eq!(normalized.attachments[0].body, b"\0\xff");
+        assert_eq!(normalized.body_markdown, "Message");
+    }
+}
+
+#[test]
+fn mailbox_rejects_corrupt_attachment_instead_of_ingesting_only_the_body() {
+    let raw = concat!(
+        "Message-ID: <corrupt@example.com>\r\n",
+        "Content-Type: multipart/mixed; boundary=outer\r\n\r\n",
+        "--outer\r\nContent-Type: text/plain\r\n\r\nMessage\r\n",
+        "--outer\r\nContent-Type: application/octet-stream\r\n",
+        "Content-Disposition: attachment; filename=broken.bin\r\n",
+        "Content-Transfer-Encoding: base64\r\n\r\n",
+        "%%%not-base64%%%\r\n--outer--\r\n",
+    );
+    assert!(mailbox_parse_raw_message(raw, "noreply@yona.local").is_none());
+    assert!(mailbox_parse_raw_message(
+        raw.replace("%%%not-base64%%%\r\n--outer--", "aGVsbG8="),
+        "noreply@yona.local",
+    )
+    .is_none());
+}
+
 fn text(content_type: &str, body: &str) -> MailboxMimePart {
     MailboxMimePart {
-        body: body.to_string(),
+        body: body.as_bytes().to_vec(),
+        filename: None,
         content_id: None,
         content_type: content_type.to_string(),
         parts: Vec::new(),
@@ -300,7 +400,8 @@ fn text(content_type: &str, body: &str) -> MailboxMimePart {
 
 fn multipart(content_type: &str, parts: Vec<MailboxMimePart>) -> MailboxMimePart {
     MailboxMimePart {
-        body: String::new(),
+        body: Vec::new(),
+        filename: None,
         content_id: None,
         content_type: content_type.to_string(),
         parts,
@@ -309,7 +410,8 @@ fn multipart(content_type: &str, parts: Vec<MailboxMimePart>) -> MailboxMimePart
 
 fn attachment(content_id: &str, content_type: &str) -> MailboxMimePart {
     MailboxMimePart {
-        body: String::new(),
+        body: Vec::new(),
+        filename: None,
         content_id: Some(content_id.to_string()),
         content_type: content_type.to_string(),
         parts: Vec::new(),

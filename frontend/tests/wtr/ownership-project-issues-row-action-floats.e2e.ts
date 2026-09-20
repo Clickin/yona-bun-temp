@@ -1,5 +1,4 @@
-import { expect, test, mergedLegacyBlock } from "../wtr-compat.ts";
-import { readFileSync } from "../wtr-compat.ts";
+import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
 // (a recorded shim gap); resolve only builds those paths.
@@ -9,16 +8,8 @@ const resolve = (...parts: string[]) => parts.join("/");
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const mode = "normal";
 const outputDir = resolve(`output/playwright/style-project-issues-row-action-floats/${mode}`);
-const routeSource = readFileSync("src/routes/$ownerName/$projectName/issues.tsx", "utf8");
-const styleSource = readFileSync("src/app.css", "utf8");
-const legacy = readFileSync("../yona-original/app/views/issue/partial_list.scala.html", "utf8");
 
 test("project issue row rails preserve legacy float ownership", async ({ page }) => {
-  expect(legacy).toContain('class="mt5 pull-right"');
-  expect(legacy).toContain('class="mr20 mt10 pull-right');
-  expect(routeSource).toContain('data-owner="project-issues-assignee-rail"');
-  expect(routeSource).not.toContain('className="mt5 pull-right"');
-
   await page.addInitScript((runtimeBasePath) => {
     (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
       basePath: runtimeBasePath,

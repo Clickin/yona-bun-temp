@@ -13,6 +13,7 @@ import { listProjectMilestones } from "../../../auth-workspace-client";
 import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { useLockedLinkClick } from "../../../components/route-fetch-lock";
 import { useLegacyMessages } from "../../../i18n";
+import { localizedMilestoneUntilLabel } from "./milestone/$milestoneId";
 import type { RuntimeConfig } from "../../../runtime-config";
 
 type MilestoneListSearch = {
@@ -113,7 +114,7 @@ function ProjectMilestonesBody({
       <div className="project-page-wrap" data-owner="project-milestones-shell">
         <div className="tab-wrap" data-owner="project-milestones-tab-wrap">
           {booleanField(project.viewerCanUpdate) ? (
-            <div className="btns" data-owner="project-milestones-new-wrap">
+            <div className="pull-right btns" data-owner="project-milestones-new-wrap">
               <Link
                 {...LEGACY_MILESTONE_LIST_LINK_PROPS}
                 to="/$ownerName/$projectName/newMilestoneForm"
@@ -179,7 +180,7 @@ function ProjectMilestonesBody({
                       search={{ ...search, state: currentState }}
                     />
                   </div>
-                  <div className="search search-bar" data-owner="project-milestones-search">
+                  <div className="pull-left search search-bar" data-owner="project-milestones-search">
                     <input
                       name="filter"
                       className="textbox"
@@ -332,7 +333,7 @@ function MilestoneRow({
                 <strong>{dueDateLabel}</strong>
                 {isClosed ? null : (
                   <span className="date" data-owner="project-milestones-until">
-                    ({stringField(milestone.untilLabel)})
+                    ({localizedMilestoneUntilLabel(stringField(milestone.untilLabel), t)})
                   </span>
                 )}
               </span>
@@ -427,9 +428,14 @@ function MilestoneIssueLink({
           </span>
           {titleText}
           {sortLabels(issue.labels).map((label) => (
-            <span
+            <button
               key={stringField(label.id)}
+              type="button"
               className="label issue-label list-label active"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+              }}
               style={
                 {
                   "--x-backgroundColor": cssBackgroundColor(stringField(label.color)),
@@ -439,7 +445,7 @@ function MilestoneIssueLink({
               data-category-id={stringField(label.categoryId)}
             >
               {stringField(label.name)}
-            </span>
+            </button>
           ))}
         </span>
       </div>

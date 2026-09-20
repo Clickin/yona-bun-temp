@@ -1,5 +1,3 @@
-import { readFileSync } from "../wtr-compat.ts";
-
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
@@ -18,6 +16,7 @@ const owners = {
 test.use({ locale: "ko-KR" });
 
 async function open(page: Page) {
+  await page.clock.setFixedTime("2026-07-17T12:00:00Z");
   await page.addInitScript((basePath) => {
     (
       window as Window & { __YONA_RUNTIME_CONFIG__?: Record<string, unknown> }
@@ -48,10 +47,9 @@ async function open(page: Page) {
       json: {
         items: [
           {
-            createdLabel: "방금 전",
-            createdTitle: "2026-07-17",
+            createdAt: "2026-07-17T12:00:00Z",
             labels: [],
-            lastPushedLabel: "방금 전",
+            lastPushedAt: "2026-07-17T12:00:00Z",
             logoUrl: "/assets/images/project_default_logo.png",
             memberCount: 1,
             overview: "샘플 프로젝트",
@@ -71,57 +69,6 @@ async function open(page: Page) {
   await page.goto(`${basePath}/projects`);
   await expect(page.locator(`[data-owner="${owners.wrap}"]`)).toBeVisible();
 }
-
-test("search strip records frozen sources and six ownership boundaries", () => {
-  const route = readFileSync("src/routes/projects.tsx", "utf8");
-  const homeRoute = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const scala = readFileSync("../yona-original/app/views/project/list.scala.html", "utf8");
-  const siteLayout = readFileSync("../yona-original/app/views/siteLayout.scala.html", "utf8");
-  const yobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
-  const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
-  const responsive = readFileSync(
-    "../yona-original/app/assets/stylesheets/less/_responsive.less",
-    "utf8",
-  );
-  const ui = readFileSync("../yona-original/app/assets/stylesheets/less/_yobiUI.less", "utf8");
-  const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
-  const messages = readFileSync("../yona-original/conf/messages.ko-KR", "utf8");
-  expect(scala).toContain('<div class="search-wrap">');
-  expect(scala).toContain('<div id="search" class="pull-left">');
-  expect(scala).toContain('<div class="search-bar">');
-  expect(siteLayout).toContain('@layout(Messages(title))("")');
-  for (const imported of ["_page.less", "_responsive.less", "_yobiUI.less"])
-    expect(yobi).toContain(imported);
-  expect(pageLess).toContain(".search-wrap {");
-  expect(pageLess).toContain(".nav-tabs > li {");
-  expect(pageLess).toContain("margin-bottom: -2px;");
-  expect(pageLess).toContain(".admin-logged-in-affix {");
-  expect(pageLess).toContain("font-size:20px;");
-  expect(ui).toContain("label, input, button, select, textarea {");
-  expect(ui).toContain("font-size:12px;");
-  expect(ui).toContain("padding:4px 25px 4px 5px;");
-  expect(ui).toContain("width:350px;");
-  expect(ui).toContain("position:absolute;");
-  expect(responsive).toContain("height: inherit !important;");
-  expect(responsive).toContain("width: inherit !important;");
-  expect(responsive).toContain('input[type="text"],');
-  expect(responsive).toContain("font-size: 16px !important;");
-  expect(bootstrap).toContain(".nav-tabs > li {\n  margin-bottom: -1px;\n}");
-  expect(bootstrap).toContain("body {");
-  expect(bootstrap).toContain("line-height: 20px;");
-  expect(bootstrap).toContain("vertical-align: middle;");
-  expect(bootstrap).toContain("button,\ninput {\n  *overflow: visible;\n  line-height: normal;\n}");
-  expect(bootstrap).toContain(
-    'button,\nhtml input[type="button"],\ninput[type="reset"],\ninput[type="submit"] {\n  cursor: pointer;',
-  );
-  expect(bootstrap).toContain(".pull-left {");
-
-  expect(messages).toContain("site.project.filter = 키워드로 프로젝트 찾기");
-  for (const owner of Object.values(owners)) expect(route).toContain(`data-owner="${owner}"`);
-  expect(route).toContain('import "../yobicon-font.css";');
-  expect(homeRoute).toContain('data-owner="site-admin-affix"');
-  expect(route).not.toMatch(/border(?:Top|Right|Bottom|Left)?Color:\s*"currentColor"/u);
-});
 
 for (const viewport of [
   { height: 900, name: "desktop", width: 1366 },

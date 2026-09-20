@@ -380,40 +380,52 @@ function ProjectPullRequestsBody({
               data-owner="project-pullrequests-tabs"
             >
               <li className={requestType === "open" ? "active" : ""}>
-                <Link
-                  to="/$ownerName/$projectName/pullRequests"
-                  params={{ ownerName, projectName }}
-                  search={{ ...searchFor(), tabId: undefined }}
-                  {...LEGACY_LIST_LINK_PROPS}
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigatePullRequestSearch({
+                      action: openAction,
+                      contributorId: contributorIdValue,
+                      filter: filterValue,
+                    })
+                  }
                 >
                   {t("pullRequest.state.open")}
                   <span className="num-badge">{pullRequests.openCount}</span>
-                </Link>
+                </button>
               </li>
               <li className={requestType === "closed" ? "active" : ""}>
-                <Link
-                  to="/$ownerName/$projectName/closedPullRequests"
-                  params={{ ownerName, projectName }}
-                  search={{ ...searchFor(), tabId: undefined }}
-                  {...LEGACY_LIST_LINK_PROPS}
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigatePullRequestSearch({
+                      action: closedAction,
+                      contributorId: contributorIdValue,
+                      filter: filterValue,
+                    })
+                  }
                 >
                   {t("pullRequest.state.closed")}
                   <span className="num-badge">{pullRequests.closedCount}</span>
-                </Link>
+                </button>
               </li>
               {isForked ? (
                 <li className={requestType === "sent" ? "active" : ""}>
-                  <Link
-                    to="/$ownerName/$projectName/sentPullRequests"
-                    params={{ ownerName, projectName }}
-                    search={{ ...searchFor(filterValue, ""), tabId: undefined }}
-                    {...LEGACY_LIST_LINK_PROPS}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigatePullRequestSearch({
+                        action: sentAction,
+                        contributorId: "",
+                        filter: filterValue,
+                      })
+                    }
                   >
                     {t("pullRequest.sent")}
                     <span className="num-badge">
                       {`${pullRequests.acceptedCount} / ${pullRequests.sentCount}`}
                     </span>
-                  </Link>
+                  </button>
                 </li>
               ) : null}
               <li>
@@ -524,7 +536,7 @@ function ProjectPullRequestContributorSelect({
   return (
     <div
       id="s2id_contributors"
-      className={`select2-container fullsize${open ? " select2-container-active select2-dropdown-open" : ""}`}
+      className={`select2-container${open ? " select2-container-active select2-dropdown-open" : ""}`}
       onBlurCapture={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
           setOpen(false);
@@ -835,7 +847,10 @@ function ProjectPullRequestRow({
   };
   const percent = percentOf(pullRequest.closedCommentThreadCount, pullRequest.commentThreadCount);
   const stateKey = pullRequest.conflict ? "conflict" : pullRequest.state.toLowerCase();
-  const toBranchClass = pullRequest.toBranch === defaultBranch ? "to-default-branch" : "to-branch";
+  const toBranchClass =
+    branchItemName(pullRequest.toBranch) === branchItemName(defaultBranch)
+      ? "to-default-branch"
+      : "to-branch";
   const titleParts = splitHeaderWordsInBrackets(pullRequest.title);
   const showReviewerCount = isUsingReviewerCount && pullRequest.reviewerCount > 0;
   const reviewerClass = pullRequest.reviewerNames.includes(currentUserLabel)
@@ -950,7 +965,7 @@ function ProjectPullRequestRow({
               </Link>
             </div>
           ) : null}
-          <span className={toBranchClass}>{pullRequest.toBranch}</span>
+          <span className={toBranchClass}>{branchItemName(pullRequest.toBranch)}</span>
         </div>
       </div>
       <div className="span2 hide-in-mobile">
@@ -1159,6 +1174,10 @@ function recordField(value: unknown): Record<string, unknown> {
 
 function percentOf(count: number, total: number) {
   return total > 0 ? Math.round((count / total) * 100) : 0;
+}
+
+function branchItemName(branch: string) {
+  return branch.startsWith("refs/") ? branch.slice(branch.indexOf("/", 5) + 1) : branch;
 }
 
 function totalPages(pullRequests: PullRequestListResponse) {

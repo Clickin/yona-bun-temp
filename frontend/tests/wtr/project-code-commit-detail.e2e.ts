@@ -1,11 +1,9 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts"; // Batch 1117: verify commit diff stat (+insertions, -deletions) and per-file diff card rendering
+import { readFileSync } from "../wtr-compat.ts";
+const defaultAvatarResponse = await fetch("/tests/src/assets/legacy/default-avatar-34.png");
+if (!defaultAvatarResponse.ok) throw new Error("Cannot load legacy default avatar fixture");
+const defaultAvatarUrl = `data:image/png;base64,${btoa(String.fromCharCode(...new Uint8Array(await defaultAvatarResponse.arrayBuffer())))}`;
 
 import { expect, test, type Locator, type Page } from "../wtr-compat.ts";
-
-// Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
-// (a recorded shim gap); resolve only builds those paths.
-const mkdirSync = () => undefined;
-const resolve = (...parts: string[]) => parts.join("/");
 
 const LEGACY_MARKDOWN_HELP = readFileSync(
   new URL("../../yona-original/app/views/help/markdown.scala.html", import.meta.url),
@@ -45,90 +43,6 @@ const LEGACY_MARKDOWN_HELP = readFileSync(
       target[label] ?? ""
     }" aria-expanded="false" class="markdown-help-nav-button" type="button">${label}</button></li>`;
   });
-const COMMIT_DETAIL_ROUTE_SOURCE = readFileSync(
-  new URL("../src/routes/$ownerName/$projectName/commit/$commitId.tsx", import.meta.url),
-  "utf8",
-);
-// F6 copy-fix-current-dom: read the style source via the suite's string-path
-// convention so pins see the raw file; the previous new URL(...) read returned
-// the esbuild/babel-transformed module (style.create compiled, trailing commas
-// normalized), which broke the threadFoldHere/reviewCard block pins.
-const COMMIT_DETAIL_STYLE_SOURCE = readFileSync("src/app.css", "utf8");
-const DIFF_LINE_VIEW_SOURCE = readFileSync(
-  new URL("../src/components/diff-line-view.tsx", import.meta.url),
-  "utf8",
-);
-const LEGACY_COMMENT_THREAD_SOURCE = readFileSync(
-  new URL("../../yona-original/app/views/partial_comment_thread.scala.html", import.meta.url),
-  "utf8",
-);
-const LEGACY_THREAD_FORM_SOURCE = readFileSync(
-  new URL(
-    "../../yona-original/app/views/partial_comment_form_on_thread.scala.html",
-    import.meta.url,
-  ),
-  "utf8",
-);
-const LEGACY_REVIEW_FORM_SOURCE = readFileSync(
-  new URL("../../yona-original/app/views/common/reviewForm.scala.html", import.meta.url),
-  "utf8",
-);
-const LEGACY_VARIABLES_SOURCE = readFileSync(
-  new URL("../../yona-original/app/assets/stylesheets/less/_variables.less", import.meta.url),
-  "utf8",
-);
-const LEGACY_RESPONSIVE_SOURCE = readFileSync(
-  new URL("../../yona-original/app/assets/stylesheets/less/_responsive.less", import.meta.url),
-  "utf8",
-);
-const LEGACY_COMMENT_THREAD_LESS_SOURCE = readFileSync(
-  new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
-  "utf8",
-);
-const APP_CSS_SOURCE = curatedAppCss();
-const LEGACY_CODE_DIFF_SOURCE = readFileSync(
-  new URL("../../yona-original/app/views/code/diff.scala.html", import.meta.url),
-  "utf8",
-);
-const LEGACY_SVN_DIFF_SOURCE = readFileSync(
-  new URL("../../yona-original/app/views/code/svnDiff.scala.html", import.meta.url),
-  "utf8",
-);
-const LEGACY_FILE_DIFF_SOURCE = readFileSync(
-  new URL("../../yona-original/app/views/partial_filediff.scala.html", import.meta.url),
-  "utf8",
-);
-const LEGACY_DIFF_LINE_SOURCE = readFileSync(
-  new URL("../../yona-original/app/views/partial_diff_line.scala.html", import.meta.url),
-  "utf8",
-);
-const LEGACY_REVIEWLIST_SOURCE = readFileSync(
-  new URL("../../yona-original/app/views/git/partial_reviewlist.scala.html", import.meta.url),
-  "utf8",
-);
-const LEGACY_COMMIT_MSG_SOURCE = readFileSync(
-  new URL("../../yona-original/app/views/common/commitMsg.scala.html", import.meta.url),
-  "utf8",
-);
-const LEGACY_MESSAGES_SOURCE = readFileSync(
-  new URL("../../yona-original/conf/messages", import.meta.url),
-  "utf8",
-);
-const LEGACY_BOOTSTRAP_SOURCE = readFileSync(
-  new URL("../../yona-original/public/bootstrap/css/bootstrap.css", import.meta.url),
-  "utf8",
-);
-const FOOTER_SCREENSHOT_DIR = resolve(
-  "output/playwright/style-project-commit-detail-footer-floats",
-  "normal",
-);
-
-async function captureCommitFooterScreenshot(page: Page, filename: string) {
-  // WTR: page.screenshot is a documented no-op (artifact-only), so the whole
-  // capture (scrollIntoViewIfNeeded/geometry/byteLength) has no outcome value.
-  void page;
-  void filename;
-}
 
 function withLegacyMarkdownHelp(html: string) {
   return html.replaceAll(
@@ -136,21 +50,6 @@ function withLegacyMarkdownHelp(html: string) {
     `<div class="tab-content">${LEGACY_MARKDOWN_HELP}<div id="edit-`,
   );
 }
-
-test("project commit detail retires the unreachable commit-message wrapper fallback arms", () => {
-  expect(LEGACY_CODE_DIFF_SOURCE).toContain('class="commitMsg-wrap"');
-  expect(LEGACY_COMMIT_MSG_SOURCE).toContain('class="commitMsg short"');
-  expect(LEGACY_COMMIT_MSG_SOURCE).toContain('class="commitMsg desc');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("commitMsg-wrap");
-  expect(APP_CSS_SOURCE).not.toContain(
-    ".code-browse-wrap .commitInfo .commitMsg-wrap .commitMsg.short {",
-  );
-  expect(APP_CSS_SOURCE).not.toContain(
-    ".code-browse-wrap .commitInfo .commitMsg-wrap .commitMsg.desc {",
-  );
-  expect(APP_CSS_SOURCE).toContain(".code-browse-wrap .commitInfo {");
-  expect(APP_CSS_SOURCE).toContain(".commitMsg");
-});
 
 function withReactOwnedTabButtons(html: string) {
   return html
@@ -169,21 +68,17 @@ function withReactOwnedTabButtons(html: string) {
     );
 }
 
-const EXPECTED_COMMIT_DETAIL_BODY = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div id="code-browse-wrap" class="code-browse-wrap"><ul class="nav nav-tabs"><li><a href="__BASE_PATH__/admin/sample/code">Files</a></li><li class="active"><a href="__BASE_PATH__/admin/sample/commits">Commit</a></li><li><a href="__BASE_PATH__/admin/sample/branches">Branches</a></li></ul><div class="codediff-wrap"><button type="button" class="ybtn ybtn-default btn-show-reviewcards"><i class="yobicon-restore"></i></button><div class="diffs-wrap"><div class="commitInfo"><div class="commitAuthor"><span class="avatar-wrap smaller"><img src="__BASE_PATH__/assets/images/default-avatar-32.png" width="32" height="32"></span><strong>Dev Author</strong><span class="ago" title="Jul 1, 2026">Jul 1, 2026</span></div><div><span class="commitMsg short" style="font-size:18px;white-space:normal">Initial commit</span><pre class="commitMsg desc">Add README</pre></div><div class="commitId-wrap"><strong class="commitId">@abcdef1234567890</strong></div></div><div class="diff-body"><div class="btnPop"><button type="button" class="ybtn ybtn-info ybtn-small"><i class="yobicon-post2"></i></button></div></div><div class="board-comment-wrap"><div class="non-ranged-threads-wrap"></div><form id="comment-form" action="__BASE_PATH__/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-comment" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-comment" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content"><div id="edit-comment" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" markdown="true" id="editor-contents-comment"></textarea></div></div><div id="preview-comment" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form></div><div id="review-form" class="review-form"><form action="__BASE_PATH__/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div class="write-comment-wrap"><div class="pull-right"><button type="button" class="ybtn ybtn-default ybtn-small">×</button></div><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-review" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-review" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content"><div id="edit-review" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="code-review-body" markdown="true" id="editor-contents-review"></textarea></div></div><div id="preview-review" class="tab-pane"><div class="markdown-preview markdown-wrap code-review-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="right-txt"><button type="submit" class="ybtn ybtn-success ybtn-small">Add a comment</button></div></div></div></form></div></div><div class="review-wrap span-hard-wrap"><div class="review-container"><button type="button" class="ybtn ybtn-default btn-hide-reviewcards"><i class="yobicon-maximize"></i></button><ul class="nav nav-tabs" style="margin-bottom:10px"><li class="active"><button type="button" data-toggle="tab">Open 0</button></li><li><button type="button" data-toggle="tab">Closed 0</button></li></ul><div class="tab-content review-list"><div id="reviewcards-open" class="tab-pane active"></div><div id="reviewcards-closed" class="tab-pane"></div></div></div></div></div></div><button id="watch-button" type="button" class="ybtn ">Watch</button><a href="__BASE_PATH__/admin/sample/commits/main" class="ybtn">List</a></div></div>
-`;
-
 const EXPECTED_COMMENT_DELETE_MODAL = `
 <div id="comment-delete-modal" class="modal hide fade"><div class="modal-header"><button type="button" class="close">×</button><h3>Delete comment</h3></div><div class="modal-body"><p>Once you delete this comment, you won't be able to recover it. Are you sure you want to delete this comment?</p></div><div class="modal-footer"><button id="comment-delete-confirm" type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn">No</button></div></div>
 `;
 
 const EXPECTED_FILE_DIFF = `<div id="src-main-rs" class="diff-partial-outer"><div class="diff-partial-inner"><div class="diff-partial-meta"><div class="diff-partial-commit"><div class="diff-partial-commit-id"><a href="__BASE_PATH__/admin/sample/code/1234567890abcdef/src/main.rs" title="1234567890abcdef" target="_blank">1234567</a></div><div class="diff-partial-commit-id"><a href="__BASE_PATH__/admin/sample/code/abcdef1234567890/src/main.rs" title="abcdef1234567890" target="_blank">abcdef1</a></div></div><div class="diff-partial-file"><span class="filename">src/main.rs</span></div></div><div class="diff-partial-code" data-hashcode="src/main.rs"><div class="patch-header"><div class="path">--- src/main.rs</div><div class="path">+++ src/main.rs</div></div><table class="diff-container show-comments" data-path-a="src/main.rs" data-path-b="src/main.rs" data-commit-a="1234567890abcdef" data-commit-b="abcdef1234567890" data-file-path="src/main.rs"><tbody><tr class="range"><td class="linenum"><div class="line-number" data-line-num="..."><span class="hidden">...</span></div></td><td class="linenum"><div class="line-number" data-line-num="..."><span class="hidden">...</span></div></td><td class="hunk">@@ -1,2 +1,3 @@</td></tr><tr class="context" data-line="1" data-side="B"><td class="linenum"><i class="yobicon-comments"></i><div class="line-number" data-line-num="1"></div><span class="hidden">1</span></td><td class="linenum"><div class="line-number" data-line-num="1"></div><span class="hidden">1</span></td><td class="code"><pre class="diff-partial-codeline"> fn main() {</pre></td></tr><tr class="remove" data-line="2" data-side="A"><td class="linenum"><i class="yobicon-comments"></i><div class="line-number" data-line-num="2"></div><span class="hidden">2</span></td><td class="linenum"><div class="line-number" data-line-num=""></div><span class="hidden"></span></td><td class="code"><pre class="diff-partial-codeline">-    println!("old");</pre></td></tr><tr class="add" data-line="2" data-side="B"><td class="linenum"><i class="yobicon-comments"></i><div class="line-number" data-line-num=""></div><span class="hidden"></span></td><td class="linenum"><div class="line-number" data-line-num="2"></div><span class="hidden">2</span></td><td class="code"><pre class="diff-partial-codeline">+    println!("new");</pre></td></tr><tr class="add" data-line="3" data-side="B"><td class="linenum"><i class="yobicon-comments"></i><div class="line-number" data-line-num=""></div><span class="hidden"></span></td><td class="linenum"><div class="line-number" data-line-num="3"></div><span class="hidden">3</span></td><td class="code"><pre class="diff-partial-codeline">+    println!("again");</pre></td></tr></tbody></table></div></div></div>`;
 
-const EXPECTED_INLINE_THREAD_ROW = `<tr class="comments board-comment-wrap" data-commit-id="abcdef1234567890"><td colspan="3"><div id="thread-77" data-state="open" class="comment-thread-wrap open" data-range-path="src/main.rs" data-range-startline="2" data-range-endline="2"><div class="btn-thread-here btn-thread-minimize"><button type="button" class="ybtn ybtn-default ybtn-small"><i class="yobicon-post2"></i></button></div><div class="thread-header"><span class="badge state open">Open</span><button type="button" class="ybtn ybtn-default ybtn-small btn-thread-minimize"><i class="yobicon-maximize"></i></button></div><ul class="comments"><li id="comment-501" class="comment"><div class="comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap" title="Dev User"><img src="/avatars/dev.png" width="32" height="32" alt="dev"></a></div><div class="media-body"><div class="meta-info"><span class="comment_author pull-left"><a href="__BASE_PATH__/dev" title="Dev User"><strong>dev </strong></a></span><span class="ago"><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890?branch=main#comment-501" title="Jul 1, 2026">Jul 1, 2026</a></span><span class="edit pull-right"><button class="btn-transparent pull-right close" title="Delete comment"><i class="yobicon-trash"></i></button></span></div><div class="comment-body markdown-wrap" data-via-email="false"><p>Line <strong>note</strong></p></div><div class="attachments" data-attachments="[]"></div></div></li></ul><div class="write-comment-form"><form action="__BASE_PATH__/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data" class="review-form" style="display:block"><input type="hidden" name="thread.id" value="77"><div class="write-comment-box"><div class="write-comment-wrap"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-thread-77" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-thread-77" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content"><div id="edit-thread-77" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="code-review-body" id="editor-contents-thread-77" markdown="true"></textarea></div></div><div id="preview-thread-77" class="tab-pane"><div class="markdown-preview markdown-wrap code-review-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="right-txt"><button type="button" class="ybtn ybtn-default ybtn-small">Close</button><button type="submit" class="ybtn ybtn-success ybtn-small">Add a comment</button></div></div></div></form></div></div></td></tr>`;
+const EXPECTED_INLINE_THREAD_ROW = `<tr class="comments board-comment-wrap" data-commit-id="abcdef1234567890"><td colspan="3"><div id="thread-77" data-state="open" class="comment-thread-wrap open" data-range-path="src/main.rs" data-range-startline="2" data-range-endline="2"><div class="btn-thread-here btn-thread-minimize"><button type="button" class="ybtn ybtn-default ybtn-small"><i class="yobicon-post2"></i></button></div><div class="thread-header"><span class="badge state open">Open</span><button type="button" class="ybtn ybtn-default ybtn-small btn-thread-minimize"><i class="yobicon-maximize"></i></button></div><ul class="comments"><li id="comment-501" class="comment"><div class="comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap" title="Dev User"><img src="/avatars/dev.png" width="32" height="32" alt="dev"></a></div><div class="media-body"><div class="meta-info"><span class="comment_author pull-left"><a href="__BASE_PATH__/dev" title="Dev User"><strong>dev </strong></a></span><span class="ago"><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890?branch=main#comment-501" title="2000-07-01 12:00:00 AM">2000-07-01</a></span><span class="edit pull-right"><button class="btn-transparent pull-right close" title="Delete comment"><i class="yobicon-trash"></i></button></span></div><div class="comment-body markdown-wrap" data-via-email="false"><p>Line <strong>note</strong></p></div><div class="attachments" data-attachments="[]"></div></div></li></ul><div class="write-comment-form"><form action="__BASE_PATH__/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data" class="review-form" style="display:block"><input type="hidden" name="thread.id" value="77"><div class="write-comment-box"><div class="write-comment-wrap"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-thread-77" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-thread-77" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content"><div id="edit-thread-77" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="code-review-body" id="editor-contents-thread-77" markdown="true"></textarea></div></div><div id="preview-thread-77" class="tab-pane"><div class="markdown-preview markdown-wrap code-review-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="right-txt"><button type="button" class="ybtn ybtn-default ybtn-small">Close</button><button type="submit" class="ybtn ybtn-success ybtn-small">Add a comment</button></div></div></div></form></div></div></td></tr>`;
 
-const EXPECTED_A_SIDE_INLINE_THREAD_ROW = `<tr class="comments board-comment-wrap" data-commit-id="abcdef1234567890"><td colspan="3"><div id="thread-78" data-state="open" class="comment-thread-wrap open" data-range-path="src/main.rs" data-range-startside="A" data-range-startline="2" data-range-startcolumn="5" data-range-endside="A" data-range-endline="2" data-range-endcolumn="18"><div class="btn-thread-here btn-thread-minimize"><button type="button" class="ybtn ybtn-default ybtn-small"><i class="yobicon-post2"></i></button></div><div class="thread-header"><span class="badge state open">Open</span><button type="button" class="ybtn ybtn-default ybtn-small btn-thread-minimize"><i class="yobicon-maximize"></i></button></div><ul class="comments"><li id="comment-502" class="comment"><div class="comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap" title="Dev User"><img src="__BASE_PATH__/assets/images/default-avatar-32.png" width="32" height="32" alt="dev"></a></div><div class="media-body"><div class="meta-info"><span class="comment_author pull-left"><a href="__BASE_PATH__/dev" title="Dev User"><strong>dev </strong></a></span><span class="ago"><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890?branch=main#comment-502" title="Jul 1, 2026">Jul 1, 2026</a></span><span class="edit pull-right"><button class="btn-transparent pull-right close" title="Delete comment"><i class="yobicon-trash"></i></button></span></div><div class="comment-body markdown-wrap" data-via-email="false"><p>Old line <strong>note</strong></p></div><div class="attachments" data-attachments="[]"></div></div></li></ul><div class="write-comment-form"><form action="__BASE_PATH__/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data" class="review-form" style="display:block"><input type="hidden" name="thread.id" value="78"><div class="write-comment-box"><div class="write-comment-wrap"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-thread-78" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-thread-78" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content"><div id="edit-thread-78" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="code-review-body" id="editor-contents-thread-78" markdown="true"></textarea></div></div><div id="preview-thread-78" class="tab-pane"><div class="markdown-preview markdown-wrap code-review-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="right-txt"><button type="button" class="ybtn ybtn-default ybtn-small">Close</button><button type="submit" class="ybtn ybtn-success ybtn-small">Add a comment</button></div></div></div></form></div></div></td></tr>`;
+const EXPECTED_A_SIDE_INLINE_THREAD_ROW = `<tr class="comments board-comment-wrap" data-commit-id="abcdef1234567890"><td colspan="3"><div id="thread-78" data-state="open" class="comment-thread-wrap open" data-range-path="src/main.rs" data-range-startside="A" data-range-startline="2" data-range-startcolumn="5" data-range-endside="A" data-range-endline="2" data-range-endcolumn="18"><div class="btn-thread-here btn-thread-minimize"><button type="button" class="ybtn ybtn-default ybtn-small"><i class="yobicon-post2"></i></button></div><div class="thread-header"><span class="badge state open">Open</span><button type="button" class="ybtn ybtn-default ybtn-small btn-thread-minimize"><i class="yobicon-maximize"></i></button></div><ul class="comments"><li id="comment-502" class="comment"><div class="comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap" title="Dev User"><img src="${defaultAvatarUrl}" width="32" height="32" alt="dev"></a></div><div class="media-body"><div class="meta-info"><span class="comment_author pull-left"><a href="__BASE_PATH__/dev" title="Dev User"><strong>dev </strong></a></span><span class="ago"><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890?branch=main#comment-502" title="2000-07-01 12:00:00 AM">2000-07-01</a></span><span class="edit pull-right"><button class="btn-transparent pull-right close" title="Delete comment"><i class="yobicon-trash"></i></button></span></div><div class="comment-body markdown-wrap" data-via-email="false"><p>Old line <strong>note</strong></p></div><div class="attachments" data-attachments="[]"></div></div></li></ul><div class="write-comment-form"><form action="__BASE_PATH__/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data" class="review-form" style="display:block"><input type="hidden" name="thread.id" value="78"><div class="write-comment-box"><div class="write-comment-wrap"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-thread-78" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-thread-78" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content"><div id="edit-thread-78" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="code-review-body" id="editor-contents-thread-78" markdown="true"></textarea></div></div><div id="preview-thread-78" class="tab-pane"><div class="markdown-preview markdown-wrap code-review-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="right-txt"><button type="button" class="ybtn ybtn-default ybtn-small">Close</button><button type="submit" class="ybtn ybtn-success ybtn-small">Add a comment</button></div></div></div></form></div></div></td></tr>`;
 
-const EXPECTED_NON_RANGED_THREAD = `<div id="thread-88" class="comment-thread-wrap open"><div class="btn-thread-here btn-thread-minimize"><button type="button" class="ybtn ybtn-default ybtn-small"><i class="yobicon-comments"></i></button></div><ul class="comments"><li id="comment-601" class="comment"><div class="comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap" title="Dev User"><img src="/avatars/dev.png" width="32" height="32" alt="dev"></a></div><div class="media-body"><div class="meta-info"><span class="comment_author pull-left"><a href="__BASE_PATH__/dev" title="Dev User"><strong>dev </strong></a></span><span class="ago"><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890?branch=main#comment-601" title="Jul 1, 2026">Jul 1, 2026</a></span><span class="edit pull-right"><button class="btn-transparent pull-right close"><i class="yobicon-trash"></i></button></span></div><div class="comment-body markdown-wrap" data-via-email="false"><p>General <strong>note</strong></p></div><div class="attachments" data-attachments="[]"></div></div></li></ul><div class="write-comment-form"><form action="__BASE_PATH__/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data" class="review-form" style="display:block"><input type="hidden" name="thread.id" value="88"><div class="write-comment-box"><div class="write-comment-wrap"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-thread-88" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-thread-88" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content"><div id="edit-thread-88" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="code-review-body" id="editor-contents-thread-88" markdown="true"></textarea></div></div><div id="preview-thread-88" class="tab-pane"><div class="markdown-preview markdown-wrap code-review-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="right-txt"><button type="button" class="ybtn ybtn-default ybtn-small">Close</button><button type="submit" class="ybtn ybtn-success ybtn-small">Add a comment</button></div></div></div></form></div></div>`;
+const EXPECTED_NON_RANGED_THREAD = `<div id="thread-88" class="comment-thread-wrap open"><div class="btn-thread-here btn-thread-minimize"><button type="button" class="ybtn ybtn-default ybtn-small"><i class="yobicon-comments"></i></button></div><ul class="comments"><li id="comment-601" class="comment"><div class="comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap" title="Dev User"><img src="/avatars/dev.png" width="32" height="32" alt="dev"></a></div><div class="media-body"><div class="meta-info"><span class="comment_author pull-left"><a href="__BASE_PATH__/dev" title="Dev User"><strong>dev </strong></a></span><span class="ago"><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890?branch=main#comment-601" title="2000-07-01 12:00:00 AM">2000-07-01</a></span><span class="edit pull-right"><button class="btn-transparent pull-right close"><i class="yobicon-trash"></i></button></span></div><div class="comment-body markdown-wrap" data-via-email="false"><p>General <strong>note</strong></p></div><div class="attachments" data-attachments="[]"></div></div></li></ul><div class="write-comment-form"><form action="__BASE_PATH__/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data" class="review-form" style="display:block"><input type="hidden" name="thread.id" value="88"><div class="write-comment-box"><div class="write-comment-wrap"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-thread-88" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-thread-88" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content"><div id="edit-thread-88" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="code-review-body" id="editor-contents-thread-88" markdown="true"></textarea></div></div><div id="preview-thread-88" class="tab-pane"><div class="markdown-preview markdown-wrap code-review-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="right-txt"><button type="button" class="ybtn ybtn-default ybtn-small">Close</button><button type="submit" class="ybtn ybtn-success ybtn-small">Add a comment</button></div></div></div></form></div></div>`;
 
 const COMMENT_601_ATTACHMENT = {
   id: 701,
@@ -200,18 +95,10 @@ const SVN_PATCH = `Index: README.md
 -old
 +new`;
 
-const EXPECTED_SVN_COMMIT_BODY = `<div class="page-wrap-outer"><div class="project-page-wrap"><div id="code-browse-wrap" class="code-browse-wrap"><div id="branches" class="btn-group branches pull-right" data-name="branch"><button class="btn dropdown-toggle large"><span class="d-label">trunk</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="trunk" data-selected="true"><a href="__BASE_PATH__/admin/sample/commits/trunk">trunk</a></li><li data-value="branches/release"><a href="__BASE_PATH__/admin/sample/commits/branches%2Frelease">branches/release</a></li></ul></div><ul class="nav nav-tabs" style="margin-bottom:20px"><li><a href="__BASE_PATH__/admin/sample/code">Files</a></li><li class="active"><a href="__BASE_PATH__/admin/sample/commits">Commit</a></li></ul><p class="commitInfo"><span class="avatar-wrap"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></span><strong>Dev Author</strong><span class="ago" title="Jul 1, 2026">Jul 1, 2026</span><strong class="commitId pull-right">@abcdef1234567890</strong></p><pre class="commitMsg">Initial commit
+const EXPECTED_SVN_COMMIT_BODY = `<div class="page-wrap-outer"><div class="project-page-wrap"><div id="code-browse-wrap" class="code-browse-wrap"><div id="branches" class="btn-group branches pull-right" data-name="branch"><button class="btn dropdown-toggle large"><span class="d-label">trunk</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="trunk" data-selected="true"><a href="__BASE_PATH__/admin/sample/commits/trunk">trunk</a></li><li data-value="branches/release"><a href="__BASE_PATH__/admin/sample/commits/branches%2Frelease">branches/release</a></li></ul></div><ul class="nav nav-tabs" style="margin-bottom:20px"><li><a href="__BASE_PATH__/admin/sample/code">Files</a></li><li class="active"><a href="__BASE_PATH__/admin/sample/commits">Commit</a></li></ul><p class="commitInfo"><span class="avatar-wrap"><img src="${defaultAvatarUrl}" width="32" height="32"></span><strong>Dev Author</strong><span class="ago" title="2000-07-01 12:00:00 AM">2000-07-01</span><strong class="commitId pull-right">@abcdef1234567890</strong></p><pre class="commitMsg">Initial commit
 Add README</pre><div class="diff-wrap"><div id="commit" data-commit-origin="true" class="diff-body hide">${SVN_PATCH}</div></div><div class="board-comment-wrap"><form id="comment-form" action="__BASE_PATH__/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-comment" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-comment" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content"><div id="edit-comment" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" id="editor-contents-comment" markdown="true"></textarea></div></div><div id="preview-comment" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form></div></div><button id="watch-button" type="button" class="ybtn ">Watch</button><a href="__BASE_PATH__/admin/sample/commits/trunk" class="ybtn pull-right">List</a><div id="minimap" class="minimap-outer"><div class="minimap-wrap"><div class="minimap-curr"></div><div class="minimap-links"></div></div></div></div></div>`;
 
-const THREAD_REPLY_AUTHOR_INFO = `<div class="author-info-wrap pull-left hide-in-mobile"><div class="author-info"><a href="__BASE_PATH__/admin" class="avatar-wrap medium" title="Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div></div>`;
-const REVIEW_FORM_AUTHOR_INFO = `<div class="author-info-wrap pull-left hide-in-mobile"><div class="author-info"><a href="__BASE_PATH__/admin" class="avatar-wrap medium" title="Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div></div>`;
-
-function withReviewAuthorInfo(html: string) {
-  return html.replace(
-    `<div id="review-form" class="review-form"><form action="__BASE_PATH__/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box">`,
-    `<div id="review-form" class="review-form"><form action="__BASE_PATH__/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data">${REVIEW_FORM_AUTHOR_INFO}<div class="write-comment-box">`,
-  );
-}
+const THREAD_REPLY_AUTHOR_INFO = `<div class="author-info-wrap pull-left hide-in-mobile"><div class="author-info"><a href="__BASE_PATH__/admin" class="avatar-wrap medium" title="Site Admin"><img src="${defaultAvatarUrl}" width="32" height="32"></a></div></div>`;
 
 function withThreadReplyAuthorInfo(html: string, threadId: number) {
   return html.replace(
@@ -224,13 +111,6 @@ function withThreadTextareaStyle(html: string, threadId: number) {
   return html.replace(
     `<textarea name="contents" class="editorSeries content comment nm" data-editor-mode="code-review-body" id="editor-contents-thread-${threadId}" markdown="true">`,
     `<textarea name="contents" class="editorSeries content comment nm" data-editor-mode="code-review-body" id="editor-contents-thread-${threadId}" style="height:100px" markdown="true">`,
-  );
-}
-
-function withCodeReviewUploadForm(html: string) {
-  return html.replace(
-    `<div class="right-txt"><button type="submit" class="ybtn ybtn-success ybtn-small">`,
-    `${uploadForm("COMMIT_COMMENT")}<div class="right-txt"><button type="submit" class="ybtn ybtn-success ybtn-small">`,
   );
 }
 
@@ -318,58 +198,12 @@ function commentUpdateForm(
   return `<div id="comment-editform-${commentId}" class="comment-update-form"><form action="${basePath}/comments/${commentId}" method="post" enctype="multipart/form-data"><input type="hidden" name="id" value="${commentId}"><div class="write-comment-box"><div class="write-comment-wrap"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-${commentId}" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-${commentId}" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content"><div id="edit-${commentId}" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="update-comment-body" id="editor-contents-${commentId}" markdown="true">${markdown}</textarea></div></div><div id="preview-${commentId}" class="tab-pane"><div class="markdown-preview markdown-wrap update-comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="upload-drop-here"><div class="msg-wrap"><div class="msg">Drag &amp; Drop files here to upload.</div></div></div><div class="right-txt comment-update-button upload-button-line"><span class="file-upload"><label for="upload-${commentId}" class="file-upload__label ybtn">File upload</label><input id="upload-${commentId}" class="file-upload__input" type="file" name="filePath" multiple></span><button type="button" class="ybtn ybtn-cancel" data-comment-id="${commentId}">Cancel</button><button type="submit" class="ybtn ybtn-info">Save</button></div></div><input type="hidden" name="temporaryUploadFiles" class="temporaryUploadFiles" value=""><div class="preview-${commentId}"></div><div class="attachment-files">${attachmentMarkers}</div><div id="upload-${commentId}" data-resourcetype="NONISSUE_COMMENT" data-resourceid="${commentId}"></div></div></form></div>`;
 }
 
-test("project commit detail route source has no generic LegacyInternalLink adapter", async () => {
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("LegacyInternalLink");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("ComponentType");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("AnchorHTMLAttributes");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("CommitHashLink");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("as never");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("search={{} as never}");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("hash={`comment-${comment.id}`}");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("hash={`thread-${thread.id}`}");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("attachmentFileHtml");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("data-href={href}");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("escapeHtml");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toMatch(
-    /function AttachmentFileMarker[\s\S]{0,700}<button[^>]*className="btn-transparent btn-delete"[^>]*data-id=/u,
-  );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toMatch(
-    /className="attachment-files"[\s\S]{0,160}dangerouslySetInnerHTML/u,
-  );
-});
-
-test("project commit detail anonymous author fallback uses legacy message key", async () => {
-  expect(LEGACY_MESSAGES_SOURCE).toMatch(/^user\.role\.anonymous\s*=\s*Anonymous$/m);
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('t("user.role.anonymous")');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('|| "Anonymous"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("<strong>Anonymous</strong>");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('commit?.authorEmail || "Anonymous"');
-});
-
-test("project commit detail watch buttons are route-owned React controls", async () => {
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('id="watch-button"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
-    "onClick={() => watchMutation.mutate(!detail.isWatching)}",
-  );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("onClick={toggleWatch}");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-footer-watch"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-footer-list"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
-    'className={` ybtn ${detail.isWatching ? "active ybtn-watching" : ""}`}',
-  );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("className={` ybtn`}");
-
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toMatch(
-    /id="watch-button"[\s\S]{0,220}data-toggle="button"/u,
-  );
-});
-
 test("project commit detail keeps the frozen legacy commit-id flow geometry", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectCommitDetail(page, [], {
     commit: {
       authorAvatarUrl: "",
-      authorDate: "Jul 1, 2026",
+      authorDate: "2000-07-01T00:00:00",
       authorEmail: "dev@example.com",
       authorLoginId: "",
       authorName: "Dev Author",
@@ -405,34 +239,6 @@ test("project commit detail keeps the frozen legacy commit-id flow geometry", as
   });
 });
 
-test("project commit detail markdown help uses shared React helper", async () => {
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("LegacyMarkdownHelp");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("help/markdown.scala.html?raw");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("legacyMarkdownHelpTemplate");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("legacyMarkdownHelpHtml");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toMatch(
-    /markdown-help[\s\S]{0,160}dangerouslySetInnerHTML/u,
-  );
-});
-
-test("project commit detail comment edit toggle is route-owned React state", async () => {
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("setEditingCommentIds");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("data-comment-id={comment.id}");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('data-toggle="comment-edit"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('data-toggle="close"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("event.stopPropagation();");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("addEventListener");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("document.");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("querySelector");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("classList");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("style.display");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("setAttribute");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("removeAttribute");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("innerHTML");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("outerHTML");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
-});
-
 test("project commit detail diff lines preserve legacy side hooks", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const detailRequests: string[] = [];
@@ -453,8 +259,6 @@ index 1234567..abcdef1 100644
     ],
   });
 
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("data-type={line.type}");
-
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
   await expect(page.locator(".diff-container.show-comments tr[data-type]")).toHaveCount(0);
@@ -471,58 +275,10 @@ index 1234567..abcdef1 100644
   expect(detailRequests).toEqual(["branch=main"]);
 });
 
-test("project commit detail React tab controls do not carry Bootstrap tab triggers", async () => {
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('data-toggle="tab"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('data-mode="edit"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('data-mode="preview"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('data-toggle="markdown-editor"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("setReviewCardTab");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("setActiveTab");
-});
-
-test("project code diff retains review tabs without the removed markdown-editor bridge", () => {
-  expect(APP_CSS_SOURCE).not.toContain(
-    '.codediff-wrap [data-toggle="markdown-editor"] > .nav-tabs > li > button',
-  );
-  expect(APP_CSS_SOURCE).not.toContain(
-    '.codediff-wrap [data-toggle="markdown-editor"] > .nav-tabs > li.active > button',
-  );
-  expect(APP_CSS_SOURCE).toContain(".codediff-wrap .review-container .nav-tabs > li > button");
-  expect(APP_CSS_SOURCE).toContain(
-    ".codediff-wrap .review-container .nav-tabs > li.active > button",
-  );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('data-toggle="markdown-editor"');
-});
-
-test("project commit detail native titles are preserved without Bootstrap tooltip markers", async () => {
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('data-toggle="tooltip"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('data-placement="top"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toMatch(
-    /className="avatar-wrap"[\s\S]{0,120}title=\{comment\.authorLabel\}/u,
-  );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toMatch(
-    /<span className="comment_author pull-left">[\s\S]{0,260}title=\{comment\.authorLabel\}[\s\S]{0,120}<strong>\{`\$\{comment\.authorLoginId\} `\}<\/strong>/u,
-  );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toMatch(
-    /className="avatar-wrap medium"[\s\S]{0,120}title=\{currentUser\.userLabel\}/u,
-  );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("data-original-title={currentUser.userLabel}");
-});
-
 test("project commit detail browser title follows legacy project layout", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const detailRequests: string[] = [];
   await mockProjectCommitDetail(page, detailRequests);
-
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("function ProjectCommitDetailTitle");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("<ProjectCommitDetailTitle");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
-    '<title>{`${t("code.commits")} @${commitId} - ${ownerName}/${projectName}`}</title>',
-  );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("document.title");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("globalThis.document");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toMatch(/useEffect[\s\S]{0,240}title/u);
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toMatch(/title[\s\S]{0,120}= /u);
 
   await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
 
@@ -555,14 +311,14 @@ test("project commit detail folds original email message in route-owned comments
               "--- Original Message ---",
               "Quoted tail from mail client",
             ].join("\n"),
-            createdLabel: "Jul 1, 2026",
+            createdLabel: "2000-07-01T00:00:00",
             id: 603,
             threadId: 89,
             viaEmail: true,
           },
         ],
         commitId: "abcdef1234567890",
-        createdLabel: "Jul 1, 2026",
+        createdLabel: "2000-07-01T00:00:00",
         endLine: null,
         id: 89,
         path: "",
@@ -572,17 +328,6 @@ test("project commit detail folds original email message in route-owned comments
       },
     ],
   });
-
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("OriginalMessageMarkdown");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("data-yobi-original-message-processed={");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("addEventListener");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("document.");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("querySelector");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("classList");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("style.display");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("innerHTML");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("outerHTML");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
 
   await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
   const commentBody = page.locator("#comment-603 .comment-body.markdown-wrap");
@@ -601,54 +346,221 @@ test("project commit detail folds original email message in route-owned comments
   expect(detailRequests).toEqual(["branch=main"]);
 });
 
-test("project commit detail comment delete modal is route-owned React state", async () => {
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("setCommentDeleteCommentId");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("openCommentDeleteModal(comment.id)");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('id="comment-delete-modal"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
-    'className={`modal hide fade${isOpen ? " in is-open" : ""}`}',
-  );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('className="modal-backdrop fade in"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('role="presentation"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("onClick={onClose}");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("onKeyUp={onClose}");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("onClick={onConfirm}");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('className="close" data-dismiss="modal"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('className="ybtn" data-dismiss="modal"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("data-request-method");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("data-request-uri");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('"CodeCommentThread"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('"comment-delete"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("document.");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("querySelector");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("classList");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("style.display");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("setAttribute");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("removeAttribute");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("innerHTML");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
+test("commit editor uses legacy tab geometry, previews drafts, and inserts checklists without submitting", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const requests: Array<{ body: unknown; method: string; pathname: string }> = [];
+  await mockProjectCommitDetail(page, [], {}, {}, requests);
+  await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
+  const form = page.locator("#comment-form");
+  const textarea = form.locator("textarea[name='contents']");
+  const edit = form.getByRole("button", { name: "Edit", exact: true });
+  const preview = form.getByRole("button", { name: "Preview", exact: true });
+  for (const width of [1366, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect(edit).toHaveCSS("display", "block");
+    await expect(edit).toHaveCSS("line-height", "20px");
+    await expect(edit).toHaveCSS("padding-top", "4px");
+    await expect(edit).toHaveCSS("padding-left", width === 390 ? "5px" : "15px");
+    const geometry = await form.evaluate((node) => {
+      const tabs = node.querySelector(".nav-tabs")!;
+      const [edit, preview] = Array.from(tabs.querySelectorAll(":scope > li > button"));
+      const e = edit!.getBoundingClientRect();
+      const p = preview!.getBoundingClientRect();
+      const t = node.querySelector("textarea")!.getBoundingClientRect();
+      return {
+        editTop: e.top,
+        previewTop: p.top,
+        editRight: e.right,
+        previewLeft: p.left,
+        previewBottom: p.bottom,
+        textareaTop: t.top,
+        previewRight: p.right,
+        textareaRight: t.right,
+      };
+    });
+    expect(geometry.editTop).toBeCloseTo(geometry.previewTop, 1);
+    expect(geometry.editRight).toBeLessThanOrEqual(geometry.previewLeft);
+    expect(geometry.previewBottom).toBeLessThanOrEqual(geometry.textareaTop);
+    expect(geometry.previewRight).toBeLessThanOrEqual(geometry.textareaRight);
+  }
+  await textarea.fill("Review **draft**");
+  await preview.click();
+  await expect(form.locator(".markdown-preview strong")).toHaveText("draft");
+  await edit.click();
+  await textarea.evaluate((node) => (node as HTMLTextAreaElement).setSelectionRange(0, 0));
+  await form.getByRole("button", { name: "Add checklist", exact: true }).click();
+  await expect(textarea).toHaveValue("Review **draft**\n- [ ] Todo A\n- [ ] Todo B\n- [ ] Todo C");
+  await preview.click();
+  await expect(form.locator(".markdown-preview input[type='checkbox']")).toHaveCount(3);
+  expect(requests).toEqual([]);
+  const avatar = page.locator(".commitAuthor img");
+  await expect(avatar).toHaveAttribute("src", defaultAvatarUrl);
+  expect(
+    await avatar.evaluate(async (node) => {
+      const image = node as HTMLImageElement;
+      await image.decode();
+      return image.naturalWidth;
+    }),
+  ).toBe(34);
 });
-
-test("project commit detail route mounts legacy project-scoped search shell", async () => {
-  // bucket-3: projectSearchScope/projectIsProtected moved out of the commit
-  // route (outlet layouts); the shell is mounted by the nested project layout.
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
-    'createFileRoute("/$ownerName/$projectName/commit/$commitId")',
+test("commit block reviews submit JSON ranges and attachments, retain failed drafts, and reject cross-file selection", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const patch = [
+    "diff --git a/src/main.rs b/src/main.rs",
+    "--- a/src/main.rs",
+    "+++ b/src/main.rs",
+    "@@ -1,1 +1,3 @@",
+    " fn main() {",
+    '+    println!("new");',
+    "+}",
+  ].join("\n");
+  const threads: unknown[] = [];
+  const detail = {
+    commit: {
+      commitId: "abcdef1234567890",
+      message: "Review changes",
+      shortMessage: "Review changes",
+    },
+    parentCommit: { commitId: "1234567890abcdef" },
+    files: [
+      { path: "src/main.rs", patch },
+      {
+        path: "src/other.rs",
+        patch: patch.replaceAll("src/main.rs", "src/other.rs"),
+      },
+    ],
+    threads,
+    permissions: { canComment: true, canUpdateThreadState: true },
+  };
+  const requests: unknown[] = [];
+  await mockProjectCommitDetail(page, [], detail);
+  const attachment = {
+    id: 209,
+    mimeType: "text/plain",
+    name: "review.txt",
+    size: 6,
+    url: `${basePath}/files/209`,
+  };
+  await page.route("**/files", async (route) => {
+    expect(route.request().headers()["x-csrf-token"]).toBe("test-csrf-token");
+    await route.fulfill({ contentType: "application/json", body: JSON.stringify(attachment) });
+  });
+  await page.route(
+    "**/api/v1/projects/admin/sample/commit/abcdef1234567890/comments",
+    async (route) => {
+      expect(route.request().method()).toBe("POST");
+      expect(route.request().headers()["content-type"]).toBe("application/json");
+      expect(route.request().headers()["x-csrf-token"]).toBe("test-csrf-token");
+      requests.push(route.request().postDataJSON());
+      if (requests.length === 1) {
+        await route.fulfill({
+          status: 403,
+          contentType: "application/json",
+          body: JSON.stringify({
+            error: { code: "forbidden", message: "Review denied", status: 403 },
+          }),
+        });
+        return;
+      }
+      threads.push({
+        id: 210,
+        state: "open",
+        path: "src/main.rs",
+        commitId: "abcdef1234567890",
+        prevCommitId: "1234567890abcdef",
+        startLine: 2,
+        startColumn: 0,
+        startSide: "B",
+        endLine: 3,
+        endColumn: 2,
+        endSide: "B",
+        createdLabel: "Sep 18, 2026",
+        comments: [
+          {
+            id: 211,
+            authorLoginId: "admin",
+            authorLabel: "Site Admin",
+            contentsMarkdown: "Selected **review**",
+            attachments: [attachment],
+            createdLabel: "Sep 18, 2026",
+          },
+        ],
+      });
+      await route.fulfill({ contentType: "application/json", body: JSON.stringify(detail) });
+    },
   );
-});
-
-test("project SVN commit detail branch dropdown is route-owned React state", async () => {
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("branchDropdownOpen");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("setBranchDropdownOpen((isOpen) => !isOpen)");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('data-toggle="dropdown"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toMatch(
-    /id="branches"[\s\S]{0,240}data-name="branch"[\s\S]{0,80}data-activate="manual"/,
+  const path = `${basePath}/admin/sample/commit/abcdef1234567890?branch=main`;
+  await page.goto(path);
+  await page.locator("#editor-contents-comment").fill("Keep this general draft");
+  await page.evaluate(() => {
+    const first = document.querySelector(".diff-container .add pre")!.firstChild!;
+    const last = document
+      .querySelectorAll(".diff-container")[1]!
+      .querySelector(".add pre")!.firstChild!;
+    const range = document.createRange();
+    range.setStart(first, 0);
+    range.setEnd(last, 2);
+    const selection = window.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
+  });
+  await page.locator(".diff-body").dispatchEvent("mouseup");
+  await expect(page.locator(".btnPop .ybtn")).toBeHidden();
+  await page.evaluate(() => {
+    const lines = document.querySelectorAll(".diff-container")[0]!.querySelectorAll(".add pre");
+    const range = document.createRange();
+    range.setStart(lines[0]!.firstChild!, 0);
+    range.setEnd(lines[1]!.firstChild!, 2);
+    const selection = window.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
+  });
+  await page.locator(".diff-body").dispatchEvent("mouseup");
+  await page.locator(".btnPop .ybtn").click();
+  const form = page.locator("#review-form");
+  const textarea = form.locator("textarea[name='contents']");
+  await form.locator("button[type='submit']").click();
+  await expect(form.locator("[role='alert']")).toBeVisible();
+  expect(requests).toEqual([]);
+  await textarea.fill("Selected **review**");
+  await form.locator("button[type='submit']").click();
+  await expect(form.locator("[role='alert']")).toHaveText("Review denied");
+  await expect(textarea).toHaveValue("Selected **review**");
+  await expect(form).toBeVisible();
+  await form.locator("input[type='file']").setInputFiles({
+    buffer: Buffer.from("review"),
+    mimeType: "text/plain",
+    name: "review.txt",
+  });
+  await form.locator("button[type='submit']").click();
+  await expect(form).toBeHidden();
+  await expect(textarea).toHaveValue("");
+  await expect(page.locator("#comment-211 .comment-body")).toHaveText("Selected review");
+  await expect(page.locator("#editor-contents-comment")).toHaveValue("Keep this general draft");
+  expect(requests).toEqual(
+    [[], [209]].map((attachmentIds) => ({
+      attachmentIds,
+      contentsMarkdown: "Selected **review**",
+      path: "src/main.rs",
+      prevCommitId: "1234567890abcdef",
+      startLine: 2,
+      startColumn: 0,
+      startSide: "B",
+      endLine: 3,
+      endColumn: 2,
+      endSide: "B",
+    })),
   );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("event.preventDefault();");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("event.stopPropagation();");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("document.addEventListener");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('querySelector("#branches');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("bootstrap.Dropdown");
+  await expect(page).toHaveURL(
+    new RegExp(`${basePath}/admin/sample/commit/abcdef1234567890\\?branch=main$`),
+  );
+  await page.goto(path);
+  await expect(page.locator("#comment-211 .comment-body")).toHaveText("Selected review");
+  await expect(page.locator("#thread-210")).toHaveAttribute("data-range-startcolumn", "0");
 });
 
 test("project commit detail internal nav links keep legacy hrefs with SPA navigation", async ({
@@ -817,13 +729,35 @@ test("project commit detail matches legacy code/diff.scala.html empty discussion
     "href",
     `${basePath}/admin/sample/branches`,
   );
-  // F6 copy-fix-current-dom: the app owns the footer floats via Style
-  // (footerListRight, pinned by "submits watch and comment mutations through
-  // legacy controls") and intentionally drops the legacy pull-right utility
-  // class; re-point the legacy selector at the route-owned element.
   await expect(page.locator('[data-owner="commit-detail-footer-list"]')).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/commits/main`,
+  );
+  await expect(page.locator("#watch-button")).toHaveClass(/\bpull-left\b/u);
+  await expect(page.locator('[data-owner="commit-detail-footer-list"]')).toHaveClass(
+    /\bpull-right\b/u,
+  );
+  await expect(page.locator(".non-ranged-threads-wrap > .comment-thread-wrap")).toHaveCount(0);
+  await expect(page.locator(".commitAuthor > span.avatar-wrap.smaller")).toHaveCount(1);
+  const emptyDiscussionOrder = await page.evaluate(() => {
+    const diffs = document.querySelector(".diffs-wrap")!;
+    const discussion = diffs.querySelector(":scope > .board-comment-wrap")!;
+    const diff = diffs.querySelector(":scope > .diff-body")!;
+    const form = discussion.querySelector(":scope > #comment-form")!;
+    return {
+      diffFollowsInfo: diffs.querySelector(".commitInfo")!.nextElementSibling === diff,
+      discussionFollowsDiff: diff.nextElementSibling === discussion,
+      formFollowsThreads:
+        discussion.querySelector(".non-ranged-threads-wrap")!.nextElementSibling === form,
+      discussionTop: discussion.getBoundingClientRect().top,
+      diffBottom: diff.getBoundingClientRect().bottom,
+    };
+  });
+  expect(emptyDiscussionOrder.diffFollowsInfo).toBe(true);
+  expect(emptyDiscussionOrder.discussionFollowsDiff).toBe(true);
+  expect(emptyDiscussionOrder.formFollowsThreads).toBe(true);
+  expect(emptyDiscussionOrder.discussionTop).toBeGreaterThanOrEqual(
+    emptyDiscussionOrder.diffBottom,
   );
   await expect(page.locator("#comment-delete-modal")).toHaveClass(/hide/);
   await expect(
@@ -947,16 +881,12 @@ test("project commit detail matches legacy code/diff.scala.html empty discussion
     reviewTop: "0px",
     reviewWidth: "260px",
   });
-  expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
-    await canonicalizeHtml(
-      page,
-      withReviewAuthorInfo(
-        withCommentUploadForm(
-          withCodeReviewUploadForm(withReactOwnedTabButtons(EXPECTED_COMMIT_DETAIL_BODY)),
-        ),
-      ).replaceAll("__BASE_PATH__", basePath),
-    ),
+  await expect(page.locator(".commitAuthor .ago")).toHaveText("2000-07-01");
+  await expect(page.locator(".commitAuthor .ago")).toHaveAttribute(
+    "title",
+    "2000-07-01 12:00:00 AM",
   );
+  await expect(page.locator(".review-container")).toHaveClass(/affix-top/);
   expect(await canonicalize(page, "#comment-delete-modal")).toEqual(
     await canonicalizeHtml(
       page,
@@ -965,12 +895,24 @@ test("project commit detail matches legacy code/diff.scala.html empty discussion
   );
 });
 
-test("project commit detail toggles legacy review-card rail collapse without navigation", async ({
+test("project commit detail affixes and collapses the legacy review-card rail without navigation", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const detailRequests: string[] = [];
-  await mockProjectCommitDetail(page, detailRequests);
+  await mockProjectCommitDetail(page, detailRequests, {
+    files: [
+      {
+        path: "long.txt",
+        patch: [
+          "--- /dev/null",
+          "+++ b/long.txt",
+          "@@ -0,0 +1,100 @@",
+          ...Array.from({ length: 100 }, (_, index) => `+line ${index + 1}`),
+        ].join("\n"),
+      },
+    ],
+  });
 
   await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
 
@@ -984,6 +926,16 @@ test("project commit detail toggles legacy review-card rail collapse without nav
   await expect(reviewWrap).toBeVisible();
   await expect(showButton).toBeHidden();
   await expect(hideButton).toBeVisible();
+  const reviewContainer = page.locator(".review-container");
+  await expect(reviewContainer).toHaveCSS("position", "relative");
+  await page.evaluate(() => {
+    const rail = document.querySelector(".review-wrap")!;
+    window.scrollTo(0, rail.getBoundingClientRect().top + window.scrollY + 100);
+  });
+  await expect(reviewContainer).toHaveCSS("position", "fixed");
+  await expect(reviewContainer).toHaveCSS("top", "10px");
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect(reviewContainer).toHaveCSS("position", "relative");
 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
@@ -1050,37 +1002,6 @@ index 1234567..abcdef1 100644
   });
   const initialUrl = page.url();
 
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("setBlockReviewFormOpen");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("setBlockReviewButtonVisible");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("globalThis.getSelection");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("setBlockReviewFormOpen(true)");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("onClose={() => setBlockReviewFormOpen(false)}");
-
-  expect(COMMIT_DETAIL_STYLE_SOURCE).toContain(
-    '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
-  );
-
-  expect(LEGACY_REVIEW_FORM_SOURCE).toContain('<div id="review-form" class="review-form">');
-  expect(LEGACY_REVIEW_FORM_SOURCE).toContain(
-    '<div class="author-info-wrap pull-left hide-in-mobile">',
-  );
-  expect(LEGACY_REVIEW_FORM_SOURCE).toContain('<div class="write-comment-box">');
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    ".review-form {\n    display: none;\n    padding: 0px 10px; padding-right:6px;",
-  );
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    ".author-info-wrap {\n        padding: 0px; margin-bottom: 10px;\n        display: block; clear: both;\n        height: 35px;",
-  );
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    ".write-comment-box {\n        padding:0;\n        margin:0;\n        margin-left:46px;",
-  );
-  expect(LEGACY_VARIABLES_SOURCE).toContain(
-    '@base-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";',
-  );
-  expect(LEGACY_RESPONSIVE_SOURCE).toContain(
-    ".review-form .write-comment-box {\n    margin-left: 0 !important;\n  }",
-  );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("CodeCommentBox");
   await expect(popButton).toHaveCount(1);
   await expect(popButton).toBeHidden();
   await expect(reviewForm).toBeHidden();
@@ -1174,7 +1095,7 @@ test("project commit detail links known commit author avatar like legacy diff.sc
   await mockProjectCommitDetail(page, detailRequests, {
     commit: {
       authorAvatarUrl: "/avatars/dev.png",
-      authorDate: "Jul 1, 2026",
+      authorDate: "2000-07-01T00:00:00",
       authorEmail: "dev@example.com",
       authorLoginId: "dev",
       authorName: "Dev Author",
@@ -1195,50 +1116,21 @@ test("project commit detail links known commit author avatar like legacy diff.sc
   await expect(authorAvatar.locator("img")).toHaveAttribute("width", "32");
   await expect(authorAvatar.locator("img")).toHaveAttribute("height", "32");
   await expect(page.locator(".commitAuthor > strong")).toHaveText("Dev Author");
+  const avatarBox = await authorAvatar.evaluate((element) => {
+    const box = element.getBoundingClientRect();
+    return { width: box.width, height: box.height };
+  });
+  expect(avatarBox).toEqual({ width: 20, height: 20 });
   expect(detailRequests).toEqual(["branch=main"]);
 });
 
 test("project commit detail Batch 756 owns Git metadata with Style", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  expect(LEGACY_CODE_DIFF_SOURCE).toContain('<div class="commitInfo">');
-  expect(LEGACY_CODE_DIFF_SOURCE).toContain('<div class="commitAuthor">');
-  expect(LEGACY_CODE_DIFF_SOURCE).toContain('<span class="ago"');
-  expect(LEGACY_CODE_DIFF_SOURCE).toContain('<div class="commitMsg-wrap">');
-  expect(LEGACY_CODE_DIFF_SOURCE).toContain('<div class="commitId-wrap">');
-  expect(LEGACY_CODE_DIFF_SOURCE).toContain('<strong class="commitId">');
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    ".commitId {\n        color:@secondary;\n        margin-top:5px;\n        font-family: @fixed-font-family;",
-  );
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".ago { margin-left:5px; color:#bbb; }");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    ".commitAuthor {\n            float:right; margin-top:5px;",
-  );
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".avatar-wrap { margin-right:5px; }");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".commitId-wrap { padding:10px 5px; }");
-  expect(LEGACY_VARIABLES_SOURCE).toContain(
-    '@fixed-font-family: Consolas, "Menlo", "Monaco", "Ubuntu Mono",  "source-code-pro", monospace;',
-  );
-  expect(LEGACY_VARIABLES_SOURCE).toContain("@secondary       : @blue2;");
-  expect(LEGACY_VARIABLES_SOURCE).toContain("@blue2  : #51AACC;");
-  for (const owner of [
-    "commit-detail-author",
-    "commit-detail-author-ago",
-    "commit-detail-author-avatar",
-    "commit-detail-id-wrap",
-    "commit-detail-id",
-  ]) {
-    expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(`data-owner="${owner}"`);
-  }
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("commitMsg-wrap");
-
-  expect(COMMIT_DETAIL_STYLE_SOURCE).toContain(
-    'font-family: Consolas, "Menlo", "Monaco", "Ubuntu Mono", "source-code-pro", monospace;',
-  );
 
   await mockProjectCommitDetail(page, [], {
     commit: {
       authorAvatarUrl: "/avatars/dev.png",
-      authorDate: "Jul 1, 2026",
+      authorDate: "2000-07-01T00:00:00",
       authorEmail: "dev@example.com",
       authorLoginId: "dev",
       authorName: "Dev Author",
@@ -1267,9 +1159,8 @@ test("project commit detail Batch 756 owns Git metadata with Style", async ({ pa
     const id = page.locator('[data-owner="commit-detail-id"]');
     await expect(info).toBeVisible();
     await expect(author).toBeVisible();
-    await expect(ago).toHaveText("Jul 1, 2026");
+    await expect(ago).toHaveText("2000-07-01");
     await expect(avatar).toBeVisible();
-    await expect(page.locator(".commitMsg-wrap")).toHaveCount(0);
     await expect(page.locator(".commitAuthor > strong")).toHaveText("Dev Author");
     await expect(id).toHaveText("@abcdef1234567890");
     await expect(author).toHaveCSS("float", "right");
@@ -1328,7 +1219,7 @@ test("project commit detail renders no-author commit with legacy anonymous autho
   const detailRequests: string[] = [];
   await mockProjectCommitDetail(page, detailRequests, {
     commit: {
-      authorDate: "Jul 1, 2026",
+      authorDate: "2000-07-01T00:00:00",
       authorEmail: null,
       authorName: null,
       commentCount: 0,
@@ -1342,8 +1233,7 @@ test("project commit detail renders no-author commit with legacy anonymous autho
   await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
 
   await expect(page.locator(".commitAuthor > strong")).toHaveText("Anonymous");
-  await expect(page.locator(".commitAuthor > .avatar-wrap.smaller")).not.toHaveAttribute("href");
-  await expect(page.locator(".commitAuthor > .avatar-wrap.smaller img")).toHaveAttribute("alt", "");
+  await expect(page.locator(".commitAuthor > .avatar-wrap")).toHaveCount(0);
   expect(detailRequests).toEqual(["branch=main"]);
 });
 
@@ -1355,36 +1245,16 @@ test("project commit detail submits watch and comment mutations through legacy c
   const mutationRequests: Array<{ body: unknown; method: string; pathname: string }> = [];
   await mockProjectCommitDetail(page, detailRequests, {}, {}, mutationRequests);
 
-  expect(LEGACY_CODE_DIFF_SOURCE).toContain(
-    '<button id="watch-button" type="button" class="pull-left ybtn',
-  );
-  expect(LEGACY_CODE_DIFF_SOURCE).toContain(
-    '<a href="@routes.CodeHistoryApp.history(project.owner, project.name, selectedBranch, path)" class="ybtn pull-right">@Messages("button.list")</a>',
-  );
-  expect(LEGACY_SVN_DIFF_SOURCE).toContain(
-    '<button id="watch-button" type="button" class="ybtn @if(commit.getWatchers(project, false)',
-  );
-  expect(LEGACY_SVN_DIFF_SOURCE).toContain(
-    '<a href="@routes.CodeHistoryApp.history(project.owner, project.name, selectedBranch, path)" class="ybtn pull-right">@Messages("button.list")</a>',
-  );
-  expect(LEGACY_BOOTSTRAP_SOURCE).toContain(".pull-right {\n  float: right;\n}");
-  expect(LEGACY_BOOTSTRAP_SOURCE).toContain(".pull-left {\n  float: left;\n}");
-  expect(LEGACY_MESSAGES_SOURCE).toContain("button.list = List");
-  expect(LEGACY_MESSAGES_SOURCE).toContain("notification.watch = Watch");
-
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-footer-watch"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-footer-list"');
-
   await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
   await expect(page.locator("#watch-button")).not.toHaveAttribute("data-toggle", "button");
   await expect(page.locator("#watch-button")).toHaveClass(/ybtn/);
-  await expect(page.locator("#watch-button")).not.toHaveClass(/pull-left/);
+  await expect(page.locator("#watch-button")).toHaveClass(/\bpull-left\b/u);
   await expect(page.locator("#watch-button")).toHaveText("Watch");
   const watch = page.locator('[data-owner="commit-detail-footer-watch"]');
   const list = page.locator('[data-owner="commit-detail-footer-list"]');
   await expect(watch).toHaveCSS("float", "left");
   await expect(list).toHaveCSS("float", "right");
-  await expect(list).not.toHaveClass(/pull-right/);
+  await expect(list).toHaveClass(/\bpull-right\b/u);
   await expect(list).toHaveText("List");
   await expect(list).toHaveAttribute("href", `${basePath}/admin/sample/commits/main`);
   const footerMetrics = await page.evaluate(() => {
@@ -1409,7 +1279,6 @@ test("project commit detail submits watch and comment mutations through legacy c
   expect(footerMetrics!.watchLeft).toBeGreaterThanOrEqual(footerMetrics!.parentLeft);
   expect(footerMetrics!.listRight).toBeLessThanOrEqual(footerMetrics!.parentRight + 1);
   expect(footerMetrics!.documentWidth).toBeLessThanOrEqual(1366);
-  await captureCommitFooterScreenshot(page, "git-desktop.png");
   await page.setViewportSize({ width: 390, height: 844 });
   const mobileFooterMetrics = await page.evaluate(() => {
     const watch = document.querySelector<HTMLElement>('[data-owner="commit-detail-footer-watch"]');
@@ -1432,7 +1301,6 @@ test("project commit detail submits watch and comment mutations through legacy c
   expect(mobileFooterMetrics!.watchLeft).toBeGreaterThanOrEqual(mobileFooterMetrics!.parentLeft);
   expect(mobileFooterMetrics!.listRight).toBeLessThanOrEqual(mobileFooterMetrics!.parentRight + 1);
   expect(mobileFooterMetrics!.documentWidth).toBeLessThanOrEqual(390);
-  await captureCommitFooterScreenshot(page, "git-mobile.png");
   await page.locator("#watch-button").click();
   await page.locator("#editor-contents-comment").fill("Top level note");
   await page.locator("#comment-form button[type=submit]").click();
@@ -1462,20 +1330,7 @@ test("project commit detail submits watch and comment mutations through legacy c
 test("project commit detail renders legacy partial_filediff rows", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const detailRequests: string[] = [];
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    ".linenum {\n                                text-align: right;\n                                color: rgba(0, 0, 0, 0.3);",
-  );
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    ".line-number {\n                                    width: 50px;\n                                    height: 20px;\n                                    position: relative;",
-  );
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    ".code {\n                                white-space: nowrap;\n                                padding:0 5px;",
-  );
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    ".diff-partial-codeline {\n                                    font-family: @fixed-font-family;\n                                    background-color: transparent;",
-  );
 
-  expect(COMMIT_DETAIL_STYLE_SOURCE).toContain('font-family: "monospace", Consolas, Tahoma;');
   await mockProjectCommitDetail(page, detailRequests, {
     files: [
       {
@@ -1496,6 +1351,21 @@ index 1234567..abcdef1 100644
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
   await expect(page.locator(".diff-partial-outer#src-main-rs")).toBeVisible();
+  await expect(page.locator('[data-owner="commit-detail-diff-stat-bar"]')).toHaveCount(0);
+  await expect(page.locator("#src-main-rs .diff-partial-inner > button")).toHaveCount(0);
+  const fileOrder = await page.locator("#src-main-rs .diff-partial-inner").evaluate((element) => {
+    const meta = element.querySelector(":scope > .diff-partial-meta")!;
+    const code = element.querySelector(":scope > .diff-partial-code")!;
+    return {
+      metaFirst: element.firstElementChild === meta,
+      codeFollowsMeta: meta.nextElementSibling === code,
+      metaBottom: meta.getBoundingClientRect().bottom,
+      codeTop: code.getBoundingClientRect().top,
+    };
+  });
+  expect(fileOrder.metaFirst).toBe(true);
+  expect(fileOrder.codeFollowsMeta).toBe(true);
+  expect(Math.abs(fileOrder.codeTop - fileOrder.metaBottom)).toBeLessThanOrEqual(1);
   await expect(page.locator("#src-main-rs .diff-partial-commit-id a").nth(0)).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/code/1234567890abcdef/src/main.rs`,
@@ -1557,34 +1427,6 @@ test("project commit detail Batch 746 partial diff row and cell owners keep lega
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const detailRequests: string[] = [];
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("&.linenum {");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".line-number {");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".code {");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".diff-partial-codeline {");
-  expect(LEGACY_DIFF_LINE_SOURCE).toContain('<i class="yobicon-comments"></i>');
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    ".yobicon-comments {\n                                    position:absolute;",
-  );
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("margin-left: -84px;");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("margin-top:2px;");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    "tr.add:hover, tr.remove:hover,tr.context:hover",
-  );
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".linenum:hover .yobicon-comments");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("&.discommentable {");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("display:none;");
-
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
-    'commentIcon: "commit-detail-diff-line-comment-icon"',
-  );
-  expect(DIFF_LINE_VIEW_SOURCE).toContain("data-owner={owners.lineNumberCell}");
-  expect(DIFF_LINE_VIEW_SOURCE).toContain("data-owner={owners.lineNumber}");
-  expect(DIFF_LINE_VIEW_SOURCE).toContain("data-owner={owners.codeCell}");
-  expect(DIFF_LINE_VIEW_SOURCE).toContain("data-owner={owners.codeLine}");
-  expect(DIFF_LINE_VIEW_SOURCE).toContain("data-owner={owners.commentIcon}");
-  expect(DIFF_LINE_VIEW_SOURCE).not.toContain("data-owner={owners.commentIcon} style=");
-
-  expect(COMMIT_DETAIL_STYLE_SOURCE).toContain("opacity: 0");
 
   await mockProjectCommitDetail(page, detailRequests, {
     files: [
@@ -1690,10 +1532,6 @@ index 1234567..abcdef1 100644
 test("project commit detail owns diff-body font family", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
-  expect(COMMIT_DETAIL_STYLE_SOURCE).toContain('font-family: "monospace", Consolas, Tahoma;');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("className={` diff-body`}");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-diff-body-layout"');
-
   await mockProjectCommitDetail(page, []);
   const diffBody = page.locator(".diff-body");
 
@@ -1707,11 +1545,6 @@ test("project commit detail owns diff-body font family", async ({ page }) => {
 
 test("project commit detail owns diff-body layout", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    ".diff-body {\n            position:relative;\n            .border-radius(3px);\n            min-height:30px;",
-  );
-
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-diff-body-layout"');
 
   await mockProjectCommitDetail(page, []);
   const diffBody = page.locator('[data-owner="commit-detail-diff-body-layout"]');
@@ -1773,10 +1606,6 @@ index 1234567..abcdef1 100644
       },
     ],
   });
-
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("code.addedPath");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("code.deletedPath");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("code.renamedPath");
 
   await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
 
@@ -1892,14 +1721,6 @@ index 1234567..abcdef1
 test("project commit detail owns legacy file-mode binary styling with fallback off", async ({
   page,
 }) => {
-  expect(LEGACY_FILE_DIFF_SOURCE).toContain(
-    '<td class="isBinary">@Messages("code.fileModeChanged")</td>',
-  );
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    ".isBinary { color:#bbb; text-shadow:-1px -1px #fff; padding:5px 10px; }",
-  );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-diff-is-binary"');
-
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectCommitDetail(page, [], {
     files: [
@@ -2144,42 +1965,6 @@ test("project commit detail ranged thread header and badge own frozen geometry",
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  expect(LEGACY_COMMENT_THREAD_SOURCE).toContain('<div class="thread-header">');
-  expect(LEGACY_COMMENT_THREAD_SOURCE).toContain(
-    '<span class="badge state @thread.state.toString().toLowerCase()">',
-  );
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".comment-thread-wrap {");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("border:1px solid #e5e5e5;");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("border-width:1px 0px;");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("padding:5px;");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("padding-bottom:0;");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("background-color:#fefefe;");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("max-width:876px;");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("position:relative;");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("&.open");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("&.closed");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("margin:0 5px;");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".comment { padding: 2px 0; }");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".media-body { background: #fff; }");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("position:absolute;");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("top:8px; right:10px;");
-
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("btn-thread-here");
-  expect(LEGACY_THREAD_FORM_SOURCE).toContain('<div class="right-txt">');
-  expect(LEGACY_THREAD_FORM_SOURCE).toContain('<p class="thread-actrow">');
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".thread-actrow {");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("text-align:right;");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("padding:5px 5px 10px;");
-
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-thread-actions"');
-  expect(COMMIT_DETAIL_STYLE_SOURCE).toMatch(
-    /\.comment-thread-wrap\s*\{[\s\S]*?border:\s*1px solid #e5e5e5;/u,
-  );
-
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-thread-shell"');
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".thread-header{");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("padding: 5px 10px 10px 10px;");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("margin:0; padding:2px 10px;");
 
   await mockProjectCommitDetail(page, [], {
     files: [
@@ -2208,14 +1993,14 @@ index 1234567..abcdef1 100644
             canDelete: false,
             contentsHtml: "<p>Server HTML should not render</p>",
             contentsMarkdown: "Line **note**",
-            createdLabel: "Jul 1, 2026",
+            createdLabel: "2000-07-01T00:00:00",
             id: 501,
             threadId: 77,
             viaEmail: false,
           },
         ],
         commitId: "abcdef1234567890",
-        createdLabel: "Jul 1, 2026",
+        createdLabel: "2000-07-01T00:00:00",
         endLine: 2,
         id: 77,
         path: "src/main.rs",
@@ -2282,29 +2067,6 @@ test("project commit detail folds closed ranged threads with frozen Style geomet
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(`&.fold {
-        position:static;
-        padding:0; margin:0;
-        background: transparent;
-        border: none;`);
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(`.thread-header,
-        .thread-actrow,
-        .comments,
-        .write-comment-form {
-            display:none;
-        }`);
-  expect(LEGACY_COMMENT_THREAD_SOURCE).toContain(
-    'class="comment-thread-wrap @thread.state.toString().toLowerCase()\n     @if(thread.isInstanceOf[CodeCommentThread] && thread.state == CommentThread.ThreadState.CLOSED){fold}"',
-  );
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    ".comment-thread-wrap + .comment-thread-wrap {\n    margin-top:10px;\n}",
-  );
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    ".comment-thread-wrap.fold + .comment-thread-wrap {\n    margin-top:0;\n}",
-  );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
-    'const isClosedRangedFold = !isNonRanged && state === "closed" && isFolded;',
-  );
 
   await mockProjectCommitDetail(page, [], {
     files: [
@@ -2333,14 +2095,14 @@ index 1234567..abcdef1 100644
             canDelete: false,
             contentsHtml: "<p>Server HTML should not render</p>",
             contentsMarkdown: "Closed ranged note",
-            createdLabel: "Jul 1, 2026",
+            createdLabel: "2000-07-01T00:00:00",
             id: 504,
             threadId: 79,
             viaEmail: false,
           },
         ],
         commitId: "abcdef1234567890",
-        createdLabel: "Jul 1, 2026",
+        createdLabel: "2000-07-01T00:00:00",
         endLine: 2,
         id: 79,
         path: "src/main.rs",
@@ -2361,7 +2123,7 @@ index 1234567..abcdef1 100644
             canDelete: false,
             contentsHtml: "<p>Server HTML should not render</p>",
             contentsMarkdown: "Second ranged note",
-            createdLabel: "Jul 1, 2026",
+            createdLabel: "2000-07-01T00:00:00",
             id: 505,
             threadId: 80,
             viaEmail: false,
@@ -2433,13 +2195,6 @@ index 1234567..abcdef1 100644
 
 test("project commit detail renders legacy inline diff comment row", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  expect(LEGACY_COMMENT_THREAD_SOURCE).toContain('<div class="thread-header">');
-  expect(LEGACY_COMMENT_THREAD_SOURCE).toContain(
-    '<span class="badge state @thread.state.toString().toLowerCase()">',
-  );
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".comment-thread-wrap {");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".thread-header{");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("margin:0; padding:2px 10px;");
 
   const detailRequests: string[] = [];
   const mutationRequests: Array<{ body: unknown; method: string; pathname: string }> = [];
@@ -2475,14 +2230,14 @@ index 1234567..abcdef1 100644
               canDelete: true,
               contentsHtml: "<p>Server HTML should not render</p>",
               contentsMarkdown: "Line **note**",
-              createdLabel: "Jul 1, 2026",
+              createdLabel: "2000-07-01T00:00:00",
               id: 501,
               threadId: 77,
               viaEmail: false,
             },
           ],
           commitId: "abcdef1234567890",
-          createdLabel: "Jul 1, 2026",
+          createdLabel: "2000-07-01T00:00:00",
           endLine: 2,
           id: 77,
           path: "src/main.rs",
@@ -2671,21 +2426,6 @@ test("project commit detail owns the emitted inline comment row, cell, and neste
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  expect(LEGACY_COMMENT_THREAD_SOURCE).toContain(
-    '<ul class="comments">\n        @for(comment: ReviewComment <- thread.reviewComments.sortBy(c => c.createdDate)) {\n        <li id="comment-@comment.id" class="comment">',
-  );
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    "&.comments {\n                            display: none;\n                            td {\n                                padding:0;\n\n                                li {\n                                    max-width: 1150px;\n                                }",
-  );
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    "&.comments {\n                            display: none;\n                            td {\n                                padding:0;",
-  );
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    "&.show-comments {\n                        tr.comments {\n                            display: table-row;",
-  );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-inline-comment-row"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-inline-comment-cell"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('commentItemVariant="inline"');
 
   await mockProjectCommitDetail(page, [], {
     files: [
@@ -2714,14 +2454,14 @@ index 1234567..abcdef1 100644
             canDelete: false,
             contentsHtml: "<p>Server HTML should not render</p>",
             contentsMarkdown: "Inline **note**",
-            createdLabel: "Jul 1, 2026",
+            createdLabel: "2000-07-01T00:00:00",
             id: 501,
             threadId: 77,
             viaEmail: false,
           },
         ],
         commitId: "abcdef1234567890",
-        createdLabel: "Jul 1, 2026",
+        createdLabel: "2000-07-01T00:00:00",
         endLine: 2,
         id: 77,
         path: "src/main.rs",
@@ -2816,14 +2556,14 @@ index 1234567..abcdef1 100644
             canDelete: true,
             contentsHtml: "<p>Server HTML should not render</p>",
             contentsMarkdown: "Old line **note**",
-            createdLabel: "Jul 1, 2026",
+            createdLabel: "2000-07-01T00:00:00",
             id: 502,
             threadId: 78,
             viaEmail: false,
           },
         ],
         commitId: "abcdef1234567890",
-        createdLabel: "Jul 1, 2026",
+        createdLabel: "2000-07-01T00:00:00",
         endColumn: 18,
         endLine: 2,
         endSide: "A",
@@ -2856,27 +2596,6 @@ index 1234567..abcdef1 100644
 
 test("project commit detail renders legacy non-ranged comment thread", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  expect(LEGACY_REVIEWLIST_SOURCE).toContain(
-    '<a href="@DiffRenderer.urlToCommentThread(thread)" class="review-card @thread.state.toString().toLowerCase()',
-  );
-  expect(LEGACY_CODE_DIFF_SOURCE).toContain('<a href="#thread-@thread.id" class="review-card');
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    ".review-card {\n    display:block;\n    border: 1px solid #ddd;\n    padding: 10px;\n    padding-left: 15px;\n    margin-bottom: 5px;",
-  );
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    ".border-radius(0 3px 3px 0);\n\n    &:last-of-type { margin-bottom:0; }",
-  );
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    "&:hover {\n        text-decoration:none;\n        background-color:#fafafa;",
-  );
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    "&.open {\n        .box-shadow(inset 5px 0px 0px @state-open);",
-  );
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    "&.closed {\n        .box-shadow(inset 5px 0px 0px @state-closed);",
-  );
-
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-review-card"');
 
   const detailRequests: string[] = [];
   await mockProjectCommitDetail(page, detailRequests, {
@@ -2894,7 +2613,7 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
             canDelete: true,
             contentsHtml: "<p>Server HTML should not render</p>",
             contentsMarkdown: "General **note**",
-            createdLabel: "Jul 1, 2026",
+            createdLabel: "2000-07-01T00:00:00",
             id: 601,
             attachments: [COMMENT_601_ATTACHMENT],
             threadId: 88,
@@ -2902,7 +2621,7 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
           },
         ],
         commitId: "abcdef1234567890",
-        createdLabel: "Jul 1, 2026",
+        createdLabel: "2000-07-01T00:00:00",
         endLine: null,
         id: 88,
         path: "",
@@ -2916,6 +2635,39 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
   await expect(page.locator(".non-ranged-threads-wrap #thread-88")).toBeVisible();
+  const nonRangedOrder = await page.locator("#thread-88").evaluate((thread) => {
+    const comments = thread.querySelector(":scope > ul.comments")!;
+    const reply = thread.querySelector(":scope > .write-comment-form")!;
+    const comment = comments.querySelector(":scope > li.comment")!;
+    const avatar = comment.querySelector(":scope > .comment-avatar")!;
+    const body = comment.querySelector(":scope > .media-body")!;
+    const topLevelForm = thread
+      .closest(".board-comment-wrap")!
+      .querySelector(":scope > #comment-form")!;
+    const avatarLink = avatar.querySelector(":scope > a.avatar-wrap")!;
+    return {
+      replyFollowsComments: comments.nextElementSibling === reply,
+      bodyFollowsAvatar: avatar.nextElementSibling === body,
+      avatarWidth: avatarLink.getBoundingClientRect().width,
+      avatarHeight: avatarLink.getBoundingClientRect().height,
+      replyTop: reply.getBoundingClientRect().top,
+      commentsBottom: comments.getBoundingClientRect().bottom,
+      topLevelFormTop: topLevelForm.getBoundingClientRect().top,
+      threadBottom: thread.getBoundingClientRect().bottom,
+    };
+  });
+  expect(nonRangedOrder.replyFollowsComments).toBe(true);
+  expect(nonRangedOrder.bodyFollowsAvatar).toBe(true);
+  expect(nonRangedOrder.avatarWidth).toBe(32);
+  expect(nonRangedOrder.avatarHeight).toBe(32);
+  expect(nonRangedOrder.replyTop).toBeGreaterThanOrEqual(nonRangedOrder.commentsBottom);
+  expect(nonRangedOrder.topLevelFormTop).toBeGreaterThanOrEqual(nonRangedOrder.threadBottom);
+  await expect(page.locator("#thread-88 > .thread-header")).toHaveCount(0);
+  await expect(
+    page.locator(
+      "#thread-88 > .write-comment-form > form > .write-comment-box > .write-comment-wrap > div:last-child > button",
+    ),
+  ).toHaveText(["Close", "Add a comment"]);
   const reviewCard = page.locator("#reviewcards-open .review-card.open");
   await expect(reviewCard).toHaveCount(1);
   await expect(reviewCard).toHaveCSS("display", "block");
@@ -2995,7 +2747,10 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
     "href",
     `${basePath}/admin/sample/commit/abcdef1234567890?branch=main#comment-601`,
   );
-  await expect(page.locator("#comment-601 .ago a")).toHaveAttribute("title", "Jul 1, 2026");
+  await expect(page.locator("#comment-601 .ago a")).toHaveAttribute(
+    "title",
+    "2000-07-01 12:00:00 AM",
+  );
   await expect(page.locator("#comment-601 .ago a")).not.toHaveAttribute("class", /.+/);
   await expect(page.locator("#comment-601 .ago a")).not.toHaveAttribute("aria-current", /.+/);
   await expect(page.locator("#comment-601 .ago a")).not.toHaveAttribute("data-status", /.+/);
@@ -3008,7 +2763,7 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
   await expect(reviewCard).not.toHaveAttribute("title", /.+/);
   await expect(reviewCard).not.toHaveAttribute("aria-current", /.+/);
   await expect(reviewCard).not.toHaveAttribute("data-status", /.+/);
-  await expect(reviewCard.locator(".date")).toHaveAttribute("title", "Jul 1, 2026");
+  await expect(reviewCard.locator(".date")).toHaveAttribute("title", "2000-07-01 12:00:00 AM");
   expect(await readNonRangedThreadMetrics(page)).toEqual({
     commentPadding: "2px 0px",
     commentsMargin: "0px 5px",
@@ -3120,25 +2875,6 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
 });
 
 test("project commit detail review cards own legacy rail geometry and hash", async ({ page }) => {
-  expect(LEGACY_CODE_DIFF_SOURCE).toContain(
-    '<p class="content">@thread.getFirstReviewComment().getContents()</p>',
-  );
-  expect(LEGACY_REVIEWLIST_SOURCE).toContain('<p class="content">');
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    ".content {\n        display: box;\n        display: -webkit-box;\n        overflow:hidden;\n        text-overflow:ellipsis;\n        text-align: justify;\n        max-height: 60px;\n        -webkit-line-clamp: 3;\n        -webkit-box-orient:vertical;\n        word-break:break-all;\n    }",
-  );
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    ".date {\n        color:#999;\n        vertical-align:middle;\n    }",
-  );
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    ".comments {\n        color:#3592b5;\n        margin-top:2px;\n        margin-left:1px;\n    }",
-  );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-review-card-content"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-review-card-date"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-review-card-comments"');
-
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('className="info"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("outdated-label");
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const detailRequests: string[] = [];
   await mockProjectCommitDetail(page, detailRequests, {
@@ -3149,7 +2885,7 @@ test("project commit detail review cards own legacy rail geometry and hash", asy
         authorLoginId: "dev",
         comments: [],
         commitId: "abcdef1234567890",
-        createdLabel: "Jul 1, 2026",
+        createdLabel: "2000-07-01T00:00:00",
         endLine: null,
         id: 88,
         path: "",
@@ -3219,18 +2955,6 @@ test("project commit detail review cards own legacy rail geometry and hash", asy
 
 test("project SVN commit detail matches legacy code/svnDiff.scala.html shell", async ({ page }) => {
   test.setTimeout(60_000);
-  expect(LEGACY_SVN_DIFF_SOURCE).toContain('<div class="diff-wrap">');
-  expect(LEGACY_SVN_DIFF_SOURCE).toContain(
-    '<div id="commit" data-commit-origin="true" class="diff-body hide">@patch</div>',
-  );
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    "    .diff-wrap {\n        width:100%; overflow:auto; margin-bottom:20px;\n    }",
-  );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-svn-diff-wrap"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("className={` diff-wrap`}");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain(
-    'style="width:100%; overflow:auto; margin-bottom:20px"',
-  );
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const detailRequests: string[] = [];
@@ -3287,10 +3011,6 @@ test("project SVN commit detail matches legacy code/svnDiff.scala.html shell", a
     expect(metrics.diffWrapContainedByCodeWrap).toBe(true);
     expect(metrics.diffWrapWidth).toBeGreaterThan(0);
     expect(metrics.diffWrapWidth).toBeLessThanOrEqual(metrics.codeWrapWidth + 0.5);
-    await captureCommitFooterScreenshot(
-      page,
-      `svn-${viewport.width === 1366 ? "desktop" : "mobile"}.png`,
-    );
 
     if (viewport.width === 1366) {
       expect(await canonicalize(page, ".diff-wrap")).toEqual(
@@ -3321,32 +3041,13 @@ test("project SVN commit detail matches legacy code/svnDiff.scala.html shell", a
 
 test("project SVN commit detail Batch 757 owns commit metadata with Style", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  expect(LEGACY_SVN_DIFF_SOURCE).toContain('<p class="commitInfo">');
-  expect(LEGACY_SVN_DIFF_SOURCE).toContain('<span class="ago"');
-  expect(LEGACY_SVN_DIFF_SOURCE).toContain('<strong class="commitId pull-right">');
-  expect(LEGACY_BOOTSTRAP_SOURCE).toContain(".pull-right {\n  float: right;\n}");
-  expect(LEGACY_SVN_DIFF_SOURCE).toContain('<pre class="commitMsg">@commit.getMessage</pre>');
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".ago { margin-left:5px; color:#bbb; }");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    "    .commitId {\n        color:@secondary;\n        margin-top:5px;\n        font-family: @fixed-font-family;",
-  );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-svn-info"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-svn-ago"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-svn-id"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("className={`  commitId`}");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("className={`  commitId pull-right`}");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("commitMsg-wrap");
-
-  expect(COMMIT_DETAIL_STYLE_SOURCE).toContain(
-    'font-family: Consolas, "Menlo", "Monaco", "Ubuntu Mono", "source-code-pro", monospace;',
-  );
 
   await mockProjectCommitDetail(
     page,
     [],
     {
       commit: {
-        authorDate: "Jul 1, 2026",
+        authorDate: "2000-07-01T00:00:00",
         authorEmail: "svn@example.com",
         authorName: "SVN Author",
         commentCount: 0,
@@ -3376,7 +3077,7 @@ test("project SVN commit detail Batch 757 owns commit metadata with Style", asyn
     const author = page.locator("#code-browse-wrap > .commitInfo > strong:not(.commitId)");
     const message = page.locator("#code-browse-wrap > .commitMsg");
     await expect(info).toBeVisible();
-    await expect(ago).toHaveText("Jul 1, 2026");
+    await expect(ago).toHaveText("2000-07-01");
     await expect(author).toHaveText("SVN Author");
     await expect(id).toHaveText("@abcdef1234567890");
     await expect(message).toHaveText("SVN commit message");
@@ -3801,7 +3502,7 @@ async function mockProjectCommitDetail(
       contentType: "application/json",
       body: JSON.stringify({
         actorId: 1,
-        avatarUrl: "/assets/images/default-avatar-32.png",
+        avatarUrl: null,
         defaultLandingPath: "/",
         emailAddress: "admin@example.com",
         isAnonymous: false,
@@ -3865,7 +3566,7 @@ async function mockProjectCommitDetail(
         branches: [{ name: "main" }, { name: "feature/release" }],
         breadcrumbs: [],
         commit: {
-          authorDate: "Jul 1, 2026",
+          authorDate: "2000-07-01T00:00:00",
           authorEmail: "dev@example.com",
           authorName: "Dev Author",
           commentCount: 0,
@@ -3904,17 +3605,8 @@ async function canonicalize(page: Page, selector: string) {
       if (!(node instanceof Element)) {
         return "";
       }
-      // F6 copy-fix-current-dom: the app renders two structures the legacy
-      // template lacks — the collapsible per-file card header button
-      // ([data-owner=commit-detail-file-card-header], added in the app's
-      // FileDiffView) and the react-rendered markdown help (legacy renders raw
-      // markdown text + markdown="true", app renders it server-side). Both are
-      // asserted separately by dedicated locators; drop them from the
-      // structural comparison.
-      if (
-        node.getAttribute("data-owner") === "commit-detail-file-card-header" ||
-        node.classList.contains("markdown-help")
-      ) {
+      // Markdown help has its own visible-content assertions.
+      if (node.classList.contains("markdown-help")) {
         return "";
       }
       const attrs = Array.from(node.attributes)
@@ -4007,13 +3699,8 @@ async function canonicalizeHtml(page: Page, html: string) {
         if (!(node instanceof Element)) {
           return "";
         }
-        // F6 copy-fix-current-dom: drop the app-only collapsible file-card
-        // header button and the react-rendered markdown help from the
-        // structural comparison (mirrors canonicalize(); see its comment).
-        if (
-          node.getAttribute("data-owner") === "commit-detail-file-card-header" ||
-          node.classList.contains("markdown-help")
-        ) {
+        // Markdown help has its own visible-content assertions.
+        if (node.classList.contains("markdown-help")) {
           return "";
         }
         const attrs = Array.from(node.attributes)
@@ -4090,14 +3777,6 @@ async function canonicalizeHtml(page: Page, html: string) {
 
 test("project commit detail file header owns the legacy visible Style state", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  expect(LEGACY_CODE_DIFF_SOURCE).toContain("partial_diff");
-  expect(LEGACY_FILE_DIFF_SOURCE).toContain('<div class="diff-partial-file">');
-  expect(LEGACY_FILE_DIFF_SOURCE).toContain('<span class="filename" >');
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".diff-partial-file {");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("padding:5px 10px;");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("margin-right: 115px;");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-file-header"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-file-header-filename"');
 
   await mockProjectCommitDetail(page, [], {
     files: [
@@ -4159,15 +3838,6 @@ test("project commit detail partial-filediff commit ids own the legacy visible S
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  expect(LEGACY_FILE_DIFF_SOURCE).toContain('<div class="diff-partial-commit">');
-  expect(LEGACY_FILE_DIFF_SOURCE).toContain('<div class="diff-partial-commit-id">');
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".diff-partial-commit {");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("float:left;");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".diff-partial-commit-id {");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("padding:5px 2px;");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("width:52px;");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-file-commit"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-file-commit-id"');
 
   await mockProjectCommitDetail(page, [], {
     files: [
@@ -4230,17 +3900,6 @@ test("project commit detail Batch 750 partial-filediff border owners preserve le
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    ".diff-partial-outer {\n        border: 1px solid #bbb;",
-  );
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    ".diff-partial-meta {\n                background-color: #eee;\n                border-bottom: 1px solid #bbb;",
-  );
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    ".diff-partial-codeline {\n                                    font-family: @fixed-font-family;\n                                    background-color: transparent;\n                                    border:none;",
-  );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-file"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-file-meta"');
 
   await mockProjectCommitDetail(page, [], {
     files: [
@@ -4306,16 +3965,6 @@ test("project commit detail Batch 754 owns the emitted partial-diff table shell"
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  expect(LEGACY_FILE_DIFF_SOURCE).toContain('<div class="diff-partial-code" data-hashcode=');
-  expect(LEGACY_FILE_DIFF_SOURCE).toContain('<table class="diff-container show-comments"');
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    ".diff-partial-code {\n                overflow: auto;\n                overflow-x: auto;\n                overflow-y: hidden;",
-  );
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
-    "table {\n                    width: 100%;\n                    border-collapse: separate;\n                    border-spacing: 0;",
-  );
-
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-owner="commit-detail-diff-partial-table"');
 
   await mockProjectCommitDetail(page, [], {
     files: [

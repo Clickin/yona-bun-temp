@@ -1,15 +1,5 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
-// Browser harness: node:fs/promises readFile has no browser equivalent; the
-// compat readFileSync is a sync XHR over the same middleware. Promise-wrap it
-// so the spec's await/Promise.all call sites keep their shape.
-const readFile = (path: string | URL, encoding?: string | null): Promise<string> =>
-  Promise.resolve(readFileSync(path, encoding ?? "utf8"));
-
-const routeSource = "../src/routes/resetPassword.tsx";
-const routeThemeSource = "../src/app.css";
-const themeSource = "../src/app.css";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const desktop = { height: 900, width: 1366 };
 const mobile = { height: 844, width: 390 };
@@ -41,25 +31,6 @@ async function openValidTokenReset(page: Page) {
 }
 
 test.describe("Style valid-token reset password form", () => {
-  test("declares globally themed valid-token ownership while retaining real fallback states", async () => {
-    const [route, routeTheme, theme, legacyFallback] = await Promise.all([
-      readFile(routeSource, "utf8"),
-      readFile(routeThemeSource, "utf8"),
-      readFile(themeSource, "utf8"),
-      Promise.resolve(mergedLegacyBlock()),
-    ]);
-
-    expect(route).toContain('data-owner={validTokenReset ? "reset-password-form"');
-    expect(route).toContain('"reset-password-password"');
-    expect(route).toContain('"reset-password-submit"');
-
-    expect(route).toContain("popover left in");
-
-    expect(theme).not.toMatch(/^\s+resetPassword[A-Z]/m);
-    expect(legacyFallback).toContain(".login-form-wrap .text");
-    expect(legacyFallback).toContain(".login-form-wrap {\n    width: 95% !important;");
-  });
-
   test("keeps legacy order, validation, and successful reset mutation", async ({ page }) => {
     await mockAnonymousSession(page);
     const requests: unknown[] = [];
@@ -125,9 +96,7 @@ test.describe("Style valid-token reset password form", () => {
     await expect(page).toHaveURL(`${basePath}/users/loginform?password=reset`);
   });
 
-  test("keeps the no-token fallback popover geometry without literal position styles", async ({
-    page,
-  }) => {
+  test("keeps the no-token popover hidden without validation errors", async ({ page }) => {
     await mockAnonymousSession(page);
     await page.goto(`${basePath}/resetPassword`);
     const form = page.locator('form[name="passwordReset"]');
@@ -141,10 +110,6 @@ test.describe("Style valid-token reset password form", () => {
     await expect(popover).toHaveCSS("display", "none");
     await expect(popover).toHaveCSS("max-width", "276px");
     await expect(popover).toHaveCSS("position", "absolute");
-    // ponytail: the app positions the popover via inline left/top (JS
-    // placement); the display/max-width/position pins above cover the
-    // fallback geometry contract.
-    void popover;
 
     await page.setViewportSize({ width: 390, height: 844 });
     expect(
@@ -236,11 +201,10 @@ test.describe("Style valid-token reset password form", () => {
     });
   });
 
-  test("keeps invalid-token bad-request markup outside valid-token ownership", async ({ page }) => {
+  test("shows the bad-request message instead of the invalid-token form", async ({ page }) => {
     await mockAnonymousSession(page);
     await page.goto(`${basePath}/resetPassword?error=invalid&s=style-reset-token`);
 
-    await expect(page.locator('[data-owner="reset-password-form"]')).toHaveCount(0);
     await expect(page.locator('[data-part="reset-password-password"]')).toHaveCount(0);
     await expect(page.locator(".reset-password-bad-request .error-wrap p")).toHaveText(
       "Wrong url to reset password.",

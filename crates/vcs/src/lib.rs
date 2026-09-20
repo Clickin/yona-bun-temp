@@ -332,6 +332,14 @@ pub struct PullRequestChangedFileRecord {
     pub patch: String,
 }
 
+pub struct PullRequestMergeMetadata<'a> {
+    pub author_name: &'a str,
+    pub author_email: &'a str,
+    pub pull_request_number: i64,
+    pub source_project: Option<&'a str>,
+    pub review_trailers: &'a str,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PullRequestMergeResult {
     pub conflict: bool,
@@ -1737,11 +1745,13 @@ pub fn svn_activity_patch_properties(
     Ok(())
 }
 
-pub fn svn_activity_commit(
+pub async fn svn_activity_commit(
     repo_path: &Path,
     activity_id: &str,
     author: &str,
     message: &str,
+    lock_tokens: &[(String, String)],
+    keep_locks: bool,
 ) -> Result<i64, VcsError> {
     let work_dir = svn_activity_work_dir(repo_path, activity_id)?;
     if !work_dir.is_dir() {
@@ -1762,16 +1772,70 @@ pub fn svn_activity_commit(
         let _ = std::fs::remove_dir_all(&work_dir);
         return Ok(revision);
     }
-    let output = svn_command("svn")
-        .args([
-            "commit",
-            "--non-interactive",
-            "--no-auth-cache",
-            "--username",
-            author,
-            "-m",
-            message,
-        ])
+    if !lock_tokens.is_empty() {
+        use sqlx::Connection;
+        let mut locks = Vec::with_capacity(lock_tokens.len());
+        for (path, token) in lock_tokens {
+            let lock = svn_lock(repo_path, path)?.ok_or_else(|| {
+                VcsError::SvnFailed("Supplied SVN lock no longer exists".to_string())
+            })?;
+            if lock.owner != author || lock.token != *token {
+                return Err(VcsError::SvnFailed(
+                    "SVN lock owner or token mismatch".to_string(),
+                ));
+            }
+            locks.push(lock);
+        }
+        // ponytail: only our disposable SVN 1.8–1.14 format-31 working copy is
+        // modified; fail closed on a new format until its lock schema is reviewed.
+        let bind_locks = async {
+            let options = sqlx::sqlite::SqliteConnectOptions::new()
+                .filename(work_dir.join(".svn/wc.db"))
+                .create_if_missing(false);
+            let mut connection = sqlx::SqliteConnection::connect_with(&options).await?;
+            let version: i64 = sqlx::query_scalar("PRAGMA user_version")
+                .fetch_one(&mut connection)
+                .await?;
+            if version != 31 {
+                return Err(sqlx::Error::Protocol(format!(
+                    "unsupported SVN working-copy format {version}"
+                )));
+            }
+            let mut transaction = connection.begin().await?;
+            let repository_id: i64 = sqlx::query_scalar("SELECT id FROM REPOSITORY WHERE root = ?")
+                .bind(svn_file_url(repo_path))
+                .fetch_one(&mut *transaction)
+                .await?;
+            for lock in locks {
+                sqlx::query("INSERT OR REPLACE INTO LOCK (repos_id, repos_relpath, lock_token, lock_owner, lock_comment) VALUES (?, ?, ?, ?, ?)")
+                    .bind(repository_id)
+                    .bind(lock.path.trim_start_matches('/'))
+                    .bind(lock.token)
+                    .bind(lock.owner)
+                    .bind(lock.comment)
+                    .execute(&mut *transaction).await?;
+            }
+            transaction.commit().await?;
+            connection.close().await
+        };
+        bind_locks.await.map_err(|error| {
+            VcsError::SvnFailed(format!("bind SVN working-copy locks: {error}"))
+        })?;
+    }
+    let mut command = svn_command("svn");
+    command.args([
+        "commit",
+        "--non-interactive",
+        "--no-auth-cache",
+        "--username",
+        author,
+        "-m",
+        message,
+    ]);
+    if keep_locks {
+        command.arg("--no-unlock");
+    }
+    let output = command
         .arg(&work_dir)
         .output()
         .map_err(|_| VcsError::SvnUnavailable)?;
@@ -1849,12 +1913,16 @@ pub fn svn_deleted_revision(
 }
 
 fn parse_svnlook_lock(path: &str, output: &str) -> Option<SvnLock> {
+    let (metadata, comment_body) = output.split_once("\nComment (").unwrap_or((output, ""));
     let mut token = String::new();
     let mut owner = String::new();
-    let mut comment = String::new();
+    let mut comment = comment_body
+        .split_once('\n')
+        .map(|(_, text)| text.strip_suffix('\n').unwrap_or(text).to_string())
+        .unwrap_or_default();
     let mut created = String::new();
     let mut expires = None;
-    for line in output.lines() {
+    for line in metadata.lines() {
         let Some((key, value)) = line.split_once(':') else {
             continue;
         };
@@ -3700,6 +3768,7 @@ pub fn merge_pull_request(
     target_repo_path: &Path,
     from_branch: &str,
     to_branch: &str,
+    metadata: &PullRequestMergeMetadata<'_>,
 ) -> Result<PullRequestMergeResult, VcsError> {
     if !source_repo_path.exists() || !target_repo_path.exists() {
         return Err(VcsError::NotFound);
@@ -3728,11 +3797,11 @@ pub fn merge_pull_request(
     git_worktree_output(work_dir.path(), &["checkout", &to_branch])?;
     git_worktree_output(
         work_dir.path(),
-        &["config", "user.email", DEFAULT_GIT_AUTHOR_EMAIL],
+        &["config", "user.email", metadata.author_email],
     )?;
     git_worktree_output(
         work_dir.path(),
-        &["config", "user.name", DEFAULT_GIT_AUTHOR_NAME],
+        &["config", "user.name", metadata.author_name],
     )?;
     git_worktree_output_with_path(
         work_dir.path(),
@@ -3748,9 +3817,45 @@ pub fn merge_pull_request(
         ],
     )?;
     let merge_target = format!("refs/remotes/pull-request-source/{from_branch}");
+    let subjects = git_worktree_output(
+        work_dir.path(),
+        &[
+            "log",
+            "--format=%s",
+            &format!("{target_commit_id_before}..{merge_target}"),
+        ],
+    )?;
+    let mut message = format!("Merge branch '{from_branch}'");
+    if let Some(source_project) = metadata.source_project {
+        message.push_str(" of ");
+        message.push_str(source_project);
+    }
+    if to_branch != "master" {
+        message.push_str(" into '");
+        message.push_str(&to_branch);
+        message.push('\'');
+    }
+    message.push_str(&format!(
+        "\n\nfrom pull-request {}\n\n* {from_branch}:\n",
+        metadata.pull_request_number
+    ));
+    for subject in subjects.lines() {
+        message.push_str("  ");
+        message.push_str(subject);
+        message.push('\n');
+    }
+    message.push('\n');
+    message.push_str(metadata.review_trailers);
     match git_worktree_output(
         work_dir.path(),
-        &["merge", "--no-ff", "--no-edit", &merge_target],
+        &[
+            "merge",
+            "--no-ff",
+            "--cleanup=verbatim",
+            "-m",
+            &message,
+            &merge_target,
+        ],
     ) {
         Ok(_) => {}
         Err(VcsError::GitFailed(message)) if is_merge_conflict_output(&message) => {
@@ -4010,7 +4115,12 @@ fn no_head_branch_list() -> CodeBranchListSnapshot {
 fn list_branches(repo_path: &Path) -> Result<Vec<CodeBranchRecord>, VcsError> {
     let output = git_output(
         repo_path,
-        &["for-each-ref", "--format=%(refname:short)", "refs/heads"],
+        &[
+            "for-each-ref",
+            "--sort=-committerdate",
+            "--format=%(refname:short)",
+            "refs/heads",
+        ],
     )?;
     Ok(output
         .lines()
@@ -4060,7 +4170,7 @@ fn list_branch_details(
         &[
             "for-each-ref",
             "--sort=-committerdate",
-            "--format=%(refname:short)%1f%(objectname)%1f%(objectname:short)%1f%(contents:subject)%1f%(committerdate:short)",
+            "--format=%(refname:short)%1f%(objectname)%1f%(objectname:short)%1f%(contents:subject)%1f%(committerdate:iso-strict)",
             "refs/heads",
         ],
     )?;
@@ -4087,13 +4197,8 @@ fn list_branch_details(
             })
         })
         .collect::<Vec<_>>();
-    branches.sort_by(|left, right| {
-        right
-            .is_default
-            .cmp(&left.is_default)
-            .then_with(|| right.commit_date.cmp(&left.commit_date))
-            .then_with(|| left.name.cmp(&right.name))
-    });
+    // Keep Git's timestamp ordering: ISO strings with different offsets are not chronological.
+    branches.sort_by_key(|branch| !branch.is_default);
     Ok(branches)
 }
 
@@ -4397,15 +4502,8 @@ fn list_history_commits(
         "--skip={}",
         usize::try_from(page).unwrap_or_default() * HISTORY_ITEM_LIMIT
     );
-    let format = "--format=%x1e%H%x1f%h%x1f%s%x1f%an%x1f%ae%x1f%ad";
-    let mut args = vec![
-        "log",
-        "--date=short",
-        format,
-        max_count.as_str(),
-        skip.as_str(),
-        branch,
-    ];
+    let format = "--format=%x1e%H%x1f%h%x1f%s%x1f%an%x1f%ae%x1f%aI";
+    let mut args = vec!["log", format, max_count.as_str(), skip.as_str(), branch];
     if !path.is_empty() {
         args.push("--");
         args.push(path);
@@ -4456,8 +4554,7 @@ fn read_commit_record(repo_path: &Path, commit_id: &str) -> Result<CodeCommitRec
         &[
             "show",
             "-s",
-            "--date=short",
-            "--format=%H%x1f%h%x1f%s%x1f%an%x1f%ae%x1f%ad%x1f%B",
+            "--format=%H%x1f%h%x1f%s%x1f%an%x1f%ae%x1f%aI%x1f%B",
             commit_id,
         ],
     )?;
@@ -4987,6 +5084,64 @@ fn find_delimiter(buffer: &[u8], delimiter: &[u8]) -> Option<(usize, usize)> {
 mod tests {
     use super::*;
     use tempfile::tempdir;
+
+    #[test]
+    fn branch_list_preserves_committer_timestamp_and_chronological_order() {
+        let directory = tempdir().expect("branch repository");
+        let repo_path = directory.path();
+        git_output(repo_path, &["init", "-b", "main"]).expect("init repository");
+        git_output(repo_path, &["config", "user.name", "Committer"]).expect("set name");
+        git_output(
+            repo_path,
+            &["config", "user.email", "committer@example.com"],
+        )
+        .expect("set email");
+        let tree = git_output(repo_path, &["mktree"]).expect("empty tree");
+        for (branch, date) in [
+            ("main", "2026-07-01T03:04:05+09:00"),
+            ("earlier", "2026-07-02T12:34:56+09:00"),
+            ("later", "2026-07-02T08:34:57+00:00"),
+        ] {
+            let output = Command::new("git")
+                .arg("--git-dir")
+                .arg(repo_path)
+                .args(["commit-tree", tree.trim(), "-m", branch])
+                .env("GIT_AUTHOR_DATE", "2001-01-01T00:00:00+00:00")
+                .env("GIT_COMMITTER_DATE", date)
+                .output()
+                .expect("commit branch");
+            assert!(output.status.success(), "{:?}", output);
+            let commit = String::from_utf8(output.stdout).expect("commit ID");
+            git_output(
+                repo_path,
+                &["update-ref", &format!("refs/heads/{branch}"), commit.trim()],
+            )
+            .expect("set branch");
+        }
+
+        let snapshot = read_branch_list(repo_path).expect("read branches");
+        let dates = snapshot
+            .branches
+            .iter()
+            .map(|branch| (branch.name.as_str(), branch.commit_date.as_str()))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            dates,
+            [
+                ("main", "2026-07-01T03:04:05+09:00"),
+                ("later", "2026-07-02T08:34:57+00:00"),
+                ("earlier", "2026-07-02T12:34:56+09:00"),
+            ]
+        );
+        let choices = list_repository_branches(repo_path).expect("read branch choices");
+        assert_eq!(
+            choices
+                .iter()
+                .map(|branch| branch.name.as_str())
+                .collect::<Vec<_>>(),
+            ["later", "earlier", "main"]
+        );
+    }
 
     #[test]
     fn svn_file_url_canonicalizes_relative_repo_roots() {

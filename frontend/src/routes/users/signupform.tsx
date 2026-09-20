@@ -168,10 +168,10 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                         ref={loginIdRef}
                         type="text"
                         name="loginId"
+                        className="text password"
                         data-part="standalone-signup-login-id"
                         placeholder=""
                         autoComplete="off"
-                        onBlur={handleLoginIdBlur}
                       />
                       <FieldPopover
                         containerRef={formWrapRef}
@@ -189,6 +189,7 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                         id="uname"
                         type="text"
                         name="name"
+                        className="text password"
                         data-part="standalone-signup-name"
                         placeholder=""
                         autoComplete="off"
@@ -204,6 +205,7 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                         ref={emailRef}
                         type="text"
                         name="email"
+                        className="text password"
                         data-part="standalone-signup-email"
                         placeholder=""
                         autoComplete="off"
@@ -226,6 +228,7 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                         ref={passwordRef}
                         type="password"
                         name="password"
+                        className="text password"
                         data-part="standalone-signup-password"
                         placeholder=""
                         autoComplete="off"
@@ -248,6 +251,7 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                         ref={retypedPasswordRef}
                         type="password"
                         name="retypedPassword"
+                        className="text password"
                         data-part="standalone-signup-retyped-password"
                         placeholder=""
                         autoComplete="off"

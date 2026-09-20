@@ -1,4 +1,3 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
@@ -88,32 +87,6 @@ async function open(page: Page) {
   await expect(page.locator(`[data-owner="${owners.form}"]`)).toBeVisible();
 }
 
-test("password form owners trace the legacy skeleton and frozen declarations", () => {
-  const route = readFileSync("src/routes/user/editform/password.tsx", "utf8");
-  const colors = readFileSync("src/app.css", "utf8");
-  const scala = readFileSync("../yona-original/app/views/user/edit_password.scala.html", "utf8");
-  const common = readFileSync("../yona-original/app/assets/stylesheets/less/_common.less", "utf8");
-  const responsive = readFileSync(
-    "../yona-original/app/assets/stylesheets/less/_responsive.less",
-    "utf8",
-  );
-  const ui = readFileSync("../yona-original/app/assets/stylesheets/less/_yobiUI.less", "utf8");
-  const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
-  expect(scala).toContain('<form id="frmPassword" method="post"');
-  expect(scala).toContain('<dd class="mt10">');
-  expect(scala).toContain('type="password" id="oldPassword"');
-  expect(common).toContain("body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,form,fieldset,p,button{");
-  expect(common).toContain(".mt10 { margin-top:10px; }");
-  expect(ui).toContain("form { margin:0 0 2px; }");
-  expect(ui).toContain('input[type="text"], input[type="password"]');
-  expect(bootstrap).toContain('input[type="password"],');
-  expect(responsive).toContain(
-    'input[type="password"],\n  textarea {\n    font-size: 16px !important;',
-  );
-  for (const owner of Object.values(owners)) expect(route).toContain(`data-owner="${owner}"`);
-  expect(route).not.toContain('className="mt10"');
-});
-
 for (const viewport of [
   { height: 900, name: "desktop", width: 1366 },
   { height: 844, name: "mobile", width: 390 },
@@ -129,10 +102,6 @@ for (const viewport of [
     await expect(terms).toHaveCount(3);
     await expect(descriptions).toHaveCount(4);
     await expect(inputs).toHaveCount(3);
-    for (let index = 0; index < 3; index++) {
-      await expect(descriptions.nth(index)).not.toHaveClass(/(?:^|\s)mt10(?:\s|$)/u);
-      await expect(inputs.nth(index)).not.toHaveAttribute("style");
-    }
 
     const actual = await page.evaluate((ownerNames) => {
       const get = (owner: string) =>
@@ -165,18 +134,8 @@ for (const viewport of [
           width: style.width,
         };
       };
-      const secondInput = getAll(ownerNames.input)[1];
-      const fallbackInput = secondInput.cloneNode(true) as HTMLInputElement;
-      fallbackInput.removeAttribute("class");
-      fallbackInput.removeAttribute("data-owner");
-      fallbackInput.removeAttribute("id");
-      fallbackInput.removeAttribute("name");
-      secondInput.parentElement!.append(fallbackInput);
-      const fallbackInputStyle = css(fallbackInput);
-      fallbackInput.remove();
       return {
         descriptions: getAll(ownerNames.description).map(box),
-        fallbackInputStyle,
         form: { box: box(get(ownerNames.form)), style: css(get(ownerNames.form)) },
         inputs: getAll(ownerNames.input).map((element) => ({
           box: box(element),
@@ -248,11 +207,6 @@ for (const viewport of [
         width: "206px",
       });
     }
-    const { fontFamily: fallbackFontFamily, ...fallbackComparable } = actual.fallbackInputStyle;
-    const { fontFamily: directFontFamily, ...directComparable } = actual.inputs[1].style;
-    expect(fallbackComparable).toEqual(directComparable);
-    expect(fallbackFontFamily).not.toBe(directFontFamily);
-    expect(directFontFamily).toBe('"Helvetica Neue", Helvetica, Arial, sans-serif');
     expect(actual.scrollWidth).toBe(viewport.width);
 
     await inputs.first().focus();

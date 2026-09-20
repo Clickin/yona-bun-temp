@@ -836,7 +836,10 @@ pub(crate) async fn organization_leave(
         .iter()
         .filter(|member| member.role == "org_admin")
         .count();
-    if authorization.viewer.is_organization_admin && admin_count == 1 {
+    if authorization.viewer.is_organization_admin
+        && !authorization.viewer.is_site_admin
+        && admin_count == 1
+    {
         return Err(ConnectError::invalid_argument(
             "organization requires at least one admin",
         ));
@@ -937,7 +940,10 @@ pub(crate) async fn organization_list(
             items.push(OrganizationListItem {
                 organization_name: item.organization_name,
                 description: item.description.unwrap_or_default(),
-                created_label: format_project_date_label(item.created_date),
+                created_at: item
+                    .created_date
+                    .map(|value| value.and_utc().to_rfc3339())
+                    .unwrap_or_default(),
                 logo_url: organization_logo_url(repository, &service.base_path, item.id).await?,
                 ..Default::default()
             });

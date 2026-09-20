@@ -14,11 +14,15 @@ impl AppRepositoryImpl<'_> {
         old_value: &str,
         new_value: &str,
         mention_mode: PostingMentionNotificationMode,
+        send_notification: bool,
     ) -> Result<MentionSyncResult, DbErr> {
         let mentioned_user_ids = self.mentioned_active_user_ids(text).await?;
         let sync_result = self
             .sync_mentions_for_resource(resource_type, resource_id, mentioned_user_ids)
             .await?;
+        if !send_notification {
+            return Ok(sync_result);
+        }
         let mut receiver_ids = self
             .posting_notification_receiver_ids(
                 project_id,

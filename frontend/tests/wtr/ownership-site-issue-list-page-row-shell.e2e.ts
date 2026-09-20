@@ -268,7 +268,7 @@ async function installPopulatedOpenIssueList(page: Page) {
             authorLoginId: "admin",
             commentCount: 1,
             createdLabel: "1 day ago",
-            createdTitle: "2026-06-29 14:30",
+            createdTitle: "2026-06-29T14:30:00Z",
             issueNumber: "1",
             ownerName: "admin",
             projectLogoUrl: "/assets/images/default-project-logo.png",

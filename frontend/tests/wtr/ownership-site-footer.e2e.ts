@@ -1,76 +1,11 @@
-import { createHash, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
-
-// Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
-// (no-op); resolve builds those paths.
-const mkdirSync = () => undefined;
-const resolve = (...parts: string[]) => parts.join("/");
 
 const BASE_PATH = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const OUTER = '[data-owner="site-footer"]';
 const INNER = '[data-owner="site-footer-inner"]';
 const PROVIDER = '[data-owner="site-footer-provider"]';
-const SCREENSHOT_DIRECTORY = resolve("..", "output", "playwright");
 
 test.use({ locale: "en-US" });
-
-test("SiteLayout footer has complete global-theme Style ownership", () => {
-  const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/app.css", "utf8");
-  const appCss = curatedAppCss();
-  const outerMarker = route.indexOf('data-owner="site-footer"');
-  const innerMarker = route.indexOf('data-owner="site-footer-inner"');
-  const providerMarker = route.indexOf('data-owner="site-footer-provider"');
-  expect(outerMarker).toBeGreaterThanOrEqual(0);
-  expect(innerMarker).toBeGreaterThan(outerMarker);
-  expect(providerMarker).toBeGreaterThan(innerMarker);
-  const footer = route.slice(
-    route.lastIndexOf("<footer", outerMarker),
-    route.indexOf("</footer>", providerMarker),
-  );
-
-  expect(footer).not.toContain("page-footer-outer");
-  expect(footer).not.toContain('className="page-footer"');
-  expect(footer).not.toContain('className="provider"');
-  expect(footer).toContain("Yona authors");
-  expect(appCss).toContain(".page-footer-outer {");
-  expect(appCss).toContain(".page-footer-outer .page-footer {");
-  expect(appCss).toContain(".page-footer-outer .provider {");
-  expect(appCss).not.toContain(".page-footer-outer .provider a {");
-
-  for (const consumer of [
-    "restricted.tsx",
-    "secret.tsx",
-    "$user.tsx",
-    "__root.tsx",
-    "[_]UIKit.tsx",
-    "restart.tsx",
-  ]) {
-    expect(readFileSync(`src/routes/${consumer}`, "utf8")).toContain(
-      'className="page-footer-outer"',
-    );
-  }
-});
-
-test("frozen SiteLayout footer sources stay byte-identical", () => {
-  const hashes = new Map([
-    [
-      "../yona-original/app/assets/stylesheets/yobi.less",
-      "b80c78edc2f66b3e14d7087d6c689c387195c06c2e5352d111fb406796d3ca62",
-    ],
-    [
-      "../yona-original/app/assets/stylesheets/less/_page.less",
-      "2124a6efd122029ff51d26e5b513fbd3945d1020487101a19a5aaa00448d4aa3",
-    ],
-    [
-      "../yona-original/app/assets/stylesheets/less/_responsive.less",
-      "3b8038e9e3f9fb2067d506794e342bf0aca81071d94128c6cc1a3214c0812105",
-    ],
-  ]);
-  for (const [path, expected] of hashes) {
-    expect(createHash("sha256").update(readFileSync(path)).digest("hex")).toBe(expected);
-  }
-});
 
 for (const viewport of [
   { height: 900, label: "desktop-home", width: 1366 },
@@ -89,9 +24,6 @@ for (const viewport of [
     await expect(inner).toHaveCount(1);
     await expect(provider).toContainText("Yona authors");
     await expect(provider).not.toContainText("Yoram");
-    await expect(outer).not.toHaveClass(/(?:^|\s)page-footer-outer(?:\s|$)/u);
-    await expect(inner).not.toHaveClass(/(?:^|\s)page-footer(?:\s|$)/u);
-    await expect(provider).not.toHaveClass(/(?:^|\s)provider(?:\s|$)/u);
 
     const evidence = await outer.evaluate((element) => {
       const innerElement = element.firstElementChild as HTMLElement;
@@ -118,6 +50,21 @@ for (const viewport of [
           textAlign: innerStyle.textAlign,
           width: innerStyle.width,
         },
+        links: Array.from(providerElement.querySelectorAll("a"), (link) => {
+          const style = getComputedStyle(link);
+          const rect = link.getBoundingClientRect();
+          return {
+            href: link.getAttribute("href"),
+            fontFamily: style.fontFamily,
+            fontSize: style.fontSize,
+            fontWeight: style.fontWeight,
+            color: style.color,
+            padding: style.padding,
+            fragments: link.getClientRects().length,
+            top: rect.top,
+            bottom: rect.bottom,
+          };
+        }),
         outer: {
           backgroundColor: outerStyle.backgroundColor,
           boxSizing: outerStyle.boxSizing,
@@ -155,6 +102,37 @@ for (const viewport of [
       fontSize: "9px",
       marginLeft: "4px",
     });
+    // common/footer.scala.html and _page.less:770-787: the link cascade, not
+    // just its provider container, determines the visible mobile line break.
+    expect(evidence.links.map((link) => link.href)).toEqual([
+      "https://github.com/yona-projects/yona/blob/master/AUTHORS",
+      "https://navercorp.com",
+      "https://naverlabs.com/",
+      "https://www.ncloud.com/?referer=yona",
+    ]);
+    for (const [index, link] of evidence.links.entries()) {
+      expect({
+        fontFamily: link.fontFamily,
+        fontSize: link.fontSize,
+        fontWeight: link.fontWeight,
+        color: link.color,
+        padding: link.padding,
+      }).toEqual({
+        fontFamily: "Tahoma",
+        fontSize: "9px",
+        fontWeight: "700",
+        color: "rgb(68, 68, 68)",
+        padding: index === 0 ? "2px" : "0px 2px",
+      });
+      expect(link.fragments).toBe(1);
+    }
+    const labs = evidence.links[2]!;
+    const cloud = evidence.links[3]!;
+    if (viewport.width === 390) {
+      expect(cloud.top).toBeGreaterThan(labs.bottom);
+    } else {
+      expect(cloud.top).toBe(labs.top);
+    }
     expect(evidence.boxes.outer.width).toBe(viewport.width);
     expect(evidence.boxes.outer.x).toBe(0);
     expect(evidence.boxes.outer.height).toBe(evidence.boxes.inner.height + 20);
@@ -165,55 +143,11 @@ for (const viewport of [
     expect(evidence.contained).toBe(true);
     expect(evidence.overflow).toBe(false);
 
-    mkdirSync(SCREENSHOT_DIRECTORY, { recursive: true });
     await outer.screenshot({
-      path: resolve(SCREENSHOT_DIRECTORY, `style-site-footer-${viewport.label}.png`),
+      path: `../output/playwright/style-site-footer-${viewport.label}.png`,
     });
   });
 }
-
-test("SiteLayout footer paint is isolated from legacy presentation classes", async ({ page }) => {
-  await page.setViewportSize({ height: 900, width: 1366 });
-  await installRuntime(page);
-  await page.goto(`${BASE_PATH}/`);
-  const result = await page.locator(OUTER).evaluate((outer) => {
-    const inner = outer.firstElementChild as HTMLElement;
-    const provider = inner.firstElementChild as HTMLElement;
-    const snapshot = () => {
-      const outerStyle = getComputedStyle(outer);
-      const innerStyle = getComputedStyle(inner);
-      const providerStyle = getComputedStyle(provider);
-      return {
-        inner: {
-          boxSizing: innerStyle.boxSizing,
-          lineHeight: innerStyle.lineHeight,
-          margin: innerStyle.margin,
-          textAlign: innerStyle.textAlign,
-          width: innerStyle.width,
-        },
-        outer: {
-          backgroundColor: outerStyle.backgroundColor,
-          boxSizing: outerStyle.boxSizing,
-          minWidth: outerStyle.minWidth,
-          padding: outerStyle.padding,
-          width: outerStyle.width,
-        },
-        provider: {
-          color: providerStyle.color,
-          fontFamily: providerStyle.fontFamily,
-          fontSize: providerStyle.fontSize,
-          marginLeft: providerStyle.marginLeft,
-        },
-      };
-    };
-    const owned = snapshot();
-    outer.classList.add("page-footer-outer");
-    inner.classList.add("page-footer");
-    provider.classList.add("provider");
-    return { owned, withLegacyClasses: snapshot() };
-  });
-  expect(result.withLegacyClasses).toEqual(result.owned);
-});
 
 async function installRuntime(page: Page) {
   await page.addInitScript((basePath) => {

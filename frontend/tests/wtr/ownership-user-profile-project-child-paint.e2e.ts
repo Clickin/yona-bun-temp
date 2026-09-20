@@ -37,8 +37,8 @@ test.beforeEach(async ({ page }) => {
             logoUrl: "/assets/images/project_default_logo.png",
             overview: "Private project",
             memberCount: 3,
-            createdLabel: "today",
-            lastPushedLabel: "an hour ago",
+            createdAt: "2020-01-02T12:00:00Z",
+            lastPushedAt: "2020-01-03T12:00:00Z",
             viewerCanWatch: false,
             isWatching: false,
             watchCount: 2,
@@ -53,7 +53,8 @@ test.beforeEach(async ({ page }) => {
             logoUrl: "/assets/images/project_default_logo.png",
             overview: "Public project",
             memberCount: 2,
-            createdLabel: "yesterday",
+            createdAt: "2020-01-01T12:00:00Z",
+            lastPushedAt: "",
             viewerCanWatch: false,
             isWatching: false,
             watchCount: 1,
@@ -199,7 +200,7 @@ test("Projects tab owns only the applied private icon and project avatar paint",
     ),
   ).toBeAttached();
   await expect(privateRow.locator('[data-owner="user-profile-project-name-tag"]')).toContainText(
-    "3 private-owner today, Latest code update an hour ago",
+    "3 private-owner",
   );
   await expect(
     privateRow.locator(

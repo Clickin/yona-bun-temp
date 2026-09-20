@@ -25,10 +25,13 @@ test("svn main folder preserves legacy branch history and native select fallback
     "href",
     `${basePath}/admin/svnplayground/commits/main/`,
   );
+  // Legacy view.scala.html renders only SVNRepository.getRefNames() (HEAD);
+  // an unmatched revision leaves Select2 displaying the native first option.
   await expect(page.locator("#branches option:checked")).toHaveText("HEAD");
   await expect(page.locator(".select2-chosen")).toHaveText("HEAD");
   await expect(page.locator(".select2-chosen .branch-label")).toHaveCount(0);
-  await expect(page.locator("#breadcrumbs a")).toHaveCount(2);
+  await expect(page.locator("#breadcrumbs a")).toHaveCount(1);
+  await expect(page.locator("#breadcrumbs")).toHaveText("svnplayground");
   await expect(page.locator("#breadcrumbs a").first()).toHaveAttribute(
     "href",
     `${basePath}/admin/svnplayground/code/main`,

@@ -752,5 +752,8 @@ fn propfind_file(
         http::header::CONTENT_TYPE,
         HeaderValue::from_static("application/xml; charset=utf-8"),
     );
+    if let Some((_, lock)) = lock {
+        super::lock::add_metadata_headers(response.headers_mut(), lock);
+    }
     response
 }

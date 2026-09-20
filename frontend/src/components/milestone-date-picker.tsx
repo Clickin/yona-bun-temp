@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ComponentProps } from "react";
 
 const PIKADAY_MONTHS = [
   "January",
@@ -26,7 +26,10 @@ const PIKADAY_WEEKDAYS = [
 
 function parseLegacyDate(value: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/u.exec(value);
-  if (!match) return null;
+  if (!match) {
+    const timestamp = Date.parse(value);
+    return Number.isNaN(timestamp) ? null : new Date(timestamp);
+  }
   const year = Number(match[1]);
   const month = Number(match[2]) - 1;
   const day = Number(match[3]);
@@ -44,10 +47,12 @@ export function MilestoneDatePicker({
   containerOwner,
   dueDate,
   onSelect,
+  popupProps,
 }: {
   containerOwner?: string;
   dueDate: string;
   onSelect: (value: string) => void;
+  popupProps?: ComponentProps<"div">;
 }) {
   const selectedDate = parseLegacyDate(dueDate);
   const initialDate = selectedDate ?? new Date();
@@ -81,102 +86,113 @@ export function MilestoneDatePicker({
     });
   }
 
-  return (
-    <div id="datepicker" className="date-picker" data-owner={containerOwner}>
-      <div className="pika-single">
-        <div className="pika-lendar">
-          <div className="pika-title">
-            <div className="pika-label">
-              {PIKADAY_MONTHS[view.month]}
-              <select
-                className="pika-select pika-select-month"
-                value={view.month}
-                onChange={(event) =>
-                  setView((current) => ({ ...current, month: Number(event.currentTarget.value) }))
-                }
-              >
-                {PIKADAY_MONTHS.map((month, index) => (
-                  <option key={month} value={index}>
-                    {month}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="pika-label">
-              {view.year}
-              <select
-                className="pika-select pika-select-year"
-                value={view.year}
-                onChange={(event) =>
-                  setView((current) => ({ ...current, year: Number(event.currentTarget.value) }))
-                }
-              >
-                {years.map((year) => (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <button className="pika-prev" type="button" onClick={() => changeMonth(-1)}>
-              Previous Month
-            </button>
-            <button className="pika-next" type="button" onClick={() => changeMonth(1)}>
-              Next Month
-            </button>
-          </div>
-          <table cellPadding="0" cellSpacing="0" className="pika-table">
-            <thead>
-              <tr>
-                {PIKADAY_WEEKDAYS.map((weekday) => (
-                  <th key={weekday} scope="col">
-                    <abbr title={weekday}>{weekday.slice(0, 3)}</abbr>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {Array.from({ length: cells.length / 7 }, (_, rowIndex) => (
-                <tr key={rowIndex}>
-                  {cells.slice(rowIndex * 7, rowIndex * 7 + 7).map((day, columnIndex) => {
-                    if (day === null) {
-                      return <td className="is-empty" key={`empty-${columnIndex}`}></td>;
-                    }
-                    const isSelected =
-                      selectedDate?.getFullYear() === view.year &&
-                      selectedDate.getMonth() === view.month &&
-                      selectedDate.getDate() === day;
-                    const isToday =
-                      today.getFullYear() === view.year &&
-                      today.getMonth() === view.month &&
-                      today.getDate() === day;
-                    return (
-                      <td
-                        className={[isToday ? "is-today" : "", isSelected ? "is-selected" : ""]
-                          .filter(Boolean)
-                          .join(" ")}
-                        data-day={day}
-                        key={day}
-                      >
-                        <button
-                          className="pika-button pika-day"
-                          type="button"
-                          data-pika-year={view.year}
-                          data-pika-month={view.month}
-                          data-pika-day={day}
-                          onClick={() => onSelect(formatLegacyDate(view.year, view.month, day))}
-                        >
-                          {day}
-                        </button>
-                      </td>
-                    );
-                  })}
-                </tr>
+  const calendar = (
+    <div {...popupProps} className={`pika-single${popupProps ? " is-bound" : ""}`}>
+      <div className="pika-lendar">
+        <div className="pika-title">
+          <div className="pika-label">
+            {PIKADAY_MONTHS[view.month]}
+            <select
+              className="pika-select pika-select-month"
+              aria-label="Month"
+              value={view.month}
+              onChange={(event) => {
+                const month = Number(event.currentTarget.value);
+                setView((current) => ({ ...current, month }));
+              }}
+            >
+              {PIKADAY_MONTHS.map((month, index) => (
+                <option key={month} value={index}>
+                  {month}
+                </option>
               ))}
-            </tbody>
-          </table>
+            </select>
+          </div>
+          <div className="pika-label">
+            {view.year}
+            <select
+              className="pika-select pika-select-year"
+              aria-label="Year"
+              value={view.year}
+              onChange={(event) => {
+                const year = Number(event.currentTarget.value);
+                setView((current) => ({ ...current, year }));
+              }}
+            >
+              {years.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button className="pika-prev" type="button" onClick={() => changeMonth(-1)}>
+            Previous Month
+          </button>
+          <button className="pika-next" type="button" onClick={() => changeMonth(1)}>
+            Next Month
+          </button>
         </div>
+        <table cellPadding="0" cellSpacing="0" className="pika-table">
+          <thead>
+            <tr>
+              {PIKADAY_WEEKDAYS.map((weekday) => (
+                <th key={weekday} scope="col">
+                  <abbr title={weekday}>{weekday.slice(0, 3)}</abbr>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: cells.length / 7 }, (_, rowIndex) => (
+              <tr key={rowIndex}>
+                {cells.slice(rowIndex * 7, rowIndex * 7 + 7).map((day, columnIndex) => {
+                  if (day === null) {
+                    return <td className="is-empty" key={`empty-${columnIndex}`}></td>;
+                  }
+                  const isSelected =
+                    selectedDate?.getFullYear() === view.year &&
+                    selectedDate.getMonth() === view.month &&
+                    selectedDate.getDate() === day;
+                  const isToday =
+                    today.getFullYear() === view.year &&
+                    today.getMonth() === view.month &&
+                    today.getDate() === day;
+                  return (
+                    <td
+                      className={[isToday ? "is-today" : "", isSelected ? "is-selected" : ""]
+                        .filter(Boolean)
+                        .join(" ")}
+                      data-day={day}
+                      key={day}
+                    >
+                      <button
+                        className="pika-button pika-day"
+                        type="button"
+                        data-pika-year={view.year}
+                        data-pika-month={view.month}
+                        data-pika-day={day}
+                        aria-label={formatLegacyDate(view.year, view.month, day)}
+                        aria-pressed={isSelected}
+                        onClick={() => onSelect(formatLegacyDate(view.year, view.month, day))}
+                      >
+                        {day}
+                      </button>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
+    </div>
+  );
+  return popupProps ? (
+    calendar
+  ) : (
+    <div id="datepicker" className="date-picker" data-owner={containerOwner}>
+      {calendar}
     </div>
   );
 }

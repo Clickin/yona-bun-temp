@@ -13,7 +13,7 @@ import {
 } from "../../api/site-admin";
 import { apiQueryKeys } from "../../api/query-keys";
 import { readSessionBootstrap } from "../../auth-workspace-client";
-import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
+import { formatLegacyTimestamp, LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import legacySpriteUrl from "../../assets/legacy/sprite.png";
@@ -247,7 +247,7 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
                   <strong>&nbsp;</strong>
                 </div>
               </div>
-              <ul data-owner="site-project-list-container">
+              <ul className="project-list-wrap" data-owner="site-project-list-container">
                 {(query.data?.projects ?? []).map((project, index) => (
                   <ProjectListItem
                     index={index}
@@ -494,12 +494,14 @@ function ProjectListItem({
   onDelete: (project: SiteProject, event: MouseEvent<HTMLButtonElement>) => void;
   project: SiteProject;
 }) {
+  const { t } = useLegacyMessages();
   const projectLogoUrl = project.projectLogoUrl.trim() || "/assets/images/project_default_logo.png";
 
   return (
     <li className="row-fluid listitem" data-owner="site-project-list-row">
       <div className="span5 listitem-col" data-owner="site-project-list-row-name-column">
         <Link
+          className="avatar-wrap list-avatar"
           to="/$ownerName/$projectName"
           params={{ ownerName: project.ownerName, projectName: project.projectName }}
           data-owner="site-project-list-row-avatar"
@@ -512,6 +514,7 @@ function ProjectListItem({
           {project.ownerName}/{project.projectName}
         </Link>
         <Link
+          className="project-name"
           to="/$ownerName/$projectName"
           params={{ ownerName: project.ownerName, projectName: project.projectName }}
           data-owner="site-project-list-project-name"
@@ -523,10 +526,11 @@ function ProjectListItem({
         {project.overview}
       </div>
       <div className="span2 listitem-col" data-owner="site-project-list-row-created-column">
-        {project.createdAt}
+        {formatLegacyTimestamp(project.createdAt, t).title.slice(0, 10)}
       </div>
       <div className="span1 listitem-col" data-owner="site-project-list-row-action-column">
         <button
+          className="ybtn ybtn-danger"
           data-owner="site-project-list-delete-action"
           data-project-name={`${project.ownerName}/${project.projectName}`}
           onClick={(event) => onDelete(project, event)}

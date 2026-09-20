@@ -844,6 +844,17 @@ async fn rest_code_browser_selector_includes_tags_and_reads_tagged_files() {
         .unwrap()
         .iter()
         .any(|branch| branch["name"] == "v1.0.0"));
+    let unknown_author_entry = root["entries"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|entry| entry["name"] == "README.md")
+        .expect("unregistered commit author's entry");
+    assert_eq!(unknown_author_entry["authorLoginId"], "");
+    assert_eq!(
+        unknown_author_entry["authorAvatarUrl"],
+        "/yona/assets/images/default-avatar-128.png"
+    );
 
     let tagged_file = response_json(
         rest_get(
@@ -1086,6 +1097,8 @@ async fn rest_commit_history_lists_branch_and_path_commits_from_git_repo() {
     assert_eq!(commits[0]["shortMessage"], "Update main function");
     assert_eq!(commits[0]["authorName"], "Second Author");
     assert_eq!(commits[0]["authorEmail"], "second@example.com");
+    chrono::DateTime::parse_from_rfc3339(commits[0]["authorDate"].as_str().unwrap())
+        .expect("history retains the author timestamp needed by legacy relative-date rendering");
     assert_eq!(commits[0]["authorLoginId"], "second");
     assert!(commits[0]["authorAvatarUrl"]
         .as_str()
@@ -1208,8 +1221,8 @@ async fn rest_commit_detail_creates_comments_and_updates_threads_from_git_repo()
     );
     let commit_id =
         bare_repository_head_commit_id(data_dir.path(), &project.owner_name, &project.project_name);
-    let detail_path = format!("/projects/owner/projectYobi/commit/{commit_id}?branch=main");
-    let comments_path = format!("/projects/owner/projectYobi/commit/{commit_id}/comments");
+    let detail_path = "/projects/owner/projectYobi/commit/HEAD?branch=main".to_string();
+    let comments_path = "/projects/owner/projectYobi/commit/HEAD/comments".to_string();
 
     let initial = response_json(rest_get(app.clone(), &detail_path, Some(&cookie)).await).await;
     assert_eq!(initial["permissions"]["canComment"], true);
@@ -1233,6 +1246,59 @@ async fn rest_commit_detail_creates_comments_and_updates_threads_from_git_repo()
     assert_eq!(created["threads"][0]["state"], "open");
     assert_eq!(created["threads"][0]["commitId"], commit_id);
     assert_eq!(created["threads"][0]["authorLoginId"], "owner");
+    assert_eq!(
+        created["isWatching"], true,
+        "comment author implicitly watches"
+    );
+    let watch_path = "/projects/owner/projectYobi/commit/HEAD/watch";
+    assert_eq!(
+        rest_post_json(app.clone(), watch_path, None, None, json!({}))
+            .await
+            .status(),
+        StatusCode::UNAUTHORIZED
+    );
+    assert_eq!(
+        rest_post_json(app.clone(), watch_path, Some(&cookie), None, json!({}))
+            .await
+            .status(),
+        StatusCode::FORBIDDEN
+    );
+    let unwatched = rest_delete_json(
+        app.clone(),
+        watch_path,
+        Some(&cookie),
+        Some(&csrf),
+        json!({}),
+    )
+    .await;
+    assert_eq!(unwatched.status(), StatusCode::OK);
+    assert_eq!(response_json(unwatched).await["isWatching"], false);
+    let canonical_detail_path = format!("/projects/owner/projectYobi/commit/{commit_id}");
+    let canonical =
+        response_json(rest_get(app.clone(), &canonical_detail_path, Some(&cookie)).await).await;
+    assert_eq!(
+        canonical["isWatching"], false,
+        "explicit unwatch overrides implicit author/comment/project watching"
+    );
+    assert_eq!(
+        canonical["threads"][0]["id"], created["threads"][0]["id"],
+        "HEAD and SHA share the discussion"
+    );
+    let watched = rest_post_json(
+        app.clone(),
+        watch_path,
+        Some(&cookie),
+        Some(&csrf),
+        json!({}),
+    )
+    .await;
+    assert_eq!(watched.status(), StatusCode::OK);
+    assert_eq!(response_json(watched).await["isWatching"], true);
+    assert_eq!(
+        response_json(rest_get(app.clone(), &canonical_detail_path, Some(&cookie)).await).await
+            ["isWatching"],
+        true
+    );
     assert_eq!(
         comment_thread_dtype(&db, created["threads"][0]["id"].as_i64().unwrap()).await,
         "non_ranged"
@@ -1465,13 +1531,248 @@ async fn rest_commit_detail_creates_comments_and_updates_threads_from_git_repo()
     assert!(generic_delete_body.is_empty());
 
     let after_generic_delete =
-        response_json(rest_get(app, &detail_path, Some(&cookie)).await).await;
+        response_json(rest_get(app.clone(), &detail_path, Some(&cookie)).await).await;
     assert_eq!(after_generic_delete["commit"]["commentCount"], 0);
     assert_eq!(after_generic_delete["threads"].as_array().unwrap().len(), 0);
     assert_eq!(count_event_rows(&db, "NEW_REVIEW_COMMENT").await, 3);
     assert_eq!(
         count_event_rows(&db, "REVIEW_THREAD_STATE_CHANGED").await,
         2
+    );
+
+    let selected_range = json!({
+        "contentsMarkdown": "Review this selected range",
+        "path": "src/main.rs",
+        "prevCommitId": initial["parentCommit"]["commitId"].as_str().expect("parent commit"),
+        "startSide": "A",
+        "startLine": 1,
+        "startColumn": 0,
+        "endSide": "B",
+        "endLine": 2,
+        "endColumn": 12
+    });
+    let created = rest_post_json(
+        app.clone(),
+        &comments_path,
+        Some(&cookie),
+        Some(&csrf),
+        selected_range.clone(),
+    )
+    .await;
+    assert_eq!(created.status(), StatusCode::OK);
+    let readback = response_json(rest_get(app, &detail_path, Some(&cookie)).await).await;
+    for field in [
+        "path",
+        "prevCommitId",
+        "startSide",
+        "startLine",
+        "startColumn",
+        "endSide",
+        "endLine",
+        "endColumn",
+    ] {
+        assert_eq!(
+            readback["threads"][0][field], selected_range[field],
+            "{field}"
+        );
+    }
+}
+
+#[tokio::test]
+async fn commit_watch_controls_notification_delivery_and_respects_private_access() {
+    let data_dir = tempdir().expect("yona data");
+    let (app, repo, db) = build_app_with_data_root_and_db(data_dir.path()).await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    let (commenter_csrf, commenter_cookie) = register_user(app.clone(), "commenter").await;
+    let (watcher_csrf, watcher_cookie) = register_user(app.clone(), "watcher").await;
+    let (_, author_cookie) = register_user(app.clone(), "author").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    seed_bare_repository(data_dir.path(), "owner", "projectYobi");
+    let watch_path = "/projects/owner/projectYobi/commit/HEAD/watch";
+    let comments_path = "/projects/owner/projectYobi/commit/HEAD/comments";
+    let inbox_path = "/notifications?from=0&size=20";
+
+    assert_eq!(
+        rest_post_json(
+            app.clone(),
+            watch_path,
+            Some(&watcher_cookie),
+            Some(&watcher_csrf),
+            json!({})
+        )
+        .await
+        .status(),
+        StatusCode::OK
+    );
+    assert_eq!(
+        rest_delete_json(
+            app.clone(),
+            watch_path,
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({})
+        )
+        .await
+        .status(),
+        StatusCode::OK
+    );
+    assert_eq!(
+        rest_post_json(
+            app.clone(),
+            comments_path,
+            Some(&commenter_cookie),
+            Some(&commenter_csrf),
+            json!({"contentsMarkdown":"Notify the explicit commit watcher"})
+        )
+        .await
+        .status(),
+        StatusCode::OK
+    );
+    assert_eq!(
+        response_json(rest_get(app.clone(), inbox_path, Some(&watcher_cookie)).await).await
+            ["total"],
+        1
+    );
+    assert_eq!(
+        response_json(rest_get(app.clone(), inbox_path, Some(&owner_cookie)).await).await["total"],
+        0,
+        "unwatch overrides commit author and project watch"
+    );
+    assert_eq!(
+        response_json(rest_get(app.clone(), inbox_path, Some(&commenter_cookie)).await).await
+            ["total"],
+        0,
+        "sender is excluded"
+    );
+    assert_eq!(
+        response_json(rest_get(app.clone(), inbox_path, Some(&author_cookie)).await).await["total"],
+        1,
+        "Git author watches without a project subscription"
+    );
+
+    assert_eq!(
+        rest_delete_json(
+            app.clone(),
+            watch_path,
+            Some(&watcher_cookie),
+            Some(&watcher_csrf),
+            json!({})
+        )
+        .await
+        .status(),
+        StatusCode::OK
+    );
+    assert_eq!(
+        rest_post_json(
+            app.clone(),
+            comments_path,
+            Some(&commenter_cookie),
+            Some(&commenter_csrf),
+            json!({"contentsMarkdown":"Respect the explicit unwatch"})
+        )
+        .await
+        .status(),
+        StatusCode::OK
+    );
+    assert_eq!(
+        response_json(rest_get(app.clone(), inbox_path, Some(&watcher_cookie)).await).await
+            ["total"],
+        1
+    );
+    assert_eq!(
+        rest_post_json(
+            app.clone(),
+            comments_path,
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({"contentsMarkdown":"Notify the implicit commenter"})
+        )
+        .await
+        .status(),
+        StatusCode::OK
+    );
+    assert_eq!(
+        response_json(rest_get(app.clone(), inbox_path, Some(&commenter_cookie)).await).await
+            ["total"],
+        1
+    );
+    assert_eq!(
+        rest_post_json(
+            app.clone(),
+            comments_path,
+            Some(&commenter_cookie),
+            Some(&commenter_csrf),
+            json!({"contentsMarkdown":"@watcher explicitly mentioned despite unwatch"})
+        )
+        .await
+        .status(),
+        StatusCode::OK
+    );
+    assert_eq!(
+        response_json(rest_get(app.clone(), inbox_path, Some(&watcher_cookie)).await).await
+            ["total"],
+        2
+    );
+
+    assert_eq!(
+        rest_post_json(
+            app.clone(),
+            watch_path,
+            Some(&watcher_cookie),
+            Some(&watcher_csrf),
+            json!({})
+        )
+        .await
+        .status(),
+        StatusCode::OK
+    );
+    yoram_persistence::project::ActiveModel {
+        id: Set(project.id),
+        project_scope: Set(Some("PRIVATE".to_string())),
+        ..Default::default()
+    }
+    .update(&db)
+    .await
+    .unwrap();
+    assert_eq!(
+        rest_post_json(
+            app.clone(),
+            watch_path,
+            Some(&watcher_cookie),
+            Some(&watcher_csrf),
+            json!({})
+        )
+        .await
+        .status(),
+        StatusCode::FORBIDDEN
+    );
+    assert_eq!(
+        rest_post_json(
+            app.clone(),
+            comments_path,
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({"contentsMarkdown":"Private discussion @watcher"})
+        )
+        .await
+        .status(),
+        StatusCode::OK
+    );
+    assert_eq!(
+        response_json(rest_get(app.clone(), inbox_path, Some(&watcher_cookie)).await).await
+            ["total"],
+        2,
+        "stale explicit watch and mention cannot disclose a private discussion"
+    );
+    assert_eq!(
+        response_json(rest_get(app, inbox_path, Some(&commenter_cookie)).await).await["total"],
+        1,
+        "implicit commenters must retain read access"
     );
 }
 

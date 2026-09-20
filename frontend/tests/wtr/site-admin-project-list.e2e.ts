@@ -997,7 +997,7 @@ async function mockProjects(
   };
   const projects = [
     {
-      createdAt: overrides.createdAt ?? "2026-06-29",
+      createdAt: overrides.createdAt ?? "2026-06-29 14:30:00",
       id: 77,
       ownerName: overrides.ownerName ?? "acme",
       overview: overrides.overview ?? "Release planning",

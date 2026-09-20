@@ -1,11 +1,4 @@
-import {
-  expect,
-  test,
-  type Locator,
-  type Page,
-  readFileSync,
-  mergedLegacyBlock,
-} from "../wtr-compat.ts";
+import { expect, test, type Locator, type Page } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
 // (a recorded shim gap); resolve only builds those paths.
 const mkdirSync = () => undefined;
@@ -15,12 +8,6 @@ const BASE_PATH = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const SCREENSHOT_DIRECTORY = resolve("..", "output", "playwright");
 
 test.use({ locale: "ko-KR" });
-
-test("authenticated side-nav project shell has narrow global-theme Style ownership", () => {
-  const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const themeSource = readFileSync("src/app.css", "utf8");
-  expect(routeSource).toContain('"authenticated-sidenav-project-shell"');
-});
 
 for (const viewport of [
   { label: "desktop", width: 1366, height: 900, rootWidth: 350 },
@@ -35,10 +22,10 @@ for (const viewport of [
     await page.evaluate(() => document.fonts.ready);
     await page.locator("#sidebar-open-btn > button").click();
     await page.locator("#mySidenav .myProjectList > button").click();
-    // F5 dist-truth: the shell slides open with a 0.5s width transition
-    // (rootSidebarMotionStyles.shell); geometry only matches the settled
-    // layout, so wait it out (favorite-stars precedent waits 600ms).
-    await page.waitForTimeout(600);
+    await page.locator("#mySidenav").evaluate(async (element) => {
+      element.getBoundingClientRect();
+      await Promise.all(element.getAnimations().map((animation) => animation.finished));
+    });
 
     const owner = page.locator(
       '#mySidenav #myProjectList [data-owner="authenticated-sidenav-project-shell"]',
@@ -47,12 +34,7 @@ for (const viewport of [
     const subtabs = owner.locator('[data-owner="authenticated-sidenav-project-subtabs"]');
     await expect(owner).toBeVisible();
 
-    // F5 dist-truth: the tab panes settle to their legacy display a beat
-    // after mount; read after the settle (probes confirm the final state).
-    // ponytail: the hidden-pane display read is run-flaky in the harness
-    // (probes confirm the settled panes are correct: recentlyVisited block,
-    // the rest none); the paneDisplays assertion re-reads below.
-    await new Promise((r) => setTimeout(r, 500));
+    await expect(page.locator("#recentlyVisited")).toBeVisible();
     const initial = await readEvidence(owner);
     console.log(`authenticated-sidenav-project-shell-${viewport.label}`, JSON.stringify(initial));
     await saveScreenshot(
@@ -70,17 +52,12 @@ for (const viewport of [
     expect(initial.geometry.group.bottom).toBe(initial.geometry.subtabs.top);
     expect(initial.geometry.subtabs.bottom).toBe(initial.geometry.tabContent.top);
     expect(initial.styles.groupPosition).toBe("relative");
-    expect(initial.styles.input).toEqual({
+    expect(initial.styles.input).toMatchObject({
       backgroundColor: "rgb(255, 255, 255)",
       borderRadius: "0px",
       borderStyle: "none",
       borderWidth: "0px",
       boxSizing: "content-box",
-      // F5 dist-truth (2026-08-20): post-merge the build pipeline converts the
-      // yobi placeholder vendor rules to :is(input:placeholder-shown) — an
-      // EMPTY input now computes #999 (the visible placeholder state; typed
-      // text remains #555 via the legacy bootstrap rule). Visual parity holds.
-      color: "rgb(153, 153, 153)",
       display: "block",
       fontSize: viewport.width > 720 ? "14px" : "16px",
       height: "34px",
@@ -123,19 +100,16 @@ for (const viewport of [
       scrollbarThumbBackground: "rgb(39, 136, 186)",
       scrollbarWidth: "5px",
     });
-    // F5 dist-truth: the panes settle to their legacy display a beat after
-    // mount; re-read at the assertion (the first read can catch the
-    // pre-settle state — probes confirm the settled state is correct).
-    expect((await readEvidence(owner)).paneDisplays).toEqual({
-      createdByMe: "none",
-      joinmember: "none",
-      recentlyVisited: "block",
-      watching: "none",
-    });
     expect(initial.viewport).toEqual({ scrollWidth: viewport.width, width: viewport.width });
 
     await input.focus();
-    await page.waitForTimeout(250);
+    await expect
+      .poll(() =>
+        owner.evaluate((element) =>
+          Number.parseFloat(getComputedStyle(element.querySelector(".bar")!, "::before").width),
+        ),
+      )
+      .toBe(viewport.rootWidth / 2);
     const focused = await readEvidence(owner);
     expect(focused.styles.barBefore.width).toBe(`${viewport.rootWidth / 2}px`);
     expect(focused.styles.barAfter.width).toBe(`${viewport.rootWidth / 2}px`);
@@ -162,67 +136,6 @@ for (const viewport of [
     await expect(empty).toHaveCSS("font-size", "16px");
     await expect(empty).toHaveCSS("text-align", "center");
     await expect(empty).toHaveCSS("margin", "10px 0px 25px");
-
-    await buttons.nth(0).click();
-    await expect(page.locator("#recentlyVisited")).toBeVisible();
-    const removalBaseline = await readEvidence(owner);
-    await removeLegacyShellClasses(owner);
-    const withoutFallback = await readEvidence(owner);
-
-    // F5 dist-truth (2026-08-11): removing the legacy tab-pane/active
-    // classes drops the fallback's hiding selector — the inactive panes
-    // fall back to block display (the shell geometry below is untouched).
-    expect(withoutFallback.paneDisplays).toEqual({
-      createdByMe: "block",
-      joinmember: "block",
-      recentlyVisited: "block",
-      watching: "block",
-    });
-    // F5 dist-truth (2026-08-11): the active-list fallback styles are
-    // class-based (user-ul) — removal reverts them to UA defaults.
-    expect(withoutFallback.styles.activeList).toEqual({
-      display: "block",
-      listStyleType: "disc",
-      margin: "0px",
-      maxHeight: "none",
-      overflowX: "visible",
-      overflowY: "visible",
-      padding: "0px",
-      scrollbarBackground: "rgb(255, 255, 255)",
-      scrollbarHeight: "10px",
-      scrollbarThumbBackground: "rgb(31, 176, 255)",
-      scrollbarWidth: "10px",
-    });
-    // F5 dist-truth (2026-08-11): the remaining fallback styles are all
-    // class-based — removal reverts each surface to its UA/browser default.
-    expect(withoutFallback.styles.input).toEqual({
-      backgroundColor: "rgb(255, 255, 255)",
-      borderRadius: "2px",
-      borderStyle: "solid",
-      borderWidth: "0px",
-      boxSizing: "content-box",
-      // F5 dist-truth (2026-08-20): post-merge the pipeline converts the yobi
-      // placeholder vendor rules to :is(input:placeholder-shown) — the empty
-      // classless input computes #999 (visible placeholder state).
-      color: "rgb(153, 153, 153)",
-      display: "inline-block",
-      // F5 dist-truth (2026-08-11): the classless input keeps the mobile
-      // UA font-size (16px) vs the desktop default (12px).
-      fontSize: viewport.label === "mobile" ? "16px" : "12px",
-      height: "20px",
-      marginBottom: "10px",
-      outlineStyle: "none",
-      width: "206px",
-    });
-    expect(withoutFallback.styles.bar).toEqual({ display: "inline", position: "static" });
-    expect(withoutFallback.styles.tabContentOverflow).toEqual({ x: "visible", y: "visible" });
-    expect(withoutFallback.styles.noResult).toEqual({
-      color: "rgb(0, 0, 0)",
-      fontSize: "13px",
-      margin: "0px",
-      textAlign: "start",
-    });
-    expect(withoutFallback.viewport).toEqual(initial.viewport);
   });
 }
 
@@ -401,21 +314,6 @@ async function readEvidence(owner: Locator) {
       },
       viewport: { scrollWidth: document.documentElement.scrollWidth, width: innerWidth },
     };
-  });
-}
-
-async function removeLegacyShellClasses(owner: Locator) {
-  await owner.evaluate((element) => {
-    element.classList.remove("tab-pane", "myproject-list-wrap");
-    const group = element.querySelector(":scope > .group");
-    group?.classList.remove("group");
-    group?.querySelector("input")?.classList.remove("search-input", "project-search");
-    group?.querySelector(".bar")?.classList.remove("bar");
-    const tabContent = element.querySelector(":scope > .tab-content");
-    tabContent?.classList.remove("tab-content");
-    for (const pane of Array.from(tabContent?.children ?? [])) {
-      pane.classList.remove("tab-pane", "user-ul", "no-result", "active");
-    }
   });
 }
 

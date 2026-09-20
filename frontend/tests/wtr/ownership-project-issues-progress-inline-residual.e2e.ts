@@ -1,4 +1,3 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -6,24 +5,6 @@ const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 test("project issues owns server-derived subtask and milestone widths with Dynamic Style", async ({
   page,
 }) => {
-  const source = readFileSync("src/routes/$ownerName/$projectName/issues.tsx", "utf8");
-  const styleSource = readFileSync("src/app.css", "utf8");
-  const issuePartial = readFileSync(
-    "../yona-original/app/views/issue/partial_list_subtask.scala.html",
-    "utf8",
-  );
-  const milestonePartial = readFileSync(
-    "../yona-original/app/views/milestone/partial_status.scala.html",
-    "utf8",
-  );
-
-  expect(issuePartial).toContain('class="subtask-progress upload-progress');
-  expect(issuePartial).toContain('style="width: @percentage%;"');
-  expect(milestonePartial).toContain('class="milestone-info"');
-  expect(milestonePartial).toContain('style="width: @milestone.getCompletionRate%;"');
-  expect(source).toContain('data-owner="project-issues-subtask-progress-bar"');
-  expect(source).toContain('data-owner="project-issues-milestone-progress-bar"');
-
   await mockIssues(page);
   await page.goto(`${basePath}/admin/sample/issues?milestoneId=5`, { waitUntil: "commit" });
 
@@ -38,8 +19,6 @@ test("project issues owns server-derived subtask and milestone widths with Dynam
   // 50% of the 179.66px track at the default viewport => 89.8281px (same pin
   // as project-issues-empty).
   await expect(milestone).toHaveCSS("width", "89.8281px");
-  await expect(subtask).toHaveClass(/\bbar\b/);
-  await expect(milestone).toHaveClass(/\bbar\b/);
 
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);

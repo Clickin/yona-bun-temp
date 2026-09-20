@@ -12,7 +12,9 @@ import { translateLegacy, translateYoram } from "./adapters.mjs";
 import { domVisibleLoss } from "./diff.mjs";
 import { classifyViolation } from "./report.mjs";
 const knownActions = Object.keys(ACTION_DEFINITIONS);
-const issuesScenarios = scenarios.filter((scenario) => issues.scenarios.some((own) => own.id === scenario.id));
+const issuesScenarios = scenarios.filter((scenario) =>
+  issues.scenarios.some((own) => own.id === scenario.id),
+);
 
 test("every issues scenario passes validateScenarios against the merged registry", () => {
   const problems = validateScenarios(issuesScenarios, knownActions);
@@ -32,7 +34,11 @@ test("every action referenced by issues scenarios exists in ACTION_DEFINITIONS",
 
 test("issues scenarios keep their ids namespaced to the domain", () => {
   for (const scenario of issues.scenarios) {
-    assert.match(scenario.id, /^(I\d{1,2}|S[346])-/, `${scenario.id} must be I* or the pre-existing S3/S4/S6`);
+    assert.match(
+      scenario.id,
+      /^(I\d{1,2}|S[346])-/,
+      `${scenario.id} must be I* or the pre-existing S3/S4/S6`,
+    );
   }
 });
 
@@ -40,16 +46,27 @@ test("read-page actions translate to legacy-direct GET paths on both sides", () 
   const step = (action, params) => ({ actor: "admin", action, params });
   const cases = [
     ["issue-detail", { owner: "admin", project: "sample", number: 1 }, "/admin/sample/issue/1"],
-    ["issue-edit-form", { owner: "admin", project: "sample", number: 1 }, "/admin/sample/issue/1/editform"],
-    ["issue-timeline", { owner: "admin", project: "sample", number: 1 }, "/admin/sample/issue/1/timeline"],
-    ["issue-next-state", { owner: "admin", project: "sample", number: 1 }, "/admin/sample/issue/1/nextstate"],
+    [
+      "issue-edit-form",
+      { owner: "admin", project: "sample", number: 1 },
+      "/admin/sample/issue/1/editform",
+    ],
+    [
+      "issue-timeline",
+      { owner: "admin", project: "sample", number: 1 },
+      "/admin/sample/issue/1/timeline",
+    ],
     ["new-issue-form", { owner: "admin", project: "sample" }, "/admin/sample/issueform"],
     ["issue-labels", { owner: "admin", project: "sample" }, "/admin/sample/issue/labels"],
     ["issue-label-styles", { owner: "admin", project: "sample" }, "/admin/sample/issue/labels.css"],
     ["issue-labels-form", { owner: "admin", project: "sample" }, "/admin/sample/issue/labelsform"],
     // Legacy route is GET /organizations/:organizationName/issues
     // (yona-original/conf/routes:100), not /:org/issues.
-    ["org-issues", { organization: "weblabs", state: "open" }, "/organizations/weblabs/issues?state=open"],
+    [
+      "org-issues",
+      { organization: "weblabs", state: "open" },
+      "/organizations/weblabs/issues?state=open",
+    ],
     ["site-issue-list", {}, "/sites/issueList"],
   ];
   for (const [action, params, expected] of cases) {
@@ -58,10 +75,107 @@ test("read-page actions translate to legacy-direct GET paths on both sides", () 
   }
 });
 
+test("I4 mutates only its created issue pair and rejects HTTP success without persisted state", async () => {
+  const scenario = issues.scenarios.find((item) => item.id === "I4-issue-next-state");
+  for (const yoramPersists of [true, false]) {
+    const records = {
+      legacy: new Map([[1, "open"]]),
+      yoram: new Map([[1, "open"]]),
+    };
+    const createdNumbers = { legacy: 17, yoram: 29 };
+    const ctx = {
+      scenarioId: scenario.id,
+      resolved: { title: "isolated issue", body: "isolated body" },
+      state: {},
+      entry: { violations: [], errors: [] },
+      options: { legacyUrl: "http://legacy.test" },
+      yoramBaseUrl: "http://yoram.test",
+    };
+    const send = async (_ctx, side, request) => {
+      const rows = records[side];
+      if (
+        request.method === "POST" &&
+        (request.path === "/admin/sample/issues/latest" ||
+          request.path === "/api/v1/projects/admin/sample/issues")
+      ) {
+        const number = createdNumbers[side];
+        rows.set(number, "open");
+        return side === "legacy"
+          ? { status: 303, location: `/admin/sample/issue/${number}` }
+          : {
+              status: 201,
+              json: {
+                issueNumber: number,
+                title: request.json.title,
+                bodyMarkdown: request.json.bodyMarkdown,
+              },
+            };
+      }
+      const number = Number(/\/issues?\/(\d+)/u.exec(request.path)?.[1]);
+      assert.notEqual(number, 1, `I4 must not touch the unrelated ${side} seed`);
+      assert.equal(number, createdNumbers[side], "each side must use its own created issue number");
+      assert.ok(rows.has(number), "I4 must create its target before using it");
+      if (side === "legacy" && request.method === "GET" && request.path.endsWith("/nextstate")) {
+        rows.set(number, rows.get(number) === "open" ? "closed" : "open");
+        return { status: 303, location: `/admin/sample/issue/${number}` };
+      }
+      if (side === "yoram" && request.method === "PUT" && request.path.endsWith("/state")) {
+        if (yoramPersists) rows.set(number, request.json.state);
+        // A successful response can claim the requested state without storing it.
+        return { status: 200, json: { state: request.json.state } };
+      }
+      if (request.method === "DELETE") {
+        rows.delete(number);
+        return { status: 200 };
+      }
+      if (request.method === "GET" && /\/issues?\/\d+$/u.test(request.path)) {
+        return side === "legacy"
+          ? { status: 200, body: `<span class="badge badge-issue-${rows.get(number)}"></span>` }
+          : { status: 200, json: { state: rows.get(number) } };
+      }
+      assert.fail(`unexpected ${side} request: ${request.method} ${request.path}`);
+    };
+    ctx.helpers = {
+      sendRaw: send,
+      async requestBoth(context, legacy, yoram) {
+        return {
+          legacyResult: await send(context, "legacy", legacy),
+          yoramResult: await send(context, "yoram", yoram),
+        };
+      },
+      issueNumberFromLocation: (location) => Number(/\/issue\/(\d+)$/u.exec(location)?.[1]),
+      async renderDomTarget() {},
+    };
+    for (const step of scenario.actions.filter((item) => item.action !== "login")) {
+      ctx.step = step;
+      await ACTION_DEFINITIONS[step.action].handler(ctx);
+      if (step.action === "issue-next-state") {
+        assert.equal(records.legacy.get(createdNumbers.legacy), "closed");
+        assert.equal(records.yoram.get(createdNumbers.yoram), yoramPersists ? "closed" : "open");
+        if (yoramPersists) {
+          assert.deepEqual(ctx.entry.violations, []);
+        } else {
+          assert.equal(ctx.entry.violations.length, 1);
+          assert.equal(ctx.entry.violations[0].kind, "api");
+          assert.equal(ctx.entry.violations[0].actual.legacyState, "closed");
+          assert.equal(ctx.entry.violations[0].actual.yoramState, "open");
+        }
+      }
+    }
+    assert.deepEqual([...records.legacy], [[1, "open"]]);
+    assert.deepEqual([...records.yoram], [[1, "open"]]);
+    assert.deepEqual(ctx.entry.errors, []);
+  }
+});
+
 test("issue detail DOM probes exclude the shared shell and keep the route body", async () => {
   const calls = [];
   const ctx = {
-    step: { actor: "admin", action: "issue-detail", params: { owner: "admin", project: "sample", number: 1 } },
+    step: {
+      actor: "admin",
+      action: "issue-detail",
+      params: { owner: "admin", project: "sample", number: 1 },
+    },
     resolved: {},
     options: { legacyUrl: "http://legacy.test" },
     yoramBaseUrl: "http://yoram.test",
@@ -99,7 +213,11 @@ test("issue detail route-body losses for watcher and label controls remain block
         ],
       },
     };
-    assert.equal(domVisibleLoss(detail), true, `missing route-body control must be visible: ${expected}`);
+    assert.equal(
+      domVisibleLoss(detail),
+      true,
+      `missing route-body control must be visible: ${expected}`,
+    );
     assert.equal(
       classifyViolation("dom", "/admin/sample/issue/1", detail).classification,
       "UNVERIFIED",
@@ -109,7 +227,11 @@ test("issue detail route-body losses for watcher and label controls remain block
 });
 
 test("JSON issue label and category reads use parsed API comparison without DOM rendering", async () => {
-  const step = { actor: "admin", action: "issue-labels", params: { owner: "admin", project: "sample" } };
+  const step = {
+    actor: "admin",
+    action: "issue-labels",
+    params: { owner: "admin", project: "sample" },
+  };
   const calls = [];
   const ctx = {
     step,
@@ -155,33 +277,68 @@ test("JSON issue label and category reads use parsed API comparison without DOM 
 });
 
 test("list-issues encodes state/milestone/search filter params", () => {
-  const step = { actor: "admin", action: "list-issues", params: { owner: "admin", project: "sample", state: "closed", milestoneId: 1 } };
+  const step = {
+    actor: "admin",
+    action: "list-issues",
+    params: { owner: "admin", project: "sample", state: "closed", milestoneId: 1 },
+  };
   assert.equal(translateLegacy(step).path, "/admin/sample/issues?state=closed&milestoneId=1");
-  const search = { actor: "admin", action: "list-issues", params: { owner: "admin", project: "sample", search: "parity" } };
+  const search = {
+    actor: "admin",
+    action: "list-issues",
+    params: { owner: "admin", project: "sample", search: "parity" },
+  };
   assert.equal(translateYoram(search).path, "/admin/sample/issues?search=parity");
 });
 
 test("issue-api-probe keeps the legacy-compat path on legacy and maps to RESTful on yoram", () => {
-  const probe = { actor: "admin", action: "issue-api-probe", params: { api: "/-_-api/v1/owners/admin/projects/sample/issues/1" } };
+  const probe = {
+    actor: "admin",
+    action: "issue-api-probe",
+    params: { api: "/-_-api/v1/owners/admin/projects/sample/issues/1" },
+  };
   assert.equal(translateLegacy(probe).method, "GET");
   assert.equal(translateLegacy(probe).path, "/-_-api/v1/owners/admin/projects/sample/issues/1");
   assert.equal(translateYoram(probe).path, "/api/v1/owners/admin/projects/sample/issues/1");
-  const assignable = { actor: "admin", action: "issue-api-probe", params: { api: "/-_-api/v1/owners/admin/projects/sample/issues/1/assignableUsers" } };
-  assert.equal(translateYoram(assignable).path, "/api/v1/owners/admin/projects/sample/issues/1/assignable-users/find");
-  const categories = { actor: "admin", action: "issue-label-categories", params: { owner: "admin", project: "sample" } };
+  const assignable = {
+    actor: "admin",
+    action: "issue-api-probe",
+    params: { api: "/-_-api/v1/owners/admin/projects/sample/issues/1/assignableUsers" },
+  };
+  assert.equal(
+    translateYoram(assignable).path,
+    "/api/v1/owners/admin/projects/sample/issues/1/assignable-users/find",
+  );
+  const categories = {
+    actor: "admin",
+    action: "issue-label-categories",
+    params: { owner: "admin", project: "sample" },
+  };
   assert.equal(translateYoram(categories).path, "/admin/sample/issue/label/categories");
 });
 
 test("pre-existing mutation actions keep their translation contracts", () => {
   assert.deepEqual(
-    translateLegacy({ actor: "a", action: "create-issue", params: { owner: "admin", project: "sample" } }, { title: "t", body: "b" }).form,
+    translateLegacy(
+      { actor: "a", action: "create-issue", params: { owner: "admin", project: "sample" } },
+      { title: "t", body: "b" },
+    ).form,
     { title: "t", body: "b", assigneeLoginId: "" },
   );
   assert.equal(
-    translateLegacy({ actor: "a", action: "create-issue", params: { owner: "admin", project: "sample" } }, { title: "t", body: "b" }).path,
+    translateLegacy(
+      { actor: "a", action: "create-issue", params: { owner: "admin", project: "sample" } },
+      { title: "t", body: "b" },
+    ).path,
     "/admin/sample/issues/latest",
   );
-  assert.equal(ACTION_DEFINITIONS["create-issue-comment"].translateLegacy({ params: { owner: "admin", project: "sample" } }, { issueNumber: 7 }).path, "/admin/sample/issue/7/comments");
+  assert.equal(
+    ACTION_DEFINITIONS["create-issue-comment"].translateLegacy(
+      { params: { owner: "admin", project: "sample" } },
+      { issueNumber: 7 },
+    ).path,
+    "/admin/sample/issue/7/comments",
+  );
 });
 
 test("issue imports use a bodyless legacy postNumber conversion and Rust migration boundary", () => {
@@ -194,7 +351,10 @@ test("issue imports use a bodyless legacy postNumber conversion and Rust migrati
     method: "POST",
     path: "/-_-api/v1/owners/admin/projects/parity-import-test/issues/imports?postNumber=17",
   });
-  assert.equal("json" in translateLegacy(step, { projectName: "parity-import-test", postNumber: 17 }), false);
+  assert.equal(
+    "json" in translateLegacy(step, { projectName: "parity-import-test", postNumber: 17 }),
+    false,
+  );
   assert.deepEqual(translateYoram(step, { projectName: "parity-import-test" }), {
     method: "POST",
     path: "/api/v1/owners/admin/projects/parity-import-test/imports",
@@ -233,13 +393,22 @@ test("issue imports prove conversion/readback and clean up their dedicated proje
       },
       async sendRaw(_ctx, side, request) {
         calls.push({ side, request });
+        const url = new URL(request.path, "http://yoram.test");
         if (side === "legacy" && request.method === "POST" && request.path.endsWith("/posts")) {
           return { status: 303, location: "/admin/parity-import-import-proof/post/23" };
         }
-        if (side === "legacy" && request.method === "POST" && request.path.endsWith("/post/23/comment")) {
+        if (
+          side === "legacy" &&
+          request.method === "POST" &&
+          request.path.endsWith("/post/23/comment")
+        ) {
           return { status: 303, location: "#comment-31" };
         }
-        if (side === "legacy" && request.method === "POST" && request.path.includes("/issues/imports?")) {
+        if (
+          side === "legacy" &&
+          request.method === "POST" &&
+          request.path.includes("/issues/imports?")
+        ) {
           return { status: 200, json: { number: 24 } };
         }
         if (side === "legacy" && request.method === "GET" && request.path.endsWith("/issue/24")) {
@@ -248,16 +417,30 @@ test("issue imports prove conversion/readback and clean up their dedicated proje
         if (side === "legacy" && request.method === "GET" && request.path.endsWith("/post/23")) {
           return { status: 404, body: "" };
         }
-        if (side === "yoram" && request.method === "POST" && request.path === "/api/v1/auth/token") {
+        if (
+          side === "yoram" &&
+          request.method === "POST" &&
+          request.path === "/api/v1/auth/token"
+        ) {
           return { status: 200, json: { access_token: "target-token" } };
         }
-        if (side === "yoram" && request.method === "GET" && request.path.endsWith("/issues")) {
-          return { status: 200, json: [{ title: plan.title, issueNumber: 42 }] };
+        if (side === "yoram" && request.method === "GET" && url.pathname.endsWith("/issues")) {
+          return {
+            status: 200,
+            json:
+              url.searchParams.get("state") === "closed"
+                ? [{ title: plan.title, issueNumber: 42 }]
+                : [],
+          };
         }
         if (side === "yoram" && request.method === "GET" && request.path.endsWith("/issues/42")) {
           return {
             status: 200,
-            json: { title: plan.title, bodyMarkdown: plan.body, comments: [{ contentsMarkdown: plan.comment }] },
+            json: {
+              title: plan.title,
+              bodyMarkdown: plan.body,
+              comments: [{ contentsMarkdown: plan.comment }],
+            },
           };
         }
         if (request.method === "DELETE") return { status: 204 };
@@ -273,12 +456,21 @@ test("issue imports prove conversion/readback and clean up their dedicated proje
 
   await ACTION_DEFINITIONS["probe-issue-imports"].handler(ctx);
   const conversion = calls.find(
-    (call) => call.side === "legacy" && call.request.method === "POST" && call.request.path.includes("/issues/imports?"),
+    (call) =>
+      call.side === "legacy" &&
+      call.request.method === "POST" &&
+      call.request.path.includes("/issues/imports?"),
   );
   assert.ok(conversion);
   assert.equal("json" in conversion.request, false);
-  assert.equal(conversion.request.path, "/-_-api/v1/owners/admin/projects/parity-import-import-proof/issues/imports?postNumber=23");
-  assert.equal(calls.some((call) => call.side === "yoram" && call.request.path.startsWith("/-_-api/")), false);
+  assert.equal(
+    conversion.request.path,
+    "/-_-api/v1/owners/admin/projects/parity-import-import-proof/issues/imports?postNumber=23",
+  );
+  assert.equal(
+    calls.some((call) => call.side === "yoram" && call.request.path.startsWith("/-_-api/")),
+    false,
+  );
   assert.deepEqual(migrationArgs[0].slice(0, 8), [
     "--from-url",
     "http://legacy.test",
@@ -295,12 +487,20 @@ test("issue imports prove conversion/readback and clean up their dedicated proje
 });
 
 test("issue mutations use legacy payload shapes and normalize paired issue identity", async () => {
-  const step = { actor: "admin", action: "update-issue-assignees", params: { owner: "admin", project: "sample" } };
+  const step = {
+    actor: "admin",
+    action: "update-issue-assignees",
+    params: { owner: "admin", project: "sample" },
+  };
   const vars = { issueNumber: 7 };
   assert.deepEqual(translateLegacy(step, vars).json, { assignees: ["admin"] });
   assert.deepEqual(translateYoram(step, vars).json, { assignees: ["admin"] });
 
-  const shareStep = { actor: "admin", action: "update-sharer", params: { owner: "admin", project: "sample" } };
+  const shareStep = {
+    actor: "admin",
+    action: "update-sharer",
+    params: { owner: "admin", project: "sample" },
+  };
   assert.deepEqual(translateLegacy(shareStep, vars).json, {
     sharer: { loginId: "carol", type: "user" },
     action: "add",
@@ -323,8 +523,14 @@ test("issue mutations use legacy payload shapes and normalize paired issue ident
         shareRequests.push({ legacy, yoram });
         sharerPresent = shareRequests.length === 1;
         return {
-          legacyResult: { status: 200, json: { action: sharerPresent ? "added" : "deleted", sharer: "carol" } },
-          yoramResult: { status: 200, json: { sharers: sharerPresent ? [{ loginId: "carol" }] : [] } },
+          legacyResult: {
+            status: 200,
+            json: { action: sharerPresent ? "added" : "deleted", sharer: "carol" },
+          },
+          yoramResult: {
+            status: 200,
+            json: { sharers: sharerPresent ? [{ loginId: "carol" }] : [] },
+          },
         };
       },
       async sendRaw(_ctx, side, request) {
@@ -353,7 +559,10 @@ test("issue mutations use legacy payload shapes and normalize paired issue ident
     method: "DELETE",
     path: "/api/v1/owners/admin/projects/sample/issues/7/sharers/carol?targetType=user",
   });
-  assert.deepEqual(shareReadbacks.map(({ side }) => side), ["legacy", "yoram", "legacy", "yoram"]);
+  assert.deepEqual(
+    shareReadbacks.map(({ side }) => side),
+    ["legacy", "yoram", "legacy", "yoram"],
+  );
   assert.deepEqual(shareReadbacks[0].request, {
     method: "GET",
     path: "/-_-api/v1/owners/admin/projects/sample/issues/7/findSharer?query=carol",
@@ -367,7 +576,11 @@ test("issue mutations use legacy payload shapes and normalize paired issue ident
   assert.deepEqual(shareReadbacks[3].request, shareReadbacks[1].request);
 
   const ctx = {
-    step: { actor: "admin", action: "patch-issue-content", params: { owner: "admin", project: "sample" } },
+    step: {
+      actor: "admin",
+      action: "patch-issue-content",
+      params: { owner: "admin", project: "sample" },
+    },
     resolved: { body: "before" },
     state: { issueNumberLegacy: 338, issueNumberYoram: 2 },
     entry: { violations: [] },
@@ -400,7 +613,11 @@ test("issue mutations use legacy payload shapes and normalize paired issue ident
 
 test("issue label JSON normalizer ignores only the optional false category flag", async () => {
   const makeContext = (yoramJson) => ({
-    step: { actor: "admin", action: "create-issue-label", params: { owner: "admin", project: "sample" } },
+    step: {
+      actor: "admin",
+      action: "create-issue-label",
+      params: { owner: "admin", project: "sample" },
+    },
     resolved: { labelName: "L", categoryName: "C" },
     suffix: "test",
     state: {},
@@ -428,7 +645,11 @@ test("issue label CRUD keeps create response IDs when the Yoram list cache is st
   const state = {};
   const entry = { violations: [], errors: [] };
   await ACTION_DEFINITIONS["create-issue-label"].handler({
-    step: { actor: "admin", action: "create-issue-label", params: { owner: "admin", project: "sample" } },
+    step: {
+      actor: "admin",
+      action: "create-issue-label",
+      params: { owner: "admin", project: "sample" },
+    },
     resolved: { labelName: "ignored", categoryName: "ignored" },
     suffix: "stale-cache",
     state,
@@ -451,7 +672,11 @@ test("issue label CRUD keeps create response IDs when the Yoram list cache is st
 
   let listCall = 0;
   await ACTION_DEFINITIONS["issue-label-ids"].handler({
-    step: { actor: "admin", action: "issue-label-ids", params: { owner: "admin", project: "sample" } },
+    step: {
+      actor: "admin",
+      action: "issue-label-ids",
+      params: { owner: "admin", project: "sample" },
+    },
     suffix: "stale-cache",
     state,
     entry,
@@ -472,15 +697,85 @@ test("issue label CRUD keeps create response IDs when the Yoram list cache is st
   });
 
   assert.deepEqual(
-    { labelIdLegacy: state.labelIdLegacy, labelIdYoram: state.labelIdYoram, categoryIdLegacy: state.categoryIdLegacy, categoryIdYoram: state.categoryIdYoram },
+    {
+      labelIdLegacy: state.labelIdLegacy,
+      labelIdYoram: state.labelIdYoram,
+      categoryIdLegacy: state.categoryIdLegacy,
+      categoryIdYoram: state.categoryIdYoram,
+    },
     { labelIdLegacy: 17, labelIdYoram: 27, categoryIdLegacy: 18, categoryIdYoram: 28 },
   );
 });
 
+test("category cleanup deletes only the named sweep category and refuses an absent match", async () => {
+  const categories = {
+    legacy: [
+      { id: 2, name: "type" },
+      { id: 7, name: "parity-cat-exact" },
+    ],
+    yoram: [
+      { id: 20, name: "type" },
+      { id: 70, name: "parity-cat-exact" },
+    ],
+  };
+  const ctx = {
+    step: {
+      actor: "admin",
+      action: "issue-label-ids",
+      params: { owner: "admin", project: "sample" },
+    },
+    resolved: {},
+    suffix: "exact",
+    state: {},
+    entry: { violations: [], errors: [] },
+    helpers: {
+      async requestBoth(_ctx, legacyRequest, yoramRequest) {
+        const response = (side, request) => {
+          if (request.method === "DELETE") {
+            const id = Number(request.path.split("/").at(-1));
+            categories[side] = categories[side].filter((category) => category.id !== id);
+            return { status: 200 };
+          }
+          return {
+            status: 200,
+            json: request.path.endsWith("/categories") ? structuredClone(categories[side]) : [],
+          };
+        };
+        return {
+          legacyResult: response("legacy", legacyRequest),
+          yoramResult: response("yoram", yoramRequest),
+        };
+      },
+    },
+  };
+  await ACTION_DEFINITIONS["issue-label-ids"].handler(ctx);
+  ctx.step.action = "delete-label-category";
+  await ACTION_DEFINITIONS["delete-label-category"].handler(ctx);
+  assert.deepEqual(categories, {
+    legacy: [{ id: 2, name: "type" }],
+    yoram: [{ id: 20, name: "type" }],
+  });
+
+  ctx.state = {};
+  ctx.suffix = "absent";
+  ctx.step.action = "issue-label-ids";
+  await ACTION_DEFINITIONS["issue-label-ids"].handler(ctx);
+  ctx.step.action = "delete-label-category";
+  await assert.rejects(ACTION_DEFINITIONS["delete-label-category"].handler(ctx), /unresolved id/);
+  assert.deepEqual(categories, {
+    legacy: [{ id: 2, name: "type" }],
+    yoram: [{ id: 20, name: "type" }],
+  });
+});
+
 test("I23 restores both seed issue-label associations immediately before export", async () => {
   const i23 = issues.scenarios.find((scenario) => scenario.id === "I23-markdown-and-export-reads");
-  const restoreIndex = i23.actions.findIndex((step) => step.action === "restore-migration-issue-labels");
-  const exportIndex = i23.actions.findIndex((step) => step.action === "migration-export-issuelabel-pairs");
+  const restoreIndex = i23.actions.findIndex(
+    (step) => step.action === "restore-migration-issue-labels",
+  );
+  const exportIndex = i23.actions.findIndex(
+    (step) => step.action === "migration-export-issuelabel-pairs",
+  );
   assert.equal(restoreIndex + 1, exportIndex);
   const calls = [];
   const rows = [
@@ -495,7 +790,10 @@ test("I23 restores both seed issue-label associations immediately before export"
   const categoriesBySide = { legacy: [], yoram: [] };
   const definition = ACTION_DEFINITIONS["restore-migration-issue-labels"];
   const ctx = {
-    step: { action: "restore-migration-issue-labels", params: { owner: "admin", project: "sample" } },
+    step: {
+      action: "restore-migration-issue-labels",
+      params: { owner: "admin", project: "sample" },
+    },
     entry: { errors: [], violations: [] },
     helpers: {
       async sendRaw(_ctx, side, request) {
@@ -546,29 +844,64 @@ test("I23 restores both seed issue-label associations immediately before export"
   assert.equal(writes.length, 1);
   assert.deepEqual(writes[0].legacy.json, ["11", "12"]);
   assert.deepEqual(writes[0].yoram.json, ["11", "12"]);
-  assert.equal(calls.filter((call) => call.request?.method === "POST" && call.request.path.endsWith("/issue/label/categories")).length, 4);
-  assert.equal(calls.filter((call) => call.request?.method === "POST" && call.request.path.endsWith("/issue/labels")).length, 4);
+  assert.equal(
+    calls.filter(
+      (call) =>
+        call.request?.method === "POST" && call.request.path.endsWith("/issue/label/categories"),
+    ).length,
+    4,
+  );
+  assert.equal(
+    calls.filter(
+      (call) => call.request?.method === "POST" && call.request.path.endsWith("/issue/labels"),
+    ).length,
+    4,
+  );
   assert.ok(calls.some((call) => call.legacy?.method === "GET" && call.yoram?.method === "GET"));
   assert.deepEqual(ctx.entry.errors, []);
 });
 
 test("mutation actions translate to the legacy form route vs the Yoram REST route", () => {
   const step = (action, params) => ({ actor: "admin", action, params });
-  const vars = { title: "t", body: "b", issueNumber: 7, commentId: 9, issuePk: 42, labelId: 5, categoryId: 6, labelName: "L", categoryName: "C" };
+  const vars = {
+    title: "t",
+    body: "b",
+    issueNumber: 7,
+    commentId: 9,
+    issuePk: 42,
+    labelId: 5,
+    categoryId: 6,
+    labelName: "L",
+    categoryName: "C",
+  };
 
   // edit-issue: legacy form POST edit route vs Yoram compat PUT issue.
   assert.deepEqual(
     translateLegacy(step("edit-issue", { owner: "admin", project: "sample" }), vars),
-    { method: "POST", path: "/admin/sample/issue/7/edit", form: { title: "t", body: "b", assigneeLoginId: "" } },
+    {
+      method: "POST",
+      path: "/admin/sample/issue/7/edit",
+      form: { title: "t", body: "b", assigneeLoginId: "" },
+    },
   );
   assert.deepEqual(
     translateYoram(step("edit-issue", { owner: "admin", project: "sample" }), vars),
-    { method: "PUT", path: "/api/v1/owners/admin/projects/sample/issues/7", json: { title: "t", body: "b" } },
+    {
+      method: "PUT",
+      path: "/api/v1/owners/admin/projects/sample/issues/7",
+      json: { title: "t", body: "b" },
+    },
   );
 
   // delete-issue: legacy direct DELETE route vs Yoram SPA REST DELETE.
-  assert.equal(translateLegacy(step("delete-issue", { owner: "admin", project: "sample" }), vars).path, "/admin/sample/issue/7/delete");
-  assert.equal(translateYoram(step("delete-issue", { owner: "admin", project: "sample" }), vars).path, "/api/v1/projects/admin/sample/issues/7");
+  assert.equal(
+    translateLegacy(step("delete-issue", { owner: "admin", project: "sample" }), vars).path,
+    "/admin/sample/issue/7/delete",
+  );
+  assert.equal(
+    translateYoram(step("delete-issue", { owner: "admin", project: "sample" }), vars).path,
+    "/api/v1/projects/admin/sample/issues/7",
+  );
 
   // comment mutations chain the captured comment id on both sides.
   assert.equal(
@@ -587,8 +920,15 @@ test("mutation actions translate to the legacy form route vs the Yoram REST rout
 
   // label CRUD: legacy form routes on both sides, attach via compat API.
   assert.deepEqual(
-    translateLegacy(step("create-issue-label", { owner: "admin", project: "sample" }), { labelName: "L", categoryName: "C" }),
-    { method: "POST", path: "/admin/sample/issue/labels", form: { labelName: "L", categoryName: "C", labelColor: "#123456" } },
+    translateLegacy(step("create-issue-label", { owner: "admin", project: "sample" }), {
+      labelName: "L",
+      categoryName: "C",
+    }),
+    {
+      method: "POST",
+      path: "/admin/sample/issue/labels",
+      form: { labelName: "L", categoryName: "C", labelColor: "#123456" },
+    },
   );
   assert.equal(
     translateLegacy(step("attach-issue-labels", { owner: "admin", project: "sample" }), vars).path,
@@ -599,7 +939,8 @@ test("mutation actions translate to the legacy form route vs the Yoram REST rout
     "/admin/sample/issue/label/5/delete",
   );
   assert.equal(
-    translateYoram(step("delete-label-category", { owner: "admin", project: "sample" }), vars).method,
+    translateYoram(step("delete-label-category", { owner: "admin", project: "sample" }), vars)
+      .method,
     "DELETE",
   );
 
@@ -610,8 +951,14 @@ test("mutation actions translate to the legacy form route vs the Yoram REST rout
     ["migration-export-issuelabel-pairs", "/migration/admin/projects/sample/issuelabel"],
     ["render-markdown", "/markdown/admin/sample"],
   ]) {
-    assert.equal(translateLegacy(step(action, { owner: "admin", project: "sample" }), vars).path, path);
-    assert.equal(translateYoram(step(action, { owner: "admin", project: "sample" }), vars).path, path);
+    assert.equal(
+      translateLegacy(step(action, { owner: "admin", project: "sample" }), vars).path,
+      path,
+    );
+    assert.equal(
+      translateYoram(step(action, { owner: "admin", project: "sample" }), vars).path,
+      path,
+    );
   }
   // Legacy LabelApp.labels requires limit and Accept: application/json
   // (LabelApp.java:52-58); the probe pins both sides to that contract.

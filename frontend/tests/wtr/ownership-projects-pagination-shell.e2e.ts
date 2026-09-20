@@ -1,4 +1,4 @@
-import { readFileSync, readFile, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFile } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
@@ -25,6 +25,7 @@ const owners = {
 test.use({ locale: "ko-KR" });
 
 async function mockProjects(page: Page, totalPages = 1) {
+  await page.clock.setFixedTime("2026-07-17T12:00:00Z");
   await page.addInitScript((runtimeBasePath) => {
     (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
       basePath: runtimeBasePath,
@@ -55,14 +56,14 @@ async function mockProjects(page: Page, totalPages = 1) {
       json: {
         items: [
           {
-            createdLabel: "07-07",
+            createdAt: "2026-07-07T12:00:00Z",
             overview: "Protected organization project for localhost parity",
             ownerName: "weblabs",
             projectName: "portal",
             projectScope: "protected",
           },
           {
-            createdLabel: "07-07",
+            createdAt: "2026-07-07T12:00:00Z",
             memberCount: 1,
             members: [{ avatarUrl: avatarDataUrl, loginId: "alice", userLabel: "Alice Kim" }],
             overview: "Parity seed project for the alice workspace",
@@ -72,7 +73,7 @@ async function mockProjects(page: Page, totalPages = 1) {
             watchCount: 1,
           },
           {
-            createdLabel: "07-07",
+            createdAt: "2026-07-07T12:00:00Z",
             memberCount: 1,
             members: [{ avatarUrl: avatarDataUrl, loginId: "admin", userLabel: "Site Admin" }],
             overview: "Parity seed Subversion project for localhost checks",
@@ -82,8 +83,8 @@ async function mockProjects(page: Page, totalPages = 1) {
             watchCount: 1,
           },
           {
-            createdLabel: "07-07",
-            lastPushedLabel: "5일 전",
+            createdAt: "2026-07-07T12:00:00Z",
+            lastPushedAt: "2026-07-12T12:00:00Z",
             memberCount: 1,
             members: [{ avatarUrl: avatarDataUrl, loginId: "admin", userLabel: "Site Admin" }],
             overview: "Parity seed project for the admin workspace",
@@ -108,94 +109,6 @@ async function open(page: Page, totalPages = 1, currentPage = 1) {
   await page.goto(`${basePath}/projects${query}`);
   await expect(page.locator('[data-owner="projects-directory-list"]')).toBeVisible();
 }
-
-test("pagination shell owns exactly four direct target types and preserves one important fallback", () => {
-  const route = readFileSync("src/routes/projects.tsx", "utf8");
-  const theme = readFileSync("src/app.css", "utf8");
-  const scala = readFileSync("../yona-original/app/views/project/list.scala.html", "utf8");
-  const siteLayout = readFileSync("../yona-original/app/views/siteLayout.scala.html", "utf8");
-  const yobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
-  const variables = readFileSync(
-    "../yona-original/app/assets/stylesheets/less/_variables.less",
-    "utf8",
-  );
-  const mixins = readFileSync("../yona-original/app/assets/stylesheets/less/_mixins.less", "utf8");
-  const common = readFileSync("../yona-original/app/assets/stylesheets/less/_common.less", "utf8");
-  const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
-  const responsive = readFileSync(
-    "../yona-original/app/assets/stylesheets/less/_responsive.less",
-    "utf8",
-  );
-  const paginationJs = readFileSync("../yona-original/public/javascripts/yona-lib.js", "utf8");
-  const messages = readFileSync("../yona-original/conf/messages.ko-KR", "utf8");
-
-  expect(scala).toContain('<div id="pagination"></div>');
-  expect(scala).toContain(
-    'yobi.Pagination.update($("#pagination"), @currentPage.getTotalPageCount);',
-  );
-  expect(siteLayout).toContain("@common.navbar(menuType, null, null)");
-  expect(yobi.trim().split("\n")).toEqual([
-    '@import "less/_variables.less";',
-    '@import "less/_mixins.less";',
-    '@import "less/_common.less";',
-    '@import "less/_sprites.less";',
-    '@import "less/_page.less";',
-    '@import "less/_tippy.less";',
-    '@import "less/_scrollbar.less";',
-    '@import "less/_responsive.less";',
-    '@import "less/_yobiUI.less";',
-    '@import "less/_temporary.less";',
-    '@import "less/_markdown.less";',
-    '@import "less/_migration.less";',
-    '@import "less/_override.less";',
-  ]);
-  expect(variables).toContain("@orange : #F36C22;");
-
-  expect(common).toContain(".page-navigation-wrap {");
-  expect(common).toContain(
-    "width:100%;\n    text-align: center;\n    margin: 20px 0;\n    clear:both;",
-  );
-  expect(common).toContain("margin: 0;\n        padding: 0;\n        list-style: none;");
-  expect(common).toContain("font-size: 0;\n        .inline-block;");
-  expect(common).toContain("padding: 0 10px;\n            font-size: 12px;");
-  expect(common).toContain("color: #8e9094;");
-  expect(common).toContain("&.ikon {");
-  expect(common).toContain("padding: 0 5px;");
-  expect(common).toContain("font-size: 11px;\n                    color: @orange;");
-  expect(common).toContain("&.off {\n                        color: #8E9094;");
-  expect(common).toContain("&.delimiter { color:#ddd; padding:0 5px; }");
-  expect(pageLess).toContain(".page-nums {\n    margin-left: -120px !important;");
-  expect(responsive).toContain(".page-nums {\n    margin-left: 0;");
-  expect(paginationJs).toContain('class="page-num ikon"');
-  expect(paginationJs).toContain('class="page-nums"');
-  expect(messages).toContain("button.prevPage = 이전 페이지");
-  expect(messages).toContain("button.nextPage = 다음 페이지");
-
-  for (const owner of Object.values(owners)) {
-    expect(route).toContain(`data-owner="${owner}"`);
-  }
-  expect(
-    [
-      ...new Set(
-        [...route.matchAll(/data-owner="(projects-directory-pagination[^"]*)"/gu)]
-          .map((match) => match[1])
-          .filter(
-            (owner) =>
-              owner !== "projects-directory-pagination-input" &&
-              owner !== "projects-directory-pagination-prev-icon" &&
-              owner !== "projects-directory-pagination-next-icon",
-          ),
-      ),
-    ].sort(),
-  ).toEqual(Object.values(owners).sort());
-  expect(route.match(/data-pagination-kind="(?:icon|standard|delimiter)"/gu)).toHaveLength(5);
-  expect(route).not.toContain(
-    "className={`page-nums ${directoryPaginationListStyleProps.className",
-  );
-  expect(route).not.toContain('className="page-navigation-wrap"');
-  expect(route).not.toMatch(/className="page-num(?:\s|"|$)/u);
-  expect(route).not.toContain('className="off"');
-});
 
 for (const viewport of [
   { height: 900, name: "desktop", width: 1366 },

@@ -1,5 +1,4 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
-import { expect, test, type Page } from "../wtr-compat.ts";
+import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const owner = (page: Page, name: string) => page.locator(`[data-owner="${name}"]`).first();
@@ -7,16 +6,6 @@ const owner = (page: Page, name: string) => page.locator(`[data-owner="${name}"]
 test.use({ locale: "ko-KR" });
 
 test("records compare diff owners and responsive containment", async ({ page }) => {
-  const route = readFileSync(
-    "src/routes/$ownerName/$projectName/compare/$revisionRange.tsx",
-    "utf8",
-  );
-  const theme = readFileSync("src/app.css", "utf8");
-  const template = readFileSync("../yona-original/app/views/code/compare.scala.html", "utf8");
-  expect(template).toContain('class="commitInfo"');
-  expect(template).toContain('class="diff-body discommentable"');
-  expect(route).toContain('data-owner="project-compare-diff-wrap"');
-
   await mockCompare(page);
   for (const viewport of [
     { width: 1366, height: 900 },
@@ -68,7 +57,7 @@ async function mockCompare(page: Page) {
       json: { ownerName: "weblabs", projectName: "demo", vcs: "GIT" },
     }),
   );
-  await page.route("**/api/v1/owners/**/projects/**/compare/**", (route: Route) =>
+  await page.route("**/api/v1/projects/**/compare/**", (route: Route) =>
     route.fulfill({
       contentType: "application/json",
       json: { commitA: "abc123", commitB: "def456", files: [] },

@@ -52,6 +52,17 @@ test("svn main branch history reuses the legacy root history skeleton", async ({
 
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await historyGeometry(page)).toMatchObject({ noOverflow: true });
+  await page.locator(".select2-choice").press("ArrowDown");
+  const search = page.locator(".select2-search input");
+  await expect(search).toBeFocused();
+  await search.press("ArrowDown");
+  await expect(page.locator(".select2-highlighted")).toHaveText("HEAD");
+  await expect(page.locator(".select2-highlighted .branch-label")).toHaveCount(0);
+  await search.press("Enter");
+  await expect(page.locator(".select2-drop")).not.toBeVisible();
+  await expect(page.locator(".select2-choice")).toBeFocused();
+  await expect(page).toHaveURL(`${basePath}/admin/svnplayground/commits/main/`);
+  expect(historyRequests()).toEqual(["branch=main"]);
 });
 
 async function mockSvnMainHistory(page: Page) {

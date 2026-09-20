@@ -6,6 +6,8 @@
 // legacySession, yoramSession, legacyPage, yoramPage, options, yoramBaseUrl,
 // suffix, helpers } where helpers carries run.mjs's shared request/render
 // utilities.
+import { mkdtempSync, renameSync, rmSync } from "node:fs";
+import path from "node:path";
 import { translateLegacy, translateYoram, LegacySession, YoramSession } from "../adapters.mjs";
 import { HarnessError, violation } from "../report.mjs";
 
@@ -23,7 +25,10 @@ export const scenarios = [
       { actor: "anonymous", action: "view-login-page", params: {} },
       { actor: "anonymous", action: "view-login-form", params: {} },
     ],
-    behaviorMatcher: { action: /^(Application\.index|UserApp\.loginForm)$/, route: /^GET \/users\/login(form)?$/ },
+    behaviorMatcher: {
+      action: /^(Application\.index|UserApp\.loginForm)$/,
+      route: /^GET \/users\/login(form)?$/,
+    },
   },
   {
     id: "S3-signup-form",
@@ -46,7 +51,10 @@ export const scenarios = [
     ],
     // Runs after all I*/P*/PR* scenarios (id sort) and every later scenario
     // re-logins as its first step, so invalidating the shared sessions here is safe.
-    behaviorMatcher: { action: /^(Application\.oAuthLogout|UserApp\.logout)$/, route: /^GET \/(users\/)?logout$/ },
+    behaviorMatcher: {
+      action: /^(Application\.oAuthLogout|UserApp\.logout)$/,
+      route: /^GET \/(users\/)?logout$/,
+    },
   },
   {
     id: "S6-projectform",
@@ -71,10 +79,17 @@ export const scenarios = [
     title: "project transfer accept page GET (bogus id/key, read-only)",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      { actor: "admin", action: "view-project-transfer", params: { id: "99999999", key: "differential-sweep-nonexistent" } },
+      {
+        actor: "admin",
+        action: "view-project-transfer",
+        params: { id: "99999999", key: "differential-sweep-nonexistent" },
+      },
     ],
     // GET render only; never POSTs the transfer acceptance.
-    behaviorMatcher: { action: /^ProjectApp\.acceptTransfer$/, route: /^GET \/project\/transfer\/:id\/:key$/ },
+    behaviorMatcher: {
+      action: /^ProjectApp\.acceptTransfer$/,
+      route: /^GET \/project\/transfer\/:id\/:key$/,
+    },
   },
   {
     id: "S9-help-init-uikit",
@@ -84,7 +99,10 @@ export const scenarios = [
       { actor: "anonymous", action: "view-init-page", params: {} },
       { actor: "anonymous", action: "view-uikit-page", params: {} },
     ],
-    behaviorMatcher: { action: /^(HelpApp\.help|Application\.(init|UIKit))$/, route: /^GET \/_(help|init|UIKit)$/ },
+    behaviorMatcher: {
+      action: /^(HelpApp\.help|Application\.(init|UIKit))$/,
+      route: /^GET \/_(help|init|UIKit)$/,
+    },
   },
   {
     id: "S10-simple-apis",
@@ -98,7 +116,8 @@ export const scenarios = [
       { actor: "admin", action: "get-title-heads", params: { owner: "admin", project: "sample" } },
     ],
     behaviorMatcher: {
-      action: /^(GlobalApi\.hello|UserApp\.users|UserApi\.getFoverite(Projects|Organizations)|ProjectApi\.titleHeads)$/,
+      action:
+        /^(GlobalApi\.hello|UserApp\.users|UserApi\.getFoverite(Projects|Organizations)|ProjectApi\.titleHeads)$/,
     },
   },
   {
@@ -109,14 +128,21 @@ export const scenarios = [
       { actor: "anonymous", action: "oauth-denied", params: { provider: "github" } },
       { actor: "anonymous", action: "oauth-authorize-contract", params: { provider: "github" } },
     ],
-    behaviorMatcher: { action: /^Application\.oAuth(Denied)?$/, route: /^GET \/authenticate\/:provider(\/denied)?$/ },
+    behaviorMatcher: {
+      action: /^Application\.oAuth(Denied)?$/,
+      route: /^GET \/authenticate\/:provider(\/denied)?$/,
+    },
   },
   {
     id: "S12-compat-translation",
     title: "compat translation helper (unconfigured precondition parity)",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      { actor: "admin", action: "post-compat-translation", params: { owner: "admin", project: "sample" } },
+      {
+        actor: "admin",
+        action: "post-compat-translation",
+        params: { owner: "admin", project: "sample" },
+      },
     ],
     behaviorMatcher: { action: /^IssueApi\.translate$/ },
   },
@@ -132,7 +158,8 @@ export const scenarios = [
         behaviorId: "B-0221",
         expectedDisposition: {
           classification: "LEGACY_BUG_NOT_REPRODUCED",
-          evidence: "yona-original/app/controllers/UserApp.java:1372-1380 accepts the empty boundary path while the canonical REST endpoint rejects it",
+          evidence:
+            "yona-original/app/controllers/UserApp.java:1372-1380 accepts the empty boundary path while the canonical REST endpoint rejects it",
           signature: {
             scenarioId: "S13-compat-default-login-page",
             action: "post-compat-default-login-page",
@@ -140,12 +167,20 @@ export const scenarios = [
             events: [
               {
                 side: "legacy",
-                request: { method: "POST", route: "/-_-api/v1/user/defultLoginPage", payload: { form: { defaultLoginPage: "" } } },
+                request: {
+                  method: "POST",
+                  route: "/-_-api/v1/user/defultLoginPage",
+                  payload: { form: { defaultLoginPage: "" } },
+                },
                 response: { status: 200 },
               },
               {
                 side: "yoram",
-                request: { method: "POST", route: "/api/v1/user/default-login-page", payload: { form: { defaultLoginPage: "" } } },
+                request: {
+                  method: "POST",
+                  route: "/api/v1/user/default-login-page",
+                  payload: { form: { defaultLoginPage: "" } },
+                },
                 response: { status: 400 },
               },
             ],
@@ -168,9 +203,7 @@ export const scenarios = [
   {
     id: "S15-compat-token-boundary",
     title: "API token issuance rejects bad credentials identically",
-    actions: [
-      { actor: "anonymous", action: "post-compat-token-invalid", params: {} },
-    ],
+    actions: [{ actor: "anonymous", action: "post-compat-token-invalid", params: {} }],
     behaviorMatcher: { action: /^UserApi\.newToken$/ },
   },
   {
@@ -187,10 +220,16 @@ export const scenarios = [
     title: "password reset request delivers token mail; reset form renders",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      { actor: "anonymous", action: "request-lost-password", params: { loginId: "admin", emailAddress: "admin@example.com" } },
+      {
+        actor: "anonymous",
+        action: "request-lost-password",
+        params: { loginId: "admin", emailAddress: "admin@example.com" },
+      },
       { actor: "anonymous", action: "open-reset-link", params: {} },
     ],
-    behaviorMatcher: { action: /^PasswordResetApp\.(requestResetPasswordEmail|resetPasswordForm)$/ },
+    behaviorMatcher: {
+      action: /^PasswordResetApp\.(requestResetPasswordEmail|resetPasswordForm)$/,
+    },
   },
   {
     id: "S18-restricted-anonymous",
@@ -203,13 +242,21 @@ export const scenarios = [
 export const actionDefinitions = {
   login: {
     translateLegacy(step) {
-      return { method: "POST", path: "/users/login", form: { loginId: step.params.loginId, password: step.params.password } };
+      return {
+        method: "POST",
+        path: "/users/login",
+        form: { loginId: step.params.loginId, password: step.params.password },
+      };
     },
     translateYoram(step) {
       return {
         method: "POST",
         path: "/api/v1/auth/sign-in",
-        json: { identifier: step.params.loginId, password: step.params.password, rememberMe: false },
+        json: {
+          identifier: step.params.loginId,
+          password: step.params.password,
+          rememberMe: false,
+        },
       };
     },
     async handler(ctx) {
@@ -217,12 +264,24 @@ export const actionDefinitions = {
       const legacyResult = await legacySession.login(step.params);
       if (legacyResult.status >= 400) {
         entry.violations.push(
-          violation({ route: "/users/login", kind: "api", expected: "<3xx redirect>", actual: `status ${legacyResult.status}` }),
+          violation({
+            route: "/users/login",
+            kind: "api",
+            expected: "<3xx redirect>",
+            actual: `status ${legacyResult.status}`,
+          }),
         );
       }
       const yoramResult = await yoramSession.login(step.params);
       if (yoramResult.status >= 400) {
-        entry.violations.push(violation({ route: "/api/v1/auth/sign-in", kind: "api", expected: 200, actual: yoramResult.status }));
+        entry.violations.push(
+          violation({
+            route: "/api/v1/auth/sign-in",
+            kind: "api",
+            expected: 200,
+            actual: yoramResult.status,
+          }),
+        );
       }
     },
   },
@@ -255,7 +314,21 @@ export const actionDefinitions = {
   "view-init-page": {
     translateLegacy: () => ({ method: "GET", path: "/_init" }),
     translateYoram: () => ({ method: "GET", path: "/_init" }),
-    handler: anonymousPageAction("/_init"),
+    async handler(ctx) {
+      // Application.init recreates every repository, despite being a GET.
+      // Keep that test bootstrap away from the shared sweep's Git/SVN data.
+      const root = ctx.legacyRepositoryRoot;
+      const backup = mkdtempSync(path.join(path.dirname(root), ".init-repositories-"));
+      const saved = path.join(backup, "repo");
+      renameSync(root, saved);
+      try {
+        await anonymousPageAction("/_init")(ctx);
+      } finally {
+        rmSync(root, { recursive: true, force: true });
+        renameSync(saved, root);
+        rmSync(backup, { recursive: true });
+      }
+    },
   },
   "view-uikit-page": {
     translateLegacy: () => ({ method: "GET", path: "/_UIKit" }),
@@ -325,8 +398,13 @@ export const actionDefinitions = {
     },
     async handler(ctx) {
       const { step } = ctx;
-      const translation = { method: "GET", path: `/project/transfer/${step.params.id}/${step.params.key}` };
-      const { legacyResult, yoramResult } = await ctx.helpers.requestBoth(ctx, translation, { ...translation });
+      const translation = {
+        method: "GET",
+        path: `/project/transfer/${step.params.id}/${step.params.key}`,
+      };
+      const { legacyResult, yoramResult } = await ctx.helpers.requestBoth(ctx, translation, {
+        ...translation,
+      });
       pushStatusDivergence(ctx, translation.path, legacyResult, yoramResult);
     },
   },
@@ -340,16 +418,25 @@ export const actionDefinitions = {
       const { entry, legacySession, yoramSession } = ctx;
       for (const path of ["/logout", "/users/logout"]) {
         const legacyResult = await legacySession.request({ method: "GET", path });
-        if (legacyResult.status >= 400) entry.errors.push(`legacy logout failed: HTTP ${legacyResult.status} @ ${path}`);
+        if (legacyResult.status >= 400)
+          entry.errors.push(`legacy logout failed: HTTP ${legacyResult.status} @ ${path}`);
       }
-      const primed = await fetch(`${yoramSession.baseUrl}/api/auth/session`, { headers: { cookie: yoramSession.cookies } });
+      const primed = await fetch(`${yoramSession.baseUrl}/api/auth/session`, {
+        headers: { cookie: yoramSession.cookies },
+      });
       yoramSession.csrfToken = primed.headers.get("x-csrf-token") ?? yoramSession.csrfToken;
       const sessionCookies = primed.headers.getSetCookie?.() ?? [];
       if (sessionCookies.length > 0) {
         yoramSession.cookies = sessionCookies.map((cookie) => cookie.split(";")[0]).join("; ");
       }
-      const yoramResult = await yoramSession.request({ method: "POST", path: "/api/v1/auth/sign-out" });
-      if (yoramResult.status >= 400) entry.errors.push(`yoram logout failed: HTTP ${yoramResult.status} @ /api/v1/auth/sign-out`);
+      const yoramResult = await yoramSession.request({
+        method: "POST",
+        path: "/api/v1/auth/sign-out",
+      });
+      if (yoramResult.status >= 400)
+        entry.errors.push(
+          `yoram logout failed: HTTP ${yoramResult.status} @ /api/v1/auth/sign-out`,
+        );
     },
   },
 
@@ -379,15 +466,25 @@ export const actionDefinitions = {
     translateLegacy: () => ({ method: "GET", path: "/-_-api/v1/favoriteOrganizations" }),
     translateYoram: () => ({ method: "GET", path: "/api/v1/user/favorites/organizations" }),
     async handler(ctx) {
-      await requestCompatApi(ctx, "/-_-api/v1/favoriteOrganizations", "/api/v1/user/favorites/organizations");
+      await requestCompatApi(
+        ctx,
+        "/-_-api/v1/favoriteOrganizations",
+        "/api/v1/user/favorites/organizations",
+      );
     },
   },
   "get-title-heads": {
     translateLegacy(step) {
-      return { method: "GET", path: `/-_-api/v1/owners/${step.params.owner}/projects/${step.params.project}/titleHeads` };
+      return {
+        method: "GET",
+        path: `/-_-api/v1/owners/${step.params.owner}/projects/${step.params.project}/titleHeads`,
+      };
     },
     translateYoram(step) {
-      return { method: "GET", path: `/api/v1/owners/${step.params.owner}/projects/${step.params.project}/title-heads/find` };
+      return {
+        method: "GET",
+        path: `/api/v1/owners/${step.params.owner}/projects/${step.params.project}/title-heads/find`,
+      };
     },
     async handler(ctx) {
       const { step } = ctx;
@@ -415,7 +512,11 @@ export const actionDefinitions = {
       // functional contract is verified separately by oauth-authorize-contract.
       const { step } = ctx;
       const path = `/authenticate/${step.params.provider}`;
-      const { legacyResult, yoramResult } = await requestAnonymousBoth(ctx, { method: "GET", path }, { method: "GET", path });
+      const { legacyResult, yoramResult } = await requestAnonymousBoth(
+        ctx,
+        { method: "GET", path },
+        { method: "GET", path },
+      );
       if (statusBucket(legacyResult.status) === statusBucket(yoramResult.status)) return;
       ctx.entry.violations.push(
         violation({
@@ -442,7 +543,11 @@ export const actionDefinitions = {
     async handler(ctx) {
       const { step } = ctx;
       const path = `/authenticate/${step.params.provider}/denied`;
-      const { legacyResult, yoramResult } = await requestAnonymousBoth(ctx, { method: "GET", path }, { method: "GET", path });
+      const { legacyResult, yoramResult } = await requestAnonymousBoth(
+        ctx,
+        { method: "GET", path },
+        { method: "GET", path },
+      );
       if (statusBucket(legacyResult.status) === statusBucket(yoramResult.status)) return;
       ctx.entry.violations.push(
         violation({
@@ -477,9 +582,12 @@ export const actionDefinitions = {
       const result = await yoramSession.request({ method: "GET", path, redirect: "manual" });
       const candidate =
         (result.location && isProviderAuthorizeUrl(result.location) && result.location) ||
-        ((result.body ?? "").match(/https?:\/\/[^\s"'<>]*oauth\/authorize[^\s"'<>]*/iu)?.[0] ?? null);
+        ((result.body ?? "").match(/https?:\/\/[^\s"'<>]*oauth\/authorize[^\s"'<>]*/iu)?.[0] ??
+          null);
       if (!candidate) {
-        throw new HarnessError(`oauth-authorize-contract: no provider authorize URL reachable or embedded for GET ${path} (status ${result.status})`);
+        throw new HarnessError(
+          `oauth-authorize-contract: no provider authorize URL reachable or embedded for GET ${path} (status ${result.status})`,
+        );
       }
       let url;
       try {
@@ -487,7 +595,9 @@ export const actionDefinitions = {
       } catch {
         throw new HarnessError(`oauth-authorize-contract: unparseable authorize URL: ${candidate}`);
       }
-      const missing = ["client_id", "state", "redirect_uri"].filter((key) => !url.searchParams.get(key));
+      const missing = ["client_id", "state", "redirect_uri"].filter(
+        (key) => !url.searchParams.get(key),
+      );
       if (missing.length > 0 || !isProviderAuthorizeUrl(url.href)) {
         entry.violations.push(
           violation({
@@ -503,10 +613,28 @@ export const actionDefinitions = {
   },
   "post-compat-translation": {
     translateLegacy(step) {
-      return { method: "POST", path: "/-_-api/v1/translation", json: { owner: step.params.owner, projectName: step.params.project, type: "issue", number: 1 } };
+      return {
+        method: "POST",
+        path: "/-_-api/v1/translation",
+        json: {
+          owner: step.params.owner,
+          projectName: step.params.project,
+          type: "issue",
+          number: 1,
+        },
+      };
     },
     translateYoram(step) {
-      return { method: "POST", path: `/api/v1/translation`, json: { owner: step.params.owner, projectName: step.params.project, type: "issue", number: 1 } };
+      return {
+        method: "POST",
+        path: `/api/v1/translation`,
+        json: {
+          owner: step.params.owner,
+          projectName: step.params.project,
+          type: "issue",
+          number: 1,
+        },
+      };
     },
     async handler(ctx) {
       const { helpers } = ctx;
@@ -517,14 +645,35 @@ export const actionDefinitions = {
     },
   },
   "post-compat-default-login-page": {
-    translateLegacy: () => ({ method: "POST", path: "/-_-api/v1/user/defultLoginPage", form: { defaultLoginPage: "" } }),
-    translateYoram: () => ({ method: "POST", path: "/api/v1/user/default-login-page", form: { defaultLoginPage: "" } }),
+    translateLegacy: () => ({
+      method: "POST",
+      path: "/-_-api/v1/user/defultLoginPage",
+      form: { defaultLoginPage: "" },
+    }),
+    translateYoram: () => ({
+      method: "POST",
+      path: "/api/v1/user/default-login-page",
+      form: { defaultLoginPage: "" },
+    }),
     async handler(ctx) {
       const { entry, helpers } = ctx;
-      const legacy = { method: "POST", path: "/-_-api/v1/user/defultLoginPage", form: { defaultLoginPage: "" } };
-      const yoram = { method: "POST", path: "/api/v1/user/default-login-page", form: { defaultLoginPage: "" } };
+      const legacy = {
+        method: "POST",
+        path: "/-_-api/v1/user/defultLoginPage",
+        form: { defaultLoginPage: "" },
+      };
+      const yoram = {
+        method: "POST",
+        path: "/api/v1/user/default-login-page",
+        form: { defaultLoginPage: "" },
+      };
       const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacy, yoram);
-      pushStatusDivergence(ctx, "/user/editform/:tabId".replace(":tabId", "defultLoginPage"), legacyResult, yoramResult);
+      pushStatusDivergence(
+        ctx,
+        "/user/editform/:tabId".replace(":tabId", "defultLoginPage"),
+        legacyResult,
+        yoramResult,
+      );
     },
   },
   "post-compat-user-invalid": {
@@ -539,24 +688,56 @@ export const actionDefinitions = {
     },
   },
   "post-compat-token-invalid": {
-    translateLegacy: () => ({ method: "POST", path: "/-_-api/v1/users/token", json: { id: "no-such-parity-user", password: "definitely-wrong" } }),
-    translateYoram: () => ({ method: "POST", path: "/api/v1/auth/token", json: { id: "no-such-parity-user", password: "definitely-wrong" } }),
+    translateLegacy: () => ({
+      method: "POST",
+      path: "/-_-api/v1/users/token",
+      json: { id: "no-such-parity-user", password: "definitely-wrong" },
+    }),
+    translateYoram: () => ({
+      method: "POST",
+      path: "/api/v1/auth/token",
+      json: { id: "no-such-parity-user", password: "definitely-wrong" },
+    }),
     async handler(ctx) {
       const { entry, helpers } = ctx;
-      const legacy = { method: "POST", path: "/-_-api/v1/users/token", json: { id: "no-such-parity-user", password: "definitely-wrong" } };
-      const yoram = { method: "POST", path: "/api/v1/auth/token", json: { id: "no-such-parity-user", password: "definitely-wrong" } };
+      const legacy = {
+        method: "POST",
+        path: "/-_-api/v1/users/token",
+        json: { id: "no-such-parity-user", password: "definitely-wrong" },
+      };
+      const yoram = {
+        method: "POST",
+        path: "/api/v1/auth/token",
+        json: { id: "no-such-parity-user", password: "definitely-wrong" },
+      };
       const { legacyResult, yoramResult } = await requestAnonymousBoth(ctx, legacy, yoram);
       void entry;
       pushStatusDivergence(ctx, legacy.path, legacyResult, yoramResult);
     },
   },
   "patch-compat-admin-user-missing": {
-    translateLegacy: () => ({ method: "PATCH", path: "/-_-api/v1/admin/users/no-such-parity-user", json: { state: "LOCKED" } }),
-    translateYoram: () => ({ method: "PATCH", path: "/api/v1/admin/users/no-such-parity-user", json: { state: "LOCKED" } }),
+    translateLegacy: () => ({
+      method: "PATCH",
+      path: "/-_-api/v1/admin/users/no-such-parity-user",
+      json: { state: "LOCKED" },
+    }),
+    translateYoram: () => ({
+      method: "PATCH",
+      path: "/api/v1/admin/users/no-such-parity-user",
+      json: { state: "LOCKED" },
+    }),
     async handler(ctx) {
       const { entry, helpers } = ctx;
-      const legacy = { method: "PATCH", path: "/-_-api/v1/admin/users/no-such-parity-user", json: { state: "LOCKED" } };
-      const yoram = { method: "PATCH", path: "/api/v1/admin/users/no-such-parity-user", json: { state: "LOCKED" } };
+      const legacy = {
+        method: "PATCH",
+        path: "/-_-api/v1/admin/users/no-such-parity-user",
+        json: { state: "LOCKED" },
+      };
+      const yoram = {
+        method: "PATCH",
+        path: "/api/v1/admin/users/no-such-parity-user",
+        json: { state: "LOCKED" },
+      };
       const { legacyResult, yoramResult } = await helpers.requestBoth(ctx, legacy, yoram);
       pushStatusDivergence(ctx, entry.behaviorIds[0] ?? legacy.path, legacyResult, yoramResult);
     },
@@ -567,10 +748,18 @@ export const actionDefinitions = {
   // mail carries its own absolute reset link (ports differ per instance).
   "request-lost-password": {
     translateLegacy(step) {
-      return { method: "POST", path: "/lostPassword", form: { loginId: step.params.loginId, emailAddress: step.params.emailAddress } };
+      return {
+        method: "POST",
+        path: "/lostPassword",
+        form: { loginId: step.params.loginId, emailAddress: step.params.emailAddress },
+      };
     },
     translateYoram(step) {
-      return { method: "POST", path: "/lostPassword", form: { loginId: step.params.loginId, emailAddress: step.params.emailAddress } };
+      return {
+        method: "POST",
+        path: "/lostPassword",
+        form: { loginId: step.params.loginId, emailAddress: step.params.emailAddress },
+      };
     },
     async handler(ctx) {
       const { step, state, helpers } = ctx;
@@ -578,7 +767,11 @@ export const actionDefinitions = {
       // Deterministic replay target: the newest reset mail must be addressed
       // to THIS requester.
       state.resetEmailAddress = step.params.emailAddress ?? "admin@example.com";
-      await helpers.requestBoth(ctx, this.translateLegacy(step, step.params), this.translateYoram(step, step.params));
+      await helpers.requestBoth(
+        ctx,
+        this.translateLegacy(step, step.params),
+        this.translateYoram(step, step.params),
+      );
     },
   },
   "open-reset-link": {
@@ -594,7 +787,10 @@ export const actionDefinitions = {
       const mails = await helpers.waitForMail(state.mailCountBefore ?? 0);
       const outcomes = {};
       const evidence = [];
-      for (const [side, baseUrl] of [["legacy", options.legacyUrl], ["yoram", yoramBaseUrl]]) {
+      for (const [side, baseUrl] of [
+        ["legacy", options.legacyUrl],
+        ["yoram", yoramBaseUrl],
+      ]) {
         const base = new URL(baseUrl);
         const expectedPort = base.port || (base.protocol === "https:" ? "443" : "80");
         const mail = mails.find((raw) => {
@@ -606,7 +802,9 @@ export const actionDefinitions = {
           });
         });
         if (!mail) {
-          entry.errors.push(`open-reset-link: no newest ${side} reset mail addressed to ${recipient}`);
+          entry.errors.push(
+            `open-reset-link: no newest ${side} reset mail addressed to ${recipient}`,
+          );
           evidence.push({ side, recipient, candidates: 0, error: "no matching mail" });
           continue;
         }
@@ -621,16 +819,36 @@ export const actionDefinitions = {
         const attemptLog = [];
         for (const link of links) {
           const url = new URL(link);
-          const result = await helpers.sendRaw(ctx, side, { method: "GET", path: `${url.pathname}${url.search}` });
+          const result = await helpers.sendRaw(ctx, side, {
+            method: "GET",
+            path: `${url.pathname}${url.search}`,
+          });
           status = result.status;
-          attemptLog.push({ url: `${url.pathname}${url.search}`, status, bodySnippet: String(result.body ?? "").slice(0, 160) });
+          attemptLog.push({
+            url: `${url.pathname}${url.search}`,
+            status,
+            bodySnippet: String(result.body ?? "").slice(0, 160),
+          });
           if (status < 400) break;
         }
         outcomes[side] = status;
         evidence.push({ side, recipient, mailDate, links: links.length, attempts: attemptLog });
       }
-      if (outcomes.legacy !== undefined && outcomes.yoram !== undefined && ((outcomes.legacy >= 400) !== (outcomes.yoram >= 400) || (outcomes.legacy >= 400 && outcomes.yoram >= 400 && outcomes.legacy !== outcomes.yoram))) {
-        entry.violations.push(violation({ route: "/resetPassword?s=...", behaviorId: entry.behaviorIds[0] ?? null, kind: "api", expected: { status: outcomes.legacy }, actual: { status: outcomes.yoram, replayEvidence: evidence } }));
+      if (
+        outcomes.legacy !== undefined &&
+        outcomes.yoram !== undefined &&
+        (outcomes.legacy >= 400 !== outcomes.yoram >= 400 ||
+          (outcomes.legacy >= 400 && outcomes.yoram >= 400 && outcomes.legacy !== outcomes.yoram))
+      ) {
+        entry.violations.push(
+          violation({
+            route: "/resetPassword?s=...",
+            behaviorId: entry.behaviorIds[0] ?? null,
+            kind: "api",
+            expected: { status: outcomes.legacy },
+            actual: { status: outcomes.yoram, replayEvidence: evidence },
+          }),
+        );
       }
     },
   },
@@ -647,10 +865,14 @@ const normalizeLocation = (location) => {
   }
 };
 
-const statusBucket = (status) => (status < 300 ? "2xx" : status < 400 ? "3xx" : status < 500 ? "4xx" : "5xx");
+const statusBucket = (status) =>
+  status < 300 ? "2xx" : status < 400 ? "3xx" : status < 500 ? "4xx" : "5xx";
 
 function freshSessions(ctx) {
-  return { legacy: new LegacySession(ctx.options.legacyUrl), yoram: new YoramSession(ctx.yoramBaseUrl) };
+  return {
+    legacy: new LegacySession(ctx.options.legacyUrl),
+    yoram: new YoramSession(ctx.yoramBaseUrl),
+  };
 }
 
 // Request both sides WITHOUT session cookies (anonymous screens). Mirrors
@@ -664,10 +886,14 @@ async function requestAnonymousBoth(ctx, legacyTranslation, yoramTranslation) {
   const yoramFailed = yoramResult.status >= 400;
   const agreedFailure = legacyFailed && yoramFailed && legacyResult.status === yoramResult.status;
   if (legacyFailed && !agreedFailure) {
-    entry.errors.push(`legacy ${step.action} failed: HTTP ${legacyResult.status} @ ${legacyTranslation.path}`);
+    entry.errors.push(
+      `legacy ${step.action} failed: HTTP ${legacyResult.status} @ ${legacyTranslation.path}`,
+    );
   }
   if (yoramFailed && !agreedFailure) {
-    entry.errors.push(`yoram ${step.action} failed: HTTP ${yoramResult.status} @ ${yoramTranslation.path}`);
+    entry.errors.push(
+      `yoram ${step.action} failed: HTTP ${yoramResult.status} @ ${yoramTranslation.path}`,
+    );
   }
   return { legacyResult, yoramResult, sessions };
 }
@@ -677,7 +903,9 @@ function pushStatusDivergence(ctx, route, legacyResult, yoramResult) {
   const expected = statusBucket(legacyResult.status);
   const actual = statusBucket(yoramResult.status);
   if (expected !== actual) {
-    ctx.entry.violations.push(violation({ route, behaviorId: ctx.step.behaviorId ?? null, kind: "api", expected, actual }));
+    ctx.entry.violations.push(
+      violation({ route, behaviorId: ctx.step.behaviorId ?? null, kind: "api", expected, actual }),
+    );
   }
 }
 
@@ -735,7 +963,11 @@ function anonymousPageAction(legacyPath) {
 // Authenticated page read via the shared sessions.
 function sessionPageAction(legacyPath) {
   return async (ctx) => {
-    const { legacyResult, yoramResult } = await ctx.helpers.requestBoth(ctx, { method: "GET", path: legacyPath }, { method: "GET", path: legacyPath });
+    const { legacyResult, yoramResult } = await ctx.helpers.requestBoth(
+      ctx,
+      { method: "GET", path: legacyPath },
+      { method: "GET", path: legacyPath },
+    );
     pushStatusDivergence(ctx, legacyPath, legacyResult, yoramResult);
     await renderDomTargetPath(ctx, legacyPath, {
       selector: legacyPath === "/projectform" ? ".project-page-wrap" : undefined,

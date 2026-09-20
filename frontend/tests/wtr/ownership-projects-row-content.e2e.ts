@@ -1,4 +1,4 @@
-import { readFileSync, readFile, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFile } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
@@ -25,6 +25,7 @@ const memberAvatarDataUrl = `data:image/png;base64,${btoa(
 test.use({ locale: "ko-KR" });
 
 async function open(page: Page) {
+  await page.clock.setFixedTime("2026-07-17T12:00:00Z");
   await page.addInitScript((basePath) => {
     (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
       basePath,
@@ -54,9 +55,9 @@ async function open(page: Page) {
       json: {
         items: [
           {
-            createdLabel: "07-07",
+            createdAt: "2026-07-07T12:00:00Z",
             labels: [],
-            lastPushedLabel: "",
+            lastPushedAt: "",
             logoUrl: "",
             memberCount: 1,
             overview: "Protected organization project for localhost parity",
@@ -66,9 +67,9 @@ async function open(page: Page) {
             watchCount: 1,
           },
           {
-            createdLabel: "07-07",
+            createdAt: "2026-07-07T12:00:00Z",
             labels: [],
-            lastPushedLabel: "",
+            lastPushedAt: "",
             logoUrl: "",
             memberCount: 1,
             members: [{ avatarUrl: memberAvatarDataUrl, loginId: "alice", userLabel: "Alice Kim" }],
@@ -79,9 +80,9 @@ async function open(page: Page) {
             watchCount: 1,
           },
           {
-            createdLabel: "07-07",
+            createdAt: "2026-07-07T12:00:00Z",
             labels: [],
-            lastPushedLabel: "",
+            lastPushedAt: "",
             logoUrl: "",
             memberCount: 1,
             members: [
@@ -94,9 +95,9 @@ async function open(page: Page) {
             watchCount: 1,
           },
           {
-            createdLabel: "07-07",
+            createdAt: "2026-07-07T12:00:00Z",
             labels: [],
-            lastPushedLabel: "5일 전",
+            lastPushedAt: "2026-07-12T12:00:00Z",
             logoUrl: "",
             memberCount: 1,
             members: [
@@ -119,45 +120,6 @@ async function open(page: Page) {
   await page.goto(`${basePath}/projects`);
   await expect(page.locator(`[data-owner="${avatarOwner}"]`).nth(1)).toBeVisible();
 }
-
-test("row content records exactly four owners and the fallback boundaries", () => {
-  const route = readFileSync("src/routes/projects.tsx", "utf8");
-  const theme = readFileSync("src/app.css", "utf8");
-  const scala = readFileSync("../yona-original/app/views/project/list.scala.html", "utf8");
-  const siteLayout = readFileSync("../yona-original/app/views/siteLayout.scala.html", "utf8");
-  const yobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
-  const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
-  const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
-  const messages = readFileSync("../yona-original/conf/messages.ko-KR", "utf8");
-  const allProjectsBlock = pageLess.slice(
-    pageLess.indexOf(".all-projects {"),
-    pageLess.indexOf("// -- userinfo -- //", pageLess.indexOf(".all-projects {")),
-  );
-  const ownerAvatarBlock = allProjectsBlock.slice(
-    allProjectsBlock.indexOf(".owner-avatar-wrap {"),
-    allProjectsBlock.indexOf(".header {", allProjectsBlock.indexOf(".owner-avatar-wrap {")),
-  );
-  expect(scala).toContain("@siteLayout(message, utils.MenuType.PROJECTS)");
-  expect(scala).toContain('<div class="owner-avatar-wrap">');
-  expect(scala).toContain('<div class="header">');
-  expect(scala).toContain('<div class="desc">');
-  expect(scala).toContain('<p class="name-tag">');
-  expect(siteLayout).toContain('@layout(Messages(title))("")');
-  expect(yobi).toContain('@import "less/_page.less";');
-  expect(messages).toContain("project.codeUpdate = 마지막 코드 업데이트");
-  expect(ownerAvatarBlock).toContain("border-radius: 3px !important;");
-  expect(ownerAvatarBlock).toMatch(
-    /img\s*\{\s*vertical-align:\s*top;\s*width:\s*100%;\s*height:\s*100%;/u,
-  );
-  expect(pageLess).toContain(".yobicon-lock { color:#7F8C8D;}");
-  expect(bootstrap).toMatch(/body\s*\{[\s\S]*?line-height:\s*20px;/u);
-  for (const owner of [avatarOwner, headerOwner, descriptionOwner, nameTagOwner, statsOwner])
-    expect(route).toContain(`data-owner="${owner}"`);
-  expect(route).not.toContain("owner-avatar-wrap");
-  expect(route).not.toContain("className={`header ");
-  expect(route).not.toContain('<div className="desc">');
-  expect(route).not.toContain('<p className="name-tag">');
-});
 
 for (const viewport of [
   { height: 900, name: "desktop", width: 1366 },

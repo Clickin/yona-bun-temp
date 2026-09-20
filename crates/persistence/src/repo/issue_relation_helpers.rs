@@ -549,11 +549,7 @@ impl AppRepositoryImpl<'_> {
         Ok(())
     }
 
-    /// Next number for a per-project sequence, computed from the actual rows
-    /// (`MAX(number) + 1`) instead of materializing every row. Reads real rows
-    /// so deleted/rolled-back numbers are reused; the `last_*_number` counter
-    /// writes in the mutation paths stay untouched (they track the allocated
-    /// high-water mark).
+    /// Pull requests use the highest existing number, as in legacy PullRequest.
     async fn next_number_for_table(
         &self,
         table: &str,
@@ -579,13 +575,73 @@ impl AppRepositoryImpl<'_> {
             .unwrap_or(1))
     }
 
+    /// Reserve the project high-water mark before returning it. The write locks
+    /// the project until the read completes, including across server processes.
+    async fn reserve_project_number(
+        &self,
+        project_id: i64,
+        table: &str,
+        counter: &str,
+    ) -> Result<i64, DbErr> {
+        let backend = self.db.get_database_backend();
+        let placeholder = &sql_placeholders(backend, 1)[0];
+        let maximum =
+            format!("(SELECT COALESCE(MAX(number), 0) FROM {table} WHERE project_id = project.id)");
+        let transaction = self.db.begin().await?;
+        transaction
+            .execute(Statement::from_sql_and_values(
+                backend,
+                format!(
+                    "UPDATE project SET {counter} = CASE \
+                     WHEN COALESCE({counter}, 0) >= {maximum} \
+                     THEN COALESCE({counter}, 0) ELSE {maximum} END + 1 \
+                     WHERE id = {placeholder}"
+                ),
+                vec![project_id.into()],
+            ))
+            .await?;
+        let row = transaction
+            .query_one(Statement::from_sql_and_values(
+                backend,
+                format!("SELECT {counter} AS number FROM project WHERE id = {placeholder}"),
+                vec![project_id.into()],
+            ))
+            .await?
+            .ok_or_else(|| DbErr::Custom("project missing during number allocation".to_string()))?;
+        let number = row.try_get::<i64>("", "number")?;
+        transaction.commit().await?;
+        Ok(number)
+    }
+
+    pub(super) async fn advance_project_number(
+        &self,
+        project_id: i64,
+        counter: &str,
+        number: i64,
+    ) -> Result<(), DbErr> {
+        let backend = self.db.get_database_backend();
+        let placeholders = sql_placeholders(backend, 3);
+        self.db
+            .execute(Statement::from_sql_and_values(
+                backend,
+                format!(
+                    "UPDATE project SET {counter} = {} WHERE id = {} \
+                     AND COALESCE({counter}, 0) < {}",
+                    placeholders[0], placeholders[1], placeholders[2]
+                ),
+                vec![number.into(), project_id.into(), number.into()],
+            ))
+            .await?;
+        Ok(())
+    }
+
     pub(super) async fn next_issue_number(&self, project_id: i64) -> Result<i64, DbErr> {
-        self.next_number_for_table("issue", "number", "project_id", project_id)
+        self.reserve_project_number(project_id, "issue", "last_issue_number")
             .await
     }
 
     pub(super) async fn next_posting_number(&self, project_id: i64) -> Result<i64, DbErr> {
-        self.next_number_for_table("posting", "number", "project_id", project_id)
+        self.reserve_project_number(project_id, "posting", "last_posting_number")
             .await
     }
 

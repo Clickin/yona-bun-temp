@@ -9,7 +9,8 @@ import { violation } from "../report.mjs";
 function userEditformTabDisposition(tab) {
   return {
     classification: "IMPLEMENTATION_DIFFERENCE",
-    evidence: "The legacy empty tab POST is not a supported React mutation; user settings are owned by the canonical workspace REST surface.",
+    evidence:
+      "The legacy empty tab POST is not a supported React mutation; user settings are owned by the canonical workspace REST surface.",
     signature: (ctx) => ({
       scenarioId: "U22-user-profile-edit-revert",
       action: "save-user-editform-tab",
@@ -62,7 +63,8 @@ export const scenarios = [
         // difference, the sweep adapter carries sessions not tokens.
         expectedDisposition: {
           classification: "IMPLEMENTATION_DIFFERENCE",
-          evidence: "yona-original/app/controllers/api/UserApi.java:295-305 vs AGENTS.md canonical /api/v1 REST contract",
+          evidence:
+            "yona-original/app/controllers/api/UserApi.java:295-305 vs AGENTS.md canonical /api/v1 REST contract",
           signature: {
             scenarioId: "U2-user-issues-compat-api",
             action: "get-user-issues-compat",
@@ -95,7 +97,10 @@ export const scenarios = [
       { actor: "admin", action: "view-notifications", params: { path: "/notification" } },
     ],
     // learnmore expand has no inventory row; the list pages carry the coverage.
-    behaviorMatcher: { action: /^(NotificationApp|Application)\.notifications$/, route: /^GET \/notifications?$/ },
+    behaviorMatcher: {
+      action: /^(NotificationApp|Application)\.notifications$/,
+      route: /^GET \/notifications?$/,
+    },
   },
   {
     id: "U4-global-search",
@@ -122,7 +127,10 @@ export const scenarios = [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
       { actor: "admin", action: "view-org-home", params: { organization: "weblabs" } },
     ],
-    behaviorMatcher: { action: /^OrganizationApp\.organization$/, route: /^GET \/organizations\/:organizationName$/ },
+    behaviorMatcher: {
+      action: /^OrganizationApp\.organization$/,
+      route: /^GET \/organizations\/:organizationName$/,
+    },
   },
   {
     id: "U7-user-profile",
@@ -150,7 +158,10 @@ export const scenarios = [
       { actor: "admin", action: "view-new-direct-issue-form", params: {} },
       { actor: "admin", action: "view-new-direct-issue-form", params: { mine: true } },
     ],
-    behaviorMatcher: { action: /^IssueApp\.newDirect(My)?IssueForm$/, route: /^GET \/user\/issues\/new/ },
+    behaviorMatcher: {
+      action: /^IssueApp\.newDirect(My)?IssueForm$/,
+      route: /^GET \/user\/issues\/new/,
+    },
   },
   {
     id: "U10-user-statistics-api",
@@ -166,19 +177,53 @@ export const scenarios = [
     title: "view organization sub-screens (boards/pullrequests/members/forms/search)",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      { actor: "admin", action: "view-org-subpage", params: { organization: "weblabs", page: "boards" } },
-      { actor: "admin", action: "view-org-subpage", params: { organization: "weblabs", page: "pullrequests" } },
-      { actor: "admin", action: "view-org-subpage", params: { organization: "weblabs", page: "closedPullrequests" } },
-      { actor: "admin", action: "view-org-subpage", params: { organization: "weblabs", page: "members" } },
-      { actor: "admin", action: "view-org-subpage", params: { organization: "weblabs", page: "issues" } },
-      { actor: "admin", action: "view-org-subpage", params: { organization: "weblabs", page: "deleteForm" } },
-      { actor: "admin", action: "view-org-subpage", params: { organization: "weblabs", page: "settingform" } },
-      { actor: "admin", action: "view-org-subpage", params: { organization: "weblabs", page: "search", query: "sample" } },
+      {
+        actor: "admin",
+        action: "view-org-subpage",
+        params: { organization: "weblabs", page: "boards" },
+      },
+      {
+        actor: "admin",
+        action: "view-org-subpage",
+        params: { organization: "weblabs", page: "pullrequests" },
+      },
+      {
+        actor: "admin",
+        action: "view-org-subpage",
+        params: { organization: "weblabs", page: "closedPullrequests" },
+      },
+      {
+        actor: "admin",
+        action: "view-org-subpage",
+        params: { organization: "weblabs", page: "members" },
+      },
+      {
+        actor: "admin",
+        action: "view-org-subpage",
+        params: { organization: "weblabs", page: "issues" },
+      },
+      {
+        actor: "admin",
+        action: "view-org-subpage",
+        params: { organization: "weblabs", page: "deleteForm" },
+      },
+      {
+        actor: "admin",
+        action: "view-org-subpage",
+        params: { organization: "weblabs", page: "settingform" },
+      },
+      {
+        actor: "admin",
+        action: "view-org-subpage",
+        params: { organization: "weblabs", page: "search", query: "sample" },
+      },
       { actor: "admin", action: "view-new-org-form", params: {} },
     ],
     behaviorMatcher: {
-      action: /^(BoardApp\.organizationBoards|OrganizationApp\.(organizationPullRequests|organizationClosedPullRequests|members|deleteForm|settingForm|newForm)|IssueApp\.organizationIssues|SearchApp\.searchInAGroup)$/,
-      route: /^(GET \/organizations\/new)$|(GET \/organizations\/:organizationName(\/(boards|pullrequests|closedPullrequests|members|deleteForm|settingform|issues|search))?$)/,
+      action:
+        /^(BoardApp\.organizationBoards|OrganizationApp\.(organizationPullRequests|organizationClosedPullRequests|members|deleteForm|settingForm|newForm)|IssueApp\.organizationIssues|SearchApp\.searchInAGroup)$/,
+      route:
+        /^(GET \/organizations\/new)$|(GET \/organizations\/:organizationName(\/(boards|pullrequests|closedPullrequests|members|deleteForm|settingform|issues|search))?$)/,
     },
   },
   {
@@ -186,9 +231,21 @@ export const scenarios = [
     title: "toggle favorite issue/project/organization twice (self-reverting)",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      { actor: "admin", action: "toggle-favorite", params: { target: "issue", owner: "admin", project: "sample", issueNumber: 1 } },
-      { actor: "admin", action: "toggle-favorite", params: { target: "project", owner: "admin", project: "sample" } },
-      { actor: "admin", action: "toggle-favorite", params: { target: "organization", organization: "weblabs" } },
+      {
+        actor: "admin",
+        action: "toggle-favorite",
+        params: { target: "issue", owner: "admin", project: "sample", issueNumber: 1 },
+      },
+      {
+        actor: "admin",
+        action: "toggle-favorite",
+        params: { target: "project", owner: "admin", project: "sample" },
+      },
+      {
+        actor: "admin",
+        action: "toggle-favorite",
+        params: { target: "organization", organization: "weblabs" },
+      },
     ],
     behaviorMatcher: {
       action: /^UserApi\.toggleFoverite(Issue|Project|Organization)$/,
@@ -213,7 +270,11 @@ export const scenarios = [
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
       { actor: "admin", action: "watch-project", params: { owner: "admin", project: "sample" } },
-      { actor: "admin", action: "toggle-noti-watch", params: { owner: "admin", project: "sample", notiType: "NEW_ISSUE" } },
+      {
+        actor: "admin",
+        action: "toggle-noti-watch",
+        params: { owner: "admin", project: "sample", notiType: "NEW_ISSUE" },
+      },
       { actor: "admin", action: "unwatch-project", params: { owner: "admin", project: "sample" } },
     ],
     behaviorMatcher: {
@@ -280,8 +341,10 @@ export const scenarios = [
       { actor: "admin", action: "view-site-screen", params: { screen: "update" } },
     ],
     behaviorMatcher: {
-      action: /^SiteApp\.(userList|projectList|data|diagnose|issueList|postList|noAvatarUsers|writeMail|massMail|update)$/,
-      route: /^GET \/sites\/(userList|projectList|data|diagnostic|issueList|postList|noAvatarUsers|mail|massmail|update)$/,
+      action:
+        /^SiteApp\.(userList|projectList|data|diagnose|issueList|postList|noAvatarUsers|writeMail|massMail|update)$/,
+      route:
+        /^GET \/sites\/(userList|projectList|data|diagnostic|issueList|postList|noAvatarUsers|mail|massmail|update)$/,
     },
   },
   {
@@ -292,11 +355,17 @@ export const scenarios = [
       { actor: "admin", action: "view-files-list", params: {} },
       { actor: "admin", action: "get-users-directory", params: {} },
       { actor: "admin", action: "get-user-sidebar", params: {}, behaviorId: "B-0185" },
-      { actor: "admin", action: "check-email-exists", params: { email: "nobody@parity.example.com" } },
+      {
+        actor: "admin",
+        action: "check-email-exists",
+        params: { email: "nobody@parity.example.com" },
+      },
     ],
     behaviorMatcher: {
-      action: /^(AttachmentApp\.getFileList|UserApp\.users|Application\.sidebar|UserApp\.usermenuTabContentList|UserApp\.isEmailExist)$/,
-      route: /^(GET \/files$|GET \/-_-api\/v1\/users$|GET \/user\/sidebar$|GET \/user\/usermenuTabContentList$|GET \/user\/isEmailExist)/,
+      action:
+        /^(AttachmentApp\.getFileList|UserApp\.users|Application\.sidebar|UserApp\.usermenuTabContentList|UserApp\.isEmailExist)$/,
+      route:
+        /^(GET \/files$|GET \/-_-api\/v1\/users$|GET \/user\/sidebar$|GET \/user\/usermenuTabContentList$|GET \/user\/isEmailExist)/,
     },
   },
   {
@@ -312,7 +381,11 @@ export const scenarios = [
       { actor: "carol", action: "enroll-organization", params: {} },
       { actor: "carol", action: "cancel-organization-enroll", params: {} },
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      { actor: "admin", action: "update-organization-info", params: { description: "parity temp description" } },
+      {
+        actor: "admin",
+        action: "update-organization-info",
+        params: { description: "parity temp description" },
+      },
       { actor: "admin", action: "update-organization-info", params: { description: "" } },
       { actor: "bob", action: "login", params: { loginId: "bob", password: "bobbob" } },
       {
@@ -321,7 +394,8 @@ export const scenarios = [
         params: {},
         expectedDisposition: {
           classification: "LEGACY_BUG_NOT_REPRODUCED",
-          evidence: "yona-original/app/controllers/AccessControl.java:176-197 and OrganizationApp.java:297-311 authorize the wrong organization-leave branch",
+          evidence:
+            "yona-original/app/controllers/AccessControl.java:176-197 and OrganizationApp.java:297-311 authorize the wrong organization-leave branch",
           signature: (ctx) => ({
             scenarioId: "U20-throwaway-org-lifecycle",
             action: "leave-organization",
@@ -329,12 +403,20 @@ export const scenarios = [
             events: [
               {
                 side: "legacy",
-                request: { method: "DELETE", route: `/organizations/${ctx.state.orgName}/member/leave`, payload: null },
+                request: {
+                  method: "DELETE",
+                  route: `/organizations/${ctx.state.orgName}/member/leave`,
+                  payload: null,
+                },
                 response: { status: 403 },
               },
               {
                 side: "yoram",
-                request: { method: "POST", route: `/api/v1/organizations/${ctx.state.orgName}/leave`, payload: null },
+                request: {
+                  method: "POST",
+                  route: `/api/v1/organizations/${ctx.state.orgName}/leave`,
+                  payload: null,
+                },
                 response: { status: 200 },
               },
             ],
@@ -348,7 +430,8 @@ export const scenarios = [
       { actor: "admin", action: "delete-organization", params: {} },
     ],
     behaviorMatcher: {
-      action: /^(OrganizationApp\.(newOrganization|addMember|editMember|deleteMember|leave|updateOrganizationInfo|deleteOrganization)|EnrollOrganizationApp\.(enroll|cancelEnroll))$/,
+      action:
+        /^(OrganizationApp\.(newOrganization|addMember|editMember|deleteMember|leave|updateOrganizationInfo|deleteOrganization)|EnrollOrganizationApp\.(enroll|cancelEnroll))$/,
       route: /^(POST \/organizations\/new$)|^(POST|DELETE) \/organizations\/:organizationName/,
     },
   },
@@ -368,8 +451,10 @@ export const scenarios = [
       { actor: "admin", action: "delete-site-user", params: {} },
     ],
     behaviorMatcher: {
-      action: /^(UserApp\.newUser|UserApp\.resetUserPasswordBySiteManager|SiteApp\.(toggleAccountLock|toggleGuestMode|toggleSiteAdminRole|unwatchUpdate|deleteUser))$/,
-      route: /^(POST \/users\/signup$)|^(POST \/sites\/(toggleAccountLock|toggleGuestMode|unwatchUpdate|toggleSiteAdminRole\/:loginId)$)|(DELETE \/sites\/user\/delete)|^(POST \/:user$)/,
+      action:
+        /^(UserApp\.newUser|UserApp\.resetUserPasswordBySiteManager|SiteApp\.(toggleAccountLock|toggleGuestMode|toggleSiteAdminRole|unwatchUpdate|deleteUser))$/,
+      route:
+        /^(POST \/users\/signup$)|^(POST \/sites\/(toggleAccountLock|toggleGuestMode|unwatchUpdate|toggleSiteAdminRole\/:loginId)$)|(DELETE \/sites\/user\/delete)|^(POST \/:user$)/,
     },
   },
   {
@@ -408,7 +493,8 @@ export const scenarios = [
     ],
     behaviorMatcher: {
       action: /^(UserApp\.(sendValidationEmail|confirmEmail))$/,
-      route: /^(POST|GET) \/user\/email\/(sendValidationEmail\/:emailId|confirm\/:emailId\/:token)$/,
+      route:
+        /^(POST|GET) \/user\/email\/(sendValidationEmail\/:emailId|confirm\/:emailId\/:token)$/,
     },
   },
   {
@@ -433,7 +519,11 @@ export const scenarios = [
     title: "site-admin avatar set and restore with an offline PNG attachment",
     actions: [
       { actor: "admin", action: "login", params: { loginId: "admin", password: "admin" } },
-      { actor: "admin", action: "set-user-avatar-from-attachment", params: { email: "admin@example.com" } },
+      {
+        actor: "admin",
+        action: "set-user-avatar-from-attachment",
+        params: { email: "admin@example.com" },
+      },
     ],
     behaviorMatcher: {
       action: /^SiteApp\.setAttachmentToUserAvatar$/,
@@ -449,7 +539,10 @@ const withQuery = (base, query) => (query ? `${base}?${query}` : base);
 async function readPageHandler(ctx) {
   const { step, resolved, options, yoramBaseUrl, helpers } = ctx;
   await helpers.requestBoth(ctx, translateLegacy(step, resolved), translateYoram(step, resolved));
-  const target = step.action === "view-user-profile" ? `/${step.params.user}` : pageTargets[step.action](step.params);
+  const target =
+    step.action === "view-user-profile"
+      ? `/${step.params.user}`
+      : pageTargets[step.action](step.params);
   if (!target) return;
   const selector = sharedRouteRootSelector(step);
   await helpers.renderDomTarget(ctx, {
@@ -467,7 +560,8 @@ async function readApiHandler(ctx) {
 }
 
 function normalizeNoAvatarUsers(value) {
-  if (!value || typeof value !== "object" || !Array.isArray(value.users)) return normalizeApiValue(value);
+  if (!value || typeof value !== "object" || !Array.isArray(value.users))
+    return normalizeApiValue(value);
   const users = [...value.users].sort((left, right) =>
     String(left.loginId ?? left.login_id ?? left.id ?? "").localeCompare(
       String(right.loginId ?? right.login_id ?? right.id ?? ""),
@@ -508,7 +602,7 @@ const pageTargets = {
   "view-notifications": (params) =>
     params.path === "/notification"
       ? withQuery("/notification", "from=0&limit=10")
-      : params.path ?? "/notifications",
+      : (params.path ?? "/notifications"),
   // Legacy search pages bind keyword + searchType; a bare ?query= render is a
   // legacy 400 error page, not the search screen.
   "view-global-search": (params) =>
@@ -524,7 +618,8 @@ const pageTargets = {
   "view-orgs-list": () => "/orgs",
   "view-org-home": (params) => `/organizations/${params.organization}`,
   "view-user-files": () => "/user/files",
-  "view-new-direct-issue-form": (params) => (params.mine ? "/user/issues/new/mine" : "/user/issues/new"),
+  "view-new-direct-issue-form": (params) =>
+    params.mine ? "/user/issues/new/mine" : "/user/issues/new",
   "view-org-subpage": (params) =>
     withQuery(
       `/organizations/${params.organization}/${params.page}`,
@@ -538,7 +633,8 @@ const pageTargets = {
         : params.query && `query=${encodeURIComponent(params.query)}`,
     ),
   "view-new-org-form": () => "/organizations/new",
-  "view-user-editform": (params) => (params.tab ? `/user/editform/${params.tab}` : "/user/editform"),
+  "view-user-editform": (params) =>
+    params.tab ? `/user/editform/${params.tab}` : "/user/editform",
   "view-site-screen": (params) => `/sites/${params.screen}`,
   "view-files-list": () => "/files",
 };
@@ -589,7 +685,6 @@ export const SITE_ADMIN_BODY_SELECTORS = Object.freeze({
   userList: '[data-owner="site-user-list-setting-content-column"]',
 });
 
-
 // --- mutation helpers --------------------------------------------------------
 // Yoram registers the legacy-compat workspace routes (favorites, /user/email,
 // /noti/toggle) at root level, so several translators below use identical
@@ -603,9 +698,18 @@ function pushApiViolation(ctx, route, expected, actual) {
 }
 
 async function mutateBoth(ctx, legacyTranslation, yoramTranslation, route) {
-  const { legacyResult, yoramResult } = await ctx.helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
-  if ((legacyResult.status >= 400) !== (yoramResult.status >= 400)) {
-    pushApiViolation(ctx, route, `legacy HTTP ${legacyResult.status}`, `yoram HTTP ${yoramResult.status}`);
+  const { legacyResult, yoramResult } = await ctx.helpers.requestBoth(
+    ctx,
+    legacyTranslation,
+    yoramTranslation,
+  );
+  if (legacyResult.status >= 400 !== yoramResult.status >= 400) {
+    pushApiViolation(
+      ctx,
+      route,
+      `legacy HTTP ${legacyResult.status}`,
+      `yoram HTTP ${yoramResult.status}`,
+    );
   }
   return { legacyResult, yoramResult };
 }
@@ -633,10 +737,12 @@ export function favoriteListContains(json, target, id, owner, project, organizat
         (entry?.owner === owner && entry?.projectName === project)
       );
     }
-    return Number(entry?.organizationId ?? entry?.id) === Number(id) || entry?.organizationName === organization;
+    return (
+      Number(entry?.organizationId ?? entry?.id) === Number(id) ||
+      entry?.organizationName === organization
+    );
   });
 }
-
 
 async function resolveLegacyProjectId(ctx, owner, project) {
   const result = await ctx.legacySession.request({ method: "GET", path: `/${owner}/${project}` });
@@ -644,7 +750,10 @@ async function resolveLegacyProjectId(ctx, owner, project) {
 }
 
 async function resolveYoramProjectId(ctx, owner, project) {
-  const result = await ctx.yoramSession.request({ method: "GET", path: `/api/v1/owners/${owner}/projects/${project}` });
+  const result = await ctx.yoramSession.request({
+    method: "GET",
+    path: `/api/v1/owners/${owner}/projects/${project}`,
+  });
   return Number(result.json?.projectId ?? result.json?.project_id ?? 0) || null;
 }
 
@@ -672,11 +781,40 @@ async function resolveLegacyOrganizationId(ctx, organization) {
   return Number(/name="id"\s+value="(\d+)"/u.exec(result.body ?? "")?.[1]) || null;
 }
 
+async function verifyOrganizationEnrollment(ctx, organization, requested) {
+  const [legacy, yoram] = await Promise.all([
+    ctx.legacySession.request({ method: "GET", path: `/organizations/${organization}` }),
+    ctx.yoramSession.request({
+      method: "GET",
+      path: `/api/v1/organizations/${organization}/container`,
+    }),
+  ]);
+  // header.scala.html renders cancel/enroll only while User.enrolled(org).
+  const expectedHref = `/organizations/${organization}/${requested ? "cancel/enroll" : "enroll"}`;
+  const button = /<a\b[^>]*\bid=["']enrollBtn["'][^>]*>/u.exec(legacy.body ?? "")?.[0] ?? "";
+  const href = /\bhref=["']([^"']*)["']/u.exec(button)?.[1].trim();
+  if (legacy.status !== 200 || href !== expectedHref) {
+    ctx.entry.errors.push(
+      `${ctx.step.action}: legacy enrollment state not ${requested} (HTTP ${legacy.status}, expected ${expectedHref})`,
+    );
+  }
+  if (yoram.status !== 200 || yoram.json?.enrollmentRequested !== requested) {
+    ctx.entry.errors.push(
+      `${ctx.step.action}: yoram enrollment state not ${requested} (HTTP ${yoram.status}, enrollmentRequested=${yoram.json?.enrollmentRequested})`,
+    );
+  }
+}
+
 const ADMIN_DISPLAY_NAME = "Site Admin";
 
 async function resolveLegacyOrgMemberId(ctx, organizationName, loginId) {
-  const page = await ctx.legacySession.request({ method: "GET", path: `/organizations/${organizationName}/members` });
-  for (const chunk of String(page.body ?? "").split('data-name="roleof-').slice(1)) {
+  const page = await ctx.legacySession.request({
+    method: "GET",
+    path: `/organizations/${organizationName}/members`,
+  });
+  for (const chunk of String(page.body ?? "")
+    .split('data-name="roleof-')
+    .slice(1)) {
     if (!chunk.startsWith(`${loginId}"`)) continue;
     const id = /\/member\/(\d+)\/delete/u.exec(chunk)?.[1];
     if (id) return Number(id);
@@ -685,7 +823,10 @@ async function resolveLegacyOrgMemberId(ctx, organizationName, loginId) {
 }
 
 async function resolveYoramOrgMemberId(ctx, organizationName, loginId) {
-  const result = await ctx.yoramSession.request({ method: "GET", path: `/api/v1/organizations/${organizationName}/admin` });
+  const result = await ctx.yoramSession.request({
+    method: "GET",
+    path: `/api/v1/organizations/${organizationName}/admin`,
+  });
   const members = result.json?.members ?? [];
   const member = members.find((entry) => entry.loginId === loginId);
   return member ? Number(member.userId) : null;
@@ -699,9 +840,15 @@ async function resolveLegacyUserIdByLoginId(ctx, loginId) {
   // row's own href precedes its attribute and lands in the previous chunk,
   // which made the resolver return the NEXT row's user id.
   const escaped = String(loginId).replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
-  const pattern = new RegExp(`data-href="/sites/user/delete(\\d+)"\\s+data-user-id="${escaped}"`, "u");
+  const pattern = new RegExp(
+    `data-href="/sites/user/delete(\\d+)"\\s+data-user-id="${escaped}"`,
+    "u",
+  );
   for (const state of ["ACTIVE", "LOCKED"]) {
-    const page = await ctx.legacySession.request({ method: "GET", path: `/sites/userList?state=${state}` });
+    const page = await ctx.legacySession.request({
+      method: "GET",
+      path: `/sites/userList?state=${state}`,
+    });
     const id = pattern.exec(String(page.body ?? ""))?.[1];
     if (id) return Number(id);
   }
@@ -717,10 +864,12 @@ async function resolveYoramUserIdByLoginId(ctx, loginId) {
   }
   return null;
 }
-const AVATAR_PNG = Uint8Array.from(Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
-  "base64",
-));
+const AVATAR_PNG = Uint8Array.from(
+  Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+    "base64",
+  ),
+);
 
 function multipartBody(fields = {}, file = null) {
   const boundary = `parity-avatar-${file?.filename ?? "form"}`.replace(/[^a-zA-Z0-9_-]/gu, "_");
@@ -736,7 +885,9 @@ function multipartBody(fields = {}, file = null) {
     append(`--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`);
   }
   if (file) {
-    append(`--${boundary}\r\nContent-Disposition: form-data; name="${file.name}"; filename="${file.filename}"\r\nContent-Type: ${file.contentType}\r\n\r\n`);
+    append(
+      `--${boundary}\r\nContent-Disposition: form-data; name="${file.name}"; filename="${file.filename}"\r\nContent-Type: ${file.contentType}\r\n\r\n`,
+    );
     append(file.content);
     append("\r\n");
   }
@@ -751,12 +902,15 @@ function multipartBody(fields = {}, file = null) {
 }
 
 function avatarUploadMultipart(suffix) {
-  return multipartBody({}, {
-    name: "filePath",
-    filename: `parity-avatar-${suffix.replace(/[^a-zA-Z0-9_-]/gu, "_")}.png`,
-    contentType: "image/png",
-    content: AVATAR_PNG,
-  });
+  return multipartBody(
+    {},
+    {
+      name: "filePath",
+      filename: `parity-avatar-${suffix.replace(/[^a-zA-Z0-9_-]/gu, "_")}.png`,
+      contentType: "image/png",
+      content: AVATAR_PNG,
+    },
+  );
 }
 
 function attachmentDeleteMultipart() {
@@ -764,7 +918,13 @@ function attachmentDeleteMultipart() {
 }
 
 function attachmentIdFromResult(result) {
-  return Number(result.json?.id ?? result.json?.url?.match(/\/files\/(\d+)/u)?.[1] ?? /\/files\/(\d+)/u.exec(result.location ?? "")?.[1]) || null;
+  return (
+    Number(
+      result.json?.id ??
+        result.json?.url?.match(/\/files\/(\d+)/u)?.[1] ??
+        /\/files\/(\d+)/u.exec(result.location ?? "")?.[1],
+    ) || null
+  );
 }
 
 function dropBehaviorClaim(entry, behaviorId) {
@@ -776,12 +936,21 @@ function claimBehavior(entry, behaviorId) {
 }
 
 async function readCurrentAvatar(ctx, side, loginId) {
-  const result = await ctx.helpers.sendRaw(ctx, side, side === "legacy"
-    ? { method: "GET", path: "/user/editform" }
-    : { method: "GET", path: `/api/v1/users/${loginId}/profile` });
-  const avatarUrl = side === "legacy"
-    ? String(/avatar-wrap xlarge[\s\S]{0,1000}?<img[^>]+src=["']([^"']+)/u.exec(result.body ?? "")?.[1] ?? "")
-    : String(result.json?.profile?.avatarUrl ?? result.json?.profile?.avatar_url ?? "");
+  const result = await ctx.helpers.sendRaw(
+    ctx,
+    side,
+    side === "legacy"
+      ? { method: "GET", path: "/user/editform" }
+      : { method: "GET", path: `/api/v1/users/${loginId}/profile` },
+  );
+  const avatarUrl =
+    side === "legacy"
+      ? String(
+          /avatar-wrap xlarge[\s\S]{0,1000}?<img[^>]+src=["']([^"']+)/u.exec(
+            result.body ?? "",
+          )?.[1] ?? "",
+        )
+      : String(result.json?.profile?.avatarUrl ?? result.json?.profile?.avatar_url ?? "");
   return {
     id: Number(/\/files\/(\d+)/u.exec(avatarUrl)?.[1]) || null,
     url: avatarUrl,
@@ -795,7 +964,9 @@ const parityEmailAddress = (suffix) => `${suffix.replace(/[^a-zA-Z0-9]/g, "")}@p
 async function legacyEmailRows(ctx) {
   const result = await ctx.legacySession.request({ method: "GET", path: "/user/editform/emails" });
   const rows = [];
-  for (const chunk of String(result.body ?? "").split("<tr>").slice(1)) {
+  for (const chunk of String(result.body ?? "")
+    .split("<tr>")
+    .slice(1)) {
     const row = chunk.split("</tr>")[0];
     const id = /\/user\/email\/delete\/(\d+)/u.exec(row)?.[1];
     const address = /class="ml10">([^<]+)<\/span>/u.exec(row)?.[1];
@@ -809,7 +980,10 @@ async function yoramEmailRows(ctx) {
   const result = await ctx.yoramSession.request({ method: "GET", path: "/api/v1/workspace" });
   const emails = result.json?.emails;
   return Array.isArray(emails)
-    ? emails.map((email) => ({ id: String(email.id), address: email.emailAddress ?? email.email_address }))
+    ? emails.map((email) => ({
+        id: String(email.id),
+        address: email.emailAddress ?? email.email_address,
+      }))
     : [];
 }
 
@@ -824,11 +998,18 @@ function findEmailId(rows, address) {
 export const actionDefinitions = {
   "view-user-issues": {
     translateLegacy(step) {
-      return { method: "GET", path: withQuery("/user/issues", step.params.tab && `tab=${step.params.tab}`) };
+      return {
+        method: "GET",
+        path: withQuery("/user/issues", step.params.tab && `tab=${step.params.tab}`),
+      };
     },
     translateYoram(step) {
       const query = step.params.tab && `tab=${step.params.tab}`;
-      return { method: "GET", path: withQuery("/api/v1/user/issues/search", query), pagePath: withQuery("/user/issues", query) };
+      return {
+        method: "GET",
+        path: withQuery("/api/v1/user/issues/search", query),
+        pagePath: withQuery("/user/issues", query),
+      };
     },
     handler: readPageHandler,
   },
@@ -858,9 +1039,17 @@ export const actionDefinitions = {
     },
     translateYoram(step) {
       if (step.params.path === "/notification") {
-        return { method: "GET", path: "/notification?from=0&limit=10", pagePath: "/notification?from=0&limit=10" };
+        return {
+          method: "GET",
+          path: "/notification?from=0&limit=10",
+          pagePath: "/notification?from=0&limit=10",
+        };
       }
-      return { method: "GET", path: "/api/v1/notifications", pagePath: step.params.path ?? "/notifications" };
+      return {
+        method: "GET",
+        path: "/api/v1/notifications",
+        pagePath: step.params.path ?? "/notifications",
+      };
     },
     handler: readPageHandler,
   },
@@ -887,7 +1076,11 @@ export const actionDefinitions = {
       ]
         .filter(Boolean)
         .join("&");
-      return { method: "GET", path: withQuery("/api/v1/search", query), pagePath: withQuery("/search", query) };
+      return {
+        method: "GET",
+        path: withQuery("/api/v1/search", query),
+        pagePath: withQuery("/search", query),
+      };
     },
     handler: readPageHandler,
   },
@@ -921,7 +1114,11 @@ export const actionDefinitions = {
       return { method: "GET", path: `/${step.params.user}` };
     },
     translateYoram(step) {
-      return { method: "GET", path: `/api/v1/users/${step.params.user}/profile`, pagePath: `/${step.params.user}` };
+      return {
+        method: "GET",
+        path: `/api/v1/users/${step.params.user}/profile`,
+        pagePath: `/${step.params.user}`,
+      };
     },
     handler: readPageHandler,
   },
@@ -939,10 +1136,16 @@ export const actionDefinitions = {
 
   "view-new-direct-issue-form": {
     translateLegacy(step) {
-      return { method: "GET", path: step.params.mine ? "/user/issues/new/mine" : "/user/issues/new" };
+      return {
+        method: "GET",
+        path: step.params.mine ? "/user/issues/new/mine" : "/user/issues/new",
+      };
     },
     translateYoram(step) {
-      return { method: "GET", path: step.params.mine ? "/user/issues/new/mine" : "/user/issues/new" };
+      return {
+        method: "GET",
+        path: step.params.mine ? "/user/issues/new/mine" : "/user/issues/new",
+      };
     },
     handler: readPageHandler,
   },
@@ -974,10 +1177,7 @@ export const actionDefinitions = {
           : step.params.query && `query=${encodeURIComponent(step.params.query)}`;
       return {
         method: "GET",
-        path: withQuery(
-          `/organizations/${step.params.organization}/${step.params.page}`,
-          query,
-        ),
+        path: withQuery(`/organizations/${step.params.organization}/${step.params.page}`, query),
       };
     },
     translateYoram(step) {
@@ -1024,10 +1224,16 @@ export const actionDefinitions = {
 
   "view-user-editform": {
     translateLegacy(step) {
-      return { method: "GET", path: step.params.tab ? `/user/editform/${step.params.tab}` : "/user/editform" };
+      return {
+        method: "GET",
+        path: step.params.tab ? `/user/editform/${step.params.tab}` : "/user/editform",
+      };
     },
     translateYoram(step) {
-      return { method: "GET", path: step.params.tab ? `/user/editform/${step.params.tab}` : "/user/editform" };
+      return {
+        method: "GET",
+        path: step.params.tab ? `/user/editform/${step.params.tab}` : "/user/editform",
+      };
     },
     handler: readPageHandler,
   },
@@ -1104,10 +1310,16 @@ export const actionDefinitions = {
 
   "check-email-exists": {
     translateLegacy(step) {
-      return { method: "GET", path: withQuery("/user/isEmailExist", `email=${encodeURIComponent(step.params.email)}`) };
+      return {
+        method: "GET",
+        path: withQuery("/user/isEmailExist", `email=${encodeURIComponent(step.params.email)}`),
+      };
     },
     translateYoram(step) {
-      return { method: "GET", path: withQuery("/user/isEmailExist", `email=${encodeURIComponent(step.params.email)}`) };
+      return {
+        method: "GET",
+        path: withQuery("/user/isEmailExist", `email=${encodeURIComponent(step.params.email)}`),
+      };
     },
     handler: readApiHandler,
   },
@@ -1161,11 +1373,19 @@ export const actionDefinitions = {
     translateLegacy(step) {
       // ids resolve at runtime in the handler; translators exist for the
       // contract/tests with a placeholder row id.
-      const kind = { issue: "Issues", project: "Projects", organization: "Organizations" }[step.params.target];
+      const kind = { issue: "Issues", project: "Projects", organization: "Organizations" }[
+        step.params.target
+      ];
       return { method: "POST", path: `/-_-api/v1/favorite${kind}/1` };
     },
     translateYoram(step) {
-      const { target, owner = "admin", project = "sample", organization = "weblabs", issueNumber = 1 } = step.params;
+      const {
+        target,
+        owner = "admin",
+        project = "sample",
+        organization = "weblabs",
+        issueNumber = 1,
+      } = step.params;
       const path =
         target === "issue"
           ? `/api/v1/owners/${owner}/projects/${project}/issues/${issueNumber}/favorite`
@@ -1176,7 +1396,13 @@ export const actionDefinitions = {
     },
     async handler(ctx) {
       const { step, state, entry } = ctx;
-      const { target, owner = "admin", project = "sample", organization = "weblabs", issueNumber = 1 } = step.params;
+      const {
+        target,
+        owner = "admin",
+        project = "sample",
+        organization = "weblabs",
+        issueNumber = 1,
+      } = step.params;
       let legacyPath;
       let yoramPath;
       if (target === "issue") {
@@ -1198,7 +1424,9 @@ export const actionDefinitions = {
       } else {
         state.legacyOrganizationId ??= await resolveLegacyOrganizationId(ctx, organization);
         if (!state.legacyOrganizationId) {
-          entry.errors.push(`toggle-favorite: legacy organization id for ${organization} unresolved`);
+          entry.errors.push(
+            `toggle-favorite: legacy organization id for ${organization} unresolved`,
+          );
           return;
         }
         legacyPath = `/-_-api/v1/favoriteOrganizations/${state.legacyOrganizationId}`;
@@ -1249,7 +1477,9 @@ export const actionDefinitions = {
         if (!initiallyFavored) continue;
         const result = await session.request({ method: "POST", path });
         if (result.status >= 400) {
-          entry.errors.push(`toggle-favorite: ${side} baseline clear failed (HTTP ${result.status})`);
+          entry.errors.push(
+            `toggle-favorite: ${side} baseline clear failed (HTTP ${result.status})`,
+          );
           return;
         }
       }
@@ -1284,7 +1514,9 @@ export const actionDefinitions = {
       state.legacyProjectId ??= await resolveLegacyProjectId(ctx, owner, project);
       state.yoramProjectId ??= await resolveYoramProjectId(ctx, owner, project);
       if (!state.legacyProjectId || !state.yoramProjectId) {
-        entry.errors.push(`toggle-noti-watch: project id unresolved (legacy=${state.legacyProjectId}, yoram=${state.yoramProjectId})`);
+        entry.errors.push(
+          `toggle-noti-watch: project id unresolved (legacy=${state.legacyProjectId}, yoram=${state.yoramProjectId})`,
+        );
         return;
       }
       // Toggle twice so the notification watch state reverts.
@@ -1312,7 +1544,9 @@ export const actionDefinitions = {
       state.emailAddress = address;
       const before = await emailRows(ctx);
       if (findEmailId(before.legacy, address) || findEmailId(before.yoram, address)) {
-        entry.errors.push("add-email: address already present before add; aborting for deterministic cleanup");
+        entry.errors.push(
+          "add-email: address already present before add; aborting for deterministic cleanup",
+        );
         return;
       }
       const legacyResult = await ctx.legacySession.request({
@@ -1320,15 +1554,26 @@ export const actionDefinitions = {
         path: "/user/email",
         form: { email: address },
       });
-      const yoramResult = await ctx.yoramSession.request({ method: "POST", path: "/user/email", form: { email: address } });
-      if ((legacyResult.status >= 400) !== (yoramResult.status >= 400)) {
-        pushApiViolation(ctx, "/user/email", `legacy HTTP ${legacyResult.status}`, `yoram HTTP ${yoramResult.status}`);
+      const yoramResult = await ctx.yoramSession.request({
+        method: "POST",
+        path: "/user/email",
+        form: { email: address },
+      });
+      if (legacyResult.status >= 400 !== yoramResult.status >= 400) {
+        pushApiViolation(
+          ctx,
+          "/user/email",
+          `legacy HTTP ${legacyResult.status}`,
+          `yoram HTTP ${yoramResult.status}`,
+        );
       }
       const after = await emailRows(ctx);
       state.newEmailIdLegacy = findEmailId(after.legacy, address);
       state.newEmailIdYoram = findEmailId(after.yoram, address);
       if (!state.newEmailIdLegacy || !state.newEmailIdYoram) {
-        entry.errors.push(`add-email: id unresolved (legacy=${state.newEmailIdLegacy}, yoram=${state.newEmailIdYoram})`);
+        entry.errors.push(
+          `add-email: id unresolved (legacy=${state.newEmailIdLegacy}, yoram=${state.newEmailIdYoram})`,
+        );
       }
     },
   },
@@ -1373,13 +1618,32 @@ export const actionDefinitions = {
       if (!legacyOriginalId && !yoramOriginalId) return;
       const results = {};
       if (legacyOriginalId) {
-        results.legacy = (await ctx.legacySession.request({ method: "PUT", path: `/user/email/setAsMain/${legacyOriginalId}` })).status;
+        results.legacy = (
+          await ctx.legacySession.request({
+            method: "PUT",
+            path: `/user/email/setAsMain/${legacyOriginalId}`,
+          })
+        ).status;
       }
       if (yoramOriginalId) {
-        results.yoram = (await ctx.yoramSession.request({ method: "PUT", path: `/user/email/setAsMain/${yoramOriginalId}` })).status;
+        results.yoram = (
+          await ctx.yoramSession.request({
+            method: "PUT",
+            path: `/user/email/setAsMain/${yoramOriginalId}`,
+          })
+        ).status;
       }
-      if (results.legacy !== undefined && results.yoram !== undefined && (results.legacy >= 400) !== (results.yoram >= 400)) {
-        pushApiViolation(ctx, "/user/email/setAsMain/:emailId", `legacy HTTP ${results.legacy}`, `yoram HTTP ${results.yoram}`);
+      if (
+        results.legacy !== undefined &&
+        results.yoram !== undefined &&
+        results.legacy >= 400 !== results.yoram >= 400
+      ) {
+        pushApiViolation(
+          ctx,
+          "/user/email/setAsMain/:emailId",
+          `legacy HTTP ${results.legacy}`,
+          `yoram HTTP ${results.yoram}`,
+        );
       }
       state.mainEmailRestored = true;
     },
@@ -1403,17 +1667,31 @@ export const actionDefinitions = {
       const rows = await emailRows(ctx);
       const legacyId = findEmailId(rows.legacy, state.emailAddress);
       const yoramId = findEmailId(rows.yoram, state.emailAddress);
-      if (legacyId) await ctx.legacySession.request({ method: "DELETE", path: `/user/email/delete/${legacyId}` });
-      if (yoramId) await ctx.yoramSession.request({ method: "DELETE", path: `/user/email/delete/${yoramId}` });
+      if (legacyId)
+        await ctx.legacySession.request({
+          method: "DELETE",
+          path: `/user/email/delete/${legacyId}`,
+        });
+      if (yoramId)
+        await ctx.yoramSession.request({ method: "DELETE", path: `/user/email/delete/${yoramId}` });
       // Legacy's cached User keeps a deleted sub-email in its in-memory
       // collection; a fresh session makes the cleanup read hit the database.
       await ctx.legacySession.login({ loginId: "admin", password: "admin" });
       let final = await emailRows(ctx);
-      for (let attempt = 0; attempt < 10 && (findEmailId(final.legacy, state.emailAddress) || findEmailId(final.yoram, state.emailAddress)); attempt += 1) {
+      for (
+        let attempt = 0;
+        attempt < 10 &&
+        (findEmailId(final.legacy, state.emailAddress) ||
+          findEmailId(final.yoram, state.emailAddress));
+        attempt += 1
+      ) {
         await new Promise((resolve) => setTimeout(resolve, 100));
         final = await emailRows(ctx);
       }
-      if (findEmailId(final.legacy, state.emailAddress) || findEmailId(final.yoram, state.emailAddress)) {
+      if (
+        findEmailId(final.legacy, state.emailAddress) ||
+        findEmailId(final.yoram, state.emailAddress)
+      ) {
         entry.errors.push(`delete-email: ${state.emailAddress} still present after cleanup`);
       }
     },
@@ -1458,22 +1736,35 @@ export const actionDefinitions = {
       await mutateBoth(
         ctx,
         { method: "POST", path: "/organizations/new", form: { name } },
-        { method: "POST", path: "/api/v1/organizations", json: { organizationName: name, description: "" } },
+        {
+          method: "POST",
+          path: "/api/v1/organizations",
+          json: { organizationName: name, description: "" },
+        },
         "/organizations/new",
       );
       const legacyOrgs = await ctx.legacySession.request({ method: "GET", path: "/orgs" });
-      const yoramOrgs = await ctx.yoramSession.request({ method: "GET", path: "/api/v1/organizations" });
+      const yoramOrgs = await ctx.yoramSession.request({
+        method: "GET",
+        path: "/api/v1/organizations",
+      });
       const inLegacy = String(legacyOrgs.body ?? "").includes(name);
       const inYoram = JSON.stringify(yoramOrgs.json ?? "").includes(name);
       if (inLegacy !== inYoram) {
-        entry.errors.push(`create-organization: ${name} present legacy=${inLegacy} yoram=${inYoram}`);
+        entry.errors.push(
+          `create-organization: ${name} present legacy=${inLegacy} yoram=${inYoram}`,
+        );
       }
     },
   },
 
   "add-org-member": {
     translateLegacy(step) {
-      return { method: "POST", path: `/organizations/${step.params.organization}/members`, form: { loginId: step.params.user } };
+      return {
+        method: "POST",
+        path: `/organizations/${step.params.organization}/members`,
+        form: { loginId: step.params.user },
+      };
     },
     translateYoram(step) {
       return {
@@ -1491,8 +1782,16 @@ export const actionDefinitions = {
       }
       await mutateBoth(
         ctx,
-        { method: "POST", path: `/organizations/${org}/members`, form: { loginId: step.params.user } },
-        { method: "POST", path: `/api/v1/organizations/${org}/members`, json: { loginId: step.params.user } },
+        {
+          method: "POST",
+          path: `/organizations/${org}/members`,
+          form: { loginId: step.params.user },
+        },
+        {
+          method: "POST",
+          path: `/api/v1/organizations/${org}/members`,
+          json: { loginId: step.params.user },
+        },
         "/organizations/:organizationName/members",
       );
     },
@@ -1500,7 +1799,11 @@ export const actionDefinitions = {
 
   "edit-org-member": {
     translateLegacy(step) {
-      return { method: "POST", path: `/organizations/${step.params.organization}/member/1/edit`, form: { id: step.params.role === "org_admin" ? 6 : 7 } };
+      return {
+        method: "POST",
+        path: `/organizations/${step.params.organization}/member/1/edit`,
+        form: { id: step.params.role === "org_admin" ? 6 : 7 },
+      };
     },
     translateYoram(step) {
       return {
@@ -1518,18 +1821,36 @@ export const actionDefinitions = {
       }
       state.legacyOrgMemberIds ??= {};
       state.yoramOrgMemberIds ??= {};
-      state.legacyOrgMemberIds[step.params.user] ??= await resolveLegacyOrgMemberId(ctx, org, step.params.user);
-      state.yoramOrgMemberIds[step.params.user] ??= await resolveYoramOrgMemberId(ctx, org, step.params.user);
+      state.legacyOrgMemberIds[step.params.user] ??= await resolveLegacyOrgMemberId(
+        ctx,
+        org,
+        step.params.user,
+      );
+      state.yoramOrgMemberIds[step.params.user] ??= await resolveYoramOrgMemberId(
+        ctx,
+        org,
+        step.params.user,
+      );
       const legacyUserId = state.legacyOrgMemberIds[step.params.user];
       const yoramUserId = state.yoramOrgMemberIds[step.params.user];
       if (!legacyUserId || !yoramUserId) {
-        entry.errors.push(`edit-org-member: member id unresolved (legacy=${legacyUserId}, yoram=${yoramUserId})`);
+        entry.errors.push(
+          `edit-org-member: member id unresolved (legacy=${legacyUserId}, yoram=${yoramUserId})`,
+        );
         return;
       }
       await mutateBoth(
         ctx,
-        { method: "POST", path: `/organizations/${org}/member/${legacyUserId}/edit`, form: { id: step.params.role === "org_admin" ? 6 : 7 } },
-        { method: "PATCH", path: `/api/v1/organizations/${org}/members/${yoramUserId}`, json: { role: step.params.role } },
+        {
+          method: "POST",
+          path: `/organizations/${org}/member/${legacyUserId}/edit`,
+          form: { id: step.params.role === "org_admin" ? 6 : 7 },
+        },
+        {
+          method: "PATCH",
+          path: `/api/v1/organizations/${org}/members/${yoramUserId}`,
+          json: { role: step.params.role },
+        },
         "/organizations/:organizationName/member/:userId/edit",
       );
     },
@@ -1537,10 +1858,16 @@ export const actionDefinitions = {
 
   "delete-org-member": {
     translateLegacy(step) {
-      return { method: "DELETE", path: `/organizations/${step.params.organization}/member/1/delete` };
+      return {
+        method: "DELETE",
+        path: `/organizations/${step.params.organization}/member/1/delete`,
+      };
     },
     translateYoram(step) {
-      return { method: "DELETE", path: `/api/v1/organizations/${step.params.organization}/members/1` };
+      return {
+        method: "DELETE",
+        path: `/api/v1/organizations/${step.params.organization}/members/1`,
+      };
     },
     async handler(ctx) {
       const { state, step, entry } = ctx;
@@ -1551,12 +1878,22 @@ export const actionDefinitions = {
       }
       state.legacyOrgMemberIds ??= {};
       state.yoramOrgMemberIds ??= {};
-      state.legacyOrgMemberIds[step.params.user] ??= await resolveLegacyOrgMemberId(ctx, org, step.params.user);
-      state.yoramOrgMemberIds[step.params.user] ??= await resolveYoramOrgMemberId(ctx, org, step.params.user);
+      state.legacyOrgMemberIds[step.params.user] ??= await resolveLegacyOrgMemberId(
+        ctx,
+        org,
+        step.params.user,
+      );
+      state.yoramOrgMemberIds[step.params.user] ??= await resolveYoramOrgMemberId(
+        ctx,
+        org,
+        step.params.user,
+      );
       const legacyUserId = state.legacyOrgMemberIds?.[step.params.user];
       const yoramUserId = state.yoramOrgMemberIds?.[step.params.user];
       if (!legacyUserId || !yoramUserId) {
-        entry.errors.push(`delete-org-member: member id unresolved (legacy=${legacyUserId}, yoram=${yoramUserId})`);
+        entry.errors.push(
+          `delete-org-member: member id unresolved (legacy=${legacyUserId}, yoram=${yoramUserId})`,
+        );
         return;
       }
       await mutateBoth(
@@ -1588,6 +1925,7 @@ export const actionDefinitions = {
         { method: "POST", path: `/api/v1/organizations/${org}/enroll` },
         "/organizations/:organizationName/enroll",
       );
+      await verifyOrganizationEnrollment(ctx, org, true);
     },
   },
 
@@ -1611,6 +1949,7 @@ export const actionDefinitions = {
         { method: "DELETE", path: `/api/v1/organizations/${org}/enroll` },
         "/organizations/:organizationName/cancel/enroll",
       );
+      await verifyOrganizationEnrollment(ctx, org, false);
     },
   },
 
@@ -1619,7 +1958,11 @@ export const actionDefinitions = {
       return {
         method: "POST",
         path: `/organizations/${step.params.organization}/setting`,
-        form: { id: step.params.legacyOrganizationId ?? 1, name: step.params.organization, description: step.params.description },
+        form: {
+          id: step.params.legacyOrganizationId ?? 1,
+          name: step.params.organization,
+          description: step.params.description,
+        },
       };
     },
     translateYoram(step) {
@@ -1702,11 +2045,16 @@ export const actionDefinitions = {
         "/organizations/:organizationName",
       );
       const legacyOrgs = await ctx.legacySession.request({ method: "GET", path: "/orgs" });
-      const yoramOrgs = await ctx.yoramSession.request({ method: "GET", path: "/api/v1/organizations" });
+      const yoramOrgs = await ctx.yoramSession.request({
+        method: "GET",
+        path: "/api/v1/organizations",
+      });
       const inLegacy = String(legacyOrgs.body ?? "").includes(org);
       const inYoram = JSON.stringify(yoramOrgs.json ?? "").includes(org);
       if (inLegacy || inYoram) {
-        entry.errors.push(`delete-organization: ${org} still present after cleanup (legacy=${inLegacy}, yoram=${inYoram})`);
+        entry.errors.push(
+          `delete-organization: ${org} still present after cleanup (legacy=${inLegacy}, yoram=${inYoram})`,
+        );
       }
       state.orgDeleted = !inLegacy && !inYoram;
     },
@@ -1761,16 +2109,38 @@ export const actionDefinitions = {
         password: state.throwawayPassword,
         retypedPassword: state.throwawayPassword,
       };
-      await mutateBoth(ctx, { method: "POST", path: "/users/signup", form, headers: { "content-type": "application/x-www-form-urlencoded" } }, { method: "POST", path: "/users/signup", form }, "/users/signup");
+      await mutateBoth(
+        ctx,
+        {
+          method: "POST",
+          path: "/users/signup",
+          form,
+          headers: { "content-type": "application/x-www-form-urlencoded" },
+        },
+        { method: "POST", path: "/users/signup", form },
+        "/users/signup",
+      );
     },
   },
 
   "toggle-account-lock": {
     translateLegacy(step) {
-      return { method: "POST", path: withQuery("/sites/toggleAccountLock", `loginId=${encodeURIComponent(step.params.loginId)}`) };
+      return {
+        method: "POST",
+        path: withQuery(
+          "/sites/toggleAccountLock",
+          `loginId=${encodeURIComponent(step.params.loginId)}`,
+        ),
+      };
     },
     translateYoram(step) {
-      return { method: "POST", path: withQuery("/sites/toggleAccountLock", `loginId=${encodeURIComponent(step.params.loginId)}`) };
+      return {
+        method: "POST",
+        path: withQuery(
+          "/sites/toggleAccountLock",
+          `loginId=${encodeURIComponent(step.params.loginId)}`,
+        ),
+      };
     },
     async handler(ctx) {
       const { state, entry } = ctx;
@@ -1793,10 +2163,22 @@ export const actionDefinitions = {
 
   "toggle-guest-mode": {
     translateLegacy(step) {
-      return { method: "POST", path: withQuery("/sites/toggleGuestMode", `loginId=${encodeURIComponent(step.params.loginId)}`) };
+      return {
+        method: "POST",
+        path: withQuery(
+          "/sites/toggleGuestMode",
+          `loginId=${encodeURIComponent(step.params.loginId)}`,
+        ),
+      };
     },
     translateYoram(step) {
-      return { method: "POST", path: withQuery("/sites/toggleGuestMode", `loginId=${encodeURIComponent(step.params.loginId)}`) };
+      return {
+        method: "POST",
+        path: withQuery(
+          "/sites/toggleGuestMode",
+          `loginId=${encodeURIComponent(step.params.loginId)}`,
+        ),
+      };
     },
     async handler(ctx) {
       const { state, entry } = ctx;
@@ -1920,14 +2302,22 @@ export const actionDefinitions = {
         },
         "/sites/user/delete:userId",
       );
-      const legacyList = await ctx.legacySession.request({ method: "GET", path: "/sites/userList?state=DELETED" });
-      const yoramList = await ctx.yoramSession.request({ method: "GET", path: "/api/v1/site/users?state=deleted" });
+      const legacyList = await ctx.legacySession.request({
+        method: "GET",
+        path: "/sites/userList?state=DELETED",
+      });
+      const yoramList = await ctx.yoramSession.request({
+        method: "GET",
+        path: "/api/v1/site/users?state=deleted",
+      });
       const legacyGone = !String(legacyList.body ?? "").includes(`data-user-id="${loginId}"`);
       const users = yoramList.json?.users ?? [];
       const yoramRow = users.find((user) => user.loginId === loginId);
       const yoramGone = !yoramRow || yoramRow.state === "DELETED" || yoramRow.state === "deleted";
       if (!legacyGone || !yoramGone) {
-        entry.errors.push(`delete-site-user: ${loginId} still active after cleanup (legacyGone=${legacyGone}, yoramGone=${yoramGone})`);
+        entry.errors.push(
+          `delete-site-user: ${loginId} still active after cleanup (legacyGone=${legacyGone}, yoramGone=${yoramGone})`,
+        );
       }
       state.throwawayDeleted = legacyGone && yoramGone;
     },
@@ -1935,10 +2325,18 @@ export const actionDefinitions = {
 
   "edit-user-profile": {
     translateLegacy(step) {
-      return { method: "POST", path: "/user/edit", form: { name: step.params.name, email: step.params.email } };
+      return {
+        method: "POST",
+        path: "/user/edit",
+        form: { name: step.params.name, email: step.params.email },
+      };
     },
     translateYoram(step) {
-      return { method: "POST", path: "/user/edit", form: { name: step.params.name, email: step.params.email } };
+      return {
+        method: "POST",
+        path: "/user/edit",
+        form: { name: step.params.name, email: step.params.email },
+      };
     },
     async handler(ctx) {
       const { entry } = ctx;
@@ -1979,10 +2377,16 @@ export const actionDefinitions = {
 
   "send-validation-email": {
     translateLegacy(step) {
-      return { method: "POST", path: `/user/email/sendValidationEmail/${step.params.emailId ?? 1}` };
+      return {
+        method: "POST",
+        path: `/user/email/sendValidationEmail/${step.params.emailId ?? 1}`,
+      };
     },
     translateYoram(step) {
-      return { method: "POST", path: `/user/email/sendValidationEmail/${step.params.emailId ?? 1}` };
+      return {
+        method: "POST",
+        path: `/user/email/sendValidationEmail/${step.params.emailId ?? 1}`,
+      };
     },
     async handler(ctx) {
       const { state, entry, helpers } = ctx;
@@ -1994,7 +2398,9 @@ export const actionDefinitions = {
       const legacyId = findEmailId(rows.legacy, state.emailAddress);
       const yoramId = findEmailId(rows.yoram, state.emailAddress);
       if (!legacyId || !yoramId) {
-        entry.errors.push(`send-validation-email: id unresolved (legacy=${legacyId}, yoram=${yoramId})`);
+        entry.errors.push(
+          `send-validation-email: id unresolved (legacy=${legacyId}, yoram=${yoramId})`,
+        );
         return;
       }
       state.validationEmailIdLegacy = legacyId;
@@ -2004,7 +2410,11 @@ export const actionDefinitions = {
         ctx,
         { method: "POST", path: `/user/email/sendValidationEmail/${legacyId}` },
         // Yoram's compat handler binds the CSRF token from the form body.
-        { method: "POST", path: `/user/email/sendValidationEmail/${yoramId}`, form: { csrfToken: ctx.yoramSession.csrfToken ?? "" } },
+        {
+          method: "POST",
+          path: `/user/email/sendValidationEmail/${yoramId}`,
+          form: { csrfToken: ctx.yoramSession.csrfToken ?? "" },
+        },
         "/user/email/sendValidationEmail/:emailId",
       );
     },
@@ -2027,15 +2437,25 @@ Object.assign(actionDefinitions, {
           .flatMap((raw) => helpers.extractMailLinks(raw, "/user/email/confirm/"))
           .some((candidate) => {
             const url = new URL(candidate);
-            return (url.port || "80") === (new URL(baseUrl).port || "80") && url.pathname.includes(`/${id}/`);
+            return (
+              (url.port || "80") === (new URL(baseUrl).port || "80") &&
+              url.pathname.includes(`/${id}/`)
+            );
           });
       const deadline = Date.now() + 30_000;
-      while ((!hasConfirmation(options.legacyUrl, ids.legacy) || !hasConfirmation(yoramBaseUrl, ids.yoram)) && Date.now() < deadline) {
+      while (
+        (!hasConfirmation(options.legacyUrl, ids.legacy) ||
+          !hasConfirmation(yoramBaseUrl, ids.yoram)) &&
+        Date.now() < deadline
+      ) {
         await new Promise((resolve) => setTimeout(resolve, 250));
         mails = helpers.readMails();
       }
       const outcomes = {};
-      for (const [side, baseUrl] of [["legacy", options.legacyUrl], ["yoram", yoramBaseUrl]]) {
+      for (const [side, baseUrl] of [
+        ["legacy", options.legacyUrl],
+        ["yoram", yoramBaseUrl],
+      ]) {
         const expectedPort = new URL(baseUrl).port || "80";
         const link = mails
           .flatMap((raw) => helpers.extractMailLinks(raw, "/user/email/confirm/"))
@@ -2048,11 +2468,26 @@ Object.assign(actionDefinitions, {
           continue;
         }
         const url = new URL(link);
-        const result = await helpers.sendRaw(ctx, side, { method: "GET", path: `${url.pathname}${url.search}` });
+        const result = await helpers.sendRaw(ctx, side, {
+          method: "GET",
+          path: `${url.pathname}${url.search}`,
+        });
         outcomes[side] = result.status;
       }
-      if (outcomes.legacy !== undefined && outcomes.yoram !== undefined && (outcomes.legacy >= 400) !== (outcomes.yoram >= 400)) {
-        entry.violations.push(violation({ route: "/user/email/confirm/:emailId/:token", behaviorId: entry.behaviorIds[0] ?? null, kind: "api", expected: { status: outcomes.legacy }, actual: { status: outcomes.yoram } }));
+      if (
+        outcomes.legacy !== undefined &&
+        outcomes.yoram !== undefined &&
+        outcomes.legacy >= 400 !== outcomes.yoram >= 400
+      ) {
+        entry.violations.push(
+          violation({
+            route: "/user/email/confirm/:emailId/:token",
+            behaviorId: entry.behaviorIds[0] ?? null,
+            kind: "api",
+            expected: { status: outcomes.legacy },
+            actual: { status: outcomes.yoram },
+          }),
+        );
       }
     },
   },
@@ -2062,45 +2497,72 @@ Object.assign(actionDefinitions, {
     translateYoram: () => ({ method: "GET", path: "/__verify-link-client-side__" }),
     async handler(ctx) {
       const { entry, state, options, yoramBaseUrl, helpers } = ctx;
-      const loginId = state.throwawayLoginId;
+      const { throwawayLoginId: loginId, throwawayEmail: recipient } = state;
       dropBehaviorClaim(entry, "B-0192");
-      if (!loginId) {
-        entry.errors.push("open-verify-link: skipped, no throwaway user recorded");
+      if (!loginId || !recipient) {
+        entry.errors.push("open-verify-link: no throwaway signup login/email recorded");
         return;
       }
       const previousCount = state.mailCountBefore ?? 0;
       const deadline = Date.now() + 30_000;
-      let mails = [];
-      const findLink = (baseUrl) => {
-        const expectedPort = new URL(baseUrl).port || "80";
-        return mails
-          .flatMap((raw) => helpers.extractMailLinks(raw, "/verify"))
-          .find((candidate) => {
-            const url = new URL(candidate);
-            return (url.port || "80") === expectedPort && url.pathname.startsWith(`/verify/${loginId}/`);
-          });
-      };
+      let links = [];
+      const findLink = (baseUrl) => links.find((url) => url.origin === new URL(baseUrl).origin);
       while (Date.now() <= deadline) {
         const allMails = helpers.readMails();
-        mails = allMails.slice(0, Math.max(0, allMails.length - previousCount));
+        links = allMails
+          .slice(0, Math.max(0, allMails.length - previousCount))
+          .filter((raw) => {
+            const to = /^To:\s*(.+)$/imu.exec(raw.replace(/\r?\n[ \t]+/gu, " "))?.[1] ?? "";
+            return to
+              .split(",")
+              .some(
+                (address) =>
+                  (/<([^<>]+)>/u.exec(address)?.[1] ?? address.trim()).toLowerCase() ===
+                  recipient.toLowerCase(),
+              );
+          })
+          .flatMap((raw) => helpers.extractMailLinks(raw, "/verify"))
+          .map((candidate) => new URL(candidate))
+          .filter((url) => url.pathname.startsWith(`/verify/${loginId}/`));
         if (findLink(options.legacyUrl) && findLink(yoramBaseUrl)) break;
         await new Promise((resolve) => setTimeout(resolve, 500));
       }
       const outcomes = {};
       state.verifyLinks = {};
-      for (const [side, baseUrl] of [["legacy", options.legacyUrl], ["yoram", yoramBaseUrl]]) {
+      for (const [side, baseUrl] of [
+        ["legacy", options.legacyUrl],
+        ["yoram", yoramBaseUrl],
+      ]) {
         const link = findLink(baseUrl);
         if (!link) {
-          entry.errors.push(`open-verify-link: no ${side} verify mail captured for ${loginId}`);
+          const origins = [...new Set(links.map((url) => url.origin))];
+          entry.errors.push(
+            `open-verify-link: no ${side} verify mail captured for ${loginId} addressed to ${recipient} at ${new URL(baseUrl).origin}; ` +
+              `captured verification origins: ${origins.join(", ") || "none"}` +
+              (side === "legacy" &&
+              origins.some(
+                (origin) =>
+                  ![options.legacyUrl, yoramBaseUrl].some(
+                    (base) => new URL(base).origin === origin,
+                  ),
+              )
+                ? "; check legacy application.hostname/application.port (UserApp.getServeIndexPageUrl)"
+                : ""),
+          );
           continue;
         }
-        const url = new URL(link);
+        const url = link;
         state.verifyLinks[side] = `${url.pathname}${url.search}`;
         claimBehavior(entry, "B-0192");
-        const result = await helpers.sendRaw(ctx, side, { method: "GET", path: state.verifyLinks[side] });
+        const result = await helpers.sendRaw(ctx, side, {
+          method: "GET",
+          path: state.verifyLinks[side],
+        });
         outcomes[side] = result.status;
         if (result.status >= 400) {
-          entry.errors.push(`open-verify-link: ${side} GET ${state.verifyLinks[side]} returned HTTP ${result.status}`);
+          entry.errors.push(
+            `open-verify-link: ${side} GET ${state.verifyLinks[side]} returned HTTP ${result.status}`,
+          );
         }
         if (side === "yoram" && result.status < 400) {
           const verificationCode = decodeURIComponent(url.pathname.split("/").pop() ?? "");
@@ -2110,38 +2572,57 @@ Object.assign(actionDefinitions, {
             json: { loginId, verificationCode },
           });
           if (verifyApi.status >= 400) {
-            entry.errors.push(`open-verify-link: yoram REST verification returned HTTP ${verifyApi.status}`);
+            entry.errors.push(
+              `open-verify-link: yoram REST verification returned HTTP ${verifyApi.status}`,
+            );
           }
         }
       }
-      if (outcomes.legacy !== undefined && outcomes.yoram !== undefined && (
-        (outcomes.legacy >= 400) !== (outcomes.yoram >= 400)
-        || outcomes.legacy !== outcomes.yoram
-      )) {
-        entry.violations.push(violation({
-          route: "/verify/:loginId/:verificationCode",
-          behaviorId: "B-0192",
-          kind: "api",
-          expected: { status: outcomes.legacy, path: state.verifyLinks.legacy },
-          actual: { status: outcomes.yoram, path: state.verifyLinks.yoram },
-        }));
+      if (
+        outcomes.legacy !== undefined &&
+        outcomes.yoram !== undefined &&
+        (outcomes.legacy >= 400 !== outcomes.yoram >= 400 || outcomes.legacy !== outcomes.yoram)
+      ) {
+        entry.violations.push(
+          violation({
+            route: "/verify/:loginId/:verificationCode",
+            behaviorId: "B-0192",
+            kind: "api",
+            expected: { status: outcomes.legacy, path: state.verifyLinks.legacy },
+            actual: { status: outcomes.yoram, path: state.verifyLinks.yoram },
+          }),
+        );
       }
     },
   },
   "request-lost-password-for-throwaway": {
     translateLegacy(step, resolved = {}) {
-      return { method: "POST", path: "/lostPassword", form: { loginId: resolved.loginId, emailAddress: resolved.emailAddress } };
+      return {
+        method: "POST",
+        path: "/lostPassword",
+        form: { loginId: resolved.loginId, emailAddress: resolved.emailAddress },
+      };
     },
     translateYoram(step, resolved = {}) {
-      return { method: "POST", path: "/lostPassword", form: { loginId: resolved.loginId, emailAddress: resolved.emailAddress } };
+      return {
+        method: "POST",
+        path: "/lostPassword",
+        form: { loginId: resolved.loginId, emailAddress: resolved.emailAddress },
+      };
     },
     async handler(ctx) {
       const { state, helpers } = ctx;
       state.mailCountBefore = helpers.readMails().length;
       await mutateBoth(
         ctx,
-        this.translateLegacy(ctx.step, { loginId: state.throwawayLoginId, emailAddress: state.throwawayEmail }),
-        this.translateYoram(ctx.step, { loginId: state.throwawayLoginId, emailAddress: state.throwawayEmail }),
+        this.translateLegacy(ctx.step, {
+          loginId: state.throwawayLoginId,
+          emailAddress: state.throwawayEmail,
+        }),
+        this.translateYoram(ctx.step, {
+          loginId: state.throwawayLoginId,
+          emailAddress: state.throwawayEmail,
+        }),
         "/lostPassword",
       );
     },
@@ -2159,7 +2640,10 @@ Object.assign(actionDefinitions, {
       const mails = await helpers.waitForMail(state.mailCountBefore ?? 0);
       const outcomes = {};
       const evidence = [];
-      for (const [side, baseUrl] of [["legacy", options.legacyUrl], ["yoram", yoramBaseUrl]]) {
+      for (const [side, baseUrl] of [
+        ["legacy", options.legacyUrl],
+        ["yoram", yoramBaseUrl],
+      ]) {
         const base = new URL(baseUrl);
         const expectedPort = base.port || (base.protocol === "https:" ? "443" : "80");
         const mail = mails.find((raw) => {
@@ -2171,7 +2655,9 @@ Object.assign(actionDefinitions, {
           });
         });
         if (!mail) {
-          entry.errors.push(`complete-reset-for-throwaway: no newest ${side} reset mail addressed to ${recipient}`);
+          entry.errors.push(
+            `complete-reset-for-throwaway: no newest ${side} reset mail addressed to ${recipient}`,
+          );
           evidence.push({ side, recipient, error: "no matching mail" });
           continue;
         }
@@ -2187,17 +2673,42 @@ Object.assign(actionDefinitions, {
         for (const candidate of links) {
           const hashString = new URL(candidate).searchParams.get("s");
           if (!hashString) continue;
-          const payload = { hashString, password: state.throwawayPassword, retypedPassword: state.throwawayPassword };
-          const result = await helpers.sendRaw(ctx, side, { method: "POST", path: "/resetPassword", form: payload });
+          const payload = {
+            hashString,
+            password: state.throwawayPassword,
+            retypedPassword: state.throwawayPassword,
+          };
+          const result = await helpers.sendRaw(ctx, side, {
+            method: "POST",
+            path: "/resetPassword",
+            form: payload,
+          });
           status = result.status;
-          attemptLog.push({ hashString: hashString.slice(0, 10) + "…", status, responseSnippet: String(result.body ?? "").slice(0, 120) });
+          attemptLog.push({
+            hashString: hashString.slice(0, 10) + "…",
+            status,
+            responseSnippet: String(result.body ?? "").slice(0, 120),
+          });
           if (status < 400) break;
         }
         outcomes[side] = status;
         evidence.push({ side, recipient, mailDate, links: links.length, attempts: attemptLog });
       }
-      if (outcomes.legacy !== undefined && outcomes.yoram !== undefined && ((outcomes.legacy >= 400) !== (outcomes.yoram >= 400) || (outcomes.legacy >= 400 && outcomes.yoram >= 400 && outcomes.legacy !== outcomes.yoram))) {
-        entry.violations.push(violation({ route: "/resetPassword", behaviorId: entry.behaviorIds[0] ?? null, kind: "api", expected: { status: outcomes.legacy }, actual: { status: outcomes.yoram, replayEvidence: evidence } }));
+      if (
+        outcomes.legacy !== undefined &&
+        outcomes.yoram !== undefined &&
+        (outcomes.legacy >= 400 !== outcomes.yoram >= 400 ||
+          (outcomes.legacy >= 400 && outcomes.yoram >= 400 && outcomes.legacy !== outcomes.yoram))
+      ) {
+        entry.violations.push(
+          violation({
+            route: "/resetPassword",
+            behaviorId: entry.behaviorIds[0] ?? null,
+            kind: "api",
+            expected: { status: outcomes.legacy },
+            actual: { status: outcomes.yoram, replayEvidence: evidence },
+          }),
+        );
       }
     },
   },
@@ -2235,11 +2746,15 @@ Object.assign(actionDefinitions, {
         try {
           state.avatarOriginal[side] = await readCurrentAvatar(ctx, side, "admin");
           if (state.avatarOriginal[side].status >= 400) {
-            entry.errors.push(`set-user-avatar: ${side} current-avatar capture returned HTTP ${state.avatarOriginal[side].status}`);
+            entry.errors.push(
+              `set-user-avatar: ${side} current-avatar capture returned HTTP ${state.avatarOriginal[side].status}`,
+            );
           }
         } catch (error) {
           state.avatarOriginal[side] = { id: null, url: "", status: 0 };
-          entry.errors.push(`set-user-avatar: ${side} current-avatar capture failed: ${error.message}`);
+          entry.errors.push(
+            `set-user-avatar: ${side} current-avatar capture failed: ${error.message}`,
+          );
         }
       }
 
@@ -2261,9 +2776,10 @@ Object.assign(actionDefinitions, {
       for (const side of sides) {
         const attachmentId = state.avatarAttachment[side];
         if (!attachmentId) continue;
-        const translation = side === "legacy"
-          ? this.translateLegacy(step, { avatarFileId: attachmentId, email })
-          : this.translateYoram(step, { avatarFileId: attachmentId, email });
+        const translation =
+          side === "legacy"
+            ? this.translateLegacy(step, { avatarFileId: attachmentId, email })
+            : this.translateYoram(step, { avatarFileId: attachmentId, email });
         claimBehavior(entry, "B-0289");
         const result = await helpers.sendRaw(ctx, side, translation);
         state.avatarSet[side] = result;
@@ -2279,12 +2795,15 @@ Object.assign(actionDefinitions, {
         if (!attachmentId) continue;
         const originalId = state.avatarOriginal[side]?.id;
         if (originalId && state.avatarSet[side]?.status < 400) {
-          const translation = side === "legacy"
-            ? this.translateLegacy(step, { avatarFileId: originalId, email })
-            : this.translateYoram(step, { avatarFileId: originalId, email });
+          const translation =
+            side === "legacy"
+              ? this.translateLegacy(step, { avatarFileId: originalId, email })
+              : this.translateYoram(step, { avatarFileId: originalId, email });
           const restored = await helpers.sendRaw(ctx, side, translation);
           if (restored.status >= 400) {
-            entry.errors.push(`set-user-avatar: ${side} captured avatar ${originalId} could not be restored (HTTP ${restored.status})`);
+            entry.errors.push(
+              `set-user-avatar: ${side} captured avatar ${originalId} could not be restored (HTTP ${restored.status})`,
+            );
           }
         }
         const deleted = await helpers.sendRaw(ctx, side, {
@@ -2293,16 +2812,22 @@ Object.assign(actionDefinitions, {
           multipart: attachmentDeleteMultipart(),
         });
         if (deleted.status >= 400) {
-          entry.errors.push(`set-user-avatar: ${side} temporary attachment ${attachmentId} cleanup returned HTTP ${deleted.status}`);
+          entry.errors.push(
+            `set-user-avatar: ${side} temporary attachment ${attachmentId} cleanup returned HTTP ${deleted.status}`,
+          );
         }
         try {
           const restoredAvatar = await readCurrentAvatar(ctx, side, "admin");
           const expectedId = originalId ?? null;
           if (restoredAvatar.id !== expectedId) {
-            entry.errors.push(`set-user-avatar: ${side} avatar restore mismatch (expected=${expectedId ?? "gravatar"}, actual=${restoredAvatar.id ?? "gravatar"})`);
+            entry.errors.push(
+              `set-user-avatar: ${side} avatar restore mismatch (expected=${expectedId ?? "gravatar"}, actual=${restoredAvatar.id ?? "gravatar"})`,
+            );
           }
         } catch (error) {
-          entry.errors.push(`set-user-avatar: ${side} avatar restore verification failed: ${error.message}`);
+          entry.errors.push(
+            `set-user-avatar: ${side} avatar restore verification failed: ${error.message}`,
+          );
         }
       }
     },
@@ -2313,7 +2838,16 @@ Object.assign(actionDefinitions, {
 //
 // Empty forms exercise the route handlers without creating users, mail, or
 // imported records. requestBoth records expected unsupported/validation errors.
-function residualProbeDisposition({ action, behaviorId, legacyPath, yoramPath, legacyStatus, yoramStatus, classification, evidence }) {
+function residualProbeDisposition({
+  action,
+  behaviorId,
+  legacyPath,
+  yoramPath,
+  legacyStatus,
+  yoramStatus,
+  classification,
+  evidence,
+}) {
   return {
     classification,
     evidence,
@@ -2339,9 +2873,18 @@ function residualProbeDisposition({ action, behaviorId, legacyPath, yoramPath, l
 }
 
 async function residualStatusProbe(ctx, legacyTranslation, yoramTranslation, route) {
-  const { legacyResult, yoramResult } = await ctx.helpers.requestBoth(ctx, legacyTranslation, yoramTranslation);
-  if ((legacyResult.status >= 400) !== (yoramResult.status >= 400)) {
-    pushApiViolation(ctx, route, `legacy HTTP ${legacyResult.status}`, `yoram HTTP ${yoramResult.status}`);
+  const { legacyResult, yoramResult } = await ctx.helpers.requestBoth(
+    ctx,
+    legacyTranslation,
+    yoramTranslation,
+  );
+  if (legacyResult.status >= 400 !== yoramResult.status >= 400) {
+    pushApiViolation(
+      ctx,
+      route,
+      `legacy HTTP ${legacyResult.status}`,
+      `yoram HTTP ${yoramResult.status}`,
+    );
   }
 }
 
@@ -2412,7 +2955,8 @@ scenarios.push({
         legacyStatus: 303,
         yoramStatus: 400,
         classification: "IMPLEMENTATION_DIFFERENCE",
-        evidence: "Malformed site import is rejected by the canonical REST boundary; no import state is persisted.",
+        evidence:
+          "Malformed site import is rejected by the canonical REST boundary; no import state is persisted.",
       }),
     },
     {
@@ -2428,7 +2972,8 @@ scenarios.push({
         legacyStatus: 500,
         yoramStatus: 400,
         classification: "LEGACY_BUG_NOT_REPRODUCED",
-        evidence: "yona-original/app/controllers/SiteApp.java:87-95 lets EmailException escape for the malformed empty mail form; Yoram rejects the same unsupported payload cleanly.",
+        evidence:
+          "yona-original/app/controllers/SiteApp.java:87-95 lets EmailException escape for the malformed empty mail form; Yoram rejects the same unsupported payload cleanly.",
       }),
     },
     { actor: "admin", action: "probe-site-mail-list-invalid", params: {} },
@@ -2436,6 +2981,7 @@ scenarios.push({
   ],
   behaviorMatcher: {
     action: /^(SiteApp\.(exportData|importData|sendMail|mailList)|UserApp\.resetUserPassword)$/,
-    route: /^(GET \/sites\/export|POST \/sites\/(import|mail|mailList)|POST \/user\/resetPassword)$/,
+    route:
+      /^(GET \/sites\/export|POST \/sites\/(import|mail|mailList)|POST \/user\/resetPassword)$/,
   },
 });

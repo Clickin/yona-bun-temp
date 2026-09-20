@@ -103,6 +103,8 @@ export type WorkspaceSidebarOrganizationItem = YoramRecord & {
 };
 
 export type WorkspaceMemberProjectItem = WorkspaceSidebarProjectItem & {
+  createdAt: string;
+  lastPushedAt: string;
   notifications: YoramRecord[];
 };
 
@@ -120,14 +122,24 @@ export type ReadWorkspaceOverviewResponse = YoramRecord & {
   watchedProjects: WorkspaceMemberProjectItem[];
 };
 
+export type ProjectDirectoryItem = YoramProjectItem & {
+  createdAt: string;
+  lastPushedAt: string;
+};
+
+export type OrganizationListItem = YoramRecord & {
+  createdAt: string;
+  organizationName: string;
+};
+
 export type ListProjectsResponse = YoramRecord & {
-  items: YoramRecord[];
-  projects?: YoramRecord[];
+  items: ProjectDirectoryItem[];
+  projects?: ProjectDirectoryItem[];
 };
 
 export type ListOrganizationsResponse = YoramRecord & {
-  items: YoramRecord[];
-  organizations?: YoramRecord[];
+  items: OrganizationListItem[];
+  organizations?: OrganizationListItem[];
 };
 
 export type OrganizationDetail = YoramRecord;
@@ -146,7 +158,7 @@ export type OrganizationAdminView = YoramRecord & {
 export type OrganizationContainer = YoramRecord & {
   adminMembers: YoramUserItem[];
   memberMembers: YoramUserItem[];
-  visibleProjects: YoramProjectItem[];
+  visibleProjects: (ProjectDirectoryItem & { members: YoramUserItem[] })[];
 };
 
 export type ProjectDetail = YoramRecord & {

@@ -1,13 +1,8 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const EXPECTED_EDIT_FORM_BODY = `
-<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/issue/1" id="issue-form" enctype="multipart/form-data"><input type="hidden" name="authorId" value="1"><input type="hidden" id="isDraft" name="isDraft" value="false"><input type="hidden" id="isPublish" name="isPublish" value="false"><div class="row-fluid"><div class="span12"><dl><dt><label for="title"><strong class="secondary-txt">#1</strong></label></dt><dd><div class="span12"><div class="span11"><input type="text" id="title" name="title" value="Editable issue" class="text title " maxlength="250" tabindex="1" placeholder="Title" autocomplete="off"></div><div class="span1 subtask-message">Option</div></div><div class="subtask-wrap show"><div class="span3"><select id="targetProjectId" name="targetProjectId" data-format="projects" data-placeholder="Choose projects" data-container-css-class="fullsize"><option value="7">sample</option></select></div><div class="span6"><select id="parentId" name="parentIssueId" data-format="issues" data-placeholder="Choose projects" data-container-css-class="fullsize"><option value="" selected="">??? Select parent issue ???</option><option value="42">#11.Existing parent</option></select></div></div></dd></dl></div><div class="row-fluid"><div class="span9 span-left-pane"><dl><dd style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2">Editable body</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></dd></dl><div class="upload-wrap content-footer" data-resource-type="ISSUE_POST" data-resource-id="101"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class=" actrow right-txt"><span class="send-notification-check"><label class="checkbox inline"><input type="checkbox" name="notificationMail" id="notificationMail" value="yes" checked=""><strong>Send notification mail</strong></label></span><button type="submit" id="button-save" class="ybtn ybtn-info">Save</button><button type="button" class="ybtn">Cancel</button></div></div><div class="span3 span-hard-wrap right-menu"><dl class="issue-option"><dt>Status</dt><dd><div id="state" class="btn-group auto"><button type="button" class="btn dropdown-toggle auto"><span class="d-label">Status</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="OPEN" data-selected="true" class="active"><button type="button">Open</button></li><li data-value="CLOSED"><button type="button">Closed</button></li></ul></div></dd></dl><dl class="issue-option"><dt>Assignee</dt><dd><input type="hidden" class="bigdrop" id="assignee" name="assigneeLoginId" placeholder="No assignee" value="dev" style="width:100%"></dd></dl><dl id="milestoneOption" class="issue-option"><dt>Milestone</dt><dd><select id="milestoneId" name="milestoneId" data-format="milestone" data-container-css-class="fullsize"><option value="0">No milestone</option><optgroup label="Open"><option value="5" data-state="open" selected="">v1.0</option></optgroup></select></dd></dl><dl class="issue-option"><dt>Due date</dt><dd><div class="search search-bar"><input type="text" id="issueDueDate" name="dueDate" class="textbox full" value="2026-08-02"><button type="button" class="search-btn btn-calendar"><i class="yobicon-calendar2"></i></button><input type="date" class="issue-due-date-native-picker" aria-label="Choose due date" tabindex="-1" value="2026-08-02"></div></dd></dl><dl class="issue-option"><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" data-close-on-select="false" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false" selected="">bug</option></optgroup></select></dd></dl></div></div></div></form></div>
+<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/issue/1" id="issue-form" enctype="multipart/form-data"><input type="hidden" name="authorId" value="1"><input type="hidden" id="isDraft" name="isDraft" value="false"><input type="hidden" id="isPublish" name="isPublish" value="false"><div class="row-fluid"><div class="span12"><dl><dt><label for="title"><strong class="secondary-txt">#1</strong></label></dt><dd><div class="span12"><div class="span11"><input type="text" id="title" name="title" value="Editable issue" class="text title " maxlength="250" tabindex="1" placeholder="Title" autocomplete="off"></div><div class="span1 subtask-message">Option</div></div><div class="subtask-wrap show"><div class="span3"><select id="targetProjectId" name="targetProjectId" data-format="projects" data-placeholder="Choose projects" data-container-css-class="fullsize"><option value="7">sample</option></select></div><div class="span6"><select id="parentId" name="parentIssueId" data-format="issues" data-placeholder="Choose projects" data-container-css-class="fullsize"><option value="" selected="">??? Select parent issue ???</option><option value="42">#11.Existing parent</option></select></div></div></dd></dl></div><div class="row-fluid"><div class="span9 span-left-pane"><dl><dd style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2">Editable body</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></dd></dl><div class="upload-wrap content-footer" data-resource-type="ISSUE_POST" data-resource-id="101"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class=" actrow right-txt"><span class="send-notification-check"><label class="checkbox inline"><input type="checkbox" name="notificationMail" id="notificationMail" value="yes" checked=""><strong>Send notification mail</strong></label></span><button type="submit" id="button-save" class="ybtn ybtn-info">Save</button><button type="button" class="ybtn">Cancel</button></div></div><div class="span3 span-hard-wrap right-menu"><dl class="issue-option"><dt>Status</dt><dd><div id="state" class="btn-group auto"><button type="button" class="btn dropdown-toggle auto"><span class="d-label">Status</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="OPEN" data-selected="true" class="active"><button type="button">Open</button></li><li data-value="CLOSED"><button type="button">Closed</button></li></ul></div></dd></dl><dl class="issue-option"><dt>Assignee</dt><dd><input type="hidden" class="bigdrop" id="assignee" name="assigneeLoginId" placeholder="No assignee" value="dev" style="width:100%"></dd></dl><dl id="milestoneOption" class="issue-option"><dt>Milestone</dt><dd><select id="milestoneId" name="milestoneId" data-format="milestone" data-container-css-class="fullsize"><option value="0">No milestone</option><optgroup label="Open"><option value="5" data-state="open" selected="">v1.0</option></optgroup></select></dd></dl><dl class="issue-option"><dt>Due date</dt><dd><div class="search search-bar"><input type="text" id="issueDueDate" name="dueDate" class="textbox full" value="2026-08-02" aria-haspopup="dialog" aria-expanded="false"><button type="button" class="search-btn btn-calendar" aria-haspopup="dialog" aria-expanded="false"><i class="yobicon-calendar2"></i></button></div></dd></dl><dl class="issue-option"><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" data-close-on-select="false" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false" selected="">bug</option></optgroup></select></dd></dl></div></div></div></form></div>
 `;
-const ROUTE_SOURCE = readFileSync(
-  new URL("../src/routes/$ownerName/$projectName/issue/$issueNumber/editform.tsx", import.meta.url),
-  "utf8",
-);
 
 function withLegacyEditor(html: string, markdownHelpHtml: string) {
   return html.replace(
@@ -171,44 +166,12 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
   await expect(labelEditLink).toHaveText("[Edit]");
   await expect(labelEditLink).not.toHaveAttribute("data-status", "active");
   await expect(labelEditLink).not.toHaveAttribute("aria-current", "page");
-  expect(ROUTE_SOURCE).toContain("<Link");
-  expect(ROUTE_SOURCE).toContain('className="label-edit"');
-  expect(ROUTE_SOURCE).toContain("legacyRouteLocalActiveProps");
-  expect(ROUTE_SOURCE).toContain('"aria-current": undefined');
-  expect(ROUTE_SOURCE).toContain('"data-status": undefined');
-  expect(ROUTE_SOURCE).not.toContain("createLink");
-  expect(ROUTE_SOURCE).not.toMatch(/<a[\s>]/u);
-  expect(ROUTE_SOURCE).not.toContain("setAttribute");
-  expect(ROUTE_SOURCE).not.toContain("removeAttribute");
-  expect(ROUTE_SOURCE).not.toContain("activeProps={{ className: undefined }}");
-  expect(ROUTE_SOURCE).toContain(
-    'import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";',
-  );
-  expect(ROUTE_SOURCE).toContain("<LegacyMarkdownHelp />");
-  expect(ROUTE_SOURCE).not.toMatch(
-    /help\/markdown\.scala\.html|legacyMarkdownHelpTemplate|legacyMarkdownHelpHtml|dangerouslySetInnerHTML|__html/u,
-  );
-  expect(ROUTE_SOURCE).not.toMatch(
-    /document\.|globalThis\["document"\]|window\.parent\.document|addEventListener|classList|style\.display|href="javascript:/u,
-  );
-  expect(ROUTE_SOURCE).not.toMatch(/data-toggle="tab"/u);
-  expect(ROUTE_SOURCE).not.toMatch(/data-mode=/u);
-  expect(ROUTE_SOURCE).toContain(
-    '<title>{`${t("title.editIssue")} - ${ownerName}/${projectName}`}</title>',
-  );
-  expect(ROUTE_SOURCE).not.toMatch(
-    /document\.title|window\.document\.title|window\.parent\.document\.title|globalThis\["document"\]\.title/u,
-  );
   await expect(page.locator(".subtask-wrap")).toHaveClass(/subtask-wrap show/);
   await expect(page.locator(".subtask-message")).toHaveClass("span1 subtask-message");
   await expect(page.locator("#targetProjectId")).toBeEnabled();
   await expect(page.locator("#parentId")).toBeEnabled();
   await expect(page.locator("#parentId option").first()).toHaveText("??? Select parent issue ???");
   await expect(page.locator('#parentId option[value="42"]')).toHaveText("#11. Existing parent");
-  expect(ROUTE_SOURCE).toContain('const currentIssueId = stringField(issueRecord.issueId, "")');
-  expect(ROUTE_SOURCE).toContain('parentIssueId !== "" || currentIssueId !== ""');
-  expect(ROUTE_SOURCE).toContain("setIsSubtaskOptionVisible");
-  expect(ROUTE_SOURCE).toContain('"이미 부모 이슈입니다."');
   await expect(page.locator("#notificationMail")).toBeChecked();
   await expect(page.locator("#editor-body-body")).toHaveAttribute("markdown", "true");
   await expect(page.locator("#editor-body-body")).toHaveAttribute("tabindex", "2");
@@ -283,12 +246,7 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
   await expect(
     page.locator('.content-wrap.frm-wrap script[type="text/x-jquery-tmpl"]'),
   ).toHaveCount(0);
-  expect(ROUTE_SOURCE).not.toMatch(
-    /attachedFileTemplate|dropFilesHereTemplate|tplAttachedFile|tplDropFilesHere|text\/x-jquery-tmpl/u,
-  );
   const cancelButton = await expectModernCancelControl(page);
-  expect(ROUTE_SOURCE).not.toContain("window.history.back()");
-  expect(ROUTE_SOURCE).toContain("router.history.back()");
 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
@@ -686,14 +644,6 @@ test("project issue edit form drops legacy plugin initializer markers but keeps 
   );
   await expect(editor.locator(".markdown-help")).toHaveCount(1);
   await expect(editor.locator(".notification-receiver")).toHaveCount(1);
-
-  expect(ROUTE_SOURCE).not.toMatch(/data-toggle="(?:select2|dropdown|markdown-editor)"/u);
-  expect(ROUTE_SOURCE).not.toMatch(
-    /<div\b(?=[^>]*\bid="state")(?=[^>]*\bdata-name="state")[^>]*>/u,
-  );
-  expect(ROUTE_SOURCE).not.toMatch(/data-avatar-url/u);
-  expect(ROUTE_SOURCE).not.toMatch(/data-mode=/u);
-  expect(ROUTE_SOURCE).not.toMatch(/id="assignee"[\s\S]*title=""/u);
 });
 
 test("project issue edit form exposes legacy group search scope when org data exists", async ({
@@ -817,9 +767,6 @@ test("project issue edit form renders movable project options without select2 av
         value: "11",
       },
     ]);
-
-  expect(ROUTE_SOURCE).toContain("(project as YoramRecord).movableIssueProjects");
-  expect(ROUTE_SOURCE).toContain("id === currentProjectId");
 });
 
 test("project issue edit form translates legacy write validation behavior", async ({ page }) => {
@@ -887,7 +834,17 @@ test("project issue edit form translates legacy write validation behavior", asyn
   await expect(page.locator("#issueDueDate")).toBeFocused();
   expect(updateRequests).toBe(0);
 
-  await page.locator("#issueDueDate").fill("2026-08-03");
+  // The edit caller has no onChange: choosing a date must still update FormData.
+  await page.locator("#issueDueDate").fill("2026-08-02");
+  const calendar = page.getByRole("dialog", { name: "Due date", exact: true });
+  await expect(calendar).toBeVisible();
+  await expect(calendar.getByRole("button", { name: "2026-08-02", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await calendar.getByRole("button", { name: "2026-08-03", exact: true }).click();
+  await expect(calendar).toHaveCount(0);
+  await expect(page.locator("#issueDueDate")).toHaveValue("2026-08-03");
   await page.locator("#button-save").click();
   await expect.poll(() => updateRequests).toBe(1);
   expect(updateBody?.isDraft).toBe(false);
@@ -1117,22 +1074,6 @@ test("project issue draft edit form submits legacy draft save and publish flags"
   expect(publishBody.isDraft).toBe(false);
   expect(publishBody.isPublish).toBe(true);
   await expect.poll(() => updateRequests).toBe(2);
-
-  expect(ROUTE_SOURCE).not.toMatch(/querySelector<HTMLInputElement>\("#isDraft"\)/u);
-  expect(ROUTE_SOURCE).not.toMatch(/querySelector<HTMLInputElement>\("#isPublish"\)/u);
-  expect(ROUTE_SOURCE).not.toMatch(/setAttribute\("value", "true"\)/u);
-  expect(ROUTE_SOURCE).not.toMatch(
-    /\$\("#is(?:Draft|Publish)"\)|document\.|classList|style\.display/u,
-  );
-  expect(ROUTE_SOURCE).toContain('id="draft-save-btn"');
-  expect(ROUTE_SOURCE).toContain(
-    'const draftPublishDescription = t("button.draft.publish.description")',
-  );
-  expect(ROUTE_SOURCE).toContain('const draftSaveDescription = t("button.draft.save.description")');
-  expect(ROUTE_SOURCE).toContain("function handleDraftPublishClick");
-  expect(ROUTE_SOURCE).toContain("confirm(draftPublishDescription)");
-  expect(ROUTE_SOURCE).not.toContain("window.confirm(");
-  expect(ROUTE_SOURCE).toContain("requestSubmit()");
 });
 
 async function mockProjectIssueEditForm(

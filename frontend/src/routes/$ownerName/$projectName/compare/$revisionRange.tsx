@@ -116,16 +116,6 @@ function ProjectCodeCompareBody({
           </strong>
         </p>
 
-        {compare.files.length > 0 ? (
-          <div data-owner="project-compare-diff-stat-bar">
-            <span className="project-compare-diff-stat-badge-changed">
-              {compare.filesChanged} {compare.filesChanged === 1 ? "file" : "files"} changed
-            </span>
-            <span className="project-compare-diff-stat-badge-add">+{compare.insertions}</span>
-            <span className="project-compare-diff-stat-badge-delete">-{compare.deletions}</span>
-          </div>
-        ) : null}
-
         {isSvn && compare.patch ? (
           <div className="diff-wrap" data-owner="project-compare-diff-wrap">
             <div className="diff-body hide" data-commit-origin="true" id="commit">

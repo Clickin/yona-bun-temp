@@ -1,4 +1,3 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
@@ -12,42 +11,6 @@ const owners = [
   "site-post-list-setting-sidebar-column",
   "site-post-list-setting-content-column",
 ];
-
-test("direct management grid owns only the active frozen base declarations", () => {
-  const route = readFileSync("src/routes/sites/postList.tsx", "utf8");
-  const layout = readFileSync("../yona-original/app/views/site/siteMngLayout.scala.html", "utf8");
-  const postList = readFileSync("../yona-original/app/views/site/postList.scala.html", "utf8");
-  const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
-  const responsive = readFileSync(
-    "../yona-original/public/bootstrap/css/bootstrap-responsive.css",
-    "utf8",
-  );
-  const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
-
-  expect(postList).toContain("@siteMngLayout(message)");
-  expect(layout).toContain('<div class="site-setting-wrap">');
-  expect(layout).toContain('<div class="row-fluid">');
-  expect(layout).toContain('<div class="span2">');
-  expect(layout).toContain('<div class="span10">');
-  expect(pageLess).toContain(".site-setting-wrap {\n    margin:0 auto;");
-  expect(bootstrap).toContain(".row-fluid {\n  width: 100%;");
-  expect(bootstrap).toContain('.row-fluid [class*="span"] {');
-  expect(bootstrap).toContain(".row-fluid .span10 {\n  width: 82.97872340425532%;");
-  expect(bootstrap).toContain(".row-fluid .span2 {\n  width: 14.893617021276595%;");
-  expect(responsive).toContain('[class*="span"]');
-  for (const owner of owners) expect(route).toContain(`data-owner="${owner}"`);
-  // F5 route renders the legacy grid classes — siteMngLayout.scala.html:39-42,72.
-  // e2e closure ledger (2026-08-11): ROUTE_DOM parity restores the siteMngLayout
-  // classes on the React-owned elements; the frozen fallback styles them.
-  for (const legacyClass of [
-    'className="site-setting-wrap"',
-    'className="row-fluid"',
-    'className="span2"',
-    'className="span10"',
-  ])
-    expect(route).toContain(legacyClass);
-  expect(route).not.toContain('"@media (max-width: 767px)"');
-});
 
 test("direct management grid preserves the active desktop and mobile proportions in one browser", async ({
   page,
@@ -177,7 +140,7 @@ async function installFixture(page: Page) {
             authorLoginId: "alice",
             commentCount: 3,
             createdLabel: "1 day ago",
-            createdTitle: "2026-06-29",
+            createdTitle: new Date(Date.now() - 26 * 60 * 60 * 1_000).toISOString(),
             ownerName: "acme",
             postNumber: "7",
             projectLogoUrl: "/assets/images/project_default_logo.png",

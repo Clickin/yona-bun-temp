@@ -44,6 +44,7 @@ import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
 import { DefaultSearchErrorBody, isDefaultForbiddenError } from "../-search-screen";
 import { RootAliasNotFound } from "../__root";
+import { localizedMilestoneUntilLabel } from "./$projectName/milestone/$milestoneId";
 
 const legacyProjectShellLinkActiveOptions = {
   exact: true,
@@ -1335,11 +1336,6 @@ export function ProjectHomeBody({
                   <span id="project-description" className="markdown-wrap">
                     {overviewText ? (
                       <LegacyMarkdown
-                        components={{
-                          p: ({ children }) => (
-                            <p className="project-home-markdown-paragraph">{children}</p>
-                          ),
-                        }}
                         urlTransform={(url) => basePathUrlTransform(runtimeConfig.basePath, url)}
                       >
                         {overviewText}
@@ -1586,7 +1582,7 @@ export function ProjectHomeBody({
                 booleanField(project.viewerCanLeave) ? (
                   <button
                     type="button"
-                    className="ybtn ybtn-minimum ybtn-danger"
+                    className="ybtn ybtn-minimum ybtn-danger pull-right"
                     id="projectLeaveBtn"
                     onClick={openLeaveModal}
                     data-owner="project-home-leave-button"
@@ -1720,7 +1716,7 @@ function ProjectHomeMilestoneStatus({
             {t("label.dueDate")}
             <strong>{dueDateLabel}</strong>
             {!isClosed && dueDateRelative ? (
-              <span className="date">({dueDateRelative})</span>
+              <span className="date">({localizedMilestoneUntilLabel(dueDateRelative, t)})</span>
             ) : null}
           </span>
         ) : null}

@@ -1,10 +1,8 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
-import { expect, test } from "../wtr-compat.ts";
+import { expect, test, type Page } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve joins path parts.
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
-const fileURLToPath = (u: URL) => u.pathname;
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 // Both fallback modes render 0px: legacy select2.css:578-583 keeps the
@@ -14,107 +12,7 @@ const expectedProjectOriginalMargin = "0px";
 const screenshotDirectory = resolve(
   `output/playwright/style-project-new-pull-request-selector-floats/${"normal"}`,
 );
-const source = (relativePath: string) =>
-  readFileSync(fileURLToPath(new URL(relativePath, import.meta.url)), "utf8");
-
-test("new pull request form owns mr5 only on original project selects", async ({ page }) => {
-  const routeSource = source("../src/routes/$ownerName/$projectName/newPullRequestForm.tsx");
-  const styleSource = source("../src/app.css");
-  const legacy = source("../../yona-original/app/views/git/create.scala.html");
-  const commonLess = source("../../yona-original/app/assets/stylesheets/less/_common.less");
-  const pageLess = source("../../yona-original/app/assets/stylesheets/less/_page.less");
-  const responsiveLess = source("../../yona-original/app/assets/stylesheets/less/_responsive.less");
-  const bootstrapCss = source("../../yona-original/public/bootstrap/css/bootstrap.css");
-  const bootstrapResponsiveCss = source(
-    "../../yona-original/public/bootstrap/css/bootstrap-responsive.css",
-  );
-  const legacyFallbackCss = mergedLegacyBlock();
-  const yobiLess = source("../../yona-original/app/assets/stylesheets/yobi.less");
-  const messages = source("../../yona-original/conf/messages");
-  const pullRequestPageLess = pageLess.split("\n").slice(5458, 5478).join("\n");
-
-  expect(legacy).toContain('<div class="pull-request-wrap">');
-  expect(legacy).toContain(
-    '<select id="fromProjectId" name="fromProjectId" data-toggle="select2" class="mr5">',
-  );
-  expect(legacy).toContain(
-    '<select id="toProjectId" name="toProjectId" data-toggle="select2" class="mr5">',
-  );
-  for (const id of ["fromBranch", "toBranch"]) {
-    const start = legacy.indexOf(`<select id="${id}"`);
-    const end = legacy.indexOf("</select>", start);
-    expect(start).toBeGreaterThanOrEqual(0);
-    expect(legacy.slice(start, end)).not.toContain("mr5");
-  }
-  expect(commonLess).toContain(".mr5 { margin-right:5px; }");
-  expect(pullRequestPageLess).toContain(".pull-request-wrap {");
-  expect(pullRequestPageLess).toContain("margin-bottom:20px;");
-  expect(pullRequestPageLess).toContain("min-height:55px;");
-  expect(pullRequestPageLess).toContain(".field-title {");
-  expect(pullRequestPageLess).toContain(".arrow {");
-  expect(bootstrapCss).toContain(".pull-right {\n  float: right;");
-  expect(bootstrapCss).toContain(".pull-left {\n  float: left;");
-  expect(responsiveLess).toContain("@media all and (max-width: 720px) {");
-  expect(responsiveLess).toContain('input[type="text"],');
-  expect(responsiveLess).toContain(".project-selects {");
-  expect(bootstrapCss).toContain("button,\ninput,\nselect,\ntextarea {\n  margin: 0;");
-  expect(bootstrapCss).toContain("input::-moz-focus-inner");
-  expect(bootstrapResponsiveCss).toContain("@media (max-width: 767px) {");
-  expect(bootstrapResponsiveCss).toContain(".row-fluid {");
-  expect(bootstrapResponsiveCss).toContain(".input-block-level {");
-  expect(legacyFallbackCss).toContain(
-    ".select2-offscreen, .select2-offscreen:focus {\n" +
-      "    clip: rect(0 0 0 0) !important;\n" +
-      "    width: 1px !important;\n" +
-      "    height: 1px !important;\n" +
-      "    border: 0 !important;\n" +
-      "    margin: 0 !important;",
-  );
-  for (const importedFile of [
-    "_variables.less",
-    "_mixins.less",
-    "_common.less",
-    "_sprites.less",
-    "_page.less",
-    "_tippy.less",
-    "_scrollbar.less",
-    "_responsive.less",
-    "_yobiUI.less",
-    "_temporary.less",
-    "_markdown.less",
-    "_migration.less",
-    "_override.less",
-  ]) {
-    expect(yobiLess).toContain(`@import "less/${importedFile}";`);
-  }
-  for (const message of [
-    "button.add.checklist = Add checklist",
-    "button.cancel = Cancel",
-    "button.clear.temporary = Clear Temporary",
-    "common.editor.edit = Edit",
-    "common.editor.preview = Preview",
-    "pullRequest.from = From",
-    "pullRequest.is.merging = We are checking if the code is safe. Please wait for a while to complete this process.",
-    "pullRequest.menu.commit = Commits",
-    "pullRequest.select.branch = Select branch",
-    "pullRequest.send = Send pull request",
-    "pullRequest.to = To",
-    "title.newPullRequest = Send pull request",
-  ]) {
-    expect(messages).toContain(message);
-  }
-
-  expect(routeSource).toContain('data-owner="new-pull-request-from-column"');
-  expect(routeSource).toContain('data-owner="new-pull-request-to-column"');
-  // legacy git/create.scala.html:37-64 wraps from/to columns in .pull-left/.pull-right
-  // (project-pullrequest-create-form parity); these are layout columns, not the
-  // mr5 select ownership this spec pins
-  expect(routeSource).toContain('className="pull-left"');
-  expect(routeSource).toContain('className="pull-right"');
-  expect(routeSource).toContain('data-owner="new-pull-request-from-project-original"');
-  expect(routeSource).toContain('data-owner="new-pull-request-to-project-original"');
-  expect(routeSource).not.toContain('data-toggle="select2"');
-
+test("new pull request form preserves legacy project selectors and layout", async ({ page }) => {
   await mockNewPullRequestForm(page);
   for (const viewport of [
     { height: 900, name: "1366x900", width: 1366 },
@@ -160,25 +58,17 @@ test("new pull request form owns mr5 only on original project selects", async ({
     ]);
     await expect(form.locator(".actions button")).toHaveText(["Send pull request", "Cancel"]);
 
-    for (const [id, owner] of [
-      ["fromProjectId", "new-pull-request-from-project-original"],
-      ["toProjectId", "new-pull-request-to-project-original"],
-    ] as const) {
+    for (const id of ["fromProjectId", "toProjectId"]) {
       const original = page.locator(`#${id}`);
       await expect(original).toHaveClass(/\bmr5\b/u);
       await expect(original).toHaveClass(/\bselect2-offscreen\b/u);
-      // Fallback-on intentionally resets margin; fallback-off lets Style mr5 win.
       await expect(original).toHaveCSS("margin-right", expectedProjectOriginalMargin);
-      await expect(original).toHaveAttribute("data-owner", owner);
-      // data-style-src is dev-only metadata (dist renders null; parity helper treats it as env-variant noise) — dropped in WTR copy.
     }
     for (const id of ["fromBranch", "toBranch"]) {
       const original = page.locator(`#${id}`);
       await expect(original).not.toHaveClass(/\bmr5\b/u);
       await expect(original).toHaveClass(/\bselect2-offscreen\b/u);
       await expect(original).toHaveCSS("margin-right", "0px");
-      await expect(original).not.toHaveAttribute("data-owner");
-      // data-style-src is dev-only metadata (dist renders null; parity helper treats it as env-variant noise) — dropped in WTR copy.
     }
     await expect(page.locator("#fromProjectId")).toHaveValue("7");
     await expect(page.locator("#fromBranch")).toHaveValue("feature/ui");

@@ -30,7 +30,11 @@ test("svn HEAD folder keeps the legacy HEAD history link and ko-KR folder skelet
   await expect(page.locator("#branches option:checked")).toHaveText("HEAD");
   await expect(page.locator(".select2-chosen")).toHaveText("HEAD");
   await expect(page.locator(".select2-chosen .branch-label")).toHaveCount(0);
-  await expect(page.locator("#breadcrumbs a")).toHaveCount(2);
+  await expect(page.locator("#breadcrumbs a")).toHaveCount(1);
+  await expect(page.locator("#breadcrumbs a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/svnplayground/code/HEAD`,
+  );
   await expect(page.locator("#breadcrumbs")).toHaveText("svnplayground");
   await expect(page.locator(".code-browse-header > .pull-right")).toHaveCount(0);
   await expect(page.locator(".list-wrap > .listhead strong")).toHaveText([

@@ -603,5 +603,8 @@
   "validation.required": "必須項目です",
   "validation.reservedWord": "予約語は使用できません",
   "validation.retypePassword": "パスワードをもう一回入力してください",
-  "validation.tooShortPassword": "パスワードは４文字以上にしてください"
+  "validation.tooShortPassword": "パスワードは４文字以上にしてください",
+  "select2.noMatches": "該当なし",
+  "common.time.am": "午前",
+  "common.time.pm": "午後"
 }

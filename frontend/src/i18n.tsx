@@ -144,6 +144,45 @@ export function createLegacyI18nRuntime(
   };
 }
 
+export function formatLegacyTimestamp(value: string, t: LegacyI18nContextValue["t"]) {
+  const date = new Date(value);
+  const timestamp = date.getTime();
+  if (!Number.isFinite(timestamp)) {
+    return { label: value, title: value };
+  }
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = date.getHours();
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+  const fullDate = `${year}-${month}-${day}`;
+  const title = `${fullDate} ${hours % 12 || 12}:${minutes}:${seconds} ${t(hours < 12 ? "common.time.am" : "common.time.pm")}`;
+  const now = Date.now();
+  const elapsedSeconds = Math.floor(Math.max(0, now - timestamp) / 1_000);
+  const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+  const elapsedHours = Math.floor(elapsedMinutes / 60);
+  const elapsedDays = Math.floor(elapsedHours / 24);
+  let label: string;
+  if (elapsedDays >= 8) {
+    label = year === new Date(now).getFullYear() ? `${month}-${day}` : fullDate;
+  } else if (elapsedSeconds === 0) {
+    label = t("common.time.just");
+  } else {
+    const [unit, count] =
+      elapsedDays > 0
+        ? ["day", elapsedDays]
+        : elapsedHours > 0
+          ? ["hour", elapsedHours]
+          : elapsedMinutes > 0
+            ? ["minute", elapsedMinutes]
+            : ["second", elapsedSeconds];
+    label = t(`common.time.${unit}${count === 1 ? "" : "s"}`, { args: [count] });
+  }
+  return { label, title };
+}
+
 export function formatLegacyMessage(
   template: string,
   args: readonly (number | string)[] | undefined,

@@ -23,7 +23,13 @@ const MERGED_DEFINITIONS = { ...ACTION_DEFINITIONS, ...actionDefinitions };
 const knownActions = Object.keys(MERGED_DEFINITIONS);
 
 const inventory = JSON.parse(
-  readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), "../../docs/provenance/behavior-inventory.json"), "utf8"),
+  readFileSync(
+    path.join(
+      path.dirname(fileURLToPath(import.meta.url)),
+      "../../docs/provenance/behavior-inventory.json",
+    ),
+    "utf8",
+  ),
 ).behaviors;
 
 test("every scenario passes validateScenarios against merged registry", () => {
@@ -38,9 +44,21 @@ test("every referenced action exists in ACTION_DEFINITIONS after merge", () => {
         MERGED_DEFINITIONS[step.action],
         `${scenario.id}: action ${step.action} missing from merged registry`,
       );
-      assert.equal(typeof MERGED_DEFINITIONS[step.action].handler, "function", `${step.action} needs handler`);
-      assert.equal(typeof MERGED_DEFINITIONS[step.action].translateLegacy, "function", `${step.action} needs translateLegacy`);
-      assert.equal(typeof MERGED_DEFINITIONS[step.action].translateYoram, "function", `${step.action} needs translateYoram`);
+      assert.equal(
+        typeof MERGED_DEFINITIONS[step.action].handler,
+        "function",
+        `${step.action} needs handler`,
+      );
+      assert.equal(
+        typeof MERGED_DEFINITIONS[step.action].translateLegacy,
+        "function",
+        `${step.action} needs translateLegacy`,
+      );
+      assert.equal(
+        typeof MERGED_DEFINITIONS[step.action].translateYoram,
+        "function",
+        `${step.action} needs translateYoram`,
+      );
     }
   }
 });
@@ -73,7 +91,7 @@ test("restore resolver selects current restorable PRs, not stale branch or numbe
         if (side === "legacy" && request.path.endsWith("/closedPullRequests")) {
           return {
             status: 200,
-            body: 'pullRequest/88 pullRequest/87',
+            body: "pullRequest/88 pullRequest/87",
           };
         }
         if (side === "legacy" && request.path.endsWith("/88")) {
@@ -131,23 +149,59 @@ test("translators produce expected method/path literals", () => {
   const step = (action, params) => ({ action, params });
   const cases = [
     ["list-issue-labels", { owner: "admin", project: "sample" }, "/admin/sample/issue/labels"],
-    ["view-issue-labels-form", { owner: "admin", project: "sample" }, "/admin/sample/issue/labelsform"],
-    ["list-issue-label-categories", { owner: "admin", project: "sample" }, "/admin/sample/issue/label/categories"],
-    ["view-issue-label-category", { owner: "admin", project: "sample", categoryId: 1 }, "/admin/sample/issue/label/category/1"],
-    ["fetch-issue-label-styles", { owner: "admin", project: "sample" }, "/admin/sample/issue/labels.css"],
+    [
+      "view-issue-labels-form",
+      { owner: "admin", project: "sample" },
+      "/admin/sample/issue/labelsform",
+    ],
+    [
+      "list-issue-label-categories",
+      { owner: "admin", project: "sample" },
+      "/admin/sample/issue/label/categories",
+    ],
+    [
+      "view-issue-label-category",
+      { owner: "admin", project: "sample", categoryId: 1 },
+      "/admin/sample/issue/label/category/1",
+    ],
+    [
+      "fetch-issue-label-styles",
+      { owner: "admin", project: "sample" },
+      "/admin/sample/issue/labels.css",
+    ],
     ["view-site-labels", {}, "/labels?limit=1000"],
     ["view-site-label-categories", {}, "/categories?limit=1000"],
     ["list-milestones", { owner: "admin", project: "sample" }, "/admin/sample/milestones"],
-    ["view-milestone", { owner: "admin", project: "sample", milestoneId: 1 }, "/admin/sample/milestone/1"],
-    ["view-milestone-editform", { owner: "admin", project: "sample", milestoneId: 2 }, "/admin/sample/milestone/2/editform"],
-    ["view-new-milestone-form", { owner: "admin", project: "sample" }, "/admin/sample/newMilestoneForm"],
+    [
+      "view-milestone",
+      { owner: "admin", project: "sample", milestoneId: 1 },
+      "/admin/sample/milestone/1",
+    ],
+    [
+      "view-milestone-editform",
+      { owner: "admin", project: "sample", milestoneId: 2 },
+      "/admin/sample/milestone/2/editform",
+    ],
+    [
+      "view-new-milestone-form",
+      { owner: "admin", project: "sample" },
+      "/admin/sample/newMilestoneForm",
+    ],
     ["list-posts", { owner: "admin", project: "sample" }, "/admin/sample/posts"],
     ["view-post-form", { owner: "admin", project: "sample" }, "/admin/sample/postform"],
     ["view-post", { owner: "admin", project: "sample", postNumber: 1 }, "/admin/sample/post/1"],
-    ["view-post-editform", { owner: "admin", project: "sample", postNumber: 2 }, "/admin/sample/post/2/editform"],
+    [
+      "view-post-editform",
+      { owner: "admin", project: "sample", postNumber: 2 },
+      "/admin/sample/post/2/editform",
+    ],
     ["view-project-members", { owner: "admin", project: "sample" }, "/admin/sample/members"],
     ["view-project-watchers", { owner: "admin", project: "sample" }, "/admin/sample/watchers"],
-    ["view-project-setting-form", { owner: "admin", project: "sample" }, "/admin/sample/settingform"],
+    [
+      "view-project-setting-form",
+      { owner: "admin", project: "sample" },
+      "/admin/sample/settingform",
+    ],
     ["view-project-delete-form", { owner: "admin", project: "sample" }, "/admin/sample/deleteform"],
     ["view-project-transfer-form", { owner: "admin", project: "sample" }, "/admin/sample/transfer"],
     ["view-project-webhooks", { owner: "admin", project: "sample" }, "/admin/sample/webhooks"],
@@ -155,8 +209,16 @@ test("translators produce expected method/path literals", () => {
     ["view-project-go-menu", { owner: "admin", project: "sample" }, "/admin/sample/go"],
     ["view-change-vcs-form", { owner: "admin", project: "sample" }, "/admin/sample/changeVCS"],
     ["fetch-mention-list", { owner: "admin", project: "sample" }, "/admin/sample/mentionList"],
-    ["fetch-mention-list-commit-diff", { owner: "admin", project: "sample" }, "/admin/sample/mentionListAtCommitDiff"],
-    ["fetch-mention-list-pull-request", { owner: "admin", project: "sample" }, "/admin/sample/mentionListAtPullRequest?pullRequestId=1"],
+    [
+      "fetch-mention-list-commit-diff",
+      { owner: "admin", project: "sample" },
+      "/admin/sample/mentionListAtCommitDiff",
+    ],
+    [
+      "fetch-mention-list-pull-request",
+      { owner: "admin", project: "sample" },
+      "/admin/sample/mentionListAtPullRequest?pullRequestId=1",
+    ],
   ];
   for (const [action, params, expectedPath] of cases) {
     const legacy = MERGED_DEFINITIONS[action].translateLegacy(step(action, params), {});
@@ -164,11 +226,16 @@ test("translators produce expected method/path literals", () => {
       action === "view-site-labels" || action === "view-site-label-categories"
         ? { headers: { Accept: "application/json" } }
         : {};
-    assert.deepEqual(legacy, { method: "GET", path: expectedPath, ...expectedHeaders }, `${action} legacy translation`);
+    assert.deepEqual(
+      legacy,
+      { method: "GET", path: expectedPath, ...expectedHeaders },
+      `${action} legacy translation`,
+    );
     const yoram = MERGED_DEFINITIONS[action].translateYoram(step(action, params), {});
     assert.equal(yoram.method, "GET", `${action} yoram method`);
     assert.equal(yoram.path, expectedPath, `${action} yoram path (SPA shell serves legacy route)`);
-    if (yoram.pagePath !== undefined) assert.equal(yoram.pagePath, expectedPath, `${action} yoram pagePath`);
+    if (yoram.pagePath !== undefined)
+      assert.equal(yoram.pagePath, expectedPath, `${action} yoram pagePath`);
   }
 });
 
@@ -291,7 +358,11 @@ test("missing semantic category match blocks detail comparison", async () => {
     }),
     /no Yoram category matches legacy "type"/u,
   );
-  assert.equal(calls, 0, "do not probe an unrelated Yoram category after semantic resolution fails");
+  assert.equal(
+    calls,
+    0,
+    "do not probe an unrelated Yoram category after semantic resolution fails",
+  );
 });
 
 test("issue labels form compares equivalent route bodies with visible controls blocking", async () => {
@@ -317,7 +388,11 @@ test("issue labels form compares equivalent route bodies with visible controls b
   assert.equal(target.spa, true);
   assert.equal(target.legacySelector, ".page-wrap-outer > .project-page-wrap.label-editor-wrap");
   assert.equal(target.yoramSelector, '[data-owner="project-labels-form-page"]');
-  assert.equal(target.selector, undefined, "side-specific roots must not fall back to the whole page");
+  assert.equal(
+    target.selector,
+    undefined,
+    "side-specific roots must not fall back to the whole page",
+  );
   assert.equal(target.legacy, "http://legacy.test/admin/sample/issue/labelsform");
   assert.equal(target.yoram, "http://yoram.test/admin/sample/issue/labelsform");
 });
@@ -333,7 +408,11 @@ test("labels form route-body losses for visible labels and buttons remain blocki
         fullDiffs: [{ side: "legacy-only", expected }],
       },
     };
-    assert.equal(domVisibleLoss(detail), true, `missing labels-form control must remain visible: ${expected}`);
+    assert.equal(
+      domVisibleLoss(detail),
+      true,
+      `missing labels-form control must remain visible: ${expected}`,
+    );
     assert.equal(
       classifyViolation("dom", "/admin/sample/issue/labelsform", detail).classification,
       "UNVERIFIED",
@@ -353,7 +432,10 @@ test("compat reads keep legacy /-_-api/v1 paths and map yoram to RESTful", () =>
   assert.equal(watchers.path, "/api/v1/owners/admin/projects/sample/posts/1/watchers");
   assert.equal(watchers.pagePath, "/api/v1/owners/admin/projects/sample/posts/1/watchers");
   assert.equal(
-    MERGED_DEFINITIONS["list-post-watchers"].translateLegacy(step("list-post-watchers", { owner: "admin", project: "sample", postNumber: 1 }), {}).path,
+    MERGED_DEFINITIONS["list-post-watchers"].translateLegacy(
+      step("list-post-watchers", { owner: "admin", project: "sample", postNumber: 1 }),
+      {},
+    ).path,
     "/-_-api/v1/owners/admin/projects/sample/posts/1/watchers",
   );
 });
@@ -521,9 +603,23 @@ const WAVE3_SCENARIO_IDS = [
 // Behaviors these wave-3 scenarios must claim; all were uncovered before the
 // wave (verified against the full-registry union computed before this change).
 const WAVE3_REQUIRED_IDS = [
-  "B-0004", "B-0012", "B-0030", "B-0121", "B-0122", "B-0150",
-  "B-0184", "B-0204", "B-0231", "B-0239", "B-0255", "B-0267", "B-0272",
-  "B-0273", "B-0274", "B-0284", "B-0313",
+  "B-0004",
+  "B-0012",
+  "B-0030",
+  "B-0121",
+  "B-0122",
+  "B-0150",
+  "B-0184",
+  "B-0204",
+  "B-0231",
+  "B-0239",
+  "B-0255",
+  "B-0267",
+  "B-0272",
+  "B-0273",
+  "B-0274",
+  "B-0284",
+  "B-0313",
 ];
 
 test("wave-3 lifecycle scenarios claim their targeted behavior set", () => {
@@ -536,7 +632,9 @@ test("wave-3 lifecycle scenarios claim their targeted behavior set", () => {
   // None of the targeted ids may be claimed by a non-wave-3 scenario too —
   // they are this domain's exclusive NEW coverage.
   const others = scenarios.filter((scenario) => !WAVE3_SCENARIO_IDS.includes(scenario.id));
-  const claimedElsewhere = new Set(others.flatMap((scenario) => matchBehaviors(scenario, inventory)));
+  const claimedElsewhere = new Set(
+    others.flatMap((scenario) => matchBehaviors(scenario, inventory)),
+  );
   for (const id of WAVE3_REQUIRED_IDS) {
     assert.ok(!claimedElsewhere.has(id), `${id} is also claimed by a pre-existing scenario`);
   }
@@ -567,14 +665,24 @@ test("throwaway-only mutations are confined to their lifecycle scenarios without
       `${scenario.id}: throwaway-only action used outside a lifecycle scenario`,
     );
     for (const step of uses) {
-      assert.equal(step.params.project, undefined, `${scenario.id}/${step.action}: static project target forbidden`);
+      assert.equal(
+        step.params.project,
+        undefined,
+        `${scenario.id}/${step.action}: static project target forbidden`,
+      );
       assert.equal(step.params.owner, "admin", `${scenario.id}/${step.action}: unexpected owner`);
     }
   }
   const p18 = scenarios.find((scenario) => scenario.id === "P18-throwaway-project-lifecycle");
   assert.ok(p18, "P18 lifecycle scenario missing");
-  assert.ok(p18.actions.some((a) => a.action === "create-project"), "P18 must create its throwaway project");
-  assert.ok(p18.actions[p18.actions.length - 1].action === "delete-project", "P18 must end by deleting the throwaway project");
+  assert.ok(
+    p18.actions.some((a) => a.action === "create-project"),
+    "P18 must create its throwaway project",
+  );
+  assert.ok(
+    p18.actions[p18.actions.length - 1].action === "delete-project",
+    "P18 must end by deleting the throwaway project",
+  );
 });
 
 test("throwaway setting mutation reports the exact legacy route", async () => {
@@ -597,8 +705,14 @@ test("throwaway setting mutation reports the exact legacy route", async () => {
 
 test("board label mutation changes only the posts created by the current scenario", async () => {
   const posts = {
-    legacy: new Map([[0, [1]], [17, [2]]]),
-    yoram: new Map([[0, [1]], [31, [2]]]),
+    legacy: new Map([
+      [0, [1]],
+      [17, [2]],
+    ]),
+    yoram: new Map([
+      [0, [1]],
+      [31, [2]],
+    ]),
   };
   await MERGED_DEFINITIONS["set-post-labels-api"].handler({
     step: { params: { owner: "admin", project: "sample", postNumber: 0 } },
@@ -606,9 +720,10 @@ test("board label mutation changes only the posts created by the current scenari
     entry: { violations: [] },
     helpers: {
       async sendRaw(_ctx, side, request) {
-        const match = side === "legacy"
-          ? /\/postlabel\/(\d+)$/u.exec(request.path)
-          : /\/posts\/(\d+)\/labels$/u.exec(request.path);
+        const match =
+          side === "legacy"
+            ? /\/postlabel\/(\d+)$/u.exec(request.path)
+            : /\/posts\/(\d+)\/labels$/u.exec(request.path);
         const number = Number(match?.[1]);
         if (!posts[side].has(number)) return { status: 404 };
         posts[side].set(number, request.json);
@@ -622,19 +737,111 @@ test("board label mutation changes only the posts created by the current scenari
   assert.deepEqual(posts.yoram.get(0), [1]);
 });
 
+test("member addition uses the legacy UI JSON response branch and canonical REST", () => {
+  const step = { params: { owner: "admin", project: "sample" } };
+  const resolved = { loginId: "bob" };
+  for (const action of ["add-project-member", "add-created-member"]) {
+    const legacy = MERGED_DEFINITIONS[action].translateLegacy(step, resolved);
+    assert.equal(legacy.headers.accept, "application/json");
+    assert.equal(legacy.headers["content-type"], "application/x-www-form-urlencoded");
+    assert.equal(legacy.headers["x-requested-with"], "XMLHttpRequest");
+    const yoram = MERGED_DEFINITIONS[action].translateYoram(step, resolved);
+    assert.equal(yoram.path, "/api/v1/owners/admin/projects/sample/members");
+    assert.deepEqual(yoram.json, { loginId: "bob" });
+  }
+});
+
+test("member mutations reject successful responses with divergent persisted watchers or unchanged membership", async () => {
+  let added = false;
+  const ctx = {
+    step: { params: { owner: "admin", project: "sample", loginId: "bob" } },
+    state: {},
+    entry: { errors: [], violations: [] },
+    helpers: {
+      async pairLenient() {
+        added = true;
+        return { legacyResult: { status: 200 }, yoramResult: { status: 200 } };
+      },
+      async sendRaw(_ctx, side, request) {
+        if (request.path.endsWith("/watchers")) {
+          return side === "legacy"
+            ? { status: 200, body: added ? '<div class="member-id">@bob</div>' : "" }
+            : { status: 200, json: { watchers: [] } };
+        }
+        return side === "legacy"
+          ? {
+              status: 200,
+              body: added ? '<a href="/admin/sample/member/35/edit" data-loginId="bob">' : "",
+            }
+          : { status: 200, json: { members: added ? [{ userId: 3, loginId: "bob" }] : [] } };
+      },
+    },
+  };
+  await MERGED_DEFINITIONS["add-project-member"].handler(ctx);
+  assert.ok(
+    ctx.entry.violations.some(
+      (item) =>
+        item.route === "/admin/sample/watchers" &&
+        item.expected.side === "legacy" &&
+        item.actual.watchers.includes("bob"),
+    ),
+  );
+  await MERGED_DEFINITIONS["remove-project-member"].handler(ctx);
+  assert.ok(ctx.entry.errors.some((error) => error.includes("member removal did not persist")));
+});
 
 test("mutation actions avoid forbidden destructive routes", () => {
   const forbidden = [
     // delete/transfer and Wave D project mutations hit state-created
     // throwaways only (enforced by the confinement test above).
-    { method: "DELETE", pathPattern: /^\/o\/p\/delete$/, exempt: new Set(["delete-project", "cleanup-created-projects"]) },
-    { method: "PUT", pathPattern: /^\/o\/p\/transfer$/, exempt: new Set(["request-project-transfer"]) },
-    { method: "POST", pathPattern: /\/changeVCS$/, exempt: new Set(["change-created-project-vcs"]) },
+    {
+      method: "DELETE",
+      pathPattern: /^\/o\/p\/delete$/,
+      exempt: new Set(["delete-project", "cleanup-created-projects"]),
+    },
+    {
+      method: "PUT",
+      pathPattern: /^\/o\/p\/transfer$/,
+      exempt: new Set(["request-project-transfer"]),
+    },
+    {
+      method: "POST",
+      pathPattern: /\/changeVCS$/,
+      exempt: new Set(["change-created-project-vcs"]),
+    },
     { method: "POST", pathPattern: /\/fork$/, exempt: new Set(["fork-created-project"]) },
     { method: "POST", pathPattern: /\/clone$/, exempt: new Set(["clone-created-project"]) },
   ];
-  const resolved = { title: "t", body: "b", content: "c", dueDate: "2026-12-31", overview: "ov", name: "n", category: "cat", loginId: "bob", phase: "labels", payloadUrl: "u", original: "o" };
-  const probe = (action) => ({ action, params: { owner: "o", project: "p", milestoneId: 1, postNumber: 1, commentId: 1, labelId: 1, webhookId: 1, userId: 1, issueNumber: 1, loginId: "bob", query: "x", missing: "page" } });
+  const resolved = {
+    title: "t",
+    body: "b",
+    content: "c",
+    dueDate: "2026-12-31",
+    overview: "ov",
+    name: "n",
+    category: "cat",
+    loginId: "bob",
+    phase: "labels",
+    payloadUrl: "u",
+    original: "o",
+  };
+  const probe = (action) => ({
+    action,
+    params: {
+      owner: "o",
+      project: "p",
+      milestoneId: 1,
+      postNumber: 1,
+      commentId: 1,
+      labelId: 1,
+      webhookId: 1,
+      userId: 1,
+      issueNumber: 1,
+      loginId: "bob",
+      query: "x",
+      missing: "page",
+    },
+  });
   for (const scenario of scenarios) {
     for (const stepAction of scenario.actions.map((a) => a.action)) {
       if (stepAction === "login") continue;
@@ -652,66 +859,190 @@ test("mutation actions avoid forbidden destructive routes", () => {
 });
 
 test("mutation translators produce expected method/path literals", () => {
-  const resolved = { title: "t", body: "b", content: "c", dueDate: "2026-12-31", milestoneId: 7, postNumber: 3, commentId: 5, labelId: 9, webhookId: 11, userId: 13, overview: "ov", name: "n", category: "cat", loginId: "bob", issueNumber: 17, phase: "labels", payloadUrl: "u", original: "o", attachmentId: 21, prId: 31, projectId: 31, probeName: "pn", destination: "alice" };
+  const resolved = {
+    title: "t",
+    body: "b",
+    content: "c",
+    dueDate: "2026-12-31",
+    milestoneId: 7,
+    postNumber: 3,
+    commentId: 5,
+    labelId: 9,
+    webhookId: 11,
+    userId: 13,
+    overview: "ov",
+    name: "n",
+    category: "cat",
+    loginId: "bob",
+    issueNumber: 17,
+    phase: "labels",
+    payloadUrl: "u",
+    original: "o",
+    attachmentId: 21,
+    prId: 31,
+    projectId: 31,
+    probeName: "pn",
+    destination: "alice",
+  };
   const step = (action, params) => ({ action, params });
   const cases = [
     ["create-milestone", "translateLegacy", { method: "POST", path: "/o/p/milestones" }],
-    ["create-milestone", "translateYoram", { method: "POST", path: "/api/v1/owners/o/projects/p/milestones" }],
+    [
+      "create-milestone",
+      "translateYoram",
+      { method: "POST", path: "/api/v1/owners/o/projects/p/milestones" },
+    ],
     ["edit-milestone", "translateLegacy", { method: "POST", path: "/o/p/milestone/7/edit" }],
-    ["edit-milestone", "translateYoram", { method: "PATCH", path: "/api/v1/owners/o/projects/p/milestones/7" }],
+    [
+      "edit-milestone",
+      "translateYoram",
+      { method: "PATCH", path: "/api/v1/owners/o/projects/p/milestones/7" },
+    ],
     ["close-milestone", "translateLegacy", { method: "POST", path: "/o/p/milestone/7/close" }],
-    ["close-milestone", "translateYoram", { method: "PATCH", path: "/api/v1/owners/o/projects/p/milestones/7/state" }],
-    ["open-milestone", "translateYoram", { method: "PATCH", path: "/api/v1/owners/o/projects/p/milestones/7/state" }],
-    ["create-milestone-api", "translateYoram", { method: "POST", path: "/api/v1/owners/o/projects/p/milestones/bulk" }],
-    ["create-milestone-api", "translateLegacy", { method: "POST", path: "/-_-api/v1/owners/o/projects/p/milestones" }],
+    [
+      "close-milestone",
+      "translateYoram",
+      { method: "PATCH", path: "/api/v1/owners/o/projects/p/milestones/7/state" },
+    ],
+    [
+      "open-milestone",
+      "translateYoram",
+      { method: "PATCH", path: "/api/v1/owners/o/projects/p/milestones/7/state" },
+    ],
+    [
+      "create-milestone-api",
+      "translateYoram",
+      { method: "POST", path: "/api/v1/owners/o/projects/p/milestones/bulk" },
+    ],
+    [
+      "create-milestone-api",
+      "translateLegacy",
+      { method: "POST", path: "/-_-api/v1/owners/o/projects/p/milestones" },
+    ],
     ["create-post", "translateLegacy", { method: "POST", path: "/o/p/posts" }],
     ["create-post", "translateYoram", { method: "POST", path: "/api/v1/projects/o/p/posts" }],
     ["edit-post", "translateLegacy", { method: "POST", path: "/o/p/post/3/edit" }],
     ["edit-post", "translateYoram", { method: "PATCH", path: "/api/v1/projects/o/p/posts/3" }],
-    ["patch-post-content-api", "translateLegacy", { method: "PATCH", path: "/-_-api/v1/owners/o/projects/p/posts/3/content" }],
-    ["patch-post-content-api", "translateYoram", { method: "PATCH", path: "/api/v1/owners/o/projects/p/posts/3/content" }],
+    [
+      "patch-post-content-api",
+      "translateLegacy",
+      { method: "PATCH", path: "/-_-api/v1/owners/o/projects/p/posts/3/content" },
+    ],
+    [
+      "patch-post-content-api",
+      "translateYoram",
+      { method: "PATCH", path: "/api/v1/owners/o/projects/p/posts/3/content" },
+    ],
     ["create-post-comment", "translateLegacy", { method: "POST", path: "/o/p/post/3/comment" }],
-    ["create-post-comment", "translateYoram", { method: "POST", path: "/api/v1/projects/o/p/posts/3/comments" }],
+    [
+      "create-post-comment",
+      "translateYoram",
+      { method: "POST", path: "/api/v1/projects/o/p/posts/3/comments" },
+    ],
     ["update-post-comment", "translateLegacy", { method: "POST", path: "/o/p/post/3/comment/5" }],
-    ["update-post-comment", "translateYoram", { method: "PATCH", path: "/api/v1/projects/o/p/posts/3/comments/5" }],
-    ["patch-post-comment-api", "translateLegacy", { method: "PATCH", path: "/o/p/post/3/comment/5" }],
-    ["patch-post-comment-api", "translateYoram", { method: "PATCH", path: "/o/p/post/3/comment/5" }],
-    ["delete-post-comment", "translateLegacy", { method: "DELETE", path: "/o/p/post/3/comment/5/delete" }],
-    ["delete-post-comment", "translateYoram", { method: "DELETE", path: "/api/v1/projects/o/p/posts/3/comments/5" }],
-    ["create-post-api", "translateLegacy", { method: "POST", path: "/-_-api/v1/owners/o/projects/p/posts" }],
+    [
+      "update-post-comment",
+      "translateYoram",
+      { method: "PATCH", path: "/api/v1/projects/o/p/posts/3/comments/5" },
+    ],
+    [
+      "patch-post-comment-api",
+      "translateLegacy",
+      { method: "PATCH", path: "/o/p/post/3/comment/5" },
+    ],
+    [
+      "patch-post-comment-api",
+      "translateYoram",
+      { method: "PATCH", path: "/o/p/post/3/comment/5" },
+    ],
+    [
+      "delete-post-comment",
+      "translateLegacy",
+      { method: "DELETE", path: "/o/p/post/3/comment/5/delete" },
+    ],
+    [
+      "delete-post-comment",
+      "translateYoram",
+      { method: "DELETE", path: "/api/v1/projects/o/p/posts/3/comments/5" },
+    ],
+    [
+      "create-post-api",
+      "translateLegacy",
+      { method: "POST", path: "/-_-api/v1/owners/o/projects/p/posts" },
+    ],
     ["delete-post", "translateLegacy", { method: "DELETE", path: "/o/p/post/3/delete" }],
     ["delete-post", "translateYoram", { method: "DELETE", path: "/api/v1/projects/o/p/posts/3" }],
     ["create-webhook", "translateLegacy", { method: "POST", path: "/o/p/webhooks" }],
-    ["create-webhook", "translateYoram", { method: "POST", path: "/api/v1/owners/o/projects/p/webhooks" }],
+    [
+      "create-webhook",
+      "translateYoram",
+      { method: "POST", path: "/api/v1/owners/o/projects/p/webhooks" },
+    ],
     ["delete-webhook", "translateLegacy", { method: "DELETE", path: "/o/p/webhooks/11" }],
-    ["delete-webhook", "translateYoram", { method: "DELETE", path: "/api/v1/owners/o/projects/p/webhooks/11" }],
+    [
+      "delete-webhook",
+      "translateYoram",
+      { method: "DELETE", path: "/api/v1/owners/o/projects/p/webhooks/11" },
+    ],
     ["watch-project", "translateLegacy", { method: "POST", path: "/o/p/watch" }],
     ["watch-project", "translateYoram", { method: "POST", path: "/o/p/watch" }],
     ["unwatch-project", "translateLegacy", { method: "POST", path: "/o/p/unwatch" }],
     ["attach-project-label", "translateLegacy", { method: "POST", path: "/o/p/labels" }],
     ["detach-project-label", "translateLegacy", { method: "POST", path: "/o/p/labels/9" }],
     ["detach-project-label", "translateYoram", { method: "POST", path: "/o/p/labels/9" }],
-    ["create-label-api", "translateLegacy", { method: "POST", path: "/-_-api/v1/owners/o/projects/p/labels" }],
+    [
+      "create-label-api",
+      "translateLegacy",
+      { method: "POST", path: "/-_-api/v1/owners/o/projects/p/labels" },
+    ],
     ["add-project-member", "translateLegacy", { method: "POST", path: "/o/p/members" }],
-    ["remove-project-member", "translateLegacy", { method: "DELETE", path: "/o/p/member/13/delete" }],
-    ["remove-project-member", "translateYoram", { method: "DELETE", path: "/o/p/member/13/delete" }],
+    [
+      "remove-project-member",
+      "translateLegacy",
+      { method: "DELETE", path: "/o/p/member/13/delete" },
+    ],
+    [
+      "remove-project-member",
+      "translateYoram",
+      { method: "DELETE", path: "/api/v1/owners/o/projects/p/members/13" },
+    ],
     ["update-project-overview", "translateLegacy", { method: "PUT", path: "/o/p" }],
     ["update-project-overview", "translateYoram", { method: "PUT", path: "/o/p" }],
     ["render-markdown-preview", "translateLegacy", { method: "POST", path: "/markdown/o/p" }],
     ["render-markdown-preview", "translateYoram", { method: "POST", path: "/markdown/o/p" }],
     ["enroll-project", "translateLegacy", { method: "POST", path: "/o/p/enroll" }],
     ["cancel-enroll-project", "translateYoram", { method: "POST", path: "/o/p/cancel/enroll" }],
-    ["set-issue-labels-api", "translateLegacy", { method: "POST", path: "/-_-api/v1/owners/o/projects/p/issuelabel/17" }],
-    ["set-issue-labels-api", "translateYoram", { method: "POST", path: "/api/v1/owners/o/projects/p/issues/17/labels" }],
-    ["fetch-project-exports", { owner: "o", project: "p" }, "/-_-api/v1/owners/o/projects/p/exports"],
+    [
+      "set-issue-labels-api",
+      "translateLegacy",
+      { method: "POST", path: "/-_-api/v1/owners/o/projects/p/issuelabel/17" },
+    ],
+    [
+      "set-issue-labels-api",
+      "translateYoram",
+      { method: "POST", path: "/api/v1/owners/o/projects/p/issues/17/labels" },
+    ],
+    [
+      "fetch-project-exports",
+      { owner: "o", project: "p" },
+      "/-_-api/v1/owners/o/projects/p/exports",
+    ],
     ["list-review-threads", { owner: "o", project: "p" }, "/o/p/reviews"],
     ["view-project-leave-info", { owner: "o", project: "p" }, "/info/leave/o/p"],
     ["view-migration-hub", {}, "/migration"],
     ["export-migration-project", { owner: "o", project: "p" }, "/migration/o/projects/p"],
-    ["export-migration-issue-label-pairs", { owner: "o", project: "p" }, "/migration/o/projects/p/issuelabel"],
+    [
+      "export-migration-issue-label-pairs",
+      { owner: "o", project: "p" },
+      "/migration/o/projects/p/issuelabel",
+    ],
     ["export-migration-issues", { owner: "o", project: "p" }, "/migration/o/projects/p/issues"],
     ["export-migration-labels", { owner: "o", project: "p" }, "/migration/o/projects/p/labels"],
-    ["export-migration-milestones", { owner: "o", project: "p" }, "/migration/o/projects/p/milestones"],
+    [
+      "export-migration-milestones",
+      { owner: "o", project: "p" },
+      "/migration/o/projects/p/milestones",
+    ],
     ["export-migration-posts", { owner: "o", project: "p" }, "/migration/o/projects/p/posts"],
     ["export-migration-projects-list", {}, "/migration/projects"],
     ["fetch-attachment-list", {}, "/files"],
@@ -721,27 +1052,75 @@ test("mutation translators produce expected method/path literals", () => {
     ["copy-labels", "translateLegacy", { method: "POST", path: "/o/p/copyLabels" }],
     ["copy-labels", "translateYoram", { method: "POST", path: "/o/p/copyLabels" }],
     ["add-created-member", "translateLegacy", { method: "POST", path: "/o/p/members" }],
-    ["add-created-member", "translateYoram", { method: "POST", path: "/o/p/members" }],
+    [
+      "add-created-member",
+      "translateYoram",
+      { method: "POST", path: "/api/v1/owners/o/projects/p/members" },
+    ],
     ["edit-created-member", "translateLegacy", { method: "POST", path: "/o/p/member/13/edit" }],
     ["edit-created-member", "translateYoram", { method: "POST", path: "/o/p/member/13/edit" }],
     ["update-created-setting", "translateLegacy", { method: "POST", path: "/o/p/setting" }],
-    ["update-created-setting", "translateYoram", { method: "PATCH", path: "/api/v1/owners/o/projects/p" }],
+    [
+      "update-created-setting",
+      "translateYoram",
+      { method: "PATCH", path: "/api/v1/owners/o/projects/p" },
+    ],
     ["fork-created-project", "translateLegacy", { method: "POST", path: "/o/p/fork" }],
-    ["fork-created-project", "translateYoram", { method: "POST", path: "/api/v1/owners/o/projects/p/fork" }],
+    [
+      "fork-created-project",
+      "translateYoram",
+      { method: "POST", path: "/api/v1/owners/o/projects/p/fork" },
+    ],
     ["clone-created-project", "translateLegacy", { method: "POST", path: "/o/p/clone" }],
     ["clone-created-project", "translateYoram", { method: "POST", path: "/o/p/clone" }],
     ["change-created-project-vcs", "translateLegacy", { method: "POST", path: "/o/p/changeVCS" }],
-    ["change-created-project-vcs", "translateYoram", { method: "POST", path: "/api/v1/owners/o/projects/p/change-vcs" }],
-    ["site-purge-created-project", "translateLegacy", { method: "DELETE", path: "/sites/project/delete/31" }],
-    ["site-purge-created-project", "translateYoram", { method: "DELETE", path: "/sites/project/delete/31" }],
-    ["request-project-transfer", "translateLegacy", { method: "PUT", path: "/o/p/transfer?owner=alice" }],
-    ["request-project-transfer", "translateYoram", { method: "PUT", path: "/o/p/transfer?owner=alice" }],
+    [
+      "change-created-project-vcs",
+      "translateYoram",
+      { method: "POST", path: "/api/v1/owners/o/projects/p/change-vcs" },
+    ],
+    [
+      "site-purge-created-project",
+      "translateLegacy",
+      { method: "DELETE", path: "/sites/project/delete/31" },
+    ],
+    [
+      "site-purge-created-project",
+      "translateYoram",
+      { method: "DELETE", path: "/sites/project/delete/31" },
+    ],
+    [
+      "request-project-transfer",
+      "translateLegacy",
+      { method: "PUT", path: "/o/p/transfer?owner=alice" },
+    ],
+    [
+      "request-project-transfer",
+      "translateYoram",
+      { method: "PUT", path: "/o/p/transfer?owner=alice" },
+    ],
     ["delete-project", "translateLegacy", { method: "DELETE", path: "/o/p/delete" }],
     ["delete-project", "translateYoram", { method: "DELETE", path: "/api/v1/owners/o/projects/p" }],
-    ["delete-missing-pushed-branch", "translateLegacy", { method: "DELETE", path: "/o/p/pushedBranch/999999999/delete" }],
-    ["delete-missing-pushed-branch", "translateYoram", { method: "DELETE", path: "/o/p/pushedBranch/999999999/delete" }],
-    ["probe-transfer-accept-missing", "translateLegacy", { method: "GET", path: "/project/transfer/999999999/deadbeef" }],
-    ["probe-transfer-accept-missing", "translateYoram", { method: "GET", path: "/project/transfer/999999999/deadbeef" }],
+    [
+      "delete-missing-pushed-branch",
+      "translateLegacy",
+      { method: "DELETE", path: "/o/p/pushedBranch/999999999/delete" },
+    ],
+    [
+      "delete-missing-pushed-branch",
+      "translateYoram",
+      { method: "DELETE", path: "/o/p/pushedBranch/999999999/delete" },
+    ],
+    [
+      "probe-transfer-accept-missing",
+      "translateLegacy",
+      { method: "GET", path: "/project/transfer/999999999/deadbeef" },
+    ],
+    [
+      "probe-transfer-accept-missing",
+      "translateYoram",
+      { method: "GET", path: "/project/transfer/999999999/deadbeef" },
+    ],
     ["upload-attachment", "translateLegacy", { method: "POST", path: "/files" }],
     ["upload-attachment", "translateYoram", { method: "POST", path: "/files" }],
     ["get-attachment", "translateLegacy", { method: "GET", path: "/files/21" }],
@@ -754,10 +1133,26 @@ test("mutation translators produce expected method/path literals", () => {
     ["probe-user-isused", "translateYoram", { method: "GET", path: "/user/isUsed?name=pn" }],
     ["probe-admin-users", "translateLegacy", { method: "GET", path: "/-_-api/v1/admin/users" }],
     ["probe-admin-users", "translateYoram", { method: "GET", path: "/api/v1/admin/users" }],
-    ["restore-closed-pullrequest", "translateLegacy", { method: "POST", path: "/o/p/pullRequest/31/restorefrombranch" }],
-    ["restore-closed-pullrequest", "translateYoram", { method: "POST", path: "/o/p/pullRequest/31/restorefrombranch" }],
-    ["close-restored-pullrequest", "translateLegacy", { method: "POST", path: "/o/p/pullRequest/31/close" }],
-    ["close-restored-pullrequest", "translateYoram", { method: "POST", path: "/o/p/pullRequest/31/close" }],
+    [
+      "restore-closed-pullrequest",
+      "translateLegacy",
+      { method: "POST", path: "/o/p/pullRequest/31/restorefrombranch" },
+    ],
+    [
+      "restore-closed-pullrequest",
+      "translateYoram",
+      { method: "POST", path: "/o/p/pullRequest/31/restorefrombranch" },
+    ],
+    [
+      "close-restored-pullrequest",
+      "translateLegacy",
+      { method: "POST", path: "/o/p/pullRequest/31/close" },
+    ],
+    [
+      "close-restored-pullrequest",
+      "translateYoram",
+      { method: "POST", path: "/o/p/pullRequest/31/close" },
+    ],
   ];
   for (const [action, kind, expected] of cases) {
     const def = MERGED_DEFINITIONS[action];
@@ -770,7 +1165,11 @@ test("mutation translators produce expected method/path literals", () => {
       const t = def.translateLegacy(step(action, kind), {});
       assert.deepEqual(
         t,
-        { method: "GET", path: expected, ...(action === "view-project-leave-info" ? { redirect: "manual" } : {}) },
+        {
+          method: "GET",
+          path: expected,
+          ...(action === "view-project-leave-info" ? { redirect: "manual" } : {}),
+        },
         `${action} read translation`,
       );
     }
@@ -778,12 +1177,27 @@ test("mutation translators produce expected method/path literals", () => {
 });
 
 test("destructive scenario steps carry the behavior id for their own route", () => {
-  const find = (id, action, value) => scenarios.find((scenario) => scenario.id === id)?.actions.find(
-    (step) => step.action === action && (value === undefined || step.params?.tab === value),
+  const find = (id, action, value) =>
+    scenarios
+      .find((scenario) => scenario.id === id)
+      ?.actions.find(
+        (step) => step.action === action && (value === undefined || step.params?.tab === value),
+      );
+  assert.equal(
+    find("P18-throwaway-project-lifecycle", "update-created-setting")?.behaviorId,
+    "B-0267",
   );
-  assert.equal(find("P18-throwaway-project-lifecycle", "update-created-setting")?.behaviorId, "B-0267");
-  assert.equal(find("P23-wave-d-project-destructive", "fork-created-project")?.behaviorId, "B-0226");
-  assert.equal(find("P23-wave-d-project-destructive", "clone-created-project")?.behaviorId, "B-0225");
-  assert.equal(find("P23-wave-d-project-destructive", "change-created-project-vcs")?.behaviorId, "B-0236");
+  assert.equal(
+    find("P23-wave-d-project-destructive", "fork-created-project")?.behaviorId,
+    "B-0226",
+  );
+  assert.equal(
+    find("P23-wave-d-project-destructive", "clone-created-project")?.behaviorId,
+    "B-0225",
+  );
+  assert.equal(
+    find("P23-wave-d-project-destructive", "change-created-project-vcs")?.behaviorId,
+    "B-0236",
+  );
   assert.equal(find("P24-site-project-purge", "site-purge-created-project")?.behaviorId, "B-0019");
 });

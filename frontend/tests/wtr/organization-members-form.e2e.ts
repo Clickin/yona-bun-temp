@@ -1,14 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
-
-const ORGANIZATION_MEMBERS_ROUTE_SOURCE = readFileSync(
-  "src/routes/organizations/$organizationName/members.tsx",
-  "utf8",
-);
-const ORGANIZATION_ROUTE_SOURCE = readFileSync(
-  "src/routes/organizations/$organizationName.tsx",
-  "utf8",
-);
 
 const EXPECTED_ORGANIZATION_MEMBERS = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
@@ -67,7 +57,8 @@ test("organization members matches legacy organization/members.scala.html DOM", 
     ),
   );
   expect(await organizationMemberMetrics(page)).toEqual({
-    addButtonOffsetLeft: 398,
+    // Legacy input: 384px + 12px padding + 2px border; .ybtn adds .3em at 14px.
+    addButtonOffsetLeft: 402,
     addInputWidth: 384,
     avatarHeight: 40,
     avatarWidth: 40,
@@ -85,7 +76,7 @@ test("organization members matches legacy organization/members.scala.html DOM", 
   });
 });
 
-test("organization members restores localhost organization shell and scoped navbar layout", async ({
+test("organization members preserves the legacy siteLayout navbar without group search scope", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -94,17 +85,12 @@ test("organization members restores localhost organization shell and scoped navb
   await page.goto(`${basePath}/organizations/weblabs/members`);
 
   await expect(page).toHaveTitle("weblabs");
-  // e2e closure ledger (2026-08-13): flipped legacy-positive — the shared
-  // shell header carries the legacy gnb-outer class (common/navbar.scala.html
-  // renders <header class="gnb-outer">; ownership-global-gnb-outer pattern).
+  // organization/members.scala.html uses siteLayout, whose navbar receives no group.
   await expect(page.locator("header[data-owner=global-gnb-outer]")).toHaveClass(
     /(?:^|\s)gnb-outer(?:\s|$)/u,
   );
-  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
-  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
-    "action",
-    `${basePath}/organizations/weblabs/search`,
-  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
   await expect(page.locator(".project-header-outer")).toHaveAttribute(
     "style",
     /group_default\.png/u,
@@ -121,24 +107,69 @@ test("organization members restores localhost organization shell and scoped navb
 
   const boxes = await page.evaluate(() => {
     const navbar = document.querySelector("[data-owner=global-gnb-outer]");
-    const scopeButton = document.querySelector("#gnb-search-scope-title");
+    const searchInput = document.querySelector('.gnb-search-form input[name="keyword"]');
     const searchBox = document.querySelector('[data-owner="global-gnb-search-box"]');
-    if (!navbar || !scopeButton || !searchBox) {
+    if (!navbar || !searchInput || !searchBox) {
       return null;
     }
     return {
       navbar: navbar.getBoundingClientRect(),
-      scopeButton: scopeButton.getBoundingClientRect(),
+      searchInput: searchInput.getBoundingClientRect(),
       searchBox: searchBox.getBoundingClientRect(),
     };
   });
   expect(boxes).not.toBeNull();
-  expect(boxes!.scopeButton.top).toBeGreaterThanOrEqual(boxes!.navbar.top);
-  expect(boxes!.scopeButton.bottom).toBeLessThanOrEqual(boxes!.navbar.bottom);
+  expect(boxes!.searchInput.top).toBeGreaterThanOrEqual(boxes!.navbar.top);
+  expect(boxes!.searchInput.bottom).toBeLessThanOrEqual(boxes!.navbar.bottom);
   expect(boxes!.searchBox.top).toBeGreaterThanOrEqual(boxes!.navbar.top);
   expect(boxes!.searchBox.bottom).toBeLessThanOrEqual(boxes!.navbar.bottom);
   expect(boxes!.searchBox.right).toBeLessThanOrEqual(boxes!.navbar.right);
 });
+
+for (const width of [1366, 390]) {
+  test(`organization members preserves legacy floated member geometry at ${width}px`, async ({
+    page,
+  }) => {
+    const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+    await page.setViewportSize({ width, height: 900 });
+    await mockOrganizationMembers(page);
+    await page.goto(`${basePath}/organizations/weblabs/members`);
+    const list = page.locator(".page-wrap-outer > .project-page-wrap > .members.project.row-fluid");
+    await expect(list.locator(".member")).toHaveCount(2);
+    const geometry = await list.evaluate((node) => {
+      const listBox = node.getBoundingClientRect();
+      const rows = Array.from(node.querySelectorAll<HTMLElement>(":scope > .member"));
+      return rows.map((row) => {
+        const box = row.getBoundingClientRect();
+        const role = row.querySelector<HTMLElement>(".member-setting .dropdown-toggle")!;
+        const remove = row.querySelector<HTMLElement>(".member-setting > .ybtn-danger")!;
+        return {
+          float: getComputedStyle(row).float,
+          widthRatio: box.width / listBox.width,
+          top: box.top,
+          bottom: box.bottom,
+          right: box.right,
+          listRight: listBox.right,
+          roleFontSize: getComputedStyle(role).fontSize,
+          actionGap: remove.getBoundingClientRect().left - role.getBoundingClientRect().right,
+        };
+      });
+    });
+    for (const row of geometry) {
+      expect(row.float).toBe("left");
+      expect(row.widthRatio).toBeCloseTo(width === 390 ? 0.95 : 0.4893617021276595, 4);
+      expect(row.right).toBeLessThanOrEqual(row.listRight);
+      expect(row.roleFontSize).toBe("12px");
+      // Legacy inline whitespace adds a space to the delete button's .3em margin.
+      expect(row.actionGap).toBeGreaterThan(6);
+    }
+    if (width === 390) {
+      expect(geometry[1]!.top).toBeGreaterThanOrEqual(geometry[0]!.bottom);
+    } else {
+      expect(geometry[1]!.top).toBe(geometry[0]!.top);
+    }
+  });
+}
 
 test("organization members mention stylesheet keeps the configured base path", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -158,12 +189,6 @@ test("organization members mention stylesheet keeps the configured base path", a
     "screen",
   );
   expect(new URL(mentionRequest.url()).pathname).toBe(mentionStylesheetHref);
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toMatch(
-    /const mentionStylesheetHref = prefixBasePath\(\s*runtimeConfig\.basePath,\s*"\/assets\/javascripts\/lib\/mentionjs\/mention\.css",?\s*\);/,
-  );
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain(
-    'href="/assets/javascripts/lib/mentionjs/mention.css"',
-  );
 });
 
 test("organization members forbidden response renders legacy organization error shell", async ({
@@ -175,17 +200,12 @@ test("organization members forbidden response renders legacy organization error 
   await page.goto(`${basePath}/organizations/weblabs/members`);
 
   await expect(page).toHaveTitle("weblabs");
-  // e2e closure ledger (2026-08-13): flipped legacy-positive — the shared
-  // shell header carries the legacy gnb-outer class (common/navbar.scala.html
-  // renders <header class="gnb-outer">; ownership-global-gnb-outer pattern).
+  // Error content keeps the same unscoped siteLayout navbar.
   await expect(page.locator("header[data-owner=global-gnb-outer]")).toHaveClass(
     /(?:^|\s)gnb-outer(?:\s|$)/u,
   );
-  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
-  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
-    "action",
-    `${basePath}/organizations/weblabs/search`,
-  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
   await expect(page.locator(".project-header-outer")).toBeVisible();
   await expect(page.locator(".project-menu-outer")).toBeVisible();
   await expect(page.locator(".project-header-outer")).toHaveAttribute(
@@ -359,6 +379,7 @@ test("organization members role dropdown uses route-owned open state", async ({ 
     .filter({ has: page.locator('button[data-loginid="dev"]') })
     .locator(".member-setting > .btn-group");
   const toggle = roleGroup.locator("button.dropdown-toggle");
+  await expect(toggle).toHaveText("Group Member");
   await expect(roleGroup).not.toHaveClass(/open/);
   await expect(roleGroup).not.toHaveAttribute("data-name", /.+/);
   await expect(toggle).not.toHaveAttribute("data-toggle", /.+/);
@@ -387,6 +408,8 @@ test("organization members role dropdown uses route-owned open state", async ({ 
 
   await expect(roleGroup.locator("ul.dropdown-menu")).toBeVisible();
   await expect(roleGroup.locator("li")).toHaveCount(2);
+  await expect(roleGroup.locator('[data-value="org_admin"] button')).toHaveText("Group Manager");
+  await expect(roleGroup.locator('[data-value="org_member"] button')).toHaveText("Group Member");
   await toggle.click();
   await expect(roleGroup).not.toHaveClass(/open/);
   await toggle.click();
@@ -543,74 +566,6 @@ test("organization members profile and breadcrumb links use SPA navigation with 
   await expect(page.locator(".project-menu-gruop li").first()).toHaveClass(/active/);
 });
 
-test("organization members route source keeps internal navigation out of raw anchors", () => {
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain("Link");
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain("searchLegacyMemberUsers");
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain('className="typeahead dropdown-menu"');
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain('data-provider="typeahead"');
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain("value={loginIdQuery}");
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain("loginIdInputRef.current?.focus()");
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain(
-    'className={`inner-bubble${showTypeaheadSuggestions ? " open" : ""}`}',
-  );
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("showLegacyProjectHeaderLinks");
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain(
-    "projectSearchScope={{ organizationName }}",
-  );
-  expect(ORGANIZATION_ROUTE_SOURCE).toContain("showLegacyProjectHeaderLinks");
-  // F6 copy-fix-current-dom: org parent route scopes search for non-settings routes via
-  // projectSearchScope={isSettings || isDeleteForm ? undefined : { organizationName }}
-  // ($organizationName.tsx:170); members is neither, so the scope stays for this route.
-
-  // F6 copy-fix-current-dom: `const isMembers` was replaced by pathname-derived
-  // scope/menu state in the org parent route ($organizationName.tsx:140-141).
-  expect(ORGANIZATION_ROUTE_SOURCE).toContain(
-    "const isSettings = pathname === `/organizations/${organizationName}/settingform`;",
-  );
-  expect(ORGANIZATION_ROUTE_SOURCE).toContain(
-    "const isDeleteForm = pathname === `/organizations/${organizationName}/deleteForm`;",
-  );
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain("<title>{organizationName}</title>");
-  expect(ORGANIZATION_ROUTE_SOURCE).toContain("/legacy-assets/images/group_default.png");
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain('to="/$user"');
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain(
-    'to="/organizations/$organizationName/members"',
-  );
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("acceptOrganizationEnrollmentRest");
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain("params={{ organizationName }}");
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain('"data-status": undefined');
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("LegacyOrganizationLinkProps");
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("LegacyUserLinkProps");
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("legacyOrganizationLinkProps");
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("legacyUserLinkProps");
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("DOMParser");
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("parseFromString");
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("loginIdInputRef.current.value");
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("querySelector");
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("addEventListener(");
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("classList");
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain(".style.display");
-
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toMatch(/\bdocument\s*\./);
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("jQuery");
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("$(");
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("innerHTML");
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("globalThis.document");
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain('globalThis["document"]');
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("document.title");
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain('data-toggle="dropdown"');
-  const organizationMemberSource = ORGANIZATION_MEMBERS_ROUTE_SOURCE.slice(
-    ORGANIZATION_MEMBERS_ROUTE_SOURCE.indexOf("function OrganizationMember"),
-    ORGANIZATION_MEMBERS_ROUTE_SOURCE.indexOf("function OrganizationSettingMenu"),
-  );
-  expect(organizationMemberSource).not.toContain("data-name={`roleof-${loginId}`}");
-  expect(organizationMemberSource).not.toMatch(/data-name=\{[^}]*roleof-[^}]*loginId[^}]*\}/u);
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("<a ");
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("</a>");
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("organizationHref(");
-});
-
 test("organization members delete modal stays route-owned across open dismiss and confirm", async ({
   page,
 }) => {
@@ -731,32 +686,6 @@ test("organization members delete failure shows legacy alert mapping", async ({ 
     .poll(() => organizationMembersDeleteModalBridgeAuditHits(page))
     .toEqual({ documentClicks: [], getElementById: [] });
   await expect.poll(() => requests.deletedUserIds).toEqual(["1"]);
-});
-
-test("organization members delete modal source insulates delegated modal bridge", () => {
-  const modalSource = ORGANIZATION_MEMBERS_ROUTE_SOURCE.slice(
-    ORGANIZATION_MEMBERS_ROUTE_SOURCE.indexOf(
-      "function insulateOrganizationMembersDeleteModalButtonClick",
-    ),
-    ORGANIZATION_MEMBERS_ROUTE_SOURCE.indexOf("function OrganizationHeader"),
-  );
-
-  expect(modalSource).toContain("function insulateOrganizationMembersDeleteModalButtonClick");
-  expect(modalSource).toContain("event.preventDefault();");
-  expect(modalSource).toContain("event.stopPropagation();");
-  expect(modalSource).toContain("const openDeleteMemberModal");
-  expect(modalSource).toContain("const dismissDeleteMemberModal");
-  expect(modalSource).toContain("const submitDeleteMember");
-  expect(modalSource).toContain("closeDeleteMemberModal();");
-  expect(modalSource).toContain('className={`modal hide${deleteUserId === null ? "" : " in"}`}');
-  expect(modalSource).toContain('className="modal-backdrop fade in"');
-  expect(modalSource).toContain("onDelete={openDeleteMemberModal}");
-  expect(modalSource).toContain("onClick={dismissDeleteMemberModal}");
-  expect(modalSource).toContain("onClick={submitDeleteMember}");
-  expect(modalSource).not.toContain('data-dismiss="modal"');
-  expect(modalSource).not.toContain("document.");
-  expect(modalSource).not.toContain("classList");
-  expect(modalSource).not.toContain("addEventListener(");
 });
 
 test("organization members menu settings link preserves legacy href with SPA transition", async ({
@@ -1122,8 +1051,8 @@ function organizationAdminPayload() {
     ],
     organizationName: "weblabs",
     roleOptions: [
-      { label: "Group Manager", role: "org_admin" },
-      { label: "Group Member", role: "org_member" },
+      { label: "org_admin", role: "org_admin" },
+      { label: "org_member", role: "org_member" },
     ],
     viewerCanUpdate: true,
   };

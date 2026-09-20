@@ -1160,7 +1160,7 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
         changes["threads"][0]["comments"][0]["attachments"][0]["mimeType"],
         "image/png"
     );
-    assert_eq!(changes["cardThreads"].as_array().unwrap().len(), 3);
+    assert_eq!(changes["cardThreads"].as_array().unwrap().len(), 2);
     assert!(
         changes["cardThreads"][0]["authorAvatarUrl"]
             .as_str()
@@ -1186,7 +1186,7 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
         .await,
     )
     .await;
-    assert_eq!(specific_changes["cardThreads"].as_array().unwrap().len(), 3);
+    assert_eq!(specific_changes["cardThreads"].as_array().unwrap().len(), 2);
     assert_eq!(
         specific_changes["inlineThreads"]
             .as_array()
@@ -1196,15 +1196,25 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
             .count(),
         1
     );
-    assert_eq!(
-        specific_changes["inlineThreads"]
+    assert!(!specific_changes["inlineThreads"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|thread| thread["path"] == "src/commit-only.rs"));
+    for response in [&changes, &specific_changes] {
+        assert!(response["cardThreads"]
             .as_array()
             .unwrap()
             .iter()
-            .filter(|thread| thread["path"].as_str().unwrap_or_default() == "src/commit-only.rs")
-            .count(),
-        1
-    );
+            .any(|thread| thread["path"] == "src/lib.rs"));
+        for field in ["threads", "cardThreads", "nonRangedThreads"] {
+            assert!(!response[field]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|thread| thread["path"] == "src/commit-only.rs"));
+        }
+    }
     assert_eq!(
         specific_changes["nonRangedThreads"]
             .as_array()
@@ -1319,6 +1329,18 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
     assert!(commit_only_review["pullRequestNumber"].is_null());
     assert_eq!(commit_only_review["commitId"], "abcdef123456");
 
+    let container = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/owners/owner/projects/projectYobi/container",
+            Some(&reviewer_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(container["openPullRequestCount"], 3);
+    assert_eq!(container["reviewCount"], 4);
+
     comment_thread::ActiveModel {
         dtype: Set("ranged".to_string()),
         id: NotSet,
@@ -1356,6 +1378,16 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
     assert_eq!(closed_reviews["closedCount"], 1);
     assert_eq!(closed_reviews["totalCount"], 1);
     assert_eq!(closed_reviews["items"][0]["path"], "src/closed-thread.rs");
+    let container_with_closed_review = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/owners/owner/projects/projectYobi/container",
+            Some(&reviewer_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(container_with_closed_review["reviewCount"], 4);
     assert!(
         closed_reviews["items"][0]["authorAvatarUrl"]
             .as_str()

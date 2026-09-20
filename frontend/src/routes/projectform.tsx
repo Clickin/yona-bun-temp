@@ -212,17 +212,40 @@ function ProjectCreateScreen({
 
               <dl>
                 <dt>
-                  <label htmlFor="project-owner">
+                  <label htmlFor="project-owner-choice">
                     {t("project.owner")}
                     <strong data-owner="project-form-required-marker-owner">*</strong>
                   </label>
                 </dt>
                 <dd>
+                  <ProjectFormSelect
+                    id="project-owner-choice"
+                    label={t("project.owner")}
+                    className="mb10"
+                    value={ownerName}
+                    options={ownerOptions.map((option) => ({
+                      value: option.ownerName,
+                      label: option.ownerName,
+                      content: <OwnerLabel option={option} basePath={runtimeConfig.basePath} />,
+                    }))}
+                    searchable
+                    onChange={(nextOwner) => {
+                      setOwnerName(nextOwner);
+                      if (
+                        !ownerOptions.find((option) => option.ownerName === nextOwner)
+                          ?.organization &&
+                        projectScope === "PROTECTED"
+                      ) {
+                        setProjectScope("PUBLIC");
+                      }
+                    }}
+                  />
                   <select
                     id="project-owner"
                     name="owner"
                     data-format="user"
-                    className={"mb10"}
+                    className="mb10 select2-offscreen"
+                    tabIndex={-1}
                     style={{ minWidth: "220px" }}
                     data-owner="project-form-owner"
                     value={ownerName}
@@ -252,6 +275,7 @@ function ProjectCreateScreen({
                 <dd>
                   <input
                     id="project-name"
+                    autoFocus
                     type="text"
                     name="name"
                     className="text"
@@ -379,14 +403,29 @@ function ProjectCreateScreen({
 
                 <div className="row-fluid">
                   <div className={"span2 mt10"} data-owner="project-form-vcs-label">
-                    <label htmlFor="vcs">{t("project.vcs")}</label>
+                    <label htmlFor="vcs-choice">{t("project.vcs")}</label>
                   </div>
                   <div className="span10 cu-desc">
+                    <ProjectFormSelect
+                      id="vcs-choice"
+                      label={t("project.vcs")}
+                      className="mb10 mt5"
+                      value={vcs}
+                      options={[
+                        { value: "GIT", label: t("project.new.vcsType.git") },
+                        { value: "SUBVERSION", label: t("project.new.vcsType.subversion") },
+                      ]}
+                      onChange={(nextVcs) => {
+                        setVcs(nextVcs);
+                        setMenuPullRequestChecked(true);
+                      }}
+                    />
                     <select
                       id="vcs"
                       name="vcs"
                       data-dropdown-css-class="select2-without-searchbox"
-                      className={"mb10 mt5"}
+                      className="mb10 mt5 select2-offscreen"
+                      tabIndex={-1}
                       style={{ minWidth: "220px" }}
                       data-owner="project-form-vcs"
                       value={vcs}
@@ -480,7 +519,7 @@ function ProjectCreateScreen({
               <div className={"actions mt20"} data-owner="project-form-actions">
                 <button className="ybtn ybtn-success" disabled={createMutation.isPending}>
                   {t("project.create")}
-                </button>
+                </button>{" "}
                 <Link
                   to="/"
                   className="ybtn"
@@ -495,6 +534,120 @@ function ProjectCreateScreen({
         </div>
       </div>
     </SiteLayoutShell>
+  );
+}
+
+function ProjectFormSelect({
+  className,
+  id,
+  label,
+  onChange,
+  options,
+  searchable = false,
+  value,
+}: {
+  className: string;
+  id: string;
+  label: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string; content?: React.ReactNode }[];
+  searchable?: boolean;
+  value: string;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const [filter, setFilter] = React.useState("");
+  const selected = options.find((option) => option.value === value);
+  const close = () => {
+    setOpen(false);
+    setFilter("");
+  };
+
+  return (
+    <div
+      className={`select2-container ${className}${open ? " select2-dropdown-open select2-container-active" : ""}`}
+      data-owner="project-form-select"
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) close();
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          close();
+        }
+      }}
+    >
+      <button
+        id={id}
+        type="button"
+        className="select2-choice"
+        aria-label={label}
+        aria-expanded={open}
+        onClick={() => (open ? close() : setOpen(true))}
+      >
+        <span className="select2-chosen">{selected?.content ?? selected?.label}</span>
+        <span className="select2-arrow" aria-hidden="true">
+          <b></b>
+        </span>
+      </button>
+      {open ? (
+        <div className="select2-drop select2-drop-active">
+          {searchable ? (
+            <div className="select2-search">
+              <input
+                className="select2-input"
+                aria-label={label}
+                value={filter}
+                onChange={(event) => setFilter(event.currentTarget.value)}
+              />
+            </div>
+          ) : null}
+          <ul className="select2-results">
+            {options
+              .filter((option) => option.label.toLowerCase().includes(filter.toLowerCase()))
+              .map((option) => (
+                <li
+                  key={option.value}
+                  className={`select2-results-dept-0 select2-result select2-result-selectable${option.value === value ? " select2-selected" : ""}`}
+                >
+                  <button
+                    type="button"
+                    className="select2-result-label"
+                    onClick={() => {
+                      onChange(option.value);
+                      close();
+                    }}
+                  >
+                    {option.content ?? option.label}
+                  </button>
+                </li>
+              ))}
+          </ul>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function OwnerLabel({ option, basePath }: { option: ProjectCreateOwnerOption; basePath: string }) {
+  return (
+    <span className="usf-group" title={`${option.ownerName} `}>
+      <span className="avatar-wrap smaller">
+        <img
+          src={prefixBasePath(
+            basePath,
+            option.avatarUrl?.trim() ||
+              (option.organization
+                ? "/assets/images/group_default.png"
+                : "/assets/images/default-avatar-128.png"),
+          )}
+          width="20"
+          height="20"
+          alt=""
+        />
+      </span>
+      <strong className="name">{option.ownerName}</strong>
+      <span className="loginid"></span>
+    </span>
   );
 }
 

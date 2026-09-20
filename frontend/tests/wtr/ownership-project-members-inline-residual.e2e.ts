@@ -1,16 +1,10 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const routeSource = "src/routes/$ownerName/$projectName/members.tsx";
 
 test("project members moves residual inline actions into colocated Style owners", async ({
   page,
 }) => {
-  const source = readFileSync(routeSource, "utf8");
-  expect(source).toContain('data-owner="project-members-suggestion-action"');
-  expect(source).toContain('detailsOwner="project-members-enrollment-details"');
-
   await mockMembers(page);
   await page.goto(`${basePath}/admin/sample/members`, { waitUntil: "domcontentloaded" });
 

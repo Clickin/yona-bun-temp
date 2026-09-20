@@ -1,56 +1,5 @@
-import { readFile } from "../wtr-compat.ts";
+import type { OrganizationContainer } from "../../src/api/types";
 import { expect, test } from "../wtr-compat.ts";
-
-const routeSource = "src/routes/organizations/$organizationName.tsx";
-const legacySource = "../yona-original/app/views/organization/view.scala.html";
-const yobiSource = "../yona-original/app/assets/stylesheets/yobi.less";
-const pageLessSource = "../yona-original/app/assets/stylesheets/less/_page.less";
-
-const yobiImports = [
-  "_variables.less",
-  "_mixins.less",
-  "_common.less",
-  "_sprites.less",
-  "_page.less",
-  "_tippy.less",
-  "_scrollbar.less",
-  "_responsive.less",
-  "_yobiUI.less",
-  "_temporary.less",
-  "_markdown.less",
-  "_migration.less",
-  "_override.less",
-];
-
-test("organization project-card owner avatar image preserves frozen declarations", async () => {
-  const [route, legacy, yobi, pageLess] = await Promise.all([
-    readFile(routeSource, "utf8"),
-    readFile(legacySource, "utf8"),
-    readFile(yobiSource, "utf8"),
-    readFile(pageLessSource, "utf8"),
-  ]);
-
-  expect(legacy).toContain('<ul class="all-projects">');
-  expect(legacy).toContain('<div class="owner-avatar-wrap hide-in-mobile">');
-  expect(legacy).toContain("@if(hasProjectLogo(project)){");
-  expect(legacy).toContain('<img src="@urlToProjectLogo(project)" alt="@project" +');
-  expect(legacy).toContain('".name"/>');
-  for (const importedFile of yobiImports) {
-    expect(yobi).toContain(`@import "less/${importedFile}";`);
-  }
-  expect(pageLess).toMatch(
-    /\.owner-avatar-wrap\s*\{[\s\S]*?overflow:hidden;[\s\S]*?display: inline;/,
-  );
-  expect(pageLess).toMatch(
-    /\.owner-avatar-wrap\s*\{[\s\S]*?img\s*\{\s*vertical-align: top;\s*width: 100%;\s*height: 100%;/,
-  );
-
-  expect(route).toContain('data-owner="organization-home-project-card-owner-avatar-image"');
-
-  expect(route).toContain("projectLogoUrl ? (");
-  expect(route).toContain('data-item="project-item"');
-  expect(route).toContain("data-value={dataValue}");
-});
 
 async function mockOrganizationHome(page: Page) {
   const session = { isAnonymous: false, isGuest: false, isSiteAdmin: false, loginId: "admin" };
@@ -77,8 +26,32 @@ async function mockOrganizationHome(page: Page) {
             overview: "Custom logo project",
             projectScope: "PUBLIC",
             logoUrl: "/legacy-assets/images/project_default_logo.png",
-            createdLabel: "today",
+            createdAt: "2026-06-01T10:00:00Z",
+            lastPushedAt: "",
             memberCount: 3,
+            members: [
+              {
+                avatarUrl: "",
+                loginId: "carol",
+                role: "member",
+                userId: 35,
+                userLabel: "Carol Lee",
+              },
+              {
+                avatarUrl: "",
+                loginId: "weblabs",
+                role: "manager",
+                userId: 36,
+                userLabel: "Web Labs",
+              },
+              {
+                avatarUrl: "",
+                loginId: "admin",
+                role: "manager",
+                userId: 1,
+                userLabel: "Administrator",
+              },
+            ],
             watchCount: 4,
             isWatching: true,
             labels: [],
@@ -89,8 +62,18 @@ async function mockOrganizationHome(page: Page) {
             overview: "Blank logo project",
             projectScope: "PUBLIC",
             logoUrl: "",
-            createdLabel: "yesterday",
+            createdAt: "2026-05-31T10:00:00Z",
+            lastPushedAt: "",
             memberCount: 1,
+            members: [
+              {
+                avatarUrl: "",
+                loginId: "admin",
+                role: "manager",
+                userId: 1,
+                userLabel: "Administrator",
+              },
+            ],
             watchCount: 2,
             isWatching: false,
             labels: [],
@@ -98,7 +81,7 @@ async function mockOrganizationHome(page: Page) {
         ],
         adminMembers: [],
         memberMembers: [],
-      },
+      } satisfies OrganizationContainer,
     }),
   );
 }
@@ -122,7 +105,16 @@ async function assertAvatarState(page: Page, mobile: boolean) {
     "organization-home-project-card-owner-avatar-image",
   );
   await expect(image).not.toHaveAttribute("style");
-  await expect(blank.locator("img")).toHaveCount(0);
+  await expect(
+    blank.locator('[data-owner="organization-home-project-card-owner-avatar"] img'),
+  ).toHaveCount(0);
+  const members = sample.locator('[data-owner="organization-home-project-card-members-list"] a');
+  await expect(members).toHaveCount(2);
+  await expect(members.nth(0)).toHaveAttribute("href", "/yona/carol");
+  await expect(members.nth(1)).toHaveAttribute("href", "/yona/admin");
+  await expect(
+    blank.locator('[data-owner="organization-home-project-card-members-list"] img'),
+  ).toHaveCount(1);
 
   const metrics = await surface.evaluate((node) => {
     const image = node.querySelector("img");

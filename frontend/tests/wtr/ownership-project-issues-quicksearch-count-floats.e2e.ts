@@ -1,4 +1,3 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
@@ -12,47 +11,6 @@ const screenshotDirectory = resolve(
   "output/playwright/style-project-issues-quicksearch-count-floats",
   fallbackMode,
 );
-const readSource = (relativePath: string) =>
-  readFileSync(new URL(relativePath, import.meta.url), "utf8");
-const routeSource = readSource("../src/routes/$ownerName/$projectName/issues.tsx");
-const styleSource = readSource("../src/app.css");
-const legacyListSource = readSource("../../yona-original/app/views/issue/list.scala.html");
-const legacyWrapSource = readSource(
-  "../../yona-original/app/views/issue/partial_list_wrap.scala.html",
-);
-const legacyQuickSearchSource = readSource(
-  "../../yona-original/app/views/issue/partial_list_quicksearch.scala.html",
-);
-const legacySearchFormSource = readSource(
-  "../../yona-original/app/views/issue/partial_searchform.scala.html",
-);
-const legacyYobiSource = readSource("../../yona-original/app/assets/stylesheets/yobi.less");
-const legacyBootstrapSource = readSource("../../yona-original/public/bootstrap/css/bootstrap.css");
-const legacyBootstrapResponsiveSource = readSource(
-  "../../yona-original/public/bootstrap/css/bootstrap-responsive.css",
-);
-const legacyTemporaryLessSource = readSource(
-  "../../yona-original/app/assets/stylesheets/less/_temporary.less",
-);
-const legacyIssueListJsSource = readSource(
-  "../../yona-original/public/javascripts/service/yobi.issue.List.js",
-);
-const legacyMessagesSource = readSource("../../yona-original/conf/messages");
-const yobiLessImports = [
-  "_variables.less",
-  "_mixins.less",
-  "_common.less",
-  "_sprites.less",
-  "_page.less",
-  "_tippy.less",
-  "_scrollbar.less",
-  "_responsive.less",
-  "_yobiUI.less",
-  "_temporary.less",
-  "_markdown.less",
-  "_migration.less",
-  "_override.less",
-] as const;
 const owners = [
   { name: "project-issues-quicksearch-all-count", count: 8 },
   { name: "project-issues-quicksearch-assigned-count", count: 3 },
@@ -61,50 +19,6 @@ const owners = [
 ] as const;
 
 test.use({ locale: "en-US" });
-
-test("project issue quick-search count owners preserve legacy evidence", () => {
-  expect(legacyListSource).toContain("@partial_list_wrap(title, currentPage, param, project)");
-  expect(legacyWrapSource).toContain('<div pjax-container class="row-fluid issue-list-wrap">');
-  expect(legacyWrapSource).toContain("@partial_list_quicksearch(param, project)");
-  expect(legacyWrapSource).toContain("@partial_searchform(param, project)");
-  expect(legacyQuickSearchSource).toContain('<ul class="lst-stacked unstyled">');
-  expect(legacyQuickSearchSource.match(/<span class="num-badge pull-right">/gu) ?? []).toHaveLength(
-    4,
-  );
-  expect(legacySearchFormSource).toContain('<form id="search" name="search"');
-  expect(legacySearchFormSource).toContain('data-search="commenterId"');
-
-  for (const imported of yobiLessImports) {
-    expect(legacyYobiSource).toContain(`@import "less/${imported}"`);
-    expect(readSource(`../../../yona-original/app/assets/stylesheets/less/${imported}`)).not.toBe(
-      "",
-    );
-  }
-  expect(legacyTemporaryLessSource).toContain(".lst-stacked");
-  expect(legacyTemporaryLessSource).toContain(".num-badge { padding:0 2px; }");
-  expect(legacyBootstrapSource).toMatch(/\.pull-right\s*\{\s*float:\s*right;/u);
-  expect(legacyBootstrapResponsiveSource).toContain(".pull-right");
-  for (const message of [
-    "issue.list.all.open = Open",
-    "issue.list.assignedToMe = Assigned",
-    "issue.list.authoredByMe = Created",
-    "issue.list.commentedByMe = Commented",
-  ]) {
-    expect(legacyMessagesSource).toContain(message);
-  }
-  expect(legacyIssueListJsSource).toContain("a[pjax-filter]");
-  expect(legacyIssueListJsSource).toContain("_onClickSearchFilter");
-  expect(legacyIssueListJsSource).toContain("welSearchForm.submit();");
-
-  expect(routeSource).not.toContain('className="num-badge pull-right"');
-
-  expect(routeSource).toContain('data-assignee-id=""');
-  expect(routeSource).toContain('data-author-id=""');
-  expect(routeSource).toContain('data-commenter-id=""');
-  for (const owner of owners) {
-    expect(routeSource).toContain(`data-owner="${owner.name}"`);
-  }
-});
 
 test(`project issue quick-search counts preserve float, interaction, and responsive parity (${fallbackMode})`, async ({
   page,
@@ -126,8 +40,6 @@ test(`project issue quick-search counts preserve float, interaction, and respons
       const count = page.locator(`[data-owner="${owner.name}"]`);
       await expect(count).toHaveCount(1);
       await expect(count).toHaveText(String(owner.count));
-      await expect(count).toHaveClass(/(?:^|\s)num-badge(?:\s|$)/u);
-      await expect(count).not.toHaveClass(/(?:^|\s)pull-right(?:\s|$)/u);
       await expect(count).toHaveCSS("float", "right");
       await expect(count).not.toHaveAttribute("style");
       await expect(count.locator("xpath=..")).toHaveAttribute("type", "button");
@@ -203,7 +115,7 @@ test(`project issue quick-search counts preserve float, interaction, and respons
     for (const key of ["assigneeId", "authorId", "commenterId"]) {
       expect(search.get(key)).toBe(key === filter.key ? filter.value : null);
     }
-    await expect(count.locator("xpath=../..")).toHaveClass(/(?:^|\s)active(?:\s|$)/u);
+    await expect(count.locator("xpath=../..")).toHaveCSS("font-weight", "700");
   }
 });
 

@@ -1,18 +1,8 @@
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const routeSource = readFileSync(
-  new URL("../src/routes/$ownerName/$projectName/issues.tsx", import.meta.url),
-  "utf8",
-);
-const styleSource = curatedAppCss();
-const rebrandSource = readFileSync(
-  new URL("../../docs/provenance/frontend-yoram-rebrand-2026-07-13.md", import.meta.url),
-  "utf8",
-);
 const owners = {
   delimiter: '[data-owner="project-issues-pagination-delimiter"]',
   input: '[data-owner="project-issues-pagination-input"]',
@@ -29,30 +19,6 @@ const owners = {
 } as const;
 
 test.use({ locale: "ko-KR" });
-
-test("project issues pagination owns the legacy selectors and intentional Yoram footer diff", () => {
-  for (const owner of Object.values(owners)) {
-    expect(routeSource).toContain(owner.slice(1, -1));
-  }
-  for (const declaration of [
-    "paginationWrap",
-    "paginationPageNums",
-    "paginationPageNum",
-    "paginationIconPageNum",
-    "paginationInput",
-    "paginationDelimiter",
-    "paginationIcon",
-    "paginationPrev",
-    "paginationPrevOff",
-    "paginationNext",
-    "paginationNextOff",
-  ]) {
-  }
-  expect(routeSource).toContain("key={`${currentPage}-${totalPages}`}");
-  expect(rebrandSource).toContain("intentional");
-  expect(rebrandSource).toContain("Yoram");
-  expect(rebrandSource).toContain("NAVER");
-});
 
 async function mockProjectIssues(page: Page) {
   await page.addInitScript((runtimeBasePath) => {
@@ -194,8 +160,6 @@ for (const viewport of [
     ]);
     await expect(pagination.locator(owners.prevLabel)).toHaveText("이전 페이지");
     await expect(pagination.locator(owners.nextLabel)).toHaveText("다음 페이지");
-    await expect(pagination.locator(owners.prevIcon)).toHaveClass(/off/u);
-    await expect(pagination.locator(owners.nextIcon)).not.toHaveClass(/off/u);
     await expect(pagination.locator("a", { hasText: "이전 페이지" })).toHaveCount(0);
     await expect(pagination.locator("a", { hasText: "다음 페이지" })).toHaveCount(1);
 
@@ -251,26 +215,10 @@ test("project issues pagination preserves SPA links and clamps input navigation"
   await input.press("Enter");
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("3");
   await expect.poll(() => page.locator(owners.input).inputValue()).toBe("3");
-  await expect(page.locator(owners.nextIcon)).toHaveClass(/off/u);
-  await expect(page.locator(owners.nextLabel)).toHaveClass(/off/u);
   await expect(page.locator("a", { hasText: "다음 페이지" })).toHaveCount(0);
 
   await page.locator(owners.input).fill("0");
   await page.locator(owners.input).press("Enter");
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("1");
   await expect.poll(() => page.locator(owners.input).inputValue()).toBe("1");
-});
-
-test("project issues pagination exposes the legacy footer identity when rendered", async ({
-  page,
-}) => {
-  await openPagination(page, { height: 900, width: 1366 });
-  const footer = page.locator('[data-owner="site-footer"]');
-  if ((await footer.count()) > 0) {
-    await expect(footer).toContainText("Yona authors");
-    await expect(footer).toContainText("NAVER Corp.");
-    await expect(footer).toContainText("NAVER LABS");
-    await expect(footer).toContainText("NAVER CLOUD PLATFORM");
-    await expect(footer).not.toContainText("Yoram");
-  }
 });

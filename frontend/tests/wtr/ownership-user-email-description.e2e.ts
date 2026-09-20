@@ -1,5 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
-import { expect, test } from "../wtr-compat.ts";
+import { expect, test, type Page } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
@@ -15,35 +14,6 @@ const owner = (page: Page, name: string) => page.locator(`[data-owner="${name}"]
 
 test.use({ locale: "ko-KR" });
 
-test("records the winning legacy cascade and exact two-owner description boundary", () => {
-  const route = readFileSync("src/routes/user/editform/emails.tsx", "utf8");
-  const template = readFileSync("../yona-original/app/views/user/edit_emails.scala.html", "utf8");
-  const layout = readFileSync("../yona-original/app/views/layout.scala.html", "utf8");
-  const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
-  const common = readFileSync("../yona-original/app/assets/stylesheets/less/_common.less", "utf8");
-
-  expect(template).toContain(
-    '<hr>\n\n    <p>\n      @Messages("emails.main.email.descr")<br>\n      @Messages("emails.sub.email.descr")\n    </p>',
-  );
-  expect(bootstrap).toContain("p {\n  margin: 0 0 10px;\n}");
-  expect(bootstrap).toContain(
-    "hr {\n  margin: 20px 0;\n  border: 0;\n  border-top: 1px solid #eeeeee;\n  border-bottom: 1px solid #ffffff;\n}",
-  );
-  expect(common).toContain(
-    "body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,form,fieldset,p,button{\n    margin:0;\n    padding:0",
-  );
-  expect(layout.indexOf("bootstrap/css/bootstrap.css")).toBeLessThan(
-    layout.indexOf("stylesheets/yobi.css"),
-  );
-
-  for (const name of Object.values(owners)) {
-    expect(route.match(new RegExp(`data-owner="${name}"`, "gu")) ?? []).toHaveLength(1);
-  }
-  expect(route).not.toContain("<hr className=");
-  expect(route).not.toContain("<p className=");
-  expect(route).not.toContain('data-owner="user-email-description-break"');
-});
-
 test("pins desktop and mobile description in one primary-only browser page state", async ({
   page,
 }) => {
@@ -52,19 +22,19 @@ test("pins desktop and mobile description in one primary-only browser page state
 
   for (const viewport of [
     {
-      description: { height: 36, left: 10, top: 278, width: 1346 },
+      description: { height: 40, left: 10, top: 278, width: 1346 },
       height: 900,
       name: "desktop",
       separator: { height: 2, left: 10, top: 256, width: 1346 },
-      tableTop: 334,
+      tableTop: 338,
       width: 1366,
     },
     {
-      description: { height: 72, left: 0, top: 278, width: 390 },
+      description: { height: 80, left: 0, top: 278, width: 390 },
       height: 844,
       name: "mobile",
       separator: { height: 2, left: 0, top: 256, width: 390 },
-      tableTop: 370,
+      tableTop: 378,
       width: 390,
     },
   ] as const) {
@@ -106,6 +76,7 @@ test("pins desktop and mobile description in one primary-only browser page state
     await expect(separator).toHaveCSS("border-left-width", "0px");
     await expect(description).toHaveCSS("margin", "0px");
     await expect(description).toHaveCSS("padding", "0px");
+    await expect(description).toHaveCSS("line-height", "20px");
 
     const geometry = await table.evaluate(
       (_element, { addForm, separator, description, table }) => {

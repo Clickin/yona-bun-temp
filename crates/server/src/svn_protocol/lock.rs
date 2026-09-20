@@ -22,6 +22,19 @@ pub(crate) fn token_header(headers: &HeaderMap) -> Option<String> {
     }
 }
 
+pub(crate) fn add_metadata_headers(headers: &mut HeaderMap, lock: &yoram_vcs::SvnLock) {
+    if let Ok(owner) = http::HeaderValue::from_str(&lock.owner) {
+        headers.insert("x-svn-lock-owner", owner);
+    }
+    if !lock.created.is_empty() {
+        if let Ok(created) =
+            http::HeaderValue::from_str(&super::date::committed_date(&lock.created))
+        {
+            headers.insert("x-svn-creation-date", created);
+        }
+    }
+}
+
 pub(crate) fn discovery_body(project_href: &str, lock: &yoram_vcs::SvnLock) -> String {
     let item = discovery_item(project_href, lock);
     format!(
@@ -38,7 +51,7 @@ pub(crate) fn discovery_item(project_href: &str, lock: &yoram_vcs::SvnLock) -> S
     } else {
         format!(
             "\n        <D:creationdate>{}</D:creationdate>",
-            super::xml_escape(&lock.created)
+            super::xml_escape(&super::date::committed_date(&lock.created))
         )
     };
     format!(
@@ -54,7 +67,7 @@ pub(crate) fn discovery_item(project_href: &str, lock: &yoram_vcs::SvnLock) -> S
     </D:activelock>
   </D:lockdiscovery>
 "#,
-        super::xml_escape(&lock.owner),
+        super::xml_escape(&lock.comment),
         super::xml_escape(&lock.token),
         super::xml_escape(&href)
     )

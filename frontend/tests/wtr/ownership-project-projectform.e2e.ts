@@ -1,7 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
-
-const SOURCE = readFileSync(new URL("../src/routes/projectform.tsx", import.meta.url), "utf8");
 
 test("project create form owns the legacy default and dependent states with Style", async ({
   page,
@@ -23,6 +20,15 @@ test("project create form owns the legacy default and dependent states with Styl
 
   await page.goto(`${basePath}/projectform`, { waitUntil: "domcontentloaded" });
   await expect(page).toHaveTitle("Create new project");
+  await expect(page.locator("#project-name")).toBeFocused();
+  const nameColors = await page.locator("#project-name").evaluate((input) => ({
+    text: getComputedStyle(input).color,
+    placeholder: getComputedStyle(input, "::placeholder").color,
+  }));
+  expect(nameColors).toEqual({
+    text: "rgb(85, 85, 85)",
+    placeholder: "rgb(153, 153, 153)",
+  });
   await expect(page.locator('[data-owner="project-form"]')).toHaveCount(1);
   await expect(page.locator('[data-owner="project-form-advanced"]')).toHaveCount(1);
   await expect(page.locator('[data-owner="project-form-actions"]')).toBeVisible();
@@ -55,14 +61,6 @@ test("project create form owns the legacy default and dependent states with Styl
   await expect.poll(() => createRequests.length).toBe(1);
   expect(createRequests[0]).toMatchObject({ method: "POST", csrf: "csrf-project-create" });
   expect(createRequests[0].body).toMatchObject({ projectName: "new-project" });
-
-  expect(SOURCE).toContain('id="newProjectForm"');
-  expect(SOURCE).toContain('id="project-owner"');
-  expect(SOURCE).toContain('id="project-name"');
-  expect(SOURCE).toContain('id="public"');
-  expect(SOURCE).not.toContain('data-toggle="select2"');
-  expect(SOURCE).not.toContain("$yobi.loadModule");
-  expect(SOURCE).not.toMatch(/<a\s+href=/u);
 });
 
 async function mockProjectCreate(page: Page) {

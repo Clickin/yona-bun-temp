@@ -31,8 +31,7 @@ impl AppRepositoryImpl<'_> {
             .filter(attachment::Column::Name.eq(Some(file_name.to_string())))
             .filter(attachment::Column::Hash.eq(Some(hash.to_string())))
             .filter(
-                attachment::Column::ContainerType
-                    .eq(Some(USER_ATTACHMENT_CONTAINER.to_string())),
+                attachment::Column::ContainerType.eq(Some(USER_ATTACHMENT_CONTAINER.to_string())),
             )
             .filter(attachment::Column::ContainerId.eq(user_id))
             .one(&transaction)

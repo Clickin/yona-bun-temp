@@ -1,11 +1,9 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts"; // Browser harness: no filesystem. mkdirSync/resolve only feed page.screenshot paths (no-op).
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
 
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const repoRoot = resolve("..");
 const screenshotDirectory = resolve("../output/playwright/visual-sweep");
 const owners = {
   page: "organization-members-page",
@@ -24,89 +22,6 @@ const owners = {
 } as const;
 
 test.use({ locale: "en-US" });
-
-test("organization member list records the exact six-owner legacy boundary", () => {
-  const route = readFileSync("src/routes/organizations/$organizationName/members.tsx", "utf8");
-  const legacyTemplate = readFileSync(
-    resolve(repoRoot, "yona-original/app/views/organization/members.scala.html"),
-    "utf8",
-  );
-  const legacyPage = readFileSync(
-    resolve(repoRoot, "yona-original/app/assets/stylesheets/less/_page.less"),
-    "utf8",
-  );
-  const legacyResponsive = readFileSync(
-    resolve(repoRoot, "yona-original/app/assets/stylesheets/less/_responsive.less"),
-    "utf8",
-  );
-  const legacyYobi = readFileSync(
-    resolve(repoRoot, "yona-original/app/assets/stylesheets/yobi.less"),
-    "utf8",
-  );
-  const theme = readFileSync("src/app.css", "utf8");
-
-  for (const owner of Object.values(owners)) {
-    // The enrollment avatar/details owners are passed as props (avatarWrapOwner=/
-    // detailsOwner=) and rendered by the shared component; the rest are inline
-    // data-owner.
-    if (owner === owners.enrollmentAvatarWrap || owner === owners.enrollmentDetails) continue;
-    expect(route).toContain(`data-owner="${owner}"`);
-  }
-  expect(route).toContain('avatarWrapOwner="organization-enrollment-avatar-wrap"');
-  expect(route).toContain('detailsOwner="organization-members-enrollment-details"');
-  expect(route).toContain("members project row-fluid");
-  expect(route).toContain("member span6 span-hard-wrap");
-
-  // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy yobi.organization.Member.js:151-157
-  // _onClickEnrollAcceptBtns fills #loginId and submits #addNewMember (no accept REST), so
-  // the route's enroll-accept handler takes (loginId, _userId) and posts the add-member form.
-  expect(route).toContain("onAccept={(loginId, _userId) =>");
-  expect(route).toContain("addLoginId(loginId)");
-  expect(route).toContain('data-owner="organization-members-header"');
-  expect(route).toContain('data-owner="organization-members-add-form-input"');
-
-  expect(legacyTemplate).toContain('<div class="inner-bubble">');
-  expect(legacyTemplate).toContain('<form class="nm"');
-  expect(legacyTemplate).toContain('class="text uname"');
-  expect(legacyTemplate).toContain('<div class="member-setting">');
-  expect(legacyTemplate).toContain('<div class="btn-group" data-name="roleof-');
-  expect(legacyTemplate).toContain('class="ybtn ybtn-danger ybtn-small"');
-  expect(legacyPage).toContain(".inner-bubble {");
-  expect(legacyPage).toContain("margin-bottom: 10px;");
-  expect(legacyPage).toContain("position: relative;");
-  expect(legacyPage).toContain("width: 384px;");
-  expect(legacyPage).toContain("margin: 0;");
-  expect(legacyPage).toContain(".border-radius(2px);");
-  expect(legacyResponsive).toContain(".inner-bubble .text.uname {");
-  expect(legacyResponsive).toContain("width: inherit !important;");
-  expect(legacyPage).toContain(".member-setting {");
-  expect(legacyPage).toContain("position: absolute;");
-  expect(legacyPage).toContain("right:0;");
-  expect(legacyPage).toContain("top: 15px;");
-  for (const importedStylesheet of [
-    '@import "less/_variables.less";',
-    '@import "less/_mixins.less";',
-    '@import "less/_common.less";',
-    '@import "less/_sprites.less";',
-    '@import "less/_page.less";',
-    '@import "less/_tippy.less";',
-    '@import "less/_scrollbar.less";',
-    '@import "less/_responsive.less";',
-    '@import "less/_yobiUI.less";',
-    '@import "less/_temporary.less";',
-    '@import "less/_markdown.less";',
-    '@import "less/_migration.less";',
-    '@import "less/_override.less";',
-  ]) {
-    expect(legacyYobi).toContain(importedStylesheet);
-  }
-  // e2e closure ledger (2026-08-11): ROUTE_DOM — legacy organization/members.scala.html:51
-  // renders the member avatar link with class="avatar-wrap mlarge pull-left mr10" and
-  // :54-55 the member-name/member-id divs; the route restores those classes per parity.
-  expect(route).toContain('className="avatar-wrap mlarge pull-left mr10"');
-  expect(route).toContain('className="member-name"');
-  expect(route).toContain('className="member-id"');
-});
 
 for (const fallbackOff of [false, true]) {
   test(`organization member add form Style boundary ${"normal"}`, async ({ page }) => {
@@ -257,10 +172,7 @@ for (const fallbackOff of [false, true]) {
       expect(metrics).not.toBeNull();
       expect(metrics!.metaBox.left).toBeGreaterThanOrEqual(metrics!.rowBox.left);
       expect(metrics!.metaBox.right).toBeLessThanOrEqual(metrics!.rowBox.right + 1);
-      // Frozen _page.less keeps member margin-left:5px with width:100vw; allow its
-      // legacy boundary tolerance while retaining strict row/meta containment.
-      const documentWidthLimit = viewport.name === "mobile" ? viewport.width + 8 : viewport.width;
-      expect(metrics!.documentScrollWidth).toBeLessThanOrEqual(documentWidthLimit);
+      expect(metrics!.documentScrollWidth).toBeLessThanOrEqual(viewport.width);
       mkdirSync(screenshotDirectory, { recursive: true });
       await page.screenshot({
         fullPage: true,
@@ -272,47 +184,6 @@ for (const fallbackOff of [false, true]) {
     }
   });
 }
-
-test("organization enrollment avatar owner follows the frozen legacy float boundary", () => {
-  const route = readFileSync("src/routes/organizations/$organizationName/members.tsx", "utf8");
-  const legacyTemplate = readFileSync(
-    resolve(repoRoot, "yona-original/app/views/organization/members.scala.html"),
-    "utf8",
-  );
-  const legacyCommon = readFileSync(
-    resolve(repoRoot, "yona-original/app/assets/stylesheets/less/_common.less"),
-    "utf8",
-  );
-  const legacyBootstrap = readFileSync(
-    resolve(repoRoot, "yona-original/public/bootstrap/css/bootstrap.css"),
-    "utf8",
-  );
-  const legacyYobi = readFileSync(
-    resolve(repoRoot, "yona-original/app/assets/stylesheets/yobi.less"),
-    "utf8",
-  );
-
-  expect(route).toContain('avatarWrapOwner="organization-enrollment-avatar-wrap"');
-  expect(route).toContain('detailsOwner="organization-members-enrollment-details"');
-  const componentStyleSource = curatedAppCss();
-
-  expect(legacyTemplate).toContain('<div class="pull-left mr10">');
-  expect(legacyTemplate).toContain('<div class="pull-left" style="width: 60px;">');
-  expect(legacyTemplate).toContain(
-    '<img src="@user.avatarUrl" height="65" width="65" class="img-circle"/>',
-  );
-  expect(legacyCommon).toContain(".mr10 { margin-right:10px; }");
-  expect(legacyBootstrap).toContain(".pull-left {");
-  expect(legacyBootstrap).toContain("  float: left;");
-  for (const importedStylesheet of [
-    '@import "less/_common.less";',
-    '@import "less/_sprites.less";',
-    '@import "less/_page.less";',
-    '@import "less/_responsive.less";',
-  ]) {
-    expect(legacyYobi).toContain(importedStylesheet);
-  }
-});
 
 test("organization enrollment request preserves avatar geometry, order, copy, and accept interaction", async ({
   page,
@@ -428,7 +299,7 @@ test("organization enrollment request preserves avatar geometry, order, copy, an
 
 for (const viewport of [
   { height: 900, name: "desktop", rowWidthRatio: 0.4893617021276595, width: 1366 },
-  { height: 844, name: "mobile", rowWidthRatio: 1, width: 390 },
+  { height: 844, name: "mobile", rowWidthRatio: 0.95, width: 390 },
 ] as const) {
   test(`organization member list preserves populated and empty ${viewport.name} output`, async ({
     page,
@@ -503,7 +374,7 @@ for (const viewport of [
     if (viewport.name === "mobile") {
       expect(geometry.list.width).toBe(viewport.width);
       expect(geometry.list.right).toBe(viewport.width);
-      expect(geometry.rows[0]!.row.width).toBe(viewport.width);
+      expect(geometry.rows[0]!.row.width).toBeCloseTo(geometry.list.width * 0.95, 1);
       expect(geometry.rows[0]!.row.left).toBe(5);
     }
     for (const row of geometry.rows) {

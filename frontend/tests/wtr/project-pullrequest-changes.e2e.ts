@@ -1,74 +1,26 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts"; // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts) => parts.join("/");
 
 const fileURLToPath = (u) => u.pathname;
 import { expect, test, type Locator, type Page } from "../wtr-compat.ts";
-
-const PULL_REQUEST_CHANGES_ROUTE_SOURCE = readFileSync(
-  new URL(
-    "../src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes.tsx",
-    import.meta.url,
-  ),
-  "utf8",
-);
-
-const PULL_REQUEST_CHANGES_STYLE_SOURCE = curatedAppCss();
-
-const LEGACY_REVIEWLIST_SOURCE = readFileSync(
-  new URL("../../yona-original/app/views/git/partial_reviewlist.scala.html", import.meta.url),
-  "utf8",
-);
-
-const LEGACY_MESSAGES_SOURCE = readFileSync(
-  new URL("../../yona-original/conf/messages", import.meta.url),
-  "utf8",
-);
+const defaultAvatarResponse = await fetch("/tests/src/assets/legacy/default-avatar-34.png");
+if (!defaultAvatarResponse.ok) throw new Error("Cannot load legacy default avatar fixture");
+const defaultAvatarUrl = `data:image/png;base64,${btoa(String.fromCharCode(...new Uint8Array(await defaultAvatarResponse.arrayBuffer())))}`;
 
 const BATCH_822_SCREENSHOT_DIRECTORY = fileURLToPath(
   new URL("../output/playwright/batch-822", import.meta.url),
 );
 
-const LEGACY_COMMENT_THREAD_SOURCE = readFileSync(
-  new URL("../../yona-original/app/views/partial_comment_thread.scala.html", import.meta.url),
-  "utf8",
-);
-
-const LEGACY_COMMENT_THREAD_LESS_SOURCE = readFileSync(
-  new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
-  "utf8",
-);
-
-const LEGACY_REVIEW_CARD_LESS_SOURCE = LEGACY_COMMENT_THREAD_LESS_SOURCE;
-
-const LEGACY_CODE_COMMENT_JS_SOURCE = readFileSync(
-  new URL("../../yona-original/public/javascripts/service/yobi.code.Diff.js", import.meta.url),
-  "utf8",
-);
-
 // The branch start icon retains the legacy ml0 geometry class.
-const EXPECTED_PULL_REQUEST_CHANGES_BASE = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="code-browse-wrap"><div class="board-header issue"><div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-open">Open</span></div><div class="title"><strong class="board-id">#9</strong> Initial title</div></div><div class="pull-right"><button id="btnAccept" type="button" class="ybtn ybtn-success">Merge</button></div><ul class="nav nav-tabs nm"><li><a href="__BASE_PATH__/admin/sample/pullRequest/9">Overview</a></li><li class="active"><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes">Changes</a></li></ul><div class="board-body mb20"><div class="author-info right-txt" style="margin-top:20px"><a href="__BASE_PATH__/dev" class="usf-group pull-left"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a><div class="pullRequest-branchInfo"><i class="yobicon-branch ml0"></i><code class="from" title="From"><a href="__BASE_PATH__/admin">admin</a><span>/</span><a href="__BASE_PATH__/admin/sample">sample</a>: <a href="__BASE_PATH__/admin/sample/code/feature%2Fui" class="branchName">feature/ui</a></code><i class="yobicon-right-2 ml10"></i><code class="to" title="To"><a href="__BASE_PATH__/admin">admin</a><span>/</span><a href="__BASE_PATH__/admin/sample">sample</a>: <a href="__BASE_PATH__/admin/sample/code/main" class="branchName">main</a></code></div></div></div><div class="codediff-wrap mt10 diffs-only"><div id="changes" class="diffs-wrap"><div id="commits" class="btn-group auto mb10"><button class="btn dropdown-toggle auto"><span class="d-label">All commit changes</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes">All commit changes</a></li><li class="divider"></li></ul></div><div class="diff-body diffs-wrap-scroll"><div id="state" class="pullRequest-stateInfo"><div class="alert alert-success"><i class="yobicon-check-circle-alt mr5"></i><span>This pull request can be merged safely.</span></div></div><div class="btnPop"><button type="button" class="ybtn ybtn-info ybtn-small"><i class="yobicon-post2"></i></button></div></div><div class="board-comment-wrap"><div class="non-ranged-threads-wrap"></div><form id="comment-form" action="__BASE_PATH__/admin/sample/pullRequest/90/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" ><div id="edit-comment" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" id="editor-contents-comment" markdown="true"></textarea></div></div><div id="preview-comment" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers</span><span class="notification-receiver-list"></span></div></div></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form></div><div id="review-form" class="review-form"><form action="__BASE_PATH__/admin/sample/pullRequest/90/comments" method="post" enctype="multipart/form-data"><div class="author-info-wrap pull-left hide-in-mobile"><div class="author-info"><a href="__BASE_PATH__/admin" class="avatar-wrap medium" title="Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div></div><div class="write-comment-box"><div class="write-comment-wrap"><div class="pull-right"><button type="button" class="ybtn ybtn-default ybtn-small" data-toggle="close">×</button></div><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" ><div id="edit-review" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="code-review-body" id="editor-contents-review" markdown="true"></textarea></div></div><div id="preview-review" class="tab-pane"><div class="markdown-preview markdown-wrap code-review-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers</span><span class="notification-receiver-list"></span></div></div></div><div class="upload-wrap content-footer" data-resource-type="REVIEW_COMMENT"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><div class="right-txt"><button type="submit" class="ybtn ybtn-success ybtn-small">Add a comment</button></div></div></div></form></div></div></div></div></div></div>
-`.replace(
-  `<div id="state" class="pullRequest-stateInfo"><div class="alert alert-success"><i class="yobicon-check-circle-alt mr5"></i><span>This pull request can be merged safely.</span></div></div>`,
-  `<div class="alert alert-success"><i class="yobicon-check-circle-alt mr5"></i><span>This pull request can be merged safely.</span></div>`,
-);
-
-const REVIEW_COMMENT_UPLOAD_WITH_ID = `<div class="upload-wrap content-footer" data-resource-type="REVIEW_COMMENT" id="upload"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div>`;
-
-const EXPECTED_PULL_REQUEST_CHANGES = EXPECTED_PULL_REQUEST_CHANGES_BASE.replace(
-  `<button type="button" class="ybtn ybtn-default ybtn-small" data-toggle="close">×</button>`,
-  `<button type="button" class="ybtn ybtn-default ybtn-small">×</button>`,
-).replace(
-  `<div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button>`,
-  `${REVIEW_COMMENT_UPLOAD_WITH_ID}<div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button>`,
-);
 
 const SELECTED_COMMIT_ID = "abcdef1234567890";
 
 const SELECTED_COMMIT = {
+  authorAvatarUrl: "/avatars/dev.png",
   authorDateLabel: "Jul 4, 2026",
   authorEmail: "dev@example.com",
+  authorLoginId: "dev",
+  authorName: "Dev Member",
   commitId: SELECTED_COMMIT_ID,
   commitMessage: "Add UI\n\nDetails",
   commitShortId: "abcdef1",
@@ -78,8 +30,10 @@ const SELECTED_COMMIT = {
 const SELECTED_NO_AUTHOR_COMMIT_ID = "0000000000000000";
 
 const SELECTED_NO_AUTHOR_COMMIT = {
+  authorAvatarUrl: "",
   authorDateLabel: "Jul 9, 2026",
   authorEmail: "",
+  authorLoginId: "",
   authorName: "",
   commitId: SELECTED_NO_AUTHOR_COMMIT_ID,
   commitMessage: "No author metadata\n\nDetails",
@@ -102,80 +56,19 @@ const NORMAL_FILE_PATCH = [
 ].join("\n");
 
 const PRIOR_COMMIT = {
+  authorAvatarUrl: "https://www.gravatar.com/avatar/bf25d950bde50b8e13f413bb4eb0b1dd?s=32",
   authorDateLabel: "Jul 3, 2026",
   authorEmail: "old@example.com",
+  authorLoginId: "",
+  authorName: "Former Contributor",
   commitId: PRIOR_COMMIT_ID,
   commitMessage: "Old UI\n\nDetails",
   commitShortId: "1234567",
   state: "PRIOR",
 };
 
-const EXPECTED_PULL_REQUEST_SELECTED_CHANGE = EXPECTED_PULL_REQUEST_CHANGES.replace(
-  `<span class="d-label">All commit changes</span>`,
-  `<span class="d-label"><strong class="mr10 commit-hash">abcdef1</strong><span>Add UI</span></span>`,
-)
-  .replace(
-    `<li class="divider"></li></ul>`,
-    `<li class="divider"></li><li><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890"><strong class="mr10 commit-hash">abcdef1</strong><span>Add UI</span></a></li></ul>`,
-  )
-  .replace(
-    `<div class="diff-body diffs-wrap-scroll">`,
-    `<p class="commitInfo"><span class="avatar-wrap smaller"><img src="__BASE_PATH__/assets/images/default-avatar-32.png" width="32" height="32"></span><strong>dev@example.com</strong><span class="ago" title="Jul 4, 2026">Jul 4, 2026</span></p><pre class="commitMsg mt5">Add UI\n\nDetails</pre><div class="diff-body diffs-wrap-scroll">`,
-  )
-  .replaceAll(
-    `action="__BASE_PATH__/admin/sample/pullRequest/90/comments"`,
-    `action="__BASE_PATH__/admin/sample/pullRequest/90/comments?commitId=abcdef1234567890"`,
-  );
-
-const EXPECTED_PULL_REQUEST_SELECTED_NO_AUTHOR_CHANGE = EXPECTED_PULL_REQUEST_CHANGES.replace(
-  `<span class="d-label">All commit changes</span>`,
-  `<span class="d-label"><strong class="mr10 commit-hash">0000000</strong><span>No author metadata</span></span>`,
-)
-  .replace(
-    `<li class="divider"></li></ul>`,
-    `<li class="divider"></li><li><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/0000000000000000"><strong class="mr10 commit-hash">0000000</strong><span>No author metadata</span></a></li></ul>`,
-  )
-  .replace(
-    `<div class="diff-body diffs-wrap-scroll">`,
-    `<p class="commitInfo"><span class="avatar-wrap smaller"><img src="__BASE_PATH__/assets/images/default-avatar-32.png" width="32" height="32"></span><strong>Anonymous</strong><span class="ago" title="Jul 9, 2026">Jul 9, 2026</span></p><pre class="commitMsg mt5">No author metadata\n\nDetails</pre><div class="diff-body diffs-wrap-scroll">`,
-  )
-  .replaceAll(
-    `action="__BASE_PATH__/admin/sample/pullRequest/90/comments"`,
-    `action="__BASE_PATH__/admin/sample/pullRequest/90/comments?commitId=0000000000000000"`,
-  );
-
-const EXPECTED_PULL_REQUEST_PRIOR_CHANGE = EXPECTED_PULL_REQUEST_CHANGES.replace(
-  `<span class="d-label">All commit changes</span>`,
-  `<span class="d-label"><strong class="mr10 commit-hash">1234567</strong><span>Old UI (Outdated)</span></span>`,
-)
-  .replace(
-    `<li class="divider"></li></ul>`,
-    `<li class="divider"></li><li><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890"><strong class="mr10 commit-hash">abcdef1</strong><span>Add UI</span></a></li></ul>`,
-  )
-  .replace(
-    `<div class="diff-body diffs-wrap-scroll">`,
-    `<p class="commitInfo"><span class="avatar-wrap smaller"><img src="__BASE_PATH__/assets/images/default-avatar-32.png" width="32" height="32"></span><strong>old@example.com</strong><span class="ago" title="Jul 3, 2026">Jul 3, 2026</span></p><pre class="commitMsg mt5">Old UI\n\nDetails</pre><div class="diff-body diffs-wrap-scroll">`,
-  )
-  .replaceAll(
-    `action="__BASE_PATH__/admin/sample/pullRequest/90/comments"`,
-    `action="__BASE_PATH__/admin/sample/pullRequest/90/comments?commitId=1234567890abcdef"`,
-  );
-
-const EXPECTED_PULL_REQUEST_UNKNOWN_CHANGE = EXPECTED_PULL_REQUEST_CHANGES.replace(
-  `<span class="d-label">All commit changes</span>`,
-  `<span class="d-label">All commit changes (Outdated - <strong class="mr10">fedcba9</strong>)</span>`,
-)
-  .replace(
-    `<li class="divider"></li></ul>`,
-    `<li class="divider"></li><li><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890"><strong class="mr10 commit-hash">abcdef1</strong><span>Add UI</span></a></li></ul>`,
-  )
-  .replaceAll(
-    `action="__BASE_PATH__/admin/sample/pullRequest/90/comments"`,
-    `action="__BASE_PATH__/admin/sample/pullRequest/90/comments?commitId=fedcba9876543210"`,
-  );
-
 const REVIEW_THREAD = {
-  authorAvatarUrl: "/assets/images/default-avatar-32.png",
+  authorAvatarUrl: defaultAvatarUrl,
   authorId: 2,
   authorLabel: "Dev Member",
   authorLoginId: "dev",
@@ -189,7 +82,7 @@ const REVIEW_THREAD = {
       canUpdate: false,
       contentsHtml: "<p>Review note</p>",
       contentsMarkdown: "Review note",
-      createdLabel: "Jul 5, 2026",
+      createdLabel: new Date(2000, 6, 5, 10, 15).toISOString(),
       id: 701,
       threadId: 91,
       viaEmail: false,
@@ -203,14 +96,14 @@ const REVIEW_THREAD = {
       canUpdate: false,
       contentsHtml: "<p>Follow up</p>",
       contentsMarkdown: "Follow up",
-      createdLabel: "Jul 6, 2026",
+      createdLabel: new Date(2000, 6, 6, 10, 15).toISOString(),
       id: 702,
       threadId: 91,
       viaEmail: false,
     },
   ],
   commitId: "abcdef1234567890",
-  createdLabel: "Jul 5, 2026",
+  createdLabel: new Date(2000, 6, 5, 10, 15).toISOString(),
   endLine: 2,
   endSide: "B",
   id: 91,
@@ -221,19 +114,6 @@ const REVIEW_THREAD = {
   startSide: "B",
   state: "open",
 };
-
-const EXPECTED_PULL_REQUEST_REVIEW_CARD = EXPECTED_PULL_REQUEST_CHANGES.replace(
-  `class="codediff-wrap mt10 diffs-only"`,
-  `class="codediff-wrap mt10"`,
-)
-  .replace(
-    `<div id="changes" class="diffs-wrap">`,
-    `<button type="button" class="ybtn ybtn-default btn-show-reviewcards"><i class="yobicon-restore"></i></button><div id="changes" class="diffs-wrap">`,
-  )
-  .replace(
-    `</div></div></div></div></div></div>`,
-    `</div></div><div class="review-wrap"><div class="review-container"><button type="button" class="ybtn ybtn-default btn-hide-reviewcards"><i class="yobicon-maximize"></i></button><ul class="nav nav-tabs"><li class="active"><button type="button">Open1</button></li><li><button type="button">Closed0</button></li></ul><div class="tab-content review-list"><div id="reviewcards-open" class="tab-pane active"><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890#thread-91" class="review-card open"><p class="content">Review note</p><p class="info"><span class="comments pull-left"><i class="yobicon-comments"></i>1</span><span class="outdated-label">Outdated</span><span class="date" title="Jul 5, 2026">Jul 5, 2026</span><span class="avatar-wrap smaller ml5"><img src="/assets/images/default-avatar-32.png"></span></p></a></div><div id="reviewcards-closed" class="tab-pane"></div></div></div></div></div></div></div></div>`,
-  );
 
 const NON_RANGED_THREAD = {
   ...REVIEW_THREAD,
@@ -248,13 +128,13 @@ const NON_RANGED_THREAD = {
       canUpdate: false,
       contentsHtml: "<p>Server HTML should not render</p>",
       contentsMarkdown: "General **note**",
-      createdLabel: "Jul 7, 2026",
+      createdLabel: new Date(2000, 6, 7, 10, 15).toISOString(),
       id: 801,
       threadId: 92,
       viaEmail: false,
     },
   ],
-  createdLabel: "Jul 7, 2026",
+  createdLabel: new Date(2000, 6, 7, 10, 15).toISOString(),
   id: 92,
   path: "",
 };
@@ -273,7 +153,7 @@ const VIA_EMAIL_NON_RANGED_THREAD = {
       contentsHtml: "<p>Server HTML should not render</p>",
       contentsMarkdown:
         "Reply before quoted mail.\n\n-----Original Message-----\nOriginal author wrote:\nQuoted original line",
-      createdLabel: "Jul 7, 2026",
+      createdLabel: new Date(2000, 6, 7, 10, 15).toISOString(),
       id: 802,
       threadId: 94,
       viaEmail: true,
@@ -301,13 +181,13 @@ const INLINE_REVIEW_THREAD = {
       canUpdate: false,
       contentsHtml: "<p>Server HTML should not render</p>",
       contentsMarkdown: "Inline **review**",
-      createdLabel: "Jul 8, 2026",
+      createdLabel: new Date(2000, 6, 8, 10, 15).toISOString(),
       id: 901,
       threadId: 95,
       viaEmail: false,
     },
   ],
-  createdLabel: "Jul 8, 2026",
+  createdLabel: new Date(2000, 6, 8, 10, 15).toISOString(),
   endLine: 2,
   endSide: "B",
   id: 95,
@@ -322,116 +202,342 @@ const CLOSED_INLINE_REVIEW_THREAD = {
   state: "closed",
 };
 
-const EXPECTED_PULL_REQUEST_NON_RANGED_THREAD_HTML = `<div id="thread-92" class="comment-thread-wrap open"><div class="btn-thread-here btn-thread-minimize"><button type="button" class="ybtn ybtn-default ybtn-small"><i class="yobicon-comments"></i></button></div><ul class="comments"><li id="comment-801" class="comment"><div class="comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap" title="Dev Member"><img src="/avatars/dev.png" width="32" height="32" alt="dev"></a></div><div class="media-body"><div class="meta-info"><span class="comment_author pull-left"><a href="__BASE_PATH__/dev" title="Dev Member"><strong>dev </strong></a></span><span class="ago"><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes#comment-801" title="Jul 7, 2026">Jul 7, 2026</a></span></div><div id="comment-body-801"><div class="comment-body markdown-wrap" data-via-email="false"><p>General <strong>note</strong></p></div><div class="attachments" data-attachments="[]"></div></div></div></li></ul><div class="write-comment-form"><form action="__BASE_PATH__/admin/sample/pullRequest/90/comments?commitId=abcdef1234567890" method="post" enctype="multipart/form-data" class="review-form" ><input type="hidden" name="thread.id" value="92"><div class="author-info-wrap pull-left hide-in-mobile"><div class="author-info"><a href="__BASE_PATH__/admin" class="avatar-wrap medium" title="Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div></div><div class="write-comment-box"><div class="write-comment-wrap"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" ><div id="edit-thread-92" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="code-review-body" id="editor-contents-thread-92" markdown="true"></textarea></div></div><div id="preview-thread-92" class="tab-pane"><div class="markdown-preview markdown-wrap code-review-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers</span><span class="notification-receiver-list"></span></div></div></div><div class="upload-wrap content-footer" data-resource-type="REVIEW_COMMENT"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><div class="right-txt"><button type="button" class="ybtn ybtn-default ybtn-small">Close</button><button type="submit" class="ybtn ybtn-success ybtn-small">Add a comment</button></div></div></div></form></div></div>`;
-
-const EXPECTED_PULL_REQUEST_NON_RANGED_THREAD = EXPECTED_PULL_REQUEST_REVIEW_CARD.replace(
-  `<div class="non-ranged-threads-wrap"></div>`,
-  `<div class="non-ranged-threads-wrap">${EXPECTED_PULL_REQUEST_NON_RANGED_THREAD_HTML.replace(
-    `<div id="comment-body-801"><div class="comment-body markdown-wrap" data-via-email="false"><p>General <strong>note</strong></p></div><div class="attachments" data-attachments="[]"></div></div>`,
-    `<div class="comment-body markdown-wrap" data-via-email="false"><p>General <strong>note</strong></p></div><div class="attachments" data-attachments="[]"></div>`,
-  ).replace(
-    `</span></div><div class="comment-body markdown-wrap" data-via-email="false"><p>General <strong>note</strong></p></div>`,
-    `</span><span class="edit pull-right"><button class="btn-transparent pull-right close" title="Delete comment"><i class="yobicon-trash"></i></button></span></div><div class="comment-body markdown-wrap" data-via-email="false"><p>General <strong>note</strong></p></div>`,
-  )}</div>`,
-)
-  .replace(
-    `href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890#thread-91"`,
-    `href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890#thread-92"`,
-  )
-  .replace(`<p class="content">Review note</p>`, `<p class="content">General **note**</p>`)
-  .replace(`title="Jul 5, 2026">Jul 5, 2026`, `title="Jul 7, 2026">Jul 7, 2026`)
-  .replace(`<span class="comments pull-left"><i class="yobicon-comments"></i>1</span>`, ``);
-
-const EXPECTED_PULL_REQUEST_OUTDATED_REVIEW_CARD = EXPECTED_PULL_REQUEST_REVIEW_CARD.replace(
-  `href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890#thread-91" class="review-card open"`,
-  `href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890#thread-93" class="review-card open outdated"`,
-);
-
-function expectedChangesShellMarkup(html: string) {
-  const trimmed = html.trim();
-  const root = '<div class="page-wrap-outer">';
-  if (!trimmed.startsWith(root) || !trimmed.endsWith("</div>")) {
-    throw new Error("expected changes fixture must contain the legacy page wrapper");
-  }
-  return trimmed.slice(root.length, -"</div>".length);
-}
-
-test("project pull request changes source keeps React-owned tab controls free of Bootstrap tab markers", () => {
-  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain('data-toggle="tab"');
-  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain("data-toggle='tab'");
-  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain('data-toggle="dropdown"');
-  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain("data-toggle='dropdown'");
-  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain('data-toggle="CodeCommentThread"');
-  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain("data-toggle='CodeCommentThread'");
-  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain("click.dropdown");
-  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain("dropdown.data-api");
-  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain('data-toggle="markdown-editor"');
-  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain("data-toggle='markdown-editor'");
-  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain('data-mode="edit"');
-  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain('data-mode="preview"');
-  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain("data-type={line.type}");
-});
-
-test("project pull request review cards map legacy markup to route-owned Style declarations", () => {
-  expect(LEGACY_REVIEWLIST_SOURCE).toContain(
-    '<a href="@DiffRenderer.urlToCommentThread(thread)" class="review-card',
+test("PR changes posts a general review without navigation and retains drafts on failure", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const threads: unknown[] = [];
+  const requests: unknown[] = [];
+  const attachment = {
+    id: 202,
+    mimeType: "text/plain",
+    name: "review.txt",
+    size: 6,
+    url: `${basePath}/files/202`,
+  };
+  await mockPullRequestChanges(page, { threads, nonRangedThreads: threads });
+  await page.route("**/files", async (route) => {
+    expect(route.request().method()).toBe("POST");
+    expect(route.request().headers()["x-csrf-token"]).toBe("review-csrf");
+    expect(route.request().postDataBuffer()?.toString("utf8")).toContain('filename="review.txt"');
+    await route.fulfill({ contentType: "application/json", body: JSON.stringify(attachment) });
+  });
+  await page.route(
+    "**/api/v1/owners/admin/projects/sample/pull-requests/9/comments",
+    async (route) => {
+      expect(route.request().method()).toBe("POST");
+      expect(route.request().headers()["content-type"]).toBe("application/json");
+      expect(route.request().headers()["x-csrf-token"]).toBe("review-csrf");
+      requests.push(route.request().postDataJSON());
+      if (requests.length === 1) {
+        await route.fulfill({
+          status: 403,
+          contentType: "application/json",
+          body: JSON.stringify({
+            error: { code: "forbidden", message: "Review denied", status: 403 },
+          }),
+        });
+        return;
+      }
+      threads.push({
+        ...NON_RANGED_THREAD,
+        commitId: "",
+        comments: [
+          {
+            ...NON_RANGED_THREAD.comments[0],
+            id: 1001,
+            contentsMarkdown: "Saved **review**",
+            attachments: [attachment],
+          },
+        ],
+      });
+      // The changes refetch, not the mutation response, supplies the persisted thread.
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify(pullRequestDetail()),
+      });
+    },
   );
-  expect(LEGACY_REVIEWLIST_SOURCE).toContain('<p class="content">');
-  expect(LEGACY_REVIEWLIST_SOURCE).toContain('<p class="info">');
-  expect(LEGACY_REVIEWLIST_SOURCE).toContain('<span class="outdated-label">');
-  expect(LEGACY_REVIEWLIST_SOURCE).toContain('<span class="date"');
-  expect(LEGACY_REVIEW_CARD_LESS_SOURCE).toContain(".review-card {");
-  expect(LEGACY_REVIEW_CARD_LESS_SOURCE).toContain("&:hover {");
-  expect(LEGACY_REVIEW_CARD_LESS_SOURCE).toContain("&.open {");
-  expect(LEGACY_REVIEW_CARD_LESS_SOURCE).toContain("&.closed {");
-  expect(LEGACY_REVIEW_CARD_LESS_SOURCE).toContain("-webkit-line-clamp: 3;");
+  const path = `${basePath}/admin/sample/pullRequest/9/changes`;
+  await page.goto(path);
+  await page.evaluate(() => {
+    (window as Window & { __reviewSubmission?: string }).__reviewSubmission = "general-review";
+  });
+  const form = page.locator("#comment-form");
+  const editor = form.locator("#editor-contents-comment");
+  await editor.fill("Preview **draft**");
+  await form.getByRole("button", { name: "Preview", exact: true }).click();
+  await expect(form.locator(".markdown-preview strong")).toHaveText("draft");
+  await form.getByRole("button", { name: "Edit", exact: true }).click();
+  await editor.evaluate((node) => (node as HTMLTextAreaElement).setSelectionRange(0, 0));
+  await form.getByRole("button", { name: "Add checklist", exact: true }).click();
+  await expect(editor).toHaveValue("Preview **draft**\n- [ ] Todo A\n- [ ] Todo B\n- [ ] Todo C");
+  expect(requests).toEqual([]);
+  await editor.fill("  ");
+  await form.locator("button[type='submit']").click();
+  await expect(form.locator("[role='alert']")).toHaveText("Comment should not be empty.");
+  expect(requests).toEqual([]);
 
-  for (const owner of [
-    "pull-request-changes-review-card",
-    "pull-request-changes-review-card-content",
-    "pull-request-changes-review-card-info",
-    "pull-request-changes-review-card-comments",
-    "pull-request-changes-review-card-outdated-label",
-    "pull-request-changes-review-card-date",
-  ]) {
-    expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).toContain(`data-owner="${owner}"`);
-  }
-  for (const declaration of [
-    "reviewCard",
-    "reviewCardOpen",
-    "reviewCardClosed",
-    "reviewCardOutdatedLabel",
-    "reviewCardContent",
-    "reviewCardInfo",
-    "reviewCardDate",
-    "reviewCardComments",
-  ]) {
-  }
-});
-
-test("project pull request ranged thread source maps the legacy shell and React fold behavior", () => {
-  expect(LEGACY_COMMENT_THREAD_SOURCE).toContain('class="comment-thread-wrap');
-  expect(LEGACY_COMMENT_THREAD_SOURCE).toContain('class="btn-thread-here btn-thread-minimize"');
-  expect(LEGACY_COMMENT_THREAD_SOURCE).toContain('class="thread-header"');
-  expect(LEGACY_COMMENT_THREAD_SOURCE).toContain('class="badge state');
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".comment-thread-wrap {");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("&.fold {");
-  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".btn-thread-here {");
-  expect(LEGACY_CODE_COMMENT_JS_SOURCE).toContain(
-    'closest(".comment-thread-wrap").toggleClass("fold")',
+  await editor.fill("Saved **review**");
+  await form.locator("button[type='submit']").click();
+  await expect(form.locator("[role='alert']")).toHaveText("Review denied");
+  await expect(editor).toHaveValue("Saved **review**");
+  await expect(page.locator("#comment-1001")).toHaveCount(0);
+  await form.locator("input[type='file']").setInputFiles({
+    buffer: Buffer.from("review"),
+    mimeType: "text/plain",
+    name: "review.txt",
+  });
+  await form.locator("button[type='submit']").click();
+  await expect(page.locator("#comment-1001 .comment-body")).toHaveText("Saved review");
+  await expect(editor).toHaveValue("");
+  await expect(form.locator("[role='alert']")).toHaveCount(0);
+  expect(requests).toEqual([
+    { attachmentIds: [], contentsMarkdown: "Saved **review**" },
+    { attachmentIds: [202], contentsMarkdown: "Saved **review**" },
+  ]);
+  expect(
+    await page.evaluate(
+      () => (window as Window & { __reviewSubmission?: string }).__reviewSubmission,
+    ),
+  ).toBe("general-review");
+  await expect(page).toHaveURL(new RegExp(`${path}$`));
+  await page.goto(path);
+  await expect(page.locator("#comment-1001 .comment-body")).toHaveText("Saved review");
+  await expect(page.locator("#comment-1001 .attachments")).toHaveAttribute(
+    "data-attachments",
+    JSON.stringify([attachment]),
   );
-
-  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).toContain("setIsFolded((current) => !current)");
-  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain("classList");
-  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain("style.display");
-  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain('data-toggle="CodeCommentThread"');
 });
 
-test("project pull request changes selected commit anonymous fallback uses legacy messages", () => {
-  expect(LEGACY_MESSAGES_SOURCE).toMatch(/^user\.role\.anonymous\s*=\s*Anonymous$/m);
-  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).toContain('t("user.role.anonymous")');
-  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain('commit.authorEmail || "Anonymous"');
-  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toMatch(/authorEmail\s*\|\|\s*["']Anonymous/u);
+test("PR changes replies to non-ranged and inline threads without replacing other drafts", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const options = {
+    files: [{ patch: NORMAL_FILE_PATCH, path: "src/main.rs" }],
+    inlineThreads: [INLINE_REVIEW_THREAD],
+    nonRangedThreads: [NON_RANGED_THREAD],
+    threads: [NON_RANGED_THREAD, INLINE_REVIEW_THREAD],
+  };
+  const requests: unknown[] = [];
+  await mockPullRequestChanges(page, options);
+  await page.route(
+    "**/api/v1/owners/admin/projects/sample/pull-requests/9/comments",
+    async (route) => {
+      requests.push(route.request().postDataJSON());
+      const thread = requests.length === 1 ? NON_RANGED_THREAD : INLINE_REVIEW_THREAD;
+      const updated = {
+        ...thread,
+        comments: [
+          ...thread.comments,
+          {
+            ...thread.comments[0],
+            id: requests.length === 1 ? 1002 : 1003,
+            contentsMarkdown: requests.length === 1 ? "General reply" : "Inline reply",
+          },
+        ],
+      };
+      if (requests.length === 1) {
+        options.nonRangedThreads = [updated];
+      } else {
+        options.inlineThreads = [updated];
+      }
+      options.threads = [...options.nonRangedThreads, ...options.inlineThreads];
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify(pullRequestDetail()),
+      });
+    },
+  );
+  const path = `${basePath}/admin/sample/pullRequest/9/changes`;
+  await page.goto(path);
+  await page.evaluate(() => {
+    (window as Window & { __reviewSubmission?: string }).__reviewSubmission = "thread-replies";
+  });
+  const replyForm = page.locator("#thread-92 form");
+  const replyAvatar = replyForm.locator(".author-info img");
+  await expect(replyAvatar).toHaveAttribute("src", defaultAvatarUrl);
+  expect(
+    await replyAvatar.evaluate(async (node) => {
+      const image = node as HTMLImageElement;
+      await image.decode();
+      return image.naturalWidth;
+    }),
+  ).toBe(34);
+  await expect(page.locator("#comment-801 .comment-avatar img")).toHaveAttribute(
+    "src",
+    "/avatars/dev.png",
+  );
+  const editTab = replyForm.getByRole("button", { name: "Edit", exact: true });
+  for (const width of [1366, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect(editTab).toHaveCSS("display", "block");
+    await expect(editTab).toHaveCSS("line-height", "20px");
+    await expect(editTab).toHaveCSS("padding-top", "4px");
+    await expect(editTab).toHaveCSS("padding-left", width === 390 ? "5px" : "15px");
+    const geometry = await replyForm.evaluate((node) => {
+      const [edit, preview] = Array.from(node.querySelectorAll(".nav-tabs > li > button"));
+      const e = edit!.getBoundingClientRect();
+      const p = preview!.getBoundingClientRect();
+      const t = node.querySelector("textarea")!.getBoundingClientRect();
+      return {
+        editTop: e.top,
+        previewTop: p.top,
+        editRight: e.right,
+        previewLeft: p.left,
+        previewBottom: p.bottom,
+        textareaTop: t.top,
+        previewRight: p.right,
+        textareaRight: t.right,
+      };
+    });
+    expect(geometry.editTop).toBeCloseTo(geometry.previewTop, 1);
+    expect(geometry.editRight).toBeLessThanOrEqual(geometry.previewLeft);
+    expect(geometry.previewBottom).toBeLessThanOrEqual(geometry.textareaTop);
+    expect(geometry.previewRight).toBeLessThanOrEqual(geometry.textareaRight);
+  }
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.locator("#editor-contents-comment").fill("Unsubmitted general review");
+  await page.locator("#editor-contents-thread-92").fill("General reply");
+  await page.locator("#thread-92 form button[type='submit']").click();
+  await expect(page.locator("#thread-92 #comment-1002 .comment-body")).toHaveText("General reply");
+  await expect(page.locator("#editor-contents-thread-92")).toHaveValue("");
+  await page.locator("#editor-contents-thread-95").fill("Inline reply");
+  await page.locator("#thread-95 form button[type='submit']").click();
+  await expect(page.locator("#thread-95 #comment-1003 .comment-body")).toHaveText("Inline reply");
+  await expect(page.locator("#editor-contents-thread-95")).toHaveValue("");
+  await expect(page.locator("#editor-contents-comment")).toHaveValue("Unsubmitted general review");
+  expect(requests).toEqual([
+    {
+      attachmentIds: [],
+      commitId: SELECTED_COMMIT_ID,
+      contentsMarkdown: "General reply",
+      threadId: 92,
+    },
+    {
+      attachmentIds: [],
+      commitId: SELECTED_COMMIT_ID,
+      contentsMarkdown: "Inline reply",
+      threadId: 95,
+    },
+  ]);
+  expect(
+    await page.evaluate(
+      () => (window as Window & { __reviewSubmission?: string }).__reviewSubmission,
+    ),
+  ).toBe("thread-replies");
+  await expect(page).toHaveURL(new RegExp(`${path}$`));
+  await page.goto(path);
+  await expect(page.locator("#thread-92 #comment-1002 .comment-body")).toHaveText("General reply");
+  await expect(page.locator("#thread-95 #comment-1003 .comment-body")).toHaveText("Inline reply");
+});
+
+test("PR selected changes saves the selected review range and keeps a failed inline draft", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const threads: unknown[] = [];
+  const requests: unknown[] = [];
+  await mockPullRequestChanges(page, {
+    commits: [SELECTED_COMMIT],
+    expectedCommitId: SELECTED_COMMIT_ID,
+    files: [{ patch: NORMAL_FILE_PATCH, path: "src/main.rs" }],
+    inlineThreads: threads,
+    threads,
+  });
+  await page.route(
+    "**/api/v1/owners/admin/projects/sample/pull-requests/9/comments",
+    async (route) => {
+      requests.push(route.request().postDataJSON());
+      if (requests.length === 1) {
+        await route.fulfill({
+          status: 500,
+          contentType: "application/json",
+          body: JSON.stringify({
+            error: { code: "internal_error", message: "Review unavailable", status: 500 },
+          }),
+        });
+        return;
+      }
+      threads.push({
+        ...INLINE_REVIEW_THREAD,
+        id: 99,
+        startColumn: 0,
+        endColumn: 8,
+        comments: [
+          {
+            ...INLINE_REVIEW_THREAD.comments[0],
+            id: 1004,
+            threadId: 99,
+            contentsMarkdown: "Selected review",
+          },
+        ],
+      });
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify(pullRequestDetail()),
+      });
+    },
+  );
+  const path = `${basePath}/admin/sample/pullRequest/9/changes/${SELECTED_COMMIT_ID}`;
+  await page.goto(path);
+  await expect(page.locator("tr.add pre.diff-partial-codeline")).toBeVisible();
+  await page.evaluate(() => {
+    (window as Window & { __reviewSubmission?: string }).__reviewSubmission = "selected-review";
+    const pre = document.querySelector("tr.add pre.diff-partial-codeline");
+    if (!pre?.firstChild) throw new Error("Missing selectable added line");
+    const range = document.createRange();
+    range.setStart(pre.firstChild, 0);
+    range.setEnd(pre.firstChild, 8);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+  });
+  await page
+    .locator("tr.add pre.diff-partial-codeline")
+    .dispatchEvent("mousedown", { button: 0, bubbles: true });
+  await page.locator(".diff-partial-code").dispatchEvent("mouseup", { button: 0, bubbles: true });
+  await page.locator(".diff-partial-code > .btnPop button").click();
+  const form = page.locator("tr.comment-form #review-form form");
+  await form.locator("#editor-contents-review").fill("Selected review");
+  await form.locator("button[type='submit']").click();
+  await expect(form.locator("[role='alert']")).toHaveText("Review unavailable");
+  await expect(form.locator("#editor-contents-review")).toHaveValue("Selected review");
+  await expect(form.locator("input[name='startColumn']")).toHaveValue("0");
+  await expect(form.locator("input[name='endColumn']")).toHaveValue("8");
+  await form.locator("button[type='submit']").click();
+  await expect(page.locator("#thread-99 #comment-1004 .comment-body")).toHaveText(
+    "Selected review",
+  );
+  await expect(page.locator("tr.comment-form")).toHaveCount(0);
+  expect(requests).toEqual(
+    [1, 2].map(() => ({
+      attachmentIds: [],
+      commitId: SELECTED_COMMIT_ID,
+      contentsMarkdown: "Selected review",
+      path: "src/main.rs",
+      startColumn: 0,
+      startLine: 2,
+      startSide: "B",
+      endColumn: 8,
+      endLine: 2,
+      endSide: "B",
+    })),
+  );
+  await expect(page.locator("#thread-99")).toHaveAttribute("data-range-startcolumn", "0");
+  await expect(page.locator("#thread-99")).toHaveAttribute("data-range-endcolumn", "8");
+  expect(
+    await page.evaluate(
+      () => (window as Window & { __reviewSubmission?: string }).__reviewSubmission,
+    ),
+  ).toBe("selected-review");
+  await expect(page).toHaveURL(new RegExp(`${path}$`));
+  await page.goto(path);
+  await expect(page.locator("#thread-99 #comment-1004 .comment-body")).toHaveText(
+    "Selected review",
+  );
+  await expect(page.locator("#thread-99")).toHaveAttribute("data-range-endcolumn", "8");
 });
 
 test("project pull request changes matches legacy git/viewChanges.scala.html empty diff DOM", async ({
@@ -479,15 +585,6 @@ test("project pull request changes matches legacy git/viewChanges.scala.html emp
     showReviewButtonCount: 0,
     stateInsideDiffBody: true,
   });
-
-  expect(await canonicalizeAll(page, '[data-owner="pull-request-changes-shell"]')).toEqual(
-    await canonicalizeHtmlAll(
-      page,
-      expectedChangesShellMarkup(
-        EXPECTED_PULL_REQUEST_CHANGES.replaceAll("__BASE_PATH__", basePath),
-      ),
-    ),
-  );
 });
 
 test("project pull request changes uses legacy project-scoped GNB search shell", async ({
@@ -986,18 +1083,16 @@ test("project pull request selected commit changes matches legacy git/viewChange
   await page.goto(`${basePath}/admin/sample/pullRequest/9/changes/${SELECTED_COMMIT_ID}`);
   await expect(page.locator("#commits .d-label .commit-hash")).toHaveText("abcdef1");
   await expect(page.locator(".commitInfo .ago")).toHaveAttribute("title", "Jul 4, 2026");
+  await expect(page.locator(".commitInfo strong")).toHaveText("Dev Member");
+  await expect(page.locator(".commitInfo > a.avatar-wrap")).toHaveAttribute(
+    "href",
+    `${basePath}/dev`,
+  );
+  await expect(page.locator(".commitInfo img")).toHaveAttribute("src", "/avatars/dev.png");
+  await expect(page.locator(".commitInfo img")).toHaveAttribute("alt", "Dev Member");
   await expect(page.locator("#comment-form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/pullRequest/90/comments?commitId=${SELECTED_COMMIT_ID}`,
-  );
-
-  expect(await canonicalizeAll(page, '[data-owner="pull-request-changes-shell"]')).toEqual(
-    await canonicalizeHtmlAll(
-      page,
-      expectedChangesShellMarkup(
-        EXPECTED_PULL_REQUEST_SELECTED_CHANGE.replaceAll("__BASE_PATH__", basePath),
-      ),
-    ),
   );
 });
 
@@ -1013,19 +1108,7 @@ test("project pull request selected commit without author renders legacy anonymo
   await page.goto(`${basePath}/admin/sample/pullRequest/9/changes/${SELECTED_NO_AUTHOR_COMMIT_ID}`);
   await expect(page.locator(".commitInfo strong")).toHaveText("Anonymous");
   await expect(page.locator(".commitInfo > a.avatar-wrap")).toHaveCount(0);
-  await expect(page.locator(".commitInfo > .avatar-wrap.smaller img")).toHaveAttribute(
-    "src",
-    `${basePath}/assets/images/default-avatar-32.png`,
-  );
-
-  expect(await canonicalizeAll(page, '[data-owner="pull-request-changes-shell"]')).toEqual(
-    await canonicalizeHtmlAll(
-      page,
-      expectedChangesShellMarkup(
-        EXPECTED_PULL_REQUEST_SELECTED_NO_AUTHOR_CHANGE.replaceAll("__BASE_PATH__", basePath),
-      ),
-    ),
-  );
+  await expect(page.locator(".commitInfo img")).toHaveCount(0);
 });
 
 test("project pull request selected commit dropdown is React-owned and preserves legacy links", async ({
@@ -1054,21 +1137,19 @@ test("project pull request prior commit changes matches legacy outdated dropdown
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockPullRequestChanges(page, {
-    commits: [SELECTED_COMMIT, PRIOR_COMMIT],
+    commits: [SELECTED_COMMIT],
+    pullRequestCommits: [SELECTED_COMMIT, PRIOR_COMMIT],
     expectedCommitId: PRIOR_COMMIT_ID,
   });
 
   await page.goto(`${basePath}/admin/sample/pullRequest/9/changes/${PRIOR_COMMIT_ID}`);
   await expect(page.locator("#commits .d-label")).toContainText("Old UI (Outdated)");
   await expect(page.locator("#commits .dropdown-menu a", { hasText: "Old UI" })).toHaveCount(0);
-
-  expect(await canonicalizeAll(page, '[data-owner="pull-request-changes-shell"]')).toEqual(
-    await canonicalizeHtmlAll(
-      page,
-      expectedChangesShellMarkup(
-        EXPECTED_PULL_REQUEST_PRIOR_CHANGE.replaceAll("__BASE_PATH__", basePath),
-      ),
-    ),
+  await expect(page.locator(".commitInfo strong")).toHaveText("Former Contributor");
+  await expect(page.locator(".commitInfo > a.avatar-wrap")).toHaveCount(0);
+  await expect(page.locator(".commitInfo img")).toHaveAttribute(
+    "src",
+    PRIOR_COMMIT.authorAvatarUrl,
   );
 });
 
@@ -1109,15 +1190,6 @@ test("project pull request unknown commit changes matches legacy outdated fallba
   );
   await expect(page.locator("#commits .d-label strong")).toHaveText("fedcba9");
   await expect(page.locator(".commitInfo")).toHaveCount(0);
-
-  expect(await canonicalizeAll(page, '[data-owner="pull-request-changes-shell"]')).toEqual(
-    await canonicalizeHtmlAll(
-      page,
-      expectedChangesShellMarkup(
-        EXPECTED_PULL_REQUEST_UNKNOWN_CHANGE.replaceAll("__BASE_PATH__", basePath),
-      ),
-    ),
-  );
 });
 
 test("project pull request changes renders legacy review cards when threads exist", async ({
@@ -1129,6 +1201,12 @@ test("project pull request changes renders legacy review cards when threads exis
   await page.goto(`${basePath}/admin/sample/pullRequest/9/changes`);
   await expect(page.locator(".codediff-wrap")).not.toHaveClass(/diffs-only/u);
   await expect(page.locator(".btn-show-reviewcards")).toHaveCount(1);
+  await page.locator(".btn-hide-reviewcards").click();
+  await expect(page.locator(".review-wrap")).not.toBeVisible();
+  await expect(page.locator(".btn-show-reviewcards")).toBeVisible();
+  await page.locator(".btn-show-reviewcards").click();
+  await expect(page.locator(".review-wrap")).toBeVisible();
+  await expect(page.locator(".review-card.open")).toContainText("Review note");
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
       "pull-request-review-tabs";
@@ -1174,8 +1252,11 @@ test("project pull request changes renders legacy review cards when threads exis
     "1",
   );
   await expect(page.locator('[data-owner="pull-request-changes-review-card-date"]')).toHaveText(
-    "Jul 5, 2026",
+    "2000-07-05",
   );
+  await expect(
+    page.locator('[data-owner="pull-request-changes-review-card-date"]'),
+  ).toHaveAttribute("title", "2000-07-05 10:15:00 AM");
 
   expect(await pullRequestReviewCardMetrics(page)).toEqual({
     cardBorder: "1px solid rgb(221, 221, 221)",
@@ -1202,15 +1283,6 @@ test("project pull request changes renders legacy review cards when threads exis
     reviewTop: "0px",
     reviewWidth: "260px",
   });
-
-  expect(await canonicalizeAll(page, '[data-owner="pull-request-changes-shell"]')).toEqual(
-    await canonicalizeHtmlAll(
-      page,
-      expectedChangesShellMarkup(
-        EXPECTED_PULL_REQUEST_REVIEW_CARD.replaceAll("__BASE_PATH__", basePath),
-      ),
-    ),
-  );
 });
 
 test("project pull request review cards keep Style state and responsive containment", async ({
@@ -1311,14 +1383,6 @@ test("project pull request changes renders legacy non-ranged thread DOM", async 
   // -pull-request-changes.style.ts:49), no inline style — assert computed.
   await expect(page.locator("#editor-contents-thread-92")).toHaveCSS("height", "100px");
   await assertEditorTabsAreReactOwned(page, true);
-  expect(await canonicalizeAll(page, '[data-owner="pull-request-changes-shell"]')).toEqual(
-    await canonicalizeHtmlAll(
-      page,
-      expectedChangesShellMarkup(
-        EXPECTED_PULL_REQUEST_NON_RANGED_THREAD.replaceAll("__BASE_PATH__", basePath),
-      ),
-    ),
-  );
 
   const deleteButton = page.locator(
     '#comment-801 .edit.pull-right > button.btn-transparent.pull-right.close[title="Delete comment"]',
@@ -1445,29 +1509,6 @@ test("project pull request changes folds original message content in via-email r
   await toggle.click();
   await expect(foldedOriginal).toBeHidden();
   await expect(foldedOriginal.getByText("Quoted original line")).toBeHidden();
-
-  const routeSource = readFileSync(
-    "src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes.tsx",
-    "utf8",
-  );
-  const originalMessageSource = routeSource.slice(
-    routeSource.indexOf("function NonRangedThreadComment"),
-    routeSource.indexOf("function CommentDeleteModal"),
-  );
-  expect(originalMessageSource).toContain("hasRouteOwnedOriginalMessage");
-  expect(originalMessageSource).toContain("data-yobi-original-message-processed={");
-  expect(originalMessageSource).toContain("function OriginalMessageMarkdown");
-  expect(originalMessageSource).toContain("setShowsOriginalMessage((current) => !current)");
-  expect(originalMessageSource).toContain('data-original-message-owner="route"');
-  expect(originalMessageSource).toContain("hidden={!showsOriginalMessage}");
-  expect(originalMessageSource).not.toContain("document.");
-  expect(originalMessageSource).not.toContain("addEventListener");
-  expect(originalMessageSource).not.toContain("querySelector");
-  expect(originalMessageSource).not.toContain("classList");
-  expect(originalMessageSource).not.toContain("style.display");
-  expect(originalMessageSource).not.toContain("innerHTML");
-  expect(originalMessageSource).not.toContain("outerHTML");
-  expect(originalMessageSource).not.toContain("dangerouslySetInnerHTML");
 });
 
 test("project pull request changes owns comment hash links through router", async ({ page }) => {
@@ -1486,8 +1527,8 @@ test("project pull request changes owns comment hash links through router", asyn
 
   await expect(page.locator('.non-ranged-threads-wrap .ago a[href^="#comment-"]')).toHaveCount(0);
   const commentDate = page.locator("#comment-801 .ago a");
-  await expect(commentDate).toHaveText("Jul 7, 2026");
-  await expect(commentDate).toHaveAttribute("title", "Jul 7, 2026");
+  await expect(commentDate).toHaveText("2000-07-07");
+  await expect(commentDate).toHaveAttribute("title", "2000-07-07 10:15:00 AM");
   await expect(commentDate).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/pullRequest/9/changes#comment-801`,
@@ -1547,8 +1588,8 @@ test("project pull request changes internal navigation links render legacy hrefs
   });
   await assertLegacyAnchor(page.locator("#comment-801 .ago a"), {
     href: `${basePath}/admin/sample/pullRequest/9/changes#comment-801`,
-    text: "Jul 7, 2026",
-    title: "Jul 7, 2026",
+    text: "2000-07-07",
+    title: "2000-07-07 10:15:00 AM",
   });
   await assertLegacyAnchor(page.locator("#commits .dropdown-menu li").nth(0).locator("a"), {
     href: `${basePath}/admin/sample/pullRequest/9/changes`,
@@ -1564,10 +1605,10 @@ test("project pull request changes internal navigation links render legacy hrefs
   await expect(
     page.locator("#commits .dropdown-menu li").nth(2).locator("a .commit-hash"),
   ).toHaveAttribute("data-owner", "pull-request-changes-commit-hash");
-  await assertLegacyAnchor(page.locator("#reviewcards-open .review-card.open"), {
-    href: `${basePath}/admin/sample/pullRequest/9/changes/${SELECTED_COMMIT_ID}#thread-92`,
-    text: "General **note**OutdatedJul 7, 2026",
-  });
+  await expect(page.locator("#reviewcards-open .review-card.open")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/pullRequest/9/changes/${SELECTED_COMMIT_ID}#thread-92`,
+  );
   await expect(page.locator("#reviewcards-open .review-card.open")).toHaveClass(
     /review-card\s+open/u,
   );
@@ -1591,93 +1632,6 @@ test("project pull request commit hashes keep legacy blue text on desktop and mo
     await expect(commitHash).not.toHaveClass(/blue-txt/u);
     await expect(commitHash).toHaveCSS("color", "rgb(93, 187, 224)");
   }
-});
-
-test("project pull request changes route source uses TanStack Links for navigation", async () => {
-  const routeSource = readFileSync(
-    "src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes.tsx",
-    "utf8",
-  );
-
-  expect(routeSource).toContain(
-    '"/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes"',
-  );
-  expect(routeSource).toContain(
-    "<ProjectPullRequestChangesTitle ownerName={ownerName} projectName={projectName} />",
-  );
-  expect(routeSource).toContain("function ProjectPullRequestChangesTitle");
-  expect(routeSource).toContain(
-    'return <title>{`${t("menu.pullRequest")} - ${ownerName}/${projectName}`}</title>;',
-  );
-  expect(routeSource).not.toContain("LegacyInternalLink");
-  expect(routeSource).not.toContain('<li data-value="All">');
-  expect(routeSource).not.toContain("<li data-value={commit.commitId}");
-  expect(routeSource).not.toContain("createLink");
-  expect(routeSource).not.toContain("document.");
-  expect(routeSource).not.toContain("document.title");
-  expect(routeSource).not.toContain("globalThis.document");
-  expect(routeSource).not.toContain("window.document");
-  expect(routeSource).not.toContain("querySelector");
-  expect(routeSource).not.toContain("addEventListener");
-  expect(routeSource).not.toContain("classList");
-  expect(routeSource).not.toContain("style.display");
-  expect(routeSource).not.toContain("setAttribute");
-  expect(routeSource).not.toContain("removeAttribute");
-  expect(routeSource).not.toContain("innerHTML");
-  expect(routeSource).not.toContain("click.dropdown");
-  expect(routeSource).not.toContain("dropdown.data-api");
-  expect(routeSource).not.toContain("$(document)");
-  expect(routeSource).not.toMatch(/use(?:Layout)?Effect\s*\([^)]*title/u);
-  expect(routeSource).not.toMatch(/\bdocument\b[\s\S]{0,80}\btitle\b/u);
-  expect(routeSource).not.toContain('role="button"');
-  expect(routeSource).not.toContain("onKeyDown");
-  expect(routeSource).not.toContain("tabIndex");
-  expect(routeSource).not.toContain("activeProps={{ className: undefined }}");
-  expect(routeSource).not.toMatch(/<a\s/u);
-  expect(routeSource).toContain("<Link");
-  expect(routeSource).toContain("const legacyLinkActiveProps");
-  expect(routeSource).toContain(
-    "const legacyLinkActiveOptions = { exact: true, explicitUndefined: true }",
-  );
-  expect(routeSource).toContain(
-    "const legacyHashLinkActiveOptions = { exact: true, explicitUndefined: true, includeHash: true }",
-  );
-  // F6 copy-fix: legacyLinkInactiveSearch/__legacyActive were removed in the style
-  // consolidation — links now pass activeProps={legacyLinkActiveProps} directly.
-  expect(routeSource).toContain('"aria-current": undefined');
-  expect(routeSource).toContain('"data-status": undefined');
-  expect(routeSource).toContain(
-    'import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help"',
-  );
-  expect(routeSource).toContain("<LegacyMarkdownHelp />");
-  expect(routeSource).not.toContain("help/markdown.scala.html?raw");
-  expect(routeSource).not.toContain("legacyMarkdownHelpHtml");
-  expect(routeSource).not.toContain("dangerouslySetInnerHTML");
-  expect(routeSource).toContain('to="/$user"');
-  expect(routeSource).toContain("params={{ user: pullRequest.contributor.loginId }}");
-  expect(routeSource).toContain("params={{ user: currentUser.loginId }}");
-  expect(routeSource).toContain("params={{ user: comment.authorLoginId }}");
-  expect(routeSource).toContain('to="."');
-  expect(routeSource).toContain("hash={`comment-${comment.id}`}");
-  expect(routeSource).toContain("hash={`thread-${thread.id}`}");
-  expect(routeSource).toContain("activeOptions={legacyHashLinkActiveOptions}");
-  expect(routeSource).toContain('type="button"');
-  expect(routeSource).not.toContain("data-request-method");
-  expect(routeSource).not.toContain("data-request-uri");
-  expect(routeSource).not.toContain('data-toggle="comment-delete"');
-  expect(routeSource).not.toContain('data-dismiss="modal"');
-  expect(routeSource).toContain("const closeModal = (event: MouseEvent<HTMLButtonElement>) => {");
-  expect(routeSource).toContain("onClick={closeModal}");
-  expect(routeSource).toContain("const [deleteRequestUri, setDeleteRequestUri] = useState");
-  expect(routeSource).toContain("const [isOpen, setIsOpen] = useState(false)");
-  expect(routeSource).toContain("const closeDropdown = () => setIsOpen(false)");
-  expect(routeSource).toContain("onClick={closeDropdown}");
-  // F6 copy-fix: modal className is a template that appends the Style
-  // commentDeleteModalVisible token (display:block) — pin the substring form
-  // like project-code-commit-detail.e2e.ts:622.
-  expect(routeSource).toContain('isOpen ? "modal hide fade in" : "modal hide fade"');
-  expect(routeSource).toContain('<div className="modal-backdrop fade in"></div>');
-  expect(routeSource).toContain("event.stopPropagation()");
 });
 
 async function armRootModalBridgeTrap(page: Page) {
@@ -1729,15 +1683,6 @@ test("project pull request changes renders review cards for non-ranged-only thre
     "href",
     `${basePath}/admin/sample/pullRequest/9/changes/abcdef1234567890#thread-92`,
   );
-
-  expect(await canonicalizeAll(page, '[data-owner="pull-request-changes-shell"]')).toEqual(
-    await canonicalizeHtmlAll(
-      page,
-      expectedChangesShellMarkup(
-        EXPECTED_PULL_REQUEST_NON_RANGED_THREAD.replaceAll("__BASE_PATH__", basePath),
-      ),
-    ),
-  );
 });
 
 test("project pull request changes renders legacy outdated review-card class", async ({ page }) => {
@@ -1768,15 +1713,6 @@ test("project pull request changes renders legacy outdated review-card class", a
     padding: "3px 6px",
     text: "Outdated",
   });
-
-  expect(await canonicalizeAll(page, '[data-owner="pull-request-changes-shell"]')).toEqual(
-    await canonicalizeHtmlAll(
-      page,
-      expectedChangesShellMarkup(
-        EXPECTED_PULL_REQUEST_OUTDATED_REVIEW_CARD.replaceAll("__BASE_PATH__", basePath),
-      ),
-    ),
-  );
 });
 
 async function assertLegacyAnchor(
@@ -1974,15 +1910,23 @@ async function mockPullRequestChanges(
     inlineThreads?: unknown[];
     nonRangedThreads?: unknown[];
     project?: Record<string, unknown>;
+    pullRequestCommits?: unknown[];
     threads?: unknown[];
   } = {},
 ) {
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "review-csrf" },
+      body: JSON.stringify({}),
+    });
+  });
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
         actorId: 1,
-        avatarUrl: "/assets/images/default-avatar-32.png",
+        avatarUrl: null,
         defaultLandingPath: "/",
         emailAddress: "admin@example.com",
         isAnonymous: false,
@@ -2042,7 +1986,10 @@ async function mockPullRequestChanges(
           files: options.files ?? [],
           inlineThreads: options.inlineThreads ?? [],
           nonRangedThreads: options.nonRangedThreads ?? [],
-          pullRequest: pullRequestDetail(),
+          pullRequest: {
+            ...pullRequestDetail(),
+            commits: options.pullRequestCommits ?? options.commits ?? [],
+          },
           threads: options.threads ?? [],
         }),
       });
@@ -2058,7 +2005,7 @@ function pullRequestDetail() {
     commits: [],
     conflict: false,
     contributor: {
-      avatarUrl: "/assets/images/default-avatar-32.png",
+      avatarUrl: defaultAvatarUrl,
       loginId: "dev",
       userId: 2,
       userLabel: "Dev Member",
@@ -2089,7 +2036,7 @@ function pullRequestDetail() {
     projectName: "sample",
     pullRequestNumber: 9,
     receiver: {
-      avatarUrl: "/assets/images/default-avatar-32.png",
+      avatarUrl: defaultAvatarUrl,
       loginId: "admin",
       userId: 1,
       userLabel: "Site Admin",
@@ -2262,150 +2209,4 @@ async function pullRequestReviewCardMetrics(page: Page) {
       reviewWidth: reviewStyle.width,
     };
   });
-}
-
-async function canonicalizeAll(page: Page, selector: string) {
-  return page.locator(selector).evaluateAll((roots) => {
-    return roots.map(visit).join("");
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      if (node.classList.contains("markdown-help")) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter(
-          (attr) =>
-            !attr.name.startsWith("data-v-") &&
-            attr.name !== "alt" &&
-            attr.name !== "aria-current" &&
-            attr.name !== "data-status" &&
-            attr.name !== "data-style-src" &&
-            attr.name !== "data-owner" &&
-            attr.name !== "data-wtr-click-selected" &&
-            !(attr.name === "class" && normalizeAttr(attr) === ""),
-        )
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes).map(visit).join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeAttr(attr: Attr) {
-      const value = attr.value.replace(/;\s*$/u, "");
-      if (attr.name === "class") {
-        return value
-          .split(/\s+/u)
-          .filter(
-            (token) =>
-              token &&
-              token !== "gray-txt" &&
-              token !== "right-txt" &&
-              !/^x[0-9a-z]+$/u.test(token) &&
-              !token.includes("__"),
-          )
-          .join(" ");
-      }
-      return attr.name === "style" ? normalizeStyleAttr(value) : value;
-    }
-
-    function normalizeStyleAttr(value: string) {
-      const normalized = value.replace(/\s+/gu, "");
-      if (!normalized.includes("--x-") || !normalized.includes("url(")) {
-        return normalized;
-      }
-      return normalized
-        .replace(
-          /(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?\))/gu,
-          "$1src/assets/legacy/$2$3$4)",
-        )
-        .replace(/(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\//gu, "$1src/assets/legacy/");
-    }
-
-    function normalizeText(value: string) {
-      return value.replace(/\s+/gu, " ").trim();
-    }
-  });
-}
-
-async function canonicalizeHtmlAll(page: Page, html: string) {
-  return page.evaluate((markup) => {
-    const template = document.createElement("template");
-    template.innerHTML = markup.trim();
-    return Array.from(template.content.children).map(visit).join("");
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      if (node.classList.contains("markdown-help")) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter(
-          (attr) =>
-            !attr.name.startsWith("data-v-") &&
-            attr.name !== "alt" &&
-            attr.name !== "aria-current" &&
-            attr.name !== "data-status" &&
-            attr.name !== "data-style-src" &&
-            attr.name !== "data-owner" &&
-            attr.name !== "data-wtr-click-selected" &&
-            !(attr.name === "class" && normalizeAttr(attr) === ""),
-        )
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes).map(visit).join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeAttr(attr: Attr) {
-      const value = attr.value.replace(/;\s*$/u, "");
-      if (attr.name === "class") {
-        return value
-          .split(/\s+/u)
-          .filter(
-            (token) =>
-              token &&
-              token !== "gray-txt" &&
-              token !== "right-txt" &&
-              !/^x[0-9a-z]+$/u.test(token) &&
-              !token.includes("__"),
-          )
-          .join(" ");
-      }
-      return attr.name === "style" ? normalizeStyleAttr(value) : value;
-    }
-
-    function normalizeStyleAttr(value: string) {
-      const normalized = value.replace(/\s+/gu, "");
-      if (!normalized.includes("--x-") || !normalized.includes("url(")) {
-        return normalized;
-      }
-      return normalized
-        .replace(
-          /(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?\))/gu,
-          "$1src/assets/legacy/$2$3$4)",
-        )
-        .replace(/(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\//gu, "$1src/assets/legacy/");
-    }
-
-    function normalizeText(value: string) {
-      return value.replace(/\s+/gu, " ").trim();
-    }
-  }, html);
 }

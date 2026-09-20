@@ -1,32 +1,6 @@
-import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Locator, type Page, type Route } from "../wtr-compat.ts";
 
-// Browser harness: node:fs/promises readFile has no browser equivalent; the
-// compat readFileSync is a sync XHR over the same middleware. Promise-wrap it
-// so the spec's await/Promise.all call sites keep their shape.
-const readFile = (path: string | URL, encoding?: string | null): Promise<string> =>
-  Promise.resolve(readFileSync(path, encoding ?? "utf8"));
-
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const routeSource = new URL("../src/routes/sites/postList.tsx", import.meta.url);
-const themeSource = new URL("../src/app.css", import.meta.url);
-const legacyTemplateSource = new URL(
-  "../../yona-original/app/views/site/postList.scala.html",
-  import.meta.url,
-);
-const legacyCommonLessSource = new URL(
-  "../../yona-original/app/assets/stylesheets/less/_common.less",
-  import.meta.url,
-);
-const legacyPageLessSource = new URL(
-  "../../yona-original/app/assets/stylesheets/less/_page.less",
-  import.meta.url,
-);
-const legacyYobiUiLessSource = new URL(
-  "../../yona-original/app/assets/stylesheets/less/_yobiUI.less",
-  import.meta.url,
-);
-const appCssSource = new URL("../src/app.css", import.meta.url);
 
 const owners = {
   avatar: "site-post-list-project-avatar",
@@ -68,7 +42,7 @@ async function openPostList(page: Page) {
             authorLoginId: "alice",
             commentCount: 3,
             createdLabel: "1 day ago",
-            createdTitle: "2026-06-29 14:30",
+            createdTitle: new Date(Date.now() - 26 * 60 * 60 * 1_000).toISOString(),
             labels: [],
             notice: false,
             ownerName: "acme",
@@ -85,7 +59,7 @@ async function openPostList(page: Page) {
             authorLoginId: "bob",
             commentCount: 1,
             createdLabel: "2 days ago",
-            createdTitle: "2026-06-28 09:00",
+            createdTitle: new Date(Date.now() - 50 * 60 * 60 * 1_000).toISOString(),
             labels: [],
             notice: false,
             ownerName: "labs",
@@ -112,72 +86,6 @@ async function openPostList(page: Page) {
 }
 
 test.describe("Style site post-list row and project avatar", () => {
-  test("declares the three explicit owners from the frozen final cascade", async () => {
-    const [route, theme, template, commonLess, pageLess, yobiUiLess, appCss] = await Promise.all([
-      readFile(routeSource, "utf8"),
-      Promise.resolve(curatedAppCss()),
-      readFile(legacyTemplateSource, "utf8"),
-      readFile(legacyCommonLessSource, "utf8"),
-      readFile(legacyPageLessSource, "utf8"),
-      readFile(legacyYobiUiLessSource, "utf8"),
-      Promise.resolve(curatedAppCss()),
-    ]);
-
-    expect(template).toContain('<li class="row-fluid listitem">');
-    expect(template).toContain('class="avatar-wrap list-avatar"');
-    expect(commonLess).toContain(`.avatar-wrap {
-    width:32px; height:32px;
-    vertical-align:top;
-    overflow:hidden; display:inline-block;`);
-    expect(yobiUiLess).toContain(`.avatar-wrap {
-    width:32px; height:32px; /* default size: medium */
-    display:inline-block;
-    vertical-align:middle;
-    overflow:hidden;
-    background:#ddd;`);
-    expect(yobiUiLess).toContain(`img {
-        width:100%;
-        vertical-align:top;`);
-    expect(pageLess).toContain(`.listitem {
-        border-bottom:1px solid #efefef;
-        line-height: 70px;`);
-    expect(pageLess).toContain(`&.list-avatar {
-                width:45px;
-                height:45px;
-                margin-right: 10px;
-                margin-top:3px;
-                float:left;`);
-    expect(appCss).not.toContain(".site-setting-wrap .listitem .avatar-wrap.list-avatar img {");
-
-    for (const explicitOwner of [owners.row, owners.avatar, owners.avatarImage]) {
-      expect(route).toContain(`data-owner="${explicitOwner}"`);
-    }
-
-    // The previous row-padding declarations must remain composed into the expanded owner.
-
-    for (const variable of [
-      "sitePostListRowBorder",
-      "sitePostListRowBorderStyle",
-      "sitePostListRowBorderWidth",
-      "sitePostListRowLineHeight",
-      "sitePostListRowEvenSurface",
-      "sitePostListAvatarWidth",
-      "sitePostListAvatarHeight",
-      "sitePostListAvatarMarginRight",
-      "sitePostListAvatarMarginTop",
-      "sitePostListAvatarFloat",
-      "sitePostListAvatarDisplay",
-      "sitePostListAvatarVerticalAlign",
-      "sitePostListAvatarOverflow",
-      "sitePostListAvatarSurface",
-      "sitePostListAvatarRadius",
-      "sitePostListAvatarImageWidth",
-      "sitePostListAvatarImageVerticalAlign",
-    ]) {
-      expect(theme).not.toContain(variable);
-    }
-  });
-
   test("keeps populated-row copy, order, and semantic destinations", async ({ page }) => {
     const rows = await openPostList(page);
     const first = rows.nth(0);

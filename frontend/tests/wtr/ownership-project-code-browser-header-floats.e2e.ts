@@ -1,65 +1,13 @@
 import { expect, test, type Page } from "../wtr-compat.ts";
-import { readFileSync } from "../wtr-compat.ts";
-
-// Browser harness: fileURLToPath yields the served URL pathname so string
-// mapping + .txt raw-suffix applies.
-const fileURLToPath = (u: URL) => u.pathname;
-const mkdirSync = () => undefined;
-const resolve = (...parts: string[]) => parts.join("/");
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const screenshotDirectory = resolve(
-  "output/playwright/style-project-code-browser-header-floats",
-  "normal",
-);
-const source = (relativePath: string) =>
-  readFileSync(fileURLToPath(new URL(relativePath, import.meta.url)), "utf8");
 
 test.use({ locale: "en-US" });
-
-test("project code-browser header float ownership has legacy provenance", () => {
-  const route = source("../src/routes/$ownerName/$projectName/code/$branch.tsx");
-  const styles = source("../src/app.css");
-  const legacyView = source("../../yona-original/app/views/code/view.scala.html");
-  const bootstrap = source("../../yona-original/public/bootstrap/css/bootstrap.css");
-  const pageLess = source("../../yona-original/app/assets/stylesheets/less/_page.less");
-  const yobiLess = source("../../yona-original/app/assets/stylesheets/yobi.less");
-  const messages = source("../../yona-original/conf/messages");
-
-  expect(legacyView).toContain('<select id="branches" data-toggle="select2"');
-  expect(legacyView).toContain(
-    '<div id="breadcrumbs" class="code-breadcrumb-wrap ml10 pull-left">',
-  );
-  expect(legacyView).toContain('<div class="pull-right">');
-  expect(legacyView).toContain('@Messages("code.download")');
-  expect(legacyView).toContain('@Messages("code.new.file")');
-  expect(bootstrap).toContain(".pull-right {\n  float: right;");
-  expect(bootstrap).toContain(".pull-left {\n  float: left;");
-  expect(pageLess).toContain(".code-browse-header");
-  expect(pageLess).toContain(".code-breadcrumb-wrap");
-  expect(yobiLess).toContain('@import "less/_page.less";');
-  expect(messages).toContain("code.download = Download as .zip file");
-  expect(messages).toContain("code.new.file = New file");
-
-  expect(route).toContain('data-owner="project-code-branch-picker"');
-  expect(route).toContain('data-owner="project-code-branch-breadcrumbs"');
-  expect(route).toContain('data-owner="project-code-branch-download-action"');
-  expect(route).toContain('data-owner="project-code-branch-new-file-action"');
-  expect(route).toContain('className="pull-left select2-offscreen"');
-  expect(route).toContain("booleanField(project.viewerCanUpdate)");
-  expect(route).toContain("reloadDocument");
-
-  expect(route).not.toMatch(/project-code-branch-picker[\s\S]{0,260}select2-container pull-left/u);
-  expect(route).not.toMatch(/project-code-branch-download-action[\s\S]{0,180}pull-right/u);
-  expect(route).not.toMatch(/project-code-branch-new-file-action[\s\S]{0,180}pull-right/u);
-  expect(route).not.toContain('data-toggle="select2"');
-});
 
 test("project code-browser header preserves branch/actions and stays contained", async ({
   page,
 }) => {
   await mockCodeBranch(page);
-  mkdirSync(screenshotDirectory, { recursive: true });
 
   for (const viewport of [
     { height: 900, name: "1366x900", width: 1366 },
@@ -67,6 +15,7 @@ test("project code-browser header preserves branch/actions and stays contained",
   ]) {
     await page.setViewportSize({ height: viewport.height, width: viewport.width });
     await page.goto(`${basePath}/admin/sample/code/main`, { waitUntil: "commit" });
+    await page.locator('[data-owner="project-code-branch-picker"] .select2-choice').click();
 
     await expect
       .poll(async () =>
@@ -76,7 +25,6 @@ test("project code-browser header preserves branch/actions and stays contained",
               const element = document.querySelector<HTMLElement>(selector);
               if (!element) return null;
               return {
-                className: element.className,
                 float: getComputedStyle(element).float,
                 tagName: element.tagName,
               };
@@ -98,17 +46,14 @@ test("project code-browser header preserves branch/actions and stays contained",
               download: snapshot('[data-owner="project-code-branch-download-action"]'),
               downloadLink: downloadLink
                 ? {
-                    className: downloadLink.className,
                     href: downloadLink.getAttribute("href"),
                     tagName: downloadLink.tagName,
                     text: downloadLink.textContent?.trim(),
                   }
                 : null,
-              nativeSelect: snapshot("#branches"),
               newFile: snapshot('[data-owner="project-code-branch-new-file-action"]'),
               newFileLink: newFileLink
                 ? {
-                    className: newFileLink.className,
                     href: newFileLink.getAttribute("href"),
                     tagName: newFileLink.tagName,
                     text: newFileLink.textContent?.trim(),
@@ -122,45 +67,35 @@ test("project code-browser header preserves branch/actions and stays contained",
       .toBe(
         JSON.stringify({
           breadcrumbs: {
-            className: "code-breadcrumb-wrap ml10 pull-left",
             float: "left",
             tagName: "DIV",
           },
           branchOptions: ["branch main", "branch feature/release"],
           download: {
-            className: "pull-right",
             float: "right",
             tagName: "DIV",
           },
           downloadLink: {
-            className: "ybtn",
             href: `${basePath}/admin/sample/archive/main.zip`,
             tagName: "A",
             text: "Download as .zip file",
           },
-          nativeSelect: {
-            className: "pull-left select2-offscreen",
-            float: "none",
-            tagName: "SELECT",
-          },
           newFile: {
-            className: "pull-right",
             float: "right",
             tagName: "DIV",
           },
           newFileLink: {
-            className: "ybtn",
             href: `${basePath}/admin/sample/postform?path=&branch=main`,
             tagName: "A",
             text: "New file",
           },
           picker: {
-            className: "select2-container",
             float: "left",
             tagName: "DIV",
           },
         }),
       );
+    await page.locator('[data-owner="project-code-branch-picker"] .select2-input').press("Escape");
 
     const headerMetrics = await page.evaluate(() => {
       const header = document.querySelector<HTMLElement>(
@@ -183,12 +118,6 @@ test("project code-browser header preserves branch/actions and stays contained",
       };
     });
     expect(headerMetrics).toEqual({ contained: true, noOverflow: true });
-
-    await page.screenshot({
-      animations: "disabled",
-      fullPage: true,
-      path: resolve(screenshotDirectory, `${viewport.name}.png`),
-    });
   }
 });
 

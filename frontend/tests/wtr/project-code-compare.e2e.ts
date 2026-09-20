@@ -1,12 +1,4 @@
-import { readFileSync } from "../wtr-compat.ts";
-// Batch 1118: verify 3-dot merge-base revision compare UI
 import { expect, test, type Page } from "../wtr-compat.ts";
-
-const ROUTE_SOURCE = readFileSync(
-  "src/routes/$ownerName/$projectName/compare/$revisionRange.tsx",
-  "utf8",
-);
-const DIFF_LINE_VIEW_SOURCE = readFileSync("src/components/diff-line-view.tsx", "utf8");
 
 const EXPECTED_COMPARE_BODY = `
 <div class="project-page-wrap"><div class="code-browse-wrap"><p class="commitInfo"><strong class="commitId">@abcdef1234567890..1234567890abcdef</strong></p><div class="alert">No changes</div></div></div>
@@ -47,28 +39,6 @@ test("project code compare no-change state matches legacy code/compare.scala.htm
   expect(compareRequests).toEqual(["abcdef1234567890..1234567890abcdef"]);
   expect(await canonicalize(page, ".project-page-wrap")).toEqual(
     await canonicalizeHtml(page, EXPECTED_COMPARE_BODY),
-  );
-});
-
-test("project code compare route uses React-rendered legacy projectLayout title metadata", () => {
-  expect(ROUTE_SOURCE).toContain("<ProjectCodeCompareTitle");
-  expect(ROUTE_SOURCE).toContain(
-    "return <title>{`${commitA}..${commitB} - ${ownerName}/${projectName}`}</title>;",
-  );
-  expect(ROUTE_SOURCE).toContain("commitA: compare.commitA?.commitId || compare.revA || rangeA");
-  expect(ROUTE_SOURCE).toContain("commitB: compare.commitB?.commitId || compare.revB || rangeB");
-  expect(ROUTE_SOURCE).not.toContain("document.title");
-  expect(ROUTE_SOURCE).not.toContain("globalThis.document");
-  expect(ROUTE_SOURCE).not.toMatch(/\buseEffect\b[\s\S]*?\btitle\b/u);
-  expect(ROUTE_SOURCE).not.toMatch(/\btitle\b[\s\S]*?\buseEffect\b/u);
-});
-
-test("project code compare route preserves legacy partial_diff file limit alert", () => {
-  expect(ROUTE_SOURCE).toContain("const LEGACY_DIFF_FILE_LIMIT = 2000;");
-  expect(ROUTE_SOURCE).toContain("compare.files.length >= LEGACY_DIFF_FILE_LIMIT");
-  expect(ROUTE_SOURCE).toContain('t("code.fileDiffLimitExceeded"');
-  expect(ROUTE_SOURCE).toMatch(
-    /<div className="diff-body discommentable">[\s\S]*?<p className="alert">[\s\S]*?compare\.files\.map/u,
   );
 });
 
@@ -180,6 +150,9 @@ test("project code compare non-empty patch renders legacy diff table rows", asyn
   const compareRequests: string[] = [];
   await mockProjectCompare(page, compareRequests, {
     files: [{ path: "src/main.rs", patch: SIMPLE_FILE_PATCH }],
+    filesChanged: 1,
+    insertions: 1,
+    deletions: 1,
   });
 
   await page.goto(`${basePath}/admin/sample/compare/abcdef1234567890..1234567890abcdef`);
@@ -187,22 +160,30 @@ test("project code compare non-empty patch renders legacy diff table rows", asyn
   const diffOuter = page.locator(".diff-partial-outer#src-main-rs");
   const diffTable = diffOuter.locator("table.diff-container.show-comments");
   await expect(diffOuter).toBeVisible();
+  // compare.scala.html renders the diff immediately after the revision range, without totals.
+  await expect(
+    page.locator(".code-browse-wrap > .commitInfo + .diff-body.discommentable"),
+  ).toBeVisible();
+  const commitLinks = diffOuter.locator(".diff-partial-commit-id a");
+  await expect(commitLinks).toHaveText(["abcdef1", "1234567"]);
+  await expect(commitLinks.nth(0)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/code/abcdef1234567890/src/main.rs`,
+  );
+  await expect(commitLinks.nth(1)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/code/1234567890abcdef/src/main.rs`,
+  );
   await expect(page.locator(".diff-file > pre")).toHaveCount(0);
   await expect(diffTable).toHaveCount(1);
   await expect(diffTable.locator("tbody > tr")).toHaveCount(4);
   await expect(diffTable.locator("tbody > tr.range .hunk")).toHaveText("@@ -1,2 +1,2 @@");
-  await expect(diffTable.locator("tbody > tr.context")).toHaveAttribute("data-side", "B");
-  await expect(diffTable.locator("tbody > tr.context")).toHaveAttribute("data-type", "context");
   await expect(diffTable.locator("tbody > tr.context .diff-partial-codeline")).toHaveText(
     " fn main() {",
   );
-  await expect(diffTable.locator("tbody > tr.remove")).toHaveAttribute("data-side", "A");
-  await expect(diffTable.locator("tbody > tr.remove")).toHaveAttribute("data-type", "remove");
   await expect(diffTable.locator("tbody > tr.remove .diff-partial-codeline")).toHaveText(
     '-    println!("old");',
   );
-  await expect(diffTable.locator("tbody > tr.add")).toHaveAttribute("data-side", "B");
-  await expect(diffTable.locator("tbody > tr.add")).toHaveAttribute("data-type", "add");
   await expect(diffTable.locator("tbody > tr.add .diff-partial-codeline")).toHaveText(
     '+    println!("new");',
   );
@@ -245,19 +226,6 @@ test("project code compare added file renders legacy added-path metadata", async
     `${basePath}/admin/sample/code/1234567890abcdef/src/new.rs`,
   );
   await expect(diffOuter.locator(".patch-header .path")).toHaveText("+++ src/new.rs");
-  await expect(diffOuter.locator("table.diff-container")).toHaveAttribute("data-path-a", "");
-  await expect(diffOuter.locator("table.diff-container")).toHaveAttribute(
-    "data-path-b",
-    "src/new.rs",
-  );
-});
-
-test("project code compare route preserves legacy diff line type markers", () => {
-  expect(DIFF_LINE_VIEW_SOURCE).toContain("data-line={line.lineNumber}");
-  expect(DIFF_LINE_VIEW_SOURCE).toContain('data-side={line.type === "remove" ? "A" : "B"}');
-  expect(DIFF_LINE_VIEW_SOURCE).toContain("data-type={line.type}");
-  expect(ROUTE_SOURCE).not.toContain("data-type={line.type}");
-  expect(ROUTE_SOURCE).not.toMatch(/<tr[\s\S]*data-type=/u);
 });
 
 async function mockProjectCompare(

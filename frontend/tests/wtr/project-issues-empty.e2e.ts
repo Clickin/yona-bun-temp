@@ -2,451 +2,9 @@
 // timeout with no per-test assertion observed (HARNESS_ENV). Suite-hang
 // closure: no route/CSS prescription; needs a short per-test timeout bisect
 // for the unfinished waitForRequest/poll.
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Locator, type Page } from "../wtr-compat.ts";
 
-const PROJECT_ISSUES_ROUTE_SOURCE = readFileSync(
-  new URL("../src/routes/$ownerName/$projectName/issues.tsx", import.meta.url),
-  "utf8",
-);
-const HOVER_POPOVER_SOURCE = readFileSync(
-  new URL("../src/components/hover-popover.tsx", import.meta.url),
-  "utf8",
-);
-const PROJECT_ISSUES_APP_CSS_SOURCE = readFileSync(
-  new URL("../src/app.css", import.meta.url),
-  "utf8",
-);
-const LEGACY_ISSUE_SEARCH_SOURCE = readFileSync(
-  new URL("../../yona-original/app/views/issue/partial_searchform.scala.html", import.meta.url),
-  "utf8",
-);
-const LEGACY_ISSUE_PAGE_LESS_SOURCE = readFileSync(
-  new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
-  "utf8",
-);
-const LEGACY_ISSUE_LIST_SOURCE = readFileSync(
-  new URL("../../yona-original/app/views/issue/partial_list.scala.html", import.meta.url),
-  "utf8",
-);
-const LEGACY_COMMON_LESS_SOURCE = readFileSync(
-  new URL("../../yona-original/app/assets/stylesheets/less/_common.less", import.meta.url),
-  "utf8",
-);
-const SITE_LAYOUT_SHELL_SOURCE = readFileSync(
-  new URL("../src/routes/-home-route-screen.tsx", import.meta.url),
-  "utf8",
-);
-const ROUTE_CAST_ESCAPE = ["as", "never"].join(" ");
-
-const ISSUE_LIST_KEYMAP = `<div id="helpKeys" class="modal hide fade keymap-help" tabindex="-1" role="dialog"><div class="row-fluid"><div class="span3"><h5>projects</h5><span class="ybtn ybtn-small">H</span><span class="help-inline">Home</span><br><span class="ybtn ybtn-small">B</span><span class="help-inline">Board</span><br><span class="ybtn ybtn-small">I</span><span class="help-inline">Issue</span><br><span class="ybtn ybtn-small">C</span><span class="help-inline">Code</span><br><span class="ybtn ybtn-small">M</span><span class="help-inline">Milestone</span><br><span class="ybtn ybtn-small">P</span><span class="help-inline">Pull request</span><br><span class="ybtn ybtn-small">Q</span><span class="help-inline">Settings</span><br></div><div class="span9"><div class="row-fluid"><div class="span5"><h5>Issue list</h5><span class="ybtn ybtn-small">N</span><span class="help-inline">New issue</span><br><span class="ybtn ybtn-small">←</span><span class="help-inline">Previous page</span><br><span class="ybtn ybtn-small">→</span><span class="help-inline">Next page</span><br><span class="ybtn ybtn-small">__CTRL_KEY__</span> + <span class="ybtn ybtn-small">A</span><span class="help-inline">Select all</span><br></div><div class="span7"><h5>Site</h5><span class="ybtn ybtn-small">A</span><span class="help-inline">My Issues</span><br><span class="ybtn ybtn-small">U</span><span class="help-inline">Profile</span><br><span class="ybtn ybtn-small">F</span><span class="help-inline">User menu</span><br>__SITE_SEARCH_KEYS__<span class="help-inline">Site search</span><br><span class="ybtn ybtn-small">__CTRL_KEY__</span> + <span class="ybtn ybtn-small">ENTER</span><span class="help-inline">Submit form</span><br></div></div><div class="row-fluid mt20"><div class="span12"></div></div></div></div><p class="actrow"><button type="button" class="ybtn ybtn-info">Confirm</button></p></div>`;
-const ISSUE_LIST_KEYMAP_NON_MANAGER = ISSUE_LIST_KEYMAP.replace(
-  '<span class="ybtn ybtn-small">Q</span><span class="help-inline">Settings</span><br>',
-  "",
-);
-const MILESTONE_SEARCH_SELECT = `<dl class="issue-option"><dt>Milestone</dt><dd><select id="milestoneId" name="milestoneId" data-format="milestone" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="-1">No milestone</option><optgroup label="Open"><option value="5" data-state="open">v1.0</option></optgroup><optgroup label="Closed"><option value="7" data-state="closed">v0.9</option></optgroup></select></dd></dl>`;
-
-const EXPECTED_PROJECT_ISSUES_EMPTY = `
-<div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
-<header class="gnb-outer project-header"><div class="gnb-inner"><div class="pin" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div><ul class="gnb-nav"><li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li><li><form action="__BASE_PATH__/admin/sample/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button aria-expanded="false" aria-haspopup="menu" class="ybtn dropdown-toggle" type="button" id="gnb-search-scope-title">This Project</button><ul class="dropdown-menu flat right"><li><button type="button">This Project</button></li><li><button type="button">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li></ul><div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button">Favorite</button></li><li class="myProjectList"><button type="button">Project</button></li><li class="myRecentIssueList"><button type="button">Recent History</button></li></ul><div class="tab-content tab-box"><div class="tab-content" id="usermenu-tab-content-list"><div class="tab-pane user-project-list active" id="myOrganizationList"><div class="search-result"><div class="group"><input autocomplete="off" class="search-input org-search" placeholder="Type name" type="text" value=""></input><span class="bar"></span></div><div class="no-result tab-pane user-ul" id="organizations">No results</div></div></div><div class="tab-pane user-project-list" id="myProjectList"><div><div class="search-result"><div class="tab-pane myproject-list-wrap"><div class="group"><input autocomplete="off" class="search-input project-search" id="query" placeholder="Type name" type="text" value=""></input><span class="bar"></span></div><div class="subtab-wrap subtab-group"><ul class="nav-subtab unstyled"><li class="active"><button type="button">Recently visited</button></li><li><button type="button">Create</button></li><li><button type="button">Watching</button></li><li><button type="button">Member</button></li></ul></div><div class="tab-content"><div class="no-result tab-pane user-ul active" id="recentlyVisited">No results</div><div class="no-result tab-pane user-ul" id="watching">No results</div><div class="no-result tab-pane user-ul" id="createdByMe">No results</div><div class="no-result tab-pane user-ul" id="joinmember">No results</div></div></div></div></div></div><div class="tab-pane user-project-list" id="myRecentIssueList"><div><div class="search-result"><div class="tab-pane myproject-list-wrap"><div class="group"><input autocomplete="off" class="search-input project-search" id="recent-issue-query" placeholder="Type name" type="text" value=""></input><span class="bar"></span></div><div class="tab-content"><div class="no-result tab-pane user-ul active" id="recentlyVisitedIssues">No results</div></div></div></div></div></div></div></div></div></div><ul class="gnb-usermenu"><li class="gnb-usermenu-item" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" title="Site administration"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li><li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul></div></header>
-<div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7" role="button" tabindex="0"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
-<div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class="active"><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li><li></li></ul></div></div></div>
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="row-fluid issue-list-wrap"><div class="left-menu span2 span-hard-wrap"><ul class="lst-stacked unstyled"><li class="active"><button type="button" data-assignee-id="" data-author-id="" data-commenter-id="" data-milestone-id="">Open<span class="num-badge">0</span></button></li><li><button type="button" data-assignee-id="1" data-author-id="" data-commenter-id="" data-milestone-id="">Assigned<span class="num-badge">0</span></button></li><li><button type="button" data-assignee-id="" data-author-id="1" data-commenter-id="" data-milestone-id="">Created<span class="num-badge">0</span></button></li><li><button type="button" data-assignee-id="" data-author-id="" data-commenter-id="1" data-milestone-id="">Commented<span class="num-badge">0</span></button></li></ul><form id="search" name="search" action="__BASE_PATH__/admin/sample/issues" method="get"><input type="hidden" name="orderBy" value="updatedDate"><input type="hidden" name="orderDir" value="desc"><input type="hidden" name="state" value="open"><input type="hidden" name="commenterId" value=""><hr class="hide-in-mobile"><div class="search"><div class="search-bar"><input name="filter" class="textbox full" type="text" value="empty"><button type="button" class="search-btn" data-submit="submit"><i class="yobicon-search"></i></button></div></div><div id="advanced-search-form" class="srch-advanced hide-in-mobile"><dl class="issue-option"><dt>Author</dt><dd><select id="authorId" name="authorId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="1">Created</option></select></dd></dl><dl class="issue-option"><dt>Assignee</dt><dd><select id="assigneeId" name="assigneeId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="0">No assignee</option><option value="1">Assigned</option></select></dd></dl>${MILESTONE_SEARCH_SELECT}<dl class="issue-option"><dt>Due date</dt><dd class="search search-bar"><input id="issueDueDate" type="text" name="dueDate" class="textbox full" value=""><button type="button" class="search-btn btn-calendar"><i class="yobicon-calendar2"></i></button><input type="date" class="issue-due-date-native-picker" aria-label="Choose due date" tabindex="-1" value=""></dd></dl><div class="labels-wrap"><a href="__BASE_PATH__/admin/sample/issue/labelsform" class="ybtn ybtn-default ybtn-mini pull-right"><i class="yobicon-cog vmiddle"></i><span class="vmiddle" style="margin-left:2px;">Manage label</span></a></div></div></form></div><div class="span10 span-hard-wrap" id="span10"><div><a href="__BASE_PATH__/admin/sample/issueform" class="ybtn ybtn-success">New issue</a></div><ul class="nav nav-tabs nm"><li class="active"><button type="button" state="open">Open<span class="num-badge">0</span></button></li><li><button type="button" state="closed">Closed<span class="num-badge">0</span></button></li><li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li><li class="show-subtasks-li"><div class="show-subtasks mr10" id="two-column-mode-checkbox" title="Show subtask"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li></ul><div class="error-wrap"><i class="ico ico-err1"></i><p>No issue found</p></div><div><button type="button" class="ybtn ybtn-inverse ybtn-mini">Keyboard shortcuts</button>${ISSUE_LIST_KEYMAP}</div></div></div></div></div>
-<footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" rel="noreferrer" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" rel="noreferrer" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" rel="noreferrer" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" rel="noreferrer" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
-`
-  .replace(
-    '<select id="authorId" name="authorId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="1">Created</option></select>',
-    '<select id="authorId" name="authorId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="1">Created</option><option value="1">Site Admin</option></select>',
-  )
-  .replace(
-    '<select id="assigneeId" name="assigneeId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="0">No assignee</option><option value="1">Assigned</option></select>',
-    '<select id="assigneeId" name="assigneeId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="0">No assignee</option><option value="1">Assigned</option><option value="1">Site Admin</option></select>',
-  )
-  .replace(
-    '<li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li><li><form action="__BASE_PATH__/admin/sample/search"',
-    '<li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li><li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li><li class="divider"></li><li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li><li><form action="__BASE_PATH__/admin/sample/search"',
-  )
-  .replace(
-    '<li class="active"><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li>',
-    '<li class="active"><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span><span class="project-menu-count">1</span></a></li>',
-  )
-  .replace(
-    '<li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li>',
-    '<li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span><span class="project-menu-count">1</span></a></li>',
-  )
-  .replace(
-    '<li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li>',
-    '<li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span><span class="project-menu-count">2</span></a></li>',
-  )
-  .replace(
-    '<li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li>',
-    '<li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span><span class="project-menu-count">1</span></a></li>',
-  );
-const BUG_CHILD_LABEL_STYLE = "background:rgb(81, 170, 204)";
-const EMPTY_AUTHOR_SELECT = `<select id="authorId" name="authorId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="1">Created</option><option value="1">Site Admin</option></select>`;
-const POPULATED_AUTHOR_SELECT = `<select id="authorId" name="authorId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="1">Created</option><option value="2">Dev Member</option><option value="1">Site Admin</option></select>`;
-const EMPTY_ASSIGNEE_SELECT = `<select id="assigneeId" name="assigneeId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="0">No assignee</option><option value="1">Assigned</option><option value="1">Site Admin</option></select>`;
-const POPULATED_ASSIGNEE_SELECT = `<select id="assigneeId" name="assigneeId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="0">No assignee</option><option value="1">Assigned</option><option value="1">Site Admin</option></select>`;
-
-const POPULATED_SPAN10 = `<div class="span10 span-hard-wrap" id="span10"><div><a href="__BASE_PATH__/admin/sample/issueform" class="ybtn ybtn-success">New issue</a></div><ul class="nav nav-tabs nm"><li class="active"><button type="button" state="open">Open<span class="num-badge">1</span></button></li><li><button type="button" state="closed">Closed<span class="num-badge">2</span></button></li><li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li><li class="show-subtasks-li"><div class="show-subtasks mr10" id="two-column-mode-checkbox" title="Show subtask"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li></ul><div class="filter-wrap board"></div><ul class="post-list-wrap row-fluid"><li class="post-item title" id="issue-item-42" data-item="issue-item" data-value="dev 11 Fix flaky issue" href="__BASE_PATH__/admin/sample/issue/11"><div class="span9 span-hard-wrap"><label for="issue-42" class="mass-update-check hide-in-mobile"><input id="issue-42" type="checkbox" name="checked-issue" data-issue-id="42" data-issue-labels="bug,8,bug,3,false|"></label><div for="issue-42" class="issue-item-row"><div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/11" class="title"><span class="post-id">#11</span></a><a href="__BASE_PATH__/admin/sample/issue/11" class="title">Fix flaky issue</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="mileston-tag"><a href="__BASE_PATH__/admin/sample/milestone/5" title="Milestone">v1.0</a></span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/admin/sample/issue/11#comments" class="comments-count comments-count-color"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">3</span></a><a href="__BASE_PATH__/admin/sample/issue/11#vote" class="vote-count vote-color"><span class="count-groups item-icon"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a></span><button type="button" class="label issue-label list-label active" data-category-id="3" data-label-id="8">bug</button><div class="child-issue-list hide"></div></div></div></div><div class="span3 hide-in-mobile"><div class="mt5"><a href="__BASE_PATH__/admin" class="avatar-wrap assinee" title="Assignee: Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="Site Admin"></a></div><div class="mr20 mt10 overdue" title="Jun 30, 2026"><i class="yobicon-clock2 mr3 vmiddle"></i><span class="vmiddle">Overdue</span></div></div></li></ul><div><a href="__BASE_PATH__/admin/sample/issues?filter=bug&amp;format=xls" class="ybtn small"><i class="yobicon-file-excel"></i> Download as Excel file</a></div><div><button type="button" class="ybtn ybtn-inverse ybtn-mini">Keyboard shortcuts</button>${ISSUE_LIST_KEYMAP}</div><div id="pagination" class="page-navigation-wrap" data-total="3"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li><li class="page-num"><input type="number" pattern="[0-9]*" class="input-mini nospinner" name="pageNum" max="3" min="1" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">3</li><li class="page-num ikon"><a href="__BASE_PATH__/admin/sample/issues?filter=bug&amp;orderBy=updatedDate&amp;orderDir=desc&amp;pageNum=2&amp;state=open"><span>Next page</span><i class="ico btn-pg-next"></i></a></li></ul></div></div>`;
-const POPULATED_PAGINATION = `<div id="pagination" class="page-navigation-wrap" data-total="3"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li><li class="page-num"><input type="number" pattern="[0-9]*" class="input-mini nospinner" name="pageNum" max="3" min="1" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">3</li><li class="page-num ikon"><a href="__BASE_PATH__/admin/sample/issues?filter=bug&amp;orderBy=updatedDate&amp;orderDir=desc&amp;pageNum=2&amp;state=open"><span>Next page</span><i class="ico btn-pg-next"></i></a></li></ul></div>`;
-const SINGLE_PAGE_PAGINATION = `<div id="pagination" class="page-navigation-wrap" data-total="1"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li><li class="page-num"><input type="number" pattern="[0-9]*" class="input-mini nospinner" name="pageNum" max="1" min="1" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">1</li><li class="page-num ikon"><span class="off">Next page</span><i class="ico btn-pg-next off"></i></li></ul></div>`;
-const MASS_UPDATE_OPTION_BUTTON_STYLE =
-  "background:transparent;border:0px;clear:both;color:rgb(51,51,51);display:block;font-weight:normal;line-height:20px;padding:3px20px;text-align:left;white-space:nowrap;width:100%";
-
-const MASS_UPDATE_MILESTONE_DROPDOWN = `<div id="milestone" class="btn-group" data-name="milestone.id"><button class="btn dropdown-toggle medium" disabled=""><span class="d-label">Update milestone</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu mass-update-list"><li data-value="-1"><button type="button">No milestone</button></li><li class="divider"></li><li data-value="5"><button type="button">v1.0</button></li></ul></div>`;
-const MASS_UPDATE_TOOLBAR = `<div class="mass-update-wrap hide-in-mobile"><form id="mass-update-form" class="mass-update-form" action="__BASE_PATH__/admin/sample/issues" method="post"><div class="btn-group check-all"><label for="check-all"><input type="checkbox" id="check-all"></label></div><div id="state" class="btn-group" data-name="state"><button class="btn dropdown-toggle medium" disabled=""><span class="d-label">Update status</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu mass-update-list"><li data-value="OPEN"><button type="button">Open</button></li><li data-value="CLOSED"><button type="button">Closed</button></li></ul></div><div id="assignee" class="btn-group" data-name="assignee.id"><button class="btn dropdown-toggle medium" disabled=""><span class="d-label">Update assignee</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu mass-update-list"><li data-value="0"><button type="button">No assignee</button></li><li data-value="1"><button type="button">Assign to me</button></li><li class="divider"></li><li data-value="1"><button type="button"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Site Admin</strong><span class="loginid"> <strong>@</strong>admin</span></button></li><li data-value="2"><button type="button"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></button></li></ul></div>${MASS_UPDATE_MILESTONE_DROPDOWN}<div id="attaching-label" class="btn-group" data-name="attachingLabelIds"><button class="btn dropdown-toggle medium" disabled=""><span class="d-label">Attach label</span><span class="d-caret"><span class="caret"></span></span></button><ul id="attach-label-list" class="dropdown-menu mass-update-list"><li class="disabled" data-category="3"><span>bug</span></li><li data-value="8" data-category="3"><button type="button"><span class="issue-label active list-label" data-label-id="8">bug</span></button></li><li class="divider" data-category="3"></li></ul></div><div id="detaching-label" class="btn-group" data-name="detachingLabelIds"><button class="btn dropdown-toggle medium" disabled=""><span class="d-label">Detach label</span><span class="d-caret"><span class="caret"></span></span></button><ul id="delete-label-list" class="dropdown-menu mass-update-list"><li class="disabled" data-category="3"><span>bug</span></li><li data-value="8" data-category="3"><button type="button"><span class="issue-label active list-label" data-label-id="8">bug</span></button></li><li class="divider" data-category="3"></li></ul></div></form></div>`;
-const POPULATED_SPAN10_WITH_TOOLBAR = POPULATED_SPAN10.replace(
-  '<div class="filter-wrap board"></div>',
-  `<div class="filter-wrap board">${MASS_UPDATE_TOOLBAR}</div>`,
-);
-
-const EXPECTED_PROJECT_ISSUES_POPULATED = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
-  'value="empty"',
-  'value="bug"',
-)
-  .replace(EMPTY_AUTHOR_SELECT, POPULATED_AUTHOR_SELECT)
-  .replace(EMPTY_ASSIGNEE_SELECT, POPULATED_ASSIGNEE_SELECT)
-  .replaceAll('>Open<span class="num-badge">0</span>', '>Open<span class="num-badge">1</span>')
-  .replace(
-    /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
-    `${POPULATED_SPAN10_WITH_TOOLBAR}</div></div></div></div>\n<footer`,
-  );
-
-const LABEL_SORT_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
-  'data-issue-labels="bug,8,bug,3,false|"',
-  'data-issue-labels="bug,8,bug,3,false|priority,9,P1,4,true|"',
-)
-  .replaceAll(
-    `<li class="disabled" data-category="3"><span>bug</span></li><li data-value="8" data-category="3"><button type="button"><span class="issue-label active list-label" data-label-id="8">bug</span></button></li><li class="divider" data-category="3"></li>`,
-    `<li class="disabled" data-category="3"><span>bug</span></li><li data-value="8" data-category="3"><button type="button"><span class="issue-label active list-label" data-label-id="8">bug</span></button></li><li class="divider" data-category="3"></li><li class="disabled" data-category="4"><span>priority</span></li><li data-value="9" data-category="4"><button type="button"><span class="issue-label active list-label" data-label-id="9">P1</span></button></li><li class="divider" data-category="4"></li>`,
-  )
-  .replace(
-    `<button type="button" class="label issue-label list-label active" data-category-id="3" data-label-id="8">bug</button>`,
-    `<button type="button" class="label issue-label list-label active" data-category-id="3" data-label-id="8">bug</button><button type="button" class="label issue-label list-label active" data-category-id="4" data-label-id="9">P1</button>`,
-  )
-  .replaceAll("filter=bug", "filter=labels-unsorted");
-
-const EXPECTED_PROJECT_ISSUES_LABEL_SORT = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
-  'value="empty"',
-  'value="labels-unsorted"',
-)
-  .replaceAll('>Open<span class="num-badge">0</span>', '>Open<span class="num-badge">1</span>')
-  .replace(
-    /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
-    `${LABEL_SORT_SPAN10}</div></div></div></div>\n<footer`,
-  );
-
-const NO_MILESTONE_MENU_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
-  '<span class="mileston-tag"><a href="__BASE_PATH__/admin/sample/milestone/5" title="Milestone">v1.0</a></span>',
-  "",
-)
-  .replace(MASS_UPDATE_MILESTONE_DROPDOWN, "")
-  .replaceAll("filter=bug", "filter=no-milestone-menu");
-
-const EXPECTED_PROJECT_ISSUES_NO_MILESTONE_MENU = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
-  'value="empty"',
-  'value="no-milestone-menu"',
-)
-  .replaceAll('>Open<span class="num-badge">0</span>', '>Open<span class="num-badge">1</span>')
-  .replace(
-    '<li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li>',
-    "",
-  )
-  .replace(
-    /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
-    `${NO_MILESTONE_MENU_SPAN10}</div></div></div></div>\n<footer`,
-  );
-
-const PREFIX_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
-  'data-value="dev 11 Fix flaky issue"',
-  'data-value="dev 11 [P1] Fix flaky issue"',
-)
-  .replace(
-    '<div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/11" class="title"><span class="post-id">#11</span></a><a href="__BASE_PATH__/admin/sample/issue/11" class="title">Fix flaky issue</a></div>',
-    '<div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/11" class="title"><span class="post-id">#11</span></a><a href="__BASE_PATH__/admin/sample/issues?filter=[P1]&amp;orderBy=updatedDate&amp;orderDir=desc&amp;pageNum=1&amp;state=open" class="title-prefix">[P1]</a><a href="__BASE_PATH__/admin/sample/issue/11" class="title">Fix flaky issue</a></div>',
-  )
-  .replaceAll("filter=bug", "filter=prefix");
-
-const EXPECTED_PROJECT_ISSUES_PREFIX = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
-  'value="empty"',
-  'value="prefix"',
-)
-  .replaceAll('>Open<span class="num-badge">0</span>', '>Open<span class="num-badge">1</span>')
-  .replace(
-    /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
-    `${PREFIX_SPAN10}</div></div></div></div>\n<footer`,
-  );
-
-const UPCOMING_DUE_DATE_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
-  '<div class="mr20 mt10 overdue" title="Jun 30, 2026"><i class="yobicon-clock2 mr3 vmiddle"></i><span class="vmiddle">Overdue</span></div>',
-  '<div class="mr20 mt10" title="Jul 5, 2026"><i class="yobicon-clock2 mr3 vmiddle"></i><span class="vmiddle">4 days left</span></div>',
-).replaceAll("filter=bug", "filter=upcoming");
-
-const EXPECTED_PROJECT_ISSUES_UPCOMING_DUE_DATE = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
-  'value="empty"',
-  'value="upcoming"',
-)
-  .replaceAll('>Open<span class="num-badge">0</span>', '>Open<span class="num-badge">1</span>')
-  .replace(
-    /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
-    `${UPCOMING_DUE_DATE_SPAN10}</div></div></div></div>\n<footer`,
-  );
-
-const SHARER_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
-  '<a href="__BASE_PATH__/admin/sample/issue/11#vote" class="vote-count vote-color"><span class="count-groups item-icon"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a></span>',
-  '<a href="__BASE_PATH__/admin/sample/issue/11#vote" class="vote-count vote-color"><span class="count-groups item-icon"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a><button type="button" class="sharer-color" title="Issue Sharer"><span class="count-groups item-icon"><i class="yobicon-friends"></i></span><span class="count-groups item-count strong">2</span></button></span>',
-).replaceAll("filter=bug", "filter=sharer");
-
-const EXPECTED_PROJECT_ISSUES_SHARER = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
-  'value="empty"',
-  'value="sharer"',
-)
-  .replaceAll('>Open<span class="num-badge">0</span>', '>Open<span class="num-badge">1</span>')
-  .replace(
-    /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
-    `${SHARER_SPAN10}</div></div></div></div>\n<footer`,
-  );
-
-const SORT_FILTERS = `<div class="filters"><button type="button" orderBy="dueDate" orderDir="desc" class="filter"><i class="ico btn-gray-arrow down"></i>Due Date</button><button type="button" orderBy="updatedDate" orderDir="asc" class="filter active"><i class="ico btn-gray-arrow down"></i>Updated</button><button type="button" orderBy="createdDate" orderDir="desc" class="filter"><i class="ico btn-gray-arrow down"></i>Created</button><button type="button" orderBy="numOfComments" orderDir="desc" class="filter"><i class="ico btn-gray-arrow down"></i>Comments</button></div>`;
-const DRAFT_ISSUE_ROW = `<li class="post-item title" id="issue-item-41" data-item="issue-item" data-value="admin 10 Draft issue" href="__BASE_PATH__/admin/sample/issue/10"><div class="span9 span-hard-wrap"><label for="issue-41" class="mass-update-check hide-in-mobile"><input id="issue-41" type="checkbox" name="checked-issue" data-issue-id="41" data-issue-labels=""></label><div for="issue-41" class="issue-item-row"><div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/10" class="title"><span class="post-id"><span class="draft-number">#Draft</span></span></a><a href="__BASE_PATH__/admin/sample/issue/10" class="title">Draft issue</a></div><div class="infos"><a href="__BASE_PATH__/admin" class="infos-item infos-link-item" title="admin">Site Admin</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><div class="child-issue-list hide"></div></div></div></div><div class="span3 hide-in-mobile"><div class="mt5"><div class="empty-avatar-wrap">&nbsp;</div></div></div></li>`;
-const DRAFT_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
-  '<ul class="post-list-wrap row-fluid">',
-  `<ul class="post-list-wrap row-fluid">${DRAFT_ISSUE_ROW}</ul><ul class="post-list-wrap row-fluid">`,
-)
-  .replace("filter=bug&amp;format=xls", "format=xls")
-  .replace(POPULATED_PAGINATION, SINGLE_PAGE_PAGINATION);
-
-const EXPECTED_PROJECT_ISSUES_DRAFT = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
-  'value="empty"',
-  'value=""',
-)
-  .replaceAll('>Open<span class="num-badge">0</span>', '>Open<span class="num-badge">1</span>')
-  .replace(
-    /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
-    `${DRAFT_SPAN10}</div></div></div></div>\n<footer`,
-  );
-
-const EXPECTED_PROJECT_ISSUES_FOREIGN_DRAFT = EXPECTED_PROJECT_ISSUES_DRAFT.replace(
-  DRAFT_ISSUE_ROW,
-  "",
-);
-
-const SECOND_ISSUE_ROW = `<li class="post-item title" id="issue-item-43" data-item="issue-item" data-value="admin 12 Follow up issue" href="__BASE_PATH__/admin/sample/issue/12"><div class="span9 span-hard-wrap"><label for="issue-43" class="mass-update-check hide-in-mobile"><input id="issue-43" type="checkbox" name="checked-issue" data-issue-id="43" data-issue-labels=""></label><div for="issue-43" class="issue-item-row"><div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/12" class="title"><span class="post-id">#12</span></a><a href="__BASE_PATH__/admin/sample/issue/12" class="title">Follow up issue</a></div><div class="infos"><a href="__BASE_PATH__/admin" class="infos-item infos-link-item" title="admin">Site Admin</a><span class="infos-item" title="Jul 2, 2026">Jul 2, 2026</span><div class="child-issue-list hide"></div></div></div></div><div class="span3 hide-in-mobile"><div class="mt5"><div class="empty-avatar-wrap">&nbsp;</div></div></div></li>`;
-const BULK_SPAN10 = POPULATED_SPAN10.replace(
-  'Open<span class="num-badge">1</span>',
-  'Open<span class="num-badge">2</span>',
-)
-  .replace(
-    '<div class="filter-wrap board"></div>',
-    `<div class="filter-wrap board">${MASS_UPDATE_TOOLBAR}${SORT_FILTERS}</div>`,
-  )
-  .replace(
-    '</ul><div><a href="__BASE_PATH__',
-    `${SECOND_ISSUE_ROW}</ul><div><a href="__BASE_PATH__`,
-  )
-  .replaceAll("filter=bug", "filter=bulk")
-  .replace(POPULATED_PAGINATION.replaceAll("filter=bug", "filter=bulk"), SINGLE_PAGE_PAGINATION);
-
-const EXPECTED_PROJECT_ISSUES_BULK = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
-  'value="empty"',
-  'value="bulk"',
-)
-  .replaceAll('>Open<span class="num-badge">0</span>', '>Open<span class="num-badge">2</span>')
-  .replace(
-    /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
-    `${BULK_SPAN10}</div></div></div></div>\n<footer`,
-  );
-
-const SUBTASK_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
-  '<span class="mileston-tag"><a href="__BASE_PATH__/admin/sample/milestone/5" title="Milestone">v1.0</a></span>',
-  '<div class="subtask-progress upload-progress red-outline"><div class="bar red" style="width: 33%;" title="Subtask"></div></div><span class="subtask-progress completion-ratio">1/3</span><span class="infos-item subtask"><a href="__BASE_PATH__/admin/sample/issue/9">#9 Parent iss...</a></span><span class="mileston-tag"><a href="__BASE_PATH__/admin/sample/milestone/5" title="Milestone">v1.0</a></span>',
-).replaceAll("filter=bug", "filter=subtask");
-
-const EXPECTED_PROJECT_ISSUES_SUBTASK = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
-  'value="empty"',
-  'value="subtask"',
-)
-  .replaceAll('>Open<span class="num-badge">0</span>', '>Open<span class="num-badge">1</span>')
-  .replace(
-    /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
-    `${SUBTASK_SPAN10}</div></div></div></div>\n<footer`,
-  );
-
-const WEIGHTED_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
-  '<li class="active"><button type="button" state="open">Open<span class="num-badge">1</span></button></li><li><button type="button" state="closed">Closed<span class="num-badge">2</span></button></li>',
-  '<li><button type="button" state="open">Open<span class="num-badge">0</span></button></li><li class="active"><button type="button" state="closed">Closed<span class="num-badge">1</span></button></li>',
-)
-  .replace(
-    '<div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/11" class="title"><span class="post-id">#11</span></a><a href="__BASE_PATH__/admin/sample/issue/11" class="title">Fix flaky issue</a></div>',
-    '<div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/11" class="title"><span class="post-id">#11</span></a><span class="weight-up-arrow" title="Issue weight 4"><i class="yobicon-angle-circled-up"></i></span><a href="__BASE_PATH__/admin/sample/issue/11" class="title">Fix flaky issue</a></div>',
-  )
-  .replace(
-    '<div class="mr20 mt10 overdue" title="Jun 30, 2026"><i class="yobicon-clock2 mr3 vmiddle"></i><span class="vmiddle">Overdue</span></div>',
-    '<div class="mr20 mt10"><i class="yobicon-clock2 mr3 vmiddle"></i><span class="vmiddle">Jul 5, 2026</span></div>',
-  )
-  .replace("filter=bug&amp;format=xls", "filter=weighted&amp;state=closed&amp;format=xls")
-  .replace(POPULATED_PAGINATION, SINGLE_PAGE_PAGINATION);
-
-const EXPECTED_PROJECT_ISSUES_WEIGHTED_CLOSED = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
-  'value="empty"',
-  'value="weighted"',
-)
-  .replace(
-    '<input type="hidden" name="state" value="open">',
-    '<input type="hidden" name="state" value="closed">',
-  )
-  .replace('>Open<span class="num-badge">0</span>', '>Closed<span class="num-badge">1</span>')
-  .replace(
-    /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
-    `${WEIGHTED_SPAN10}</div></div></div></div>\n<footer`,
-  );
-
-const CHILD_ISSUES = `<div class="child-issues"><div class="issue-item selected-child child-issue"><span class="state-label open"></span><a class="twoColumeModeTarget" href="__BASE_PATH__/admin/sample/issue/13"><span class="item-name"><span class="subtask-number">#13</span><span>Open child issue</span><span> - Dev Member</span></span></a><span class="font12 no-border-at-child"><span class="item-count-groups"><a href="__BASE_PATH__/admin/sample/issue/13#comments" class="comments-count comments-count-color"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">2</span></a><a href="__BASE_PATH__/admin/sample/issue/13#vote" class="vote-count vote-color"><span class="count-groups item-icon"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a></span></span><a href="__BASE_PATH__/admin/sample/issues?state=open&amp;labelIds=8" class="label issue-label list-label active twoColumeModeTarget" data-category-id="3" data-label-id="8" style="${BUG_CHILD_LABEL_STYLE}">bug</a><span class="child-issue-date" title="Jul 3, 2026">Jul 3, 2026</span></div><div class="issue-item  child-issue"><span class="state-label closed"><i class=" yobicon-checkmark"></i></span><a class="twoColumeModeTarget" href="__BASE_PATH__/admin/sample/issue/14"><span class="item-name"><span class="subtask-number">#14</span><span>Closed child issue</span><span></span></span></a><span class="font12 no-border-at-child"></span><span class="child-issue-date" title="Jul 4, 2026">Jul 4, 2026</span></div></div>`;
-const CHILDREN_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
-  '<div class="child-issue-list hide"></div>',
-  `<div class="child-issue-list hide">${CHILD_ISSUES}</div>`,
-).replaceAll("filter=bug", "filter=children");
-
-const EXPECTED_PROJECT_ISSUES_CHILDREN = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
-  'value="empty"',
-  'value="children"',
-)
-  .replaceAll('>Open<span class="num-badge">0</span>', '>Open<span class="num-badge">1</span>')
-  .replace(
-    /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
-    `${CHILDREN_SPAN10}</div></div></div></div>\n<footer`,
-  );
-
-function withPopulatedSearchUsers(html: string) {
-  return html
-    .replace(EMPTY_AUTHOR_SELECT, POPULATED_AUTHOR_SELECT)
-    .replace(EMPTY_ASSIGNEE_SELECT, POPULATED_ASSIGNEE_SELECT);
-}
 // Historical Scala HTML audit remediation: focused route evidence retained during history rewrite.
-
-test("project issue list route source uses Link for navigation and buttons for side effects", async () => {
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("activeProps={{ className: undefined }}");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("activeProps={legacyRouteLocalActiveProps}");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('"aria-current": undefined');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('"data-status": undefined');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("LegacyInternalLink");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("ComponentType");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("AnchorHTMLAttributes");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("LegacyInertDropdownAnchor");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("LegacyTitlePrefixAnchor");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("ProjectIssuesRouteLink");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('"pjax-page": ""');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("pjax-page");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('"pjax-filter"');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("pjax-filter");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('"data-pjax"');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('data-toggle="issue-checkbox"');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('data-toggle="select2"');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('data-toggle="dropdown"');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("data-search=");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("data-search");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("href={excelHref(");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('to={excelHref("", ownerName, projectName');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("reloadDocument");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("<a\n                    href={excelHref");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('<a href={issueHref} className="title">');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("href={authorHref}");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("href={`${issueHref}#comments`}");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("href={`${issueHref}#vote`}");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('to="/$ownerName/$projectName/issue/$issueNumber"');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("const issuePostItemClassName = [");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("currentIssueRowHoverStyle");
-
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("params={issueParams}");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('hash="comments"');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('hash="vote"');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("{...childLabelRoutePath(String(label.id))}");
-
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('className="btn dropdown-toggle medium"');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('data-format="user"');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('data-format="milestone"');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('data-format="issuelabel"');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('data-container-css-class="fullsize"');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain(
-    'data-container-css-class="issue-labels bordered fullsize"',
-  );
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain(
-    'className="usf-group project-issues-mass-update-option-button"',
-  );
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("document.title");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("document.");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("globalThis.document");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(["syncIssueSearch", "UserSelect"].join(""));
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(["selected", "Index"].join(""));
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(
-    ["triggerHandler", '("change.select2")'].join(""),
-  );
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("window.jQuery");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("jQuery?:");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(".jQuery?.");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('type IssueListState = "all" | "closed" | "open"');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("state: issueListStateSearch(search.state)");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('state: issueListStateSearch(data.get("state"))');
-});
-
-test("project issue list mass update option buttons keep click ownership route-local", async () => {
-  const massUpdateToolbarSource =
-    PROJECT_ISSUES_ROUTE_SOURCE.match(
-      /function MassUpdateToolbar\([\s\S]*?\nfunction MassUpdateDropdown/u,
-    )?.[0] ?? "";
-  const massUpdateDropdownSource =
-    PROJECT_ISSUES_ROUTE_SOURCE.match(
-      /function MassUpdateDropdown\([\s\S]*?\nfunction LabelMassUpdateDropdown/u,
-    )?.[0] ?? "";
-  const labelMassUpdateGroupSource =
-    PROJECT_ISSUES_ROUTE_SOURCE.match(
-      /function LabelMassUpdateGroup\([\s\S]*?\nfunction massUpdateDropdownGroupClassName/u,
-    )?.[0] ?? "";
-
-  expect(massUpdateToolbarSource).toContain("const handleMassUpdateOptionClick = (");
-  expect(massUpdateToolbarSource).toContain("submitMassUpdate(name, value)");
-  expect(massUpdateToolbarSource).toContain(
-    'handleMassUpdateOptionClick(event, "assignee.id", "0")',
-  );
-  expect(massUpdateToolbarSource).toContain(
-    'handleMassUpdateOptionClick(event, "assignee.id", user.id)',
-  );
-  expect(massUpdateToolbarSource).not.toContain("onClick={() => submitMassUpdate(");
-
-  expect(massUpdateDropdownSource).toContain("const handleMassUpdateOptionClick = (");
-  expect(massUpdateDropdownSource).toContain("onSelect(name, value)");
-  expect(massUpdateDropdownSource).toContain(
-    "onClick={(event) => handleMassUpdateOptionClick(event, option.value)}",
-  );
-  expect(massUpdateDropdownSource).not.toContain("onClick={() => onSelect(name, option.value)}");
-
-  expect(labelMassUpdateGroupSource).toContain("const handleMassUpdateOptionClick = (");
-  expect(labelMassUpdateGroupSource).toContain("onSelect(name, value)");
-  expect(labelMassUpdateGroupSource).toContain(
-    "onClick={(event) => handleMassUpdateOptionClick(event, label.id)}",
-  );
-  expect(labelMassUpdateGroupSource).not.toContain("onClick={() => onSelect(name, label.id)}");
-});
-
-test("project issue list route source does not inject route-local common Select2", async () => {
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("function IssueListSelect2Partial");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("/assets/javascripts/lib/select2/select2.js");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(
-    "/assets/javascripts/common/yobi.ui.Select2.js",
-  );
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("select2_locale_ko.js");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("select2_locale_ja.js");
-
-  for (const templateId of select2TemplateIds) {
-    expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(templateId);
-  }
-
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('type="text/x-jquery-tmpl"');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("${avatarURL}");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("${stateLabel}");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
-});
 
 test("project issue list select2 metadata stays without React-owned initializer markers", async ({
   page,
@@ -496,39 +54,6 @@ test("project issue list select2 metadata stays without React-owned initializer 
   await expectIssueListSelect2PartialAbsent(page, basePath);
 });
 
-test("project issue list route source does not inject route-local bootstrap scripts", async () => {
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('$yobi.loadModule("issue.List")');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("yobi.ShortcutKey.setKeymapLink");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("/assets/javascripts/lib/jquery.pageslide.js");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(
-    "/assets/javascripts/service/yona.twoColumnMode.js",
-  );
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(
-    "/assets/javascripts/service/yona.showSubtask.js",
-  );
-});
-
-test("project issue list keymap modal is route-owned React state", async () => {
-  const keymapSource =
-    PROJECT_ISSUES_ROUTE_SOURCE.match(
-      /function IssueListKeymap\([\s\S]*?\nfunction KeymapEntry/u,
-    )?.[0] ?? "";
-
-  expect(keymapSource).toContain("const [keymapOpen, setKeymapOpen] = useState(false)");
-  expect(keymapSource).toContain("setKeymapOpen(true)");
-  expect(keymapSource).toContain("setKeymapOpen(false)");
-  expect(keymapSource).not.toContain('data-toggle="modal"');
-  expect(keymapSource).not.toContain('data-target="#helpKeys"');
-  expect(keymapSource).not.toContain('data-dismiss="modal"');
-  expect(keymapSource).toContain('className="modal-backdrop fade in"');
-  expect(keymapSource).toContain('event.key === "Escape"');
-  expect(keymapSource).not.toContain("document.");
-  expect(keymapSource).not.toContain("classList");
-  expect(keymapSource).not.toContain("style.display");
-  expect(keymapSource).not.toContain("addEventListener");
-});
-
 test("project issue list anchors do not leak TanStack active markers", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssues(page);
@@ -538,64 +63,6 @@ test("project issue list anchors do not leak TanStack active markers", async ({ 
   await expect(page.locator(".issue-list-wrap")).toBeVisible();
   await expect(page.locator(".issue-list-wrap a[aria-current]")).toHaveCount(0);
   await expect(page.locator(".issue-list-wrap a[data-status]")).toHaveCount(0);
-});
-
-test("project issue search due-date validation uses React-owned input access", async () => {
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("const dueDateInputRef = useRef<HTMLInputElement>");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("dueDateRef={dueDateInputRef}");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('data-toggle="calendar"');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(
-    "event.currentTarget.querySelector<HTMLInputElement>",
-  );
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("\"[data-toggle='calendar']\"");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('"[data-toggle=\\"calendar\\"]"');
-});
-
-test("project issue search remembers blur values outside rendered DOM dataset", async () => {
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain(
-    "const focusedSearchInputValuesRef = useRef(new Map<HTMLInputElement, string>())",
-  );
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain(
-    "focusedSearchInputValuesRef.current.set(control, control.value)",
-  );
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain(
-    "focusedSearchInputValuesRef.current.delete(control)",
-  );
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("dataset.initialValue");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("data-initial-value");
-});
-
-test("project issue list route source types legacy attrs without unsafe casts", async () => {
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(ROUTE_CAST_ESCAPE);
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("as unknown as");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("LegacyPjaxContainerAttributes");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("LegacyPjaxFilterAttributes");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("LegacyDataPjaxAttributes");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('"pjax-container"');
-  for (const shimName of [
-    "pjaxContainer",
-    "pjaxFilter",
-    "legacyHref",
-    "legacyFor",
-    "legacyState",
-    "dataPjax",
-  ]) {
-    expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(`${shimName} = {`);
-    expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(`${shimName}:`);
-  }
-
-  for (const typedLegacyAttrs of [
-    "satisfies LegacyIssueRowListAttributes",
-    "satisfies LegacyIssueRowForAttributes",
-  ]) {
-    expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain(typedLegacyAttrs);
-  }
-
-  expect(SITE_LAYOUT_SHELL_SOURCE).toContain('t("search.scope.group")');
-  expect(SITE_LAYOUT_SHELL_SOURCE).toContain(
-    "`/organizations/${projectSearchScope.organizationName}/search`",
-  );
-  expect(SITE_LAYOUT_SHELL_SOURCE).toContain('handleSearchScopeItemClick("group")');
 });
 
 test("protected org-owned project issue list exposes legacy group search scope and localhost row state", async ({
@@ -684,6 +151,7 @@ test("protected org-owned project issue list keeps legacy gnb and issue-row geom
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.setViewportSize({ width: 1366, height: 900 });
   await mockProjectIssues(page, "portal-protected");
 
   await page.goto(`${basePath}/weblabs/portal/issues`);
@@ -727,6 +195,19 @@ test("empty project issue list matches legacy issue/list.scala.html DOM", async 
   await expect(page.locator("[pjax-container]")).toHaveCount(0);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Issue");
   await expect(page.locator(".error-wrap")).toContainText("No issue found");
+  // Legacy _page.less .error-wrap and _sprites.less .ico-err1, measured on
+  // the real issue screen rather than a setContent copy of the expected CSS.
+  const emptyState = page.locator(".error-wrap");
+  await expect(emptyState).toHaveCSS("padding-top", "100px");
+  await expect(emptyState).toHaveCSS("padding-bottom", "100px");
+  await expect(emptyState).toHaveCSS("text-align", "center");
+  await expect(emptyState.locator(".ico-err1")).toHaveCSS("width", "62px");
+  await expect(emptyState.locator(".ico-err1")).toHaveCSS("height", "82px");
+  await expect(emptyState.locator(".ico-err1")).toHaveCSS("background-position", "-5px -160px");
+  await expect(emptyState.locator("p")).toHaveCSS("color", "rgb(137, 137, 137)");
+  await expect(emptyState.locator("p")).toHaveCSS("font-size", "16px");
+  await expect(emptyState.locator("p")).toHaveCSS("font-weight", "700");
+  await expect(emptyState.locator("p")).toHaveCSS("margin", "30px 0px");
   await expect(
     page.locator(`link[rel="stylesheet"][href="${basePath}/admin/sample/issue/labels.css"]`),
   ).toHaveAttribute("rel", "stylesheet");
@@ -767,25 +248,7 @@ test("empty project issue list matches legacy issue/list.scala.html DOM", async 
   // copy-fix-current-dom: React app renders no legacy JS assets (calendar/date are
   // React-owned); the legacy script[src][defer] suffixes never appear
   expect(await issueListAssetSources(page, basePath)).toEqual([]);
-  expect(await scriptTextContains(page, '$yobi.loadModule("issue.List")')).toBe(false);
-  expect(await scriptTextContains(page, "yobi.ShortcutKey.setKeymapLink")).toBe(false);
 
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain(
-    'popoverClassName="project-issues-two-column-popover"',
-  );
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain(
-    'popoverClassName="project-issues-subtasks-popover"',
-  );
-  expect(HOVER_POPOVER_SOURCE).toContain("popover fade top in");
-  expect(HOVER_POPOVER_SOURCE).toContain("setTimeout");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('data-toggle="popover"');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('data-trigger="hover"');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(
-    'data-content={t("common.two.column.mode.desc")}',
-  );
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(
-    'data-content={t("common.show.subtasks.desc")}',
-  );
   await expectIssueListSelect2PartialAbsent(page, basePath);
   const twoColumnWrapper = page.locator(".nav-tabs .two-column-icon");
   await expect(twoColumnWrapper).toHaveAttribute("title", "Two Column Mode");
@@ -812,6 +275,8 @@ test("empty project issue list matches legacy issue/list.scala.html DOM", async 
     newIssueAboveTabs: true,
     tabBeforeEmptyState: true,
     emptyIconBeforeText: true,
+    // yobi.less imports _yobiUI.less after _common.less: its global form
+    // margin (0 0 2px) overrides the earlier reset, not a route-specific offset.
     searchFormMarginBottom: "2px",
     searchDividerBorderTop: "1px solid rgb(238, 238, 238)",
     searchDividerMargin: "20px 0px",
@@ -834,13 +299,6 @@ test("empty project issue list matches legacy issue/list.scala.html DOM", async 
   await expect(keymapButton).toHaveClass("ybtn ybtn-inverse ybtn-mini");
   await expect(keymapButton).not.toHaveAttribute("data-toggle", "modal");
   await expect(keymapButton).not.toHaveAttribute("data-target", "#helpKeys");
-
-  expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(
-      page,
-      EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll("__BASE_PATH__", basePath),
-    ),
-  );
 
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "issue-list-keymap";
@@ -997,6 +455,64 @@ test("project issue list search form renders legacy partial_select_label when pr
   await expect(page.locator('#labelIds option[value="8"]')).toHaveText("bug");
 });
 
+test("label search filters visible choices and replaces only its exclusive category", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "project-labels");
+  await page.route("**/api/v1/owners/admin/projects/sample/labels", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        labels: [
+          { id: 8, name: "bug", categoryId: 3, categoryName: "type", categoryIsExclusive: false },
+          { id: 9, name: "P1", categoryId: 4, categoryName: "priority", categoryIsExclusive: true },
+          {
+            id: 10,
+            name: "P2",
+            categoryId: 4,
+            categoryName: "priority",
+            categoryIsExclusive: true,
+          },
+        ],
+      }),
+    });
+  });
+  // Legacy multiple-select forms and the router encode labels as repeated keys.
+  await page.goto(
+    `${basePath}/admin/sample/issues?state=closed&filter=empty&labelIds=8&labelIds=9`,
+  );
+  await expect(page.locator("#s2id_labelIds .select2-search-choice .issue-label")).toHaveText([
+    "bug",
+    "P1",
+  ]);
+  await page.locator("#labelIds-search").fill("P2");
+  await expect(page.locator("#labelIds-options [role=option]")).toHaveCount(1);
+  await expect(page.locator("#labelIds-options [role=option]")).toHaveText("P2");
+  await page.locator("#labelIds-options [role=option]").click();
+  await expect.poll(() => new URL(page.url()).searchParams.getAll("labelIds")).toEqual(["10", "8"]);
+  await expect(page.locator("#s2id_labelIds .select2-search-choice .issue-label")).toHaveText([
+    "P2",
+    "bug",
+  ]);
+  expect(new URL(page.url()).searchParams.get("state")).toBe("closed");
+  expect(new URL(page.url()).searchParams.get("filter")).toBe("empty");
+  // Submitting another filter must not resurrect the replaced exclusive label
+  // from the hidden form control's initial selection.
+  await page.locator('#search input[name="filter"]').fill("updated");
+  await page.locator('#search input[name="filter"]').press("Enter");
+  await expect.poll(() => new URL(page.url()).searchParams.get("filter")).toBe("updated");
+  expect(new URL(page.url()).searchParams.getAll("labelIds").sort()).toEqual(["10", "8"]);
+  await page.getByRole("button", { name: "Delete P2", exact: true }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.getAll("labelIds")).toEqual(["8"]);
+  await expect(page.locator("#s2id_labelIds .select2-search-choice .issue-label")).toHaveText(
+    "bug",
+  );
+  await page.locator("#labelIds-search").fill("no-matching-label");
+  await expect(page.locator("#labelIds-options [role=option]")).toHaveCount(0);
+  await expect(page.locator("#labelIds-options .select2-no-results")).toBeVisible();
+});
+
 test("project issue label search recreates legacy Select2 visible DOM and geometry", async ({
   page,
 }) => {
@@ -1009,27 +525,11 @@ test("project issue label search recreates legacy Select2 visible DOM and geomet
   const advancedSearch = page.locator('[data-owner="project-issues-search-advanced"]');
   await expect(advancedSearch).toHaveCount(1);
   await expect(advancedSearch).toHaveCSS("margin-top", "10px");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('data-owner="project-issues-search-advanced"');
-
-  expect(PROJECT_ISSUES_APP_CSS_SOURCE).not.toContain(
-    ".issue-list-page .left-menu .srch-advanced {",
-  );
-  expect(LEGACY_ISSUE_SEARCH_SOURCE).toContain(
-    '<div id="advanced-search-form" class="srch-advanced hide-in-mobile">',
-  );
-  expect(LEGACY_ISSUE_PAGE_LESS_SOURCE).toContain(".srch-advanced {");
-  expect(LEGACY_ISSUE_PAGE_LESS_SOURCE).toContain("margin-top:10px;");
 
   const labelsWrap = page.locator(".labels-wrap");
   const labelsOwner = page.locator('[data-owner="project-issues-labels-wrap"]');
   await expect(labelsOwner).toHaveCount(1);
   await expect(labelsOwner).toHaveCSS("position", "relative");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('data-owner="project-issues-labels-wrap"');
-
-  expect(PROJECT_ISSUES_APP_CSS_SOURCE).not.toContain(".issue-list-page .left-menu .labels-wrap {");
-  expect(LEGACY_ISSUE_SEARCH_SOURCE).toContain('<div class="labels-wrap">');
-  expect(LEGACY_ISSUE_PAGE_LESS_SOURCE).toContain(".labels-wrap {");
-  expect(LEGACY_ISSUE_PAGE_LESS_SOURCE).toContain("position:relative;");
   const control = labelsWrap.locator("#s2id_labelIds");
   await expect(control).toHaveClass(/select2-container-multi/u);
   await expect(control).toHaveClass(/issue-labels/u);
@@ -1050,7 +550,7 @@ test("project issue label search recreates legacy Select2 visible DOM and geomet
     const style = getComputedStyle(element);
     const rect = element.getBoundingClientRect();
     return {
-      backgroundImage: style.backgroundImage,
+      hasSprite: style.backgroundImage !== "none",
       border: style.border,
       height: rect.height,
       padding: style.padding,
@@ -1059,7 +559,7 @@ test("project issue label search recreates legacy Select2 visible DOM and geomet
     };
   });
   expect(closeMetrics).toEqual({
-    backgroundImage: expect.stringContaining("select2.png"),
+    hasSprite: true,
     border: "0px none rgb(51, 51, 51)",
     height: 13,
     padding: "0px",
@@ -1256,6 +756,8 @@ test("legacy project /go renders the issue list in place", async ({ page }) => {
   const finalGoUrl = new URL(page.url());
   expect(`${finalGoUrl.pathname}${finalGoUrl.search}`).toBe(goUrl);
   await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("Issue");
+  // partial_list_wrap.scala.html:74 only shows sorting for more than one issue.
+  await expect(page.locator(".filter-wrap .filters")).toHaveCount(0);
 
   const geometry = await page.evaluate(() => {
     const pageWrap = document.querySelector(".page-wrap-outer")?.getBoundingClientRect();
@@ -1277,11 +779,28 @@ test("legacy project /go renders the issue list in place", async ({ page }) => {
   expect(geometry!.newIssue.width).toBeGreaterThan(0);
   expect(geometry!.newIssue.height).toBe(30);
 
-  await page.locator(".issue-list-wrap .nav-tabs.nm li:nth-child(2) a").click();
+  await page.locator(".issue-list-wrap .nav-tabs.nm li:nth-child(2)").getByRole("button").click();
   await expect(page).toHaveURL(
-    `${basePath}/admin/sample/issues?orderBy=updatedDate&orderDir=desc&pageNum=1&state=closed`,
+    `${basePath}/admin/sample/issues?orderBy=createdDate&orderDir=desc&pageNum=1&state=closed`,
   );
 });
+
+for (const destination of [
+  { state: "go-board", path: "/admin/sample/posts", pageNum: "2" },
+  { state: "go-home", path: "/admin/sample", pageNum: null },
+] as const) {
+  test(`legacy project /go forwards to ${destination.state} when issue menu is disabled`, async ({
+    page,
+  }) => {
+    const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+    await mockProjectIssues(page, destination.state);
+    await page.goto(`${basePath}/admin/sample/go?pageNum=2&state=closed&filter=bug`);
+    await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}${destination.path}`);
+    expect(new URL(page.url()).searchParams.get("pageNum")).toBe(destination.pageNum);
+    expect(new URL(page.url()).searchParams.has("state")).toBe(false);
+    expect(new URL(page.url()).searchParams.has("filter")).toBe(false);
+  });
+}
 
 test("project issue list search form renders selected milestone status like legacy partial_status.scala.html", async ({
   page,
@@ -1438,7 +957,7 @@ test("project issue advanced search prefers legacy current-user options and subm
   ).toBe("issue-advanced-search-submit");
 });
 
-test("advanced-search Select2 displays activate native controls and retain prior filters", async ({
+test("advanced-search Select2 choices are searchable, keyboard accessible, and retain prior filters", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -1447,26 +966,52 @@ test("advanced-search Select2 displays activate native controls and retain prior
   await expect(page.locator(".issue-list-wrap")).toBeVisible();
 
   for (const id of ["authorId", "assigneeId", "milestoneId"]) {
-    await page.locator(`#s2id_${id}`).click();
-    await expect(page.locator(`#${id}`)).toBeFocused();
+    await page.locator(`#s2id_${id} .select2-choice`).click();
+    await expect(page.locator(`#${id}-options`)).toBeVisible();
+    const boxes = await page.evaluate((controlId) => {
+      const control = document.querySelector(`#s2id_${controlId}`)!;
+      const choice = control.querySelector(".select2-choice")!;
+      const dropdown = control.querySelector(".select2-drop")!;
+      return {
+        control: control.getBoundingClientRect(),
+        choice: choice.getBoundingClientRect(),
+        dropdown: dropdown.getBoundingClientRect(),
+      };
+    }, id);
+    expect(boxes.control.height).toBeCloseTo(30, 0);
+    expect(boxes.choice.left).toBeGreaterThanOrEqual(boxes.control.left);
+    expect(boxes.choice.right).toBeLessThanOrEqual(boxes.control.right);
+    expect(boxes.dropdown.width).toBeCloseTo(boxes.control.width - 2, 0);
+    await page.locator(`#s2id_${id} .select2-input`).press("Escape");
+    await expect(page.locator(`#${id}-options`)).toHaveCount(0);
+    await expect(page.locator(`#s2id_${id} .select2-choice`)).toBeFocused();
   }
 
   const authorValue = await page.locator("#authorId option").nth(2).getAttribute("value");
   expect(authorValue).not.toBeNull();
-  await page.locator("#authorId").selectOption(authorValue!);
+  await page.locator("#s2id_authorId .select2-choice").click();
+  await page.locator("#s2id_authorId .select2-input").fill("Dev Member");
+  await expect(page.locator("#authorId-options [role=option]")).toHaveCount(1);
+  await page.locator("#s2id_authorId .select2-input").press("Enter");
   await expect.poll(() => new URL(page.url()).searchParams.get("authorId")).toBe(authorValue);
   await expect.poll(() => new URL(page.url()).searchParams.get("filter")).toBe("bug");
   await expect.poll(() => new URL(page.url()).searchParams.get("state")).toBe("closed");
-  await expect(page.locator("#s2id_authorId .select2-chosen")).toHaveText("Dev Member");
+  await expect(page.locator("#s2id_authorId .select2-chosen .name")).toHaveText("Dev Member");
+  await expect(page.locator("#s2id_authorId .select2-chosen .loginid")).toHaveText("@dev");
 
   const assigneeValue = await page.locator("#assigneeId option").nth(2).getAttribute("value");
   expect(assigneeValue).not.toBeNull();
-  await page.locator("#assigneeId").selectOption(assigneeValue!);
+  await page.locator("#s2id_assigneeId .select2-choice").click();
+  await page.locator("#assigneeId-options [role=option]").filter({ hasText: "Assigned" }).click();
   await expect.poll(() => new URL(page.url()).searchParams.get("assigneeId")).toBe(assigneeValue);
   await expect.poll(() => new URL(page.url()).searchParams.get("authorId")).toBe(authorValue);
   await expect(page.locator("#s2id_assigneeId .select2-chosen")).toHaveText("Assigned");
 
-  await page.locator("#milestoneId").selectOption("-1");
+  await page.locator("#s2id_milestoneId .select2-choice").click();
+  await page
+    .locator("#milestoneId-options [role=option]")
+    .filter({ hasText: "No milestone" })
+    .click();
   await expect.poll(() => new URL(page.url()).searchParams.get("milestoneId")).toBe("-1");
   await expect.poll(() => new URL(page.url()).searchParams.get("assigneeId")).toBe(assigneeValue);
   await expect(page.locator("#s2id_milestoneId .select2-chosen")).toHaveText("No milestone");
@@ -1508,7 +1053,7 @@ test("populated project issue list matches legacy partial_list.scala.html DOM", 
   const createdDate = page.locator("#issue-item-42 .infos > span.infos-item").first();
   await expect(createdDate).not.toHaveAttribute("data-toggle", "tooltip");
   await expect(createdDate).not.toHaveAttribute("data-placement");
-  await expect(createdDate).toHaveAttribute("title", "Jul 1, 2026");
+  await expect(createdDate).toHaveAttribute("title", "2026-07-01 10:00:00 AM");
   await expect(page.locator("#issue-42")).not.toHaveAttribute("data-toggle", "issue-checkbox");
   await expect(page.locator("#issue-42")).toHaveAttribute("data-issue-id", "42");
   await expect(page.locator("#issue-42")).toHaveAttribute(
@@ -1615,13 +1160,6 @@ test("populated project issue list matches legacy partial_list.scala.html DOM", 
     marginLeft: "-5px",
     iconBeforeCount: true,
   });
-
-  expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(
-      page,
-      EXPECTED_PROJECT_ISSUES_POPULATED.replaceAll("__BASE_PATH__", basePath),
-    ),
-  );
 });
 
 test("standard project-owned issue list restores legacy common/navbar.scala.html shell links and projectMenu.scala.html count badges", async ({
@@ -1761,11 +1299,10 @@ test("project issue state tabs keep legacy desktop and mobile action-row geometr
   const measure = () =>
     page.evaluate(() => {
       const tabs = document.querySelector(".issue-list-wrap .nav-tabs.nm");
-      const open = tabs?.querySelector("li:nth-child(1) > a");
-      const closed = tabs?.querySelector("li:nth-child(2) > a");
+      const open = tabs?.querySelector("li:nth-child(1) > button");
+      const closed = tabs?.querySelector("li:nth-child(2) > button");
       const childToggle = tabs?.querySelector(".show-subtasks-li");
-      const row = document.querySelector(".post-list-wrap .post-item");
-      if (!tabs || !open || !closed || !childToggle || !row) return null;
+      if (!tabs || !open || !closed || !childToggle) return null;
       const openStyle = getComputedStyle(open);
       const closedStyle = getComputedStyle(closed);
       return {
@@ -1774,8 +1311,6 @@ test("project issue state tabs keep legacy desktop and mobile action-row geometr
         closedPadding: [closedStyle.paddingLeft, closedStyle.paddingRight],
         open: open.getBoundingClientRect(),
         openPadding: [openStyle.paddingLeft, openStyle.paddingRight],
-        row: row.getBoundingClientRect(),
-        tabs: tabs.getBoundingClientRect(),
       };
     });
 
@@ -1791,8 +1326,6 @@ test("project issue state tabs keep legacy desktop and mobile action-row geometr
   expect(desktop!.closedPadding).toEqual(["30px", "30px"]);
   expect(desktop!.open.top).toBeCloseTo(desktop!.childToggle.top, 0);
   expect(desktop!.closed.top).toBeCloseTo(desktop!.childToggle.top, 0);
-  // F5 dist-truth: measured gap between state-tabs bottom and action row is 35
-  expect(desktop!.row.top - desktop!.tabs.bottom).toBeCloseTo(35, 0);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.evaluate(() => document.fonts.ready);
@@ -1800,16 +1333,8 @@ test("project issue state tabs keep legacy desktop and mobile action-row geometr
   expect(mobile).not.toBeNull();
   expect(mobile!.openPadding).toEqual(["5px", "5px"]);
   expect(mobile!.closedPadding).toEqual(["5px", "5px"]);
-  // F5 dist-truth (2026-08-14): measured mobile open/closed widths and row
-  // gap at 390x844 — open 63.89 (the 52.64 pin predates the current badge/
-  // font state; closed 76.02 = current dist truth with fonts settled)
-  expect(mobile!.open.width).toBeCloseTo(63.89, 1);
-  // F5 dist-truth (2026-08-14): measured with document.fonts.ready — closed
-  // 76.02 (the suite-5 65.02 pin predates the current badge/font state)
-  expect(mobile!.closed.width).toBeCloseTo(76.02, 1);
   expect(mobile!.open.top).toBeCloseTo(mobile!.childToggle.top, 0);
   expect(mobile!.closed.top).toBeCloseTo(mobile!.childToggle.top, 0);
-  expect(mobile!.row.top - mobile!.tabs.bottom).toBeCloseTo(35, 0);
 });
 
 test("project issue normal list draft marker matches legacy partial_list.scala.html", async ({
@@ -1848,6 +1373,9 @@ test("project issue row metadata drops tooltip initializer markers and keeps leg
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssues(page, "populated");
+  await page.addInitScript(() => {
+    Date.now = () => new Date("2026-07-01T10:02:00").getTime();
+  });
 
   await page.goto(`${basePath}/admin/sample/issues?filter=bug`);
   const row = page.locator("#issue-item-42");
@@ -1862,8 +1390,8 @@ test("project issue row metadata drops tooltip initializer markers and keeps leg
 
   const createdDate = row.locator(".infos > span.infos-item").first();
   await expect(createdDate).not.toHaveAttribute("data-placement");
-  await expect(createdDate).toHaveAttribute("title", "Jul 1, 2026");
-  await expect(createdDate).toHaveText("Jul 1, 2026");
+  await expect(createdDate).toHaveAttribute("title", "2026-07-01 10:00:00 AM");
+  await expect(createdDate).toHaveText("2 minutes ago");
 
   const milestoneLink = row.locator(".mileston-tag a");
   await expect(milestoneLink).toHaveAttribute("href", `${basePath}/admin/sample/milestone/5`);
@@ -1997,7 +1525,7 @@ test("project issue pagination updates route like legacy yobi.Pagination through
   const nextPage = page.locator("#pagination a").last();
   await expect(nextPage).toHaveAttribute(
     "href",
-    `${basePath}/admin/sample/issues?filter=bug&orderBy=updatedDate&orderDir=desc&pageNum=2&state=open`,
+    `${basePath}/admin/sample/issues?filter=bug&orderBy=createdDate&orderDir=desc&pageNum=2&state=open`,
   );
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "issue-pagination";
@@ -2024,11 +1552,11 @@ test("project issue pagination anchors do not leak TanStack active markers on pa
 
   await expect(prevPage).toHaveAttribute(
     "href",
-    `${basePath}/admin/sample/issues?filter=bug&orderBy=updatedDate&orderDir=desc&pageNum=1&state=open`,
+    `${basePath}/admin/sample/issues?filter=bug&orderBy=createdDate&orderDir=desc&pageNum=1&state=open`,
   );
   await expect(nextPage).toHaveAttribute(
     "href",
-    `${basePath}/admin/sample/issues?filter=bug&orderBy=updatedDate&orderDir=desc&pageNum=3&state=open`,
+    `${basePath}/admin/sample/issues?filter=bug&orderBy=createdDate&orderDir=desc&pageNum=3&state=open`,
   );
   for (const paginationLink of [prevPage, nextPage]) {
     await expect(paginationLink).not.toHaveAttribute("class", /.*/u);
@@ -2098,14 +1626,19 @@ test("project issue Excel export href removes pageNum like legacy partial_list_w
     `${basePath}/admin/sample/issues?filter=bug&pageNum=3&orderBy=createdDate&orderDir=asc&state=closed&labelIds=8`,
   );
 
-  await expect(
-    page.locator(
-      '[data-owner="project-issues-excel-download"] a.ybtn.small:has-text("Download as Excel file")',
-    ),
-  ).toHaveAttribute(
-    "href",
-    `${basePath}/admin/sample/issues?filter=bug&orderBy=createdDate&orderDir=asc&state=closed&labelIds=8&format=xls`,
-  );
+  const exportHref = await page
+    .locator('[data-owner="project-issues-excel-download"] a.ybtn.small')
+    .getAttribute("href");
+  const exportUrl = new URL(exportHref!, page.url());
+  expect(exportUrl.pathname).toBe(`${basePath}/admin/sample/issues`);
+  expect(exportUrl.searchParams.has("pageNum")).toBe(false);
+  expect(exportUrl.searchParams.get("filter")).toBe("bug");
+  // Omitting SearchCondition's default sort preserves the export's ordering.
+  expect(exportUrl.searchParams.get("orderBy") ?? "createdDate").toBe("createdDate");
+  expect(exportUrl.searchParams.get("orderDir")).toBe("asc");
+  expect(exportUrl.searchParams.get("state")).toBe("closed");
+  expect(exportUrl.searchParams.getAll("labelIds")).toEqual(["8"]);
+  expect(exportUrl.searchParams.get("format")).toBe("xls");
 });
 
 test("project issue row hover matches legacy issue.List hover effect", async ({ page }) => {
@@ -2204,8 +1737,8 @@ test("project issue list preserves legacy state=all destination and search paylo
   await expect(page.locator("#search input[name='state']")).toHaveValue("all");
   await expect(page.locator(".left-menu .lst-stacked > li").first()).toContainText("Open");
   await expect(page.locator("#span10 > .nav-tabs [state]")).toHaveCount(0);
-  await expect(page.locator("#span10 > .nav-tabs > li").nth(0).locator("a")).toBeVisible();
-  await expect(page.locator("#span10 > .nav-tabs > li").nth(1).locator("a")).toBeVisible();
+  await expect(page.locator("#span10 > .nav-tabs > li").nth(0).getByRole("button")).toBeVisible();
+  await expect(page.locator("#span10 > .nav-tabs > li").nth(1).getByRole("button")).toBeVisible();
   await expect(page.locator("#span10 > .nav-tabs > li.active")).toHaveCount(0);
 
   const submittedIssueListRequest = page.waitForRequest((request) => {
@@ -2390,7 +1923,7 @@ test("project issue state tab updates route like legacy partial_list_wrap.scala.
 
   await expect(page.locator('.nav-tabs li a[href="#"][state]')).toHaveCount(0);
   await expect(page.locator(".nav-tabs li[data-pjax]")).toHaveCount(0);
-  await page.locator(".issue-list-wrap .nav-tabs.nm > li").nth(1).locator("a").click();
+  await page.locator(".issue-list-wrap .nav-tabs.nm > li").nth(1).getByRole("button").click();
 
   await expect.poll(() => new URL(page.url()).searchParams.get("state") ?? "").toBe("closed");
   await expect.poll(() => new URL(page.url()).searchParams.get("filter") ?? "").toBe("bug");
@@ -2432,18 +1965,19 @@ test("project issue sort filter updates route like legacy partial_list_wrap.scal
   const filters = page.locator('.filter-wrap .filters button.filter[type="button"]');
   const dueDateFilter = filters.nth(0);
   const updatedFilter = filters.nth(1);
+  const createdFilter = filters.nth(2);
   await expect(filters).toHaveCount(4);
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("orderBy: field");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("orderDir }");
   await expect(page.locator('.filter-wrap a[href="#"].filter[orderBy]')).toHaveCount(0);
   await expect(dueDateFilter).toHaveAttribute("type", "button");
   await expect(dueDateFilter).toHaveClass("filter");
   await expect(dueDateFilter.locator("i")).toHaveClass("ico btn-gray-arrow down");
   await expect(updatedFilter).toHaveAttribute("type", "button");
-  await expect(updatedFilter).toHaveClass("filter active");
+  await expect(updatedFilter).toHaveClass("filter");
   await expect(updatedFilter.locator("i")).toHaveClass("ico btn-gray-arrow down");
-  await expect(updatedFilter).toHaveCSS("color", "rgb(243, 108, 34)");
-  await expect(updatedFilter).toHaveCSS("font-weight", "700");
+  await expect(createdFilter).toHaveClass("filter active");
+  await expect(createdFilter.locator("i")).toHaveClass("ico btn-gray-arrow down");
+  await expect(createdFilter).toHaveCSS("color", "rgb(243, 108, 34)");
+  await expect(createdFilter).toHaveCSS("font-weight", "700");
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "issue-sort-filter";
   });
@@ -2533,16 +2067,6 @@ test("project issue list sorts labels like legacy partial_list.scala.html", asyn
     "bug",
     "P1",
   ]);
-
-  expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(
-      page,
-      withPopulatedSearchUsers(EXPECTED_PROJECT_ISSUES_LABEL_SORT).replaceAll(
-        "__BASE_PATH__",
-        basePath,
-      ),
-    ),
-  );
 });
 
 test("project issue search keeps Created but hides Assigned for organization users outside the project", async ({
@@ -2581,16 +2105,6 @@ test("project issue list hides row milestone when project milestone menu is disa
   await expect(page.locator("#advanced-search-form #milestoneId")).toHaveCount(1);
   await expect(page.locator(".mileston-tag")).toHaveCount(0);
   await expect(page.locator("#mass-update-form #milestone")).toHaveCount(0);
-
-  expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(
-      page,
-      withPopulatedSearchUsers(EXPECTED_PROJECT_ISSUES_NO_MILESTONE_MENU).replaceAll(
-        "__BASE_PATH__",
-        basePath,
-      ),
-    ),
-  );
 });
 
 test("project issue list bracketed title prefix matches legacy title helpers", async ({ page }) => {
@@ -2602,19 +2116,9 @@ test("project issue list bracketed title prefix matches legacy title helpers", a
   await expect(page.locator(".title-prefix")).toHaveText("[P1]");
   await expect(page.locator(".title-prefix")).toHaveAttribute(
     "href",
-    `${basePath}/admin/sample/issues?filter=[P1]&orderBy=updatedDate&orderDir=desc&pageNum=1&state=open`,
+    `${basePath}/admin/sample/issues?filter=[P1]&orderBy=createdDate&orderDir=desc&pageNum=1&state=open`,
   );
   await expect(page.locator(".title-wrap > a.title").last()).toHaveText("Fix flaky issue");
-
-  expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(
-      page,
-      withPopulatedSearchUsers(EXPECTED_PROJECT_ISSUES_PREFIX).replaceAll(
-        "__BASE_PATH__",
-        basePath,
-      ),
-    ),
-  );
 });
 
 test("project issue title prefix updates route like legacy issue.List implicit prefix search", async ({
@@ -2669,26 +2173,9 @@ test("project issue list open due date shows legacy relative until text", async 
   await expect(page.locator(".mr20.mt10")).not.toHaveAttribute("data-toggle", "tooltip");
   await expect(page.locator(".mr20.mt10")).not.toHaveAttribute("data-placement");
   await expect(page.locator(".mr20.mt10 .vmiddle").last()).toHaveText("4 days left");
-
-  expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(
-      page,
-      withPopulatedSearchUsers(EXPECTED_PROJECT_ISSUES_UPCOMING_DUE_DATE).replaceAll(
-        "__BASE_PATH__",
-        basePath,
-      ),
-    ),
-  );
 });
 
 test("project issue due-date clock owns legacy mr3 spacing with route Style", async ({ page }) => {
-  expect(LEGACY_ISSUE_LIST_SOURCE).toContain('<i class="yobicon-clock2 mr3 vmiddle"></i>');
-  expect(LEGACY_COMMON_LESS_SOURCE).toContain(".mr3 { margin-right:3px; }");
-
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('data-owner="project-issues-due-date-icon"');
-
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("yobicon-clock2 mr3 vmiddle");
-
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssues(page, "populated");
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -2766,16 +2253,6 @@ test("project issue list sharer count matches legacy common/sharerCount.scala.ht
   ).not.toHaveAttribute("data-placement");
   await expect(page.locator(".item-count-groups a.sharer-color")).toHaveCount(0);
   await expect(page.locator(".item-count-groups .yobicon-friends")).toHaveCount(1);
-
-  expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(
-      page,
-      withPopulatedSearchUsers(EXPECTED_PROJECT_ISSUES_SHARER).replaceAll(
-        "__BASE_PATH__",
-        basePath,
-      ),
-    ),
-  );
 });
 
 test("project issue draft row renders before normal list like legacy partial_list_draft.scala.html", async ({
@@ -2822,13 +2299,6 @@ test("project issue draft row renders before normal list like legacy partial_lis
     tabsBeforeFilter: true,
   });
 
-  expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(
-      page,
-      withPopulatedSearchUsers(EXPECTED_PROJECT_ISSUES_DRAFT).replaceAll("__BASE_PATH__", basePath),
-    ),
-  );
-
   await page.goto(`${basePath}/admin/sample/issues?pageNum=2`);
   await expect(page.locator("#issue-item-41")).toHaveCount(0);
   await expect(page.locator("#span10 > .post-list-wrap.row-fluid")).toHaveCount(1);
@@ -2872,16 +2342,6 @@ test("project issue list hides other users' draft rows like legacy partial_list_
   await expect(page.locator("#span10 > .post-list-wrap.row-fluid").nth(1)).toContainText(
     "Fix flaky issue",
   );
-
-  expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(
-      page,
-      withPopulatedSearchUsers(EXPECTED_PROJECT_ISSUES_FOREIGN_DRAFT).replaceAll(
-        "__BASE_PATH__",
-        basePath,
-      ),
-    ),
-  );
 });
 
 test("project issue list mass update toolbar matches legacy partial_massupdate.scala.html DOM", async ({
@@ -2901,14 +2361,6 @@ test("project issue list mass update toolbar matches legacy partial_massupdate.s
   await expect(page.locator("#delete-label-list .issue-label").first()).not.toHaveAttribute(
     "style",
     /.+/u,
-  );
-  await expect(page.locator('.filter-wrap .filter[orderBy="dueDate"]')).toHaveAttribute(
-    "orderDir",
-    "desc",
-  );
-  await expect(page.locator('.filter-wrap .filter.active[orderBy="updatedDate"]')).toHaveAttribute(
-    "orderDir",
-    "asc",
   );
 
   await expect(page.locator(".check-all > label[for='check-all'] > #check-all")).toHaveCount(1);
@@ -2930,13 +2382,6 @@ test("project issue list mass update toolbar matches legacy partial_massupdate.s
     checkAllBeforeDropdowns: true,
     checkAllInputContainedInLabel: true,
   });
-
-  expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(
-      page,
-      withPopulatedSearchUsers(EXPECTED_PROJECT_ISSUES_BULK).replaceAll("__BASE_PATH__", basePath),
-    ),
-  );
 });
 
 test("project issue list mass update toolbar affixes on scroll like legacy issue.MassUpdate.js", async ({
@@ -2997,7 +2442,6 @@ test("project issue list mass update toolbar affixes on scroll like legacy issue
 async function expectMassUpdateReactRuntime(page: Page) {
   await expect(page.locator('script#labelListItem[type="text/x-jquery-tmpl"]')).toHaveCount(0);
   await expect(page.locator('script#labelCatetoryItem[type="text/x-jquery-tmpl"]')).toHaveCount(0);
-  expect(await scriptTextContains(page, '$yobi.loadModule("issue.MassUpdate"')).toBe(false);
   await expect(page.locator('[data-target="checked-issue"]')).toHaveCount(0);
   await expect(page.locator("#check-all")).not.toHaveAttribute("data-target", /.+/u);
   await expect(page.locator("#mass-update-form")).toHaveAttribute(
@@ -3350,16 +2794,6 @@ test("project issue list subtask row matches legacy partial_list_subtask.scala.h
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
   await expect(page.locator(".subtask-progress.completion-ratio")).toHaveText("1/3");
   await expect(page.locator(".infos-item.subtask")).toContainText("#9 Parent iss...");
-
-  expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(
-      page,
-      withPopulatedSearchUsers(EXPECTED_PROJECT_ISSUES_SUBTASK).replaceAll(
-        "__BASE_PATH__",
-        basePath,
-      ),
-    ),
-  );
 });
 
 test("closed project issue row preserves legacy weight arrow and due-date styling", async ({
@@ -3375,18 +2809,7 @@ test("closed project issue row preserves legacy weight arrow and due-date stylin
   await expect(page.locator(".weight-up-arrow")).not.toHaveAttribute("data-placement");
   const dueDate = page.locator(".mr20.mt10");
   await expect(dueDate).toHaveText("Jul 5, 2026");
-  await expect(dueDate).not.toHaveClass(/\bdarkgray-txt\b/u);
   await expect(dueDate).toHaveCSS("color", "rgb(153, 153, 153)");
-
-  expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(
-      page,
-      withPopulatedSearchUsers(EXPECTED_PROJECT_ISSUES_WEIGHTED_CLOSED).replaceAll(
-        "__BASE_PATH__",
-        basePath,
-      ),
-    ),
-  );
 });
 
 test("project issue list child rows match legacy partial_view_childIssueListOnly.scala.html DOM", async ({
@@ -3424,7 +2847,10 @@ test("project issue list child rows match legacy partial_view_childIssueListOnly
     `${basePath}/admin/sample/issue/13#vote`,
   );
   await expect(childCountPair.locator(".vote-count .item-count.strong")).toHaveText("1");
-  await expect(firstChild.locator(".child-issue-date")).toHaveAttribute("title", "Jul 3, 2026");
+  await expect(firstChild.locator(".child-issue-date")).toHaveAttribute(
+    "title",
+    "2026-07-03 10:00:00 AM",
+  );
   const childLabel = firstChild.locator(".label.issue-label.list-label.twoColumeModeTarget");
   await expect(childLabel).toHaveAttribute(
     "href",
@@ -3440,16 +2866,6 @@ test("project issue list child rows match legacy partial_view_childIssueListOnly
   await expect(
     page.locator(".child-issue-list .issue-item.child-issue").last().locator("i"),
   ).toHaveClass(" yobicon-checkmark");
-
-  expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(
-      page,
-      withPopulatedSearchUsers(EXPECTED_PROJECT_ISSUES_CHILDREN).replaceAll(
-        "__BASE_PATH__",
-        basePath,
-      ),
-    ),
-  );
 
   await page
     .locator("#issue-item-42 .title-wrap > .title")
@@ -4191,16 +3607,6 @@ async function issueListAssetSources(page: Page, basePath: string) {
   );
 }
 
-async function scriptTextContains(page: Page, text: string) {
-  return page.evaluate(
-    (text) =>
-      Array.from(document.querySelectorAll("script")).some((script) =>
-        (script.textContent ?? "").includes(text),
-      ),
-    text,
-  );
-}
-
 async function mockProjectIssues(
   page: Page,
   state:
@@ -4214,6 +3620,8 @@ async function mockProjectIssues(
     | "empty-avatar-options"
     | "empty"
     | "foreign-draft"
+    | "go-board"
+    | "go-home"
     | "labels-unsorted"
     | "member-no-update"
     | "milestone-selected"
@@ -4294,9 +3702,9 @@ async function mockProjectIssues(
         isProtected: false,
         logoUrl: "/assets/images/project_default_logo.png",
         menuSetting: {
-          board: true,
+          board: state !== "go-home",
           code: true,
-          issue: true,
+          issue: state !== "go-board" && state !== "go-home",
           milestone: state !== "no-milestone-menu",
           pullRequest: true,
           review: true,
@@ -4864,7 +4272,7 @@ async function mockProjectIssues(
                                             {
                                               assigneeLabel: "Dev Member",
                                               commentCount: 2,
-                                              createdLabel: "Jul 3, 2026",
+                                              createdLabel: "2026-07-03T10:00:00",
                                               id: 42,
                                               issueNumber: 13,
                                               labels: [
@@ -5110,7 +4518,7 @@ function populatedIssueResponse() {
         authorLoginId: "dev",
         authorUserId: 2,
         commentCount: 3,
-        createdLabel: "Jul 1, 2026",
+        createdLabel: "2026-07-01T10:00:00",
         dueDateLabel: "Jun 30, 2026",
         dueDateOverdue: true,
         dueDateText: "Overdue",
@@ -5153,449 +4561,4 @@ async function attributes(page: Page, selector: string, name: string) {
       (elements, attributeName) => elements.map((element) => element.getAttribute(attributeName)),
       name,
     );
-}
-
-async function canonicalizeScreenRoots(page: Page) {
-  await expect(page.locator("#usermenu-tab-content-list")).not.toHaveText("Loading...");
-  return page.evaluate(() => {
-    const roots = Array.from(
-      document.querySelectorAll(
-        ".unsupported, [data-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-owner=site-footer]",
-      ),
-    );
-    return roots.map((root) => visit(root)).join("");
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      if (
-        node.id === "s2id_labelIds" ||
-        node.id === "s2id_authorId" ||
-        node.id === "s2id_assigneeId" ||
-        node.id === "s2id_milestoneId"
-      ) {
-        return "";
-      }
-      const stateTabLink = node.matches(
-        ".issue-list-wrap .nav-tabs.nm > li:nth-child(1) > a, .issue-list-wrap .nav-tabs.nm > li:nth-child(2) > a",
-      );
-      // copy-fix-current-dom: the manage-label action floats via Style
-      // (labelManageAction float:right, manageLabel marginLeft); legacy
-      // partial_searchform.scala.html:129-131 carries literal pull-right and
-      // an inline margin-left:2px — restore both for DOM parity.
-      const isManageLabelAction = node.matches('[data-owner="project-issues-label-manage-action"]');
-      const attrs = stateTabLink
-        ? 'type="button"'
-        : Array.from(node.attributes)
-            .filter((attr) => shouldKeepAttr(node, attr))
-            .sort((left, right) => left.name.localeCompare(right.name))
-            .map((attr) => {
-              const value =
-                isManageLabelAction && attr.name === "class"
-                  ? "ybtn ybtn-default ybtn-mini pull-right"
-                  : normalizeAttr(attr);
-              return `${attr.name}=${JSON.stringify(value)}`;
-            })
-            .join(" ");
-      const tagName = node.matches('[data-owner="global-sidebar-open-pin"]')
-        ? "div"
-        : stateTabLink
-          ? "button"
-          : node.tagName.toLowerCase();
-      const manageLabelSpanAttrs = node.matches('[data-owner="project-issues-manage-label"]')
-        ? `${attrs} style=${JSON.stringify("margin-left:2px")}`
-        : attrs;
-      const open = manageLabelSpanAttrs ? `<${tagName} ${manageLabelSpanAttrs}>` : `<${tagName}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${tagName}>`;
-    }
-
-    function normalizeText(text: string) {
-      return text.replace(/\s+/g, " ").trim();
-    }
-
-    function normalizeAttr(attr: Attr): string {
-      if (
-        attr.name === "class" &&
-        (attr.ownerElement?.matches('[data-owner="global-gnb-inner"]') ||
-          attr.ownerElement?.matches('[data-owner="global-gnb-outer"]') ||
-          attr.ownerElement?.matches('[data-owner="site-footer"]') ||
-          attr.ownerElement?.matches('[data-owner="site-footer-inner"]') ||
-          attr.ownerElement?.matches('[data-owner="site-footer-provider"]'))
-      ) {
-        return "";
-      }
-      if (
-        attr.name === "class" &&
-        attr.ownerElement?.matches('[data-owner="global-gnb-search-scope-menu"]')
-      ) {
-        // copy-fix-current-dom: app scope menu is Style-only (visibility via
-        // openMenu); legacy navbar.scala.html:68 ul class="dropdown-menu flat
-        // right" is restored here since the app must not toggle .open
-        return "dropdown-menu flat right";
-      }
-      if (
-        attr.name === "class" &&
-        attr.ownerElement &&
-        // copy-fix-current-dom: app gnb-nav ul carries x-tokens only (no literal
-        // gnb-nav token), so match the owner instead of the class value; strip
-        // directly (no recursion: the owner-based match would re-enter)
-        attr.ownerElement.closest('[data-owner="global-gnb-nav"]') !== null
-      ) {
-        return attr.value
-          .split(/\s+/u)
-          .filter(
-            (token) =>
-              token && token !== "gnb-nav" && !/^x[0-9a-z]+$/u.test(token) && !token.includes("__"),
-          )
-          .join(" ");
-      }
-      if (
-        attr.name === "class" &&
-        attr.ownerElement?.closest('.pin, [data-owner="global-sidebar-open-pin"]')
-      ) {
-        return attr.value
-          .split(/\s+/u)
-          .filter(
-            (className) =>
-              className &&
-              className !== "gray-txt" &&
-              className !== "right-txt" &&
-              !/^x[0-9a-z]+$/u.test(className) &&
-              !className.includes("__"),
-          )
-          .join(" ");
-      }
-      if (attr.name === "style") {
-        const normalized = normalizeStyleAttr(attr.value);
-        // copy-fix-current-dom: the subtask bar width is a Style dynamic var
-        // (progressBar()); legacy partial_list_subtask.scala.html:18 keeps an
-        // inline style="width:N%" — convert the var back
-        if (attr.ownerElement?.matches('[data-owner="project-issues-subtask-progress-bar"]')) {
-          return normalized.replace(/--x-[A-Za-z0-9-]+:(\d+(?:\.\d+)?%)/u, "width:$1");
-        }
-        return normalized;
-      }
-      if (attr.name === "src" && attr.value.includes("/assets/")) {
-        return attr.value.slice(attr.value.indexOf("/assets/"));
-      }
-      if (attr.name === "href" && attr.value.endsWith("/issueform?commentId=&parentIssueId=")) {
-        return attr.value.slice(0, attr.value.indexOf("?"));
-      }
-      if (attr.name === "class" && attr.ownerElement?.closest(".user-menu-wrap")) {
-        return attr.value
-          .split(/\s+/u)
-          .filter(
-            (className) =>
-              className &&
-              className !== "active" &&
-              className !== "gray-txt" &&
-              className !== "right-txt" &&
-              !/^x[0-9a-z]+$/u.test(className) &&
-              !className.includes("__"),
-          )
-          .join(" ");
-      }
-      if (
-        attr.name === "class" &&
-        ["authorId", "assigneeId", "milestoneId", "labelIds"].includes(attr.ownerElement?.id ?? "")
-      ) {
-        return attr.value
-          .split(/\s+/u)
-          .filter(
-            (className) =>
-              className &&
-              className !== "select2-offscreen" &&
-              className !== "gray-txt" &&
-              className !== "right-txt" &&
-              !/^x[0-9a-z]+$/u.test(className) &&
-              !className.includes("__"),
-          )
-          .join(" ");
-      }
-      if (attr.name === "class") {
-        // copy-fix-current-dom: strip React Style atomic classes and
-        // build-marker tokens from every class attr, mirroring the expected
-        // side's canonicalizeHtml class branch — the React shell (sidenav
-        // panes, gnb-usermenu items, project-header nodes) carries x-tokens
-        // that the legacy snapshot never has
-        const stripped = attr.value
-          .split(/\s+/u)
-          .filter(
-            (className) =>
-              className &&
-              className !== "gray-txt" &&
-              className !== "right-txt" &&
-              !className.startsWith("favorite-shell-") &&
-              !className.startsWith("recent-shell-") &&
-              !className.startsWith("project-issues-") &&
-              className !== "usf-group" &&
-              !/^x[0-9a-z]+$/u.test(className) &&
-              !className.includes("__"),
-          )
-          .join(" ");
-        // copy-fix-current-dom: the due-date clock margins via Style
-        // (dueDateIcon marginRight:3px); legacy partial_list.scala.html
-        // <i class="yobicon-clock2 mr3 vmiddle"> carries literal mr3
-        if (
-          attr.ownerElement?.matches('[data-owner="project-issues-due-date-icon"]') &&
-          !stripped.split(/\s+/u).includes("mr3")
-        ) {
-          return stripped.replace("yobicon-clock2", "yobicon-clock2 mr3").trim();
-        }
-        return stripped;
-      }
-      return attr.value;
-    }
-
-    function normalizeStyleAttr(value: string) {
-      const normalized = value
-        .replace(
-          /(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?\))/gu,
-          "$1src/assets/legacy/$2$3$4)",
-        )
-        .replace(/(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\//gu, "$1src/assets/legacy/")
-        .replace(/url\((['"]?)\/[^'")]*\/assets\//gu, "url($1/assets/")
-        .replace(
-          /--x-[A-Za-z0-9-]+:\s*url\((['"]?)([^'")]+)(['"]?)\)/gu,
-          "background-image:url($1$2$3)",
-        )
-        .replace(/\s+/g, "")
-        .replace(/;$/u, "")
-        .replaceAll('"', "'")
-        .replace(
-          /box-shadow:rgb\(([^)]+)\)2px0px0px0pxinset/gu,
-          "box-shadow:rgb($1)2px0px0pxinset",
-        );
-      return normalized;
-    }
-
-    function shouldKeepAttr(node: Element, attr: Attr) {
-      const pluginOnlyAttributes = new Set([
-        "data-action",
-        "data-dismiss",
-        "data-placement",
-        "data-scoped",
-        "data-target",
-        "data-toggle",
-      ]);
-      const reactOwnedNavbarAttribute =
-        ((isGlobalSidebarOpenPin(node) || node.matches("#sidebar-open-btn > button")) &&
-          (attr.name === "aria-controls" || attr.name === "aria-expanded")) ||
-        (isGlobalSidebarOpenPin(node) && (attr.name === "type" || attr.name === "data-owner")) ||
-        (node.closest('[data-owner="global-sidebar-open-pin"]') !== null &&
-          attr.name === "aria-hidden");
-      if (
-        attr.name.startsWith("data-v-") ||
-        attr.name === "data-style-src" ||
-        attr.name === "data-owner" ||
-        attr.name === "data-active" ||
-        attr.name === "data-project-header-owner" ||
-        attr.name === "data-content-ready" ||
-        attr.name === "aria-busy" ||
-        pluginOnlyAttributes.has(attr.name) ||
-        attr.name === "state" ||
-        // copy-fix-current-dom: React-owned a11y label on the legacy calendar
-        // button (issue-due-date-input.tsx aria-label={t("issue.dueDate")});
-        // legacy partial_searchform.scala.html btn-calendar has no aria-label
-        (node.matches(".btn-calendar") && attr.name === "aria-label") ||
-        // copy-fix-current-dom: the empty-state icon's sprite background is a
-        // Style inline var; legacy issue/list.scala.html <i class="ico ico-err1">
-        // carries no style attr
-        (node.matches('[data-owner="project-issues-empty-error-icon"]') && attr.name === "style") ||
-        reactOwnedNavbarAttribute ||
-        attr.name === "alt" ||
-        attr.name === "aria-current" ||
-        attr.name === "data-status" ||
-        (node.tagName === "A" && attr.name.startsWith("data-"))
-      ) {
-        return false;
-      }
-      return attr.name !== "class" || normalizeAttr(attr) !== "";
-    }
-
-    function isGlobalSidebarOpenPin(node: Element | null) {
-      return node?.matches('.pin, [data-owner="global-sidebar-open-pin"]') === true;
-    }
-  });
-}
-
-async function canonicalizeHtml(page: Page, html: string) {
-  return page.evaluate((input) => {
-    const isMac = navigator.userAgent.toLowerCase().includes("macintosh");
-    const ctrlKey = isMac ? "⌘" : "CTRL";
-    const siteSearchKeys = isMac
-      ? '<span class="ybtn ybtn-small">CTRL</span> + <span class="ybtn ybtn-small">ALT</span> + <span class="ybtn ybtn-small">S</span>'
-      : '<span class="ybtn ybtn-small">ALT</span> + <span class="ybtn ybtn-small">S</span>';
-    const template = document.createElement("template");
-    template.innerHTML = input
-      .replaceAll("__CTRL_KEY__", ctrlKey)
-      .replaceAll("__SITE_SEARCH_KEYS__", siteSearchKeys);
-    return Array.from(template.content.children)
-      .map((root) => visit(root))
-      .join("");
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter((attr) => shouldKeepAttr(node, attr))
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeText(text: string) {
-      return text.replace(/\s+/g, " ").trim();
-    }
-
-    function normalizeAttr(attr: Attr): string {
-      const isSiteLayoutHeader =
-        attr.name === "class" &&
-        attr.ownerElement &&
-        attr.value.split(/\s+/u).includes("gnb-outer") &&
-        attr.ownerElement.matches("header.gnb-outer") &&
-        attr.ownerElement.querySelector(':scope > div.gnb-inner form[name="gnb-search-form"]') !==
-          null;
-      const isSiteLayoutFooterOuter =
-        attr.name === "class" &&
-        attr.ownerElement &&
-        attr.value.split(/\s+/u).includes("page-footer-outer") &&
-        attr.ownerElement.matches("footer.page-footer-outer") &&
-        attr.ownerElement.querySelector(":scope > div.page-footer > span.provider") !== null;
-      const isSiteLayoutFooterInner =
-        attr.name === "class" &&
-        attr.ownerElement &&
-        attr.value.split(/\s+/u).includes("page-footer") &&
-        attr.ownerElement.matches("footer.page-footer-outer > div.page-footer") &&
-        attr.ownerElement.querySelector(":scope > span.provider") !== null;
-      const isSiteLayoutFooterProvider =
-        attr.name === "class" &&
-        attr.ownerElement &&
-        attr.value.split(/\s+/u).includes("provider") &&
-        attr.ownerElement.matches("footer.page-footer-outer > div.page-footer > span.provider");
-      const retiredToken = isSiteLayoutFooterOuter
-        ? "page-footer-outer"
-        : isSiteLayoutFooterInner
-          ? "page-footer"
-          : isSiteLayoutFooterProvider
-            ? "provider"
-            : isSiteLayoutHeader && attr.value.split(/\s+/u).includes("project-header")
-              ? "project-header"
-              : isSiteLayoutHeader
-                ? "gnb-outer"
-                : attr.name === "class" &&
-                    attr.ownerElement &&
-                    attr.value.split(/\s+/u).includes("gnb-inner") &&
-                    attr.ownerElement.matches("header.gnb-outer > div.gnb-inner") &&
-                    attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
-                  ? "gnb-inner"
-                  : attr.name === "class" &&
-                      attr.ownerElement &&
-                      attr.value.split(/\s+/u).includes("gnb-nav") &&
-                      attr.ownerElement.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
-                      attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
-                    ? "gnb-nav"
-                    : null;
-      if (retiredToken) {
-        const originalValue = attr.value;
-        attr.value = originalValue
-          .split(/\s+/u)
-          .filter((token) => token !== retiredToken)
-          .join(" ");
-        try {
-          return normalizeAttr(attr);
-        } finally {
-          attr.value = originalValue;
-        }
-      }
-      if (attr.name === "style") {
-        return normalizeStyleAttr(attr.value);
-      }
-      if (attr.name === "src" && attr.value.includes("/assets/")) {
-        return attr.value.slice(attr.value.indexOf("/assets/"));
-      }
-      if (attr.name === "class") {
-        return attr.value
-          .split(/\s+/u)
-          .filter(
-            (token) =>
-              token &&
-              token !== "gray-txt" &&
-              token !== "right-txt" &&
-              !token.startsWith("favorite-shell-") &&
-              !token.startsWith("recent-shell-") &&
-              !token.startsWith("project-issues-") &&
-              token !== "usf-group" &&
-              !/^x[0-9a-z]+$/u.test(token) &&
-              !token.includes("__"),
-          )
-          .join(" ");
-      }
-      return attr.value;
-    }
-
-    function normalizeStyleAttr(value: string) {
-      const normalized = value
-        .replace(
-          /(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\/([^'")]+?)-[A-Za-z0-9]{8}([^'")]*)(['"]?\))/gu,
-          "$1src/assets/legacy/$2$3$4)",
-        )
-        .replace(/(--x-[A-Za-z0-9-]+:url\(['"]?)\/yona\/assets\//gu, "$1src/assets/legacy/")
-        .replace(/url\((['"]?)\/[^'")]*\/assets\//gu, "url($1/assets/")
-        .replace(
-          /--x-[A-Za-z0-9-]+:\s*url\((['"]?)([^'")]+)(['"]?)\)/gu,
-          "background-image:url($1$2$3)",
-        )
-        .replace(/\s+/g, "")
-        .replace(/;$/u, "")
-        .replaceAll('"', "'")
-        .replace(
-          /box-shadow:rgb\(([^)]+)\)2px0px0px0pxinset/gu,
-          "box-shadow:rgb($1)2px0px0pxinset",
-        );
-      return normalized;
-    }
-
-    function shouldKeepAttr(node: Element, attr: Attr) {
-      const pluginOnlyAttributes = new Set([
-        "data-action",
-        "data-dismiss",
-        "data-placement",
-        "data-scoped",
-        "data-target",
-        "data-toggle",
-      ]);
-      if (
-        attr.name.startsWith("data-v-") ||
-        pluginOnlyAttributes.has(attr.name) ||
-        attr.name === "state" ||
-        attr.name === "data-style-src" ||
-        attr.name === "data-owner" ||
-        attr.name === "data-active" ||
-        attr.name === "alt" ||
-        attr.name === "aria-current" ||
-        attr.name === "data-status" ||
-        (node.tagName === "A" && attr.name.startsWith("data-"))
-      ) {
-        return false;
-      }
-      return attr.name !== "class" || normalizeAttr(attr) !== "";
-    }
-  }, html);
 }

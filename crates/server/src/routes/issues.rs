@@ -3563,7 +3563,8 @@ async fn rest_update_issue(
             &service,
         )
         .await;
-    } else if send_notification && !issue.is_draft && existing.body_markdown != issue.body_markdown {
+    } else if send_notification && !issue.is_draft && existing.body_markdown != issue.body_markdown
+    {
         dispatch_issue_webhooks(
             repository,
             &issue,
@@ -4456,7 +4457,10 @@ fn rest_issue_child_issue_from_record(
     RestIssueChildIssue {
         assignee_label: record.assignee_label.clone(),
         comment_count: record.comment_count,
-        created_label: record.created_label.clone(),
+        created_label: record
+            .created_at
+            .map(|created| created.and_utc().to_rfc3339())
+            .unwrap_or_default(),
         id: record.id,
         is_draft: record.is_draft,
         issue_number: record.issue_number,
@@ -4610,7 +4614,10 @@ fn rest_issue_list_item_from_record(
             .collect(),
         child_open_count: item.child_open_count,
         comment_count: item.comment_count,
-        created_label: item.created_label,
+        created_label: item
+            .created_at
+            .map(|created| created.and_utc().to_rfc3339())
+            .unwrap_or_default(),
         due_date_label: item.due_date_label,
         due_date_overdue: item.due_date_overdue,
         id: item.id,

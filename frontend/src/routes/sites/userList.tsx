@@ -21,7 +21,7 @@ import {
 import { apiQueryKeys } from "../../api/query-keys";
 import { RestApiError } from "../../api/rest-client";
 import { readSessionBootstrap } from "../../auth-workspace-client";
-import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
+import { formatLegacyTimestamp, LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
@@ -629,11 +629,20 @@ function UserListItem({
   user: SiteUser;
 }) {
   const { t } = useLegacyMessages();
+  const createdDate = formatLegacyTimestamp(user.createdAt, t);
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  // JodaDateUtil.socialDate uses the full local date/time after yesterday.
+  const createdLabel =
+    Date.parse(user.createdAt) < yesterday.getTime()
+      ? createdDate.title.replace(/(:\d{2}):\d{2}/u, "$1")
+      : createdDate.label;
   return (
     <li className="row-fluid listitem" data-owner="site-user-list-row">
       <div className="span3 listitem-col" data-owner="site-user-list-row-column">
         <Link
           {...LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS}
+          className="avatar-wrap list-avatar"
           data-owner="site-user-list-row-avatar"
           params={{ user: user.loginId }}
           to="/$user"
@@ -653,6 +662,7 @@ function UserListItem({
         </Link>
         <Link
           {...LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS}
+          className="user-name"
           data-owner="site-user-list-row-user-name"
           params={{ user: user.loginId }}
           to="/$user"
@@ -661,6 +671,7 @@ function UserListItem({
         </Link>
         <Link
           {...LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS}
+          className="user-id"
           data-owner="site-user-list-row-user-id"
           params={{ user: user.loginId }}
           to="/$user"
@@ -672,38 +683,38 @@ function UserListItem({
         <span data-owner="site-user-list-row-email">{user.emailAddress}</span>
       </div>
       <div className="span2 listitem-col created-date" data-owner="site-user-list-row-date">
-        <span>{user.createdAt}</span>
+        <span>{createdLabel}</span>
       </div>
       {state !== "DELETED" ? (
-        <div data-owner="site-user-list-row-action">
+        <div className="span5 listitem-col action-buttons" data-owner="site-user-list-row-action">
           <button
-            className={user.isGuest ? "is-guest" : undefined}
+            className={`ybtn ybtn-small${user.isGuest ? " ybtn-success" : ""}`}
             type="button"
             data-action="guest"
             data-owner="site-user-list-row-action-button"
             onClick={() => onToggleClick(user.loginId, "guest")}
           >
             {user.isGuest ? t("button.user.make.normal.mode") : t("button.user.make.guest.mode")}
-          </button>
+          </button>{" "}
           <button
-            type="button"
+            className="ybtn ybtn-small"
             data-action="account-lock"
             data-owner="site-user-list-row-action-button"
             onClick={() => onToggleClick(user.loginId, "account-lock")}
           >
             {t(`button.user.makeAccountUnlock.${user.state === "LOCKED"}`)}
-          </button>
+          </button>{" "}
           <button
-            type="button"
+            className="ybtn ybtn-small"
             id={user.loginId}
             data-action="reset-password"
             data-owner="site-user-list-row-action-button"
             onClick={() => onResetPasswordClick(user.loginId)}
           >
             {t("title.resetPassword")}
-          </button>
+          </button>{" "}
           <button
-            className={user.isSiteAdmin ? "is-site-admin" : undefined}
+            className={`ybtn ybtn-small ${user.isSiteAdmin ? "ybtn-info" : "label-info"}`}
             type="button"
             disabled={user.id === initialUserId}
             title={
@@ -721,9 +732,9 @@ function UserListItem({
             {user.isSiteAdmin
               ? t("button.user.revoke.site.admin.role")
               : t("button.user.upgrade.to.site.admin")}
-          </button>
+          </button>{" "}
           <button
-            type="button"
+            className="ybtn ybtn-small ybtn-danger"
             disabled={user.id === initialUserId}
             title={
               user.id === initialUserId

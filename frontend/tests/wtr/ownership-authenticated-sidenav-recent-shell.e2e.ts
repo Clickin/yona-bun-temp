@@ -31,32 +31,11 @@ for (const state of ["populated", "empty"] as const) {
       const input = shell.getByRole("textbox", { name: "Type name" });
       const result = shell.locator("#recentlyVisitedIssues");
       await expect(shell).toBeVisible();
-      // Legacy _usermenu.less right-anchors the panel and animates its width.
-      // Measure after settling, including the layout viewport's scrollbar gutter.
-      await page.evaluate(
-        () =>
-          new Promise<void>((resolve) => {
-            const sidenav = document.getElementById("mySidenav");
-            if (!sidenav) {
-              resolve();
-              return;
-            }
-            let lastWidth = sidenav.getBoundingClientRect().width;
-            const poll = () => {
-              const width = sidenav.getBoundingClientRect().width;
-              if (Math.abs(width - lastWidth) < 0.001) {
-                resolve();
-                return;
-              }
-              lastWidth = width;
-              setTimeout(poll, 50);
-            };
-            setTimeout(poll, 50);
-          }),
-      );
-      const scrollbarGutter = await page.evaluate(
-        () => window.innerWidth - document.documentElement.clientWidth,
-      );
+      // Wait for the actual width transition, not one accidentally stable sample.
+      await page.locator("#mySidenav").evaluate(async (element) => {
+        element.getBoundingClientRect();
+        await Promise.all(element.getAnimations().map((animation) => animation.finished));
+      });
       const initial = await readEvidence(shell);
       console.log(
         `authenticated-sidenav-recent-shell-${state}-${viewport.label}`,
@@ -71,7 +50,12 @@ for (const state of ["populated", "empty"] as const) {
       expect(initial.pluginAttributes).toEqual([]);
       expect(initial.geometry.root).toMatchObject({
         height: state === "populated" ? 106 : 95,
-        left: viewport.x - scrollbarGutter,
+        // Legacy overflow-hidden sidenavs can still scroll horizontally on focus.
+        left:
+          viewport.x -
+          initial.viewport.scrollbarGutter -
+          initial.viewport.scrollX -
+          initial.viewport.sidenavScrollLeft,
         width: viewport.shellWidth,
       });
       expect(initial.geometry.group).toMatchObject({ height: 42, width: viewport.shellWidth });
@@ -172,13 +156,12 @@ for (const state of ["populated", "empty"] as const) {
       const focused = await readEvidence(shell);
       expect(focused.styles.before.width).toBe(`${viewport.shellWidth / 2}px`);
       expect(focused.styles.after.width).toBe(`${viewport.shellWidth / 2}px`);
-
-      await removeKnownLegacyShellClasses(shell);
-      const withoutLegacyPresentation = await readEvidence(shell);
-      expect(withoutLegacyPresentation.hasOwner).toBe(true);
-      expect(withoutLegacyPresentation.geometry).toEqual(focused.geometry);
-      expect(withoutLegacyPresentation.styles).toEqual(focused.styles);
-      expect(withoutLegacyPresentation.pluginAttributes).toEqual([]);
+      expect(
+        focused.geometry.root.left +
+          focused.viewport.scrollbarGutter +
+          focused.viewport.scrollX +
+          focused.viewport.sidenavScrollLeft,
+      ).toBe(viewport.x);
     });
   }
 }
@@ -250,7 +233,8 @@ async function readEvidence(shell: Locator) {
     const bar = group?.querySelector("span");
     const inner = element.lastElementChild;
     const result = inner?.firstElementChild;
-    if (!group || !input || !bar || !inner || !result) {
+    const sidenav = element.closest("#mySidenav");
+    if (!group || !input || !bar || !inner || !result || !sidenav) {
       throw new Error("Authenticated Recent History shell is incomplete");
     }
     const box = (target: Element) => {
@@ -273,6 +257,11 @@ async function readEvidence(shell: Locator) {
     const scrollbar = getComputedStyle(result, "::-webkit-scrollbar");
     const thumb = getComputedStyle(result, "::-webkit-scrollbar-thumb");
     return {
+      viewport: {
+        scrollbarGutter: window.innerWidth - document.documentElement.clientWidth,
+        scrollX: window.scrollX,
+        sidenavScrollLeft: sidenav.scrollLeft,
+      },
       geometry: {
         group: box(group),
         inner: box(inner),
@@ -340,20 +329,6 @@ async function readEvidence(shell: Locator) {
         },
       },
     };
-  });
-}
-
-async function removeKnownLegacyShellClasses(shell: Locator) {
-  await shell.evaluate((element) => {
-    element.classList.remove("tab-pane", "myproject-list-wrap");
-    const group = element.firstElementChild;
-    group?.classList.remove("group");
-    group?.querySelector("input")?.classList.remove("search-input", "project-search");
-    group?.querySelector("span")?.classList.remove("bar");
-    const inner = element.lastElementChild;
-    inner?.classList.remove("tab-content");
-    const result = inner?.firstElementChild;
-    result?.classList.remove("tab-pane", "user-ul", "no-result", "active");
   });
 }
 

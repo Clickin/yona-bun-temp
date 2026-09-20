@@ -1,4 +1,4 @@
-import { readFileSync, readFile, curatedAppCss } from "../wtr-compat.ts";
+import { readFile } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
@@ -23,6 +23,7 @@ const owners = {
 test.use({ locale: "ko-KR" });
 
 async function mockProjects(page: Page) {
+  await page.clock.setFixedTime("2026-07-17T12:00:00Z");
   await page.addInitScript((runtimeBasePath) => {
     (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
       basePath: runtimeBasePath,
@@ -55,7 +56,7 @@ async function mockProjects(page: Page) {
       contentType: "application/json",
       json: {
         items: ["sample", "svnplayground", "portal"].map((projectName) => ({
-          createdLabel: "07-07",
+          createdAt: "2026-07-07T12:00:00Z",
           memberCount: 1,
           members: [
             {
@@ -90,76 +91,6 @@ async function open(page: Page) {
   await expect(outer).toBeVisible({ timeout: 2_000 });
   return { outer, projectRequests };
 }
-
-test("projects page wrappers record exactly two owners and exclude unmatched descendants", () => {
-  const route = readFileSync("src/routes/projects.tsx", "utf8");
-  const scala = readFileSync("../yona-original/app/views/project/list.scala.html", "utf8");
-  const siteLayout = readFileSync("../yona-original/app/views/siteLayout.scala.html", "utf8");
-  const layout = readFileSync("../yona-original/app/views/layout.scala.html", "utf8");
-  const yobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
-  const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
-  const responsive = readFileSync(
-    "../yona-original/app/assets/stylesheets/less/_responsive.less",
-    "utf8",
-  );
-  const appCss = curatedAppCss();
-
-  expect(scala).toContain('<div class="page-wrap-outer">\n    <div class="project-page-wrap">');
-  expect(scala).toContain('<div class="search-wrap">');
-  expect(scala).toContain('<ul class="all-projects">');
-  expect(scala).toContain('<div id="pagination"></div>');
-  expect(siteLayout).toContain('@layout(Messages(title))(""){');
-  expect(siteLayout).toContain("@common.navbar(menuType, null, null)");
-  expect(siteLayout).toContain("@common.footer()");
-  expect(layout).toContain('<div id="main" class="main">');
-  expect(yobi.trim().split("\n")).toEqual([
-    '@import "less/_variables.less";',
-    '@import "less/_mixins.less";',
-    '@import "less/_common.less";',
-    '@import "less/_sprites.less";',
-    '@import "less/_page.less";',
-    '@import "less/_tippy.less";',
-    '@import "less/_scrollbar.less";',
-    '@import "less/_responsive.less";',
-    '@import "less/_yobiUI.less";',
-    '@import "less/_temporary.less";',
-    '@import "less/_markdown.less";',
-    '@import "less/_migration.less";',
-    '@import "less/_override.less";',
-  ]);
-  expect(pageLess).toContain(".page-wrap-outer {\n    min-height: 450px;\n    margin-top: 10px;");
-  expect(pageLess).toContain(".project-page-wrap {\n    margin:20px auto 0;");
-  expect(pageLess).toContain("label {\n      display: inline-block;");
-  expect(pageLess).toContain("h4 {\n        padding:10px 0;\n        line-height: 30px;");
-  expect(pageLess).toContain(".nav-tabs > li {\n          margin-bottom: -2px;");
-  expect(responsive).toContain("@media all and (max-width: 720px) {");
-  expect(responsive).toContain(
-    ".page-wrap-outer {\n    min-width: 10px !important;\n    padding: 0 !important;",
-  );
-  expect(responsive).toContain("@media all {\n  .attachment-files {");
-  expect(responsive).toContain(
-    ".page-wrap-outer {\n    padding: 0 10px;\n    width: 100%;\n    box-sizing: border-box;",
-  );
-  expect(responsive).toContain(
-    ".project-page-wrap {\n    width: 100%;\n    margin-top: 5px !important;",
-  );
-  expect(responsive).toContain(
-    ".project-breadcrumb {\n      font-size: 1.5em;\n      font-weight: bold;",
-  );
-
-  expect(
-    [...route.matchAll(/data-owner="(projects-directory-page(?:-wrap)?)"/gu)]
-      .map((match) => match[1])
-      .sort(),
-  ).toEqual(Object.values(owners).sort());
-
-  expect(route).not.toContain('className="page-wrap-outer"');
-  expect(route).not.toContain('className="project-page-wrap"');
-
-  expect(appCss).toContain(".page-wrap-outer {");
-  expect(appCss).toContain(".project-page-wrap {");
-  expect(appCss).toContain(".project-page-wrap label {");
-});
 
 for (const viewport of [
   { height: 900, name: "desktop", width: 1366 },
