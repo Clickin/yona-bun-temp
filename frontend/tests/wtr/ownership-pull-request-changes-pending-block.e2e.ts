@@ -16,7 +16,7 @@ const legacySource = new URL(
 );
 
 test("pull request changes pending review block uses conditional and Dynamic Style", async () => {
-  const [route, style, legacy] = await Promise.all([
+  const [route, _style, legacy] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(styleSource, "utf8"),
     readFile(legacySource, "utf8"),

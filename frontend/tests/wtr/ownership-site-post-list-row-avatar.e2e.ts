@@ -136,7 +136,7 @@ test.describe("Style site post-list row and project avatar", () => {
     await expect(first).toHaveClass(/\blistitem\b/u);
     await expect(avatar).toHaveClass(/\bavatar-wrap\b/u);
     await expect(avatar).toHaveClass(/\blist-avatar\b/u);
-    for (const element of [first, avatar, avatarImage]) {
+    for (const _element of [first, avatar, avatarImage]) {
     }
 
     await expect(first).toHaveCSS("padding-top", "10px");

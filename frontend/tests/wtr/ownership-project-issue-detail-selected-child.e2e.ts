@@ -8,7 +8,7 @@ const legacyPartial = "../yona-original/app/views/issue/partial_view_child.scala
 const legacyStyles = "../yona-original/app/assets/stylesheets/less/_page.less";
 
 test("issue detail selected child owns conditional Style state", async () => {
-  const [route, style, view, partial, less] = await Promise.all([
+  const [route, _style, view, partial, less] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(styleSource, "utf8"),
     readFile(legacyView, "utf8"),

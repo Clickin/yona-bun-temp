@@ -105,7 +105,7 @@ test.describe("Style site user-list title/search shell", () => {
   test("pins the Scala shell, full cascade, and exactly three title owners", async () => {
     const [
       route,
-      theme,
+      _theme,
       template,
       layout,
       yobi,

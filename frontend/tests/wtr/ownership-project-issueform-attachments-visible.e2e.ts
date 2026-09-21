@@ -2,7 +2,7 @@ import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const routeSource = new URL("../src/routes/$ownerName/$projectName/issueform.tsx", import.meta.url);
-const styleSource = new URL("../src/app.css", import.meta.url);
+
 const legacyUploader = new URL(
   "../../yona-original/app/views/common/fileUploader.scala.html",
   import.meta.url,
@@ -44,7 +44,7 @@ const legacyBootstrapResponsive = new URL(
   import.meta.url,
 );
 const legacyMessages = new URL("../../yona-original/conf/messages", import.meta.url);
-const appStyles = new URL("../src/app.css", import.meta.url);
+
 // The attachment rows moved into the shared file-uploader component; the
 // route passes Style style props down and the component owns the markers.
 const uploaderComponent = new URL("../src/components/file-uploader.tsx", import.meta.url);
@@ -53,7 +53,7 @@ const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 test("issueform attachment rows own active React-matched Style geometry", async ({ page }) => {
   const [
     route,
-    style,
+    _style,
     uploader,
     uploadForm,
     create,

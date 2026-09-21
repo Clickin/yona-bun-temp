@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss as _curatedAppCss } from "../wtr-compat.ts";
 // Post-merge: the full legacy cascade lives in app.css — normal-mode semantics.
 const fallbackOff = false;
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
@@ -25,7 +25,7 @@ const routeSource = readFileSync(
   ),
   "utf8",
 );
-const styleSource = curatedAppCss() + mergedLegacyBlock();
+
 const legacyRootSource = readFileSync(
   fileURLToPath(new URL("../../yona-original/app/views/git/view.scala.html", import.meta.url)),
   "utf8",

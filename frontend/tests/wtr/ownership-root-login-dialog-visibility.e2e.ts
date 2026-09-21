@@ -6,7 +6,7 @@ const legacySource = new URL(
   import.meta.url,
 );
 test("root login dialog visibility uses conditional Style", async () => {
-  const [route, legacy] = await Promise.all([
+  const [_route, legacy] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(legacySource, "utf8"),
   ]);

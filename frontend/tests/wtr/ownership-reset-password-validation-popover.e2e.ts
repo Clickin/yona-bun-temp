@@ -29,7 +29,7 @@ async function openValidTokenReset(page: Page) {
 
 test.describe("Style valid-token reset password validation popover", () => {
   test("owns the valid-token presentation while retaining the fallback for excluded states", async () => {
-    const [route, routeTheme, theme, legacyFallback] = await Promise.all([
+    const [route, _routeTheme, theme, legacyFallback] = await Promise.all([
       readFile(routeSource, "utf8"),
       readFile(routeThemeSource, "utf8"),
       readFile(themeSource, "utf8"),

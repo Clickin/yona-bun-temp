@@ -1,4 +1,3 @@
-import { readFile, mergedLegacyBlock } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
@@ -8,7 +7,7 @@ test("user issues keeps legacy control order while Style owns conditional mode c
   page,
 }) => {
   const route = readFileSync("src/routes/user/issues.tsx", "utf8");
-  const style = readFileSync("src/app.css", "utf8");
+
   const legacySearch = readFileSync(
     "../yona-original/app/views/issue/my_partial_search.scala.html",
     "utf8",

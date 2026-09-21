@@ -4,7 +4,6 @@ import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const ownerSelector = '[data-owner="site-project-list-title-strip"]';
 const routeSource = new URL("../src/routes/sites/projectList.tsx", import.meta.url);
-const globalThemeSource = new URL("../src/app.css", import.meta.url);
 
 async function openProjectList(page: Page) {
   const session = {

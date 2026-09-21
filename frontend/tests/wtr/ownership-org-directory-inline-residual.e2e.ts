@@ -1,4 +1,4 @@
-import { readFileSync, expect, test, type Page, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync, expect, test, type Page } from "../wtr-compat.ts";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 test.use({ locale: "ko-KR" });
@@ -7,7 +7,7 @@ test("organization directory private-card residual inline owners use route-local
   page,
 }) => {
   const route = readFileSync("src/routes/orgs.tsx", "utf8");
-  const styleSource = readFileSync("src/app.css", "utf8");
+
   const template = readFileSync("../yona-original/app/views/organization/list.scala.html", "utf8");
 
   expect(template).toContain('<li class="project" style="background-color: #fcfcfc;">');

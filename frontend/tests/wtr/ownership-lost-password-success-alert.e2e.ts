@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { mergedLegacyBlock } from "../wtr-compat.ts";
 import { expect, test, type Page, readFile } from "../wtr-compat.ts";
 
 const routeSource = new URL("../src/routes/lostPassword.tsx", import.meta.url);

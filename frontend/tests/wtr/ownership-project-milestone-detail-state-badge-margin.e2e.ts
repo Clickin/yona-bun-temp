@@ -26,7 +26,7 @@ test.use({ locale: "en-US" });
 
 test("milestone detail owns legacy state badge margin-left-5", async ({ page }) => {
   const route = source("../src/routes/$ownerName/$projectName/milestone/$milestoneId.tsx");
-  const styles = source("../src/app.css");
+
   const legacyView = source("../../yona-original/app/views/milestone/view.scala.html");
   const commonLess = source("../../yona-original/app/assets/stylesheets/less/_common.less");
   const pageLess = source("../../yona-original/app/assets/stylesheets/less/_page.less");

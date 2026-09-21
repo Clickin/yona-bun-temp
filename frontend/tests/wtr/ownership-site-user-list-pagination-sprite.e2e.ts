@@ -1,5 +1,4 @@
 import { readFile } from "../wtr-compat.ts";
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 const routeSource = new URL("../src/routes/sites/userList.tsx", import.meta.url);
 const legacySource = new URL(

@@ -69,7 +69,7 @@ async function openUpdate(page: Page) {
 
 test.describe("Style site update no-update title shell", () => {
   test("pins the Scala shell, full cascade, and exactly two title boundaries", async () => {
-    const [route, theme, template, layout, messages, yobi, pageLess, override, bootstrap] =
+    const [route, _theme, template, layout, messages, yobi, pageLess, override, bootstrap] =
       await Promise.all([
         readFile(routeSource, "utf8"),
         readFile(themeSource, "utf8"),

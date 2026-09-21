@@ -1,11 +1,4 @@
-import {
-  expect,
-  test,
-  type Locator,
-  type Page,
-  readFileSync,
-  mergedLegacyBlock,
-} from "../wtr-compat.ts";
+import { expect, test, type Locator, type Page, readFileSync } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
 // (a recorded shim gap); resolve only builds those paths.
 const mkdirSync = () => undefined;

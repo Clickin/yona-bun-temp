@@ -2,7 +2,7 @@ import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const routeSource = readFileSync("src/routes/organizations/$organizationName/search.tsx", "utf8");
-const styleSource = readFileSync("src/app.css", "utf8");
+
 const appCss = curatedAppCss();
 const fallbackCss = mergedLegacyBlock();
 const frozenPageLess = readFileSync(
@@ -112,7 +112,7 @@ test("organization search maps the frozen result family to six route-local owner
         "padding: 0 20px;",
         "margin: 20px 0;",
         "min-height: 250px;",
-        'background-image: url(\"./assets/legacy/images/no_contents.jpg\");',
+        'background-image: url("./assets/legacy/images/no_contents.jpg");',
       ],
     ],
   ] as const) {

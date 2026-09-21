@@ -1,3 +1,5 @@
+/* oxlint-disable jsx-a11y/prefer-tag-over-role -- legacy Select2/Bootstrap parity DOM intentionally keeps role-based controls. */
+/* oxlint-disable jsx-a11y/role-supports-aria-props -- legacy parity input retains its expanded-state attribute. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   IssuePostFileUploader,
@@ -12,7 +14,6 @@ import {
   useRef,
   useState,
   use,
-  type InputHTMLAttributes,
   type HTMLAttributes,
   type DragEvent,
   type KeyboardEvent,

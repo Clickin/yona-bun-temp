@@ -144,7 +144,7 @@ test.describe("Style site issue list sidebar", () => {
     const [
       route,
       theme,
-      appCss,
+      _appCss,
       template,
       layout,
       messages,

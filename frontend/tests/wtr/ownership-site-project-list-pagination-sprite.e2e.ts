@@ -6,7 +6,7 @@ const legacySource = new URL(
   import.meta.url,
 );
 test("site project list pagination sprite uses Dynamic Style", async () => {
-  const [route, legacy] = await Promise.all([
+  const [_route, legacy] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(legacySource, "utf8"),
   ]);

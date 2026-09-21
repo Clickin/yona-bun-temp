@@ -1,4 +1,4 @@
-import { readFileSync, expect, test, curatedAppCss } from "../wtr-compat.ts";
+import { expect, test, curatedAppCss } from "../wtr-compat.ts";
 test("member role menus own hover and focus paint in Style", async () => {
   const css = curatedAppCss();
   expect(css).not.toContain(

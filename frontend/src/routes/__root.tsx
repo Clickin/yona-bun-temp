@@ -1,3 +1,4 @@
+/* oxlint-disable jsx-a11y/prefer-tag-over-role -- legacy Select2/Bootstrap parity DOM intentionally keeps role-based controls. */
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -321,11 +322,19 @@ function RootYoramToast({
   }, [durationMs, onDismiss]);
 
   return (
+    // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- the legacy toast shell owns layout; replacing its div would change parity geometry.
     <div
-      tabIndex={-1}
+      role="button"
+      tabIndex={0}
       data-owner="root-yoram-toast"
       data-part="toast"
       onClick={onDismiss}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onDismiss();
+        }
+      }}
       style={{ opacity: fading ? 0 : 1 }}
     >
       <div data-part="toast-dismiss">

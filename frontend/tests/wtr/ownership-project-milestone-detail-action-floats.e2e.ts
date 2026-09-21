@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
@@ -19,7 +19,7 @@ test(`owns milestone issue assignee and due-date floats (${fallbackMode})`, asyn
     "src/routes/$ownerName/$projectName/milestone/$milestoneId.tsx",
     "utf8",
   );
-  const styleSource = readFileSync("src/app.css", "utf8");
+
   const milestoneTemplate = readFileSync(
     "../yona-original/app/views/milestone/view.scala.html",
     "utf8",

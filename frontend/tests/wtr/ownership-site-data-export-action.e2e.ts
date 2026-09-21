@@ -69,7 +69,6 @@ for (const viewport of [
         const action = element as HTMLElement;
         action.focus({ preventScroll: true });
         const focused = action.ownerDocument.activeElement === action && action.matches(":focus");
-        getComputedStyle(action).backgroundColor;
         action.getAnimations().forEach((animation) => animation.finish());
         return {
           backgroundColor: getComputedStyle(action).backgroundColor,

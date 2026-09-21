@@ -24,7 +24,7 @@ const legacyStyle = new URL(
 );
 
 test("pull-request changes review owners use conditional Style", async () => {
-  const [route, style, legacy, editor, less] = await Promise.all([
+  const [route, _style, legacy, editor, less] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(styleSource, "utf8"),
     readFile(legacySource, "utf8"),

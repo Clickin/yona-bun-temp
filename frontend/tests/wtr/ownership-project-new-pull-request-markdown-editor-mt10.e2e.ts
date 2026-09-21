@@ -2,14 +2,7 @@
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
 
-import {
-  expect,
-  test,
-  type Page,
-  type Route,
-  mergedLegacyBlock,
-  curatedAppCss,
-} from "../wtr-compat.ts";
+import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -17,11 +10,7 @@ const screenshotDirectory = resolve(
   "output/playwright/style-project-new-pull-request-markdown-editor-mt10",
   "normal",
 );
-const routeSource = readFileSync(
-  new URL("../src/routes/$ownerName/$projectName/newPullRequestForm.tsx", import.meta.url),
-  "utf8",
-);
-const styleSource = curatedAppCss();
+
 const legacyPullRequestSource = readFileSync(
   new URL("../../yona-original/app/views/git/create.scala.html", import.meta.url),
   "utf8",

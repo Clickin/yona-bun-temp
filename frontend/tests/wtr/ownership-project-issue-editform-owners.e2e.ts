@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -10,7 +10,7 @@ test("issue edit form keeps sidebar and selector owner boundaries", async ({ pag
     "src/routes/$ownerName/$projectName/issue/$issueNumber/editform.tsx",
     "utf8",
   );
-  const styleSource = readFileSync("src/app.css", "utf8");
+
   const template = readFileSync("../yona-original/app/views/issue/edit.scala.html", "utf8");
   const subtask = readFileSync(
     "../yona-original/app/views/issue/partial_select_subtask.scala.html",

@@ -9,12 +9,11 @@ const legacyPartialSource = new URL(
   "../../yona-original/app/views/reviewthread/partial_list.scala.html",
   import.meta.url,
 );
-const cssSource = new URL("../src/app.css", import.meta.url);
+
 const routeSource = new URL("../src/routes/$ownerName/$projectName/reviews.tsx", import.meta.url);
-const styleSource = new URL("../src/app.css", import.meta.url);
 
 test("project reviews title residual fallback is retired", async () => {
-  const [legacyList, legacyPartial, css, route, style] = await Promise.all([
+  const [legacyList, legacyPartial, css, route, _style] = await Promise.all([
     readFile(legacyListSource, "utf8"),
     readFile(legacyPartialSource, "utf8"),
     Promise.resolve(curatedAppCss()),

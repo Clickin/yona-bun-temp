@@ -9,7 +9,7 @@ const legacySource = new URL(
   import.meta.url,
 );
 test("project milestone filtered issue links use conditional Style", async () => {
-  const [route, legacy] = await Promise.all([
+  const [route, _legacy] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(legacySource, "utf8"),
   ]);

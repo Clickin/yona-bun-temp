@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss as _curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
@@ -35,7 +35,7 @@ test("organization boards pagination traces legacy sources and every Style decla
     ),
     "utf8",
   );
-  const styles = curatedAppCss() + mergedLegacyBlock();
+
   const groupBoards = readFileSync(
     fileURLToPath(
       new URL(
@@ -99,7 +99,7 @@ test("organization boards pagination traces legacy sources and every Style decla
   for (const marker of Object.values(pagination)) {
     expect(route).toContain(marker.slice(1, -1));
   }
-  for (const declaration of [
+  for (const _declaration of [
     "paginationWrap",
     "paginationPageNums",
     "paginationPageNum",
@@ -269,7 +269,7 @@ for (const viewport of [
 test("organization boards pagination keeps scoped SPA navigation and invalid/clamped input behavior", async ({
   page,
 }) => {
-  const requestedPages = await openBoards(page, { height: 900, width: 1366 });
+  const _requestedPages = await openBoards(page, { height: 900, width: 1366 });
   await page.locator(`${pagination.nextPage} a`).click();
   await page.waitForTimeout(1500);
 

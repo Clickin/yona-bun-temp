@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve joins path parts.
@@ -17,7 +17,7 @@ const routeSource = readFileSync(
   ),
   "utf8",
 );
-const styleSource = curatedAppCss();
+
 const legacyViewSource = readFileSync(
   new URL("../../yona-original/app/views/git/viewChanges.scala.html", import.meta.url),
   "utf8",

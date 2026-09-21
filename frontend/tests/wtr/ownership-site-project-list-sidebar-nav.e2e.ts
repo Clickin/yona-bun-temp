@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
@@ -71,7 +71,7 @@ async function openProjectList(page: Page) {
 
 test("sidebar navigation has direct owners and retires this route's presentation classes", () => {
   const route = readFileSync("src/routes/sites/projectList.tsx", "utf8");
-  const theme = readFileSync("src/app.css", "utf8");
+
   const layout = readFileSync("../yona-original/app/views/site/siteMngLayout.scala.html", "utf8");
   const projectList = readFileSync(
     "../yona-original/app/views/site/projectList.scala.html",

@@ -6,7 +6,7 @@ test("milestone mass-update item buttons own milestone geometry and states", asy
     new URL("../src/routes/$ownerName/$projectName/milestone/$milestoneId.tsx", import.meta.url),
     "utf8",
   );
-  const style = curatedAppCss();
+
   const legacy = readFileSync(
     new URL("../../yona-original/app/views/issue/partial_massupdate.scala.html", import.meta.url),
     "utf8",

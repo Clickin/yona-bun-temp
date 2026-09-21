@@ -1,4 +1,3 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page, readFile } from "../wtr-compat.ts";
 
 const routeSource = new URL("../src/routes/migration.tsx", import.meta.url);
@@ -38,7 +37,7 @@ async function openMigration(page: Page) {
 
 test.describe("Style migration disabled shell", () => {
   test("owns the frozen migration consumer cascade without fallback CSS", async () => {
-    const [route, routeTheme, theme, legacy, migrationLess, yobiUiLess, bootstrap, yobicon] =
+    const [route, _routeTheme, theme, _legacy, migrationLess, yobiUiLess, bootstrap, _yobicon] =
       await Promise.all([
         readFile(routeSource, "utf8"),
         readFile(routeThemeSource, "utf8"),

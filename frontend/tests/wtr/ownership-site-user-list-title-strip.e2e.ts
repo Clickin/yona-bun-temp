@@ -4,7 +4,6 @@ import { expect, test } from "../wtr-compat.ts";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const ownerSelector = '[data-owner="site-user-list-title-strip"]';
 const routeSource = new URL("../src/routes/sites/userList.tsx", import.meta.url);
-const themeSource = new URL("../src/app.css", import.meta.url);
 
 async function openUserList(page: Page) {
   await page.route("**/api/v1/session", (route) =>

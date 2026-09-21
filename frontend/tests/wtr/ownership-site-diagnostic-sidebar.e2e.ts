@@ -9,8 +9,7 @@ const readFile = (path: string | URL, encoding?: string | null): Promise<string>
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = new URL("../src/routes/sites/diagnostic.tsx", import.meta.url);
-const themeSource = new URL("../src/app.css", import.meta.url);
-const appCssSource = new URL("../src/app.css", import.meta.url);
+
 const templateSource = new URL(
   "../../yona-original/app/views/site/diagnostic.scala.html",
   import.meta.url,
@@ -76,7 +75,7 @@ test.describe("Style site diagnostic sidebar", () => {
   test("pins legacy sources, global theme ownership, old bridge absence, and static retirement", async () => {
     const [
       route,
-      theme,
+      _theme,
       appCss,
       template,
       layout,

@@ -1,4 +1,4 @@
-import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -146,7 +146,7 @@ test("empty providers and guest viewer preserve the bounded provider behavior", 
 async function assertSourceEvidence() {
   const [
     routeSource,
-    styleSource,
+    _styleSource,
     scala,
     helper,
     bootstrap,

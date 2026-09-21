@@ -1,5 +1,4 @@
-import { readFile, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
-import { readFileSync } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -22,7 +21,7 @@ test.beforeEach(async ({ page }) => {
 test("authenticated public profile owns outer and nested tab-content visibility", async ({
   page,
 }) => {
-  const [routeSource, styleSource, scala, bootstrap, responsive, yobiLess, appCss, ...lessChain] =
+  const [routeSource, _styleSource, scala, bootstrap, responsive, yobiLess, appCss, ...lessChain] =
     await Promise.all([
       readFile(new URL("../src/routes/$user.tsx", import.meta.url), "utf8"),
       curatedAppCss(),

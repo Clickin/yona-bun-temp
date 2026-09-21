@@ -2,9 +2,7 @@ import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const routeSource = new URL("../src/routes/restart.tsx", import.meta.url);
-const routeThemeSource = new URL("../src/app.css", import.meta.url);
-const themeSource = new URL("../src/app.css", import.meta.url);
-const fallbackSource = new URL("../src/app.css", import.meta.url);
+
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const desktop = { height: 900, width: 1366 };
 const mobile = { height: 844, width: 390 };
@@ -21,7 +19,7 @@ async function openRestart(page: Page, failed = false) {
 
 test.describe("Style restart notice", () => {
   test("uses route paint ownership while retaining the legacy restart skeleton", async () => {
-    const [route, routeTheme, theme, fallback] = await Promise.all([
+    const [route, _routeTheme, theme, fallback] = await Promise.all([
       readFile(routeSource, "utf8"),
       Promise.resolve(curatedAppCss()),
       Promise.resolve(curatedAppCss()),

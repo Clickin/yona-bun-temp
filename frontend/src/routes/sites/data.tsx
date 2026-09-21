@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { LegacyMessage } from "../../components/legacy-message";
 import { SiteAdminSidebar } from "../../components/site-admin-sidebar";
 import { siteSettingWrapClassName } from "../../components/site-admin-sidebar";
 import { createFileRoute, Link } from "@tanstack/react-router";

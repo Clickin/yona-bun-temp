@@ -150,7 +150,7 @@ function OrganizationBoardsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
 function OrganizationBoardsBody({
   boards,
   organization,
-  runtimeConfig,
+  runtimeConfig: _runtimeConfig,
   search,
 }: {
   boards: OrganizationBoardsResponse;
@@ -176,7 +176,12 @@ function OrganizationBoardsBody({
       <div className="page-wrap-outer" data-owner="organization-boards-page">
         <div className="project-page-wrap" data-owner="organization-boards-shell">
           <div className="search-wrap underline" data-owner="organization-boards-search">
-            <form id="option_form" className="pull-left" method="get" data-owner="organization-boards-search-form">
+            <form
+              id="option_form"
+              className="pull-left"
+              method="get"
+              data-owner="organization-boards-search-form"
+            >
               <input type="hidden" name="orderBy" value={search.orderBy} />
               <input type="hidden" name="orderDir" value={search.orderDir} />
               <div className="project-selects span7">

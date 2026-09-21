@@ -1,4 +1,4 @@
-import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdir only feeds page.screenshot paths (no-op); resolve builds those paths.
@@ -11,7 +11,7 @@ const screenshotDirectory = resolve("output/playwright/style-project-home-action
 test.use({ locale: "en-US" });
 
 test("project home float owners cite the exact legacy evidence", async () => {
-  const [route, style, legacyRoot, legacyPartial, bootstrap, pageLess, yobi, messages] =
+  const [route, _style, legacyRoot, legacyPartial, bootstrap, pageLess, yobi, messages] =
     await Promise.all([
       readFile(new URL("../src/routes/$ownerName/$projectName.tsx", import.meta.url), "utf8"),
       curatedAppCss(),

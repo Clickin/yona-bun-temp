@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
 // (a recorded shim gap); resolve only builds those paths.
@@ -34,7 +34,7 @@ test(`milestone issue metadata counts and labels parity (${mode})`, async ({ pag
     "src/routes/$ownerName/$projectName/milestone/$milestoneId.tsx",
     "utf8",
   );
-  const styleSource = readFileSync("src/app.css", "utf8");
+
   const view = readFileSync("../yona-original/app/views/milestone/view.scala.html", "utf8");
   const issuePartial = readFileSync(
     "../yona-original/app/views/issue/partial_list.scala.html",
@@ -115,7 +115,7 @@ test(`milestone issue metadata counts and labels parity (${mode})`, async ({ pag
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/admin/sample/milestone/1`, { waitUntil: "commit" });
     const row = page.locator('[data-owner="milestone-detail-issue-row"]').first();
-    const infos = row.locator('[data-owner="milestone-detail-issue-infos"]');
+
     const counts = row.locator('[data-owner="milestone-detail-issue-count-groups"]');
     const comment = row.locator('[data-owner="milestone-detail-issue-comments-count"]');
     const vote = row.locator('[data-owner="milestone-detail-issue-vote-count"]');

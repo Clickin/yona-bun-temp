@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const routeSource = readFileSync(
@@ -30,9 +30,9 @@ test("issue detail populated body/sidebar owns route-scoped Style geometry", () 
   expect(legacyLess).toContain(".deleteButtonX");
   expect(legacyLess).toContain(".oneline-comment-box");
 
-  for (const owner of ["author", "content", "actions", "boardFooter", "issueInfo"]) {
+  for (const _owner of ["author", "content", "actions", "boardFooter", "issueInfo"]) {
   }
-  for (const owner of [
+  for (const _owner of [
     "disabledCommentActions",
     "commentFormActions",
     "uploadHelp",

@@ -2,7 +2,6 @@ import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const rootSource = new URL("../src/routes/__root.tsx", import.meta.url);
-const themeSource = new URL("../src/app.css", import.meta.url);
 
 const desktop = { width: 1366, height: 900 };
 const mobile = { width: 390, height: 844 };

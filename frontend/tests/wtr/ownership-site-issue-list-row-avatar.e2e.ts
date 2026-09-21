@@ -9,7 +9,7 @@ const readFile = (path: string | URL, encoding?: string | null): Promise<string>
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = new URL("../src/routes/sites/issueList.tsx", import.meta.url);
-const themeSource = new URL("../src/app.css", import.meta.url);
+
 const legacyTemplateSource = new URL(
   "../../yona-original/app/views/site/issueList.scala.html",
   import.meta.url,
@@ -26,7 +26,6 @@ const legacyYobiUiLessSource = new URL(
   "../../yona-original/app/assets/stylesheets/less/_yobiUI.less",
   import.meta.url,
 );
-const appCssSource = new URL("../src/app.css", import.meta.url);
 
 const owners = {
   avatar: "site-issue-list-project-avatar",
@@ -214,7 +213,7 @@ test.describe("Style site issue-list row and project avatar", () => {
     await expect(avatar).not.toHaveClass(/\blist-avatar\b/u);
     await expect(owner(first, "site-issue-list-author-avatar")).toHaveCount(1);
     await expect(owner(first, "site-issue-list-metadata-item")).toHaveCount(3);
-    for (const element of [first, avatar, avatarImage]) {
+    for (const _element of [first, avatar, avatarImage]) {
     }
 
     await expect(first).toHaveCSS("padding-top", "10px");

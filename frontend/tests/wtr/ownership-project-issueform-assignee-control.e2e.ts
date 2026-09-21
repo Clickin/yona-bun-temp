@@ -2,7 +2,7 @@ import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const routeSource = new URL("../src/routes/$ownerName/$projectName/issueform.tsx", import.meta.url);
-const styleSource = new URL("../src/app.css", import.meta.url);
+
 const legacyCreate = new URL(
   "../../yona-original/app/views/issue/create.scala.html",
   import.meta.url,
@@ -15,11 +15,11 @@ const legacyOverride = new URL(
   "../../yona-original/app/assets/stylesheets/less/_override.less",
   import.meta.url,
 );
-const appStyles = new URL("../src/app.css", import.meta.url);
+
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 test("issueform assignee control keeps route-local Style geometry", async ({ page }) => {
-  const [route, style, create, assignee, override, css] = await Promise.all([
+  const [route, _style, create, assignee, override, css] = await Promise.all([
     readFile(routeSource, "utf8"),
     Promise.resolve(curatedAppCss()),
     readFile(legacyCreate, "utf8"),

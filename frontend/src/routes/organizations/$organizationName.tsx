@@ -12,7 +12,6 @@ import { RestApiError, restFetch } from "../../api/rest-client";
 import type {
   OrganizationContainer,
   OrganizationRedirectResult,
-  YoramRecord,
   YoramUserItem,
 } from "../../api/types";
 import defaultAvatarUrl from "../../assets/legacy/default-avatar-34.png";
@@ -551,7 +550,6 @@ function MemberPanel({
   title: string;
 }) {
   const { t } = useLegacyMessages();
-  const panelKey = className.includes("mt10") ? "member" : "manager";
 
   return (
     <div className={className} data-owner="organization-home-members-panel">
@@ -575,7 +573,7 @@ function MemberPanel({
             className={`${className.includes("mt10") ? "unstyled project-members" : "project-members"}`}
             data-owner="organization-home-members-list"
           >
-            {members.map((member, index) => (
+            {members.map((member, _index) => (
               <li
                 className="member"
                 data-owner="organization-home-member"

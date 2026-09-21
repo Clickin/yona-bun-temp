@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss as _curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
@@ -17,7 +17,7 @@ const ORGANIZATION_ISSUES_ROUTE_SOURCE = readFileSync(
   ),
   "utf8",
 );
-const ORGANIZATION_ISSUES_STYLE_SOURCE = curatedAppCss() + mergedLegacyBlock();
+
 const LEGACY_ISSUE_LIST_SOURCE = readFileSync(
   fileURLToPath(
     new URL(

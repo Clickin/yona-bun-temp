@@ -1,4 +1,4 @@
-import { expect, test, type Page, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { expect, test, type Page, curatedAppCss as _curatedAppCss } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 
 // Browser harness: fileURLToPath yields the served URL pathname so string
@@ -12,7 +12,7 @@ const route = readFileSync(
   ),
   "utf8",
 );
-const styles = curatedAppCss() + mergedLegacyBlock();
+
 const legacyView = readFileSync(
   fileURLToPath(new URL("../../yona-original/app/views/code/view.scala.html", import.meta.url)),
   "utf8",

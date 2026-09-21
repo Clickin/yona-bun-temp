@@ -1,3 +1,5 @@
+/* oxlint-disable eslint/no-control-regex -- glob and keyboard parsers intentionally match control-code placeholders. */
+/* oxlint-disable typescript/no-this-alias -- custom locator subclasses intentionally capture the base resolver. */
 // In-browser Playwright-compatible harness for @web/test-runner.
 //
 // The converted parity specs run ENTIRELY inside the browser: the app is
@@ -17,8 +19,6 @@
 //     at module top level, so it must be sync)
 declare const describe: (name: string, fn: () => void) => void;
 declare const it: (name: string, fn: (this: unknown) => void | Promise<void>) => void;
-declare const beforeEach: (fn: () => void | Promise<void>) => void;
-declare const afterEach: (fn: () => void | Promise<void>) => void;
 
 export type Page = PageFacade;
 
@@ -594,7 +594,7 @@ function installFetchMock(iframe: HTMLIFrameElement, realFetch: typeof fetch): v
     const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
     // Spec-registered routes match first (LIFO, like Playwright); defaults last.
     for (let index = mockRegistry.length - 1; index >= 0; index -= 1) {
-      const { regex, handler } = mockRegistry[index];
+      const { regex } = mockRegistry[index];
       if (regex.test(url)) {
         metricIncrement("mockRequests");
         const top = typeof window !== "undefined" ? window : null;
@@ -1107,11 +1107,7 @@ export class Locator {
     }
     if (lastError !== null && this.currentSafe() === null) {
       // Only report the strict violation if the element never settles.
-      try {
-        this.current();
-      } catch (error) {
-        throw error;
-      }
+      this.current();
     }
     throw new Error(`${this.selector}: element not found`);
   }
@@ -2218,7 +2214,7 @@ class PageFacade {
     };
   }
 
-  async goto(url: string, options?: { waitUntil?: string }): Promise<void> {
+  async goto(url: string, _options?: { waitUntil?: string }): Promise<void> {
     metricIncrement("gotoCalls");
     if (!this.iframeElement) {
       this.iframeElement = document.createElement("iframe");
@@ -3251,7 +3247,7 @@ function buildExpect(target: ExpectTarget, negate: boolean): ExpectResult {
         options?.timeout,
       );
     },
-    toMatchObject: (expected: Record<string, unknown>, options?: { timeout?: number }) => {
+    toMatchObject: (expected: Record<string, unknown>, _options?: { timeout?: number }) => {
       if (stringTarget === null) return;
       const actual = stringTarget() as Record<string, unknown>;
       const matches = toMatchObjectCheck(actual, expected);

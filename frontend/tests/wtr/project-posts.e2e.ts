@@ -2062,7 +2062,7 @@ test("project board-post renders legacy unauthorized comment state", async ({ pa
     "post-detail-disabled-comment-actions",
     "post-detail-disabled-comment-button",
   ];
-  for (const owner of owners) {
+  for (const _owner of owners) {
   }
 
   for (const viewport of [
@@ -5527,18 +5527,13 @@ test("authenticated populated board post owns comment identity actions and body 
 
     const comment = page.locator("#comment-21");
     const author = comment.locator('[data-owner="post-detail-comment-author"]');
-    const responsiveAvatar = comment.locator(
-      '[data-owner="post-detail-comment-responsive-avatar"]',
-    );
-    const responsiveAvatarWrap = comment.locator(
-      '[data-owner="post-detail-comment-responsive-avatar-wrap"]',
-    );
+
     const ago = comment.locator('[data-owner="post-detail-comment-ago"]');
     const edit = comment.locator('[data-owner="post-detail-comment-edit-action"]');
     const remove = comment.locator('[data-owner="post-detail-comment-delete-action"]');
     const editIcon = comment.locator('[data-owner="post-detail-comment-edit-icon"]');
     const deleteIcon = comment.locator('[data-owner="post-detail-comment-delete-icon"]');
-    const body = comment.locator('[data-owner="post-detail-comment-body-content"]');
+
     const metrics = await comment.evaluate((row) => {
       const get = (owner: string) => row.querySelector<HTMLElement>(`[data-owner="${owner}"]`)!;
       const author = get("post-detail-comment-author");
@@ -5990,11 +5985,10 @@ test("authenticated populated board post owns open parent comment update form in
     await expect(formWrap).toHaveCSS("display", "block");
     await expect(body).toBeHidden();
     const form = formWrap.locator(":scope > form");
-    const writeBox = form.locator('[data-owner="post-detail-comment-update-write-box"]');
-    const textareaBox = form.locator('[data-owner="post-detail-comment-update-textarea-box"]');
+
     const actions = form.locator('[data-owner="post-detail-comment-update-actions"]');
     const textarea = form.locator('[data-owner="post-detail-comment-update-textarea"]');
-    const fileUpload = form.locator('[data-owner="post-detail-comment-update-file-upload"]');
+
     const fileUploadLabel = form.locator(
       '[data-owner="post-detail-comment-update-file-upload-label"]',
     );
@@ -6017,12 +6011,6 @@ test("authenticated populated board post owns open parent comment update form in
       '[data-owner="post-detail-comment-update-checklist-icon"]',
     );
     const dropOverlay = form.locator('[data-owner="post-detail-comment-update-drop-overlay"]');
-    const dropMessageWrap = dropOverlay.locator(
-      '[data-owner="post-detail-comment-update-drop-message-wrap"]',
-    );
-    const dropMessage = dropMessageWrap.locator(
-      '[data-owner="post-detail-comment-update-drop-message"]',
-    );
     const clearTemporary = editorNav.locator(
       '[data-owner="post-detail-comment-update-clear-temporary"]',
     );

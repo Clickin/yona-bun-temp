@@ -1,5 +1,4 @@
 import { readFile } from "../wtr-compat.ts";
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -46,7 +45,7 @@ async function openMail(page: Page, response?: MailResponse, search = "") {
 
 test.describe("Style site mail title strip", () => {
   test("reuses canonical frozen title globals through the stable owner", async () => {
-    const [route, theme] = await Promise.all([
+    const [route, _theme] = await Promise.all([
       readFile(routeSource, "utf8"),
       readFile(themeSource, "utf8"),
     ]);

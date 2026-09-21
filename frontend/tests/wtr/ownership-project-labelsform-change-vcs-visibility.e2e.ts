@@ -12,7 +12,7 @@ const legacySource = new URL(
 );
 
 test("labels form change-vcs menu uses conditional Style", async () => {
-  const [route, style, legacy] = await Promise.all([
+  const [_route, _style, legacy] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(styleSource, "utf8"),
     readFile(legacySource, "utf8"),

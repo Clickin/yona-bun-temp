@@ -6,7 +6,7 @@ test("organization menu group owns route-local geometry", async () => {
     new URL("../src/routes/organizations/$organizationName.tsx", import.meta.url),
     "utf8",
   );
-  const styles = await Promise.resolve(curatedAppCss());
+  const _styles = await Promise.resolve(curatedAppCss());
   const legacy = await readFile(
     new URL("../../yona-original/app/views/organization/menu.scala.html", import.meta.url),
     "utf8",

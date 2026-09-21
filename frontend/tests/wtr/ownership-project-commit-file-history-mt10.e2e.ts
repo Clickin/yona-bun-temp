@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 // Browser harness: screenshot paths are artifact-only no-ops.
@@ -11,7 +11,7 @@ const routeSource = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/commits/$branch/$filePath.tsx", import.meta.url),
   "utf8",
 );
-const styleSource = curatedAppCss();
+
 const legacyHistorySource = readFileSync(
   new URL("../../yona-original/app/views/code/history.scala.html", import.meta.url),
   "utf8",

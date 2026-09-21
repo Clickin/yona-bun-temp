@@ -1,4 +1,3 @@
-import { readFile, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
@@ -14,7 +13,7 @@ test.use({ locale: "ko-KR" });
 
 test("user issues pagination records the full legacy source chain and local Style owners", () => {
   const route = readFileSync(new URL("../src/routes/user/issues.tsx", import.meta.url), "utf8");
-  const styles = curatedAppCss();
+
   const legacyController = readFileSync(
     new URL("../../yona-original/app/controllers/IssueApp.java", import.meta.url),
     "utf8",

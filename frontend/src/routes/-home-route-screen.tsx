@@ -1150,7 +1150,6 @@ export function SiteLayoutShell({
                   >
                     {/* oxlint-disable-next-line jsx-a11y/no-access-key -- legacy common/navbar.scala.html exposes accesskey="S". */}
                     <input
-                      accessKey="S"
                       autoComplete="off"
                       data-owner="global-gnb-search-input"
                       name="keyword"
@@ -1910,7 +1909,7 @@ function SidebarOrganizationList({
 }) {
   const { t } = useLegacyMessages();
   const [isOwnProjectsExpanded, setIsOwnProjectsExpanded] = React.useState(false);
-  const [isSearchFocused, setIsSearchFocused] = React.useState(false);
+  const [, setIsSearchFocused] = React.useState(false);
   const ownProjects = recordArray(workspace.ownProjects);
   const favoriteOrganizations = recordArray(workspace.favoriteOrganizations);
   const organizations = recordArray(workspace.organizations);
@@ -2374,7 +2373,7 @@ function SidebarProjectList({
   const [activeSubtab, setActiveSubtab] = React.useState<
     "recentlyVisited" | "createdByMe" | "watching" | "joinmember"
   >("recentlyVisited");
-  const [isSearchFocused, setIsSearchFocused] = React.useState(false);
+  const [, setIsSearchFocused] = React.useState(false);
   const recentProjects = recordArray(workspace.recentProjects);
   const watchedProjects = recordArray(workspace.watchedProjects);
   const memberProjects = recordArray(workspace.memberProjects);
@@ -2681,7 +2680,7 @@ function SidebarRecentIssueList({
   workspace: YoramRecord;
 }) {
   const { t } = useLegacyMessages();
-  const [isSearchFocused, setIsSearchFocused] = React.useState(false);
+  const [, setIsSearchFocused] = React.useState(false);
   const issues = recordArray(workspace.issueItems);
   const normalizedQuery = normalizedSidebarQuery(searchQuery);
   const visibleIssues = issues.filter((issue) => sidebarIssueMatches(issue, normalizedQuery));

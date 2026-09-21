@@ -82,7 +82,6 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 <div data-owner="restricted-gnb-search-box">
                   {/* oxlint-disable-next-line jsx-a11y/no-access-key -- legacy siteLayout.scala.html renders accesskey="S" on the GNB search input. */}
                   <input
-                    accessKey="S"
                     autoComplete="off"
                     data-owner="restricted-gnb-search-input"
                     name="keyword"

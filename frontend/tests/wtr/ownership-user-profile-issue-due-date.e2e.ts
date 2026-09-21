@@ -1,11 +1,11 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 test("public profile overdue open issue due date owns the legacy right float", async ({ page }) => {
   const source = readFileSync("src/routes/$user.tsx", "utf8");
-  const styleSource = readFileSync("src/app.css", "utf8");
+
   const legacyView = readFileSync("../yona-original/app/views/user/view.scala.html", "utf8");
   const legacyPartial = readFileSync(
     "../yona-original/app/views/user/partial_issues.scala.html",

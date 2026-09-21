@@ -194,10 +194,7 @@ test("project issue detail owns generic MarkdownEditor notification receiver tit
     new URL("../../yona-original/app/assets/stylesheets/yobi.less", import.meta.url),
     "utf8",
   );
-  const routeSource = readFileSync(
-    "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
-    "utf8",
-  );
+
   const styleSource = readFileSync("src/app.css", "utf8");
 
   expect(legacyEditor).toContain('<div class="notification-receiver">');

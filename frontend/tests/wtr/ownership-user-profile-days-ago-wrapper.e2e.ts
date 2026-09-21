@@ -1,11 +1,11 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 test("authenticated public profile owns the daysAgo wrapper float", async ({ page }) => {
   const source = readFileSync("src/routes/$user.tsx", "utf8");
-  const styleSource = readFileSync("src/app.css", "utf8");
+
   const legacyView = readFileSync("../yona-original/app/views/user/view.scala.html", "utf8");
   const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
   const commonLess = readFileSync(

@@ -1,3 +1,4 @@
+/* oxlint-disable jsx-a11y/prefer-tag-over-role -- legacy Select2/Bootstrap parity DOM intentionally keeps role-based controls. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CountBadge } from "../../../../components/count-badge";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -710,15 +711,15 @@ function ProjectLabelsBody({
 }
 
 function ProjectLabelsList({
-  basePath,
+  basePath: _basePath,
   canManageIssueLabels,
   labels,
   onDeleteLabel,
   onEditCategory,
   onEditLabel,
-  ownerName,
+  ownerName: _ownerName,
   project,
-  projectName,
+  projectName: _projectName,
 }: {
   basePath: string;
   canManageIssueLabels: boolean;
@@ -800,7 +801,7 @@ function ProjectLabelsList({
           <div className="span9">
             <table className="table nm">
               <tbody>
-                {category.labels.map((label, labelIndex) => {
+                {category.labels.map((label, _labelIndex) => {
                   const labelId = stringField(label.id, "");
                   const labelName = stringField(label.name, "");
                   return (
@@ -952,7 +953,7 @@ function escapeTypeaheadRegExp(value: string) {
   return value.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
 }
 
-function typeaheadMenuStyle(input: HTMLInputElement | null) {
+function _typeaheadMenuStyle(input: HTMLInputElement | null) {
   return {
     display: "block",
     left: 0,

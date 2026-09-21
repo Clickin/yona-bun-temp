@@ -9,7 +9,7 @@ const fileURLToPath = (u: URL) => u.pathname;
 const routeSourcePath = fileURLToPath(
   new URL("../src/routes/$ownerName/$projectName/commits.tsx", import.meta.url),
 );
-const styleSourcePath = fileURLToPath(new URL("../src/app.css", import.meta.url));
+const _styleSourcePath = fileURLToPath(new URL("../src/app.css", import.meta.url));
 const legacyHistoryPath = fileURLToPath(
   new URL("../../yona-original/app/views/code/history.scala.html", import.meta.url),
 );
@@ -28,7 +28,7 @@ const screenshotRoot = fileURLToPath(
 
 test("project code-history float ownership has legacy source provenance", () => {
   const routeSource = readFileSync(routeSourcePath, "utf8");
-  const styleSource = readFileSync(styleSourcePath, "utf8");
+
   const legacyHistory = readFileSync(legacyHistoryPath, "utf8");
   const legacyBootstrap = readFileSync(legacyBootstrapPath, "utf8");
   const legacyPageLess = readFileSync(legacyPageLessPath, "utf8");

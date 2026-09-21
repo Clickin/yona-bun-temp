@@ -16,7 +16,7 @@ const legacyUploadSource = new URL(
 );
 
 test("milestone upload paste help uses conditional Style", async () => {
-  const [route, style, legacyCreate, legacyUpload] = await Promise.all([
+  const [_route, _style, legacyCreate, legacyUpload] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(styleSource, "utf8"),
     readFile(legacyCreateSource, "utf8"),

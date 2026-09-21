@@ -2,7 +2,7 @@ import { readFile, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const routeSource = new URL("../src/routes/users/signupform.tsx", import.meta.url);
-const themeSource = new URL("../src/app.css", import.meta.url);
+
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 async function mockAnonymousSignup(page: Page, capabilities: Record<string, unknown> = {}) {

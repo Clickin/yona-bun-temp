@@ -1,3 +1,4 @@
+/* oxlint-disable jsx-a11y/prefer-tag-over-role -- legacy Select2/Bootstrap parity DOM intentionally keeps role-based controls. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LegacyMessage } from "../../components/legacy-message";
 import { SiteAdminSidebar, siteSettingWrapClassName } from "../../components/site-admin-sidebar";
@@ -48,9 +49,6 @@ const LEGACY_SITE_SETTING_NAV_LINK_PROPS = {
 const LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS = {
   activeOptions: { explicitUndefined: true },
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
-};
-const LEGACY_SITE_USER_LIST_SIDEBAR_SEARCH = {
-  __legacySiteUserListSidebarActiveMarker: undefined,
 };
 
 export const Route = createFileRoute("/sites/userList")({
@@ -608,7 +606,7 @@ function UserStateTabs({
 }
 
 function UserListItem({
-  even,
+  even: _even,
   initialUserId,
   onDeleteClick,
   onDismissPasswordResetAlert,

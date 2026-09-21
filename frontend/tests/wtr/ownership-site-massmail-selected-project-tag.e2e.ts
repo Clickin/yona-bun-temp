@@ -1,12 +1,10 @@
 import { readFile, curatedAppCss } from "../wtr-compat.ts";
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const ownerSelector = '[data-owner="site-massmail-selected-project-tag"]';
 const routeSource = new URL("../src/routes/sites/massmail.tsx", import.meta.url);
-const themeSource = new URL("../src/app.css", import.meta.url);
-const appCssSource = new URL("../src/app.css", import.meta.url);
+
 const legacyMassMailScript = new URL(
   "../../yona-original/public/javascripts/service/yobi.site.MassMail.js",
   import.meta.url,
@@ -53,7 +51,7 @@ test.describe("Style site massmail selected-project tag", () => {
   test("retires only the generated label fallback classes and keeps tags absent until added", async ({
     page,
   }) => {
-    const [route, theme, appCss, legacyScript] = await Promise.all([
+    const [route, _theme, appCss, legacyScript] = await Promise.all([
       readFile(routeSource, "utf8"),
       Promise.resolve(curatedAppCss()),
       Promise.resolve(curatedAppCss()),

@@ -1,4 +1,3 @@
-import { readFile, mergedLegacyBlock } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
@@ -35,7 +34,7 @@ test.beforeEach(async ({ page }) => {
 
 test("status and since wrapper retirement records the exact Scala and frozen ownership", () => {
   const route = readFileSync("src/routes/$user.tsx", "utf8");
-  const styles = readFileSync("src/app.css", "utf8");
+
   const view = readFileSync("../yona-original/app/views/user/view.scala.html", "utf8");
   const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
   const yobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");

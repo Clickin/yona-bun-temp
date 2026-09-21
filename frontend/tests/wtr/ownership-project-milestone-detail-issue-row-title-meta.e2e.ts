@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
 // (a recorded shim gap); resolve only builds those paths.
@@ -34,7 +34,7 @@ test(`authenticated milestone issue row title/meta parity (${mode})`, async ({ p
     "src/routes/$ownerName/$projectName/milestone/$milestoneId.tsx",
     "utf8",
   );
-  const styleSource = readFileSync("src/app.css", "utf8");
+
   const view = readFileSync("../yona-original/app/views/milestone/view.scala.html", "utf8");
   const issuePartial = readFileSync(
     "../yona-original/app/views/issue/partial_list.scala.html",
@@ -109,10 +109,9 @@ test(`authenticated milestone issue row title/meta parity (${mode})`, async ({ p
     const rows = page.locator('[data-owner="milestone-detail-issue-row"]');
     await expect(rows).toHaveCount(2);
     const first = rows.nth(0);
-    const titleWrap = first.locator('[data-owner="milestone-detail-issue-title-wrap"]');
-    const postId = first.locator('[data-owner="milestone-detail-issue-post-id"]');
+
     const titleLinks = first.locator('[data-owner="milestone-detail-issue-title-link"]');
-    const infos = first.locator('[data-owner="milestone-detail-issue-infos"]');
+
     await expect(titleLinks).toHaveCount(2);
     await expect(titleLinks.nth(0)).toHaveAttribute("href", `${basePath}/admin/sample/issue/42`);
     await expect(titleLinks.nth(1)).toHaveText("Fix populated issue");

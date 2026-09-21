@@ -2386,8 +2386,8 @@ function ProgressBar({
 
 function ProjectMember({
   basePath,
-  first,
-  last,
+  first: _first,
+  last: _last,
   member,
 }: {
   basePath: string;

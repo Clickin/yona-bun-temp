@@ -20,7 +20,7 @@ test.use({ locale: "en-US" });
 
 test("global GNB search submit has complete global-theme Style ownership", () => {
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/app.css", "utf8");
+
   const appCss = curatedAppCss();
   const marker = route.indexOf('data-owner="global-gnb-search-submit"');
   const markup = route.slice(

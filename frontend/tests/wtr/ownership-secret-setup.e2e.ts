@@ -20,7 +20,7 @@ async function mockSecretSetup(page: Page, secretSetupRequired = true) {
 
 test.describe("Style secret setup", () => {
   test("uses route paint ownership for the legacy inline secret surface", async () => {
-    const [route, routeTheme, restrictedRoute, restartRoute, theme, fallback] = await Promise.all([
+    const [route, _routeTheme, restrictedRoute, restartRoute, theme, fallback] = await Promise.all([
       readFile(routeSource, "utf8"),
       readFile(routeThemeSource, "utf8"),
       readFile(restrictedRouteSource, "utf8"),
@@ -67,7 +67,6 @@ test.describe("Style secret setup", () => {
           const input = element as HTMLInputElement;
           input.focus({ preventScroll: true });
           const focused = input.ownerDocument.activeElement === input && input.matches(":focus");
-          getComputedStyle(input).borderBottomColor;
           input.getAnimations().forEach((animation) => animation.finish());
           return {
             borderBottomColor: getComputedStyle(input).borderBottomColor,

@@ -4,8 +4,8 @@ import { expect, test, type Page } from "../wtr-compat.ts";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 test("project search Style owners preserve populated and empty result contracts", async () => {
-  const [route, style, legacy, issues, users, posts, less, appCss, fallbackCss] = await Promise.all(
-    [
+  const [route, _style, legacy, issues, users, posts, less, appCss, fallbackCss] =
+    await Promise.all([
       readFile(
         new URL("../src/routes/$ownerName/$projectName/search.tsx", import.meta.url),
         "utf8",
@@ -33,8 +33,7 @@ test("project search Style owners preserve populated and empty result contracts"
       ),
       Promise.resolve(curatedAppCss()),
       Promise.resolve(mergedLegacyBlock()),
-    ],
-  );
+    ]);
   expect(legacy).toContain("search-category-wrap");
   expect(issues).toContain("search-list-wrap");
   expect(users).toContain("search-list-item");
@@ -72,7 +71,7 @@ test("project search Style owners preserve populated and empty result contracts"
     "margin: 20px 0;",
     "text-align: center;",
     "min-height: 250px;",
-    'background-image: url(\"./assets/legacy/images/no_contents.jpg\");',
+    'background-image: url("./assets/legacy/images/no_contents.jpg");',
     "background-repeat: no-repeat;",
     "background-position: center 50%;",
   ]) {

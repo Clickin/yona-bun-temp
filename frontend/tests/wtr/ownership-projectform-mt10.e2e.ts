@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
@@ -13,7 +13,6 @@ test("project form preserves legacy mt10 ownership and behavior", async ({ page 
     "utf8",
   );
   const routeSource = readFileSync("src/routes/projectform.tsx", "utf8");
-  const styleSource = readFileSync("src/app.css", "utf8");
 
   expect(legacySource).toMatch(
     /<div class="span2 right-txt mt10">\s*@Messages\("project\.shareOption"\)\s*<\/div>/u,
@@ -36,9 +35,9 @@ test("project form preserves legacy mt10 ownership and behavior", async ({ page 
   }
   expect(routeSource).toContain("span2 mt10");
   expect(routeSource).toContain("unstyled project-scopes mt10");
-  for (const styleName of ["shareOptionLabel", "vcsLabel"]) {
+  for (const _styleName of ["shareOptionLabel", "vcsLabel"]) {
   }
-  for (const styleName of ["protectedScope", "privateScope", "scopes"]) {
+  for (const _styleName of ["protectedScope", "privateScope", "scopes"]) {
   }
   expect(routeSource).not.toContain("right-txt");
   expect(routeSource).not.toContain("document.querySelector");

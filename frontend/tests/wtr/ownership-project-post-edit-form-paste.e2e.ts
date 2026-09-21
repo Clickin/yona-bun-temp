@@ -20,7 +20,7 @@ const legacyUploadSource = new URL(
 );
 
 test("post edit upload paste help uses conditional Style", async () => {
-  const [route, style, legacyEdit, legacyUploader, legacyUpload] = await Promise.all([
+  const [_route, _style, legacyEdit, legacyUploader, legacyUpload] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(styleSource, "utf8"),
     readFile(legacyEditSource, "utf8"),

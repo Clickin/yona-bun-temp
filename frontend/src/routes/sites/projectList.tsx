@@ -1,3 +1,4 @@
+/* oxlint-disable jsx-a11y/prefer-tag-over-role -- legacy Select2/Bootstrap parity DOM intentionally keeps role-based controls. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LegacyMessage } from "../../components/legacy-message";
 import { SiteAdminSidebar } from "../../components/site-admin-sidebar";
@@ -486,7 +487,7 @@ function ProjectListPagination({
 }
 
 function ProjectListItem({
-  index,
+  index: _index,
   onDelete,
   project,
 }: {

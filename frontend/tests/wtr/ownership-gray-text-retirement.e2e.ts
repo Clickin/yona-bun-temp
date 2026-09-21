@@ -17,6 +17,6 @@ test("retires gray-txt fallback with route-owned separators", async () => {
   for (const [route, owner] of routes) {
     const source = read(route);
     expect(source).not.toContain("gray-txt");
-    expect(source).toContain(`data-owner=\"${owner}\"`);
+    expect(source).toContain(`data-owner="${owner}"`);
   }
 });

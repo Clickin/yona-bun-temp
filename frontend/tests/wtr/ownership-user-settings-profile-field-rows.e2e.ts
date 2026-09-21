@@ -17,7 +17,7 @@ test.use({ locale: "ko-KR" });
 
 test("records the legacy profile field ownership and retained fallback consumer", () => {
   const route = read("src/routes/user/editform.tsx");
-  const styles = read("src/app.css");
+
   const appCss = read("src/app.css");
   const legacy = read("../yona-original/app/views/user/edit.scala.html");
   const tabMenu = read("../yona-original/app/views/user/partial_edit_tabmenu.scala.html");

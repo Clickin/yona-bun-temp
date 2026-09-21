@@ -36,7 +36,7 @@ async function openMassMail(page: Page) {
 
 test.describe("Style site massmail title strip", () => {
   test("reuses canonical frozen title globals through the stable owner", async () => {
-    const [route, theme] = await Promise.all([
+    const [route, _theme] = await Promise.all([
       readFile(routeSource, "utf8"),
       readFile(themeSource, "utf8"),
     ]);

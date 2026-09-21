@@ -1,5 +1,4 @@
-import { readFile, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
-import { readFileSync } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -84,7 +83,7 @@ test.beforeEach(async ({ page }) => {
 test("authenticated public profile owns desktop author/assignee and mobile assignee visibility", async ({
   page,
 }) => {
-  const [source, styleSource, view, partial, responsive, bootstrap, yobiLess, messages] =
+  const [source, _styleSource, view, partial, responsive, bootstrap, yobiLess, messages] =
     await Promise.all([
       readFile(new URL("../src/routes/$user.tsx", import.meta.url), "utf8"),
       curatedAppCss(),

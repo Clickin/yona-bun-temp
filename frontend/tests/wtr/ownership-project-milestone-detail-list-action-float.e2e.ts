@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
 // (a recorded shim gap); resolve only builds those paths.
@@ -34,7 +34,7 @@ test(`milestone detail owns the legacy list action float (${fallbackMode})`, asy
     "src/routes/$ownerName/$projectName/milestone/$milestoneId.tsx",
     "utf8",
   );
-  const styleSource = readFileSync("src/app.css", "utf8");
+
   const legacyView = readFileSync("../yona-original/app/views/milestone/view.scala.html", "utf8");
   const massUpdatePartial = readFileSync(
     "../yona-original/app/views/issue/partial_massupdate.scala.html",

@@ -1,4 +1,4 @@
-import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -74,7 +74,7 @@ test("populated public-profile pull-request title and infos owners retire legacy
 }) => {
   const [
     routeSource,
-    styleSource,
+    _styleSource,
     viewScala,
     partial,
     pageLess,

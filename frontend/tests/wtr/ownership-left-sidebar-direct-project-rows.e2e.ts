@@ -1,11 +1,4 @@
-import {
-  expect,
-  test,
-  type Locator,
-  type Page,
-  readFileSync,
-  mergedLegacyBlock,
-} from "../wtr-compat.ts";
+import { expect, test, type Locator, type Page, readFileSync } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
 // (a recorded shim gap); resolve only builds those paths.
 const mkdirSync = () => undefined;
@@ -319,7 +312,7 @@ async function readRowEvidence(row: ProjectRow) {
     const logo = item.firstElementChild as HTMLElement;
     const nameOwner = item.lastElementChild as HTMLElement;
     const name = nameOwner.firstElementChild as HTMLElement;
-    const owner = nameOwner.lastElementChild as HTMLElement;
+
     const avatar = logo.querySelector("i") as HTMLElement;
     const star = list.lastElementChild as HTMLElement;
     const icon = star.firstElementChild as HTMLElement;

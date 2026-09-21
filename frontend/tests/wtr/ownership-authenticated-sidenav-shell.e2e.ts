@@ -1,11 +1,4 @@
-import {
-  expect,
-  test,
-  type Locator,
-  type Page,
-  readFileSync,
-  mergedLegacyBlock,
-} from "../wtr-compat.ts";
+import { expect, test, type Locator, type Page, readFileSync } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
 // (a recorded shim gap); resolve only builds those paths.
 const mkdirSync = () => undefined;
@@ -25,7 +18,7 @@ test("authenticated side-nav shell uses global Style color variables", () => {
   expect(themeSource).not.toContain("sidenavBaseTop");
   expect(themeSource).not.toContain("sidenavAdminAffixTop");
 
-  for (const color of [
+  for (const _color of [
     "#fff",
     "#ffffff",
     "white",

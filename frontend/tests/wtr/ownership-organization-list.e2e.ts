@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -8,7 +8,7 @@ test.use({ locale: "ko-KR" });
 
 test("records organization directory Style ownership and responsive geometry", async ({ page }) => {
   const route = readFileSync("src/routes/orgs.tsx", "utf8");
-  const theme = readFileSync("src/app.css", "utf8");
+
   const template = readFileSync("../yona-original/app/views/organization/list.scala.html", "utf8");
   const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
   const responsiveLess = readFileSync(

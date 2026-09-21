@@ -1,5 +1,4 @@
 import { readFile } from "../wtr-compat.ts";
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -48,7 +47,7 @@ async function openProjects(page: Page) {
 
 test.describe("Style site massmail project input", () => {
   test("uses a stable owner and canonical global margin only", async ({ page }) => {
-    const [route, theme] = await Promise.all([
+    const [route, _theme] = await Promise.all([
       readFile(routeSource, "utf8"),
       readFile(themeSource, "utf8"),
     ]);

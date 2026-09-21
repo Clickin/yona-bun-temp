@@ -13,7 +13,7 @@ for (const viewport of [
   }) => {
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/_help`);
-    const list = page.locator(owner("list"));
+
     const rows = page.locator(owner("row"));
     const first = rows.first();
     const last = rows.last();

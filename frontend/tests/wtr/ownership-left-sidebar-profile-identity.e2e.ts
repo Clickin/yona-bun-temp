@@ -1,11 +1,4 @@
-import {
-  expect,
-  test,
-  type Locator,
-  type Page,
-  readFileSync,
-  mergedLegacyBlock,
-} from "../wtr-compat.ts";
+import { expect, test, type Locator, type Page, readFileSync } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
 // (a recorded shim gap); resolve only builds those paths.
 const mkdirSync = () => undefined;
@@ -17,7 +10,7 @@ test.use({ locale: "en-US" });
 
 test("left sidebar profile identity has complete global-theme Style ownership", () => {
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/app.css", "utf8");
+
   const marker = route.indexOf('data-owner="left-sidebar-profile-identity"');
   expect(marker).toBeGreaterThanOrEqual(0);
   const ownerStart = route.lastIndexOf("<Link", marker);

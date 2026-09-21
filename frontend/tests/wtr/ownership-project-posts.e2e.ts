@@ -1,4 +1,4 @@
-import { readFile, readFileSync, curatedAppCss } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const generatedFallbackHref = "legacy-assets/stylesheets/legacy-fallback.css";

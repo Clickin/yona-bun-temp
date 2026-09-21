@@ -1,4 +1,4 @@
-import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Locator, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -68,7 +68,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("profile owner edit control follows the final frozen ybtn mini cascade", async ({ page }) => {
-  const [routeSource, styleSource, scala, yobiLess, yobiUiLess, messages] = await Promise.all([
+  const [routeSource, _styleSource, scala, yobiLess, yobiUiLess, messages] = await Promise.all([
     readFile(new URL("../src/routes/$user.tsx", import.meta.url), "utf8"),
     curatedAppCss(),
     readFile(

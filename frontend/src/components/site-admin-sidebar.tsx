@@ -78,7 +78,7 @@ export function SiteAdminSidebar({
   navOwner,
   ownerPrefix,
   showUpdateBadge,
-  styleSlots,
+  styleSlots: _styleSlots,
   ulClassName,
 }: SiteAdminSidebarProps) {
   return (

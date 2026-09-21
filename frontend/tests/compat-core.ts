@@ -1,3 +1,4 @@
+/* oxlint-disable eslint/no-control-regex -- glob and keyboard parsers intentionally match control-code placeholders. */
 // ponytail: extracted from wtr-compat.ts (same-source helpers, no behavior
 // change) so the dom lane can run without the iframe/realm machinery. The
 // chrome lane keeps importing wtr-compat.ts untouched; this module is the

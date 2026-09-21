@@ -10,7 +10,6 @@ const lessSource = new URL(
   "../../yona-original/app/assets/stylesheets/less/_page.less",
   import.meta.url,
 );
-const appCssSource = new URL("../src/app.css", import.meta.url);
 
 test("project history header typography uses route-local Style ownership", async () => {
   const [route, legacy, less, appCss] = await Promise.all([

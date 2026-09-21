@@ -1,5 +1,5 @@
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
-import { readFile, readFileSync } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
 // (a no-op); resolve only builds those paths.

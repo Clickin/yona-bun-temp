@@ -1,5 +1,5 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
-import { expect, test, type Page, type Route } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
+import { expect, test, type Page } from "../wtr-compat.ts";
 
 const SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/post/$postNumber/editform.tsx", import.meta.url),
@@ -9,7 +9,7 @@ const UPLOAD_SOURCE = readFileSync(
   new URL("../../yona-original/app/views/common/uploadForm.scala.html", import.meta.url),
   "utf8",
 );
-const STYLE_SOURCE = curatedAppCss();
+
 const EDITOR_COMPONENT_SOURCE = readFileSync(
   new URL("../src/components/markdown-editor.tsx", import.meta.url),
   "utf8",

@@ -84,7 +84,7 @@ async function mockOrganizationHome(page: Page) {
   );
 }
 
-async function assertStats(page: Page, projectName: string, fallbackOff: boolean) {
+async function assertStats(page: Page, projectName: string, _fallbackOff: boolean) {
   const card = page.locator(`[data-value^="${projectName} "]`).first();
   const stats = card.locator('[data-owner="organization-home-project-card-stats"]');
   const membersIcon = card.locator(

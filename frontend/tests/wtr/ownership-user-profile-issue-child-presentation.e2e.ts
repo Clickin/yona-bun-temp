@@ -1,5 +1,4 @@
-import { readFile, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
-import { readFileSync } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdir only feeds page.screenshot paths (no-op).
@@ -100,14 +99,14 @@ test("public profile visible child list owns only its matching legacy presentati
 
   const [
     route,
-    styles,
+    _styles,
     view,
     issuePartial,
     childListPartial,
     childPartial,
     pageLess,
     yobiLess,
-    yobicon,
+    _yobicon,
   ] = await Promise.all([
     readFile(new URL("../src/routes/$user.tsx", import.meta.url), "utf8"),
     curatedAppCss(),

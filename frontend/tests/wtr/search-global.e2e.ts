@@ -2313,7 +2313,7 @@ async function canonicalizeScreenRoots(page: Page) {
       if (attr.name === "class") {
         const isSignupLink =
           attr.ownerElement instanceof HTMLAnchorElement &&
-          /\/users\/signupform$/u.test(attr.ownerElement.getAttribute("href") ?? "");
+          (attr.ownerElement.getAttribute("href") ?? "").endsWith("/users/signupform");
         return attr.value
           .split(/\s+/u)
           .filter(
@@ -2330,7 +2330,7 @@ async function canonicalizeScreenRoots(page: Page) {
       if (
         attr.name === "style" &&
         attr.ownerElement instanceof Element &&
-        (Array.from(attr.ownerElement.classList).some((token) => /^ico-/.test(token)) ||
+        (Array.from(attr.ownerElement.classList).some((token) => token.startsWith("ico-")) ||
           attr.ownerElement.classList.contains("empty-result"))
       ) {
         return "";
@@ -2400,8 +2400,8 @@ async function canonicalizeScreenRoots(page: Page) {
         attr.name === "href" &&
         attr.ownerElement instanceof HTMLAnchorElement &&
         attr.ownerElement.closest(".user-menu-wrap") !== null &&
-        /\/anonymous$/u.test(attr.value) &&
-        !/\/user\/anonymous$/u.test(attr.value)
+        attr.value.endsWith("/anonymous") &&
+        !attr.value.endsWith("/user/anonymous")
       );
     }
 
@@ -2647,7 +2647,7 @@ async function canonicalizeHtml(page: Page, html: string) {
       if (attr.name === "class") {
         const isSignupLink =
           attr.ownerElement instanceof HTMLAnchorElement &&
-          /\/users\/signupform$/u.test(attr.ownerElement.getAttribute("href") ?? "");
+          (attr.ownerElement.getAttribute("href") ?? "").endsWith("/users/signupform");
         return attr.value
           .split(/\s+/u)
           .filter(
@@ -2664,7 +2664,7 @@ async function canonicalizeHtml(page: Page, html: string) {
       if (
         attr.name === "style" &&
         attr.ownerElement instanceof Element &&
-        (Array.from(attr.ownerElement.classList).some((token) => /^ico-/.test(token)) ||
+        (Array.from(attr.ownerElement.classList).some((token) => token.startsWith("ico-")) ||
           attr.ownerElement.classList.contains("empty-result"))
       ) {
         return "";
@@ -2734,8 +2734,8 @@ async function canonicalizeHtml(page: Page, html: string) {
         attr.name === "href" &&
         attr.ownerElement instanceof HTMLAnchorElement &&
         attr.ownerElement.closest(".user-menu-wrap") !== null &&
-        /\/anonymous$/u.test(attr.value) &&
-        !/\/user\/anonymous$/u.test(attr.value)
+        attr.value.endsWith("/anonymous") &&
+        !attr.value.endsWith("/user/anonymous")
       );
     }
 

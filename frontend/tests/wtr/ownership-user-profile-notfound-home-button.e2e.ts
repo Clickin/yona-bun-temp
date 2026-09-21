@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 // Post-merge: the full legacy cascade lives in app.css — normal-mode semantics.
 const fallbackOff = false;
 import { expect, test } from "../wtr-compat.ts";
@@ -14,7 +14,7 @@ const screenshotDirectory = resolve(
   fallbackOff ? "fallback-off" : "fallback-on",
 );
 const routeSource = readFileSync(new URL("../src/routes/$user.tsx", import.meta.url), "utf8");
-const stylesSource = curatedAppCss();
+
 const legacyView = readFileSync(
   new URL("../../yona-original/app/views/user/view.scala.html", import.meta.url),
   "utf8",

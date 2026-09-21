@@ -6,7 +6,7 @@ test("issue detail timeline event base/date use route-local Style", async () => 
     "../src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
     "utf8",
   );
-  const styleSource = readFileSync("../src/app.css", "utf8");
+
   const legacyEvent = readFileSync(
     "../yona-original/app/views/issue/partial_event_timeline.scala.html",
     "utf8",

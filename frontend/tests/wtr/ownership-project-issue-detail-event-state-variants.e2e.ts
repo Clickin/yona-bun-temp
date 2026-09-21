@@ -6,7 +6,7 @@ test("issue detail event state variants use finite Style lookup", async () => {
     "../src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
     "utf8",
   );
-  const style = readFileSync("../src/app.css", "utf8");
+
   const css = readFileSync("../src/app.css", "utf8");
   const legacy = readFileSync(
     "../yona-original/app/views/issue/partial_event_timeline.scala.html",

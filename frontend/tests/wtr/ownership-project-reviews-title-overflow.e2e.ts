@@ -9,7 +9,7 @@ const routeSource = new URL("../src/routes/$ownerName/$projectName/reviews.tsx",
 const styleSource = new URL("../src/app.css", import.meta.url);
 
 test("project reviews title overflow uses route-local Style", async () => {
-  const [legacy, css, route, style] = await Promise.all([
+  const [legacy, css, route, _style] = await Promise.all([
     readFile(legacySource, "utf8"),
     readFile(cssSource, "utf8"),
     readFile(routeSource, "utf8"),

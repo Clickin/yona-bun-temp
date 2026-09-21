@@ -52919,3 +52919,8 @@ body:has(.site-admin-affix-surface) #mySidenav {
   color: #333;
   border-color: #ccc;
 }
+@media (prefers-reduced-motion: reduce) {
+  [data-last-outlet-transition="true"] {
+    transition: none !important;
+  }
+}

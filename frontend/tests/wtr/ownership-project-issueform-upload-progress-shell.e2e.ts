@@ -14,8 +14,8 @@ const appCssSource = "../src/app.css";
 
 test("issue form upload progress shell owns static Style geometry", async () => {
   const [
-    route,
-    style,
+    _route,
+    _style,
     create,
     uploader,
     uploadForm,

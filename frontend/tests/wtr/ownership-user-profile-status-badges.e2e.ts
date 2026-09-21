@@ -1,4 +1,4 @@
-import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -65,7 +65,7 @@ test("public profile status badges follow the final frozen Bootstrap and page ca
   page,
 }) => {
   test.setTimeout(60_000);
-  const [routeSource, styleSource, scala, bootstrap, yobiLess, pageLess, overrideLess] =
+  const [routeSource, _styleSource, scala, bootstrap, yobiLess, pageLess, overrideLess] =
     await Promise.all([
       readFile(new URL("../src/routes/$user.tsx", import.meta.url), "utf8"),
       curatedAppCss(),

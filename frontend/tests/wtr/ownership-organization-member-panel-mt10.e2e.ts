@@ -11,7 +11,7 @@ const screenshotDirectory = resolve(
 );
 
 const routeSource = new URL("../src/routes/organizations/$organizationName.tsx", import.meta.url);
-const styleSource = new URL("../src/app.css", import.meta.url);
+
 const legacyViewSource = new URL(
   "../../yona-original/app/views/organization/view.scala.html",
   import.meta.url,
@@ -63,7 +63,7 @@ test.use({ locale: "en-US" });
 test("organization member panel mt10 preserves frozen source and Style ownership", async () => {
   const [
     route,
-    style,
+    _style,
     legacyView,
     common,
     page,

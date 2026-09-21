@@ -168,12 +168,7 @@ for (const viewport of [
       outer: actualOuter,
       ...actualOwned
     } = evidence.actual;
-    const {
-      boxes: fallbackBoxes,
-      heading: fallbackHeading,
-      outer: fallbackOuter,
-      ...fallbackOwned
-    } = evidence.fallback;
+    const { heading: fallbackHeading, outer: fallbackOuter, ...fallbackOwned } = evidence.fallback;
     expect(actualOwned).toEqual(fallbackOwned);
     expect(actualBoxes).toEqual({
       heading: {

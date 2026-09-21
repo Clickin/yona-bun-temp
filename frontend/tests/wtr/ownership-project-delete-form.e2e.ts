@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts"; // Browser harness: fileURLToPath reduces URL objects to their pathname so
+import { readFileSync, curatedAppCss as _curatedAppCss } from "../wtr-compat.ts"; // Browser harness: fileURLToPath reduces URL objects to their pathname so
 // readFileSync maps them through the fixture middleware.
 const fileURLToPath = (u: URL) => u.pathname;
 
@@ -8,7 +8,6 @@ const routeSource = readFileSync(
   fileURLToPath(new URL("../src/routes/$ownerName/$projectName/deleteform.tsx", import.meta.url)),
   "utf8",
 );
-const styleSource = curatedAppCss() + mergedLegacyBlock();
 
 const owners = [
   "project-delete-action",

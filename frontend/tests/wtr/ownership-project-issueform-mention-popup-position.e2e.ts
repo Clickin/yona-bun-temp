@@ -6,7 +6,7 @@ const styleSource = "../src/app.css";
 const legacySource = "../yona-original/app/views/issue/create.scala.html";
 
 test("issue form mention popup coordinates use Dynamic Style", async () => {
-  const [route, style, legacy] = await Promise.all([
+  const [route, _style, legacy] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(styleSource, "utf8"),
     readFile(legacySource, "utf8"),

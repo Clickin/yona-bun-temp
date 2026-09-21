@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts"; // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts"; // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts) => parts.join("/");
 
@@ -59,7 +59,6 @@ test("authenticated Home notification row has complete global-theme Style owners
   expect(item).toContain("yobicon-${notificationGlyph}");
   expect(appCss).not.toContain(".notification-stream {");
   expect(less).toContain(".notification-stream {");
-
 });
 
 for (const viewport of [

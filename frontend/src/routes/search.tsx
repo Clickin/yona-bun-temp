@@ -17,7 +17,6 @@ import {
 } from "../api/search";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import defaultProjectLogoUrl from "../assets/legacy/project_default_logo.png";
-import legacySpriteUrl from "../assets/legacy/sprite.png";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";

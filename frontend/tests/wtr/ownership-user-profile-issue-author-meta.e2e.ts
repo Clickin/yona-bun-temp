@@ -1,5 +1,4 @@
-import { readFile, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
-import { readFileSync } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -65,7 +64,7 @@ test("authenticated public profile owns populated issue author and metadata resi
 }) => {
   const [
     source,
-    styleSource,
+    _styleSource,
     scala,
     partial,
     pageLess,

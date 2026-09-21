@@ -2,7 +2,7 @@ import { expect, test, curatedAppCss } from "../wtr-compat.ts";
 import { readFile } from "../wtr-compat.ts";
 
 test("change VCS code menu visibility uses conditional Style", async () => {
-  const [partial, route, style] = await Promise.all([
+  const [partial, route, _style] = await Promise.all([
     readFile("../yona-original/app/views/project/partial_settingmenu.scala.html", "utf8"),
     readFile("src/routes/$ownerName/$projectName/changeVCS.tsx", "utf8"),
     Promise.resolve(curatedAppCss()),

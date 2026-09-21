@@ -1,3 +1,4 @@
+/* oxlint-disable jsx-a11y/prefer-tag-over-role -- legacy Select2/Bootstrap parity DOM intentionally keeps role-based controls. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PullRequestFileUploader } from "../../../components/file-uploader";
 import { PullRequestMarkdownEditor } from "../../../components/markdown-editor";
@@ -609,10 +610,15 @@ export function PullRequestSelect2({
   const [open, setOpen] = useState(false);
   const [term, setTerm] = useState("");
   const choiceRef = useRef<HTMLButtonElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
   const selectedLabel = options.find((option) => option.value === value)?.label ?? "";
   const visibleOptions = options.filter((option) =>
     option.label.toLowerCase().includes(term.trim().toLowerCase()),
   );
+  // react-doctor-disable-next-line react-doctor/no-effect-event-handler -- focus follows the legacy dropdown opening after its input mounts.
+  useEffect(() => {
+    if (open) searchRef.current?.focus();
+  }, [open]);
   const choose = (nextValue: string) => {
     setOpen(false);
     setTerm("");
@@ -623,6 +629,7 @@ export function PullRequestSelect2({
   return (
     <div
       id={`s2id_${controlId}`}
+      role="group"
       className={`select2-container${disabled ? " select2-container-disabled" : ""}${branch ? "" : " mr5"}${open ? " select2-container-active select2-dropdown-open" : ""}`}
       data-owner={`${owner}-${controlId}-picker`}
       onBlurCapture={(event) => {
@@ -674,10 +681,10 @@ export function PullRequestSelect2({
         >
           <div className="select2-search">
             <input
+              ref={searchRef}
               className="select2-input"
               type="text"
               autoComplete="off"
-              autoFocus
               value={term}
               aria-label={branch ? t("pullRequest.select.branch") : t("title.project")}
               onChange={(event) => setTerm(event.currentTarget.value)}

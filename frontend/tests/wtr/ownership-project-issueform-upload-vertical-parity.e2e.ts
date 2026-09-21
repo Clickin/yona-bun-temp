@@ -14,9 +14,9 @@ const legacyResponsiveSource = "../yona-original/app/assets/stylesheets/less/_re
 test("issueform editor owns legacy border-box geometry before the upload shell", async () => {
   const [
     route,
-    styles,
+    _styles,
     markdown,
-    markdownStyles,
+    _markdownStyles,
     bootstrap,
     legacyCreate,
     legacyPage,

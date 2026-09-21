@@ -3,7 +3,7 @@ import { expect, test } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = new URL("../src/routes/sites/update.tsx", import.meta.url);
-const themeSource = new URL("../src/app.css", import.meta.url);
+
 const templateSource = new URL(
   "../../yona-original/app/views/site/update.scala.html",
   import.meta.url,
@@ -139,8 +139,8 @@ test.describe("Style site update available message", () => {
   test("isolates generated ownership to the available paragraph and its direct strong", async ({
     page,
   }) => {
-    const available = await openAvailableUpdate(page);
-    const strong = owner(available, owners.strong);
+    const _available = await openAvailableUpdate(page);
+
     expect(
       await page.evaluate(
         (ownerNames) =>

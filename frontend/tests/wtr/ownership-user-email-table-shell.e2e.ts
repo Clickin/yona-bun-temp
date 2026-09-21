@@ -159,7 +159,7 @@ for (const viewport of [
       await expect(cell).toHaveCSS("vertical-align", "top");
       await expect(cell).toHaveCSS("border-top", "1px solid rgb(221, 221, 221)");
     }
-    for (const [index, cell] of (await actions.all()).entries()) {
+    for (const [_index, cell] of (await actions.all()).entries()) {
       await expect(cell).toHaveCSS("padding", "8px");
       await expect(cell).toHaveCSS("line-height", "20px");
       await expect(cell).toHaveCSS("text-align", "right");

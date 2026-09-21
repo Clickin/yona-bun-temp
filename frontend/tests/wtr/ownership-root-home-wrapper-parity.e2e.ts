@@ -12,7 +12,7 @@ test("authenticated root home preserves legacy wrapper classes, order, and geome
     "../yona-original/app/views/index/notifications.scala.html",
     "utf8",
   );
-  const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
+
   const yobiLess = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
   const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
   const responsiveLess = readFileSync(

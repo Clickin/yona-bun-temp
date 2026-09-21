@@ -3,7 +3,7 @@ import { expect, test, type Locator, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = new URL("../src/routes/sites/update.tsx", import.meta.url);
-const themeSource = new URL("../src/app.css", import.meta.url);
+
 const templateSource = new URL(
   "../../yona-original/app/views/site/update.scala.html",
   import.meta.url,

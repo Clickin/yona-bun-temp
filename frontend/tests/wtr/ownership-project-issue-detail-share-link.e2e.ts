@@ -1,9 +1,9 @@
-import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test("issue detail comment share-link hidden state is Style-owned", () => {
   const route = readFileSync("src/routes/$ownerName/$projectName/issue/$issueNumber.tsx", "utf8");
-  const theme = curatedAppCss();
+
   const comment = readFileSync(
     "../yona-original/app/views/issue/partial_comment.scala.html",
     "utf8",

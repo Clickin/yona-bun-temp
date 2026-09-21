@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
@@ -10,7 +10,7 @@ const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const fallback = "normal";
 const screenshotDir = resolve(`output/playwright/style-project-reviews-action-floats/${fallback}`);
 const route = readFileSync("src/routes/$ownerName/$projectName/reviews.tsx", "utf8");
-const style = readFileSync("src/app.css", "utf8");
+
 const legacy = readFileSync("../yona-original/app/views/reviewthread/list.scala.html", "utf8");
 const partial = readFileSync(
   "../yona-original/app/views/reviewthread/partial_list.scala.html",

@@ -44,8 +44,8 @@ test.describe("Style site data sidebar", () => {
   test("pins legacy sources, global theme, old bridge absence, and retirement", async () => {
     const [
       route,
-      theme,
-      appCss,
+      _theme,
+      _appCss,
       template,
       layout,
       messages,

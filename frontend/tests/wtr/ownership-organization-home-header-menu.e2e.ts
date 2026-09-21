@@ -6,7 +6,7 @@ const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 test("organization home moves the legacy header and menu shells into Style owners", async ({
   page,
 }) => {
-  const [legacyHeader, legacyMenu, style, route] = await Promise.all([
+  const [legacyHeader, legacyMenu, _style, route] = await Promise.all([
     readFile("../yona-original/app/views/organization/header.scala.html", "utf8"),
     readFile("../yona-original/app/views/organization/menu.scala.html", "utf8"),
     Promise.resolve(curatedAppCss()),
@@ -61,7 +61,7 @@ test("organization home moves the legacy header and menu shells into Style owner
       "organization-menu-settings",
     ];
     const nodes = Object.fromEntries(
-      required.map((owner) => [owner, document.querySelector(`[data-owner=\"${owner}\"]`)]),
+      required.map((owner) => [owner, document.querySelector(`[data-owner="${owner}"]`)]),
     );
     if (Object.values(nodes).some((node) => !(node instanceof HTMLElement)))
       throw new Error("missing owner");

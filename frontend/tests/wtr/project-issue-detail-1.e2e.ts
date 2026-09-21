@@ -1,4 +1,4 @@
-import { expect, test, type Page, readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { expect, test, readFileSync } from "../wtr-compat.ts";
 // Post-merge: the full legacy cascade lives in app.css — normal-mode semantics.
 const fallbackOff = false;
 import {
@@ -6,45 +6,22 @@ import {
   issueNotFoundMetrics,
   headTitleText,
   lastHeadMetaContent,
-  commentDeleteModalMetrics,
   canonicalize,
-  canonicalizeAll,
   canonicalizeHtml,
   setBrowserLanguage,
   armRootModalBridgeTrap,
   rootModalBridgeHits,
-  installClipboardSpy,
-  lastCopiedText,
   expectIssueDetailAssets,
-  expectIssueDetailTooltipMetadata,
-  expectLegacyTopHoverPopover,
-  expectIssueDetailSelect2Partial,
   protectedIssueShellMetrics,
-  readReplyMetrics,
-  dedupeRequests,
-  getUserAvatar,
-  insulateModalButtonClick,
-  splitOriginalMessage,
-  assertContained,
-  loadModule,
-  partial_voters,
-  attachedFilesHtml,
-  child_commentForm,
-  legacyIssueOpenGraphDescription,
-  yonaAssgineeModule,
+  insulateModalButtonClick as _insulateModalButtonClick,
+  partial_voters as _partial_voters,
+  yonaAssgineeModule as _yonaAssgineeModule,
   commentVoters,
-  issueVoterAvatarOrderMetrics,
-  commentUpdateFormMetrics,
-  childCommentAnchorMetrics,
-  commentVoterModalMetrics,
+  commentVoterModalMetrics as _commentVoterModalMetrics,
   issueDetailShellMetrics,
   indexCommentMetrics,
   issueCommentMetrics,
-  eventTimelineMetrics,
-  childIssueMetrics,
-  selectedLabelMetrics,
   keymapModalMetrics,
-  dueDateInlineUpdateMetrics,
 } from "./project-issue-detail-shared.ts";
 
 test("project issue detail renders safe legacy media, highlighted markdown, and action geometry", async ({
@@ -198,13 +175,13 @@ test("project issue detail restores live Korean metadata controls and editor geo
     // background-image style with the Vite-managed hashed asset
     // (project_default-HASH.jpg) — the earlier --x-backgroundImage CSS-var
     // mechanism was retired; the image URL contract is unchanged.
-    /background-image:\s*url\(['"](?:https?:\/\/[^'"]*)?\/yona\/(?:[^\/]+\/)*assets\/project_default-[A-Za-z0-9]{8}\.jpg['"]\)/u,
+    /background-image:\s*url\(['"](?:https?:\/\/[^'"]*)?\/yona\/(?:[^/]+\/)*assets\/project_default-[A-Za-z0-9]{8}\.jpg['"]\)/u,
   );
   await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
     "src",
     // copy-fix-current-dom: Vite-managed hashed logo asset; nested SPA routes
     // resolve the relative vite base against the route path
-    /\/yona\/(?:[^\/]+\/)*assets\/project_default_logo-[A-Za-z0-9]{8}\.png$/u,
+    /\/yona\/(?:[^/]+\/)*assets\/project_default_logo-[A-Za-z0-9]{8}\.png$/u,
   );
 
   const assignee = page.getByRole("combobox", { name: "담당자" });

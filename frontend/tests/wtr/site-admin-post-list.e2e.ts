@@ -462,7 +462,7 @@ test("site admin post list preserves mixed legacy row branches and pagination co
   );
   await expect(rows).toHaveCount(2);
   expect(
-    (await sitePostRowDom(page)).map(({ dateText, dateTitle, projectImgSrc, ...row }) => row),
+    (await sitePostRowDom(page)).map(({ _dateText, _dateTitle, _projectImgSrc, ...row }) => row),
   ).toEqual([
     {
       authorAvatarHeight: "16",

@@ -1,11 +1,4 @@
-import {
-  expect,
-  test,
-  type Locator,
-  type Page,
-  readFileSync,
-  mergedLegacyBlock,
-} from "../wtr-compat.ts";
+import { expect, test, type Locator, type Page, readFileSync } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
 // (a recorded shim gap); resolve only builds those paths.
 const mkdirSync = () => undefined;
@@ -223,7 +216,7 @@ for (const state of ["populated", "empty"] as const) {
 
 test("left sidebar Favorite shell has complete global-theme Style ownership", () => {
   const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const themeSource = readFileSync("src/app.css", "utf8");
+
   const componentStart = routeSource.indexOf("function SidebarOrganizationList");
   const componentEnd = routeSource.indexOf("function SidebarProjectList", componentStart);
 

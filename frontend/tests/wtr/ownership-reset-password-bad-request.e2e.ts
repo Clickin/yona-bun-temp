@@ -27,7 +27,7 @@ async function open(page: Page) {
 
 test.describe("Style reset-password bad request", () => {
   test("owns only the legacy wrapper and message while retaining shared fallback primitives", async () => {
-    const [source, routeVars, vars, css] = await Promise.all([
+    const [source, _routeVars, vars, css] = await Promise.all([
       readFile(route, "utf8"),
       readFile(routeTheme, "utf8"),
       readFile(theme, "utf8"),

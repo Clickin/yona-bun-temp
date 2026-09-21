@@ -16,7 +16,6 @@ const legacyStyles = new URL(
   "../../yona-original/app/assets/stylesheets/less/_page.less",
   import.meta.url,
 );
-const appStyles = new URL("../src/app.css", import.meta.url);
 
 test("site mail send action wrapper owns legacy centering in Style", async () => {
   const [route, legacy, less, css] = await Promise.all([

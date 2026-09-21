@@ -1,12 +1,11 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 // Post-merge: the full legacy cascade lives in app.css — normal-mode semantics.
 const fallbackOff = false;
 import { expect, test } from "../wtr-compat.ts";
 
-test("reviews batch 6 restores the legacy project page shell", async ({ page }) => {
+test("reviews batch 6 restores the legacy project page shell", async ({ _page }) => {
   const legacy = readFileSync("../yona-original/app/views/reviewthread/list.scala.html", "utf8");
   const route = readFileSync("src/routes/$ownerName/$projectName/reviews.tsx", "utf8");
-  const style = readFileSync("src/app.css", "utf8");
 
   expect(legacy).toContain('<div class="project-page-wrap">');
   expect(legacy).toContain('<div class="row-fluid issue-list-wrap">');

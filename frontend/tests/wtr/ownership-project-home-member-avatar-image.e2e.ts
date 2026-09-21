@@ -1,5 +1,5 @@
 import { readFileSync } from "../wtr-compat.ts";
-import { expect, test, type Page, type Route } from "../wtr-compat.ts";
+import { expect, test, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const memberAvatarUrl = `${basePath}/legacy-assets/images/default-avatar-34.png`;

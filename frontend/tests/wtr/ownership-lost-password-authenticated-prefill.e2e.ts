@@ -86,7 +86,6 @@ test.describe("Style authenticated lost-password prefill", () => {
         const input = element as HTMLInputElement;
         input.focus({ preventScroll: true });
         const focused = input.ownerDocument.activeElement === input && input.matches(":focus");
-        getComputedStyle(input).borderBottomColor;
         input.getAnimations().forEach((animation) => animation.finish());
         return {
           borderBottomColor: getComputedStyle(input).borderBottomColor,

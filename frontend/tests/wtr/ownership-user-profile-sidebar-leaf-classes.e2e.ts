@@ -1,4 +1,4 @@
-import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdir only feeds page.screenshot paths (no-op).
@@ -55,7 +55,7 @@ test("populated public-profile sidebar leaf DOM preserves exact Style parity", a
     const since = page.locator('[data-owner="user-profile-since"]');
     const provider = page.locator('[data-owner="user-profile-provider-logo"]');
     const github = page.locator('[data-owner="user-profile-provider-github"]');
-    const google = page.locator('[data-owner="user-profile-provider-google"]');
+
     const svg = github.locator(":scope > svg");
 
     await expect(since).toHaveText("2026-06-30");
@@ -183,7 +183,7 @@ async function assertSourceEvidence() {
   ];
   const [
     route,
-    styles,
+    _styles,
     scala,
     helper,
     yobi,
@@ -308,7 +308,7 @@ async function readMetrics(page: Page) {
     const infoBox = info.getBoundingClientRect();
     const sinceWrapperBox = sinceWrapper.getBoundingClientRect();
     const providerWrapperBox = providerWrapper.getBoundingClientRect();
-    const providerBox = provider.getBoundingClientRect();
+
     const githubBox = github.getBoundingClientRect();
     const googleBox = google.getBoundingClientRect();
     const svgBox = svg.getBoundingClientRect();

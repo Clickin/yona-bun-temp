@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts"; // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts"; // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
 
@@ -44,7 +44,7 @@ test("global GNB nav and brand item have complete global-theme Style ownership",
   expect(nav).not.toContain('className="gnb-nav"');
 
   const itemMarker = route.indexOf('data-owner="global-gnb-brand-item"');
-  const item = route.slice(route.lastIndexOf("<li", itemMarker), route.indexOf(">", itemMarker));
+
   expect(itemMarker).toBeGreaterThanOrEqual(0);
 
   expect(appCss).toContain(".gnb-nav {");

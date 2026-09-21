@@ -22,7 +22,7 @@ export function TabButton({
   as,
   children,
   className,
-  size = "default",
+  _size = "default",
   ...rest
 }: TabButtonProps) {
   const Component = as ?? "button";

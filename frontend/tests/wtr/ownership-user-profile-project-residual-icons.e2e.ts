@@ -1,4 +1,4 @@
-import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdir only feeds page.screenshot paths (no-op).
@@ -96,7 +96,7 @@ test("Projects residual member, watch, and trash icons are direct Style owners",
 }) => {
   test.setTimeout(60_000);
 
-  const [route, styles, view, partial, messages, yobicon, common, yobiUi, focusedTest] =
+  const [route, _styles, view, partial, messages, yobicon, common, yobiUi, focusedTest] =
     await Promise.all([
       readFile("../src/routes/$user.tsx"),
       curatedAppCss(),

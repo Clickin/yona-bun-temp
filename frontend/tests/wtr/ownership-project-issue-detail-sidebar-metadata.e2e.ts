@@ -6,7 +6,7 @@ test("issue detail sidebar metadata uses route-local Style ownership", async () 
     "../src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
     "utf8",
   );
-  const styleSource = readFileSync("../src/app.css", "utf8");
+
   const legacySource = readFileSync("../yona-original/app/views/issue/view.scala.html", "utf8");
   const legacyLess = readFileSync(
     "../yona-original/app/assets/stylesheets/less/_page.less",

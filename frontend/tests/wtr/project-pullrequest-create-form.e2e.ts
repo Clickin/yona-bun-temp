@@ -1237,7 +1237,7 @@ async function expectModernCancelControl(page: Page) {
   return cancel;
 }
 
-function nextDialogMessage(page: Page) {
+function _nextDialogMessage(page: Page) {
   return page.waitForEvent("dialog").then(async (dialog) => {
     const message = dialog.message();
     await dialog.dismiss();

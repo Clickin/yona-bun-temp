@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss as _curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 const fileURLToPath = (u: URL) => u.pathname;
 
@@ -6,7 +6,7 @@ const routeSource = readFileSync(
   fileURLToPath(new URL("../src/routes/$ownerName/$projectName/reviews.tsx", import.meta.url)),
   "utf8",
 );
-const styleSource = curatedAppCss() + mergedLegacyBlock();
+
 const owners = [
   "project-reviews-sidebar",
   "project-reviews-search-input",

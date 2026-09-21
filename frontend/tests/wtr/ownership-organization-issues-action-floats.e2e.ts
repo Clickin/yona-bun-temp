@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
@@ -13,7 +13,7 @@ const screenshotDirectory = resolve(
 const owner = (name: string) => `[data-owner="${name}"]`;
 
 const routeSource = readFileSync("src/routes/organizations/$organizationName/issues.tsx", "utf8");
-const styleSource = readFileSync("src/app.css", "utf8");
+
 const legacyRoot = readFileSync(
   "../yona-original/app/views/organization/group_issue_list.scala.html",
   "utf8",

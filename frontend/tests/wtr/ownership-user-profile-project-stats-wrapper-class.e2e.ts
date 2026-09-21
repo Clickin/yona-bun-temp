@@ -1,4 +1,4 @@
-import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFile, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdir only feeds page.screenshot paths (no-op).
@@ -76,7 +76,7 @@ test.beforeEach(async ({ page }) => {
 test("profile project stats wrapper retires only its literal legacy class", async ({ page }) => {
   const [
     routeSource,
-    styleSource,
+    _styleSource,
     view,
     partial,
     yobi,

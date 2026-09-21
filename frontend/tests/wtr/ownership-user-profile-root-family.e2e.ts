@@ -1,4 +1,4 @@
-import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -97,7 +97,7 @@ test.beforeEach(async ({ page }) => {
 test("public profile root family moves active legacy geometry into route-local Style", async ({
   page,
 }) => {
-  const [routeSource, styleSource, legacyView, legacyIssues, legacyPulls, legacyProjects, less] =
+  const [routeSource, _styleSource, legacyView, legacyIssues, legacyPulls, legacyProjects, less] =
     await Promise.all([
       readFile(new URL("../src/routes/$user.tsx", import.meta.url), "utf8"),
       curatedAppCss(),
@@ -142,7 +142,7 @@ test("public profile root family moves active legacy geometry into route-local S
     "user-profile-issue-row",
     "user-profile-issue-title-wrap",
   ]) {
-    expect(routeSource).toContain(`data-owner=\"${owner}\"`);
+    expect(routeSource).toContain(`data-owner="${owner}"`);
   }
 
   await page.setViewportSize({ width: 1366, height: 900 });

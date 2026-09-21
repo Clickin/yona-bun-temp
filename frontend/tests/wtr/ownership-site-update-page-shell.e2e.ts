@@ -123,7 +123,7 @@ test("site update page shell owns the legacy site-management frame", async ({ pa
             if (!element) throw new Error(`Missing ${selector}`);
             return element.getBoundingClientRect();
           };
-          const pageBox = requireBox(`[data-owner="${pageOwner}"]`);
+
           const contentBox = requireBox(`[data-owner="${contentOwner}"]`);
           const sidebarBox = requireBox(`[data-owner="${sidebarOwner}"]`);
           const page = document.querySelector<HTMLElement>(`[data-owner="${pageOwner}"]`);

@@ -1,3 +1,5 @@
+/* oxlint-disable jsx-a11y/media-has-caption -- legacy parity fixture preserves media markup without caption tracks. */
+/* oxlint-disable jsx-a11y/prefer-tag-over-role -- legacy Select2/Bootstrap parity DOM intentionally keeps role-based controls. */
 /* oxlint-disable jsx-a11y/tabindex-no-positive -- legacy issue/create.scala.html requires title/body keyboard order 1 then 2. */
 /* oxlint-disable react-doctor/query-mutation-missing-invalidation -- project header mutations share invalidateProject and issue creation invalidates source/target issue caches. */
 /* oxlint-disable react-doctor/no-many-boolean-props -- backend ACL capability flags are the minimal legacy form visibility contract. */

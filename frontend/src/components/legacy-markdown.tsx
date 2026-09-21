@@ -1,3 +1,4 @@
+/* oxlint-disable eslint/no-control-regex -- glob and keyboard parsers intentionally match control-code placeholders. */
 /* Canonical legacy-Yona Markdown rendering on TanStack Markdown (plan Phase D).
  *
  * Two rendering paths share one extension/component model:
@@ -28,7 +29,6 @@
  */
 import {
   parseMarkdown,
-  type BlockNode,
   type InlineNode,
   type MarkdownDocument,
   type MarkdownExtension,

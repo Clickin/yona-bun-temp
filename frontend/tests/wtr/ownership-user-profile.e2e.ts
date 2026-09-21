@@ -25,7 +25,7 @@ test("public user profile renders legacy info and stream owners", async ({ page 
     ),
     "utf8",
   );
-  const styleSource = await Promise.resolve(curatedAppCss());
+  const _styleSource = await Promise.resolve(curatedAppCss());
   expect(legacy).toContain('<div class="pull-left" style="margin-left: 10px;">');
   expect(source).toContain('data-owner="user-profile-project-info"');
   expect(source).toContain('data-owner="user-profile-days-ago-input"');

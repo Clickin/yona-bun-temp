@@ -1,11 +1,4 @@
-import {
-  expect,
-  test,
-  type Page,
-  type Route,
-  mergedLegacyBlock,
-  curatedAppCss,
-} from "../wtr-compat.ts";
+import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
@@ -25,7 +18,7 @@ const markdownEditorSource = readFileSync(
   new URL("../src/components/markdown-editor.tsx", import.meta.url),
   "utf8",
 );
-const styleSource = curatedAppCss();
+
 const legacyViewSource = readFileSync(
   new URL("../../yona-original/app/views/board/view.scala.html", import.meta.url),
   "utf8",

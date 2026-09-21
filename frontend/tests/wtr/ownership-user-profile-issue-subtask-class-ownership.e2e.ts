@@ -1,4 +1,4 @@
-import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdir only feeds page.screenshot paths (no-op).
@@ -120,7 +120,7 @@ test(`profile issue subtask summary owns title-cell styles without inapplicable 
 }) => {
   test.setTimeout(60_000);
 
-  const [route, styles, view, issues, subtask, yobi, common, pageLess, bootstrap, messages, js] =
+  const [route, _styles, view, issues, subtask, yobi, common, pageLess, bootstrap, messages, js] =
     await Promise.all([
       readFile(new URL("../src/routes/$user.tsx", import.meta.url), "utf8"),
       curatedAppCss(),

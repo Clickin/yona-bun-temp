@@ -1,11 +1,4 @@
-import {
-  expect,
-  test,
-  type Page,
-  type Route,
-  mergedLegacyBlock,
-  curatedAppCss,
-} from "../wtr-compat.ts";
+import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
@@ -15,11 +8,7 @@ const screenshotDirectory = resolve(
   "output/playwright/style-project-postform-markdown-editor-mt10",
   "normal",
 );
-const routeSource = readFileSync(
-  new URL("../src/routes/$ownerName/$projectName/postform.tsx", import.meta.url),
-  "utf8",
-);
-const styleSource = curatedAppCss();
+
 const legacyCreateSource = readFileSync(
   new URL("../../yona-original/app/views/board/create.scala.html", import.meta.url),
   "utf8",

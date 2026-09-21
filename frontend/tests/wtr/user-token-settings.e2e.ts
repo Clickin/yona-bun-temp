@@ -1,4 +1,4 @@
-import { expect, test, type Page, mergedLegacyBlock } from "../wtr-compat.ts";
+import { expect, test, type Page } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 
 const EXPECTED_USER_TOKEN_SCREEN = `

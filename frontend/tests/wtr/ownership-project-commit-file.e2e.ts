@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -11,7 +11,7 @@ test("records commit file history owners and responsive containment", async ({ p
     "src/routes/$ownerName/$projectName/commits/$branch/$filePath.tsx",
     "utf8",
   );
-  const theme = readFileSync("src/app.css", "utf8");
+
   const historyTemplate = readFileSync(
     "../yona-original/app/views/code/history.scala.html",
     "utf8",

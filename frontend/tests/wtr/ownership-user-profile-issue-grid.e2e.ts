@@ -14,7 +14,6 @@ const evidenceSources = [
   "yona-original/conf/messages",
 ];
 
-const retiredGridClasses = ["span12", "span-hard-wrap", "span2", "span5", "span1", "span3"];
 const owners = {
   content: "user-profile-issue-grid-content",
   project: "user-profile-issue-project-name-wrapper",

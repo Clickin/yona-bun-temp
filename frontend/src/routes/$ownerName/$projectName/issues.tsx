@@ -1,3 +1,4 @@
+/* oxlint-disable jsx-a11y/prefer-tag-over-role -- legacy Select2/Bootstrap parity DOM intentionally keeps role-based controls. */
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
@@ -3011,6 +3012,7 @@ function IssueSearchSingleSelectDisplay({
   };
   return (
     <div
+      role="group"
       id={`s2id_${id}`}
       className={`select2-container fullsize${open ? " select2-dropdown-open select2-container-active" : ""}`}
       onBlur={(event) => {
@@ -3085,9 +3087,10 @@ function IssueSearchSingleSelectDisplay({
               }}
             />
           </div>
+          {/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- legacy Select2 renders its result set as a UL with listbox semantics. */}
           <ul className="select2-results" id={`${id}-options`} role="listbox">
             {filteredOptions.map((option, index) => (
-              <Fragment key={`${option.value}:${index}`}>
+              <Fragment key={option.value}>
                 {option.group && option.group !== filteredOptions[index - 1]?.group ? (
                   <li className="select2-result-with-children">
                     <div className="select2-result-label">{option.group}</div>
@@ -3261,14 +3264,12 @@ function IssueSearchLabelSelect({
   const [query, setQuery] = useState("");
   const groupedLabels = groupProjectLabels(labels);
   const labelOptions = groupedLabels.flatMap((category) => category.labels);
-  const matchingCategories = groupedLabels
-    .map((category) => ({
-      ...category,
-      labels: category.labels.filter((label) =>
-        `${category.name} ${label.name}`.toLocaleLowerCase().includes(query.toLocaleLowerCase()),
-      ),
-    }))
-    .filter((category) => category.labels.length > 0);
+  const matchingCategories = groupedLabels.flatMap((category) => {
+    const matchingLabels = category.labels.filter((label) =>
+      `${category.name} ${label.name}`.toLocaleLowerCase().includes(query.toLocaleLowerCase()),
+    );
+    return matchingLabels.length > 0 ? [{ ...category, labels: matchingLabels }] : [];
+  });
   const selectedLabels = search.labelIds.flatMap((labelId) => {
     const label = labelOptions.find((option) => option.id === labelId);
     return label ? [label] : [];

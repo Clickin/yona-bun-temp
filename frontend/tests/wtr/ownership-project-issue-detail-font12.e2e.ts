@@ -6,7 +6,7 @@ test("issue detail child comment/vote text owns font size in Style", async () =>
     "../src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
     "utf8",
   );
-  const style = readFileSync("../src/app.css", "utf8");
+
   const legacy = readFileSync(
     "../yona-original/app/views/issue/partial_view_child.scala.html",
     "utf8",

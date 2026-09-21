@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
@@ -17,7 +17,7 @@ test("pull request detail owns legacy mr10 on the header state/date wrapper", as
     "src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber.tsx",
     "utf8",
   );
-  const styleSource = readFileSync("src/app.css", "utf8");
+
   const legacyRoot = readFileSync("../yona-original/app/views/git/view.scala.html", "utf8");
   const legacyInfo = readFileSync("../yona-original/app/views/git/partial_info.scala.html", "utf8");
   const legacyState = readFileSync(

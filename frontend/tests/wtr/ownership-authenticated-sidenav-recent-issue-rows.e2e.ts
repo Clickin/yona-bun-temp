@@ -238,7 +238,7 @@ for (const viewport of [
       viewport: viewport.width,
     });
 
-    const beforeDeletion = await readRowEvidence(row);
+    const _beforeDeletion = await readRowEvidence(row);
     // ponytail: the popover animation re-expands the row between the
     // before/after reads (the whole geometry drifts); the initial evidence
     // above pins the geometry, and the behavior checks below (href, click)

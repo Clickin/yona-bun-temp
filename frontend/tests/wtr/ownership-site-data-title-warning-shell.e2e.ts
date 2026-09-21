@@ -1,4 +1,3 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 import { readFile } from "../wtr-compat.ts";
 import type { Page } from "../wtr-compat.ts";
@@ -69,8 +68,8 @@ async function openData(page: Page) {
 
 test.describe("Style site data title/warning shell", () => {
   test("pins the Scala shell, active cascade, and four owner/theme boundaries", async () => {
-    const [route, theme, template, layout, yobi, pageLess, override, bootstrap] = await Promise.all(
-      [
+    const [route, _theme, template, layout, yobi, pageLess, override, bootstrap] =
+      await Promise.all([
         readFile(routeSource, "utf8"),
         readFile(themeSource, "utf8"),
         readFile(templateSource, "utf8"),
@@ -79,8 +78,7 @@ test.describe("Style site data title/warning shell", () => {
         readFile(pageLessSource, "utf8"),
         readFile(overrideLessSource, "utf8"),
         readFile(bootstrapSource, "utf8"),
-      ],
-    );
+      ]);
 
     expect(template).toContain('<div class="title_area">');
     expect(template).toContain('<h2 class="pull-left">');

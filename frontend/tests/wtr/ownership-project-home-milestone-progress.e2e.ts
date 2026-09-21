@@ -13,7 +13,7 @@ const legacyStyles = new URL(
 );
 
 test("project home milestone progress owns static geometry with Style", async () => {
-  const [route, style, legacy, less] = await Promise.all([
+  const [route, _style, legacy, less] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(styleSource, "utf8"),
     readFile(legacySource, "utf8"),

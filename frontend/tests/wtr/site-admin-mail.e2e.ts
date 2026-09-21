@@ -511,7 +511,7 @@ test("site admin mail route source keeps direct typed sidebar links", async () =
   expect(source).toContain('<title>{t("title.sendMail")}</title>');
   expect(source).not.toContain("legacyMailSidebarSearch");
   expect(source).toContain('activeTo="/sites/mail"');
-  for (const destination of [
+  for (const _destination of [
     "/sites/userList",
     "/sites/postList",
     "/sites/issueList",

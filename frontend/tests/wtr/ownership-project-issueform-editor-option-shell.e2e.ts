@@ -2,7 +2,7 @@ import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const routeSource = new URL("../src/routes/$ownerName/$projectName/issueform.tsx", import.meta.url);
-const styleSource = new URL("../src/app.css", import.meta.url);
+
 const legacyEditor = new URL(
   "../../yona-original/app/views/common/editor.scala.html",
   import.meta.url,
@@ -11,10 +11,9 @@ const legacyIssue = new URL(
   "../../yona-original/app/views/issue/create.scala.html",
   import.meta.url,
 );
-const appStyles = new URL("../src/app.css", import.meta.url);
 
 test("issueform editor shell keeps only exact legacy geometry owners", async () => {
-  const [route, style, editor, issue, css] = await Promise.all([
+  const [route, _style, editor, issue, css] = await Promise.all([
     readFile(routeSource, "utf8"),
     Promise.resolve(curatedAppCss()),
     readFile(legacyEditor, "utf8"),

@@ -151,7 +151,13 @@ function ProjectPostsBody({
     <div className="page-wrap-outer" data-owner="project-posts-page" data-content-ready="true">
       <div className="post-list project-page-wrap" data-owner="project-posts-list">
         <div className="search-wrap underline">
-          <form id="option_form" className="pull-left" action={action} method="get" data-owner="project-posts-search">
+          <form
+            id="option_form"
+            className="pull-left"
+            action={action}
+            method="get"
+            data-owner="project-posts-search"
+          >
             <input type="hidden" name="orderBy" value={search.orderBy} />
             <input type="hidden" name="orderDir" value={search.orderDir} />
             <div className="search-bar">
@@ -360,7 +366,7 @@ function BoardFilters({
   return (
     <div className="filter-wrap board" data-owner="project-posts-filter-wrap">
       <div className="filters" data-owner="project-posts-filters">
-        {filters.map((filter, index) => {
+        {filters.map((filter, _index) => {
           const active = search.orderBy === filter.field;
           const nextDir = active && search.orderDir === "desc" ? "asc" : "desc";
           return (

@@ -56,7 +56,7 @@ async function open(page: Page, response: MailOptions = defaultMailOptions) {
 test("not-configured alert keeps Bootstrap fallback classes and Style ownership", async ({
   page,
 }) => {
-  const [route, theme] = await Promise.all([
+  const [route, _theme] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(themeSource, "utf8"),
   ]);

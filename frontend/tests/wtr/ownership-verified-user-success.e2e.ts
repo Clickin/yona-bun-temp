@@ -2,8 +2,7 @@ import { expect, test, type Page } from "../wtr-compat.ts";
 import { readFile } from "../wtr-compat.ts";
 
 const routeSource = new URL("../src/routes/verify/$loginId/$verificationCode.tsx", import.meta.url);
-const routeThemeSource = new URL("../src/app.css", import.meta.url);
-const themeSource = new URL("../src/app.css", import.meta.url);
+
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 async function openVerifiedUser(page: Page) {
@@ -18,7 +17,7 @@ async function openVerifiedUser(page: Page) {
 
 test.describe("Style verified user success", () => {
   test("uses inline geometry and route paint values for success only", async () => {
-    const [route] = await Promise.all([readFile(routeSource, "utf8")]);
+    const route = await readFile(routeSource, "utf8");
 
     expect(route).toContain('data-owner="verified-user-success"');
     expect(route).toContain('className="center-wrap tag-line-wrap reset-password"');
@@ -43,7 +42,7 @@ test.describe("Style verified user success", () => {
     );
     expect(classComposition.title).toContain("title");
     expect(classComposition.tagline).toContain("tag-line");
-    for (const classes of Object.values(classComposition)) {
+    for (const _classes of Object.values(classComposition)) {
     }
 
     const generatedOutsideVerifiedOwner = await page.evaluate(() =>

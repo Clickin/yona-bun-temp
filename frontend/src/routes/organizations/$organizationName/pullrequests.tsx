@@ -550,7 +550,7 @@ function OrganizationPullRequestItem({
   );
 }
 
-function stringField(value: unknown, fallback: string) {
+function _stringField(value: unknown, fallback: string) {
   if (typeof value === "string") {
     return value;
   }
@@ -560,7 +560,7 @@ function stringField(value: unknown, fallback: string) {
   return fallback;
 }
 
-function booleanField(value: unknown) {
+function _booleanField(value: unknown) {
   return value === true;
 }
 

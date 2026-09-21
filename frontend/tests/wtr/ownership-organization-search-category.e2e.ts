@@ -6,7 +6,7 @@ const ROUTE = "src/routes/organizations/$organizationName/search.tsx";
 const STYLE = "src/app.css";
 
 test("organization search category wrapper has legacy-backed Style ownership", async () => {
-  const [route, style, partial, pageLess] = await Promise.all([
+  const [route, _style, partial, pageLess] = await Promise.all([
     readFile(ROUTE, "utf8"),
     readFile(STYLE, "utf8"),
     readFile("../yona-original/app/views/search/partial_search.scala.html", "utf8"),

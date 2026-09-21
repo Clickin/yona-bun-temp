@@ -2,7 +2,7 @@ import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const routeSource = "src/routes/$ownerName/$projectName.tsx";
-const styleSource = "src/app.css";
+
 const legacySource =
   "../yona-original/app/views/project/partial_dashboard_issuesbylabel.scala.html";
 

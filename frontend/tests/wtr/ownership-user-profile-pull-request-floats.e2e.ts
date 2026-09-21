@@ -7,7 +7,7 @@ test("populated public profile pull-request row owns receiver and state floats",
 }) => {
   const [
     source,
-    styleSource,
+    _styleSource,
     legacyView,
     legacyPartial,
     pageLess,

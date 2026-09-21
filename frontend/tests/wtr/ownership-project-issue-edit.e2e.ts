@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -11,7 +11,7 @@ test("records issue edit form owners and responsive geometry", async ({ page }) 
     "src/routes/$ownerName/$projectName/issue/$issueNumber/editform.tsx",
     "utf8",
   );
-  const theme = readFileSync("src/app.css", "utf8");
+
   const template = readFileSync("../yona-original/app/views/issue/edit.scala.html", "utf8");
   expect(template).toContain('id -> "issue-form"');
   expect(template).toContain('name="title"');

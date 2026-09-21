@@ -1,4 +1,4 @@
-import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdir only feeds page.screenshot paths (no-op).
 const mkdir = async () => undefined;
@@ -95,7 +95,7 @@ test("profile Projects pane retires only Style-owned header, desc, and name-tag 
 }) => {
   const [
     route,
-    styles,
+    _styles,
     view,
     partial,
     yobi,
@@ -230,7 +230,7 @@ test("profile Projects pane retires only Style-owned header, desc, and name-tag 
   expect(behavior).toContain('htElement.waLeaveProject = $("a.leaveProject");');
 
   expect(route).toContain('data-owner="user-profile-project-private-icon"');
-  for (const [owner, style, legacyClass] of [
+  for (const [owner, _style, _legacyClass] of [
     ["user-profile-project-header", "projectHeader", "header"],
     ["user-profile-project-description", "projectDescription", "desc"],
     ["user-profile-project-name-tag", "projectNameTag", "name-tag"],

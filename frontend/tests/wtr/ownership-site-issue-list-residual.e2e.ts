@@ -9,7 +9,6 @@ const readFile = (path: string | URL, encoding?: string | null): Promise<string>
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = new URL("../src/routes/sites/issueList.tsx", import.meta.url);
-const themeSource = new URL("../src/app.css", import.meta.url);
 
 async function openPopulatedIssueList(page: Page) {
   const session = (route: Route) =>

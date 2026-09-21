@@ -3,7 +3,7 @@ import { expect, test } from "../wtr-compat.ts";
 
 test("notification badge owns the exact frozen primitive and retires its class", () => {
   const route = readFileSync("src/routes/sites/projectList.tsx", "utf8");
-  const theme = readFileSync("src/app.css", "utf8");
+
   const layout = readFileSync("../yona-original/app/views/site/siteMngLayout.scala.html", "utf8");
   const common = readFileSync("../yona-original/app/assets/stylesheets/less/_common.less", "utf8");
   const variables = readFileSync(

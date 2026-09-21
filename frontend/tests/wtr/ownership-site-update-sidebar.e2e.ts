@@ -3,8 +3,7 @@ import { expect, test, type Locator, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = new URL("../src/routes/sites/update.tsx", import.meta.url);
-const themeSource = new URL("../src/app.css", import.meta.url);
-const appCssSource = new URL("../src/app.css", import.meta.url);
+
 const layoutSource = new URL(
   "../../yona-original/app/views/site/siteMngLayout.scala.html",
   import.meta.url,
@@ -69,7 +68,7 @@ test.describe("Style site update sidebar", () => {
   test("pins full frozen cascade, app bridge retirement, global theme, and route retirement contract", async () => {
     const [
       route,
-      theme,
+      _theme,
       appCss,
       layout,
       messages,

@@ -85,7 +85,7 @@ test.describe("Style site project-list delete modal", () => {
     const route = await readFile(routeSource, "utf8");
 
     for (const owner of Object.values(owners)) expect(route).toContain(owner.slice(1, -1));
-    for (const style of [
+    for (const _style of [
       "deleteModal",
       "deleteModalHeader",
       "deleteModalClose",

@@ -19,11 +19,7 @@ import {
   updateProjectMemberRoleRest,
 } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
-import type {
-  ProjectEnrollmentRequestEntry,
-  ProjectMemberEntry,
-  ProjectMembersResponse,
-} from "../../../api/org-project";
+import type { ProjectMemberEntry, ProjectMembersResponse } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
 import { RestApiError } from "../../../api/rest-client";
 import { readSessionBootstrap, searchLegacyMemberUsers } from "../../../auth-workspace-client";

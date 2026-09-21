@@ -171,8 +171,8 @@ for (const viewport of [
     expect(columnMetrics[0]?.marginLeft).toBe("0px");
     expect(columnMetrics[1]?.marginLeft).not.toBe("0px");
     if (viewport.name === "desktop") {
-      expect(columnMetrics[0]?.widthRatio).toBeCloseTo(0.7446808510638297, 4);
-      expect(columnMetrics[1]?.widthRatio).toBeCloseTo(0.23404255319148937, 4);
+      expect(columnMetrics[0]?.widthRatio).toBeCloseTo(0.7447, 4);
+      expect(columnMetrics[1]?.widthRatio).toBeCloseTo(0.234, 4);
     }
     const searchWrapMetrics = await searchWrap.evaluate((node) => {
       const style = getComputedStyle(node);

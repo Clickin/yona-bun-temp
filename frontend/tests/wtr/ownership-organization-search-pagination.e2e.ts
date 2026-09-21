@@ -2,7 +2,7 @@
 // (a recorded shim gap); resolve only builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -25,7 +25,7 @@ test.use({ locale: "ko-KR" });
 
 test("organization search pagination maps legacy provenance and every Style owner", () => {
   const route = readFileSync("src/routes/organizations/$organizationName/search.tsx", "utf8");
-  const styles = readFileSync("src/app.css", "utf8");
+
   const partialSearch = readFileSync(
     "../yona-original/app/views/search/partial_search.scala.html",
     "utf8",
@@ -82,7 +82,7 @@ test("organization search pagination maps legacy provenance and every Style owne
     expect(marker).toBeTruthy();
     expect(route).toContain(`data-owner="${marker}"`);
   }
-  for (const declaration of [
+  for (const _declaration of [
     "paginationWrap",
     "paginationPageNums",
     "paginationPageNum",

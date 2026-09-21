@@ -8,7 +8,7 @@ const legacyPartial = "../yona-original/app/views/issue/partial_view_childIssueL
 const legacyStyles = "../yona-original/app/assets/stylesheets/less/_page.less";
 
 test("issue detail parent subtask progress and state own static Style geometry", async () => {
-  const [route, style, view, partial, less] = await Promise.all([
+  const [route, _style, view, partial, less] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(styleSource, "utf8"),
     readFile(legacyView, "utf8"),

@@ -1,4 +1,4 @@
-import { expect, test, type Page, type Route, mergedLegacyBlock } from "../wtr-compat.ts";
+import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -6,8 +6,6 @@ const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 test("new pull request form owns legacy inline layout and preserves Select2 closed state", async ({
   page,
 }) => {
-  const source = readFileSync("src/routes/$ownerName/$projectName/newPullRequestForm.tsx", "utf8");
-  const styleSource = readFileSync("src/app.css", "utf8");
   const legacy = readFileSync("../yona-original/app/views/git/create.scala.html", "utf8");
   const editorLegacy = readFileSync("../yona-original/app/views/common/editor.scala.html", "utf8");
   expect(legacy).toContain('<div class="pull-request-wrap">');
@@ -43,8 +41,6 @@ test("new pull request form owns legacy inline layout and preserves Select2 clos
 });
 
 test("new pull request conflict modal owns legacy center-txt alignment", async ({ page }) => {
-  const source = readFileSync("src/routes/$ownerName/$projectName/newPullRequestForm.tsx", "utf8");
-  const styleSource = readFileSync("src/app.css", "utf8");
   const legacy = readFileSync("../yona-original/app/views/common/scripts.scala.html", "utf8");
   const commonLess = readFileSync(
     "../yona-original/app/assets/stylesheets/less/_common.less",

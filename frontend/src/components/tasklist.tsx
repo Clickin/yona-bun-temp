@@ -165,7 +165,7 @@ function sourceTaskText(markdown: string, source: SourceTask) {
     .slice(source.markerEnd, lineEnd === -1 ? markdown.length : lineEnd)
     .replace(/[*_~`]/gu, "")
     .replace(/!?\[([^\]]*)\]\([^)]*\)/gu, "$1")
-    .replace(/\\([\\`*_\[\]{}()#+.!>-])/gu, "$1")
+    .replace(/\\([\\`*_[\]{}()#+.!>-])/gu, "$1")
     .replace(/\s+/gu, " ")
     .trim();
 }

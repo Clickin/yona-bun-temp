@@ -1,11 +1,10 @@
-import { expect, test, type Page, mergedLegacyBlock } from "../wtr-compat.ts";
+import { expect, test, type Page } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 const fs = { mkdirSync: () => undefined };
 const path = { join: (...parts: string[]) => parts.join("/") };
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-const testDir = "tests/wtr";
-const frontendRoot = ".";
+
 const legacyRoot = "../yona-original";
 const screenshotRoot = path.join(
   "output",
@@ -16,7 +15,7 @@ const screenshotRoot = path.join(
 
 test("project form VCS warning keeps legacy ml10 spacing and visibility", async ({ page }) => {
   const route = readFileSync("src/routes/projectform.tsx", "utf8");
-  const style = readFileSync("src/app.css", "utf8");
+
   const legacyView = readFileSync(
     path.join(legacyRoot, "app/views/project/create.scala.html"),
     "utf8",

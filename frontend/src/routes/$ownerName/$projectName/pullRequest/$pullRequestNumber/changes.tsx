@@ -461,8 +461,11 @@ function useReviewCommentForm(
       const attachments = await Promise.all(
         formData
           .getAll("filePath")
-          .filter((value): value is File => value instanceof File && value.name !== "")
-          .map((file) => uploadTemporaryAttachment(runtimeConfig, csrfToken, file)),
+          .flatMap((value) =>
+            value instanceof File && value.name !== ""
+              ? [uploadTemporaryAttachment(runtimeConfig, csrfToken, value)]
+              : [],
+          ),
       );
       const optionalText = (name: string) => String(formData.get(name) ?? "") || undefined;
       const optionalNumber = (name: string) =>

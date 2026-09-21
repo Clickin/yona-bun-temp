@@ -4554,7 +4554,7 @@ function populatedIssueResponse() {
   };
 }
 
-async function attributes(page: Page, selector: string, name: string) {
+async function _attributes(page: Page, selector: string, name: string) {
   return page
     .locator(selector)
     .evaluateAll(

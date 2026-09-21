@@ -4,7 +4,6 @@ import {
   type Locator,
   type Page,
   readFileSync,
-  mergedLegacyBlock,
   curatedAppCss,
 } from "../wtr-compat.ts"; // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
 // (a recorded shim gap); resolve only builds those paths.

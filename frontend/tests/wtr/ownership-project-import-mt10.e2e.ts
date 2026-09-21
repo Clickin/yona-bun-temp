@@ -9,7 +9,7 @@ const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const screenshotDirectory = resolve("output/playwright/style-project-import-mt10", "normal");
 
 const routeSourcePath = "src/routes/[_]import.tsx";
-const styleSourcePath = "src/app.css";
+const _styleSourcePath = "src/app.css";
 const legacySourcePath = "../yona-original/app/views/project/importing.scala.html";
 const legacyCommonPath = "../yona-original/app/assets/stylesheets/less/_common.less";
 const legacyYobiPath = "../yona-original/app/assets/stylesheets/yobi.less";
@@ -40,7 +40,7 @@ test("project import mt10 owners preserve legacy structure and Style geometry", 
   page,
 }) => {
   const routeSource = readFileSync(routeSourcePath, "utf8");
-  const styleSource = readFileSync(styleSourcePath, "utf8");
+
   const legacySource = readFileSync(legacySourcePath, "utf8");
   const legacyCommon = readFileSync(legacyCommonPath, "utf8");
   const legacyYobi = readFileSync(legacyYobiPath, "utf8");

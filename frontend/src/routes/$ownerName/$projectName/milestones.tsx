@@ -180,7 +180,10 @@ function ProjectMilestonesBody({
                       search={{ ...search, state: currentState }}
                     />
                   </div>
-                  <div className="pull-left search search-bar" data-owner="project-milestones-search">
+                  <div
+                    className="pull-left search search-bar"
+                    data-owner="project-milestones-search"
+                  >
                     <input
                       name="filter"
                       className="textbox"
@@ -207,7 +210,7 @@ function ProjectMilestonesBody({
             <div className="row-fluid" data-owner="project-milestones-row-fluid">
               <div>
                 <ul className="milestones" data-owner="project-milestones-list">
-                  {milestones.map((milestone, index) => (
+                  {milestones.map((milestone, _index) => (
                     <MilestoneRow
                       key={stringField(milestone.id)}
                       filter={filter}
@@ -481,7 +484,7 @@ function numberField(value: unknown) {
   return Number.isFinite(numeric) ? numeric : 0;
 }
 
-function recordField(value: unknown) {
+function _recordField(value: unknown) {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
 }
 

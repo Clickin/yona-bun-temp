@@ -1,10 +1,10 @@
+/* oxlint-disable jsx-a11y/media-has-caption -- legacy parity fixture preserves media markup without caption tracks. */
 /* oxlint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions, jsx-a11y/no-aria-hidden-on-focusable, jsx-a11y/prefer-tag-over-role -- legacy issue detail Bootstrap modal, Select2 generated DOM, and index-comment DOM parity keep their visible element composition while React owns behavior. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import {
   Children,
   Fragment,
-  isValidElement,
   use,
   useEffect,
   useMemo,
@@ -69,12 +69,11 @@ import {
   watchIssue,
   type RestIssueDetailResponse,
 } from "../../../../auth-workspace-client";
-import { deleteTemporaryAttachment, uploadTemporaryAttachment } from "../../../../api/attachments";
+import { uploadTemporaryAttachment } from "../../../../api/attachments";
 import { SiteLayoutShell } from "../../../-home-route-screen";
 import { ProjectNestedShellContext } from "../../$projectName";
 import { useRootToast } from "../../../__root";
 import defaultAvatarUrl from "../../../../assets/legacy/default-avatar-128.png";
-import legacySpriteUrl from "../../../../assets/legacy/sprite.png";
 import { UploadForm } from "../../../../components/file-uploader";
 import { IssueLabel } from "../../../../components/issue-label";
 import { IssueDueDateInput } from "../../../../components/issue-due-date-input";
@@ -576,9 +575,9 @@ function restApiErrorStatus(error: unknown) {
 
 function IssueDetailAssets({
   basePath,
-  ownerName,
-  projectName,
-  supportedLanguages,
+  ownerName: _ownerName,
+  projectName: _projectName,
+  supportedLanguages: _supportedLanguages,
 }: {
   basePath: string;
   ownerName: string;
@@ -674,7 +673,7 @@ function IssueDetailBody({
   const issueInfoRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const { language, t } = useLegacyMessages();
-  const setRootToast = useRootToast();
+
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [sharerListOpen, setSharerListOpen] = useState(false);
   const [translatedBodyMarkdown, setTranslatedBodyMarkdown] = useState<string | null>(null);
@@ -1565,7 +1564,7 @@ function IssuePostingHistory({
 }) {
   const { t } = useLegacyMessages();
   const [open, setOpen] = useState(false);
-  const modalRef = useModalFocus(open);
+
   const openHistory = (event: MouseEvent<HTMLButtonElement>) => {
     insulateModalButtonClick(event);
     setOpen(true);
@@ -2009,6 +2008,7 @@ function IssueMilestoneSelect({
 
   return (
     <div
+      tabIndex={0}
       data-owner="issue-detail-milestone-control"
       role="combobox"
       aria-controls={listboxId}
@@ -2067,7 +2067,6 @@ function IssueMilestoneSelect({
         <div className="select2-drop select2-drop-active">
           <div className="select2-search">
             <input
-              autoFocus
               type="text"
               className="select2-input"
               role="searchbox"
@@ -2321,6 +2320,7 @@ function LegacySharerControl({
                     type="button"
                     className="select2-result-label"
                     role="option"
+                    aria-selected={false}
                     onClick={() => {
                       onAdd(user.loginId, user.type);
                       setQuery("");
@@ -2719,7 +2719,6 @@ function IssueChildIssues({
   const percentage = totalCount ? Math.trunc((childClosedCount / totalCount) * 100) : 0;
   const progressStyle = { "--x-subtask-progress-width": `${percentage}%` } as React.CSSProperties;
   const assigneeLabel = isCurrentIssueParent ? stringField(issue.assigneeLabel) : "";
-  const parentIssueStateVariant = parentIssueState.toLowerCase();
 
   return (
     <div className="subtasks" data-owner="project-issue-detail-subtasks">

@@ -1,4 +1,3 @@
-import { readFile, mergedLegacyBlock } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
@@ -6,7 +5,7 @@ const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 test("user issues left menu keeps the legacy search box contained", async ({ page }) => {
   const route = readFileSync("src/routes/user/issues.tsx", "utf8");
-  const style = readFileSync("src/app.css", "utf8");
+
   const legacy = readFileSync(
     "../yona-original/app/views/issue/my_partial_search.scala.html",
     "utf8",

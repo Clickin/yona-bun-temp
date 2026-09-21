@@ -364,7 +364,7 @@ function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
 }
 
-async function directChildOrder(root: Locator) {
+async function _directChildOrder(root: Locator) {
   return root.locator(":scope > *").evaluateAll((elements) =>
     elements.map((element) => {
       if (element.className) return element.className;

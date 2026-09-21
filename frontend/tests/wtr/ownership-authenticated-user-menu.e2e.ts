@@ -4,7 +4,6 @@ import {
   type Locator,
   type Page,
   readFileSync,
-  mergedLegacyBlock,
   curatedAppCss,
 } from "../wtr-compat.ts"; // Browser harness: no filesystem and no node:crypto. mkdirSync only feeds
 // page.screenshot paths (a recorded shim gap); resolve only builds those
@@ -111,7 +110,7 @@ test("authenticated user menu owns its legacy declarations through global Style 
   for (const color of ["#efefef", "#f36c22", "#ffffff"]) {
     expect(themeSource.toLowerCase()).toContain(color);
   }
-  for (const color of [
+  for (const _color of [
     "#5dbbe0",
     "#788ba7",
     "#efefef",

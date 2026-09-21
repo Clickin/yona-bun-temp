@@ -1,12 +1,5 @@
-import {
-  expect,
-  test,
-  type Locator,
-  type Page,
-  mergedLegacyBlock,
-  curatedAppCss,
-} from "../wtr-compat.ts";
-import { readFile, readFileSync } from "../wtr-compat.ts";
+import { expect, test, type Locator, type Page, curatedAppCss } from "../wtr-compat.ts";
+import { readFile } from "../wtr-compat.ts";
 import { compareComputedParity } from "../helpers/computed-css-parity.ts";
 
 async function expectComputedParity(
@@ -844,8 +837,8 @@ test("project home README tab renders README Markdown instead of compatibility H
   );
   const expectedHomeHtml = withLegacyProjectPageAncestry(
     expected
-    .replace(EXPECTED_GENERIC_GNB, EXPECTED_PROJECT_SCOPED_GNB)
-    .replaceAll("__BASE_PATH__", basePath),
+      .replace(EXPECTED_GENERIC_GNB, EXPECTED_PROJECT_SCOPED_GNB)
+      .replaceAll("__BASE_PATH__", basePath),
   );
   for (const selector of SCREEN_ROOT_SELECTOR.split(", ")) {
     await expectComputedParity(page, selector, expectedHomeHtml);
@@ -856,10 +849,10 @@ test("project home README tab renders README Markdown instead of compatibility H
 test("project home README Edit link owns legacy ml5 spacing and navigation", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const routeSource = await readFile("src/routes/$ownerName/$projectName.tsx", "utf8");
-  const styleSource = await curatedAppCss();
+  const _styleSource = await curatedAppCss();
   const legacySource = await readFile(
     "../yona-original/app/views/project/partial_readme.scala.html",
-    "utf8",
+    _utf8,
   );
 
   expect(routeSource).toContain('data-owner="project-home-readme-edit-link"');

@@ -1,4 +1,4 @@
-import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test.beforeEach(async ({ page }) => {
@@ -70,7 +70,7 @@ test.beforeEach(async ({ page }) => {
 
 test("authenticated profile projects list owns the legacy all-projects shell", async ({ page }) => {
   const route = await readFile("../src/routes/$user.tsx");
-  const styleSource = await curatedAppCss();
+  const _styleSource = await curatedAppCss();
   const scala = await readFile(
     new URL("../../yona-original/app/views/user/view.scala.html", import.meta.url),
     "utf8",

@@ -20,7 +20,7 @@ test("organization pull-request pagination records full legacy provenance", () =
       "utf8",
     );
   const route = read("../src/routes/organizations/$organizationName/pullrequests.tsx");
-  const styles = read("../src/app.css");
+
   const legacyRoot = read(
     "../../yona-original/app/views/organization/group_pullrequest_list.scala.html",
   );

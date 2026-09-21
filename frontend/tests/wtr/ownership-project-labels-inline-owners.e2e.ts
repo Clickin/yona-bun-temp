@@ -11,7 +11,7 @@ const routeSource = fileURLToPath(
 const styleSource = fileURLToPath(new URL("../src/app.css", import.meta.url));
 
 test("labels form inline owners use conditional and Dynamic Style", async () => {
-  const [legacy, route, style] = await Promise.all([
+  const [legacy, route, _style] = await Promise.all([
     readFile(legacySource, "utf8"),
     readFile(routeSource, "utf8"),
     readFile(styleSource, "utf8"),

@@ -1,4 +1,3 @@
-import { readFile } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
@@ -19,7 +18,7 @@ test("moves only the active legacy user-list management shell to five Style owne
     process.env.YONA_USER_LIST_ROUTE_SOURCE ?? "src/routes/sites/userList.tsx",
     "utf8",
   );
-  const layout = readFileSync("../yona-original/app/views/site/siteMngLayout.scala.html", "utf8");
+
   const userList = readFileSync("../yona-original/app/views/site/userList.scala.html", "utf8");
   const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
   const responsiveLess = readFileSync(
@@ -35,7 +34,7 @@ test("moves only the active legacy user-list management shell to five Style owne
   const manifest = readFileSync("../docs/provenance/legacy-css-merged.manifest.json", "utf8");
 
   expect(userList).toContain("@siteMngLayout(message)");
-  for (const token of ["page-wrap-outer", "site-setting-wrap", "row-fluid", "span2", "span10"])
+  for (const _token of ["page-wrap-outer", "site-setting-wrap", "row-fluid", "span2", "span10"])
     expect(pageLess).toContain(".page-wrap-outer {");
   expect(pageLess).toContain(".site-setting-wrap {");
   expect(responsiveLess).toContain(".page-wrap-outer {");

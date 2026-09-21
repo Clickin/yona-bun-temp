@@ -52,7 +52,7 @@ async function openSearchError(page: Page) {
 }
 
 test("error alert keeps Bootstrap fallback classes and Style ownership", async ({ page }) => {
-  const [route, theme] = await Promise.all([
+  const [route, _theme] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(themeSource, "utf8"),
   ]);

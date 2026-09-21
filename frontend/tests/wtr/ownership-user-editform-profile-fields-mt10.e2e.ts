@@ -17,7 +17,7 @@ test.use({ locale: "ko-KR" });
 
 test("user edit profile fields own the three legacy mt10 declarations", async ({ page }) => {
   const route = read("src/routes/user/editform.tsx");
-  const styles = read("src/app.css");
+
   const legacyTemplate = read("../yona-original/app/views/user/edit.scala.html");
   const commonLess = read("../yona-original/app/assets/stylesheets/less/_common.less");
 

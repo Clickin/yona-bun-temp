@@ -2,14 +2,7 @@
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
 
-import {
-  expect,
-  test,
-  type Page,
-  type Route,
-  mergedLegacyBlock,
-  curatedAppCss,
-} from "../wtr-compat.ts";
+import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -20,7 +13,7 @@ const routeSource = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/newMilestoneForm.tsx", import.meta.url),
   "utf8",
 );
-const styleSource = curatedAppCss();
+
 const legacyCreateSource = readFileSync(
   new URL("../../yona-original/app/views/milestone/create.scala.html", import.meta.url),
   "utf8",

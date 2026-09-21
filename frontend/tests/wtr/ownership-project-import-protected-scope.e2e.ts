@@ -6,7 +6,7 @@ const styleSource = "src/app.css";
 const legacySource = "../yona-original/app/views/project/importing.scala.html";
 
 test("project import protected scope uses conditional Style", async () => {
-  const [route, style, legacy] = [
+  const [, _style, legacy] = [
     readFileSync(routeSource, "utf8"),
     readFileSync(styleSource, "utf8"),
     readFileSync(legacySource, "utf8"),

@@ -1,4 +1,4 @@
-import { expect, test, type Page, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { expect, test, type Page } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -6,7 +6,7 @@ const route = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/milestone/$milestoneId.tsx", import.meta.url),
   "utf8",
 );
-const styles = curatedAppCss();
+
 const legacy = readFileSync(
   new URL("../../yona-original/app/views/error/notfound.scala.html", import.meta.url),
   "utf8",

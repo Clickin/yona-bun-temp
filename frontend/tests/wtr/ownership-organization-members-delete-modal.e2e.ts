@@ -12,7 +12,7 @@ const legacySource = new URL(
 );
 
 test("organization member delete modal uses conditional Style visibility", async () => {
-  const [route, style, legacy] = await Promise.all([
+  const [route, _style, legacy] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(styleSource, "utf8"),
     readFile(legacySource, "utf8"),

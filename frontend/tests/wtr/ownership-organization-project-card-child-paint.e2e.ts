@@ -64,7 +64,7 @@ async function mockOrganizationHome(page: Page) {
   );
 }
 
-async function assertChildPaint(page: Page, mobile: boolean, fallbackOff: boolean) {
+async function assertChildPaint(page: Page, mobile: boolean, _fallbackOff: boolean) {
   const card = page.locator('[data-value^="private-sample "]').first();
   const header = card.locator('[data-owner="organization-home-project-card-header"]');
   const lock = card.locator('[data-owner="organization-home-project-card-private-lock"]');

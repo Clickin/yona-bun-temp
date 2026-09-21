@@ -4,7 +4,6 @@ import { createFileRoute, Link, type SearchSchemaInput, useRouter } from "@tanst
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { restFetch } from "../api/rest-client";
 import type { ListOrganizationsResponse, YoramRecord } from "../api/types";
-import legacySpriteUrl from "../assets/legacy/sprite.png";
 import "../yobicon-font.css";
 import { formatLegacyTimestamp, LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
@@ -302,7 +301,7 @@ function OrganizationsPagination({
 }
 
 function OrganizationListItem({
-  basePath,
+  basePath: _basePath,
   organization,
 }: {
   basePath: string;

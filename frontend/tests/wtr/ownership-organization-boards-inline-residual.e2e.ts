@@ -22,10 +22,6 @@ test("organization boards owns the two-column anchor position with route-local S
     "utf8",
   );
   const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
-  const twoColumnJs = readFileSync(
-    "../yona-original/public/javascripts/service/yona.twoColumnMode.js",
-    "utf8",
-  );
 
   expect(legacy).toContain("group_board_list_partial");
   expect(partial).toContain('class="post-item title"');

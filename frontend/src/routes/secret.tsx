@@ -7,7 +7,6 @@ import { readAuthUiCapabilitiesRest, setupSecretAdminRest } from "../api/auth";
 import { apiQueryKeys } from "../api/query-keys";
 import { RestApiError } from "../api/rest-client";
 import type { ReadAuthUiCapabilitiesResponse } from "../api/types";
-import legacySpriteUrl from "../assets/legacy/sprite.png";
 import { readSessionBootstrap } from "../auth-workspace-client";
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";

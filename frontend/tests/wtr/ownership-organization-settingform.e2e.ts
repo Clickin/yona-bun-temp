@@ -1,9 +1,9 @@
-import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test("records organization setting form owner boundary", () => {
   const route = readFileSync("src/routes/organizations/$organizationName/settingform.tsx", "utf8");
-  const theme = curatedAppCss();
+
   const template = readFileSync(
     "../yona-original/app/views/organization/setting.scala.html",
     "utf8",

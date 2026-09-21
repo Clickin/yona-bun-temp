@@ -277,7 +277,7 @@ function PostListPagination({
   );
 }
 
-function PostListItem({ even, post }: { even: boolean; post: SitePost }) {
+function PostListItem({ even: _even, post }: { even: boolean; post: SitePost }) {
   const { t } = useLegacyMessages();
   const created = post.createdTitle ? formatLegacyTimestamp(post.createdTitle, t) : null;
 
@@ -303,7 +303,9 @@ function PostListItem({ even, post }: { even: boolean; post: SitePost }) {
         >
           {post.ownerName}/{post.projectName}
         </Link>{" "}
-        <span className="post-info-separator" data-owner="site-post-list-separator">·</span>{" "}
+        <span className="post-info-separator" data-owner="site-post-list-separator">
+          ·
+        </span>{" "}
         <Link
           className="post-title"
           params={{

@@ -49,7 +49,7 @@ test("OAuth provider logos use route-local Style owners", async () => {
   expect(loginSource).toContain('dataOwnerPrefix="standalone-login"');
   expect(userSource).toContain('dataOwnerPrefix="user-profile"');
 
-  for (const style of [rootStyle, loginStyle, userSource]) {
+  for (const _style of [rootStyle, loginStyle, userSource]) {
   }
   expect(appCss).not.toContain(".auth-provider-logo {");
   expect(appCss).not.toContain(".auth-provider-logo svg");

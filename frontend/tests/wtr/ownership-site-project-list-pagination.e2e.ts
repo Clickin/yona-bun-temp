@@ -77,7 +77,7 @@ test.describe("Style site project-list pagination", () => {
     expect(route).toContain('data-pagination-variant="icon"');
     expect(route).toContain('data-disabled="true"');
     expect(route).toContain('data-disabled="false"');
-    for (const style of [
+    for (const _style of [
       "paginationWrapper",
       "paginationList",
       "paginationItem",

@@ -1,10 +1,10 @@
-import { readFile, readFileSync, curatedAppCss } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const generatedFallbackHref = "legacy-assets/stylesheets/legacy-fallback.css";
 
 test("project pull-request empty state owns the legacy error-wrap geometry", async ({ page }) => {
-  const [route, styles, legacy, partial, less, messages, sprite] = await Promise.all([
+  const [route, _styles, legacy, partial, less, messages, sprite] = await Promise.all([
     readFile(
       new URL("../src/routes/$ownerName/$projectName/pullRequests.tsx", import.meta.url),
       "utf8",

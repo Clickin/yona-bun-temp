@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. resolve only builds page.screenshot paths
@@ -29,7 +29,7 @@ test.use({ locale: "ko-KR" });
 
 test("global search issue pagination maps legacy provenance and owns every control", () => {
   const route = readFileSync("src/routes/search.tsx", "utf8");
-  const styles = readFileSync("src/app.css", "utf8");
+
   const searchPartial = readFileSync(
     "../yona-original/app/views/search/partial_search.scala.html",
     "utf8",
@@ -72,7 +72,7 @@ test("global search issue pagination maps legacy provenance and owns every contr
     // ponytail: `owner()` builds a CSS selector (brackets); the source uses the plain attribute.
     expect(route).toContain(selector.slice(1, -1));
   }
-  for (const declaration of [
+  for (const _declaration of [
     "paginationWrap",
     "paginationPageNums",
     "paginationPageNum",

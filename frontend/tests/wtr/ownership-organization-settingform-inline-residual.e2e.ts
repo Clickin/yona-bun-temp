@@ -3,11 +3,10 @@ import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = "src/routes/organizations/$organizationName/settingform.tsx";
-const styleSource = "src/app.css";
+const _styleSource = "src/app.css";
 
 test("organization setting form owns static and dynamic inline residuals in Style", () => {
   const route = readFileSync(routeSource, "utf8");
-  const styles = readFileSync(styleSource, "utf8");
 
   expect(route).toContain("setting.scala.html");
   expect(route).toContain('data-owner="organization-setting-top-box"');

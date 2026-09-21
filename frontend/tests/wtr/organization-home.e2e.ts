@@ -762,9 +762,9 @@ test("organization home keeps legacy view.scala.html layout metrics", async ({ p
   expect(metrics.row.marginBottom).toBe("20px");
   // layout.scala.html loads bootstrap.css, not bootstrap-responsive.css:
   // the base .row-fluid percentages remain active even above 1200px.
-  expect(metrics.mainColumn.widthRatio).toBeCloseTo(0.7446808510638297, 3);
-  expect(metrics.sideColumn.widthRatio).toBeCloseTo(0.23404255319148937, 3);
-  expect(metrics.sideColumn.marginLeftRatio).toBeCloseTo(0.02127659574468085, 3);
+  expect(metrics.mainColumn.widthRatio).toBeCloseTo(0.7447, 3);
+  expect(metrics.sideColumn.widthRatio).toBeCloseTo(0.234, 3);
+  expect(metrics.sideColumn.marginLeftRatio).toBeCloseTo(0.0213, 3);
   expect(metrics.projectList.margin).toBe("0px 0px 20px");
   expect(metrics.projectList.listStyle).toBe("none");
   expect(metrics.projectRow.padding).toBe("15px 0px 10px");

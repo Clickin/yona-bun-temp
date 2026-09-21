@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
@@ -113,7 +113,7 @@ test("public profile renders connected OAuth provider logos without crashing on 
 
 test("public-profile breadcrumb records the frozen legacy ownership boundary", () => {
   const route = readFileSync("src/routes/$user.tsx", "utf8");
-  const styles = readFileSync("src/app.css", "utf8");
+
   const view = readFileSync("../yona-original/app/views/user/view.scala.html", "utf8");
   const yobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
   const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");

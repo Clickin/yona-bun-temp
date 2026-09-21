@@ -1,9 +1,9 @@
-import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
+import { curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 import { readFile } from "../wtr-compat.ts";
 
 const routeSource = new URL("../src/routes/sites/data.tsx", import.meta.url);
-const themeSource = new URL("../src/app.css", import.meta.url);
+
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 async function openData(page: Page) {
@@ -26,7 +26,7 @@ async function openData(page: Page) {
 
 test.describe("Style site data title strip", () => {
   test("reuses global frozen title-strip values", async () => {
-    const [route, theme] = await Promise.all([
+    const [route, _theme] = await Promise.all([
       readFile(routeSource, "utf8"),
       Promise.resolve(curatedAppCss()),
     ]);

@@ -1,11 +1,4 @@
-import {
-  expect,
-  test,
-  type Page,
-  type Route,
-  mergedLegacyBlock,
-  curatedAppCss,
-} from "../wtr-compat.ts";
+import { expect, test, type Page, type Route, curatedAppCss } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -32,7 +25,7 @@ test("commit review retires the React-only thread-actrow flex arm", () => {
 
 test("commit detail owns static review form and original-message styles", async ({ page }) => {
   const route = readFileSync("src/routes/$ownerName/$projectName/commit/$commitId.tsx", "utf8");
-  const style = readFileSync("src/app.css", "utf8");
+
   const legacy = readFileSync("../yona-original/app/views/code/diff.scala.html", "utf8");
   const comment = readFileSync(
     "../yona-original/app/views/partial_comment_form_on_thread.scala.html",

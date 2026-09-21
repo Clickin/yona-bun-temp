@@ -3,8 +3,7 @@ import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = new URL("../src/routes/sites/massmail.tsx", import.meta.url);
-const appCssSource = new URL("../src/app.css", import.meta.url);
-const themeSource = new URL("../src/app.css", import.meta.url);
+
 const ownerSelector = '[data-owner="site-massmail-write-action"]';
 
 async function mockSession(page: Page) {

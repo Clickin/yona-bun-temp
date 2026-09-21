@@ -1,9 +1,9 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const route = readFileSync("../src/routes/$ownerName/$projectName.tsx", "utf8");
-const styles = readFileSync("src/app.css", "utf8");
+
 const legacy = readFileSync(
   "../yona-original/app/views/error/internalServerError_default.scala.html",
   "utf8",

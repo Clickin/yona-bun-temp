@@ -329,7 +329,7 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     });
   }
 
-  async function handleLoginIdBlur(event: React.FocusEvent<HTMLInputElement>) {
+  async function _handleLoginIdBlur(event: React.FocusEvent<HTMLInputElement>) {
     const loginId = event.currentTarget.value.trim().toLowerCase();
     event.currentTarget.value = loginId;
 

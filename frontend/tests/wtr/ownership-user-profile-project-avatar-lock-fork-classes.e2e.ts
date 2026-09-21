@@ -1,4 +1,4 @@
-import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdir only feeds page.screenshot paths (no-op).
 const mkdir = async () => undefined;
@@ -121,7 +121,7 @@ test("Projects pane retires only avatar, lock-size, and fork-alignment utility c
   ];
   const [
     route,
-    styles,
+    _styles,
     view,
     partial,
     yobi,

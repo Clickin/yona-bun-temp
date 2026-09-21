@@ -585,7 +585,7 @@ test("project issue detail renders legacy unauthorized comment form", async ({ p
     "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
     "utf8",
   );
-  const styleSource = readFileSync("src/app.css", "utf8");
+
   const legacyView = readFileSync(
     "../yona-original/app/views/common/commentForm.scala.html",
     "utf8",

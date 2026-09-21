@@ -21,7 +21,7 @@ test("pull-request branch direction preserves the legacy ml10 icon boundary", as
   const routeSource = source(
     "../src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber.tsx",
   );
-  const styleSource = source("../src/app.css");
+
   const legacyPartial = source("../../yona-original/app/views/git/partial_branch.scala.html");
   const legacyView = source("../../yona-original/app/views/git/view.scala.html");
   const legacyCommon = source("../../yona-original/app/assets/stylesheets/less/_common.less");
@@ -41,7 +41,6 @@ test("pull-request branch direction preserves the legacy ml10 icon boundary", as
     await page.setViewportSize({ height: viewport.height, width: viewport.width });
     await page.goto(`${basePath}/admin/sample/pullRequest/9`, { waitUntil: "networkidle" });
 
-    const branchInfo = page.locator(".pullRequest-branchInfo");
     const direction = page.locator('[data-owner="pull-request-detail-branch-direction-icon"]');
     await expect(direction).toBeVisible();
     await expect(direction).toHaveClass(/\byobicon-right-2\b/u);

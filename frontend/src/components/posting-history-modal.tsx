@@ -71,14 +71,14 @@ export function PostingHistoryModal({
       onKeyDown={(event) => closeOnEscape(event, onClose)}
     >
       <div className="modal-header">
-        <button type="button" className="close" aria-hidden="true" onClick={handleClose}>
+        <button type="button" className="close" onClick={handleClose}>
           ×
         </button>
         <h5 className="nm">{t("change.history")}</h5>
       </div>
       <div className="modal-body">{children}</div>
       <div className="modal-footer">
-        <button className="ybtn ybtn-info ybtn-small" aria-hidden="true" onClick={handleClose}>
+        <button className="ybtn ybtn-info ybtn-small" onClick={handleClose}>
           {t("button.confirm")}
         </button>
       </div>

@@ -1334,7 +1334,7 @@ async function canonicalizeScreenRoots(page: Page) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
-              !/^s2e-/u.test(token) &&
+              !token.startsWith("s2e-") &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )
@@ -1423,7 +1423,7 @@ async function canonicalizeHtml(page: Page, html: string) {
               token &&
               token !== "gray-txt" &&
               token !== "right-txt" &&
-              !/^s2e-/u.test(token) &&
+              !token.startsWith("s2e-") &&
               !/^x[0-9a-z]+$/u.test(token) &&
               !token.includes("__"),
           )

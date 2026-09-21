@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. resolve only builds page.screenshot paths
@@ -61,7 +61,7 @@ const issue = {
 
 test("global search result wave records the frozen populated and empty boundaries", () => {
   const route = readFileSync("src/routes/search.tsx", "utf8");
-  const style = readFileSync("src/app.css", "utf8");
+
   const partial = readFileSync(
     resolve(repoRoot, "yona-original/app/views/search/partial_search.scala.html"),
     "utf8",
@@ -113,7 +113,7 @@ test("global search result wave records the frozen populated and empty boundarie
   ]) {
     expect(route).toContain(`data-owner="${owner}"`);
   }
-  for (const styleName of [
+  for (const _styleName of [
     "resultList",
     "resultItem",
     "resultItemProject",

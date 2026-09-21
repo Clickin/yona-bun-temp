@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts"; // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts"; // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
 
@@ -13,7 +13,7 @@ test.use({ locale: "en-US" });
 test("global GNB brand link has complete global-theme Style ownership", () => {
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
   const restricted = readFileSync("src/routes/restricted.tsx", "utf8");
-  const theme = readFileSync("src/app.css", "utf8");
+
   const appCss = curatedAppCss();
 
   const marker = route.indexOf('data-owner="global-gnb-brand-link"');

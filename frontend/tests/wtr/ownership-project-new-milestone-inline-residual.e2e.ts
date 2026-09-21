@@ -3,11 +3,11 @@ import { expect, test } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routePath = "src/routes/$ownerName/$projectName/newMilestoneForm.tsx";
-const stylePath = "src/app.css";
+const _stylePath = "src/app.css";
 
 test("new milestone form owns static editor layout declarations", async ({ page }) => {
   const route = readFileSync(routePath, "utf8");
-  const styles = readFileSync(stylePath, "utf8");
+
   const template = readFileSync("../yona-original/app/views/milestone/create.scala.html", "utf8");
   const editor = readFileSync("../yona-original/app/views/common/editor.scala.html", "utf8");
 

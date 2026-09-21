@@ -106,6 +106,10 @@ function ProjectCreateScreen({
   const [menuReviewChecked, setMenuReviewChecked] = React.useState(() =>
     defaultMenus.has("review"),
   );
+  const projectNameRef = React.useRef<HTMLInputElement>(null);
+  React.useEffect(() => {
+    projectNameRef.current?.focus();
+  }, []);
   React.useEffect(() => {
     if (!ownerName && selectedOwner) {
       setOwnerName(selectedOwner);
@@ -274,8 +278,8 @@ function ProjectCreateScreen({
                 </dt>
                 <dd>
                   <input
+                    ref={projectNameRef}
                     id="project-name"
-                    autoFocus
                     type="text"
                     name="name"
                     className="text"
@@ -562,8 +566,13 @@ function ProjectFormSelect({
     setFilter("");
   };
 
+  const visibleOptions = options.flatMap((option) =>
+    option.label.toLowerCase().includes(filter.toLowerCase()) ? [option] : [],
+  );
+
   return (
     <div
+      role="group"
       className={`select2-container ${className}${open ? " select2-dropdown-open select2-container-active" : ""}`}
       data-owner="project-form-select"
       onBlur={(event) => {
@@ -602,25 +611,23 @@ function ProjectFormSelect({
             </div>
           ) : null}
           <ul className="select2-results">
-            {options
-              .filter((option) => option.label.toLowerCase().includes(filter.toLowerCase()))
-              .map((option) => (
-                <li
-                  key={option.value}
-                  className={`select2-results-dept-0 select2-result select2-result-selectable${option.value === value ? " select2-selected" : ""}`}
+            {visibleOptions.map((option) => (
+              <li
+                key={option.value}
+                className={`select2-results-dept-0 select2-result select2-result-selectable${option.value === value ? " select2-selected" : ""}`}
+              >
+                <button
+                  type="button"
+                  className="select2-result-label"
+                  onClick={() => {
+                    onChange(option.value);
+                    close();
+                  }}
                 >
-                  <button
-                    type="button"
-                    className="select2-result-label"
-                    onClick={() => {
-                      onChange(option.value);
-                      close();
-                    }}
-                  >
-                    {option.content ?? option.label}
-                  </button>
-                </li>
-              ))}
+                  {option.content ?? option.label}
+                </button>
+              </li>
+            ))}
           </ul>
         </div>
       ) : null}

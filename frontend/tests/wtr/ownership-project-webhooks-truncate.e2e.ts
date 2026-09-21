@@ -2,11 +2,6 @@ import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test("project webhook payload URL owns the scoped truncate style", async () => {
-  const route = readFileSync(
-    new URL("../src/routes/$ownerName/$projectName/webhooks.tsx", import.meta.url),
-    "utf8",
-  );
-  const style = curatedAppCss();
   const legacy = readFileSync(
     new URL("../../yona-original/app/views/project/webhooks.scala.html", import.meta.url),
     "utf8",

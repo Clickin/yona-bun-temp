@@ -1,3 +1,4 @@
+/* oxlint-disable typescript/no-this-alias -- custom locator subclasses intentionally capture the base resolver. */
 // dom-compat: Vitest + happy-dom Playwright-compatible harness for the DOM
 // parity lane. Same public surface as wtr-compat.ts but the app mounts
 // directly in the happy-dom global document (no iframe realm) with a memory

@@ -1,4 +1,3 @@
-import { readFile } from "../wtr-compat.ts";
 // Post-merge: the full legacy cascade lives in app.css — normal-mode semantics.
 const fallbackOff = false;
 import { readFileSync } from "../wtr-compat.ts";
@@ -23,7 +22,6 @@ test("records the exact three-owner legacy search boundary", () => {
     "../yona-original/app/assets/stylesheets/less/_responsive.less",
     "utf8",
   );
-  const yobicon = readFileSync("../yona-original/public/stylesheets/yobicon/style.css", "utf8");
 
   expect(template).toContain('<div class="user-file-search search search-bar">');
   expect(template).toContain('name="filter" class="textbox"');

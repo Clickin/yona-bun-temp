@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
@@ -14,7 +14,6 @@ test("public user profile owns legacy spacing on both mode controls", async ({ p
   const routeSource = readFileSync("src/routes/$user.tsx", "utf8");
   const sharedComponentSource = readFileSync("src/components/two-column-mode-checkbox.tsx", "utf8");
 
-  const styleSource = readFileSync("src/app.css", "utf8");
   const legacyView = readFileSync("../yona-original/app/views/user/view.scala.html", "utf8");
   const legacyTwoColumn = readFileSync(
     "../yona-original/app/views/common/twoColumnModeCheckboxArea.scala.html",

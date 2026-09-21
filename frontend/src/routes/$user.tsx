@@ -7,7 +7,6 @@ type ExternalLinkTarget = NonNullable<React.ComponentProps<typeof Link>["to"]>;
 import { currentSessionQueryOptions } from "../api/session";
 import { RestApiError } from "../api/rest-client";
 import { readPublicUserProfileQueryOptions, type PublicUserProfileResponse } from "../api/users";
-import legacySpriteUrl from "../assets/legacy/sprite.png";
 import googleProviderLogoUrl from "../assets/legacy/provider-logo/btn_google_light_normal_ios.svg?no-inline";
 import type {
   WorkspaceIssueItem,
@@ -1264,7 +1263,7 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
 function ProfileProjectRow({
   project,
   subject,
-  isFirst,
+  isFirst: _isFirst,
 }: {
   project: WorkspaceMemberProjectItem;
   subject: WorkspaceProfile;
@@ -1420,7 +1419,7 @@ function ShowSubtasksCheckbox({
   const popoverTimer = React.useRef<number | null>(null);
   const popoverTitle = t("common.show.subtasks");
   const popoverContent = t("common.show.subtasks.desc");
-  const [isControlHovered, setIsControlHovered] = useState(false);
+  const [, setIsControlHovered] = useState(false);
   const clearPopoverTimer = React.useCallback(() => {
     if (popoverTimer.current !== null) {
       window.clearTimeout(popoverTimer.current);

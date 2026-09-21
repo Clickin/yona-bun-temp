@@ -1,8 +1,8 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const routeSource = readFileSync("../src/routes/[_]import.tsx", "utf8");
-const styleSource = readFileSync("src/app.css", "utf8");
+
 const legacySource = readFileSync(
   "../yona-original/app/views/project/importing.scala.html",
   "utf8",

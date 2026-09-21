@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -7,7 +7,7 @@ test("organization profile owns the server logo background with Dynamic Style", 
   page,
 }) => {
   const source = readFileSync("src/routes/organizations/$organizationName.tsx", "utf8");
-  const styleSource = readFileSync("src/app.css", "utf8");
+
   const legacy = readFileSync("../yona-original/app/views/organization/header.scala.html", "utf8");
 
   expect(legacy).toContain(

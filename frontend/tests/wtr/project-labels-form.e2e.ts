@@ -207,7 +207,7 @@ test("project labels uses legacy project-scoped GNB search shell", async ({ page
 
 test("project labels renders default project header assets under the configured context", async ({
   page,
-}, testInfo) => {
+}, _testInfo) => {
   const configuredBasePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const mountPrefix = configuredBasePath === "/" ? "" : configuredBasePath;
   await mockProjectLabels(page, [], {

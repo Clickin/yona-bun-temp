@@ -1,3 +1,4 @@
+/* oxlint-disable jsx-a11y/role-supports-aria-props -- legacy parity input retains its expanded-state attribute. */
 import {
   useId,
   useLayoutEffect,
@@ -7,6 +8,7 @@ import {
   type KeyboardEvent,
   type RefObject,
 } from "react";
+// react-doctor-disable-next-line react-doctor/no-flush-sync -- blur handlers read the committed date immediately to preserve legacy Pikaday behavior.
 import { createPortal, flushSync } from "react-dom";
 import { useLegacyMessages } from "../i18n";
 import { MilestoneDatePicker } from "./milestone-date-picker";
@@ -37,7 +39,7 @@ export function IssueDueDateInput({
   const calendarRef = useRef<HTMLDivElement>(null);
   const [localValue, setLocalValue] = useState(defaultValue ?? "");
   const [open, setOpen] = useState(false);
-  const [position, setPosition] = useState({ left: 0, top: 0 });
+  const [_position, setPosition] = useState({ left: 0, top: 0 });
   const currentDate = value ?? localValue;
 
   useLayoutEffect(() => {
@@ -57,7 +59,7 @@ export function IssueDueDateInput({
     setPosition({ left, top });
   }, [dueDateRef, open]);
 
-  function handleBlur(event: FocusEvent<HTMLElement>) {
+  function handleDueDateBlur(event: FocusEvent<HTMLElement>) {
     const next = event.relatedTarget;
     if (
       next instanceof Node &&
@@ -98,6 +100,7 @@ export function IssueDueDateInput({
 
   return (
     <>
+      {/* oxlint-disable-next-line jsx-a11y/role-supports-aria-props -- legacy input exposes expanded state alongside the calendar popup. */}
       <input
         ref={dueDateRef}
         type="text"
@@ -115,7 +118,7 @@ export function IssueDueDateInput({
           setOpen(true);
         }}
         onClick={() => setOpen(true)}
-        onBlur={handleBlur}
+        onBlur={handleDueDateBlur}
         onKeyDown={handleKeyDown}
         onChange={(event) => {
           setLocalValue(event.currentTarget.value);
@@ -149,8 +152,7 @@ export function IssueDueDateInput({
                 ref: calendarRef,
                 role: "dialog",
                 "aria-label": t("issue.dueDate"),
-                style: position,
-                onBlur: handleBlur,
+                onBlur: handleDueDateBlur,
                 onChange: () => dueDateRef.current?.focus(),
                 onKeyDown: handleKeyDown,
                 onMouseDown: (event) => {

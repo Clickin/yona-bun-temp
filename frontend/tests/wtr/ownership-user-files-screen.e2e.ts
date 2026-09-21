@@ -1,4 +1,4 @@
-import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
+import { curatedAppCss } from "../wtr-compat.ts";
 import { readFile } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
@@ -7,8 +7,7 @@ const mkdir = async () => undefined;
 const resolve = (...parts: string[]) => parts.join("/").replace(/^\/+/, "");
 
 const routeSource = new URL("../src/routes/user/files.tsx", import.meta.url);
-const styleSource = new URL("../src/app.css", import.meta.url);
-const fallbackSource = new URL("../src/app.css", import.meta.url);
+
 const legacyTemplateSource = new URL(
   "../../yona-original/app/views/user/userFiles.scala.html",
   import.meta.url,

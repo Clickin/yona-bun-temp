@@ -6,12 +6,7 @@ import { LegacyMarkdown } from "../../../../components/legacy-markdown";
 import defaultAvatarUrl from "../../../../assets/legacy/default-avatar-64.png";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { currentSessionQueryOptions } from "../../../../api/session";
-import type {
-  ProjectContainer,
-  ProjectMilestone,
-  ProjectMilestoneIssue,
-  YoramLabel,
-} from "../../../../api/types";
+import type { ProjectMilestone, ProjectMilestoneIssue, YoramLabel } from "../../../../api/types";
 import {
   closeProjectMilestone,
   deleteProjectMilestone,
@@ -647,9 +642,11 @@ function MassUpdateShell({
         input.addLabelIds = [Number(value)];
         const label = labels.find((candidate) => candidate.id === value);
         if (label?.categoryIsExclusive) {
-          input.removeLabelIds = selectedLabels
-            .filter((selected) => selected.id !== value && selected.categoryId === label.categoryId)
-            .map((selected) => Number(selected.id));
+          input.removeLabelIds = selectedLabels.flatMap((selected) =>
+            selected.id !== value && selected.categoryId === label.categoryId
+              ? [Number(selected.id)]
+              : [],
+          );
         }
         break;
       }

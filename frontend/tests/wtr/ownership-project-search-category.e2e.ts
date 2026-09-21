@@ -2,7 +2,7 @@ import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 test("project search category wrapper owns the legacy category geometry contract", async () => {
-  const [route, style, partial, pageLess] = await Promise.all([
+  const [route, _style, partial, pageLess] = await Promise.all([
     readFile(new URL("../src/routes/$ownerName/$projectName/search.tsx", import.meta.url), "utf8"),
     Promise.resolve(curatedAppCss()),
     readFile(

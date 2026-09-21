@@ -1,4 +1,4 @@
-import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdir only feeds page.screenshot paths (no-op).
@@ -111,7 +111,7 @@ test("profile Projects pane retires only project link leaf classes", async ({ pa
   ];
   const [
     route,
-    styles,
+    _styles,
     view,
     partial,
     yobi,

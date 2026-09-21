@@ -9,7 +9,7 @@ const legacyOverride = "../yona-original/app/assets/stylesheets/less/_override.l
 const appStyles = "../src/app.css";
 
 test("issueform select controls own route-scoped Style geometry", async () => {
-  const [route, style, create, assignee, override, css] = await Promise.all([
+  const [route, _style, create, assignee, override, css] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(styleSource, "utf8"),
     readFile(legacyCreate, "utf8"),

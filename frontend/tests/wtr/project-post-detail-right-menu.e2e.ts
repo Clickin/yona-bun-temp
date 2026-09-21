@@ -13,7 +13,7 @@ test("board post keeps the legacy full-width right menu shell and comment hash t
 
   const pageWrap = page.locator(".project-page-wrap.board-view");
   const body = page.locator(".board-body.row-fluid");
-  const leftPane = page.locator(".board-body > .span-left-pane");
+
   const rightPane = page.locator(".board-body > .span-right-pane");
   const sidebar = page.locator('[data-owner="post-detail-sidebar"]');
   const comment = page.locator("#comment-1");

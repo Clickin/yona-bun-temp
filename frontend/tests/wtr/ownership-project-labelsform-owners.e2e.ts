@@ -1,4 +1,4 @@
-import { expect, test, type Page, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { expect, test, type Page, curatedAppCss as _curatedAppCss } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 const fileURLToPath = (u) => u.pathname;
 
@@ -8,7 +8,7 @@ const routeSource = readFileSync(
   ),
   "utf8",
 );
-const styleSource = curatedAppCss() + mergedLegacyBlock();
+
 const owners = [
   "project-labels-category-list",
   "project-labels-category-heading",

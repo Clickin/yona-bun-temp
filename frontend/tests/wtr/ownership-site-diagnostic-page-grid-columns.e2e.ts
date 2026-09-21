@@ -42,7 +42,7 @@ test("site diagnostic page/grid/columns own the active frozen layout declaration
   for (const owner of Object.values(OWNERS)) {
     expect(route).toContain(`data-owner="${owner}"`);
   }
-  for (const style of [
+  for (const _style of [
     "page",
     "settingWrap",
     "settingGrid",

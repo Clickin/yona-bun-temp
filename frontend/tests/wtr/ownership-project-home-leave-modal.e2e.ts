@@ -6,7 +6,7 @@ const legacySource = new URL(
   import.meta.url,
 );
 test("project home leave modal visibility uses conditional Style", async () => {
-  const [route, legacy] = await Promise.all([
+  const [route, _legacy] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(legacySource, "utf8"),
   ]);

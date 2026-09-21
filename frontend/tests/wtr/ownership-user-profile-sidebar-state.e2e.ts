@@ -1,4 +1,4 @@
-import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -40,7 +40,7 @@ test.beforeEach(async ({ page }) => {
 test("authenticated public profile owns static user sidebar spacing", async ({ page }) => {
   const [
     source,
-    styleSource,
+    _styleSource,
     scala,
     pageLess,
     commonLess,

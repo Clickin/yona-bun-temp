@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem; mkdirSync only feeds page.screenshot paths (no-op).
@@ -14,7 +14,7 @@ test.use({ locale: "en-US" });
 
 test("records the three project pull-request float owners and frozen legacy evidence", () => {
   const route = readFileSync("src/routes/$ownerName/$projectName/pullRequests.tsx", "utf8");
-  const style = readFileSync("src/app.css", "utf8");
+
   const legacyRoot = readFileSync("../yona-original/app/views/git/list.scala.html", "utf8");
   const partialSearch = readFileSync(
     "../yona-original/app/views/git/partial_search.scala.html",

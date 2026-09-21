@@ -1081,7 +1081,7 @@ function isNonRangedThread(thread: CodeReviewThread) {
 function CodeCommentThreadView({
   currentUser,
   deleteComment,
-  hasPreviousThread = false,
+  hasPreviousThread: _hasPreviousThread = false,
   commentItemVariant = "default",
   isNonRanged = false,
   isFolded: controlledIsFolded,
@@ -1722,8 +1722,11 @@ function ReviewForm({
       const attachments = await Promise.all(
         formData
           .getAll("filePath")
-          .filter((value): value is File => value instanceof File && value.name !== "")
-          .map((file) => uploadTemporaryAttachment(runtimeConfig, csrfToken, file)),
+          .flatMap((value) =>
+            value instanceof File && value.name !== ""
+              ? [uploadTemporaryAttachment(runtimeConfig, csrfToken, value)]
+              : [],
+          ),
       );
       return createCommitDiscussionCommentRest(runtimeConfig, csrfToken, {
         commitId,

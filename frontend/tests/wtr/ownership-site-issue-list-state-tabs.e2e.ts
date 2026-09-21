@@ -9,7 +9,7 @@ const readFile = (path: string | URL, encoding?: string | null): Promise<string>
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = new URL("../src/routes/sites/issueList.tsx", import.meta.url);
-const themeSource = new URL("../src/app.css", import.meta.url);
+
 const templateSource = new URL(
   "../../yona-original/app/views/site/issueList.scala.html",
   import.meta.url,
@@ -128,7 +128,7 @@ test.describe("Style site issue-list state tabs", () => {
 
     for (const explicitOwner of Object.values(owners))
       expect(route).toContain(`data-owner="${explicitOwner}"`);
-    for (const style of [
+    for (const _style of [
       "issueListStateTabs",
       "issueListStateTabItem",
       "issueListStateTabItemSelected",

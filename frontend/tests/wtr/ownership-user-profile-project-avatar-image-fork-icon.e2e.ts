@@ -1,4 +1,4 @@
-import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const projects = [
@@ -84,7 +84,7 @@ test.beforeEach(async ({ page }) => {
 test("profile project avatar images and conditional fork icon own the final legacy declarations", async ({
   page,
 }) => {
-  const [routeSource, styleSource, view, partial, yobi, commonLess, yobiUiLess, bootstrap] =
+  const [routeSource, _styleSource, view, partial, yobi, commonLess, yobiUiLess, bootstrap] =
     await Promise.all([
       // String paths keep the raw fixture: URL reads skip the .txt suffix and
       // come back esbuild-transformed (trailing commas stripped).

@@ -6,7 +6,7 @@ test("project milestones progress owns static geometry", async () => {
     new URL("../src/routes/$ownerName/$projectName/milestones.tsx", import.meta.url),
     "utf8",
   );
-  const styles = await Promise.resolve(curatedAppCss());
+  const _styles = await Promise.resolve(curatedAppCss());
   const appCss = await Promise.resolve(curatedAppCss());
   const legacy = await readFile(
     new URL("../../yona-original/app/views/milestone/list.scala.html", import.meta.url),

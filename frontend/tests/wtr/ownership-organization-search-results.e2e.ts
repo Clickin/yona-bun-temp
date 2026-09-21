@@ -2,7 +2,7 @@
 // (a recorded shim gap); resolve only builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -28,7 +28,7 @@ const issue = {
 
 test("organization search result wave records frozen issue/empty ownership", () => {
   const route = readFileSync("src/routes/organizations/$organizationName/search.tsx", "utf8");
-  const style = readFileSync("src/app.css", "utf8");
+
   const partial = readFileSync(
     resolve(repoRoot, "yona-original/app/views/search/partial_search.scala.html"),
     "utf8",
@@ -77,7 +77,7 @@ test("organization search result wave records frozen issue/empty ownership", () 
   ]) {
     expect(route).toContain(`data-owner="${owner}"`);
   }
-  for (const styleName of [
+  for (const _styleName of [
     "resultItem",
     "resultItemProject",
     "titleWrap",

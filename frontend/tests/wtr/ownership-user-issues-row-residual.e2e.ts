@@ -1,4 +1,3 @@
-import { readFile, mergedLegacyBlock } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
@@ -6,7 +5,7 @@ const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 test("user issue row conditional and dynamic styles use route-local Style", async ({ page }) => {
   const source = readFileSync("src/routes/user/issues.tsx", "utf8");
-  const styleSource = readFileSync("src/app.css", "utf8");
+
   const legacy = readFileSync(
     "../yona-original/app/views/issue/my_partial_list.scala.html",
     "utf8",

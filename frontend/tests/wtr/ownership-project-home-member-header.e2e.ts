@@ -6,7 +6,7 @@ test("project home member header uses route-local Style", async () => {
     new URL("../src/routes/$ownerName/$projectName.tsx", import.meta.url),
     "utf8",
   );
-  const style = curatedAppCss();
+
   const legacy = readFileSync(
     new URL("../../yona-original/app/views/project/home.scala.html", import.meta.url),
     "utf8",

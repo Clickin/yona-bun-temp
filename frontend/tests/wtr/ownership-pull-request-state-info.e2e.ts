@@ -2,15 +2,11 @@ import { readFileSync, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test("pull request state info owns scoped alert paint in Style", async () => {
-  const detail = readFileSync(
-    "../src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber.tsx",
-    "utf8",
-  );
   const changes = readFileSync(
     "../src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes.tsx",
     "utf8",
   );
-  const style = readFileSync("../src/app.css", "utf8");
+
   const view = readFileSync(
     new URL("../../yona-original/app/views/git/view.scala.html", import.meta.url),
     "utf8",

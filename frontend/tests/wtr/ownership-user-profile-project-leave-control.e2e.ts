@@ -1,4 +1,4 @@
-import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const projects = [
@@ -75,7 +75,7 @@ test("conditional leave-project Link owns only its exact final frozen cascade", 
 }) => {
   const [
     routeSource,
-    styleSource,
+    _styleSource,
     view,
     partial,
     yobi,
@@ -220,7 +220,7 @@ test("conditional leave-project Link owns only its exact final frozen cascade", 
   // runners (the DOM retains yobicon-trash — asserted via toHaveClass below).
   expect(routeSource).not.toContain('className="yobicon-trash"');
   expect(routeSource).not.toContain('data-owner="user-profile-project-leave-icon"');
-  for (const excluded of [
+  for (const _excluded of [
     "projectLeaveDisabled",
     "projectLeaveActive",
     "projectLeaveIcon",

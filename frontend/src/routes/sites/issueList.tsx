@@ -333,7 +333,7 @@ function IssueStateTab({ selected, state }: { selected: string; state: SiteIssue
   );
 }
 
-function IssueListItem({ index, issue }: { index: number; issue: SiteIssue }) {
+function IssueListItem({ index: _index, issue }: { index: number; issue: SiteIssue }) {
   const { t } = useLegacyMessages();
   const projectLogoUrl = issue.projectLogoUrl.trim() || defaultProjectLogoUrl;
   const created = issue.createdTitle
@@ -362,7 +362,9 @@ function IssueListItem({ index, issue }: { index: number; issue: SiteIssue }) {
         >
           {issue.ownerName}/{issue.projectName}
         </Link>{" "}
-        <span className="post-info-separator" data-owner="site-issue-list-separator">·</span>{" "}
+        <span className="post-info-separator" data-owner="site-issue-list-separator">
+          ·
+        </span>{" "}
         <Link
           className="post-title"
           to="/$ownerName/$projectName/issue/$issueNumber"
@@ -407,7 +409,11 @@ function IssueListItem({ index, issue }: { index: number; issue: SiteIssue }) {
         >
           {issue.authorLabel}{" "}
         </Link>{" "}
-        <span className="post-meta-item" data-owner="site-issue-list-metadata-item" title={created.title}>
+        <span
+          className="post-meta-item"
+          data-owner="site-issue-list-metadata-item"
+          title={created.title}
+        >
           {created.label}{" "}
         </span>{" "}
         <span className="post-comments post-meta-item" data-owner="site-issue-list-metadata-item">

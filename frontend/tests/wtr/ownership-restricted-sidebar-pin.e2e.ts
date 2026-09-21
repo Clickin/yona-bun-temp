@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts"; // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
+import { readFileSync, curatedAppCss } from "../wtr-compat.ts"; // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts: string[]) => parts.join("/");
 
@@ -14,7 +14,6 @@ test.use({ locale: "en-US" });
 test("restricted sidebar pin has route-paint and inline-geometry Style ownership", () => {
   const appCss = curatedAppCss();
   const route = readFileSync("src/routes/restricted.tsx", "utf8");
-  const routeTheme = readFileSync("src/app.css", "utf8");
 
   expect(route).not.toContain('className="pin"');
   expect(route).not.toContain('data-placement="bottom"');

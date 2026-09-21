@@ -20,7 +20,7 @@ test("project no-head code preserves runtime owners", async ({ page }) => {
   );
   await page.goto(`${basePath}/admin/sample/code`, { waitUntil: "commit" });
   const pageShell = page.locator('[data-owner="project-code-nohead-page"]');
-  const column = page.locator('[data-owner="project-code-nohead-column"]');
+
   const alert = page.locator('[data-owner="project-code-nohead-alert"]');
   await expect(pageShell).toBeVisible();
   await expect(alert).toBeVisible();

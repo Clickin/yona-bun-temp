@@ -1,4 +1,3 @@
-import { readFile, mergedLegacyBlock } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
@@ -14,7 +13,7 @@ const owners = {
 
 test("sidebar nav owns only UL, repeated LI variants, and direct Links", () => {
   const route = readFileSync("src/routes/sites/userList.tsx", "utf8");
-  const theme = readFileSync("src/app.css", "utf8");
+
   const legacy = readFileSync("../yona-original/app/views/site/siteMngLayout.scala.html", "utf8");
   const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
   expect(legacy).toContain('<ul class="site-setting-nav">');

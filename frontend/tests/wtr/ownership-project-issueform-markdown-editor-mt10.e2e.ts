@@ -15,7 +15,7 @@ test.use({ locale: "en-US" });
 test("issueform markdown editor keeps legacy mt10 ownership, tabs, and responsive bounds", async ({
   page,
 }, _testInfo) => {
-  const [route, style, create, editor, commonLess, yobiLess, messages] = await Promise.all([
+  const [route, _style, create, editor, commonLess, yobiLess, messages] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(styleSource, "utf8"),
     readFile(legacyCreateSource, "utf8"),

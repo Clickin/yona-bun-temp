@@ -14,7 +14,7 @@ const lessSource = new URL(
 const appCssSource = new URL("../src/app.css", import.meta.url);
 
 test("project posts sort filters preserve legacy DOM and route-local Style ownership", async () => {
-  const [route, style, legacy, less, appCss] = await Promise.all([
+  const [route, _style, legacy, less, appCss] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(styleSource, "utf8"),
     readFile(legacySource, "utf8"),

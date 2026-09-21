@@ -10,7 +10,7 @@ const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const repoRoot = resolve("..");
 const screenshotDirectory = resolve("../output/playwright/visual-sweep");
 const routeSource = "src/routes/organizations/$organizationName/settingform.tsx";
-const themeSource = "src/app.css";
+const _themeSource = "src/app.css";
 const owners = [
   "organization-setting-bubble",
   "organization-setting-logo-point",
@@ -22,7 +22,7 @@ const owners = [
 
 test("organization setting form records the route-local Style paint boundary", () => {
   const route = readFileSync(routeSource, "utf8");
-  const theme = readFileSync(themeSource, "utf8");
+
   const legacyTemplate = readFileSync(
     resolve(repoRoot, "yona-original/app/views/organization/setting.scala.html"),
     "utf8",
@@ -40,7 +40,7 @@ test("organization setting form records the route-local Style paint boundary", (
     "utf8",
   );
   expect(route).toContain("setting.scala.html");
-  for (const owner of owners) expect(route).toContain(`data-owner=\"${owner}\"`);
+  for (const owner of owners) expect(route).toContain(`data-owner="${owner}"`);
 
   expect(legacyTemplate).toContain('<form id="saveSetting"');
   expect(legacyTemplate).toContain('<div class="box-wrap bottom">');

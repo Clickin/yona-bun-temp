@@ -1,9 +1,9 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const route = readFileSync("../src/routes/$ownerName/$projectName/issue/$issueNumber.tsx", "utf8");
-const styles = readFileSync("src/app.css", "utf8");
+
 const legacy = readFileSync("../yona-original/app/views/error/forbidden.scala.html", "utf8");
 const issueView = readFileSync("../yona-original/app/views/issue/view.scala.html", "utf8");
 const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");

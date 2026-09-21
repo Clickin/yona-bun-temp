@@ -1,9 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  ProjectPullRequestsScreen,
-  type ProjectPullRequestsSearch,
-  validateProjectPullRequestsSearch,
-} from "./pullRequests";
+import { ProjectPullRequestsScreen, validateProjectPullRequestsSearch } from "./pullRequests";
 
 export const Route = createFileRoute("/$ownerName/$projectName/closedPullRequests")({
   component: ProjectClosedPullRequestsRoute,

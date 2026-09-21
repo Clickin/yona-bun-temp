@@ -71,7 +71,7 @@ test.describe("Style site project-list title search", () => {
     for (const owner of Object.values(owners)) {
       expect(route).toContain(owner.slice(1, -1));
     }
-    for (const style of [
+    for (const _style of [
       "projectSearchForm",
       "projectSearchBar",
       "projectSearchTextbox",

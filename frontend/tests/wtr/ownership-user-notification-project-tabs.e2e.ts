@@ -1,4 +1,4 @@
-import { readFile, curatedAppCss } from "../wtr-compat.ts";
+import { curatedAppCss } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
@@ -205,10 +205,6 @@ test("notification project tabs record the frozen five-owner boundary", () => {
   expect(route).not.toContain('className="tab-content"');
   expect(route).not.toContain('className="tab-pane active"');
   expect(route).not.toContain('className="tab-pane"');
-  const projectTabStyles = route.slice(
-    route.indexOf("projectList: {"),
-    route.indexOf("notificationTable: {"),
-  );
 
   expect(route).toContain('data-owner="user-notification-table"');
   expect(route).toContain('role="switch"');

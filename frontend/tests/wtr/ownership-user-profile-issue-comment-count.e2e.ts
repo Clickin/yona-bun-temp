@@ -1,5 +1,4 @@
-import { readFile, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
-import { readFileSync } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdir only feeds page.screenshot paths (no-op).
@@ -74,7 +73,7 @@ test("authenticated profile top-level issue comment count owns its exact present
 }) => {
   const [
     route,
-    styles,
+    _styles,
     view,
     issuePartial,
     childPartial,
@@ -88,7 +87,7 @@ test("authenticated profile top-level issue comment count owns its exact present
     yobiLess,
     bootstrap,
     bootstrapResponsive,
-    yobicon,
+    _yobicon,
     messages,
     focusedTest,
   ] = await Promise.all([

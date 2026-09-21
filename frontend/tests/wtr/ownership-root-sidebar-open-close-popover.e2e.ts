@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
@@ -16,7 +16,7 @@ const SCREENSHOT_DIRECTORY = resolve(
 test.use({ locale: "en-US" });
 
 test("root sidebar open/close motion and project overview hover stay contained", async ({
-  page,
+  _page,
 }) => {
   const usermenu = readFileSync("../yona-original/app/views/common/usermenu.scala.html", "utf8");
   const projectList = readFileSync(
@@ -32,7 +32,6 @@ test("root sidebar open/close motion and project overview hover stay contained",
     "utf8",
   );
   const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const styleSource = readFileSync("src/app.css", "utf8");
 
   expect(usermenu).toContain('<div id="mySidenav" class="sidenav">');
   expect(projectList).toContain("data-toggle='popover'");

@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -6,7 +6,7 @@ const route = readFileSync(
   "../src/routes/$ownerName/$projectName/issue/$issueNumber/editform.tsx",
   "utf8",
 );
-const styles = readFileSync("src/app.css", "utf8");
+
 const editView = readFileSync("../yona-original/app/views/issue/edit.scala.html", "utf8");
 const notFoundView = readFileSync("../yona-original/app/views/error/notfound.scala.html", "utf8");
 const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");

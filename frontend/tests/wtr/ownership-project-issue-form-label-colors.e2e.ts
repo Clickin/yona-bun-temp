@@ -1,11 +1,9 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
-import { expect, test, type Page, type Route } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
+import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 test("issue form owns selected and available label colors with Dynamic Style", async ({ page }) => {
-  const source = readFileSync("src/routes/$ownerName/$projectName/issueform.tsx", "utf8");
-  const styles = readFileSync("src/app.css", "utf8");
   const legacy = readFileSync("../yona-original/app/views/issue/create.scala.html", "utf8");
   const labels = readFileSync(
     "../yona-original/app/views/issue/partial_select_label.scala.html",

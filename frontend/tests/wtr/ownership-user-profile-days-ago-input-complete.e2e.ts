@@ -1,4 +1,4 @@
-import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test, type Page } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -58,8 +58,6 @@ test("public-profile daysAgo number input completely owns its frozen cascade", a
 
     const input = page.locator('[data-owner="user-profile-days-ago-input"]');
     const controls = page.locator('[data-owner="user-profile-days-ago-controls"]');
-    const tabs = page.locator('[data-owner="user-profile-tabs"]');
-    const stream = page.locator('[data-owner="user-profile-stream"]');
 
     await expect(input).toHaveCount(1);
     await expect(input).toHaveAttribute("id", "daysAgoBtn");
@@ -201,8 +199,8 @@ test("public-profile daysAgo number input completely owns its frozen cascade", a
 async function assertSourceEvidence() {
   const [
     routeSource,
-    styleSource,
-    scala,
+    _styleSource,
+    _scala,
     yobi,
     bootstrap,
     variables,

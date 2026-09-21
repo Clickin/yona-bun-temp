@@ -1,4 +1,4 @@
-import { expect, test, type Page, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { expect, test, type Page, curatedAppCss as _curatedAppCss } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths
 // (a recorded shim gap); resolve only builds those paths.
@@ -12,7 +12,7 @@ const routeSource = readFileSync(
   ),
   "utf8",
 );
-const styleSource = curatedAppCss() + mergedLegacyBlock();
+
 const legacyShell = readFileSync(
   fileURLToPath(
     new URL("../../yona-original/app/views/project/issuelabels.scala.html", import.meta.url),

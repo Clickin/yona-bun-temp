@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const project = {
@@ -23,9 +23,9 @@ const project = {
   viewerCanWatch: false,
 };
 
-test("deleteform batch 7 preserves the legacy bottom action wrapper", async ({ page }) => {
+test("deleteform batch 7 preserves the legacy bottom action wrapper", async ({ _page }) => {
   const route = readFileSync("src/routes/$ownerName/$projectName/deleteform.tsx", "utf8");
-  const style = readFileSync("src/app.css", "utf8");
+
   const legacy = readFileSync("../yona-original/app/views/project/delete.scala.html", "utf8");
   const settingMenu = readFileSync(
     "../yona-original/app/views/project/partial_settingmenu.scala.html",

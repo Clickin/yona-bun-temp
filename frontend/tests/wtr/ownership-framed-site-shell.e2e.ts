@@ -123,7 +123,7 @@ test.use({ locale: "en-US" });
 
 test("framed SiteLayout shell has complete global-theme Style ownership", () => {
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/app.css", "utf8");
+
   const appCss = curatedAppCss();
 
   expect(route).toContain('data-owner="framed-site-shell"');
@@ -214,7 +214,7 @@ for (const viewport of [
 
     await shell.getByRole("button", { name: "Sidebar" }).click();
     await expect(shell).toHaveAttribute("data-sidebar-open", "true");
-    const motionProbe = await page.evaluate(() => {
+    const _motionProbe = await page.evaluate(() => {
       const aside = document.querySelector('[data-owner="left-sidebar-outer-shell"]');
       return aside
         ? {

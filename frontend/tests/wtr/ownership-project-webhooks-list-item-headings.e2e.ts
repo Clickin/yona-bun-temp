@@ -5,7 +5,7 @@ test("project webhook list item headings own padding while retaining truncate", 
     new URL("../src/routes/$ownerName/$projectName/webhooks.tsx", import.meta.url),
     "utf8",
   );
-  const style = curatedAppCss();
+
   const legacy = readFileSync(
     new URL("../../yona-original/app/views/project/webhooks.scala.html", import.meta.url),
     "utf8",

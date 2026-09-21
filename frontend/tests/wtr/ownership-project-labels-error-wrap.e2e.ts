@@ -1,4 +1,4 @@
-import { expect, test, type Page, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { expect, test, type Page, curatedAppCss } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -28,10 +28,6 @@ const pageLess = readFileSync(
 );
 const spritesLess = readFileSync(
   new URL("../../yona-original/app/assets/stylesheets/less/_sprites.less", import.meta.url),
-  "utf8",
-);
-const messages = readFileSync(
-  new URL("../../yona-original/conf/messages", import.meta.url),
   "utf8",
 );
 

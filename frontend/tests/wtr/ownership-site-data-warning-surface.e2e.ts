@@ -1,4 +1,3 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 import { readFile } from "../wtr-compat.ts";
 
@@ -24,7 +23,7 @@ async function openData(page: Page) {
 
 test.describe("Style site data warning surface", () => {
   test("uses global theme ownership for the legacy warning surface", async () => {
-    const [route, theme] = await Promise.all([
+    const [route, _theme] = await Promise.all([
       readFile(routeSource, "utf8"),
       readFile(themeSource, "utf8"),
     ]);

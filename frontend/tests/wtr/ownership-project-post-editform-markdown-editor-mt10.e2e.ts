@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts"; // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
+import { readFileSync } from "../wtr-compat.ts"; // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts) => parts.join("/");
 
@@ -13,7 +13,7 @@ const routeSource = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/post/$postNumber/editform.tsx", import.meta.url),
   "utf8",
 );
-const styleSource = curatedAppCss();
+
 const legacyBoardSource = readFileSync(
   new URL("../../yona-original/app/views/board/edit.scala.html", import.meta.url),
   "utf8",

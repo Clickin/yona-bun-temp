@@ -50,8 +50,8 @@ test.describe("Style site mail sidebar", () => {
   test("pins Scala, frozen LESS chain, global theme, bridge absence, and retirement", async () => {
     const [
       route,
-      theme,
-      appCss,
+      _theme,
+      _appCss,
       template,
       layout,
       messages,
@@ -235,9 +235,8 @@ test.describe("Style site mail sidebar", () => {
       expect(boxes.badge.top).toBeLessThan(boxes.links[6].bottom);
       expect(boxes.badge.bottom).toBeGreaterThan(boxes.links[6].top);
       const fallback = await sidebar.evaluate((actual, names) => {
-        const actualItem = actual.querySelector<HTMLElement>(`[data-owner="${names.item}"]`)!;
-        const actualLink = actualItem.querySelector<HTMLElement>(`[data-owner="${names.link}"]`)!;
-        const actualBadge = actual.querySelector<HTMLElement>(`[data-owner="${names.badge}"]`)!;
+        const _actualItem = actual.querySelector<HTMLElement>(`[data-owner="${names.item}"]`)!;
+
         const ul = document.createElement("ul"),
           li = document.createElement("li"),
           a = document.createElement("a"),

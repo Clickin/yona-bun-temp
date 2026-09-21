@@ -4,7 +4,7 @@ import { expect, test } from "../wtr-compat.ts";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 test("project home uses Dynamic Style for server-provided milestone progress", async ({ page }) => {
-  const [routeSource, styleSource] = [
+  const [routeSource] = [
     readFileSync("src/routes/$ownerName/$projectName.tsx", "utf8"),
     curatedAppCss(),
   ];

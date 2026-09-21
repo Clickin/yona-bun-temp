@@ -6,7 +6,7 @@ test("project home dashboard progress owns base geometry", async () => {
     new URL("../src/routes/$ownerName/$projectName.tsx", import.meta.url),
     "utf8",
   );
-  const style = curatedAppCss();
+
   const css = curatedAppCss();
   const assignee = readFileSync(
     new URL(

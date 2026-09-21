@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts) => parts.join("/");
@@ -14,7 +14,7 @@ test.use({ locale: "en-US" });
 
 test("project pull requests owns legacy mr10 on the two-column mode control", async ({ page }) => {
   const routeSource = readFileSync("src/routes/$ownerName/$projectName/pullRequests.tsx", "utf8");
-  const styleSource = readFileSync("src/app.css", "utf8");
+
   const legacyRoot = readFileSync("../yona-original/app/views/git/list.scala.html", "utf8");
   const legacyPartial = readFileSync(
     "../yona-original/app/views/git/partial_search.scala.html",
@@ -119,7 +119,6 @@ test("project pull requests owns legacy mr10 on the two-column mode control", as
     await page.evaluate(() => localStorage.removeItem("useTwoColumnMode"));
     await page.reload({ waitUntil: "commit" });
 
-    const tabs = page.locator('[data-owner="project-pullrequests-tabs"]');
     const mode = page.locator('[data-owner="project-pullrequests-two-column-anchor"]');
     const toggle = mode.locator("#two-column-mode");
     await expect(mode).toHaveCount(1);

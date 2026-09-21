@@ -84,8 +84,8 @@ test.describe("Style site mass mail sidebar", () => {
     ];
     const [
       route,
-      theme,
-      appCss,
+      _theme,
+      _appCss,
       template,
       layout,
       messages,

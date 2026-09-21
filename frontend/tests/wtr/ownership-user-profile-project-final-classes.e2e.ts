@@ -1,4 +1,4 @@
-import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdir only feeds page.screenshot paths (no-op).
 const mkdir = async () => undefined;
@@ -93,7 +93,7 @@ test.beforeEach(async ({ page }) => {
 test("Projects final presentation classes are direct Style owners", async ({ page }) => {
   test.setTimeout(60_000);
 
-  const [route, styles, view, partial, legacyJs, focusedTest] = await Promise.all([
+  const [route, _styles, view, partial, legacyJs, focusedTest] = await Promise.all([
     readFile(new URL("../src/routes/$user.tsx", import.meta.url), "utf8"),
     curatedAppCss(),
     readFile(

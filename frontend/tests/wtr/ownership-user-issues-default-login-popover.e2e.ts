@@ -1,16 +1,15 @@
 import { readFile, curatedAppCss } from "../wtr-compat.ts";
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const routeSource = new URL("../src/routes/user/issues.tsx", import.meta.url);
-const styleSource = new URL("../src/app.css", import.meta.url);
+
 const legacySource = new URL(
   "../../yona-original/app/views/common/mySeriesMenuTab.scala.html",
   import.meta.url,
 );
 
 test("user issues default-login popover uses static Style", async () => {
-  const [route, style, legacy] = await Promise.all([
+  const [route, _style, legacy] = await Promise.all([
     readFile(routeSource, "utf8"),
     Promise.resolve(curatedAppCss()),
     readFile(legacySource, "utf8"),

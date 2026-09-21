@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFileSync, curatedAppCss as _curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. fileURLToPath yields the served URL
@@ -14,7 +14,6 @@ const routeSource = readFileSync(
   ),
   "utf8",
 );
-const styleSource = curatedAppCss() + mergedLegacyBlock();
 
 test("pull request detail declares Style owners and paint-only theme", () => {
   for (const owner of [

@@ -19,7 +19,7 @@ const states = [
 test("public profile empty panels own frozen error-wrap paint, order, and geometry", async ({
   page,
 }) => {
-  const [route, styles, legacy, less, messages] = await Promise.all([
+  const [route, _styles, legacy, less, messages] = await Promise.all([
     readFile(new URL("../src/routes/$user.tsx", import.meta.url), "utf8"),
     Promise.resolve(curatedAppCss()),
     readFile(

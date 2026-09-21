@@ -1,11 +1,10 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const routeSource = readFileSync(
   "../src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
   "utf8",
 );
-const styleSource = readFileSync("src/app.css", "utf8");
 
 test("issue detail keeps direct Style owners and paint-only theme", () => {
   for (const owner of [

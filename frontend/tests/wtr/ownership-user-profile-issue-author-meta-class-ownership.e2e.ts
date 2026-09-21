@@ -1,5 +1,4 @@
-import { readFile, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
-import { readFileSync } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 // Browser harness: no filesystem. mkdir only feeds page.screenshot paths (no-op).
@@ -83,7 +82,7 @@ test(`profile issue author/meta classes have direct Style ownership (${mode})`, 
 }) => {
   test.setTimeout(60_000);
 
-  const [route, styles, view, partial, yobi, common, pageLess, responsive, messages] =
+  const [route, _styles, view, partial, yobi, common, pageLess, responsive, messages] =
     await Promise.all([
       readFile(new URL("../src/routes/$user.tsx", import.meta.url), "utf8"),
       curatedAppCss(),

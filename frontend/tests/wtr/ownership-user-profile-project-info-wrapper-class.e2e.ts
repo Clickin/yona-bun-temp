@@ -1,4 +1,4 @@
-import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 // Browser harness: no filesystem. mkdir only feeds page.screenshot paths (no-op).
 const mkdir = async () => undefined;
@@ -79,7 +79,7 @@ test("profile project info wrapper retires only its declaration-free legacy clas
 }) => {
   const [
     routeSource,
-    styleSource,
+    _styleSource,
     view,
     partial,
     yobi,

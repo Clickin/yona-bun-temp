@@ -1,11 +1,11 @@
-import { expect, test, type Page, type Route, mergedLegacyBlock } from "../wtr-compat.ts";
+import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 test("moves board post detail static residuals to route-local Style", async ({ page }) => {
   const route = readFileSync("src/routes/$ownerName/$projectName/post/$postNumber.tsx", "utf8");
-  const theme = readFileSync("src/app.css", "utf8");
+
   const template = readFileSync("../yona-original/app/views/common/editor.scala.html", "utf8");
   const boardTemplate = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
   const commentTemplate = readFileSync(
@@ -202,7 +202,7 @@ test("moves board post detail static residuals to route-local Style", async ({ p
 
 test("post detail right alignment owners are route-local Style", () => {
   const route = readFileSync("src/routes/$ownerName/$projectName/post/$postNumber.tsx", "utf8");
-  const theme = readFileSync("src/app.css", "utf8");
+
   for (const owner of [
     "post-detail-actions",
     "post-detail-disabled-comment-actions",

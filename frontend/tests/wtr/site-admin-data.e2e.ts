@@ -470,7 +470,7 @@ async function readSiteDataContainmentMetrics(page: Page) {
     const titleArea = requireElement('[data-owner="site-data-title-strip"]');
     const title = requireElement('[data-owner="site-data-title-heading"]');
     const cuDesc = requireElement('[data-owner="site-data-warning-surface"]');
-    const exportTitle = requireElement(".span10 > h3:nth-of-type(1)");
+
     const exportCopy = requireElement(".span10 > p:nth-of-type(1)");
     const exportButton = requireElement('[data-owner="site-data-export-action"]');
     const importTitle = requireElement(".span10 > h3:nth-of-type(2)");

@@ -7,7 +7,7 @@ const resolve = (...parts) => parts.join("/");
 test("anonymous Home feature block has complete global-theme Style ownership", () => {
   const route = readFileSync(resolve("src/routes/-home-route-screen.tsx"), "utf8");
   const theme = readFileSync(resolve("src/app.css"), "utf8");
-  const appCss = readFileSync(resolve("src/app.css"), "utf8");
+
   const legacy = readFileSync(
     resolve("../yona-original/app/views/index/partial_intro.scala.html"),
     "utf8",

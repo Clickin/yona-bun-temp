@@ -7,7 +7,7 @@ import { LegacyTabIndexInput } from "../../../../../components/legacy-tab-index-
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
-import type { ProjectContainer, ProjectMilestone } from "../../../../../api/types";
+import type { ProjectMilestone } from "../../../../../api/types";
 import {
   readProjectMilestone,
   readSessionBootstrap,
@@ -308,6 +308,6 @@ function stringField(value: unknown, fallback: string) {
   return fallback;
 }
 
-function booleanField(value: unknown) {
+function _booleanField(value: unknown) {
   return value === true || value === "true" || value === 1 || value === "1";
 }

@@ -12,7 +12,7 @@ test("pull request conflict guide owns conditional static styling", async () => 
     "../src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber.tsx",
     "utf8",
   );
-  const styles = await readFile("../src/app.css", "utf8");
+  const _styles = await readFile("../src/app.css", "utf8");
   const legacy = await readFile(
     new URL("../../yona-original/app/views/git/partial_state.scala.html", import.meta.url),
     "utf8",

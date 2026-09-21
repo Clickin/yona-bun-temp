@@ -10,7 +10,7 @@ const legacyStyles = "../yona-original/app/assets/stylesheets/less/_page.less";
 const appStyles = "../src/app.css";
 
 test("issue detail subtasks own route-scoped geometry in Style", async () => {
-  const [route, style, view, list, child, less, css] = await Promise.all([
+  const [route, _style, view, list, child, less, css] = await Promise.all([
     readFile(routeSource),
     readFile(styleSource),
     readFile(legacyView),

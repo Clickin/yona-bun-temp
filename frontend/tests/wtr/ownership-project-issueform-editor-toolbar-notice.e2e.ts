@@ -2,7 +2,7 @@ import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const routeSource = new URL("../src/routes/$ownerName/$projectName/issueform.tsx", import.meta.url);
-const styleSource = new URL("../src/app.css", import.meta.url);
+
 const editorTemplate = new URL(
   "../../yona-original/app/views/common/editor.scala.html",
   import.meta.url,
@@ -15,10 +15,9 @@ const legacyUiStyles = new URL(
   "../../yona-original/app/assets/stylesheets/less/_yobiUI.less",
   import.meta.url,
 );
-const appStyles = new URL("../src/app.css", import.meta.url);
 
 test("issueform editor toolbar notice owns scoped Style geometry and paint", async () => {
-  const [route, style, editor, pageLess, uiLess, css] = await Promise.all([
+  const [route, _style, editor, pageLess, uiLess, css] = await Promise.all([
     readFile(routeSource, "utf8"),
     Promise.resolve(curatedAppCss()),
     readFile(editorTemplate, "utf8"),

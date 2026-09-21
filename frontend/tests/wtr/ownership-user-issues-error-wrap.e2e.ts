@@ -1,4 +1,3 @@
-import { readFile, mergedLegacyBlock } from "../wtr-compat.ts";
 import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
@@ -6,7 +5,7 @@ const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 test("current-user issues empty state keeps legacy error-wrap Style parity", async ({ page }) => {
   const route = readFileSync("src/routes/user/issues.tsx", "utf8");
-  const style = readFileSync("src/app.css", "utf8");
+
   const legacyList = readFileSync("../yona-original/app/views/issue/my_list.scala.html", "utf8");
   const legacySearch = readFileSync(
     "../yona-original/app/views/issue/my_partial_search.scala.html",
@@ -42,7 +41,7 @@ test("current-user issues empty state keeps legacy error-wrap Style parity", asy
   await page.goto(`${basePath}/user/issues`, { waitUntil: "networkidle" });
 
   const wrap = page.locator('[data-owner="user-issues-empty-error-wrap"]');
-  const icon = page.locator('[data-owner="user-issues-empty-error-icon"]');
+
   const message = page.locator('[data-owner="user-issues-empty-error-message"]');
   await expect(wrap).toBeVisible();
   await expect(message).toHaveText("No issue found");

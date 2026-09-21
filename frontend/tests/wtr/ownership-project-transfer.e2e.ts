@@ -1,11 +1,11 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 const routeSource = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/transfer.tsx", import.meta.url),
   "utf8",
 );
-const styleSource = curatedAppCss();
+
 const owners = [
   "project-transfer-bubble",
   "project-transfer-owner-row",

@@ -95,7 +95,7 @@ test("goto lifecycle: fresh mount, retained storage, same realm", async ({ page 
 // test — the wrapper is per-Page, so capture the original here).
 test("fetch teardown restores the original global fetch", async ({ page }) => {
   void page;
-  const original = globalThis.fetch;
+
   await page.goto("/");
   // Inside the test the wrapper is active and answers mocks.
   const response = await fetch("http://yoram.local/yona/api/v1/session");

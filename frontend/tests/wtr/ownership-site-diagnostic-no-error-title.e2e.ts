@@ -1,4 +1,3 @@
-import { readFileSync } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 import { readFile } from "../wtr-compat.ts";
 
@@ -42,7 +41,7 @@ async function openNoErrorDiagnostic(page: Page) {
 
 test.describe("Style site diagnostic no-error title", () => {
   test("owns only the legacy no-error title strip through global theme values", async () => {
-    const [route, theme] = await Promise.all([
+    const [route, _theme] = await Promise.all([
       readFile(routeSource, "utf8"),
       readFile(themeSource, "utf8"),
     ]);

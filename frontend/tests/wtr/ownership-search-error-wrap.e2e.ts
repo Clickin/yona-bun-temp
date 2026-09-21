@@ -10,7 +10,7 @@ test("shared search error family preserves legacy DOM, copy, paint, and geometry
 }) => {
   const [
     route,
-    styles,
+    _styles,
     notFound,
     forbidden,
     internal,

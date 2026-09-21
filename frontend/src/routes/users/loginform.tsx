@@ -26,7 +26,7 @@ type AuthUiCapabilities = ReadAuthUiCapabilitiesResponse & {
   socialLoginOnly?: boolean;
 };
 
-const LEGACY_LOGIN_ACTION_PATH: "/users/login" = "/users/login";
+const LEGACY_LOGIN_ACTION_PATH = "/users/login" as const;
 
 export const Route = createFileRoute("/users/loginform")({
   component: LoginFormRoute,

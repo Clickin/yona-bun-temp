@@ -245,7 +245,7 @@ function HelpTocScreen({ appName }: { appName: string }) {
 function HelpFaqRow({
   answer,
   index,
-  isLast = false,
+  isLast: _isLast = false,
   isOpen,
   onKeyDown,
   onToggle,

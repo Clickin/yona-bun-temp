@@ -1,4 +1,4 @@
-import { readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts"; // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
+import { readFileSync } from "../wtr-compat.ts"; // Browser harness: no filesystem. mkdirSync only feeds page.screenshot paths (no-op); resolve builds those paths.
 const mkdirSync = () => undefined;
 const resolve = (...parts) => parts.join("/");
 
@@ -9,14 +9,7 @@ const screenshotDirectory = resolve(
   "output/playwright/style-project-pull-request-editform-markdown-editor-mt10",
   "normal",
 );
-const routeSource = readFileSync(
-  new URL(
-    "../src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber/editform.tsx",
-    import.meta.url,
-  ),
-  "utf8",
-);
-const styleSource = curatedAppCss();
+
 const legacyEditorSource = readFileSync(
   new URL("../../yona-original/app/views/common/editor.scala.html", import.meta.url),
   "utf8",

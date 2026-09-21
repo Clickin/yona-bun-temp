@@ -6,7 +6,7 @@ const containerSelector = '[data-owner="site-project-list-container"]';
 const projectNameSelector = '[data-owner="site-project-list-project-name"]';
 const deleteActionSelector = '[data-owner="site-project-list-delete-action"]';
 const routeSource = new URL("../src/routes/sites/projectList.tsx", import.meta.url);
-const appCssSource = new URL("../src/app.css", import.meta.url);
+
 const legacyTemplateSource = new URL(
   "../../yona-original/app/views/site/projectList.scala.html",
   import.meta.url,

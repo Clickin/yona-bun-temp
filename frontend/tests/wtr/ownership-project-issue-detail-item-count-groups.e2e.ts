@@ -9,7 +9,7 @@ const legacyStyles = "../yona-original/app/assets/stylesheets/less/_page.less";
 const appStyles = "../src/app.css";
 
 test("issue detail child count groups own the exact route-scoped Style cluster", async () => {
-  const [route, style, caller, pair, less, css] = await Promise.all([
+  const [route, _style, caller, pair, less, css] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(styleSource, "utf8"),
     readFile(legacyCaller, "utf8"),

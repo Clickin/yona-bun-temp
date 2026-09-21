@@ -150,10 +150,9 @@ function UserNotificationSettingsScreen({ runtimeConfig }: { runtimeConfig: Runt
             >
               <table data-owner="user-notification-table">
                 <tbody>
-                  {NOTIFICATION_TYPES.map(([eventType, messageKey], rowIndex) => {
+                  {NOTIFICATION_TYPES.map(([eventType, messageKey], _rowIndex) => {
                     const enabled = isNotificationEnabled(notifications, eventType);
-                    const firstRow = rowIndex === 0;
-                    const lastRow = rowIndex === NOTIFICATION_TYPES.length - 1;
+
                     return (
                       <tr data-owner="user-notification-row" key={eventType}>
                         <th data-owner="user-notification-label-cell">{t(messageKey)}</th>

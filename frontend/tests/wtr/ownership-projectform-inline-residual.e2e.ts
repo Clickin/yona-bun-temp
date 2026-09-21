@@ -1,11 +1,11 @@
-import { readFileSync, mergedLegacyBlock } from "../wtr-compat.ts";
+import { readFileSync } from "../wtr-compat.ts";
 import { expect, test, type Page, type Route } from "../wtr-compat.ts";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 test("project create select controls own the legacy 220px inline widths", async ({ page }) => {
   const routeSource = readFileSync("src/routes/projectform.tsx", "utf8");
-  const styleSource = readFileSync("src/app.css", "utf8");
+
   const legacySource = readFileSync("../yona-original/app/views/project/create.scala.html", "utf8");
   expect(legacySource).toContain('id="project-owner"');
   expect(legacySource).toContain('id="vcs"');
@@ -54,7 +54,7 @@ test("project create select controls own the legacy 220px inline widths", async 
 
 test("project create advanced field labels own legacy right alignment", async ({ page }) => {
   const routeSource = readFileSync("src/routes/projectform.tsx", "utf8");
-  const styleSource = readFileSync("src/app.css", "utf8");
+
   const legacySource = readFileSync("../yona-original/app/views/project/create.scala.html", "utf8");
   expect(legacySource.match(/span2 right-txt(?: mt10)?/gu)).toHaveLength(3);
   expect(routeSource).not.toContain("right-txt");
@@ -75,7 +75,7 @@ test("project create advanced field labels own legacy right alignment", async ({
 
 test("project create visibility labels own the legacy ml5 margin in Style", async ({ page }) => {
   const routeSource = readFileSync("src/routes/projectform.tsx", "utf8");
-  const styleSource = readFileSync("src/app.css", "utf8");
+
   const legacySource = readFileSync("../yona-original/app/views/project/create.scala.html", "utf8");
   const legacyCommon = readFileSync(
     "../yona-original/app/assets/stylesheets/less/_common.less",

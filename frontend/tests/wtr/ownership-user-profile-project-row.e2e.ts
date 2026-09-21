@@ -1,4 +1,4 @@
-import { readFile, readFileSync, mergedLegacyBlock, curatedAppCss } from "../wtr-compat.ts";
+import { readFile, curatedAppCss } from "../wtr-compat.ts";
 import { expect, test } from "../wtr-compat.ts";
 
 test.beforeEach(async ({ page }) => {
@@ -54,7 +54,7 @@ test.beforeEach(async ({ page }) => {
 
 test("populated Projects tab project row owns legacy float geometry", async ({ page }) => {
   const source = await readFile("../src/routes/$user.tsx");
-  const styleSource = await curatedAppCss();
+  const _styleSource = await curatedAppCss();
   const legacy = await readFile(
     new URL("../../yona-original/app/views/user/partial_projectlist.scala.html", import.meta.url),
     "utf8",

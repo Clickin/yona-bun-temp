@@ -1,3 +1,4 @@
+/* oxlint-disable jsx-a11y/prefer-tag-over-role -- legacy Select2/Bootstrap parity DOM intentionally keeps role-based controls. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import {
@@ -148,7 +149,7 @@ function ProjectPostDetailRoute() {
 }
 
 export function ProjectPostDetailIndexScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  const { ownerName, postNumber, projectName } = Route.useParams();
+  const { ownerName, postNumber: _postNumber, projectName } = Route.useParams();
   const nestedProjectShell = use(ProjectNestedShellContext);
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
@@ -156,12 +157,6 @@ export function ProjectPostDetailIndexScreen({ runtimeConfig }: { runtimeConfig:
   useWireframeContentProgress([
     ["api", "v1", "owners", ownerName, "projects", projectName, "posts"],
   ]);
-  const postQuery = useQuery({
-    ...readProjectPostQueryOptions(runtimeConfig, { ownerName, postNumber, projectName }),
-    retry(failureCount, error) {
-      return restApiErrorStatus(error) !== 404 && failureCount < 3;
-    },
-  });
 
   if (!projectQuery.data) {
     if (nestedProjectShell) {
@@ -2184,47 +2179,59 @@ function PostChildComment({
     () => [gfmAutolinkLiterals, referenceKit.extension, childCommentParagraphMarkers()],
     [referenceKit],
   );
-  const metadata = (
-    <>
-      {" - "}
-      <Link
-        to="/$user"
-        params={{ user: authorLoginId }}
-        search={LEGACY_EMPTY_PROFILE_SEARCH}
-        className="usf-group"
-        data-owner="post-detail-child-comment-author-link"
-        activeOptions={{ exact: true }}
-        activeProps={legacyRouteLocalActiveProps}
-      >
-        <strong data-owner="post-detail-child-comment-author-strong">{authorLabel}</strong>
-      </Link>{" "}
-      <Link
-        to="."
-        hash={`comment-${commentId}`}
-        activeOptions={{ includeHash: true }}
-        activeProps={legacyRouteLocalActiveProps}
-        className="ago"
-        data-owner="post-detail-child-comment-ago-link"
-        title={created.title}
-      >
-        {created.label}
-      </Link>
-      {canDelete ? (
-        <button
-          type="button"
-          className="btn-transparent deleteButtonX"
-          data-owner="post-detail-child-comment-delete"
-          title={t("common.comment.delete")}
-          onClick={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            onCommentDeleteRequest(commentId);
-          }}
+  const metadata = useMemo(
+    () => (
+      <>
+        {" - "}
+        <Link
+          to="/$user"
+          params={{ user: authorLoginId }}
+          search={LEGACY_EMPTY_PROFILE_SEARCH}
+          className="usf-group"
+          data-owner="post-detail-child-comment-author-link"
+          activeOptions={{ exact: true }}
+          activeProps={legacyRouteLocalActiveProps}
         >
-          x
-        </button>
-      ) : null}
-    </>
+          <strong data-owner="post-detail-child-comment-author-strong">{authorLabel}</strong>
+        </Link>{" "}
+        <Link
+          to="."
+          hash={`comment-${commentId}`}
+          activeOptions={{ includeHash: true }}
+          activeProps={legacyRouteLocalActiveProps}
+          className="ago"
+          data-owner="post-detail-child-comment-ago-link"
+          title={created.title}
+        >
+          {created.label}
+        </Link>
+        {canDelete ? (
+          <button
+            type="button"
+            className="btn-transparent deleteButtonX"
+            data-owner="post-detail-child-comment-delete"
+            title={t("common.comment.delete")}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onCommentDeleteRequest(commentId);
+            }}
+          >
+            x
+          </button>
+        ) : null}
+      </>
+    ),
+    [
+      authorLabel,
+      authorLoginId,
+      canDelete,
+      commentId,
+      created.label,
+      created.title,
+      onCommentDeleteRequest,
+      t,
+    ],
   );
   const components = useMemo<MarkdownComponents>(
     () => ({

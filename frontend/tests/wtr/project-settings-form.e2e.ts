@@ -1226,7 +1226,6 @@ test("issue template edit preserves the legacy ybtn contract through its route-l
     // below were classified as HARNESS_ENV — WTR does not synthesize
     // pseudo-class states (documented ceiling, ownership-restricted-sidebar-pin
     // precedent), so only the base-state paint remains pinned.
-    const linkBox = await link.boundingBox();
 
     const containment = await link.evaluate((element) => {
       const box = element.getBoundingClientRect();
@@ -3248,45 +3247,6 @@ async function projectSettingMetrics(page: Page) {
       shareDescriptionWidth: Math.round(shareDescriptionRect.width),
       textareaHeight: Math.round(textareaRect.height),
       watchingCount: form.querySelector<HTMLInputElement>('input[name="watchingCount"]')?.value,
-    };
-
-    function requireElement<T extends HTMLElement = HTMLElement>(selector: string) {
-      const element = document.querySelector<T>(selector);
-      if (!element) {
-        throw new Error(`Missing ${selector}`);
-      }
-      return element;
-    }
-  });
-}
-
-async function projectNamePopoverMetrics(page: Page) {
-  return page.evaluate(() => {
-    const rightColumn = requireElement(".setting-box.right");
-    const input = requireElement<HTMLInputElement>("#project-name");
-    const popover = requireElement(".setting-box.right .popover.left");
-    const title = requireElement(".setting-box.right .popover-title");
-    const content = requireElement(".setting-box.right .popover-content");
-    const arrow = requireElement(".setting-box.right .popover .arrow");
-    const rightColumnRect = rightColumn.getBoundingClientRect();
-    const inputRect = input.getBoundingClientRect();
-    const popoverRect = popover.getBoundingClientRect();
-    const contentRect = content.getBoundingClientRect();
-    const arrowRect = arrow.getBoundingClientRect();
-    const titleStyle = getComputedStyle(title);
-
-    return {
-      arrowCenteredVertically:
-        Math.abs(
-          arrowRect.top + arrowRect.height / 2 - (popoverRect.top + popoverRect.height / 2),
-        ) <= 2,
-      contentWidth: Math.round(contentRect.width),
-      inputKeptInsideRightColumn:
-        inputRect.left >= rightColumnRect.left && inputRect.right <= rightColumnRect.right,
-      placement: popover.classList.contains("left") ? "left" : "",
-      popoverLeftOfInput: popoverRect.right <= inputRect.left,
-      popoverVisible: getComputedStyle(popover).display !== "none" && popoverRect.width > 0,
-      titleHidden: titleStyle.display === "none",
     };
 
     function requireElement<T extends HTMLElement = HTMLElement>(selector: string) {

@@ -1,3 +1,4 @@
+/* oxlint-disable jsx-a11y/prefer-tag-over-role -- legacy Select2/Bootstrap parity DOM intentionally keeps role-based controls. */
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter, useParams } from "@tanstack/react-router";
@@ -119,10 +120,12 @@ function ProjectCodeFolderBody({
     branchItemName(item.name).toLowerCase().includes(branchSearch.toLowerCase()),
   );
 
+  // react-doctor-disable-next-line react-doctor/no-effect-event-handler -- focus follows the legacy dropdown opening after its input mounts.
   useEffect(() => {
     if (branchMenuOpen) branchSearchRef.current?.focus();
   }, [branchMenuOpen]);
 
+  // react-doctor-disable-next-line react-doctor/no-effect-event-handler -- scroll follows keyboard/filter state after the option list renders.
   useEffect(() => {
     if (branchMenuOpen) highlightedBranchRef.current?.scrollIntoView({ block: "nearest" });
   }, [branchMenuOpen, branchSearch, highlightedBranch]);
@@ -218,6 +221,7 @@ function ProjectCodeFolderBody({
 
           <div className="code-browse-header" data-owner="project-code-branch-header">
             <div
+              role="group"
               className={`select2-container pull-left${branchMenuOpen ? " select2-dropdown-open select2-container-active" : ""}`}
               data-owner="project-code-branch-picker"
               onBlur={(event) => {
