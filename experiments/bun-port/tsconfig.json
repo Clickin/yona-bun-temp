@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["bun", "node", "react", "react-dom", "vite/client"]
+  },
+  "include": ["backend/**/*.ts", "scripts/**/*.ts", "web/**/*.ts", "web/**/*.tsx"]
+}

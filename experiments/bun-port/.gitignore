@@ -1,0 +1,12 @@
+node_modules/
+web/.tanstack/
+web/.output/
+web/dist/
+out/
+.local/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.log
+*.pem
+*.key

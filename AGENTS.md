@@ -115,6 +115,7 @@
 - `reference/mixed-code/**`를 구현 근거로 읽거나 사용하지 않는다. 기능/UX 근거는 `yona-original/`에서만 찾는다.
 - 새 canonical 구현이나 문서 기준선은 `repo root`를 기준으로 적는다.
 - root Bun/Go 혼합 코드, `TanStack Start`, in-process `tRPC`, `createServerFn`, Go backend 관련 결정은 현재 baseline처럼 서술하지 않는다.
+- **실험 분기 예외:** `experiment/bun-backend-validation`에서만 `experiments/bun-port/**`의 Bun, 독립 TypeScript backend, tRPC/SuperJSON, SQLBraid, trusted in-process plugin 검증을 허용한다. 결과와 미해결 항목은 `docs/reports/bun-port-validation/{environment,results,decision}.md`에 기록한다. 이 실험은 Rust 제품 runtime/frontend를 교체하지 않으며 legacy parity·fixture 비공개·release 금지 기준을 바꾸지 않는다. Bun SSH 이슈가 해결되기 전 Git/SVN SSH server interface는 제공하지 않는다.
 - 기능이 아직 비어 있으면 반드시 세 계층에 남긴다.
   - root canonical 문서: deferred scope
   - provenance 문서: gap 또는 deviation

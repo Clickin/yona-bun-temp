@@ -37,6 +37,8 @@ const NON_IMPLEMENTATION_PREFIXES = [
   "reports/",
   "reference/spikes/",
   "scripts/",
+  // Branch-local Bun backend feasibility code is not product parity surface.
+  "experiments/bun-port/",
   // Static legacy-data snapshots (e.g. fixtures/legacy-yona-1.16) consumed by
   // release-gate tooling; test/reference data, not product implementation surface.
   "fixtures/",

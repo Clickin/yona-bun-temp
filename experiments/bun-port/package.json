@@ -1,0 +1,51 @@
+{
+  "name": "@yoram/bun-backend-validation",
+  "version": "0.0.0-experiment",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "bun run check:runtime && bun test backend/contract.test.ts",
+    "dev": "bun run check:runtime && bun --bun run vite web --config web/vite.config.ts",
+    "build:web": "bun run check:runtime && bun --bun run vite build web --config web/vite.config.ts",
+    "build:standalone": "bun run build:web && bun run scripts/embed-web-assets.ts && bun build --compile --minify web/serve.mjs --outfile web/dist/yoram-bun",
+    "start:standalone": "bun run check:runtime && ./web/dist/yoram-bun",
+    "dev:backend": "bun run check:runtime && bun run backend/server.ts",
+    "check:runtime": "bun run scripts/check-runtime.ts",
+    "seed:fixture": "bun run check:runtime && bun run scripts/seed-fixture.ts",
+    "typecheck": "tsc --project tsconfig.json"
+  },
+  "dependencies": {
+    "@sqlbraid/bun-sql": "1.0.0",
+    "@sqlbraid/core": "1.0.0",
+    "@sqlbraid/mariadb": "1.0.0",
+    "@sqlbraid/mysql": "1.0.0",
+    "@sqlbraid/postgres": "1.0.0",
+    "@sqlbraid/runtime": "1.0.0",
+    "@sqlbraid/sqlite": "1.0.0",
+    "@sqlbraid/template": "1.0.0",
+    "@tanstack/react-query": "5.103.2",
+    "@tanstack/react-router": "1.170.38",
+    "@tanstack/react-router-ssr-query": "1.167.3",
+    "@tanstack/react-start": "1.168.57",
+    "@trpc/client": "11.19.0",
+    "@trpc/server": "11.19.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "superjson": "2.2.6",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.2",
+    "@types/node": "26.6.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.1",
+    "typescript": "6.0.3",
+    "vite": "8.3.0"
+  },
+  "overrides": {
+    "@sqlbraid/core": "1.0.0",
+    "@sqlbraid/runtime": "1.0.0",
+    "@sqlbraid/template": "1.0.0"
+  }
+}

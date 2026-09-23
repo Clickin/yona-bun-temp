@@ -1,0 +1,6 @@
+{
+  "id": "issue-summary",
+  "apiVersion": 1,
+  "entrypoint": "issue-summary.mjs",
+  "sha256": "1357acc58e658a7902297e3e4d2991f61811c7ab618985c5559e23e88d03e2f9"
+}

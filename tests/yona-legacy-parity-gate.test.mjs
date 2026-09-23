@@ -280,6 +280,18 @@ test("ignores repo tooling and bootstrap files that do not define parity semanti
   assert.match(result.summary, /No implementation files/);
 });
 
+test("ignores the isolated Bun backend feasibility experiment", () => {
+  const changedFiles = [
+    "experiments/bun-port/backend/rpc.ts",
+    "experiments/bun-port/web/src/routes/login.tsx",
+  ];
+  const result = runGate(changedFiles);
+
+  assert.equal(result.verdict, "pass");
+  assert.deepEqual(result.implementationFiles, []);
+  assert.deepEqual(result.skippedFiles, changedFiles);
+});
+
 test("ignores frontend test helper files that support route parity tests", () => {
   const result = runGate(["frontend/src/auth-workspace-shell.test-helpers.tsx"]);
 
